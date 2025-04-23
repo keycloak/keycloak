@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 
+import com.google.common.base.CaseFormat;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import org.keycloak.common.Profile;
 import org.keycloak.config.CachingOptions;
@@ -39,7 +40,7 @@ final class CachingPropertyMappers {
                         .build(),
                 fromOption(CachingOptions.CACHE_STACK)
                         .isEnabled(CachingPropertyMappers::cacheSetToInfinispan, CACHE_STACK_SET_TO_ISPN)
-                        .to("kc.spi-connections-infinispan-quarkus-stack")
+                        .to("kc.spi-cache-embedded-default-stack")
                         .paramLabel("stack")
                         .build(),
                 fromOption(CachingOptions.CACHE_CONFIG_FILE)
@@ -51,7 +52,7 @@ final class CachingPropertyMappers {
                             } else
                                 return null;
                         })
-                        .to("kc.spi-connections-infinispan-quarkus-config-file")
+                        .to("kc.spi-cache-embedded-default-config-file")
                         .transformer(CachingPropertyMappers::resolveConfigFile)
                         .validator(s -> {
                             if (!Files.exists(Paths.get(resolveConfigFile(s, null)))) {
@@ -126,6 +127,7 @@ final class CachingPropertyMappers {
                         .build(),
                 fromOption(CachingOptions.CACHE_METRICS_HISTOGRAMS_ENABLED)
                         .isEnabled(MetricsPropertyMappers::metricsEnabled, MetricsPropertyMappers.METRICS_ENABLED_MSG)
+                        .to("kc.spi-cache-embedded-default-metrics-histograms-enabled")
                         .build()
         );
 
@@ -210,6 +212,7 @@ final class CachingPropertyMappers {
         return fromOption(CachingOptions.maxCountOption(cacheName))
                 .isEnabled(isEnabled, enabledWhen)
                 .paramLabel("max-count")
+                .to("kc.spi-cache-embedded-default-%s-max-count".formatted(CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_HYPHEN, cacheName)))
                 .build();
     }
 

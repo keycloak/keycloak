@@ -24,10 +24,18 @@ import org.keycloak.models.KeycloakSession;
  * A Service Provider Interface (SPI) that allows to plug-in an embedded or remote cache manager instance.
  *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
+ * @deprecated To be removed. Use InfinispanConnectionProvider to retrieve the embedded or remote cache manager.
  */
+@Deprecated(since = "26.3", forRemoval = true)
 public interface ManagedCacheManagerProvider {
 
-    <C> C getEmbeddedCacheManager(KeycloakSession keycloakSession, Config.Scope config);
+    /**
+     * @deprecated The EmbeddedCacheManager is created and managed by keycloak. Use InfinispanConnectionProvider to retrieve it and implement CacheEmbeddedConfigProvider to overwrite the configuration.
+     */
+    @Deprecated(since = "26.3", forRemoval = true)
+    default <C> C getEmbeddedCacheManager(KeycloakSession keycloakSession, Config.Scope config) {
+        throw new UnsupportedOperationException();
+    }
 
     /**
      * @return A RemoteCacheManager if the features {@link org.keycloak.common.Profile.Feature#CLUSTERLESS} or {@link org.keycloak.common.Profile.Feature#MULTI_SITE}  is enabled, {@code null} otherwise.
@@ -35,6 +43,6 @@ public interface ManagedCacheManagerProvider {
      */
     @Deprecated(since = "26.3", forRemoval = true)
     default <C> C getRemoteCacheManager(Config.Scope config) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 }

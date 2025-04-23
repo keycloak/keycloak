@@ -31,7 +31,9 @@ import org.keycloak.models.sessions.infinispan.remote.RemoteStickySessionEncoder
 import org.keycloak.models.sessions.infinispan.remote.RemoteUserLoginFailureProviderFactory;
 import org.keycloak.models.sessions.infinispan.remote.RemoteUserSessionProviderFactory;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.spi.infinispan.CacheEmbeddedConfigProviderSpi;
 import org.keycloak.spi.infinispan.CacheRemoteConfigProviderSpi;
+import org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory;
 import org.keycloak.spi.infinispan.impl.remote.DefaultCacheRemoteConfigProviderFactory;
 import org.keycloak.testsuite.model.Config;
 import org.keycloak.testsuite.model.HotRodServerRule;
@@ -70,16 +72,16 @@ public class RemoteInfinispan extends KeycloakModelParameters {
             var siteName = siteName(nodeCounter);
             cf.spi("connectionsInfinispan")
                     .provider("default")
-                    .config("embedded", "true")
-                    .config("clustered", "true")
-                    .config("useKeycloakTimeService", "true")
-                    .config("nodeName", "node-" + nodeCounter)
-                    .config("siteName", siteName)
-                    .config("jgroupsUdpMcastAddr", mcastAddr(nodeCounter));
+                    .config("useKeycloakTimeService", "true");
             cf.spi(CacheRemoteConfigProviderSpi.SPI_NAME)
                     .provider(DefaultCacheRemoteConfigProviderFactory.PROVIDER_ID)
                     .config(DefaultCacheRemoteConfigProviderFactory.HOSTNAME, "localhost")
                     .config(DefaultCacheRemoteConfigProviderFactory.PORT, siteName.equals("site-2") ? "11333" : "11222");
+            cf.spi(CacheEmbeddedConfigProviderSpi.SPI_NAME)
+                    .provider(DefaultCacheEmbeddedConfigProviderFactory.PROVIDER_ID)
+                    .config(DefaultCacheEmbeddedConfigProviderFactory.CONFIG, "test-ispn.xml")
+                    .config(DefaultCacheEmbeddedConfigProviderFactory.SITE_NAME, siteName(NODE_COUNTER.get()))
+                    .config(DefaultCacheEmbeddedConfigProviderFactory.NODE_NAME, "node-" + NODE_COUNTER.incrementAndGet());
         }
     }
 

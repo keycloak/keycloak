@@ -585,7 +585,6 @@
                             <keycloak.cacheRemote.port>${keycloak.cacheRemote.port}</keycloak.cacheRemote.port>
                             <keycloak.cacheRemote.port.2>${keycloak.cacheRemote.port.2}</keycloak.cacheRemote.port.2>
                             <keycloak.cacheRemote.hostname>${keycloak.cacheRemote.hostname}</keycloak.cacheRemote.hostname>
-                            <keycloak.connectionsInfinispan.sessionsOwners>${keycloak.connectionsInfinispan.sessionsOwners}</keycloak.connectionsInfinispan.sessionsOwners>
                             <keycloak.testsuite.logging.pattern>${keycloak.testsuite.logging.pattern}</keycloak.testsuite.logging.pattern>
 
                             <keycloak.connectionsJpa.url.crossdc>${keycloak.connectionsJpa.url.crossdc}</keycloak.connectionsJpa.url.crossdc>
@@ -718,7 +717,6 @@
                 <auth.server.quarkus.skip.unpack>false</auth.server.quarkus.skip.unpack>
                 <auth.server.undertow.skip.unpack>true</auth.server.undertow.skip.unpack>
                 <auth.server.jboss.skip.unpack>true</auth.server.jboss.skip.unpack>
-                <keycloak.connectionsInfinispan.sessionsOwners>2</keycloak.connectionsInfinispan.sessionsOwners>
             </properties>
             <build>
                 <plugins>
@@ -1328,8 +1326,6 @@
                 <auth.server.undertow.cluster>true</auth.server.undertow.cluster>
 
                 <auth.server.jboss.skip.unpack>true</auth.server.jboss.skip.unpack>
-
-                <keycloak.connectionsInfinispan.sessionsOwners>2</keycloak.connectionsInfinispan.sessionsOwners>
             </properties>
             <build>
                 <plugins>

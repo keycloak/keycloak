@@ -481,7 +481,7 @@ spec:
       secret:
         name: remote-store-secret
         key: password
-    - name: spi-connections-infinispan-quarkus-site-name
+    - name: spi-cache-embedded-default-site-name
       value: keycloak
     - name: db-driver
       value: software.amazon.jdbc.Driver

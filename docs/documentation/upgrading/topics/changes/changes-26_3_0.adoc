@@ -24,6 +24,18 @@ When you want the user, who is authenticated to your client application, to link
 mechanism with the action `idp_link`. The proprietary custom protocol for client initiated account linking is deprecated now and might be removed in the future versions. For more information, see the
 Client initiated account link section of the link:{developerguide_link}[{developerguide_name}].
 
+=== Deprecation of `spi-connections-infinispan-quarkus-site-name`
+
+The option `spi-connections-infinispan-quarkus-site-name` is deprecated, and it will be removed in the future.
+Use `spi-cache-embedded-default-site-name` instead.
+Specifying the site name is no longer required
+
+=== Deprecation of `jboss.site.name` and `jboss.node.name`
+
+Both system properties are no longer valid.
+{project_name} will fail to start if those are present.
+Instead, use the command line option `spi-cache-embedded-default-site-name` as `jboss.site.name` replacement, and `spi-cache-embedded-default-node-name` as `jboss.node.name` replacement.
+
 == Notable changes
 
 Notable changes where an internal behavior changed to prevent common misconfigurations, fix bugs or simplify running {project_name}.

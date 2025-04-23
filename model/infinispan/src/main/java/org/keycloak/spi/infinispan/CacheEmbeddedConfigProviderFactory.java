@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,16 +15,12 @@
  * limitations under the License.
  */
 
-package org.keycloak.quarkus.runtime.storage.infinispan;
+package org.keycloak.spi.infinispan;
 
-import org.keycloak.cluster.ManagedCacheManagerProvider;
+import org.keycloak.provider.ProviderFactory;
 
 /**
- * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
- * @deprecated @deprecated To be removed. Use InfinispanConnectionProvider to retrieve the embedded or remote cache manager.
+ * The {@link ProviderFactory} to build {@link CacheEmbeddedConfigProvider}.
  */
-@Deprecated(since = "26.3", forRemoval = true)
-public final class QuarkusCacheManagerProvider implements ManagedCacheManagerProvider {
-
-
+public interface CacheEmbeddedConfigProviderFactory extends ProviderFactory<CacheEmbeddedConfigProvider> {
 }
