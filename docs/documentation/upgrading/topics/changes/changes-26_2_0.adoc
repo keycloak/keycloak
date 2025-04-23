@@ -19,6 +19,17 @@ the `X-Forwarded-Port` header with the desired port.
 The required JAR for the Oracle JDBC driver that needs to be explicitly added to the distribution has changed.
 Instead of providing `ojdbc11` JAR, use `ojdbc17` JAR as stated in the https://www.keycloak.org/server/db#_installing_the_oracle_database_driver[Installing the Oracle Database driver] guide.
 
+=== H2 Credentials
+
+While migrating from an instance using the H2 based `dev-file` database is not supported, you may be able to continue to use your existing H2 database if you explicitly provide the old defaults for the database username and password. For example in the keycloak.conf specify:
+
+[example]
+====
+db-username=sa
+
+db-password=password
+====
+
 === JWT Client authentication aligned with the latest OIDC specification
 
 The latest draft version of the link:https://openid.net/specs/openid-connect-core-1_0-36.html#rfc.section.9[OpenID Connect core specification] changed the rules for
