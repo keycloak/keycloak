@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@noble/hashes": "^1.8.0",
-    "@patternfly-v5/patternfly": "npm:@patternfly/patternfly@^5.4.2",
+    "@patternfly-v5/patternfly": "npm:@patternfly/patternfly@^6.2.0",
     "@patternfly/patternfly": "^4.224.5",
     "patternfly": "^3.59.5",
     "react": "^18.3.1",
