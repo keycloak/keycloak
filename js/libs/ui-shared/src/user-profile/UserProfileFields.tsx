@@ -140,9 +140,9 @@ export const UserProfileFields = ({
         .map(({ group, attributes }) => ({
           title: label(t, group.displayHeader, group.name) || t("general"),
           panel: (
-            <div className="pf-v5-c-form">
+            <div className="pf-v6-c-form">
               {group.displayDescription && (
-                <Content component="p" className="pf-v5-u-pb-lg">
+                <Content component="p" className="pf-v6-u-pb-lg">
                   {label(t, group.displayDescription, "")}
                 </Content>
               )}
