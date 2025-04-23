@@ -26,6 +26,20 @@
     <includeBaseDirectory>true</includeBaseDirectory>
     <baseDirectory>${dist.archive.dir}</baseDirectory>
 
+    <dependencySets>
+        <!-- ✅ Add this block to include kaptcha.jar -->
+        <dependencySet>
+            <outputDirectory>lib</outputDirectory>
+            <useProjectArtifact>false</useProjectArtifact>
+            <unpack>false</unpack>
+            <scope>runtime</scope>
+            <includes>
+                <include>com.github.penggle:kaptcha</include>
+            </includes>
+        </dependencySet>
+
+        <!-- Existing dependencies if any can be listed here -->
+    </dependencySets>
     <fileSets>
         <fileSet>
             <directory>target/${project.build.finalName}</directory>

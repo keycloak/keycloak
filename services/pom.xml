@@ -32,12 +32,18 @@
 
     <properties>
         <version.swagger.doclet>1.1.2</version.swagger.doclet>
+        <version.google.captcha>2.3.2</version.google.captcha>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.penggle</groupId>
+            <artifactId>kaptcha</artifactId>
+            <version>${version.google.captcha}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -261,6 +267,7 @@
                         -AgeneratedTranslationFilesPath=${project.build.directory}/generated-translation-files
                     </compilerArgument>
                 </configuration>
+
             </plugin>
             <plugin>
                 <artifactId>maven-jar-plugin</artifactId>

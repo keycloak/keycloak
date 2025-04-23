@@ -1,14 +1,21 @@
-FROM registry.access.redhat.com/ubi9 AS ubi-micro-build
+FROM registry.access.redhat.com/ubi9/ubi AS ubi-full-build
 
 ARG KEYCLOAK_VERSION=999.0.0-SNAPSHOT
 ARG KEYCLOAK_DIST=https://github.com/vunetsystems/washington/releases/download/$KEYCLOAK_VERSION/keycloak-$KEYCLOAK_VERSION.tar.gz
 
-RUN dnf install -y tar gzip zip
+# Install required OS tools and minimal fonts for Java rendering
+RUN dnf install -y \
+    tar gzip zip fontconfig \
+    dejavu-sans-fonts \
+    freetype google-droid-sans-fonts \
+    java-21-openjdk-headless glibc-langpack-en findutils \
+    && dnf clean all
 
 ADD $KEYCLOAK_DIST /tmp/keycloak/
 
-# The next step makes it uniform for local development and upstream built.
-# If it is a local tar archive then it is unpacked, if from remote is just downloaded.
+USER root
+
+# Unpack Keycloak
 RUN (cd /tmp/keycloak && \
       tar -xvf /tmp/keycloak/keycloak-*.tar.gz && \
       rm /tmp/keycloak/keycloak-*.tar.gz) || true
@@ -16,35 +23,42 @@ RUN (cd /tmp/keycloak && \
 RUN mv /tmp/keycloak/keycloak-* /opt/keycloak && mkdir -p /opt/keycloak/data
 RUN chmod -R g+rwX /opt/keycloak
 
-ADD ubi-null.sh /tmp/
-RUN bash /tmp/ubi-null.sh java-21-openjdk-headless glibc-langpack-en findutils
-
-# vunet specific changes
+# Vunet-specific build steps
 WORKDIR /vunet
 COPY vunet .
 RUN bash ./build.sh
 
-FROM registry.access.redhat.com/ubi9-micro
+# ================== Final image ===================
+FROM registry.access.redhat.com/ubi9/ubi
+
 ENV LANG en_US.UTF-8
 
+# Install runtime dependencies (minimal but enough for font rendering)
+RUN dnf install -y \
+    fontconfig \
+    dejavu-sans-fonts \
+    freetype google-droid-sans-fonts \
+    java-21-openjdk-headless glibc-langpack-en findutils \
+    && dnf clean all
+
 LABEL org.opencontainers.image.source https://github.com/vunetsystems/washington
-# Flag for determining app is running in container
+
 ENV KC_RUN_IN_CONTAINER true
 
-COPY --from=ubi-micro-build /tmp/null/rootfs/ /
-COPY --from=ubi-micro-build --chown=1000:0 /opt/keycloak /opt/keycloak
+# Copy built artifacts
+COPY --from=ubi-full-build --chown=1000:0 /opt/keycloak /opt/keycloak
 
-# vunet specific files
-COPY --from=ubi-micro-build --chown=1000:0 /vunet/provisioning/realm.json /opt/keycloak/data/import/realm.json
-COPY --from=ubi-micro-build --chown=1000:0 /vunet/dist/vsmaps-extensions.jar /opt/keycloak/providers/vsmaps-extensions.jar
-COPY --from=ubi-micro-build --chown=1000:0 /vunet/plugins/recaptcha-login.jar /opt/keycloak/providers/recaptcha-login.jar
-COPY --from=ubi-micro-build --chown=1000:0 /vunet/plugins/single-handshake-thirdparty-multifactor-authentication-1.0.0.jar /opt/keycloak/providers/single-handshake-thirdparty-multifactor-authentication-1.0.0.jar
-COPY --from=ubi-micro-build --chown=1000:0 /vunet/plugins/sms-based-thirdparty-multifactor-authentication-1.0.0.jar /opt/keycloak/providers/sms-based-thirdparty-multifactor-authentication-1.0.0.jar
-COPY --from=ubi-micro-build --chown=1000:0 /vunet/plugins/custom-username-password-form-1.0.0.jar /opt/keycloak/providers/custom-username-password-form-1.0.0.jar
-COPY --from=ubi-micro-build --chown=1000:0 /vunet/theme/ /opt/keycloak/themes/
+# Vunet-specific files
+COPY --from=ubi-full-build --chown=1000:0 /vunet/provisioning/realm.json /opt/keycloak/data/import/realm.json
+COPY --from=ubi-full-build --chown=1000:0 /vunet/dist/vsmaps-extensions.jar /opt/keycloak/providers/vsmaps-extensions.jar
+COPY --from=ubi-full-build --chown=1000:0 /vunet/plugins/recaptcha-login.jar /opt/keycloak/providers/recaptcha-login.jar
+COPY --from=ubi-full-build --chown=1000:0 /vunet/plugins/single-handshake-thirdparty-multifactor-authentication-1.0.0.jar /opt/keycloak/providers/single-handshake-thirdparty-multifactor-authentication-1.0.0.jar
+COPY --from=ubi-full-build --chown=1000:0 /vunet/plugins/sms-based-thirdparty-multifactor-authentication-1.0.0.jar /opt/keycloak/providers/sms-based-thirdparty-multifactor-authentication-1.0.0.jar
+COPY --from=ubi-full-build --chown=1000:0 /vunet/plugins/custom-username-password-form-1.0.0.jar /opt/keycloak/providers/custom-username-password-form-1.0.0.jar
+COPY --from=ubi-full-build --chown=1000:0 /vunet/theme/ /opt/keycloak/themes/
 
 RUN echo "keycloak:x:0:root" >> /etc/group && \
-      echo "keycloak:x:1000:0:keycloak user:/opt/keycloak:/sbin/nologin" >> /etc/passwd
+    echo "keycloak:x:1000:0:keycloak user:/opt/keycloak:/sbin/nologin" >> /etc/passwd
 
 USER 1000
 
@@ -58,7 +72,7 @@ RUN /opt/keycloak/bin/kc.sh build
 
 ENTRYPOINT [ "/opt/keycloak/bin/kc.sh" ]
 
-# common labels
+# Common labels
 ARG KEYCLOAK_VERSION
 ARG KEYCLOAK_URL="https://www.keycloak.org/"
 ARG KEYCLOAK_TAGS="keycloak security identity"
@@ -76,7 +90,6 @@ LABEL maintainer=${KEYCLOAK_MAINTAINER} \
       com.redhat.component="" \
       com.redhat.license_terms=""
 
-# server specific
 ARG KEYCLOAK_SERVER_DISPLAY_NAME="Keycloak Server"
 ARG KEYCLOAK_SERVER_IMAGE_NAME="keycloak"
 ARG KEYCLOAK_SERVER_DESCRIPTION="${KEYCLOAK_SERVER_DISPLAY_NAME} Image"
@@ -87,7 +100,6 @@ LABEL name=${KEYCLOAK_SERVER_IMAGE_NAME} \
       io.k8s.display-name=${KEYCLOAK_SERVER_DISPLAY_NAME} \
       io.k8s.description=${KEYCLOAK_SERVER_DESCRIPTION}
 
-# oci
 ARG KEYCLOAK_SOURCE="https://github.com/keycloak/keycloak"
 ARG KEYCLOAK_DOCS=${KEYCLOAK_URL}documentation
 
@@ -96,3 +108,4 @@ LABEL org.opencontainers.image.title=${KEYCLOAK_SERVER_DISPLAY_NAME} \
       org.opencontainers.image.source=${KEYCLOAK_SOURCE} \
       org.opencontainers.image.description=${KEYCLOAK_DESCRIPTION} \
       org.opencontainers.image.documentation=${KEYCLOAK_DOCS}
+

@@ -12,6 +12,30 @@
 
 <script src="${url.resourcesPath}/encryption.js"> </script>
 
+<#if captcha_enabled?? && captcha_enabled == true>
+  <script>
+    const tabId = <#if tabId??>"${tabId}"<#else>null</#if>;
+
+    async function refreshCaptcha() {
+        if (!tabId) {
+        console.error("Missing tabId, cannot refresh CAPTCHA");
+        return;
+        }
+
+              const response = await fetch(`/realms/vunet/recaptcha-gen?tab_id=${tabId}`);
+              const data = await response.json();
+              const img = document.getElementById("captchaImg");
+              if (img && data.image) {
+        img.src = "data:image/png;base64," + data.image;
+        }
+            }
+
+            document.addEventListener("DOMContentLoaded", function () {
+        refreshCaptcha();
+      });
+  </script>
+</#if>
+
 <@layout.registrationLayout
 displayInfo=realm.password && realm.registrationAllowed && !registrationDisabled??
   displayMessage=!messagesPerField.existsError("username", "password")
@@ -52,6 +76,48 @@ displayInfo=realm.password && realm.registrationAllowed && !registrationDisabled
           name="password"
           type="password"
         />
+        <#if captcha_enabled?? && captcha_enabled == true>
+          <div class="form-group" style="margin-top: 1.5em;">
+            <label for="captcha" style="font-size: 16px; font-weight: 500; color:#808080; margin-bottom: 6px; display: block;">
+              Type the characters you see in this image
+            </label>
+
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <!-- CAPTCHA Image -->
+              <img id="captchaImg"
+                  src=""
+                  style="height: 65px; width: 278px; border-radius: 6px; border: 1px solid #ccc; padding: 2px;"
+                  aria-hidden="true" />
+
+              <!-- Reload Button -->
+              <button type="button"
+                      onclick="refreshCaptcha()"
+                      title="Reload CAPTCHA"
+                      style="background: none; border: none; color: #888; cursor: pointer;">
+                <img src="${url.resourcesPath}/img/refresh-icon.svg" alt="Refresh CAPTCHA" />
+              </button>
+
+              <!-- Solve Input Box -->
+              <input
+                name="captcha"
+                type="text"
+                placeholder="Solve CAPTCHA"
+                required
+                style="
+                  height: 38px;
+                  width: 123px;
+                  font-size: 14px;
+                  padding: 8px;
+                  border: 1px solid #ccc;
+                  border-radius: 6px;
+                  background: #fff;
+                  color: #000;
+                  box-sizing: border-box;
+                "
+              />
+            </div>
+          </div>
+        </#if>
         <#if realm.rememberMe && !usernameEditDisabled?? || realm.resetPasswordAllowed>
           <div class="flex items-center justify-between">
             <#if realm.rememberMe && !usernameEditDisabled??>

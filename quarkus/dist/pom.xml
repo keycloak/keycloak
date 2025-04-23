@@ -41,6 +41,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>com.github.penggle</groupId>
+            <artifactId>kaptcha</artifactId>
+            <version>2.3.2</version>
+        </dependency>
+        <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-client-cli-dist</artifactId>
             <type>zip</type>

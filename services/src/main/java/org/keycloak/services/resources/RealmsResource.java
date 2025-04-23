@@ -275,6 +275,13 @@ public class RealmsResource {
         throw new NotFoundException();
     }
 
+
+    @Path("{realm}/recaptcha-gen")
+    public Object getRecaptchaResource(@PathParam("realm") String realm) {
+        resolveRealmAndUpdateSession(realm);
+        return new RecaptchaResource(session);
+    }
+
     private void checkSsl(RealmModel realm) {
         if (!"https".equals(session.getContext().getUri().getBaseUri().getScheme())
                 && realm.getSslRequired().isRequired(session.getContext().getConnection())) {
