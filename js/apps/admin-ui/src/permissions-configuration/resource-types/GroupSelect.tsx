@@ -69,14 +69,11 @@ export const GroupSelect = ({
         name={name!}
         control={control}
         defaultValue={defaultValue}
-        rules={
-          isRequired
-            ? {
-                validate: (value?: GroupRepresentation[]) =>
-                  value && value.length > 0,
-              }
-            : undefined
-        }
+        rules={{
+          validate: (value?: string[]) => {
+            return isRequired && value && value.length > 0;
+          },
+        }}
         render={({ field }) => (
           <>
             {open && (
@@ -147,7 +144,7 @@ export const GroupSelect = ({
           </Tbody>
         </Table>
       )}
-      {errors.groups && <FormErrorText message={t("requiredGroups")} />}
+      {errors[name!] && <FormErrorText message={t("requiredGroups")} />}
     </FormGroup>
   );
 };

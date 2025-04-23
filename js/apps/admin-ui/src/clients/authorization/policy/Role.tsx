@@ -66,6 +66,7 @@ export const Role = () => {
                 <AddRoleMappingModal
                   id="role"
                   type="roles"
+                  title={t("assignRole")}
                   onAssign={(rows) => {
                     field.onChange([
                       ...(field.value || []),
@@ -77,7 +78,6 @@ export const Role = () => {
                   onClose={() => {
                     setOpen(false);
                   }}
-                  isLDAPmapper
                 />
               )}
               <Button
