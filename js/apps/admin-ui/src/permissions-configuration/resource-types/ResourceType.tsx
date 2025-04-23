@@ -95,8 +95,9 @@ export const ResourceType = ({
             resourceType: normalizedResourceType,
           })}
           defaultValue={[]}
-          variant="typeaheadMulti"
+          variant={withEnforceAccessTo ? "typeaheadMulti" : "typeahead"}
           isRequired={withEnforceAccessTo}
+          isRadio={!withEnforceAccessTo}
         />
       )}
     </>
