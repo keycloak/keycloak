@@ -2819,7 +2819,7 @@
       "builtIn": true,
       "authenticationExecutions": [
         {
-          "authenticator": "auth-username-password-form",
+          "authenticator": "custom-username-password-form",
           "authenticatorFlow": false,
           "requirement": "REQUIRED",
           "priority": 10,
