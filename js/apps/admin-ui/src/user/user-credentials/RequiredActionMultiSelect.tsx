@@ -53,9 +53,6 @@ export const RequiredActionMultiSelect = <
       isScrollable
       maxMenuHeight="375px"
       variant={SelectVariant.typeaheadMulti}
-      chipGroupProps={{
-        numChips: 3,
-      }}
       placeholderText={t("requiredActionPlaceholder")}
       menuAppendTo="parent"
       options={requiredActions.map(({ alias, name }) => ({

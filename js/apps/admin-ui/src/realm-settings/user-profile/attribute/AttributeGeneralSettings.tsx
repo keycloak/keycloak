@@ -197,7 +197,6 @@ export const AttributeGeneralSettings = () => {
                       }}
                       typeAheadAriaLabel="Select"
                       chipGroupProps={{
-                        numChips: 3,
                         expandedText: t("hide"),
                         collapsedText: t("showRemaining"),
                       }}
@@ -336,7 +335,6 @@ export const AttributeGeneralSettings = () => {
                           variant={SelectVariant.typeaheadMulti}
                           typeAheadAriaLabel="Select"
                           chipGroupProps={{
-                            numChips: 3,
                             expandedText: t("hide"),
                             collapsedText: t("showRemaining"),
                           }}

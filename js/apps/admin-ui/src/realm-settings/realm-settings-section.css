@@ -33,14 +33,6 @@ article.pf-v6-c-card.pf-m-flat.kc-email-connection
   padding-top: 0px;
 }
 
-.kc-email-settings > div.pf-v6-c-card__body.kc-form-panel__body,
-.kc-email-template > div.pf-v6-c-card__body.kc-form-panel__body,
-.kc-login-screen > div.pf-v6-c-card__body.kc-form-panel__body,
-.kc-user-info-settings > div.pf-v6-c-card__body.kc-form-panel__body {
-  padding-left: 0px;
-  padding-bottom: var(--pf-v6-global--spacer--2xl);
-}
-
 button.kc-certificate.pf-v6-c-button.pf-m-secondary {
   margin-left: var(--pf-v6-global--spacer--md);
 }
@@ -89,13 +81,6 @@ div#offline-session-max-label > .pf-v6-c-form__group-label {
 .pf-v6-c-content.messageBundleDescription {
   max-width: 1024px;
   padding-bottom: var(--pf-v6-global--spacer--lg);
-}
-
-.kc-message-bundles > .pf-v6-c-card__body.kc-form-panel__body > div.tableBorder {
-  border-style: solid;
-  border-width: 1px;
-  border-color: var(--pf-v6-global--BorderColor--100);
-  max-width: 1024px;
 }
 
 .pf-v6-c-form__group.kc-email-form-group {

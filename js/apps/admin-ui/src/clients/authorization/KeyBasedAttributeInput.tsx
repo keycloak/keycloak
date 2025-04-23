@@ -98,7 +98,6 @@ const ValueInput = ({
               toggleId={`${attribute.id}-value`}
               className="kc-attribute-value-selectable"
               chipGroupProps={{
-                numChips: 1,
                 expandedText: t("hide"),
                 collapsedText: t("showRemaining"),
               }}

@@ -37,7 +37,7 @@ export default function RealmRolesSection() {
         subKey="roleExplain"
         helpUrl={helpUrls.realmRolesUrl}
       />
-      <PageSection hasBodyWrapper={false} padding={{ default: "noPadding" }}>
+      <PageSection hasBodyWrapper>
         <RolesList
           loader={loader}
           toCreate={toAddRole({ realm })}

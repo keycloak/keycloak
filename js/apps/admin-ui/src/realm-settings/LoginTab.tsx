@@ -1,17 +1,8 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import {
-  Card,
-  CardBody,
-  CardFooter,
-  CardTitle,
-  FormGroup,
-  PageSection,
-  Switch,
-} from "@patternfly/react-core";
+import { FormPanel, HelpItem, useAlerts } from "@keycloak/keycloak-ui-shared";
+import { FormGroup, PageSection, Switch } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { FormPanel, HelpItem } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../admin-client";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../components/form/FormAccess";
 import { useRealm } from "../context/realm-context/RealmContext";
 
@@ -56,11 +47,6 @@ export const RealmSettingsLoginTab = ({
 
   return (
     <PageSection hasBodyWrapper={false}>
-      <Card ouiaId="BasicCard">
-        <CardTitle>Title</CardTitle>
-        <CardBody>Body</CardBody>
-        <CardFooter>Footer</CardFooter>
-      </Card>
       <FormPanel
         className="kc-login-screen"
         title={t("loginScreenCustomization")}

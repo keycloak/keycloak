@@ -237,7 +237,6 @@ export const EffectiveMessageBundles = ({
                     <KeycloakSelect
                       data-testid="effective_message_bundles-theme-searchField"
                       chipGroupProps={{
-                        numChips: 1,
                         expandedText: t("hide"),
                         collapsedText: t("showRemaining"),
                       }}
@@ -304,7 +303,6 @@ export const EffectiveMessageBundles = ({
                     <KeycloakSelect
                       data-testid="effective-message-bundles-feature-searchField"
                       chipGroupProps={{
-                        numChips: 1,
                         expandedText: t("hide"),
                         collapsedText: t("showRemaining"),
                       }}
@@ -367,7 +365,6 @@ export const EffectiveMessageBundles = ({
                     <KeycloakSelect
                       data-testid="effective-message-bundles-language-searchField"
                       chipGroupProps={{
-                        numChips: 1,
                         expandedText: t("hide"),
                         collapsedText: t("showRemaining"),
                       }}

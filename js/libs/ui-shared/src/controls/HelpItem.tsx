@@ -2,6 +2,7 @@ import { Icon, Popover } from "@patternfly/react-core";
 import { HelpIcon } from "@patternfly/react-icons";
 import { ReactNode } from "react";
 import { useHelp } from "../context/HelpContext";
+import style from "./helpitem.module.css";
 
 type HelpItemProps = {
   helpText: string | ReactNode;
@@ -25,7 +26,7 @@ export const HelpItem = ({
             data-testid={`help-label-${fieldLabelId}`}
             aria-label={fieldLabelId}
             onClick={(e) => e.preventDefault()}
-            className="pf-v5-c-form__group-label-help"
+            className={style.helpItem}
           >
             <Icon isInline={noVerticalAlign}>
               <HelpIcon />

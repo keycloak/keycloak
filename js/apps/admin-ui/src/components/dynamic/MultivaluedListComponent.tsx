@@ -51,7 +51,6 @@ export const MultiValuedListComponent = ({
             data-testid={name}
             isDisabled={isDisabled}
             chipGroupProps={{
-              numChips: 3,
               expandedText: t("hide"),
               collapsedText: t("showRemaining"),
             }}

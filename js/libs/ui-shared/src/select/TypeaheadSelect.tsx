@@ -54,8 +54,6 @@ export const TypeaheadSelect = ({
     onToggle?.(!rest.isOpen);
   };
 
-  const { numChips, ...chipGroupPropsRest } = chipGroupProps || {};
-
   const onInputKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     const focusedItem = childArray[focusedItemIndex];
     onToggle?.(true);
@@ -163,21 +161,19 @@ export const TypeaheadSelect = ({
                 (chipGroupComponent ? (
                   chipGroupComponent
                 ) : (
-                  <LabelGroup {...chipGroupPropsRest}>
-                    {selections
-                      .splice(numChips || 0)
-                      .map((selection, index: number) => (
-                        <Label
-                          variant="outline"
-                          key={index}
-                          onClose={(ev) => {
-                            ev.stopPropagation();
-                            onSelect?.(selection);
-                          }}
-                        >
-                          {selection}
-                        </Label>
-                      ))}
+                  <LabelGroup {...chipGroupProps}>
+                    {selections.map((selection, index: number) => (
+                      <Label
+                        variant="outline"
+                        key={index}
+                        onClose={(ev) => {
+                          ev.stopPropagation();
+                          onSelect?.(selection);
+                        }}
+                      >
+                        {selection}
+                      </Label>
+                    ))}
                   </LabelGroup>
                 ))}
             </TextInputGroupMain>
