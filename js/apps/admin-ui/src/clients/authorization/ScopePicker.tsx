@@ -90,7 +90,6 @@ export const ScopePicker = ({
                 toggleId="scopes"
                 variant={SelectVariant.typeaheadMulti}
                 chipGroupProps={{
-                  numChips: 3,
                   expandedText: t("hide"),
                   collapsedText: t("showRemaining"),
                 }}

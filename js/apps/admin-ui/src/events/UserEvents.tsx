@@ -277,7 +277,6 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
                         className="keycloak__events_search__type_select"
                         data-testid="event-type-searchField"
                         chipGroupProps={{
-                          numChips: 1,
                           expandedText: t("hide"),
                           collapsedText: t("showRemaining"),
                         }}
