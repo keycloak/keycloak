@@ -368,13 +368,27 @@ public class PolicyEvaluationService {
             accessToken.setRealmAccess(new AccessToken.Access());
         }
 
-        if (representation.getRoleIds() != null && !representation.getRoleIds().isEmpty()) {
-            if (accessToken.getRealmAccess() == null) {
-                accessToken.setRealmAccess(new AccessToken.Access());
-            }
-            AccessToken.Access realmAccess = accessToken.getRealmAccess();
+        if (accessToken.getRealmAccess() == null) {
+            accessToken.setRealmAccess(new AccessToken.Access());
+        }
 
+        AccessToken.Access realmAccess = accessToken.getRealmAccess();
+        if (representation.getRoleIds() != null && !representation.getRoleIds().isEmpty()) {
             representation.getRoleIds().forEach(realmAccess::addRole);
+        } else {
+            UserModel user = keycloakSession.users().getUserById(realm, representation.getUserId());
+
+            if (user != null) {
+                AccessToken finalAccessToken = accessToken;
+                user.getRoleMappingsStream().forEach(roleModel -> {
+                    if (roleModel.isClientRole()) {
+                        ClientModel client = (ClientModel) roleModel.getContainer();
+                        finalAccessToken.addAccess(client.getClientId()).addRole(roleModel.getName());
+                    } else {
+                        realmAccess.addRole(roleModel.getName());
+                    }
+                });
+            }
         }
 
         return new CloseableKeycloakIdentity(accessToken, keycloakSession, userSession);
