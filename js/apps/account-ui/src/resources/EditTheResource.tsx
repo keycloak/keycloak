@@ -3,7 +3,8 @@ import {
   TextControl,
   useEnvironment,
 } from "@keycloak/keycloak-ui-shared";
-import { Button, Form, Modal } from "@patternfly/react-core";
+import { Button, Form } from "@patternfly/react-core";
+import { Modal } from "@patternfly/react-core/deprecated";
 import { Fragment, useEffect } from "react";
 import { FormProvider, useFieldArray, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";

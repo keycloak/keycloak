@@ -56,7 +56,7 @@ export const Root = () => {
         {
           path: decodeURIComponent(new URL(environment.baseUrl).pathname),
           element: (
-            <Page header={<Header />} sidebar={<PageNav />} isManagedSidebar>
+            <Page masthead={<Header />} sidebar={<PageNav />} isManagedSidebar>
               <Suspense fallback={<Spinner />}>
                 <Outlet />
               </Suspense>

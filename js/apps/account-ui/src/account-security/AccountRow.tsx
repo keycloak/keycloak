@@ -58,10 +58,10 @@ export const AccountRow = ({
           dataListCells={[
             <DataListCell key="idp">
               <Split>
-                <SplitItem className="pf-v5-u-mr-sm">
+                <SplitItem className="pf-v6-u-mr-sm">
                   <IconMapper icon={account.providerName} />
                 </SplitItem>
-                <SplitItem className="pf-v5-u-my-xs" isFilled>
+                <SplitItem className="pf-v6-u-my-xs" isFilled>
                   <span id={`${account.providerAlias}-idp-name`}>
                     {account.displayName}
                   </span>
@@ -70,7 +70,7 @@ export const AccountRow = ({
             </DataListCell>,
             <DataListCell key="label">
               <Split>
-                <SplitItem className="pf-v5-u-my-xs" isFilled>
+                <SplitItem className="pf-v6-u-my-xs" isFilled>
                   <span id={`${account.providerAlias}-idp-label`}>
                     <Label color={account.social ? "blue" : "green"}>
                       {t(account.social ? "socialLogin" : "systemDefined")}
@@ -81,7 +81,7 @@ export const AccountRow = ({
             </DataListCell>,
             <DataListCell key="username" width={5}>
               <Split>
-                <SplitItem className="pf-v5-u-my-xs" isFilled>
+                <SplitItem className="pf-v6-u-my-xs" isFilled>
                   <span id={`${account.providerAlias}-idp-username`}>
                     {account.linkedUsername}
                   </span>
@@ -97,18 +97,26 @@ export const AccountRow = ({
         >
           {isLinked && (
             <Button
+              icon={
+                <Icon size="sm">
+                  <UnlinkIcon />
+                </Icon>
+              }
               id={`${account.providerAlias}-idp-unlink`}
               variant="link"
               onClick={() => unLink(account)}
             >
-              <Icon size="sm">
-                <UnlinkIcon />
-              </Icon>{" "}
+              {" "}
               {t("unLink")}
             </Button>
           )}
           {!isLinked && (
             <Button
+              icon={
+                <Icon size="sm">
+                  <LinkIcon />
+                </Icon>
+              }
               id={`${account.providerAlias}-idp-link`}
               variant="link"
               onClick={() => {
@@ -117,9 +125,6 @@ export const AccountRow = ({
                 });
               }}
             >
-              <Icon size="sm">
-                <LinkIcon />
-              </Icon>{" "}
               {t("link")}
             </Button>
           )}

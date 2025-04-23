@@ -7,7 +7,6 @@ import {
   MenuToggle,
   MenuToggleElement,
   PageSection,
-  PageSectionVariants,
   Select,
   SelectList,
   SelectOption,
@@ -88,7 +87,7 @@ export const Oid4Vci = () => {
       title={t("verifiableCredentialsTitle")}
       description={t("verifiableCredentialsDescription")}
     >
-      <PageSection isFilled variant={PageSectionVariants.light}>
+      <PageSection hasBodyWrapper={false} isFilled>
         <List isPlain>
           <ListItem>
             <Select
