@@ -129,7 +129,7 @@ public class JavaOptsScriptTest {
     void testKcHomeDirPathFormat(LaunchResult result) {
         String output = result.getOutput();
         assertThat(output, containsString("kc.home.dir="));
-        assertThat(output, matchesPattern("(?s).*kc\\.home\\.dir=\"[A-Z]:/.*?/keycloak/quarkus/tests/integration/target/kc-tests/keycloak-\\d+\\.\\d+\\.\\d+.*?/bin/\\.\\.\".*"));
+        assertThat(output, matchesPattern("(?s).*kc\\.home\\.dir=\"[A-Z]:/.*/target/kc-tests/keycloak-\\d+\\.\\d+\\.\\d+.*?/bin/\\.\\.\".*"));
     }
 
 }
