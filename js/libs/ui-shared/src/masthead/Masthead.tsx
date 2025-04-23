@@ -7,6 +7,7 @@ import {
   MastheadContent,
   MastheadLogo,
   MastheadLogoProps,
+  MastheadMain,
   MastheadMainProps,
   MastheadToggle,
   PageToggleButton,
@@ -96,16 +97,18 @@ const KeycloakMasthead = ({
   const picture = keycloak.idTokenParsed?.picture;
   return (
     <Masthead {...rest}>
-      <MastheadToggle>
-        <PageToggleButton variant="plain" aria-label={t("navigation")}>
-          <BarsIcon />
-        </PageToggleButton>
-      </MastheadToggle>
-      <MastheadBrand>
-        <MastheadLogo {...brandProps}>
-          <img src={src} alt={alt} className={className} />
-        </MastheadLogo>
-      </MastheadBrand>
+      <MastheadMain>
+        <MastheadToggle>
+          <PageToggleButton variant="plain" aria-label={t("navigation")}>
+            <BarsIcon />
+          </PageToggleButton>
+        </MastheadToggle>
+        <MastheadBrand>
+          <MastheadLogo {...brandProps}>
+            <img src={src} alt={alt} className={className} />
+          </MastheadLogo>
+        </MastheadBrand>
+      </MastheadMain>
       <MastheadContent>
         {toolbar}
         <Toolbar>
@@ -132,7 +135,7 @@ const KeycloakMasthead = ({
               />
             </ToolbarItem>
             <ToolbarItem
-              align={{ default: "alignStart" }}
+              align={{ default: "alignEnd" }}
               visibility={{
                 md: "hidden",
               }}
@@ -146,10 +149,7 @@ const KeycloakMasthead = ({
                 ]}
               />
             </ToolbarItem>
-            <ToolbarItem
-              align={{ default: "alignEnd" }}
-              className="pf-v5-u-m-0-on-lg"
-            >
+            <ToolbarItem>
               {picture || avatar?.src ? (
                 <Avatar {...{ src: picture, alt: t("avatar"), ...avatar }} />
               ) : (

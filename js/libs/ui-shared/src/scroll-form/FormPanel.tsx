@@ -21,7 +21,7 @@ export const FormPanel = ({
       <CardTitle tabIndex={0}>
         <FormTitle id={scrollId} title={title} />
       </CardTitle>
-      <CardBody className="kc-form-panel__body">{children}</CardBody>
+      <CardBody>{children}</CardBody>
     </Card>
   );
 };
