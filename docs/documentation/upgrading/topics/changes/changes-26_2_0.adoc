@@ -21,7 +21,7 @@ Instead of providing `ojdbc11` JAR, use `ojdbc17` JAR as stated in the https://w
 
 === H2 Credentials
 
-With this version, the default H2 based `dev-file` database changed its credentials. While migrating from an instance using this dev only database is not supported, you may be able to continue to use your existing H2 database if you explicitly provide the old defaults for the database username and password. For example in the keycloak.conf specify:
+With this version, the default H2 based `dev-file` database changed its credentials. While migrating from an instance using this dev only database is not supported, you may be able to continue to use your existing H2 database if you explicitly provide the old defaults for the database username and password. For example in the `keycloak.conf` specify:
 
 [example]
 ====
