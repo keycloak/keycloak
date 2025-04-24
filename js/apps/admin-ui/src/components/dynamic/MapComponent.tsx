@@ -27,7 +27,8 @@ export const MapComponent = ({
   label,
   helpText,
   required,
-  isDisabled,
+  readOnly,
+  isDisabled = readOnly ?? false,
   defaultValue,
   convertToName,
 }: ComponentProps) => {
