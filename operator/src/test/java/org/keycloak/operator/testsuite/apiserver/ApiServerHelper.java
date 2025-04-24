@@ -41,25 +41,28 @@ public class ApiServerHelper {
             }
 
             private void updateStatefulSet(StatefulSet obj) {
-                int replicas = obj.getSpec().getReplicas();
+                int specReplicas = obj.getSpec().getReplicas();
+                int statusReplicas = Optional.ofNullable(obj.getStatus().getReplicas()).orElse(0);
                 String revision = Utils.hash(List.of(obj.getSpec())).substring(1);
-                if (!Objects.equals(Optional.ofNullable(obj.getStatus().getReplicas()).orElse(0), replicas)
-                        || !Objects.equals(revision, obj.getStatus().getUpdateRevision())
-                        || !Objects.equals(obj.getStatus().getCurrentRevision(), obj.getStatus().getUpdateRevision())) {
+                String updateRevision = obj.getStatus().getUpdateRevision();
+
+                if (statusReplicas != specReplicas
+                        || !Objects.equals(revision, updateRevision)
+                        || !Objects.equals(obj.getStatus().getCurrentRevision(), updateRevision)) {
                     // generate intermediate rolling events
                     int actualReplicas;
-                    if (!Objects.equals(revision, obj.getStatus().getUpdateRevision())) {
-                        actualReplicas = 0;
-                    } else if (replicas == 0) {
-                        actualReplicas = Math.max(replicas, Optional.ofNullable(obj.getStatus().getReplicas()).orElse(0) - 1);
+                    if (!Objects.equals(revision, updateRevision)) { // detected spec change, mimic rolling update with just one pod
+                        actualReplicas = Math.max(0, statusReplicas - 1);
+                    } else if (specReplicas == 0 && statusReplicas > 0) { // probably recreate update requested, scaling down the deployment
+                        actualReplicas = statusReplicas - 1;
                     } else {
-                        actualReplicas = Math.min(replicas, Optional.ofNullable(obj.getStatus().getReplicas()).orElse(0) + 1);
+                        actualReplicas = statusReplicas + 1; // otherwise, just scale up
                     }
                     obj = result.getKubernetesSerialization().clone(obj);
                     obj.getStatus().setReplicas(actualReplicas);
                     obj.getStatus().setReadyReplicas(actualReplicas);
                     obj.getStatus().setUpdateRevision(revision);
-                    if (actualReplicas == replicas) {
+                    if (actualReplicas == specReplicas) {
                         obj.getStatus().setCurrentRevision(revision);
                     }
                     obj.getMetadata().setResourceVersion(null);
