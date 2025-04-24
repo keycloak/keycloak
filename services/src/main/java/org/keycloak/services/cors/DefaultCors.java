@@ -47,12 +47,13 @@ public class DefaultCors implements Cors {
     private ResponseBuilder builder;
     private Set<String> allowedOrigins;
     private Set<String> allowedMethods;
+    private final HeaderSet allowedHeaders = HeaderSet.copyOf(DEFAULT_ALLOW_HEADERS);
     private Set<String> exposedHeaders;
 
     private boolean preflight;
     private boolean auth;
 
-    DefaultCors(KeycloakSession session) {
+    public DefaultCors(KeycloakSession session) {
         this.session = session;
         this.request = session.getContext().getHttpRequest();
         this.response = session.getContext().getHttpResponse();
@@ -113,6 +114,12 @@ public class DefaultCors implements Cors {
     }
 
     @Override
+    public Cors allowedHeaders(String... allowedHeaders) {
+        this.allowedHeaders.addAll(Arrays.asList(allowedHeaders));
+        return this;
+    }
+
+    @Override
     public Cors exposedHeaders(String... exposedHeaders) {
         if (this.exposedHeaders == null) {
             this.exposedHeaders = new HashSet<>();
@@ -165,13 +172,9 @@ public class DefaultCors implements Cors {
 
         if (preflight) {
             if (auth) {
-                response.setHeader(ACCESS_CONTROL_ALLOW_HEADERS, String.format("%s, %s", DEFAULT_ALLOW_HEADERS, AUTHORIZATION_HEADER));
-            } else {
-                response.setHeader(ACCESS_CONTROL_ALLOW_HEADERS, DEFAULT_ALLOW_HEADERS);
+                allowedHeaders(AUTHORIZATION_HEADER);
             }
-        }
-
-        if (preflight) {
+            response.setHeader(ACCESS_CONTROL_ALLOW_HEADERS, allowedHeaders.toHeaderString());
             response.setHeader(ACCESS_CONTROL_MAX_AGE, String.valueOf(DEFAULT_MAX_AGE));
         }
     }

@@ -35,7 +35,7 @@ public interface Cors extends Provider {
 
     long DEFAULT_MAX_AGE = TimeUnit.HOURS.toSeconds(1);
     String DEFAULT_ALLOW_METHODS = "GET, HEAD, OPTIONS";
-    String DEFAULT_ALLOW_HEADERS = "Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers, DPoP";
+    HeaderSet DEFAULT_ALLOW_HEADERS = HeaderSet.parse("Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers, DPoP");
 
     String ORIGIN_HEADER = "Origin";
     String AUTHORIZATION_HEADER = "Authorization";
@@ -69,6 +69,8 @@ public interface Cors extends Provider {
     Cors allowedOrigins(String... allowedOrigins);
 
     Cors allowedMethods(String... allowedMethods);
+
+    Cors allowedHeaders(String... allowedHeaders);
 
     Cors exposedHeaders(String... exposedHeaders);
 
