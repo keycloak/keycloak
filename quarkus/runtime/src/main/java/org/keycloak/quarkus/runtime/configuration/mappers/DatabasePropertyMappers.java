@@ -61,12 +61,10 @@ final class DatabasePropertyMappers {
                         .paramLabel("properties")
                         .build(),
                 fromOption(DatabaseOptions.DB_USERNAME)
-                        .mapFrom(DatabaseOptions.DB, DatabasePropertyMappers::resolveUsername)
                         .to("quarkus.datasource.username")
                         .paramLabel("username")
                         .build(),
                 fromOption(DatabaseOptions.DB_PASSWORD)
-                        .mapFrom(DatabaseOptions.DB, DatabasePropertyMappers::resolvePassword)
                         .to("quarkus.datasource.password")
                         .paramLabel("password")
                         .isMasked(true)
@@ -118,14 +116,6 @@ final class DatabasePropertyMappers {
 
     private static String toDatabaseKind(String db, ConfigSourceInterceptorContext context) {
         return Database.getDatabaseKind(db).orElse(null);
-    }
-
-    private static String resolveUsername(String database, ConfigSourceInterceptorContext context) {
-        return isDevModeDatabase(database) ? "sa" : null;
-    }
-
-    private static String resolvePassword(String database, ConfigSourceInterceptorContext context) {
-        return isDevModeDatabase(database) ? "password" : null;
     }
 
     private static boolean isDevModeDatabase(String database) {
