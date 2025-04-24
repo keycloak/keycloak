@@ -55,8 +55,8 @@ public class ApiServerHelper {
                         // this is not fully accurate as it's rather recreate than rolling update,
                         // but thanks to gradual scaling up it emits more events which is closer to the real behavior
                         actualReplicas = 0;
-                    } else if (specReplicas == 0 && statusReplicas > 0) { // probably recreate update requested, scaling down the deployment
-                        actualReplicas = statusReplicas - 1;
+                    } else if (specReplicas == 0) { // probably recreate update requested, scaling down the deployment
+                        actualReplicas = Math.max(0, statusReplicas - 1);
                     } else {
                         actualReplicas = statusReplicas + 1; // otherwise, just scale up
                     }
