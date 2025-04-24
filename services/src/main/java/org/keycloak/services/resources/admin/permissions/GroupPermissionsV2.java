@@ -16,37 +16,25 @@
  */
 package org.keycloak.services.resources.admin.permissions;
 
-import static org.keycloak.authorization.AdminPermissionsSchema.GROUPS_RESOURCE_TYPE;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Stream;
 
 import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
-import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.authorization.model.ResourceWrapper;
-import org.keycloak.authorization.permission.ResourcePermission;
-import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.models.AdminRoles;
-import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.services.resources.admin.permissions.ModelRecord.GroupModelRecord;
 
 class GroupPermissionsV2 extends GroupPermissions {
 
-    private final KeycloakSession session;
+    private final FineGrainedAdminPermissionEvaluator eval;
 
     GroupPermissionsV2(KeycloakSession session, AuthorizationProvider authz, MgmtPermissions root) {
         super(authz, root);
-        this.session = session;
+        this.eval = new FineGrainedAdminPermissionEvaluator(session, root, resourceStore, policyStore);
     }
 
     @Override
@@ -55,7 +43,7 @@ class GroupPermissionsV2 extends GroupPermissions {
             return true;
         }
 
-        return hasPermission(null, AdminPermissionsSchema.VIEW);
+        return eval.hasPermission(new GroupModelRecord(null), null, AdminPermissionsSchema.VIEW);
     }
 
     @Override
@@ -64,7 +52,7 @@ class GroupPermissionsV2 extends GroupPermissions {
             return true;
         }
 
-        return hasPermission(group.getId(), AdminPermissionsSchema.VIEW);
+        return eval.hasPermission(new GroupModelRecord(group), null, AdminPermissionsSchema.VIEW);
     }
 
     @Override
@@ -73,7 +61,7 @@ class GroupPermissionsV2 extends GroupPermissions {
             return true;
         }
 
-        return hasPermission(null, AdminPermissionsSchema.MANAGE);
+        return eval.hasPermission(new GroupModelRecord(null), null, AdminPermissionsSchema.MANAGE);
     }
 
     @Override
@@ -82,7 +70,7 @@ class GroupPermissionsV2 extends GroupPermissions {
             return true;
         }
 
-        return hasPermission(group.getId(), AdminPermissionsSchema.MANAGE);
+        return eval.hasPermission(new GroupModelRecord(group), null, AdminPermissionsSchema.MANAGE);
     }
 
     @Override
@@ -91,7 +79,7 @@ class GroupPermissionsV2 extends GroupPermissions {
             return true;
         }
 
-        return hasPermission(group.getId(), AdminPermissionsSchema.VIEW_MEMBERS);
+        return eval.hasPermission(new GroupModelRecord(group), null, AdminPermissionsSchema.VIEW_MEMBERS);
     }
 
     @Override
@@ -100,7 +88,7 @@ class GroupPermissionsV2 extends GroupPermissions {
             return true;
         }
 
-        return hasPermission(group.getId(), AdminPermissionsSchema.MANAGE_MEMBERS);
+        return eval.hasPermission(new GroupModelRecord(group), null, AdminPermissionsSchema.MANAGE_MEMBERS);
     }
 
     @Override
@@ -109,78 +97,12 @@ class GroupPermissionsV2 extends GroupPermissions {
             return true;
         }
 
-        return hasPermission(group.getId(), AdminPermissionsSchema.MANAGE_MEMBERSHIP);
+        return eval.hasPermission(new GroupModelRecord(group), null, AdminPermissionsSchema.MANAGE_MEMBERSHIP);
     }
 
     @Override
     public Set<String> getGroupIdsWithViewPermission() {
-        if (root.hasOneAdminRole(AdminRoles.VIEW_USERS, AdminRoles.MANAGE_USERS)) {
-            return Collections.emptySet();
-        }
-
-        if (!root.isAdminSameRealm()) {
-            return Collections.emptySet();
-        }
-
-        ResourceServer server = root.realmResourceServer();
-
-        if (server == null) {
-            return Collections.emptySet();
-        }
-
-        Set<String> granted = new HashSet<>();
-
-        policyStore.findByResourceType(server, GROUPS_RESOURCE_TYPE).stream()
-                .flatMap((Function<Policy, Stream<Resource>>) policy -> policy.getResources().stream())
-                .forEach(gr -> {
-            if (hasPermission(gr.getName(), AdminPermissionsSchema.VIEW_MEMBERS, AdminPermissionsSchema.MANAGE_MEMBERS)) {
-                granted.add(gr.getName());
-            }
-        });
-
-        return granted;
-    }
-
-    private boolean hasPermission(String groupId, String... scopes) {
-        return hasPermission(groupId, null, scopes);
-    }
-
-    private boolean hasPermission(String groupId, EvaluationContext context, String... scopes) {
-        if (!root.isAdminSameRealm()) {
-            return false;
-        }
-
-        ResourceServer server = root.realmResourceServer();
-
-        if (server == null) {
-            return false;
-        }
-
-        String resourceType = GROUPS_RESOURCE_TYPE;
-        Resource resourceTypeResource = AdminPermissionsSchema.SCHEMA.getResourceTypeResource(session, server, resourceType);
-        Resource resource = groupId == null ? resourceTypeResource : resourceStore.findByName(server, groupId);
-
-        if (groupId != null && resource == null) {
-            resource = new ResourceWrapper(groupId, groupId, new HashSet<>(resourceTypeResource.getScopes()), server);
-        }
-
-        Collection<Permission> permissions = (context == null) ?
-                root.evaluatePermission(new ResourcePermission(resourceType, resource, resource.getScopes(), server), server) :
-                root.evaluatePermission(new ResourcePermission(resourceType, resource, resource.getScopes(), server), server, context);
-
-        List<String> expectedScopes = List.of(scopes);
-
-        for (Permission permission : permissions) {
-            if (permission.getResourceId().equals(resource.getId())) {
-                for (String scope : permission.getScopes()) {
-                    if (expectedScopes.contains(scope)) {
-                        return true;
-                    }
-                }
-            }
-        }
-
-        return false;
+        throw new UnsupportedOperationException("Not supported in V2");
     }
 
     @Override

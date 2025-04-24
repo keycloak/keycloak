@@ -329,7 +329,7 @@ public class RealmManager {
         // Need to refresh masterApp for current realm
         String adminRealmName = Config.getAdminRealm();
         RealmModel adminRealm = model.getRealmByName(adminRealmName);
-        ClientModel masterApp = adminRealm.getClientByClientId(KeycloakModelUtils.getMasterRealmAdminApplicationClientId(realm.getName()));
+        ClientModel masterApp = adminRealm.getClientByClientId(KeycloakModelUtils.getMasterRealmAdminManagementClientId(realm.getName()));
         if (masterApp == null) {
             createMasterAdminManagement(realm);
             return;
@@ -355,7 +355,7 @@ public class RealmManager {
         }
         adminRole.setDescription("${role_"+AdminRoles.ADMIN+"}");
 
-        ClientModel realmAdminApp = KeycloakModelUtils.createManagementClient(adminRealm, KeycloakModelUtils.getMasterRealmAdminApplicationClientId(realm.getName()));
+        ClientModel realmAdminApp = KeycloakModelUtils.createManagementClient(adminRealm, KeycloakModelUtils.getMasterRealmAdminManagementClientId(realm.getName()));
         // No localized name for now
         realmAdminApp.setName(realm.getName() + " Realm");
         realm.setMasterAdminClient(realmAdminApp);
@@ -699,7 +699,7 @@ public class RealmManager {
     }
 
     private boolean hasRealmAdminManagementClient(RealmRepresentation rep) {
-        String realmAdminClientId =  Config.getAdminRealm().equals(rep.getRealm()) ?  KeycloakModelUtils.getMasterRealmAdminApplicationClientId(rep.getRealm()) : getRealmAdminClientId(rep);
+        String realmAdminClientId =  Config.getAdminRealm().equals(rep.getRealm()) ?  KeycloakModelUtils.getMasterRealmAdminManagementClientId(rep.getRealm()) : getRealmAdminClientId(rep);
         return hasClient(rep, realmAdminClientId);
     }
 
