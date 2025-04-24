@@ -157,7 +157,7 @@ RUN ulimit -n 1024000 && dnf install --installroot ...
 ...
 ----
 
-* If you are including provider jars and your container fails a `start --optimize` with a notification that a provider jar has changed, this is due to Docker truncating 
+* If you are including provider JARs and your container fails a `start --optimized` with a notification that a provider JAR has changed, this is due to Docker truncating 
 or otherwise modifying file modification timestamps from what the `build` command recorded to what is seen at runtime.
   In this case you will need to force the image to use a known timestamp of your choosing with a `touch` command prior to running a `build`:
   
