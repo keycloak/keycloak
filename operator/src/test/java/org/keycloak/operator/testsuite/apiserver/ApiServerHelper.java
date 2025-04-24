@@ -58,7 +58,7 @@ public class ApiServerHelper {
                     } else if (specReplicas == 0) { // probably recreate update requested, scaling down the deployment
                         actualReplicas = Math.max(0, statusReplicas - 1);
                     } else {
-                        actualReplicas = statusReplicas + 1; // otherwise, just scale up
+                        actualReplicas = Math.min(specReplicas, statusReplicas + 1); // otherwise, just scale up
                     }
                     obj = result.getKubernetesSerialization().clone(obj);
                     obj.getStatus().setReplicas(actualReplicas);
