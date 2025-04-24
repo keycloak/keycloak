@@ -51,8 +51,10 @@ public class ApiServerHelper {
                         || !Objects.equals(obj.getStatus().getCurrentRevision(), updateRevision)) {
                     // generate intermediate rolling events
                     int actualReplicas;
-                    if (!Objects.equals(revision, updateRevision)) { // detected spec change, mimic rolling update with just one pod
-                        actualReplicas = Math.max(0, statusReplicas - 1);
+                    if (!Objects.equals(revision, updateRevision)) { // detected spec change, mimic rolling update
+                        // this is not fully accurate as it's rather recreate than rolling update,
+                        // but thanks to gradual scaling up it emits more events which is closer to the real behavior
+                        actualReplicas = 0;
                     } else if (specReplicas == 0 && statusReplicas > 0) { // probably recreate update requested, scaling down the deployment
                         actualReplicas = statusReplicas - 1;
                     } else {
