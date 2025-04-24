@@ -15,7 +15,8 @@ export const MultiValuedStringComponent = ({
   helpText,
   stringify,
   required,
-  isDisabled = false,
+  readOnly,
+  isDisabled = readOnly ?? false,
   convertToName,
 }: ComponentProps) => {
   const { t } = useTranslation();

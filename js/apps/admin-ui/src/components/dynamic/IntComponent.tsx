@@ -6,6 +6,8 @@ export const IntComponent = ({
   name,
   label,
   helpText,
+  readOnly,
+  isDisabled = readOnly ?? false,
   convertToName,
   ...props
 }: NumberComponentProps) => {
@@ -19,6 +21,7 @@ export const IntComponent = ({
       label={t(label!)}
       labelIcon={t(helpText!)}
       data-testid={name}
+      isDisabled={isDisabled}
       {...props}
     />
   );
