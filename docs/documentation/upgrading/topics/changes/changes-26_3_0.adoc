@@ -2,6 +2,10 @@
 
 Breaking changes are identified as requiring changes from existing users to their configurations.
 
+=== local admin deprecated for removal
+
+`UrlType.LOCAL_ADMIN` and the corresponding welcome theme variable `localAdminUrl` have been deprecated for eventual removal. The default welcome resource will now simply mention localhost rather than providing a URL when an admin user has yet to be created.
+
 === Deprecated for removal the Instagram Identity Broker
 
 In this release, the Instagram Identity Broker is deprecated for removal and is not enabled by default.
