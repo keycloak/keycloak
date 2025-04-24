@@ -49,6 +49,7 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -57,6 +58,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.KeyUtils;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
@@ -77,6 +79,7 @@ import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserInfoClientUtil;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
@@ -105,6 +108,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO;
+import static org.keycloak.testsuite.AbstractTestRealmKeycloakTest.TEST_REALM_NAME;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.oauth.OAuthClient.AUTH_SERVER_ROOT;
 
@@ -638,6 +642,34 @@ public class UserInfoTest extends AbstractKeycloakTest {
                     .assertEvent();
         } finally {
             client.close();
+        }
+    }
+
+    // Issue 39037
+    @Test
+    public void testUserInfoWithOfflineAccessAndHybridFlow() throws Exception {
+        try (Client client = AdminClientUtil.createResteasyClient();
+             ClientAttributeUpdater oidcClient = ClientAttributeUpdater.forClient(adminClient, TEST_REALM_NAME, "test-app")
+                .setImplicitFlowEnabled(true)
+                .update()) {
+            oauth.scope(OAuth2Constants.SCOPE_OPENID + " " + OAuth2Constants.OFFLINE_ACCESS)
+                    .responseType(OIDCResponseType.CODE + " " + OIDCResponseType.TOKEN)
+                    .doLogin("test-user@localhost", "password");
+            AuthorizationEndpointResponse authzEndpointResponse = oauth.parseLoginResponse();
+
+            // UserInfo request with the accessToken returned from authz endpoint
+            Response response1 = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, authzEndpointResponse.getAccessToken());
+            assertResponseSuccessful(response1);
+
+            org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authzEndpointResponse.getCode());
+
+            // Another userInfo request with the accessToken (but after tokens are exchanged)
+            Response response2 = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, authzEndpointResponse.getAccessToken());
+            assertResponseSuccessful(response2);
+
+            // UserInfo request with the token returned from token response
+            Response response3 = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, tokenResponse.getAccessToken());
+            assertResponseSuccessful(response3);
         }
     }
 
