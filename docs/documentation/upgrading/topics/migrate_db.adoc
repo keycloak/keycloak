@@ -12,7 +12,7 @@ Before you migrate the database, shut down all {project_name} nodes running the 
 
 [NOTE]
 ====
-Migration is not supported with the H2 based `dev-file` database type.
+Migration is not supported with the H2 based default `dev-file` database type.
 ====
 
 === Automatic relational database migration
