@@ -115,6 +115,15 @@ public class HardcodedGroupStorageProvider implements GroupStorageProvider {
         }
 
         @Override
+        public String getDescription() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        public void setDescription(String description) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
         public Stream<RoleModel> getRealmRoleMappingsStream() {
             return Stream.empty();
         }
