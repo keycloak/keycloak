@@ -16,8 +16,6 @@
  */
 package org.keycloak.services.resources.admin.permissions;
 
-import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -28,21 +26,31 @@ import org.keycloak.authorization.common.DefaultEvaluationContext;
 import org.keycloak.authorization.identity.UserModelIdentity;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
-import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.authorization.model.ResourceWrapper;
-import org.keycloak.authorization.permission.ResourcePermission;
-import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
-import org.keycloak.representations.idm.authorization.Permission;
+import org.keycloak.services.resources.admin.permissions.ModelRecord.UserModelRecord;
 
 class UserPermissionsV2 extends UserPermissions {
 
+    private final FineGrainedAdminPermissionEvaluator eval;
+
     UserPermissionsV2(KeycloakSession session, AuthorizationProvider authz, MgmtPermissionsV2 root) {
         super(session, authz, root);
+        this.eval = new FineGrainedAdminPermissionEvaluator(session, root, resourceStore, policyStore);
+    }
+
+    @Override
+    public boolean canQuery() {
+        return root.hasOneAdminRole(AdminRoles.QUERY_USERS) || canView();
+    }
+
+    @Override
+    public void requireQuery() {
+        if (!canQuery()) {
+            throw new ForbiddenException();
+        }
     }
 
     @Override
@@ -51,7 +59,7 @@ class UserPermissionsV2 extends UserPermissions {
             return true;
         }
 
-        return hasPermission(user, null, AdminPermissionsSchema.VIEW);
+        return eval.hasPermission(new UserModelRecord(user), null, AdminPermissionsSchema.VIEW);
     }
 
     @Override
@@ -60,7 +68,21 @@ class UserPermissionsV2 extends UserPermissions {
             return true;
         }
 
-        return hasPermission((UserModel) null, null, AdminPermissionsSchema.VIEW);
+        return eval.hasPermission(new UserModelRecord(null), null, AdminPermissionsSchema.VIEW);
+    }
+
+    @Override
+    public void requireView(UserModel user) {
+        if (!canView(user)) {
+            throw new ForbiddenException();
+        }
+    }
+
+    @Override
+    public void requireView() {
+        if (!(canView())) {
+            throw new ForbiddenException();
+        }
     }
 
     @Override
@@ -69,7 +91,7 @@ class UserPermissionsV2 extends UserPermissions {
             return true;
         }
 
-        return hasPermission(user, null, AdminPermissionsSchema.MANAGE);
+        return eval.hasPermission(new UserModelRecord(user), null, AdminPermissionsSchema.MANAGE);
     }
 
     @Override
@@ -78,11 +100,14 @@ class UserPermissionsV2 extends UserPermissions {
             return true;
         }
 
-        if (!root.isAdminSameRealm()) {
-            return false;
-        }
+        return eval.hasPermission(new UserModelRecord(null), null, AdminPermissionsSchema.MANAGE);
+    }
 
-        return hasPermission((UserModel) null, null, AdminPermissionsSchema.MANAGE);
+    @Override
+    public void requireManage(UserModel user) {
+        if (!canManage(user)) {
+            throw new ForbiddenException();
+        }
     }
 
     @Override
@@ -94,14 +119,14 @@ class UserPermissionsV2 extends UserPermissions {
 
     @Override
     public boolean canImpersonate(UserModel user, ClientModel requester) {
-        if (root.hasOneAdminRole(ImpersonationConstants.IMPERSONATION_ROLE)) {
+        if (root.hasOneAdminRole(AdminRoles.IMPERSONATION)) {
             return true;
         }
 
         DefaultEvaluationContext context = requester == null ? null :
                 new DefaultEvaluationContext(new UserModelIdentity(root.realm, user), Map.of("kc.client.id", List.of(requester.getClientId())), session);
 
-        return hasPermission(user, context, AdminPermissionsSchema.IMPERSONATE);
+        return eval.hasPermission(new UserModelRecord(user), context, AdminPermissionsSchema.IMPERSONATE);
     }
 
     @Override
@@ -110,7 +135,7 @@ class UserPermissionsV2 extends UserPermissions {
             return true;
         }
 
-        return hasPermission(user, null, AdminPermissionsSchema.MAP_ROLES);
+        return eval.hasPermission(new UserModelRecord(user), null, AdminPermissionsSchema.MAP_ROLES);
     }
 
     @Override
@@ -119,41 +144,7 @@ class UserPermissionsV2 extends UserPermissions {
             return true;
         }
 
-        return hasPermission(user, null, AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP);
-    }
-
-    private boolean hasPermission(UserModel user, EvaluationContext context, String scope) {
-        if (!root.isAdminSameRealm()) {
-            return false;
-        }
-
-        ResourceServer server = root.realmResourceServer();
-
-        if (server == null) {
-            return false;
-        }
-
-        String resourceType = AdminPermissionsSchema.USERS_RESOURCE_TYPE;
-        Resource resourceTypeResource = AdminPermissionsSchema.SCHEMA.getResourceTypeResource(session, server, resourceType);
-        Resource resource = user == null ? resourceTypeResource : resourceStore.findByName(server, user.getId());
-
-        if (user != null && resource == null) {
-            resource = new ResourceWrapper(user.getId(), user.getId(), new HashSet<>(resourceTypeResource.getScopes()), server);
-        }
-
-        Collection<Permission> permissions = (context == null) ?
-                root.evaluatePermission(new ResourcePermission(resourceType, resource, resource.getScopes(), server), server) :
-                root.evaluatePermission(new ResourcePermission(resourceType, resource, resource.getScopes(), server), server, context);
-
-        for (Permission permission : permissions) {
-            if (permission.getResourceId().equals(resource.getId())) {
-                if (permission.getScopes().contains(scope)) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return eval.hasPermission(new UserModelRecord(user), null, AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP);
     }
 
     // todo this method should be removed and replaced by canImpersonate(user, client); once V1 is removed

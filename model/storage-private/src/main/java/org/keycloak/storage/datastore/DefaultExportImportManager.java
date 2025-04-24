@@ -714,7 +714,7 @@ public class DefaultExportImportManager implements ExportImportManager {
         String oldName = realm.getName();
 
         ClientModel masterApp = realm.getMasterAdminClient();
-        masterApp.setClientId(KeycloakModelUtils.getMasterRealmAdminApplicationClientId(name));
+        masterApp.setClientId(KeycloakModelUtils.getMasterRealmAdminManagementClientId(name));
         realm.setName(name);
 
         ClientModel adminClient = realm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);

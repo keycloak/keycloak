@@ -48,7 +48,6 @@ import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
-import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.ImpersonationSessionNote;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -134,7 +133,7 @@ public class ImpersonationTest extends AbstractKeycloakTest {
 
         realm.user(UserBuilder.create().id(impersonatedUserId).username("test-user@localhost"));
         realm.user(UserBuilder.create().username("realm-admin").password("password").role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN));
-        realm.user(UserBuilder.create().username("impersonator").password("password").role(Constants.REALM_MANAGEMENT_CLIENT_ID, ImpersonationConstants.IMPERSONATION_ROLE).role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.VIEW_USERS));
+        realm.user(UserBuilder.create().username("impersonator").password("password").role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.IMPERSONATION).role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.VIEW_USERS));
         realm.user(UserBuilder.create().username("bad-impersonator").password("password").role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_USERS));
 
         testRealms.add(realm.build());
@@ -171,7 +170,7 @@ public class ImpersonationTest extends AbstractKeycloakTest {
 
         List<RoleRepresentation> roles = new LinkedList<>();
         roles.add(ApiUtil.findClientRoleByName(testRealmClient, AdminRoles.VIEW_USERS).toRepresentation());
-        roles.add(ApiUtil.findClientRoleByName(testRealmClient, ImpersonationConstants.IMPERSONATION_ROLE).toRepresentation());
+        roles.add(ApiUtil.findClientRoleByName(testRealmClient, AdminRoles.IMPERSONATION).toRepresentation());
 
         user.roles().clientLevel(testRealmClient.toRepresentation().getId()).add(roles);
 
@@ -269,7 +268,7 @@ public class ImpersonationTest extends AbstractKeycloakTest {
         user.setServiceAccountClientId("service-account-cl");
 
         // add impersonation roles
-        ApiUtil.assignClientRoles(realm, user.getId(), Constants.REALM_MANAGEMENT_CLIENT_ID, ImpersonationConstants.IMPERSONATION_ROLE);
+        ApiUtil.assignClientRoles(realm, user.getId(), Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.IMPERSONATION);
 
         // Impersonation
         testSuccessfulServiceAccountImpersonation(user, "test");
