@@ -734,4 +734,11 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString("Invalid value for option '--log-%s-async-queue-length': 'invalid' is not an int".formatted(handlerName)));
     }
+
+    @Test
+    public void datasourcesNotAllowedChar(){
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev","--db-kind-<default>=postgres");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Unknown option: '--db-kind-<default>'"));
+    }
 }

@@ -18,10 +18,29 @@ import java.util.Map;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
+
+    @Test
+    public void defaultDatasource() {
+        ConfigArgsConfigSource.setCliArgs("--db-kind-default=mariadb", "--db=postgres");
+        initConfig();
+
+        assertConfig("db-kind-default", "mariadb");
+        assertConfig("db", "postgres");
+        assertExternalConfig("quarkus.datasource.\"default\".db-kind", "mariadb");
+        assertExternalConfig("quarkus.datasource.db-kind", "postgresql");
+
+        onAfter();
+
+        ConfigArgsConfigSource.setCliArgs("--db-kind-some<other>datasource=mssql");
+        initConfig();
+
+        // KC value is present as CLI is available data source
+        assertConfig("db-kind-some<other>datasource", "mssql");
+        assertExternalConfigNull("quarkus.datasource.\"some<other>datasource\".db-kind");
+    }
 
     @Test
     public void propertyMapping() {
@@ -95,11 +114,11 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         onAfter();
 
         ConfigArgsConfigSource.setCliArgs("--db-kind-tigers=dev-mem");
-        SmallRyeConfig config = createConfig();
-        assertNull(config.getConfigValue("quarkus.datasource.\"tigers\".username").getValue());
-        assertNull(config.getConfigValue("quarkus.datasource.\"tigers\".password").getValue());
-        assertNull(config.getConfigValue("kc.db-username-tigers").getValue());
-        assertNull(config.getConfigValue("kc.db-password-tigers").getValue());
+        initConfig();
+        assertExternalConfigNull("quarkus.datasource.\"tigers\".username");
+        assertExternalConfigNull("quarkus.datasource.\"tigers\".password");
+        assertConfigNull("db-username-tigers");
+        assertConfigNull("db-password-tigers");
         onAfter();
 
         ConfigArgsConfigSource.setCliArgs("--db-kind-users=postgres", "--db-username-users=other");
@@ -108,12 +127,12 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         onAfter();
 
         ConfigArgsConfigSource.setCliArgs("--db-kind-some-store=postgres");
-        config = createConfig();
+        initConfig();
         // username  or password should not be set, either as the quarkus or kc property
-        assertNull(config.getConfigValue("quarkus.datasource.\"some-store\".username").getValue());
-        assertNull(config.getConfigValue("quarkus.datasource.\"some-store\".password").getValue());
-        assertNull(config.getConfigValue("kc.db-username-some-store").getValue());
-        assertNull(config.getConfigValue("kc.db-password-some-store").getValue());
+        assertExternalConfigNull("quarkus.datasource.\"some-store\".username");
+        assertExternalConfigNull("quarkus.datasource.\"some-store\".password");
+        assertConfigNull("db-username-some-store");
+        assertConfigNull("db-password-some-store");
     }
 
     @Test
