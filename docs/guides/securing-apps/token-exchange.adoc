@@ -2,9 +2,9 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Using token exchange"
+title="Configuring and using token exchange"
 priority=120
-summary="Configuring and using Token exchange with {project_name}">
+summary="Configure and use token exchange for {project_name}.">
 
 Token exchange is the process that allows a client application to exchange one token for another token. In {project_name}, two features implement token exchange:
 

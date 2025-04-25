@@ -3,7 +3,7 @@
 
 <@tmpl.guide
 title="Concepts for multi-site deployments"
-summary="Understanding a multi-site deployment with synchronous replication" >
+summary="Understand multi-site deployment with synchronous replication." >
 
 This topic describes a highly available multi-site setup and the behavior to expect. It outlines the requirements of the high availability architecture and describes the benefits and tradeoffs.
 

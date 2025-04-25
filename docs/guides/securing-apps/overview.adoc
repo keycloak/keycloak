@@ -4,7 +4,7 @@
 <@tmpl.guide
 title="Planning for securing applications and services"
 priority=10
-summary="Introduction and basic concepts for securing applications">
+summary="Understand basic concepts for securing applications.">
 
 As an OAuth2, OpenID Connect and SAML compliant server, {project_name} can secure any application and service as long
 as the technology stack they are using supports any of these protocols. For more details about the security protocols

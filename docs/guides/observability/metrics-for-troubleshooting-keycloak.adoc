@@ -3,7 +3,7 @@
 
 <@tmpl.guide
 title="Self-provided metrics"
-summary="Learn about key metrics that {project_name} provides"
+summary="Learn about the key metrics that {project_name} provides."
 tileVisible="false"
 >
 

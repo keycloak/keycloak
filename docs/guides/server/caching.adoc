@@ -5,7 +5,7 @@
 
 <@tmpl.guide
 title="Configuring distributed caches"
-summary="Understand how to configure the caching layer">
+summary="Configure the caching layer to cluster multiple {project_name} instances and to increase performance.">
 
 {project_name} is designed for high availability and multi-node clustered setups.
 The current distributed cache implementation is built on top of https://infinispan.org[Infinispan], a high-performance, distributable in-memory data grid.

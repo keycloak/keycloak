@@ -4,7 +4,7 @@
 
 <@tmpl.guide
 title="FIPS 140-2 support"
-summary="How to configure {project_name} server for FIPS compliance"
+summary="Configure {project_name} server for FIPS compliance."
 includedOptions="">
 
 The Federal Information Processing Standard Publication 140-2, (FIPS 140-2), is a U.S. government computer security standard used to approve cryptographic modules. {project_name} supports running in FIPS 140-2 compliant mode. In this case, {project_name} will use only FIPS approved cryptography algorithms for its functionality.
