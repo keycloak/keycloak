@@ -152,17 +152,11 @@ public class DatabaseOptions {
         Option<?> option = cachedDatasourceOptions.get(key.get());
 
         if (option == null) {
-            var builder = new OptionBuilder<>(key.get(), parentOption.getType())
-                    .category(OptionCategory.DATABASE_DATASOURCES)
-                    .buildTime(parentOption.isBuildTime())
-                    .defaultValue(parentOption.getDefaultValue())
-                    .expectedValues(parentOption.getExpectedValues())
-                    .caseInsensitiveExpectedValues(parentOption.isCaseInsensitiveExpectedValues())
-                    .strictExpectedValues(parentOption.isStrictExpectedValues());
+            var builder = parentOption.toBuilder()
+                    .key(key.get())
+                    .category(OptionCategory.DATABASE_DATASOURCES);
 
-            if (parentOption.isHidden()) {
-                builder.hidden();
-            } else {
+            if (!parentOption.isHidden()) {
                 builder.description("Used for named <datasource>. " + parentOption.getDescription());
             }
 
