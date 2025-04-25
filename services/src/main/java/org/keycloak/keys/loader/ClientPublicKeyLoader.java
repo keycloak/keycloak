@@ -70,8 +70,9 @@ public class ClientPublicKeyLoader implements PublicKeyLoader {
         OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientModel(client);
         if (config.isUseJwksUrl()) {
             String jwksUrl = config.getJwksUrl();
+            String bearerToken = config.getJwksUrlAuthToken();
             jwksUrl = ResolveRelative.resolveRelativeUri(session, client.getRootUrl(), jwksUrl);
-            JSONWebKeySet jwks = JWKSHttpUtils.sendJwksRequest(session, jwksUrl);
+            JSONWebKeySet jwks = JWKSHttpUtils.sendJwksRequest(session, jwksUrl, bearerToken);
             return JWKSUtils.getKeyWrappersForUse(jwks, keyUse, true);
         } else if (config.isUseJwksString()) {
             JSONWebKeySet jwks = JsonSerialization.readValue(config.getJwksString(), JSONWebKeySet.class);

@@ -140,6 +140,14 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
         setAttribute(OIDCConfigAttributes.JWKS_URL, jwksUrl);
     }
 
+    public String getJwksUrlAuthToken() {
+        return getAttribute(OIDCConfigAttributes.JWKS_URL_AUTH_BEARER_TOKEN);
+    }
+
+    public void setJwksUrlAuthToken(String jwksUrlAuthToken) {
+        setAttribute(OIDCConfigAttributes.JWKS_URL_AUTH_BEARER_TOKEN, jwksUrlAuthToken);
+    }
+
     public boolean isUseJwksString() {
         String useJwksString = getAttribute(OIDCConfigAttributes.USE_JWKS_STRING);
         return Boolean.parseBoolean(useJwksString);
