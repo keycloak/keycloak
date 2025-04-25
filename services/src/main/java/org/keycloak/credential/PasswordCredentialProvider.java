@@ -29,6 +29,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PolicyError;
 
@@ -279,13 +280,31 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
         }
 
         if (!provider.policyCheck(passwordPolicy, password)) {
-            int iterations = passwordPolicy != null ? passwordPolicy.getHashIterations() : -1;
+            final int iterations = passwordPolicy != null ? passwordPolicy.getHashIterations() : -1;
+            final String hashAlgorithm = passwordPolicy != null ? passwordPolicy.getHashAlgorithm() : null;
+            try {
+                // refresh the password in a different transaction, do not fail if there is a model exception
+                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(),
+                        (KeycloakSession s) -> refreshPassword(s, hashAlgorithm, iterations, input.getChallengeResponse(),
+                                password.getId(), password.getCreatedDate(), password.getUserLabel(), user.getId()));
+            } catch (ModelException e) {
+                logger.info("Error re-hashing the password in a different transaction", e);
+            }
+        }
+    }
 
-            PasswordCredentialModel newPassword = provider.encodedCredential(input.getChallengeResponse(), iterations);
-            newPassword.setId(password.getId());
-            newPassword.setCreatedDate(password.getCreatedDate());
-            newPassword.setUserLabel(password.getUserLabel());
-            user.credentialManager().updateStoredCredential(newPassword);
+    private static void refreshPassword(KeycloakSession s, String hashAlgorithm, int iterations, String challenge,
+            String passwordId, Long passwordDate, String passwordLabel, String userId) {
+        PasswordCredentialModel newPassword = ((hashAlgorithm != null)
+                ? s.getProvider(PasswordHashProvider.class, hashAlgorithm)
+                : s.getProvider(PasswordHashProvider.class))
+                .encodedCredential(challenge, iterations);
+        newPassword.setId(passwordId);
+        newPassword.setCreatedDate(passwordDate);
+        newPassword.setUserLabel(passwordLabel);
+        UserModel userModel = s.users().getUserById(s.getContext().getRealm(), userId);
+        if (userModel != null) {
+            userModel.credentialManager().updateStoredCredential(newPassword);
         }
     }
 
