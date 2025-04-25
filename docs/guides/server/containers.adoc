@@ -145,6 +145,33 @@ Health check endpoints are available at `https://localhost:9000/health`, `https:
 
 Opening up `https://localhost:9000/metrics` leads to a page containing operational metrics that could be used by your monitoring solution.
 
+=== Known issues with Docker
+
+* If a `RUN dnf install` command seems to be taking an excessive amount of time, then likely your Docker systemd service has the file limit setting `LimitNOFILE` configured incorrectly. 
+Either update the service configuration to use a better value, such as 1024000, or directly use `ulimit` in the RUN command:
+
+[source, dockerfile]
+----
+...
+RUN ulimit -n 1024000 && dnf install --installroot ...
+...
+----
+
+* If you are including provider JARs and your container fails a `start --optimized` with a notification that a provider JAR has changed, this is due to Docker truncating 
+or otherwise modifying file modification timestamps from what the `build` command recorded to what is seen at runtime.
+  In this case you will need to force the image to use a known timestamp of your choosing with a `touch` command prior to running a `build`:
+  
+[source, dockerfile]
+----
+...
+# ADD or copy one or more provider jars
+ADD --chown=keycloak:keycloak --chmod=644 some-jar.jar /opt/keycloak/providers/
+...
+RUN touch -m --date=@1743465600 /opt/keycloak/providers/*
+RUN /opt/keycloak/bin/kc.sh build
+...
+----
+
 == Exposing the container to a different port
 
 By default, the server is listening for `http` and `https` requests using the ports `8080` and `8443`, respectively.
