@@ -25,7 +25,7 @@ public class RecoveryAuthnCodesUtils {
 
     private static final Logger logger = Logger.getLogger(RecoveryAuthnCodesUtils.class);
 
-    private static final int QUANTITY_OF_CODES_TO_GENERATE = 12;
+    public static final int QUANTITY_OF_CODES_TO_GENERATE = 12;
     private static final int CODE_LENGTH = 12;
     public static final char[] UPPERNUM = "ABCDEFGHIJKLMNPQRSTUVWXYZ123456789".toCharArray();
     private static final SecretGenerator SECRET_GENERATOR = SecretGenerator.getInstance();
