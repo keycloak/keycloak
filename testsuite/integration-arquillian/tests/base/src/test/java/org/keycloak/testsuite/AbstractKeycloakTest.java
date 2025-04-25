@@ -793,4 +793,8 @@ public abstract class AbstractKeycloakTest {
     protected static String generatePassword(int length) {
         return SecretGenerator.getInstance().randomString(length);
     }
+
+    protected String getAccountRootUrl() {
+        return suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/test/account";
+    }
 }

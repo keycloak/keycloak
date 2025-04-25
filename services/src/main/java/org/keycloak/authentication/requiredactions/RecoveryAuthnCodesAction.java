@@ -17,13 +17,19 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionConfigModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.userprofile.ValidationException;
+import org.keycloak.validate.ValidationError;
 
 import static org.keycloak.utils.CredentialHelper.createRecoveryCodesCredential;
 
@@ -34,6 +40,26 @@ public class RecoveryAuthnCodesAction implements RequiredActionProvider, Require
     private static final String FIELD_USER_LABEL_HIDDEN = "userLabel";
     public static final String PROVIDER_ID = UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name();
     private static final RecoveryAuthnCodesAction INSTANCE = new RecoveryAuthnCodesAction();
+
+    private static final List<ProviderConfigProperty> CONFIG_PROPERTIES;
+
+    public static final String WARNING_THRESHOLD = "warning_threshold";
+
+    public static final int RECOVERY_CODES_WARNING_THRESHOLD_DEFAULT = 4;
+
+    static {
+        List<ProviderConfigProperty> properties = ProviderConfigurationBuilder.create() //
+                .property() //
+                .name(WARNING_THRESHOLD) //
+                .label("Warning Threshold") //
+                .helpText("When user has smaller amount of remaining recovery codes on his account than the value configured here, account console will show warning to the user, which will recommend him to setup new set of recovery codes.")
+                .type(ProviderConfigProperty.INTEGER_TYPE) //
+                .defaultValue(RECOVERY_CODES_WARNING_THRESHOLD_DEFAULT) //
+                .add() //
+                .build();
+
+        CONFIG_PROPERTIES = properties;
+    }
 
     @Override
     public String getId() {
@@ -130,5 +156,29 @@ public class RecoveryAuthnCodesAction implements RequiredActionProvider, Require
     @Override
     public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.RECOVERY_CODES);
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return List.copyOf(CONFIG_PROPERTIES);
+    }
+
+    @Override
+    public void validateConfig(KeycloakSession session, RealmModel realm, RequiredActionConfigModel model) {
+
+        int parsedMaxAuthAge;
+        try {
+            parsedMaxAuthAge = parseWarningThreshold(model);
+        } catch (Exception ex) {
+            throw new ValidationException(new ValidationError(getId(), WARNING_THRESHOLD, "error-invalid-value"));
+        }
+
+        if (parsedMaxAuthAge < 0) {
+            throw new ValidationException(new ValidationError(getId(), WARNING_THRESHOLD, "error-number-out-of-range-too-small", 0));
+        }
+    }
+
+    private int parseWarningThreshold(RequiredActionConfigModel model) throws NumberFormatException {
+        return Integer.parseInt(model.getConfigValue(WARNING_THRESHOLD));
     }
 }
