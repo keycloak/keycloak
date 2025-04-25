@@ -16,7 +16,7 @@ public class OptionBuilder<T> {
 
     private final Class<T> type;
     private final Class<?> auxiliaryType;
-    private final String key;
+    private String key;
     private OptionCategory category;
     private boolean hidden;
     private boolean build;
@@ -49,6 +49,11 @@ public class OptionBuilder<T> {
         description = null;
         defaultValue = Optional.empty();
         strictExpectedValues = true;
+    }
+
+    OptionBuilder<T> key(String key) {
+        this.key = key;
+        return this;
     }
 
     public OptionBuilder<T> category(OptionCategory category) {
