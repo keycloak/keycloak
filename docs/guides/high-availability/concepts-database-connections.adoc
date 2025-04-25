@@ -3,7 +3,7 @@
 
 <@tmpl.guide
 title="Concepts for database connection pools"
-summary="Understand these concepts to avoid resource exhaustion and congestion"
+summary="Understand concepts for avoiding resource exhaustion and congestion."
 tileVisible="false" >
 
 This section is intended when you want to understand considerations and best practices on how to configure database connection pools for {project_name}.

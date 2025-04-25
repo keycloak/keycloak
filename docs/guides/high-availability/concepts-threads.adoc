@@ -3,7 +3,7 @@
 
 <@tmpl.guide
 title="Concepts for configuring thread pools"
-summary="Understand these concepts to avoid resource exhaustion and congestion"
+summary="Understand concepts for avoiding resource exhaustion and congestion."
 tileVisible="false" >
 
 

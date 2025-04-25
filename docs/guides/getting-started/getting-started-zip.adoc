@@ -3,7 +3,7 @@
 
 <@tmpl.guide
 title="OpenJDK"
-summary="Get started with {project_name} on bare metal">
+summary="Get started with {project_name} on a physical or virtual server.">
 
 :links-local: true
 :links-admin-console: http://localhost:8080/admin[{project_name} Admin Console]
