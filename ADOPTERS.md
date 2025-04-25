@@ -50,6 +50,7 @@ List of organization names below is based on information collected using Keycloa
 * Prodesan
 * Quest Software
 * Research Industrial Software Engineering (RISE)
+* [SICK AG](https://www.sick.com)
 * Sportsbet.com.au
 * [Stacklok](https://stacklok.com/)
 * Stack Labs
