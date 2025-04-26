@@ -116,11 +116,11 @@ public class HardcodedGroupStorageProvider implements GroupStorageProvider {
 
         @Override
         public String getDescription() {
-            throw new UnsupportedOperationException("Not supported yet.");
+            return null;
         }
 
         public void setDescription(String description) {
-            throw new UnsupportedOperationException("Not supported yet.");
+            throw new ReadOnlyException("group is read only");
         }
 
         @Override
