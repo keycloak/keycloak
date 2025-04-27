@@ -65,7 +65,6 @@ import java.util.Set;
         @NamedQuery(name="searchForRealmRoles", query="select role from RoleEntity role where role.clientRole = false and role.realmId = :realm and ( lower(role.name) like :search or lower(role.description) like :search ) order by role.name"),
         @NamedQuery(name="getRoleIdsFromIdList", query="select role.id from RoleEntity role where role.realmId = :realm and role.id in :ids order by role.name ASC"),
         @NamedQuery(name="getRoleIdsByNameContainingFromIdList", query="select role.id from RoleEntity role where role.realmId = :realm and lower(role.name) like lower(concat('%',:search,'%')) and role.id in :ids order by role.name ASC"),
-        @NamedQuery(name="getParentRolesOfACompositeRole", query = "select role from RoleEntity role where :compositeRole member of role.compositeRoles"),
 })
 
 public class RoleEntity {
@@ -98,6 +97,9 @@ public class RoleEntity {
     @ManyToMany(fetch = FetchType.LAZY, cascade = {})
     @JoinTable(name = "COMPOSITE_ROLE", joinColumns = @JoinColumn(name = "COMPOSITE"), inverseJoinColumns = @JoinColumn(name = "CHILD_ROLE"))
     private Set<RoleEntity> compositeRoles;
+
+    @ManyToMany(mappedBy = "compositeRoles", cascade = {})
+    private Set<RoleEntity> parentRoles;
 
     // Explicitly not using OrphanRemoval as we're handling the removal manually through HQL but at the same time we still
     // want to remove elements from the entity's collection in a manual way. Without this, Hibernate would do a duplicit
@@ -156,6 +158,17 @@ public class RoleEntity {
             compositeRoles = new HashSet<>();
         }
         return compositeRoles;
+    }
+
+    public Set<RoleEntity> getParentRoles() {
+        if (parentRoles == null) {
+            parentRoles = new HashSet<>();
+        }
+        return parentRoles;
+    }
+
+    public void setParentRoles(Set<RoleEntity> parentRoles) {
+        this.parentRoles = parentRoles;
     }
 
     public void setCompositeRoles(Set<RoleEntity> compositeRoles) {
