@@ -458,18 +458,15 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         // So in any case, native query is not an option. This is not optimal as it executes additional queries but
         // the alternative of clearing the persistence context is not either as we don't know if something currently present
         // in the context is not needed later.
-        Stream<RoleEntity> parentRoles = em.createNamedQuery("getParentRolesOfACompositeRole", RoleEntity.class).setParameter("compositeRole", roleEntity).getResultStream();
-        parentRoles.forEach(parentRole -> parentRole.getCompositeRoles().remove(roleEntity));
-        parentRoles.close();
+
+        roleEntity.getParentRoles().forEach(roleEntity1 -> roleEntity1.getCompositeRoles().remove(roleEntity));
 
         em.createNamedQuery("deleteClientScopeRoleMappingByRole").setParameter("role", roleEntity).executeUpdate();
 
-        em.flush();
         em.remove(roleEntity);
 
         session.getKeycloakSessionFactory().publish(roleRemovedEvent(role));
 
-        em.flush();
         return true;
 
     }
