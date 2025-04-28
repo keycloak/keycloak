@@ -22,7 +22,7 @@
     "@eslint/compat": "^1.2.8",
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.24.0",
-    "@types/node": "^22.14.0",
+    "@types/node": "^22.15.2",
     "eslint": "^9.24.0",
     "eslint-config-prettier": "^10.1.2",
     "eslint-plugin-lodash": "^8.0.0",
