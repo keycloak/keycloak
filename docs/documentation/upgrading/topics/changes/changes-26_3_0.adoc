@@ -26,15 +26,17 @@ Client initiated account link section of the link:{developerguide_link}[{develop
 
 === Deprecation of `spi-connections-infinispan-quarkus-site-name`
 
-The option `spi-connections-infinispan-quarkus-site-name` is deprecated, and it will be removed in the future.
-Use `spi-cache-embedded-default-site-name` instead.
-Specifying the site name is no longer required
+The option `spi-connections-infinispan-quarkus-site-name` is deprecated and no longer used for multi-site setups, and it will be removed in the future.
+Use `spi-cache-embedded-default-site-name` instead in setups when running with embedded distributed caches.
+See the https://www.keycloak.org/server/all-provider-config[All provider configuration] for more details on these options.
 
-=== Deprecation of `jboss.site.name` and `jboss.node.name`
+=== Removal of `jboss.site.name` and `jboss.node.name`
 
-Both system properties are no longer valid.
+Both system properties have been used internally within Keycloak and have not been part of the official documentation.
 {project_name} will fail to start if those are present.
+
 Instead, use the command line option `spi-cache-embedded-default-site-name` as `jboss.site.name` replacement, and `spi-cache-embedded-default-node-name` as `jboss.node.name` replacement.
+See the https://www.keycloak.org/server/all-provider-config[All provider configuration] for more details on these options.
 
 == Notable changes
 

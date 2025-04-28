@@ -103,7 +103,6 @@ public final class JGroupsConfigurator {
                             InfinispanConnectionProvider.JBOSS_SITE_NAME, DefaultCacheEmbeddedConfigProviderFactory.PROVIDER_ID));
         }
         if (System.getProperty(InfinispanConnectionProvider.JBOSS_NODE_NAME) != null) {
-            // TODO warn or fail?
             throw new IllegalArgumentException(
                     String.format("System property %s is in use. Use --spi-cache-embedded-%s-node-name config option instead",
                             InfinispanConnectionProvider.JBOSS_NODE_NAME, DefaultCacheEmbeddedConfigProviderFactory.PROVIDER_ID));
