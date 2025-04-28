@@ -2,6 +2,7 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import io.quarkus.datasource.common.runtime.DatabaseKind;
 import io.smallrye.config.ConfigSourceInterceptorContext;
+import io.smallrye.config.ConfigValue;
 import org.jboss.logging.Logger;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.Option;
@@ -14,7 +15,9 @@ import org.keycloak.utils.StringUtil;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static org.keycloak.config.DatabaseOptions.OPTIONS_DATASOURCES;
 import static org.keycloak.config.DatabaseOptions.getDatasourceOption;
@@ -110,7 +113,7 @@ final class DatabasePropertyMappers {
 
     private static String getXaOrNonXaDriver(String name, String value, ConfigSourceInterceptorContext context) {
         var key = StringUtil.isNotBlank(name) ? TransactionOptions.getNamedTxXADatasource(name) : TransactionOptions.TRANSACTION_XA_ENABLED.getKey();
-        boolean isXaEnabled = Configuration.isTrue(NS_KEYCLOAK_PREFIX + key);
+        boolean isXaEnabled = Configuration.isKcPropertyTrue(key);
         return Database.getDriver(value, isXaEnabled).orElse(null);
     }
 
@@ -131,7 +134,10 @@ final class DatabasePropertyMappers {
      * Agroal connection pool is closed on Keycloak shutdown.
      */
     private static String transformMinPoolSize(String database, ConfigSourceInterceptorContext context) {
-        return isDevModeDatabase(database) ? "1" : null;
+        Supplier<String> getParentPoolMinSize = () -> Optional.ofNullable(context.proceed(NS_KEYCLOAK_PREFIX + DatabaseOptions.DB_POOL_MIN_SIZE.getKey()))
+                .map(ConfigValue::getValue)
+                .orElse(null);
+        return isDevModeDatabase(database) ? "1" : getParentPoolMinSize.get();
     }
 
     // Datasources
