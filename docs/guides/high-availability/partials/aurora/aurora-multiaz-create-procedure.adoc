@@ -306,6 +306,7 @@ The values specified here must be used when configuring the {project_name} datab
 [source,bash]
 ----
   aws rds create-db-instance \
+    --no-auto-minor-version-upgrade \
     --db-cluster-identifier keycloak-aurora \
     --db-instance-identifier "keycloak-aurora-instance-1" \
     --db-instance-class db.t4g.large \
@@ -319,6 +320,7 @@ The values specified here must be used when configuring the {project_name} datab
 [source,bash]
 ----
   aws rds create-db-instance \
+    --no-auto-minor-version-upgrade \
     --db-cluster-identifier keycloak-aurora \
     --db-instance-identifier "keycloak-aurora-instance-2" \
     --db-instance-class db.t4g.large \
