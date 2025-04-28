@@ -1,5 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const retryCount = parseInt(process.env.RETRY_COUNT || "0");
+
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
@@ -7,7 +9,7 @@ export default defineConfig({
   testDir: "./test",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  retries: retryCount,
   workers: 1,
   reporter: process.env.CI ? [["github"], ["html"]] : "list",
 
