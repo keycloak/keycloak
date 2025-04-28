@@ -171,7 +171,10 @@ public class LDAPAdminRestApiTest extends AbstractLDAPTest {
         updateUserExpectError(userRes, user);
 
         user.getAttributes().remove(LDAPConstants.LDAP_ID);
-        userRes.update(user);
+        try (Response response = userRes.update(user)) {
+            // handling auto closable Response object
+        }
+
         user = userRes.toRepresentation();
         assertEquals(origLdapId, user.getAttributes().get(LDAPConstants.LDAP_ID));
 
@@ -183,7 +186,9 @@ public class LDAPAdminRestApiTest extends AbstractLDAPTest {
 
         // Update firstName and lastName should be fine
         user.getAttributes().put(LDAPConstants.LDAP_ENTRY_DN, origLdapEntryDn);
-        userRes.update(user);
+        try (Response response = userRes.update(user)) {
+            // handling auto closable Response object
+        }
 
         user = userRes.toRepresentation();
         assertEquals("JohnUpdated", user.getFirstName());
@@ -194,7 +199,9 @@ public class LDAPAdminRestApiTest extends AbstractLDAPTest {
         // Revert
         user.setFirstName("John");
         user.setLastName("Doe");
-        userRes.update(user);
+        try (Response response = userRes.update(user)) {
+            // handling auto closable Response object
+        }
     }
 
 
@@ -216,8 +223,10 @@ public class LDAPAdminRestApiTest extends AbstractLDAPTest {
     }
 
     private void updateUserExpectError(UserResource userRes, UserRepresentation user) {
-        try {
-            userRes.update(user);
+        try (Response response = userRes.update(user)){
+            if (response.getStatus() == 400) {
+                throw new BadRequestException(response);
+            }
             Assert.fail("Not expected to successfully update user");
         } catch (BadRequestException e) {
             // Expected
@@ -285,17 +294,23 @@ public class LDAPAdminRestApiTest extends AbstractLDAPTest {
             assertNull(userRep.getAttributes());
 
             userRep.singleAttribute(LDAPConstants.LDAP_ID, "");
-            user.update(userRep);
+            try (Response responseInner = user.update(userRep)) {
+                // handling auto closable Response object
+            }
             userRep = testRealm().users().get(newUserId).toRepresentation();
             assertNull(userRep.getAttributes());
             userRep.singleAttribute(LDAPConstants.LDAP_ID, null);
-            user.update(userRep);
+            try (Response responseInner = user.update(userRep)) {
+                // handling auto closable Response object
+            }
             userRep = testRealm().users().get(newUserId).toRepresentation();
             assertNull(userRep.getAttributes());
 
-            try {
-                userRep.singleAttribute(LDAPConstants.LDAP_ID, "should-fail");
-                user.update(userRep);
+            userRep.singleAttribute(LDAPConstants.LDAP_ID, "should-fail");
+            try (Response responseInner = user.update(userRep)) {
+                if (responseInner.getStatus() == 400) {
+                    throw new BadRequestException(responseInner);
+                }
                 fail("Should fail, attribute is read-only");
             } catch (BadRequestException ignore) {
             }

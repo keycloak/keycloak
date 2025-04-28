@@ -20,6 +20,9 @@ package org.keycloak.testsuite.federation.ldap;
 
 import java.util.List;
 import java.util.Map;
+
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.core.Response;
 import org.hamcrest.MatcherAssert;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
@@ -154,7 +157,9 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
         UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
         UserRepresentation userRepresentation = user.toRepresentation();
         userRepresentation.setRequiredActions(Collections.singletonList(UserModel.RequiredAction.CONFIGURE_TOTP.toString()));
-        user.update(userRepresentation);
+        try (Response response = user.update(userRepresentation)) {
+            // handling auto closable Response object
+        }
 
         // assert
         user = ApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
@@ -164,7 +169,9 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
 
         // reset
         userRepresentation.setRequiredActions(Collections.emptyList());
-        user.update(userRepresentation);
+        try (Response response = user.update(userRepresentation)) {
+            // handling auto closable Response object
+        }
     }
 
     @Test
@@ -177,23 +184,31 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
         UserRepresentation userRepresentation = user.toRepresentation();
         String language = "pt_BR";
         userRepresentation.setAttributes(Map.of(UserModel.LOCALE, List.of(language)));
-        user.update(userRepresentation);
+        try (Response response = user.update(userRepresentation)) {
+            // handling auto closable Response object
+        }
 
         userRepresentation = user.toRepresentation();
         assertEquals(language, userRepresentation.getAttributes().get(UserModel.LOCALE).get(0));
 
         userRepresentation.getAttributes().remove(UserModel.LOCALE);
-        user.update(userRepresentation);
+        try (Response response = user.update(userRepresentation)) {
+            // handling auto closable Response object
+        }
         assertNull(userRepresentation.getAttributes().get(UserModel.LOCALE));
     }
 
     // KEYCLOAK-3365
-    @Test(expected = ClientErrorException.class)
+    @Test(expected = BadRequestException.class)
     public void testReadOnlyUserThrowsIfChanged() {
         UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
         UserRepresentation userRepresentation = user.toRepresentation();
         userRepresentation.setFirstName("Jane");
-        user.update(userRepresentation);
+        try (Response response = user.update(userRepresentation)) {
+            if (response.getStatus() == 400) {
+                throw new BadRequestException(response);
+            }
+        }
     }
 
     // issue #28580

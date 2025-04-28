@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.admin.concurrency;
+package org.keycloak.tests.admin.concurrency;
 
-import java.util.stream.Collectors;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
+import org.keycloak.admin.client.resource.GroupsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.admin.client.resource.UserResource;
@@ -34,65 +34,62 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.model.StoreProvider;
-import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.tests.utils.admin.ApiUtil;
+import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.IntStream;
 
-import org.junit.Ignore;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@KeycloakIntegrationTest
 public class ConcurrencyTest extends AbstractConcurrencyTest {
 
-    public void concurrentTest(KeycloakRunnable... tasks) throws Throwable {
-        System.out.println("***************************");
-        long start = System.currentTimeMillis();
-        run(tasks);
-        long end = System.currentTimeMillis() - start;
-        System.out.println("took " + end + " ms");
-    }
-
-    // KEYCLOAK-8141 Verify that no attribute values are duplicated, and there are no locking exceptions when adding attributes in parallell
     @Test
-    @Ignore
     public void createUserAttributes() throws Throwable {
         AtomicInteger c = new AtomicInteger();
 
-        UsersResource users = testRealm().users();
+        UsersResource users = managedRealm.admin().users();
 
-        UserRepresentation u = UserBuilder.create().username("attributes").build();
-        Response response = users.create(u);
-        String userId = ApiUtil.getCreatedId(response);
-        response.close();
+        // enable unmanaged attributes
+        UserProfileUtil.enableUnmanagedAttributes(managedRealm.admin().users().userProfile());
+
+        UserRepresentation u = UserConfigBuilder.create().username("attributes").build();
+
+        String userId;
+        try (Response response = users.create(u)) {
+            userId = ApiUtil.getCreatedId(response);
+        }
 
         UserResource user = users.get(userId);
 
         concurrentTest((threadIndex, keycloak, realm) -> {
-            UserRepresentation rep = user.toRepresentation();
-            rep.singleAttribute("a-" + c.getAndIncrement(), "value");
-            user.update(rep);
+            UserRepresentation innerRep = user.toRepresentation();
+            innerRep.setAttributes(new HashMap<>());
+            innerRep.singleAttribute("a-" + c.getAndIncrement(), "value");
+            try (Response response = user.update(innerRep)) {
+                // handling auto closable Response object
+            }
         });
 
-        UserRepresentation rep = user.toRepresentation();
+        UserRepresentation outerRep = user.toRepresentation();
 
         // Number of attributes should be equal to created attributes, or less (concurrent requests may drop attributes added by other threads)
-        assertTrue(rep.getAttributes().size() <= c.get());
-
+        assertTrue(outerRep.getAttributes().size() <= c.get());
         // All attributes should have a single value
-        for (Map.Entry<String, List<String>> e : rep.getAttributes().entrySet()) {
+        for (Map.Entry<String, List<String>> e : outerRep.getAttributes().entrySet()) {
             assertEquals(1, e.getValue().size());
         }
     }
@@ -132,9 +129,10 @@ public class ConcurrencyTest extends AbstractConcurrencyTest {
     public void createClientRole() throws Throwable {
         ClientRepresentation c = new ClientRepresentation();
         c.setClientId("client");
-        Response response = adminClient.realm(REALM_NAME).clients().create(c);
-        final String clientId = ApiUtil.getCreatedId(response);
-        response.close();
+        final String clientId;
+        try (Response response = managedRealm.admin().clients().create(c)) {
+            clientId = ApiUtil.getCreatedId(response);
+        }
 
         AtomicInteger uniqueCounter = new AtomicInteger();
         concurrentTest(new CreateClientRole(uniqueCounter, clientId));
@@ -144,6 +142,14 @@ public class ConcurrencyTest extends AbstractConcurrencyTest {
     public void createRole() throws Throwable {
         AtomicInteger uniqueCounter = new AtomicInteger();
         run(new CreateRole(uniqueCounter));
+    }
+
+    public void concurrentTest(KeycloakRunnable... tasks) throws Throwable {
+        System.out.println("***************************");
+        long start = System.currentTimeMillis();
+        run(tasks);
+        long end = System.currentTimeMillis() - start;
+        System.out.println("took " + end + " ms");
     }
 
     private class CreateClient implements KeycloakRunnable {
@@ -156,27 +162,23 @@ public class ConcurrencyTest extends AbstractConcurrencyTest {
 
         @Override
         public void run(int threadIndex, Keycloak keycloak, RealmResource realm) throws Throwable {
-            String name = "c-" + clientIndex.getAndIncrement();
+            String name = "c1-" + clientIndex.getAndIncrement();
             ClientRepresentation c = new ClientRepresentation();
             c.setClientId(name);
-            Response response = realm.clients().create(c);
-            String id = ApiUtil.getCreatedId(response);
-            response.close();
+            final ClientsResource clients = realm.clients();
 
-            c = realm.clients().get(id).toRepresentation();
-            assertNotNull(c);
-
-            int findAttempts = 1;
-            if (StoreProvider.getCurrentProvider().equals(StoreProvider.DEFAULT)) {
-                findAttempts = 5;
+            String id;
+            try (Response response = clients.create(c)) {
+                id = ApiUtil.getCreatedId(response);
             }
-            boolean clientFound = IntStream.range(0, findAttempts)
-                    .anyMatch(i -> realm.clients().findAll().stream()
-                            .map(ClientRepresentation::getClientId)
-                            .filter(Objects::nonNull)
-                            .anyMatch(name::equals));
 
-            assertTrue("Client " + name + " not found in client list after " + findAttempts + " attempts", clientFound);
+            c = clients.get(id).toRepresentation();
+
+            assertNotNull(c);
+            assertTrue(clients.findAll().stream()
+                .map(ClientRepresentation::getClientId)
+                .filter(Objects::nonNull)
+                .anyMatch(name::equals), "Client " + name + " not found in client list");
         }
     }
 
@@ -190,30 +192,23 @@ public class ConcurrencyTest extends AbstractConcurrencyTest {
 
         @Override
         public void run(int threadIndex, Keycloak keycloak, RealmResource realm) throws Throwable {
-            String name = "c-" + clientIndex.getAndIncrement();
+            String name = "c2-" + clientIndex.getAndIncrement();
             ClientRepresentation c = new ClientRepresentation();
             c.setClientId(name);
             final ClientsResource clients = realm.clients();
 
-            Response response = clients.create(c);
-            String id = ApiUtil.getCreatedId(response);
-            response.close();
+            String id;
+            try (Response response = clients.create(c)) {
+                id = ApiUtil.getCreatedId(response);
+            }
             final ClientResource client = clients.get(id);
 
             c = client.toRepresentation();
             assertNotNull(c);
-
-            int findAttempts = 1;
-            if (StoreProvider.getCurrentProvider().equals(StoreProvider.DEFAULT)) {
-                findAttempts = 5;
-            }
-            boolean clientFound = IntStream.range(0, findAttempts)
-                    .anyMatch(i -> clients.findAll().stream()
-                            .map(ClientRepresentation::getClientId)
-                            .filter(Objects::nonNull)
-                            .anyMatch(name::equals));
-
-            assertTrue("Client " + name + " not found in client list after " + findAttempts + " attempts", clientFound);
+            assertTrue(clients.findAll().stream()
+                .map(ClientRepresentation::getClientId)
+                .filter(Objects::nonNull)
+                .anyMatch(name::equals), "Client " + name + " not found in client list");
 
             client.remove();
             try {
@@ -223,11 +218,10 @@ public class ConcurrencyTest extends AbstractConcurrencyTest {
 
             }
 
-            assertFalse("Client " + name + " should now not present in client list",
-              clients.findAll().stream()
+            assertFalse(clients.findAll().stream()
                 .map(ClientRepresentation::getClientId)
                 .filter(Objects::nonNull)
-                .anyMatch(name::equals));
+                .anyMatch(name::equals), "Client " + name + " should now not present in client list");
         }
     }
 
@@ -244,18 +238,20 @@ public class ConcurrencyTest extends AbstractConcurrencyTest {
             String name = "g-" + uniqueIndex.getAndIncrement();
             GroupRepresentation c = new GroupRepresentation();
             c.setName(name);
-            Response response = realm.groups().add(c);
-            String id = ApiUtil.getCreatedId(response);
-            response.close();
+            final GroupsResource groups = realm.groups();
 
-            c = realm.groups().group(id).toRepresentation();
+            String id;
+            try (Response response = groups.add(c)) {
+                id = ApiUtil.getCreatedId(response);
+            }
+
+            c = groups.group(id).toRepresentation();
             assertNotNull(c);
 
-            assertTrue("Group " + name + " [" + id + "] " + " not found in group list",
-                    realm.groups().groups().stream()
-                            .map(GroupRepresentation::getName)
-                            .filter(Objects::nonNull)
-                            .anyMatch(name::equals));
+            assertTrue(groups.groups().stream()
+                .map(GroupRepresentation::getName)
+                .filter(Objects::nonNull)
+                .anyMatch(name::equals), "Group " + name + " [" + id + "] " + " not found in group list");
         }
     }
 

@@ -413,18 +413,23 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
         member.setEmail(KeycloakModelUtils.generateId() + "@user.org");
 
-        try {
-            // member has a hard link with the organization, and the email must match the domains set to the organization
-            testRealm().users().get(member.getId()).update(member);
+        // member has a hard link with the organization, and the email must match the domains set to the organization
+        ErrorRepresentation error = new ErrorRepresentation();
+        try (Response response = testRealm().users().get(member.getId()).update(member)) {
+            error = response.readEntity(ErrorRepresentation.class);
+            if (response.getStatus() == 400) {
+                throw new BadRequestException(response);
+            }
             fail("Should fail because email domain does not match any from organization");
         } catch (BadRequestException expected) {
-            ErrorRepresentation error = expected.getResponse().readEntity(ErrorRepresentation.class);
             assertEquals(UserModel.EMAIL, error.getField());
             assertEquals("Email domain does not match any domain from the organization", error.getErrorMessage());
         }
 
         member.setEmail(member.getEmail().replace("@user.org", "@" + organizationName + ".org"));
-        testRealm().users().get(member.getId()).update(member);
+        try (Response response = testRealm().users().get(member.getId()).update(member)) {
+            // handling auto closable Response object
+        }
     }
 
     @Test
@@ -736,7 +741,10 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         testRealm().identityProviders().get(idpRep.getAlias()).update(idpRep);
         UserRepresentation user = getUserRepresentation(email);
         user.setEmail("user@someother.com");
-        testRealm().users().get(user.getId()).update(user);
+        try (Response response = testRealm().users().get(user.getId()).update(user)) {
+            // handling auto closable Response object
+        }
+
     }
 
     @Test
@@ -748,8 +756,10 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         assertEquals(email.substring(email.indexOf('@') + 1), idpRep.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE));
         UserRepresentation user = getUserRepresentation(email);
         user.setEmail("user@someother.com");
-        try {
-            testRealm().users().get(user.getId()).update(user);
+        try (Response response = testRealm().users().get(user.getId()).update(user)){
+            if (response.getStatus() == 400) {
+                throw new BadRequestException(response);
+            }
             fail("invalid email domain");
         } catch (BadRequestException expected) {
 

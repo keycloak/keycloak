@@ -19,6 +19,8 @@ package org.keycloak.testsuite.oauth;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.core.Response;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -352,11 +354,15 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
 
         representation.setCredentials(Arrays.asList(password));
 
-        this.expectedException.expect(Matchers.allOf(Matchers.instanceOf(ClientErrorException.class),
+        this.expectedException.expect(Matchers.allOf(Matchers.instanceOf(BadRequestException.class),
                 Matchers.hasProperty("response", Matchers.hasProperty("status", is(400)))));
         this.expectedException.reportMissingExceptionWithMessage("Should fail, should not be possible to manage credentials for service accounts");
 
-        serviceAccount.update(representation);
+        try (Response response = serviceAccount.update(representation)) {
+            if (response.getStatus() == 400) {
+                throw new BadRequestException(response);
+            }
+        }
     }
 
     /**

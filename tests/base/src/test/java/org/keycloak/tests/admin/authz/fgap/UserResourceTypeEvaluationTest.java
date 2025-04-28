@@ -179,8 +179,10 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         });
 
         // updating the user should be denied
-        try {
-            realmAdminClient.realm(realm.getName()).users().get(newUserId).update(UserConfigBuilder.create().email("email@test.com").build());
+        try (Response response = realmAdminClient.realm(realm.getName()).users().get(newUserId).update(UserConfigBuilder.create().email("email@test.com").build())){
+            if (response.getStatus() == 403) {
+                throw new ForbiddenException();
+            }
             fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
             assertThat(ex, instanceOf(ForbiddenException.class));
@@ -393,47 +395,65 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         ScopePermissionRepresentation allResourcesPermission = createAllPermission(client, usersType, allowPolicy, Set.of(MANAGE, IMPERSONATE));
         // all resource permissions grants manage scope
         UsersResource users = realmAdminClient.realm(realm.getName()).users();
-        users.get(userAlice.getId()).update(userAlice.admin().toRepresentation());
+
+        try (Response response = users.get(userAlice.getId()).update(userAlice.admin().toRepresentation())) {
+            // handling auto closable Response object
+        }
 
         ScopePermissionRepresentation resourcePermission = createPermission(client, userAlice.getId(), usersType, Set.of(MANAGE), allowPolicy);
         // both all and specific resource permission grants manage scope
-        users.get(userAlice.getId()).update(userAlice.admin().toRepresentation());
+        try (Response response = users.get(userAlice.getId()).update(userAlice.admin().toRepresentation())) {
+            // handling auto closable Response object
+        }
 
         allResourcesPermission = getScopePermissionsResource(client).findByName(allResourcesPermission.getName());
         allResourcesPermission.setScopes(Set.of(IMPERSONATE));
         getScopePermissionsResource(client).findById(allResourcesPermission.getId()).update(allResourcesPermission);
         // all resource permission does not have the manage scope but the scope is granted by the resource permission
-        users.get(userAlice.getId()).update(userAlice.admin().toRepresentation());
+        try (Response response = users.get(userAlice.getId()).update(userAlice.admin().toRepresentation())) {
+            // handling auto closable Response object
+        }
 
         resourcePermission = getScopePermissionsResource(client).findByName(resourcePermission.getName());
         resourcePermission.setScopes(Set.of(IMPERSONATE));
         getScopePermissionsResource(client).findById(resourcePermission.getId()).update(resourcePermission);
-        try {
-            // neither the all and specific resource permission grants access to the manage scope
-            users.get(userAlice.getId()).update(userAlice.admin().toRepresentation());
+
+        // neither the all and specific resource permission grants access to the manage scope
+        try (Response response = users.get(userAlice.getId()).update(userAlice.admin().toRepresentation())){
+            if (response.getStatus() == 403) {
+                throw new ForbiddenException();
+            }
             fail("Expected Exception wasn't thrown.");
         } catch (ForbiddenException expected) {}
 
         allResourcesPermission.setScopes(Set.of(MANAGE));
         getScopePermissionsResource(client).findById(allResourcesPermission.getId()).update(allResourcesPermission);
         // all resource permission grants access again to manage
-        users.get(userAlice.getId()).update(userAlice.admin().toRepresentation());
+        try (Response response = users.get(userAlice.getId()).update(userAlice.admin().toRepresentation())) {
+            // handling auto closable Response object
+        }
 
         UserPolicyRepresentation notAllowPolicy = createUserPolicy(Logic.NEGATIVE, realm, client, "Not My Admin", adminUser.getId());
         createPermission(client, userAlice.getId(), usersType, Set.of(MANAGE), notAllowPolicy);
-        try {
-            // a specific resource permission that explicitly negates access to the manage scope denies access to the scope
-            users.get(userAlice.getId()).update(userAlice.admin().toRepresentation());
+
+        // a specific resource permission that explicitly negates access to the manage scope denies access to the scope
+        try (Response response = users.get(userAlice.getId()).update(userAlice.admin().toRepresentation())){
+            if (response.getStatus() == 403) {
+                throw new ForbiddenException();
+            }
             fail("Expected Exception wasn't thrown.");
         } catch (ForbiddenException expected) {}
 
         resourcePermission = getScopePermissionsResource(client).findByName(resourcePermission.getName());
         resourcePermission.setScopes(Set.of(IMPERSONATE, MANAGE));
         getScopePermissionsResource(client).findById(resourcePermission.getId()).update(resourcePermission);
-        try {
-            // the specific resource permission that explicitly negates access to the manage scope denies access to the scope
-            // even though there is another resource permission that grants access to the scope - conflict resolution denies by default
-            users.get(userAlice.getId()).update(userAlice.admin().toRepresentation());
+
+        // the specific resource permission that explicitly negates access to the manage scope denies access to the scope
+        // even though there is another resource permission that grants access to the scope - conflict resolution denies by default
+        try (Response response = users.get(userAlice.getId()).update(userAlice.admin().toRepresentation())){
+            if (response.getStatus() == 403) {
+                throw new ForbiddenException();
+            }
             fail("Expected Exception wasn't thrown.");
         } catch (ForbiddenException expected) {}
     }

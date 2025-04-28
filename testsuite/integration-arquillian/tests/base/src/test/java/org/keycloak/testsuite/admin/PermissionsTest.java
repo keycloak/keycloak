@@ -1469,9 +1469,9 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 realm.users().get(user.getId()).getUnmanagedAttributes();
             }
         }, Resource.USER, false);
-        invoke(new Invocation() {
-            public void invoke(RealmResource realm) {
-                realm.users().get(user.getId()).update(user);
+        invoke(new InvocationWithResponse() {
+            public void invoke(RealmResource realm, AtomicReference<Response> response) {
+                response.set(realm.users().get(user.getId()).update(user));
             }
         }, Resource.USER, true);
         invoke(new Invocation() {
@@ -1658,9 +1658,9 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 realm.users().get(user.getId()).remove();
             }
         }, clients.get(AdminRoles.QUERY_CLIENTS), false);
-        invoke(new Invocation() {
-            public void invoke(RealmResource realm) {
-                realm.users().get(user.getId()).update(user);
+        invoke(new InvocationWithResponse() {
+            public void invoke(RealmResource realm, AtomicReference<Response> response) {
+                response.set(realm.users().get(user.getId()).update(user));
             }
         }, clients.get(AdminRoles.QUERY_CLIENTS), false);
         // users with query-user role should be able to query required actions so the user detail page can be rendered successfully when fine-grained permissions are enabled.

@@ -48,6 +48,10 @@
                     <groupId>io.quarkus</groupId>
                     <artifactId>quarkus-junit5-config</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.infinispan</groupId>
+                    <artifactId>infinispan-server-testdriver-core</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
     </dependencies>

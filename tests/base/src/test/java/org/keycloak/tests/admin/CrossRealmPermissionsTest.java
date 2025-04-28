@@ -59,9 +59,12 @@ public class CrossRealmPermissionsTest {
                 realm.users().get(userUuid).toRepresentation(), managedRealm2.admin()
         );
 
-        expectNotFound(realm ->
-                realm.users().get(userUuid).update(new UserRepresentation()), managedRealm2.admin()
-        );
+        try (Response response = managedRealm2.admin().users().get(userUuid).update(new UserRepresentation())) {
+            if (response.getStatus() != 404) {
+                Assertions.fail("Expected failure");
+            }
+            Assertions.assertEquals(404, response.getStatus());
+        }
 
         expectNotFound(realm ->
                 realm.users().get(userUuid).remove(), managedRealm2.admin()

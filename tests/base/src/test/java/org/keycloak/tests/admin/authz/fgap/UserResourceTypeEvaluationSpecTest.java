@@ -39,6 +39,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -1007,15 +1008,18 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
     }
 
     private void assertUpdate(ManagedUser user, boolean success) {
-        if (success) {
-            realmAdminClient.realm(realm.getName()).users().get(user.getId()).update(user.admin().toRepresentation());
-            assertEvaluation(user, DecisionEffect.PERMIT, Set.of(VIEW, MANAGE));
-        } else {
-            try {
-                realmAdminClient.realm(realm.getName()).users().get(user.getId()).update(user.admin().toRepresentation());
-                fail("Should have thrown an exception");
-            } catch (ForbiddenException expected) {
-                assertEvaluation(user, DecisionEffect.DENY, Set.of(VIEW, MANAGE));
+        try (Response response = realmAdminClient.realm(realm.getName()).users().get(user.getId()).update(user.admin().toRepresentation())) {
+            if (success) {
+                assertEvaluation(user, DecisionEffect.PERMIT, Set.of(VIEW, MANAGE));
+            } else {
+                try {
+                    if (response.getStatus() == 403) {
+                        throw new ForbiddenException();
+                    }
+                    fail("Should have thrown an exception");
+                } catch (ForbiddenException expected) {
+                    assertEvaluation(user, DecisionEffect.DENY, Set.of(VIEW, MANAGE));
+                }
             }
         }
     }

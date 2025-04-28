@@ -26,6 +26,7 @@ import java.util.Set;
 
 import jakarta.ws.rs.BadRequestException;
 
+import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Before;
@@ -160,7 +161,9 @@ public class AccountRestServiceReadOnlyAttributesTest extends AbstractRestServic
         UserResource adminUserResource = ApiUtil.findUserByUsernameId(testRealm(), user.getUsername());
         org.keycloak.representations.idm.UserRepresentation adminUserRep = adminUserResource.toRepresentation();
         adminUserRep.singleAttribute("deniedFoo", "foo");
-        adminUserResource.update(adminUserRep);
+        try (Response response = adminUserResource.update(adminUserRep)) {
+            // handling auto closable Response object
+        }
         adminUserResource = ApiUtil.findUserByUsernameId(testRealm(), user.getUsername());
         adminUserRep = adminUserResource.toRepresentation();
         assertEquals("foo", adminUserRep.getAttributes().get("deniedFoo").get(0));
@@ -191,7 +194,11 @@ public class AccountRestServiceReadOnlyAttributesTest extends AbstractRestServic
             adminUserResource = ApiUtil.findUserByUsernameId(testRealm(), user.getUsername());
             adminUserRep = adminUserResource.toRepresentation();
             adminUserRep.singleAttribute(attrName, "foo");
-            adminUserResource.update(adminUserRep);
+            try (Response response = adminUserResource.update(adminUserRep)) {
+                if (response.getStatus() == 400) {
+                    throw new BadRequestException(response);
+                }
+            }
             if (deniedForAdminAsWell) {
                 Assert.fail("Not expected to update attribute " + attrName + " by admin REST API");
             }

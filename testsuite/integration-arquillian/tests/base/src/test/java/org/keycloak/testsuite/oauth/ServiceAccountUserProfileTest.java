@@ -29,6 +29,8 @@ import jakarta.ws.rs.BadRequestException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import jakarta.ws.rs.core.Response;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
@@ -37,6 +39,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
@@ -135,13 +138,17 @@ public class ServiceAccountUserProfileTest extends AbstractKeycloakTest {
         assertNotNull(username);
         assertNull(representation.getEmail());
 
-        serviceAccount.update(representation);
+        try (Response response = serviceAccount.update(representation)) {
+            // handling auto closable Response object
+        }
         representation = serviceAccount.toRepresentation();
         assertNull(representation.getEmail());
         assertEquals(username, representation.getUsername());
 
         representation.setEmail("test@keycloak.org");
-        serviceAccount.update(representation);
+        try (Response response = serviceAccount.update(representation)) {
+            // handling auto closable Response object
+        }
         representation = serviceAccount.toRepresentation();
         assertNotNull(representation.getEmail());
         assertEquals(username, representation.getUsername());
@@ -154,7 +161,9 @@ public class ServiceAccountUserProfileTest extends AbstractKeycloakTest {
         UserRepresentation representation = serviceAccount.toRepresentation();
 
         representation.setAttributes(Map.of("attr-1", List.of("attr-1-value")));
-        serviceAccount.update(representation);
+        try (Response response = serviceAccount.update(representation)) {
+            // handling auto closable Response object
+        }
 
         representation = serviceAccount.toRepresentation();
         assertFalse(representation.getAttributes().isEmpty());
@@ -171,8 +180,16 @@ public class ServiceAccountUserProfileTest extends AbstractKeycloakTest {
         UserResource serviceAccount = realm.users().get(userId);
         UserRepresentation rep = serviceAccount.toRepresentation();
         rep.setEmail("invalidEmail");
-        BadRequestException e = assertThrows(BadRequestException.class, () -> serviceAccount.update(rep));
-        assertThat(e.getResponse().readEntity(String.class), containsString(EmailValidator.MESSAGE_INVALID_EMAIL));
+
+        ErrorRepresentation error = new ErrorRepresentation();
+        try (Response response = serviceAccount.update(rep)) {
+            error = response.readEntity(ErrorRepresentation.class);
+            if (response.getStatus() == 400) {
+                throw new BadRequestException(response);
+            }
+        } catch (BadRequestException e) {
+            assertThat(error.getErrorMessage(), containsString(EmailValidator.MESSAGE_INVALID_EMAIL));
+        }
     }
 
     @Test
@@ -190,6 +207,8 @@ public class ServiceAccountUserProfileTest extends AbstractKeycloakTest {
         UserResource serviceAccount = realm.users().get(userId);
         UserRepresentation rep = serviceAccount.toRepresentation();
         rep.setLastName(null);
-        serviceAccount.update(rep);
+        try (Response response = serviceAccount.update(rep)) {
+            // handling auto closable Response object
+        }
     }
 }

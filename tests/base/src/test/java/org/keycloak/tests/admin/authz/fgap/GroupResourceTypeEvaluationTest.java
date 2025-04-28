@@ -124,8 +124,10 @@ public class GroupResourceTypeEvaluationTest extends AbstractPermissionTest {
         assertTrue(search.isEmpty());
 
         // my admin should not be able to manage yet
-        try {
-            realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).update(UserConfigBuilder.create().email("email@test.com").build());
+        try (Response response = realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).update(UserConfigBuilder.create().email("email@test.com").build())) {
+            if (response.getStatus() == 403) {
+                throw new ForbiddenException();
+            }
             fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
             assertThat(ex, instanceOf(ForbiddenException.class));
@@ -140,7 +142,9 @@ public class GroupResourceTypeEvaluationTest extends AbstractPermissionTest {
         assertEquals(userAlice.getUsername(), search.get(0).getUsername());
 
         // my admin should be able to update Alice due to her membership and MANAGE_MEMBERS permission
-        realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).update(UserConfigBuilder.create().email("email@test.com").build());
+        try (Response response = realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).update(UserConfigBuilder.create().email("email@test.com").build())) {
+            // handling auto closable Response object
+        }
         assertEquals("email@test.com", realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).toRepresentation().getEmail());
     }
 
