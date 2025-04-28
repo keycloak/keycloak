@@ -31,14 +31,16 @@ Shut down all nodes of the cluster running the old version before starting the n
 
 == Determining the update strategy for an updated configuration
 
-To determine if a rolling update is possible, run the update compatibility command:
+To determine if a rolling update is possible:
 
-1. Generate the required metadata with the old configuration.
+1. Run the update compatibility command to generate the required metadata with the old configuration.
 2. Check the metadata with the new configuration to determine the update strategy.
+
+NOTE: If you do not use `--optimized` keep in mind that an `update` command may implicitly create or update an optimized build for you - if you are running the command from the same machine as a server instance, this may impact the next start of your server.
 
 [WARNING]
 ====
-This command currently offers only a limited functionality. At the moment, it takes into consideration only the version of {project_name} and the embedded Infinispan to determine if a rolling update is possible.
+The `check` command currently offers only a limited functionality. At the moment, it takes into consideration only the version of {project_name} and the embedded Infinispan to determine if a rolling update is possible.
 If those are unchanged, it reports that a rolling update is possible.
 
 The current version does not yet verify configuration changes and assumes all configuration changes are eligible for a rolling update.

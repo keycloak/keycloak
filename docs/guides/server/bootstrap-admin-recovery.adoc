@@ -31,7 +31,7 @@ Additionally, it is strongly recommended to use the dedicated command with the s
 If you have built an optimized version of {project_name} with the `build` command as outlined in <@links.server id="configuration"/>, use the command line option `--optimized` to have {project_name} skip the build check for a faster startup time.
 When doing this, remove the build time options from the command line and keep only the runtime options.
 
-NOTE: if you do not use `--optimized` keep in mind that an `bootstrap-admin` command will implicitly create or update an optimized image for you - if you are running the command from the same machine as a server instance, this may impact the next start of your server.
+NOTE: if you do not use `--optimized` keep in mind that an `bootstrap-admin` command may implicitly create or update an optimized build for you - if you are running the command from the same machine as a server instance, this may impact the next start of your server.
 
 === Create an admin user
 
