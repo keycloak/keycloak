@@ -50,6 +50,8 @@ import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.vault.FilesKeystoreVaultProviderFactory;
 import org.keycloak.quarkus.runtime.vault.FilesPlainTextVaultProviderFactory;
+import org.keycloak.spi.infinispan.CacheEmbeddedConfigProviderSpi;
+import org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory;
 import org.mariadb.jdbc.MariaDbDataSource;
 import org.postgresql.xa.PGXADataSource;
 
@@ -375,21 +377,21 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     public void testClusterConfig() {
         // Cluster enabled by default, but disabled for the "dev" profile
         String conf = Environment.getHomeDir() + File.separator + "conf" + File.separator;
-        Assert.assertEquals(conf + "cache-ispn.xml", initConfig("connectionsInfinispan", "quarkus").get("configFile"));
+        Assert.assertEquals(conf + "cache-ispn.xml", cacheEmbeddedConfiguration().get(DefaultCacheEmbeddedConfigProviderFactory.CONFIG));
 
         // If explicitly set, then it is always used regardless of the profile
         System.clearProperty(org.keycloak.common.util.Environment.PROFILE);
         ConfigArgsConfigSource.setCliArgs("--cache-config-file=cluster-foo.xml");
 
-        Assert.assertEquals(conf + "cluster-foo.xml", initConfig("connectionsInfinispan", "quarkus").get("configFile"));
+        Assert.assertEquals(conf + "cluster-foo.xml", cacheEmbeddedConfiguration().get(DefaultCacheEmbeddedConfigProviderFactory.CONFIG));
         System.setProperty(org.keycloak.common.util.Environment.PROFILE, "dev");
-        Assert.assertEquals(conf + "cluster-foo.xml", initConfig("connectionsInfinispan", "quarkus").get("configFile"));
+        Assert.assertEquals(conf + "cluster-foo.xml", cacheEmbeddedConfiguration().get(DefaultCacheEmbeddedConfigProviderFactory.CONFIG));
 
         ConfigArgsConfigSource.setCliArgs("");
-        Assert.assertEquals("cache-local.xml", initConfig("connectionsInfinispan", "quarkus").get("configFile"));
+        Assert.assertEquals("cache-local.xml", cacheEmbeddedConfiguration().get(DefaultCacheEmbeddedConfigProviderFactory.CONFIG));
 
         ConfigArgsConfigSource.setCliArgs("--cache-stack=foo");
-        Assert.assertEquals("foo", initConfig("connectionsInfinispan", "quarkus").get("stack"));
+        Assert.assertEquals("foo", cacheEmbeddedConfiguration().get(DefaultCacheEmbeddedConfigProviderFactory.STACK));
     }
 
     @Test
@@ -584,4 +586,8 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         SmallRyeConfig config = createConfig();
         assertEquals("200k", config.getConfigValue("quarkus.http.limits.max-header-size").getValue());
     }
+
+    private static Config.Scope cacheEmbeddedConfiguration() {
+        return initConfig(CacheEmbeddedConfigProviderSpi.SPI_NAME, DefaultCacheEmbeddedConfigProviderFactory.PROVIDER_ID);
+    } 
 }
