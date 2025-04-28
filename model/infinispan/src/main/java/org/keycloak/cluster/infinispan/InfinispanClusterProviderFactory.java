@@ -58,11 +58,8 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
 
     protected static final Logger logger = Logger.getLogger(InfinispanClusterProviderFactory.class);
 
-    // Infinispan cache
     private volatile Cache<String, Object> workCache;
-    private int clusterStartupTime;
-    // Just to extract notifications related stuff to separate class
-    private InfinispanNotificationsManager notificationsManager;
+    private volatile ClusterProvider clusterProvider;
 
     private final ExecutorService localExecutor = Executors.newCachedThreadPool(r -> {
         Thread thread = Executors.defaultThreadFactory().newThread(r);
@@ -74,33 +71,33 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
 
     @Override
     public ClusterProvider create(KeycloakSession session) {
-        lazyInit(session);
-        String myAddress = InfinispanUtil.getTopologyInfo(session).getMyNodeName();
-        return new InfinispanClusterProvider(clusterStartupTime, myAddress, workCache, notificationsManager, localExecutor);
+        return lazyInit(session);
     }
 
-    private void lazyInit(KeycloakSession session) {
-        if (workCache == null) {
-            synchronized (this) {
-                if (workCache == null) {
-                    InfinispanConnectionProvider ispnConnections = session.getProvider(InfinispanConnectionProvider.class);
-                    workCache = ispnConnections.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
+    private ClusterProvider lazyInit(KeycloakSession session) {
+        if (clusterProvider != null)
+            return clusterProvider;
 
-                    workCacheListener = new ViewChangeListener();
-                    workCache.getCacheManager().addListener(workCacheListener);
+        synchronized (this) {
+            if (clusterProvider != null)
+                return clusterProvider;
+            InfinispanConnectionProvider ispnConnections = session.getProvider(InfinispanConnectionProvider.class);
+            this.workCache = ispnConnections.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
 
-                    clusterStartupTime = initClusterStartupTime(session);
+            workCacheListener = new ViewChangeListener();
+            workCache.getCacheManager().addListener(workCacheListener);
 
-                    TopologyInfo topologyInfo = InfinispanUtil.getTopologyInfo(session);
-                    String myAddress = topologyInfo.getMyNodeName();
-                    String mySite = topologyInfo.getMySiteName();
+            var clusterStartupTime = initClusterStartupTime(session);
 
-                    notificationsManager = InfinispanNotificationsManager.create(workCache, myAddress, mySite);
-                }
-            }
+            TopologyInfo topologyInfo = InfinispanUtil.getTopologyInfo(session);
+            String myAddress = topologyInfo.getMyNodeName();
+            String mySite = topologyInfo.getMySiteName();
+
+            var notificationsManager = InfinispanNotificationsManager.create(workCache, myAddress, mySite);
+            this.clusterProvider = new InfinispanClusterProvider(clusterStartupTime, myAddress, workCache, notificationsManager, localExecutor);
+            return clusterProvider;
         }
     }
-
 
     protected int initClusterStartupTime(KeycloakSession session) {
         Integer existingClusterStartTime = (Integer) workCache.get(InfinispanClusterProvider.CLUSTER_STARTUP_TIME_KEY);
@@ -213,8 +210,5 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
         private Set<String> convertAddresses(Collection<Address> addresses) {
             return addresses.stream().map(Object::toString).collect(Collectors.toSet());
         }
-
     }
-
-
 }
