@@ -1,0 +1,4 @@
+org.keycloak.admin.api.AdminApiSpi
+org.keycloak.admin.api.realm.RealmsApiSpi
+org.keycloak.admin.api.client.ClientsApiSpi
+org.keycloak.admin.api.mapper.ApiModelMapperSpi

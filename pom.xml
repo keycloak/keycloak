@@ -301,6 +301,8 @@
         <module>test-framework</module>
         <module>tests</module>
         <module>quarkus</module>
+        <module>rest/admin-api</module>
+        <module>rest/admin-api</module>
     </modules>
 
     <dependencyManagement>
