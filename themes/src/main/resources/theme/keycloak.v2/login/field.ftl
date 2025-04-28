@@ -66,7 +66,9 @@
                 aria-controls="${name}" data-password-toggle
                 data-icon-show="fa-eye fas" data-icon-hide="fa-eye-slash fas"
                 data-label-show="${msg('showPassword')}" data-label-hide="${msg('hidePassword')}">
-            <i class="fa-eye fas" aria-hidden="true"></i>
+            <span class="pf-v6-c-button__text">
+              <i class="fa-eye fas" aria-hidden="true"></i>
+            </span>
         </button>
       </div>
     </div>
