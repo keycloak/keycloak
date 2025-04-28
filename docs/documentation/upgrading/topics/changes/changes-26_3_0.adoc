@@ -18,6 +18,12 @@ It has been a while since discussions started about any activity around the Inst
 and any objection from the community about deprecating it for removal. For more details, see
 https://github.com/keycloak/keycloak/issues/37967[Deprecate for removal the Instagram social broker].
 
+=== Deprecated password policy Recovery Codes Warning Threshold
+
+In relation to supported Recovery codes, we deprecated the password policy `Recovery Codes Warning Threshold`. This password policy might be removed in the future major version of {project_name}.
+This password policy was not related to passwords at all, but was related to recovery codes, and hence using password policy is not appropriate way for the configuration of the threshold. It is
+recommended to use the configuration option *Warning Threshold* of the *Recovery Authentication Codes* required action instead of using password policy. For more details, see the link:{adminguide_link}#_recovery-codes[Recovery codes documentation].
+
 === Deprecated proprietary protocol for client initiated linking to the identity provider account
 
 When you want the user, who is authenticated to your client application, to link his or her account to a specific identity provider, consider using the Application initiated action (AIA) based
