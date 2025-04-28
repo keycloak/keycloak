@@ -287,4 +287,104 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         initConfig();
         assertExternalConfig("quarkus.datasource.bar", "foo-val3");
     }
+
+    @Test
+    public void poolSizeDefault() {
+        ConfigArgsConfigSource.setCliArgs("");
+        initConfig();
+
+        assertConfigNull("db-pool-initial-size-clients");
+        assertConfig(Map.of(
+                "db-pool-min-size-clients", "1",
+                "db-pool-max-size-clients", "100"
+        ));
+
+        assertExternalConfigNull("quarkus.datasource.\"clients\".jdbc.initial-size");
+        assertExternalConfig(Map.of(
+                "quarkus.datasource.\"clients\".jdbc.min-size", "1",
+                "quarkus.datasource.\"clients\".jdbc.max-size", "100"
+        ));
+    }
+
+    @Test
+    public void poolSizeH2() {
+        ConfigArgsConfigSource.setCliArgs("--db-pool-min-size-clients=5", "--db-pool-initial-size-clients=10", "--db-pool-max-size-clients=15");
+        initConfig();
+
+        assertConfig(Map.of(
+                "db-pool-min-size-clients", "5",
+                "db-pool-initial-size-clients", "10",
+                "db-pool-max-size-clients", "15"
+        ));
+
+        assertExternalConfig(Map.of(
+                "quarkus.datasource.\"clients\".jdbc.min-size", "5",
+                "quarkus.datasource.\"clients\".jdbc.initial-size", "10",
+                "quarkus.datasource.\"clients\".jdbc.max-size", "15"
+        ));
+        onAfter();
+
+        ConfigArgsConfigSource.setCliArgs("--db-pool-initial-size-clients=10");
+        initConfig();
+        assertConfig(Map.of(
+                "db-pool-min-size-clients", "1", // set 1 for H2
+                "db-pool-initial-size-clients", "10"
+        ));
+        onAfter();
+
+        ConfigArgsConfigSource.setCliArgs("--db-kind-clients=mysql", "--db-pool-initial-size-clients=16");
+        initConfig();
+        assertConfig(Map.of(
+                "db-pool-min-size-clients", "1", // set default value (1) for H2 default datasource
+                "db-pool-initial-size-clients", "16"
+        ));
+        onAfter();
+
+        ConfigArgsConfigSource.setCliArgs("--db=postgres", "--db-kind-clients=mysql", "--db-pool-initial-size-clients=10");
+        initConfig();
+        assertConfig("db-pool-initial-size-clients", "10");
+        assertConfigNull("db-pool-min-size-clients"); // set null for non-H2 default datasource
+    }
+
+    @Test
+    public void poolSizeNonDefaultDbKind() {
+        ConfigArgsConfigSource.setCliArgs("-db-kind-store=postgres", "--db-pool-min-size-store=5", "--db-pool-initial-size-store=10", "--db-pool-max-size=15");
+        initConfig();
+
+        assertConfig(Map.of(
+                "db-pool-min-size-store", "5",
+                "db-pool-initial-size-store", "10",
+                "db-pool-max-size-store", "15"
+        ));
+
+        assertExternalConfig(Map.of(
+                "quarkus.datasource.\"store\".jdbc.min-size", "5",
+                "quarkus.datasource.\"store\".jdbc.initial-size", "10",
+                "quarkus.datasource.\"store\".jdbc.max-size", "15"
+        ));
+    }
+
+    @Test
+    public void poolSizeInherit() {
+        ConfigArgsConfigSource.setCliArgs("--db-pool-min-size=25", "--db-pool-initial-size=50", "--db-pool-max-size=115", "--db-kind-users=mssql");
+        initConfig();
+
+        assertConfig(Map.of(
+                "db-pool-min-size", "25",
+                "db-pool-min-size-users", "25",
+                "db-pool-initial-size", "50",
+                "db-pool-initial-size-users", "50",
+                "db-pool-max-size", "115",
+                "db-pool-max-size-users", "115"
+        ));
+
+        assertExternalConfig(Map.of(
+                "quarkus.datasource.jdbc.min-size", "25",
+                "quarkus.datasource.\"users\".jdbc.min-size", "25",
+                "quarkus.datasource.jdbc.initial-size", "50",
+                "quarkus.datasource.\"users\".jdbc.initial-size", "50",
+                "quarkus.datasource.jdbc.max-size", "115",
+                "quarkus.datasource.\"users\".jdbc.max-size", "115"
+        ));
+    }
 }
