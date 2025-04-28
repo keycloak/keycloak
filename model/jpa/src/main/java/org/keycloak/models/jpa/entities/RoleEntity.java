@@ -98,7 +98,7 @@ public class RoleEntity {
     @JoinTable(name = "COMPOSITE_ROLE", joinColumns = @JoinColumn(name = "COMPOSITE"), inverseJoinColumns = @JoinColumn(name = "CHILD_ROLE"))
     private Set<RoleEntity> compositeRoles;
 
-    @ManyToMany(mappedBy = "compositeRoles", cascade = {})
+    @ManyToMany(mappedBy = "compositeRoles", fetch = FetchType.LAZY, cascade = {})
     private Set<RoleEntity> parentRoles;
 
     // Explicitly not using OrphanRemoval as we're handling the removal manually through HQL but at the same time we still
