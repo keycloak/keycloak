@@ -16,22 +16,24 @@
  */
 package org.keycloak.quarkus.runtime.services.resources;
 
-import io.quarkus.resteasy.reactive.server.EndpointDisabled;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.ext.Provider;
-import org.keycloak.common.Profile;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+
+import org.keycloak.common.util.UriUtils;
+import org.keycloak.config.HostnameV2Options;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.quarkus.runtime.configuration.mappers.HostnameV2PropertyMappers;
 import org.keycloak.services.Urls;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.theme.FreeMarkerException;
@@ -39,12 +41,19 @@ import org.keycloak.theme.Theme;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
 
-import java.io.IOException;
-import java.net.URI;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.TreeMap;
+import io.quarkus.resteasy.reactive.server.EndpointDisabled;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.Provider;
 
 @Provider
 @Path("/realms")
@@ -81,22 +90,26 @@ public class DebugHostnameSettingsResource {
 
         FreeMarkerProvider freeMarkerProvider = keycloakSession.getProvider(FreeMarkerProvider.class);
 
+        List<String> configWarnings = new ArrayList<String>();
+        HostnameV2PropertyMappers.validateConfig(configWarnings::add);
+
         URI frontendUri = keycloakSession.getContext().getUri(UrlType.FRONTEND).getBaseUri();
         URI backendUri = keycloakSession.getContext().getUri(UrlType.BACKEND).getBaseUri();
         URI adminUri = keycloakSession.getContext().getUri(UrlType.ADMIN).getBaseUri();
 
-        String frontendTestUrl = getTest(realmModel, frontendUri);
-        String backendTestUrl = getTest(realmModel, backendUri);
-        String adminTestUrl = getTest(realmModel, adminUri);
+        String frontendTestUrl = getTest(realmModel, frontendUri, true);
+        String backendTestUrl = getTest(realmModel, backendUri, false);
+        String adminTestUrl = getTest(realmModel, adminUri, false);
 
         Map<String, Object> attributes = new HashMap<>();
+        attributes.put("configWarnings", configWarnings);
         attributes.put("frontendUrl", frontendUri.toString());
         attributes.put("backendUrl", backendUri.toString());
         attributes.put("adminUrl", adminUri.toString());
 
         attributes.put("realm", realmModel.getName());
         attributes.put("realmUrl", realmModel.getAttribute("frontendUrl"));
-        attributes.put("implVersion", Profile.isFeatureEnabled(Profile.Feature.HOSTNAME_V2) ? "V2" : "V1");
+        attributes.put("implVersion", "V2");
 
         attributes.put("frontendTestUrl", frontendTestUrl);
         attributes.put("backendTestUrl", backendTestUrl);
@@ -117,10 +130,45 @@ public class DebugHostnameSettingsResource {
     @GET
     @Path("/{realmName}/" + DEFAULT_PATH_SUFFIX + "/" + PATH_FOR_TEST_CORS_IN_HEADERS)
     @Produces(MediaType.TEXT_PLAIN)
-    public Response test(final @PathParam("realmName") String realmName) {
-        Response.ResponseBuilder builder = Response.ok(PATH_FOR_TEST_CORS_IN_HEADERS + "-OK");
-        String origin = keycloakSession.getContext().getRequestHeaders().getHeaderString(Cors.ORIGIN_HEADER);
-        builder.header(Cors.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+    public Response test(final @PathParam("realmName") String realmName, @DefaultValue("false") @QueryParam("frontEnd") boolean frontEnd) {
+        String text = "OK";
+        String corsOrigin = keycloakSession.getContext().getRequestHeaders().getHeaderString(Cors.ORIGIN_HEADER);
+        URI requestUri = keycloakSession.getContext().getUri().getRequestUri();
+        String requestOrigin = UriUtils.getOrigin(requestUri);
+        URI frontendUri = keycloakSession.getContext().getUri(UrlType.FRONTEND).getBaseUri();
+
+        if (frontEnd) {
+            boolean originMatches = requestOrigin.equals(UriUtils.getOrigin(frontendUri));
+            HttpHeaders requestHeaders = keycloakSession.getContext().getRequestHeaders();
+            boolean proxied = requestHeaders.getHeaderString("Forwarded") != null || requestHeaders.getHeaderString("X-Forwarded-For") != null;
+
+            if (!originMatches) { // might fail CORs checks
+                try {
+                    new URL(Configuration.getKcConfigValue(HostnameV2Options.HOSTNAME.getKey()).getValue());
+                    // a full url is ok
+                } catch (MalformedURLException e) {
+                    text = "Default origin check failing. Please check you proxy settings.";
+                    if (!keycloakSession.getContext().getHttpRequest().isProxyTrusted()) {
+                        text += " Note the proxy is not trusted.";
+                    }
+                    if (!proxied) {
+                        text += " No proxy headers are set on the request.";
+                    }
+                }
+            }
+
+            boolean https = requestUri.getScheme().equals("https");
+            if (https) {
+                // if reencrypt, then proxy headers may need set
+                // if passthrough, then proxy headers should not be set
+
+                // TODO: not sure if there is great way to do this. Would likely need to check that a connection to the frontend uses the same
+                // cert as what is coming in on this request
+            }
+        }
+
+        Response.ResponseBuilder builder = Response.ok(text);
+        builder.header(Cors.ACCESS_CONTROL_ALLOW_ORIGIN, corsOrigin);
         builder.header(Cors.ACCESS_CONTROL_ALLOW_METHODS, "GET");
         return builder.build();
     }
@@ -149,9 +197,10 @@ public class DebugHostnameSettingsResource {
         }
     }
 
-    private String getTest(RealmModel realmModel, URI baseUri) {
+    private String getTest(RealmModel realmModel, URI baseUri, boolean frontEnd) {
         return Urls.realmBase(baseUri)
                    .path("/{realmName}/{debugHostnameSettingsPath}/{pathForTestCORSInHeaders}")
+                   .queryParam("frontEnd", frontEnd)
                    .build(realmModel.getName(), DEFAULT_PATH_SUFFIX, PATH_FOR_TEST_CORS_IN_HEADERS)
                    .toString();
     }

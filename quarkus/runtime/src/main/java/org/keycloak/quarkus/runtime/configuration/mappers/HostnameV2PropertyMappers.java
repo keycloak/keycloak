@@ -6,6 +6,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import org.keycloak.common.Profile;
@@ -42,49 +43,52 @@ public final class HostnameV2PropertyMappers {
     }
 
     public static void validateConfig(Picocli picocli) {
+        validateConfig(picocli::warn);
+    }
+
+    public static void validateConfig(Consumer<String> warn) {
         List<String> inUse = REMOVED_OPTIONS.stream().filter(s -> Configuration.getOptionalKcValue(s).isPresent()).toList();
 
         if (!inUse.isEmpty()) {
-            picocli.warn("Hostname v1 options %s are still in use, please review your configuration".formatted(inUse));
+            warn.accept("Hostname v1 options %s are still in use, please review your configuration".formatted(inUse));
         }
         boolean isProd = Environment.PROD_PROFILE_VALUE.equals(org.keycloak.common.util.Environment.getProfile());
         boolean httpsEnabled = HttpPropertyMappers.isHttpsEnabled();
         String host = Configuration.getConfigValue(HostnameV2Options.HOSTNAME).getValue();
-        if (host != null && validateFullHostname(httpsEnabled, isProd, host, picocli)) {
+        if (host != null && validateFullHostname(httpsEnabled, isProd, host, warn)) {
             return;
         }
         if (httpsEnabled) {
-            // must be tls passthrough, but there's no way of knowing the intention
-            return;
+            return; // must be re-encrypt or passthrough. if passthrough, proxy headers must not be set
         }
+        // should be edge
         String proxyHeaders = Configuration.getConfigValue(ProxyOptions.PROXY_HEADERS).getValue();
         if (proxyHeaders != null) {
-            // must not be tls passthrough, but there's no way of knowing the intention
             return;
         }
         if (isProd) {
-            String warning = CONTEXT_WARNING + " Also if you are using a proxy, requests from the proxy to the server will fail CORS checks with 403s because the wrong origin will be determined. Make sure `proxy-headers` are configured properly or use a full URL `hostname`.";
+            String warning = CONTEXT_WARNING + " Also if you are using a proxy, requests from the proxy to the server will fail CORS checks with 403s because the wrong origin will be determined. Make sure `proxy-headers` are configured properly.";
             if (host == null) {
-                picocli.warn("With HTTPS not enabled, `proxy-headers` unset, and `hostname-strict=false`, " + warning);
+                warn.accept("With HTTPS not enabled, `proxy-headers` unset, and `hostname-strict=false`, " + warning);
             } else if (!SecureContextResolver.isLocal(host)) {
-                picocli.warn("Likely misconfiguration detected. With HTTPS not enabled, `proxy-headers` unset, and a non-URL `hostname`, " + warning);
+                warn.accept("Likely misconfiguration detected. With HTTPS not enabled, `proxy-headers` unset, and a non-URL `hostname`, " + warning);
             } // else warn on prod
         }
     }
 
-    static boolean validateFullHostname(boolean httpsEnabled, boolean isProd, String host, Picocli picocli) {
+    static boolean validateFullHostname(boolean httpsEnabled, boolean isProd, String host, Consumer<String> warn) {
         try {
             URL url = new URL(host);
 
             if (!url.getProtocol().toUpperCase().equals("HTTPS") && isProd) {
                 if (!SecureContextResolver.isLocal(url.getHost())) {
-                    picocli.warn("Likely misconfiguration detected. `hostname` is configured to use HTTP instead of HTTPS, " + CONTEXT_WARNING);
+                    warn.accept("Likely misconfiguration detected. `hostname` is configured to use HTTP instead of HTTPS, " + CONTEXT_WARNING);
 
                     // TODO: any hostname-admin specific validation?
 
                 } // else warn on prod?
                 if (httpsEnabled) {
-                    picocli.warn("Likely misconfiguration detected. HTTPS is enabled on the server, but `hostname` specifies HTTP.");
+                    warn.accept("Likely misconfiguration detected. HTTPS is enabled on the server, but `hostname` specifies HTTP.");
                 }
             }
 
