@@ -88,13 +88,14 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
             workCache.getCacheManager().addListener(workCacheListener);
 
             var clusterStartupTime = initClusterStartupTime(session);
-
             TopologyInfo topologyInfo = InfinispanUtil.getTopologyInfo(session);
-            String myAddress = topologyInfo.getMyNodeName();
-            String mySite = topologyInfo.getMySiteName();
+            var cp = new InfinispanClusterProvider(clusterStartupTime, topologyInfo, workCache, localExecutor);
 
-            var notificationsManager = InfinispanNotificationsManager.create(workCache, myAddress, mySite);
-            this.clusterProvider = new InfinispanClusterProvider(clusterStartupTime, myAddress, workCache, notificationsManager, localExecutor);
+            // We need CacheEntryListener for communication within current DC
+            workCache.addListener(cp.new CacheEntryListener());
+            logger.debugf("Added listener for infinispan cache: %s", workCache.getName());
+
+            this.clusterProvider = cp;
             return clusterProvider;
         }
     }
