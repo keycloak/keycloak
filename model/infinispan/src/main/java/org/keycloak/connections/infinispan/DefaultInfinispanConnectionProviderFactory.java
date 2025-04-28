@@ -82,18 +82,13 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
     private volatile EmbeddedCacheManager cacheManager;
 
-    private volatile TopologyInfo topologyInfo;
-
     private volatile RemoteCacheManager remoteCacheManager;
+
+    private volatile InfinispanConnectionProvider connectionProvider;
 
     @Override
     public InfinispanConnectionProvider create(KeycloakSession session) {
-        lazyInit(session);
-
-        return InfinispanUtils.isRemoteInfinispan() ?
-                new RemoteInfinispanConnectionProvider(cacheManager, remoteCacheManager, topologyInfo) :
-                new DefaultInfinispanConnectionProvider(cacheManager, topologyInfo);
-
+        return lazyInit(session);
     }
 
     /*
@@ -152,22 +147,26 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         factory.register(this);
     }
 
-    protected void lazyInit(KeycloakSession keycloakSession) {
-        if (cacheManager != null) {
-            return;
+    protected InfinispanConnectionProvider lazyInit(KeycloakSession keycloakSession) {
+        if (connectionProvider != null) {
+            return connectionProvider;
         }
         synchronized (this) {
-            // if cacheManager it not null, the remoteCacheManager must be visible too.
-            if (cacheManager != null) {
-                return;
+            if (connectionProvider != null) {
+                return connectionProvider;
             }
-            var cm = createEmbeddedCacheManager(keycloakSession);
-            this.remoteCacheManager = createRemoteCacheManager(keycloakSession);
-            this.topologyInfo = new TopologyInfo(cm);
-            injectKeycloakTimeService(cm);
-            // set cacheManager field last
-            this.cacheManager = cm;
+
+            this.cacheManager = createEmbeddedCacheManager(keycloakSession);
+            injectKeycloakTimeService(cacheManager);
+            var topologyInfo = new TopologyInfo(cacheManager);
             logger.infof(topologyInfo.toString());
+
+            this.remoteCacheManager = createRemoteCacheManager(keycloakSession);
+            this.connectionProvider = InfinispanUtils.isRemoteInfinispan() ?
+                  new RemoteInfinispanConnectionProvider(cacheManager, remoteCacheManager, topologyInfo) :
+                  new DefaultInfinispanConnectionProvider(cacheManager, topologyInfo);
+
+            return connectionProvider;
         }
     }
 
