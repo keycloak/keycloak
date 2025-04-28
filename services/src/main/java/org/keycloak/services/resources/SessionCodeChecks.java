@@ -448,6 +448,14 @@ public class SessionCodeChecks {
                 flowPath = LoginActionsService.AUTHENTICATE_PATH;
             }
 
+            //set redirect uri from client data parameter
+            try {
+                ClientData clientData = ClientData.decodeClientDataFromParameter(clientDataString);
+                authSession.setRedirectUri(clientData.getRedirectUri());
+            } catch (Exception e) {
+                logger.debugf(e, "ClientData parameter in invalid format. ClientData parameter was %s", clientDataString);
+            }
+
             String clientData = AuthenticationProcessor.getClientData(session, authSession);
             URI redirectUri = getLastExecutionUrl(flowPath, null, authSession.getTabId(), clientData);
             logger.debugf("Authentication session restart from cookie succeeded. Redirecting to %s", redirectUri);
