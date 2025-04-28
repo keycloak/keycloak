@@ -20,6 +20,7 @@ import org.keycloak.authentication.authenticators.browser.PasswordFormFactory;
 import org.keycloak.authentication.authenticators.browser.UsernameFormFactory;
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.CredentialModel;
+import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
@@ -28,6 +29,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel;
+import org.keycloak.models.credential.dto.RecoveryAuthnCodesCredentialData;
 import org.keycloak.models.utils.RecoveryAuthnCodesUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.account.CredentialMetadataRepresentation;
@@ -55,6 +57,7 @@ import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.SecondBrowser;
+import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.WebDriver;
 
 import java.util.Arrays;
@@ -505,6 +508,13 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
             CredentialMetadataRepresentation recoveryCodesMetadata = getRecoveryCodeCredentialFromAccountRestApi(httpClient, response.getAccessToken());
             Assert.assertNull("Expected not warning", recoveryCodesMetadata.getWarningMessageTitle());
             Assert.assertEquals("0/12", recoveryCodesMetadata.getInfoMessage().getParameters()[0]);
+            Assert.assertNotNull(recoveryCodesMetadata.getCredential().getCredentialData());
+            RecoveryAuthnCodesCredentialData data = JsonSerialization.readValue(
+                    recoveryCodesMetadata.getCredential().getCredentialData(), RecoveryAuthnCodesCredentialData.class);
+            Assert.assertEquals(12, data.getTotalCodes());
+            Assert.assertEquals(12, data.getRemainingCodes());
+            Assert.assertEquals(JavaAlgorithm.SHA512, data.getAlgorithm());
+            Assert.assertNull(data.getHashIterations());
 
             // Re-authenticate with recovery codes
             oauth.loginForm().prompt(OIDCLoginProtocol.PROMPT_VALUE_LOGIN).open();
