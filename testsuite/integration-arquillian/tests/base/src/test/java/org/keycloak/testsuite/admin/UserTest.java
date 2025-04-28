@@ -782,7 +782,7 @@ public class UserTest extends AbstractAdminTest {
 
             addAttribute(user, "test", Collections.singletonList("test" + i));
             addAttribute(user, "test" + i, Collections.singletonList("test" + i));
-            addAttribute(user, "attr", Collections.singletonList("common"));
+            addAttribute(user, "attr", Arrays.asList("common", "common2"));
 
             ids.add(createUser(user));
         }
@@ -818,6 +818,11 @@ public class UserTest extends AbstractAdminTest {
 
         attributes = new HashMap<>();
         attributes.put("attr", "common");
+        assertThat(realm.users().count(null, null, null, null, null, null, null, mapToSearchQuery(attributes)), is(9));
+
+        attributes = new HashMap<>();
+        attributes.put("attr", "common");
+        attributes.put(UserModel.EXACT, Boolean.FALSE.toString());
         assertThat(realm.users().count(null, null, null, null, null, null, null, mapToSearchQuery(attributes)), is(9));
     }
 
