@@ -8,4 +8,6 @@ public interface ApiModelMapper extends Provider {
 
     ClientRepresentation fromModel(ClientModel model);
 
+    default void close() {
+    }
 }

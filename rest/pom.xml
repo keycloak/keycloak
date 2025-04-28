@@ -33,6 +33,7 @@
 
     <modules>
         <module>admin-api</module>
+        <module>admin-api-default</module>
         <module>admin-ui-ext</module>
     </modules>
 
