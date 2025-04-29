@@ -214,37 +214,21 @@ public class AppServerTestEnricher {
         Administration administration = new Administration(client);
         Operations operations = new Operations(client);
 
-        boolean isElytronConfigured = false;
-        try {
-            // check if the eap is configured to use elytron
-            ModelNodeResult result = operations.readAttribute(Address.subsystem("undertow")
-                    .and("server", "default-server").and("https-listener", "https"), "ssl-context");
-            if (!result.isFailed() && result.hasDefinedValue()) {
-                isElytronConfigured = true;
-            }
-        } catch (IOException e) {
-            log.debug("Error reading 'ssl-context' attribute in undertow, assuming not elytron", e);
-        }
-
-        if (isElytronConfigured && !operations.exists(Address.subsystem("elytron").and("server-ssl-context", "KCSslContext"))) {
+        if (!operations.exists(Address.subsystem("elytron").and("server-ssl-context", "KCSslContext"))) {
             client.execute("/subsystem=elytron/key-store=KCKeyStore:add(path=adapter.jks,relative-to=jboss.server.config.dir,credential-reference={clear-text=secret},type=JKS)");
             client.execute("/subsystem=elytron/key-manager=KCKeyManager:add(key-store=KCKeyStore,credential-reference={clear-text=secret,algorithm=PKIX})");
             client.execute("/subsystem=elytron/key-store=KCTrustStore:add(relative-to=jboss.server.config.dir,path=keycloak.truststore,credential-reference={clear-text=secret},type=JKS)");
             client.execute("/subsystem=elytron/trust-manager=KCTrustManager:add(key-store=KCTrustStore)");
             client.execute("/subsystem=elytron/server-ssl-context=KCSslContext:add(key-manager=KCKeyManager,trust-manager=KCTrustManager)");
-            client.execute("/subsystem=undertow/server=default-server/https-listener=https:write-attribute(name=ssl-context,value=KCSslContext)");
-        } else if (!operations.exists(Address.coreService("management").and("security-realm", "UndertowRealm"))) {
-            client.execute("/core-service=management/security-realm=UndertowRealm:add()");
-            client.execute("/core-service=management/security-realm=UndertowRealm/server-identity=ssl:add(keystore-relative-to=jboss.server.config.dir,keystore-password=secret,keystore-path=adapter.jks");
+            if (operations.exists(Address.subsystem("undertow").and("server", "default-server").and("https-listener", "https"))) {
+                client.execute("/subsystem=undertow/server=default-server/https-listener=https:write-attribute(name=ssl-context,value=KCSslContext)");
+            } else {
+                client.execute("/subsystem=undertow/server=default-server/https-listener=https:add(socket-binding=https, enable-http2=true, ssl-context=KCSslContext)");
+            }
         }
 
         client.execute("/system-property=javax.net.ssl.trustStore:add(value=${jboss.server.config.dir}/keycloak.truststore)");
         client.execute("/system-property=javax.net.ssl.trustStorePassword:add(value=secret)");
-
-        if (!isElytronConfigured) {
-            removeHttpsListener(client, administration);
-            addHttpsListenerAppServer(client);
-        }
 
         reloadOrRestartTimeoutClient(administration);
     }
