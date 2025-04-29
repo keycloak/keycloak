@@ -58,12 +58,12 @@ At the same time, if you enter a Service Level Agreement (SLA) with stakeholders
 
 | Latency
 | Response time for authentication related HTTP requests as measured by the server
-| 95% of all authentication related requests should be faster than 250 ms within a month.
+| 95% of all authentication related requests should be faster than 250 ms within 30 days.
 | {project_name} server-side metrics to track latency for specific endpoints along with Response Time Distribution using `http_server_requests_seconds_bucket` and `http_server_requests_seconds_count`.
 
 | Errors
 | Failed authentication requests due to server problems as measured by the server
-| The rate of errors due to server problems for authentication requests should be less than 0.1% within a month.
+| The rate of errors due to server problems for authentication requests should be less than 0.1% within 30 days.
 | Identify server side error by filtering the metric `http_server_requests_seconds_count` on the tag `outcome` for value `SERVER_ERROR`.
 
 |===
@@ -103,7 +103,7 @@ NOTE: In Grafana you can replace value `30d:15s` with `$__range:$__interval` to 
 
 === Latency of authentication requests
 
-This Prometheus query calculates the percentage of authentication requests that completed within 0.25 seconds relative to all authentication requests for specific {project_name} endpoints, targeting a particular namespace and pod, over the past 5 minutes.
+This Prometheus query calculates the percentage of authentication requests that completed within 0.25 seconds relative to all authentication requests for specific {project_name} endpoints, targeting a particular namespace and pod, over the past 30 days.
 
 This example requires the {project_name} configuration `http-metrics-slos` to contain value `250` indicating that buckets for requests faster and slower than 250 ms should be recorded.
 Setting `http-metrics-histograms-enabled` to `true` would capture additional buckets which can help with performance troubleshooting.
@@ -116,7 +116,7 @@ sum(
       le="0.25", # <2>
       container="keycloak", # <3>
       namespace="$namespace"}
-    [5m] # <4>
+    [30d] # <4>
   )
 ) without (le,uri,status,outcome,method,pod,instance) # <5>
 /
@@ -126,7 +126,7 @@ sum(
       uri=~"/realms/{realm}/protocol/{protocol}.*|/realms/{realm}/login-actions.*", # <1>
       container="keycloak",
       namespace="$namespace"}
-    [5m] # <3>
+    [30d] # <3>
   )
 ) without (le,uri,status,outcome,method,pod,instance) # <5>
 ----
@@ -136,13 +136,13 @@ sum(
 <4> Time range as specified by the SLO
 <5> Ignore as many labels necessary to create a single sum
 
-NOTE: In Grafana you can replace value `5m` with `$__range` to compute latency SLI in the time range selected for the dashboard.
+NOTE: In Grafana, you can replace value `30d` with `$__range` to compute latency SLI in the time range selected for the dashboard.
 
 === Errors for authentication requests
 
 This Prometheus query calculates the percentage of authentication requests
 that returned a server side error for all authentication requests,
-targeting a particular namespace, over the past 5 minutes.
+targeting a particular namespace, over the past 30 days.
 
 [source,plaintext]
 ----
@@ -153,7 +153,7 @@ sum(
       outcome="SERVER_ERROR", # <2>
       container="keycloak", # <3>
       namespace="$namespace"}
-    [5m] # <4>
+    [30d] # <4>
   )
 ) without (le,uri,status,outcome,method,pod,instance) # <5>
 /
@@ -163,7 +163,7 @@ sum(
       uri=~"/realms/{realm}/protocol/{protocol}.*|/realms/{realm}/login-actions.*", # <1>
       container="keycloak", # <3>
       namespace="$namespace"}
-    [5m] # <4>
+    [30d] # <4>
   )
 ) without (le,uri,status,outcome,method,pod,instance) # <5>
 ----
@@ -172,6 +172,8 @@ sum(
 <3> Filter by additional tags to identify {project_name} nodes
 <4> Time range as specified by the SLO
 <5> Ignore as many labels necessary to create a single sum
+
+NOTE: In Grafana, you can replace value `30d` with `$__range` to compute errors SLI in the time range selected for the dashboard.
 
 == Further Reading
 
