@@ -42,6 +42,22 @@ public class GrantTypeConditionFactory extends AbstractClientPolicyConditionProv
 
     static {
         addCommonConfigProperties(configProperties);
+
+        ProviderConfigProperty property = new ProviderConfigProperty(GRANT_TYPES, "Grant Types",
+                "The condition evaluates to true if the current grant type is one of those in the list",
+                ProviderConfigProperty.MULTIVALUED_LIST_TYPE, null);
+
+        List<String> DEFAULT_GRANT_TYPES_SUPPORTED = Stream.of(OAuth2Constants.AUTHORIZATION_CODE,  OAuth2Constants.IMPLICIT, OAuth2Constants.REFRESH_TOKEN, OAuth2Constants.PASSWORD, OAuth2Constants.CLIENT_CREDENTIALS).collect(Collectors.toList());
+        if (Profile.isFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE_STANDARD_V2)) {
+            DEFAULT_GRANT_TYPES_SUPPORTED.add(OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
+        }
+        if (Profile.isFeatureEnabled(Profile.Feature.DEVICE_FLOW)) {
+            DEFAULT_GRANT_TYPES_SUPPORTED.add(OAuth2Constants.DEVICE_CODE_GRANT_TYPE);
+        }
+
+        property.setOptions(DEFAULT_GRANT_TYPES_SUPPORTED);
+        configProperties.add(property);
+
     }
 
     @Override
@@ -61,21 +77,6 @@ public class GrantTypeConditionFactory extends AbstractClientPolicyConditionProv
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        ProviderConfigProperty property = new ProviderConfigProperty(GRANT_TYPES, "Grant Types",
-                "The condition evaluates to true if the current grant type is one of those in the list",
-                ProviderConfigProperty.MULTIVALUED_LIST_TYPE, null);
-
-        List<String> DEFAULT_GRANT_TYPES_SUPPORTED = Stream.of(OAuth2Constants.AUTHORIZATION_CODE,  OAuth2Constants.IMPLICIT, OAuth2Constants.REFRESH_TOKEN, OAuth2Constants.PASSWORD, OAuth2Constants.CLIENT_CREDENTIALS).collect(Collectors.toList());
-        if (Profile.isFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE_STANDARD_V2)) {
-            DEFAULT_GRANT_TYPES_SUPPORTED.add(OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
-        }
-        if (Profile.isFeatureEnabled(Profile.Feature.DEVICE_FLOW)) {
-            DEFAULT_GRANT_TYPES_SUPPORTED.add(OAuth2Constants.DEVICE_CODE_GRANT_TYPE);
-        }
-
-        property.setOptions(DEFAULT_GRANT_TYPES_SUPPORTED);
-        configProperties.add(property);
-
         return configProperties;
     }
 }
