@@ -6,7 +6,7 @@
 
 <@tmpl.guide
 title="Configuring logging"
-summary="Learn how to configure Logging">
+summary="Configure logging for {project_name}.">
 
 {project_name} uses the JBoss Logging framework.
 The following is a high-level overview for the available log handlers with the common parent log handler `root`:
@@ -175,6 +175,57 @@ If you want to have JSON logs in *ECS* (Elastic Common Schema) format for the co
 ----
 {"@timestamp":"2025-02-03T14:53:22.539484211+01:00","event.sequence":9608,"log.logger":"io.quarkus","log.level":"INFO","message":"Keycloak 999.0.0-SNAPSHOT on JVM (powered by Quarkus 3.17.8) started in 4.615s. Listening on: http://0.0.0.0:8080","process.thread.name":"main","process.thread.id":1,"mdc":{},"ndc":"","host.hostname":"host-name","process.name":"/usr/lib/jvm/jdk-21.0.3+9/bin/java","process.pid":77561,"data_stream.type":"logs","ecs.version":"1.12.2","service.environment":"prod","service.name":"Keycloak","service.version":"999.0.0-SNAPSHOT"}
 ----
+
+=== Asynchronous logging
+{project_name} supports asynchronous logging, which might be useful for deployments requiring **high throughput** and **low latency**.
+Asynchronous logging uses a separate thread to take care of processing all log records.
+The logging handlers are invoked in exactly the same way as with synchronous logging, only done in separate threads.
+You can enable asynchronous logging for all {project_name} log handlers.
+A dedicated thread will be created for every log handler with enabled asynchronous logging.
+
+The underlying mechanism for asynchronous logging uses a queue for processing log records.
+Every new log record is added to the queue and then published to the particular log handler with enabled asynchronous logging.
+Every log handler has a different queue.
+
+If the queue is already full, it blocks the main thread and waits for free space in the queue.
+
+==== When to use asynchronous logging
+
+* You need **lower latencies** for incoming requests
+* You need **higher throughput**
+* You have **small worker thread pool** and want to offload logging to separate threads
+* You want to reduce the impact of **I/O-heavy log handlers**
+* You are logging to **remote destinations** (e.g., network syslog servers) and want to avoid blocking worker threads
+
+WARNING: Be aware that enabling asynchronous logging might bring some **additional memory overhead** due to the additional separate thread and the inner queue.
+In that case, it is not recommended to use it for resource-constrained environments.
+Additionally, unexpected server shutdowns create a risk of **losing log records**.
+
+==== Enable asynchronous logging
+You can enable asynchronous logging globally for all log handlers by using `log-async` property as follows:
+
+<@kc.start parameters="--log-async=true"/>
+
+Or you can enable the asynchronous logging for every specific handler by using properties in the format `log-<handler>-async` (where `<handler>` is a log handler).
+If the property for a specific handler is not set, the value from the parent `log-async` property is used.
+
+You can use these properties as follows:
+
+<@kc.start parameters="--log-console-async=true --log-file-async=true --log-syslog-async=true"/>
+
+* `log-console-async` - Console log handler
+* `log-file-async` - File log handler
+* `log-syslog-async` - Syslog log handler
+
+==== Change queue length
+You can change the size of the queue used for the asynchronous logging.
+The default size is **512** log records in the queue.
+
+You can change the queue length as follows:
+
+<@kc.start parameters="--log-console-async-queue-length=512 --log-file-async-queue-length=512 --log-syslog-async-queue-length=512"/>
+
+These properties are available only when asynchronous logging is enabled for these specific log handlers.
 
 == Console log handler
 The console log handler is enabled by default, providing unstructured log messages for the console.

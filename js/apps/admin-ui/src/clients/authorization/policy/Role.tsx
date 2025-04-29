@@ -7,7 +7,11 @@ import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../../admin-client";
 import { DefaultSwitchControl } from "../../../components/SwitchControl";
-import { AddRoleMappingModal } from "../../../components/role-mapping/AddRoleMappingModal";
+import {
+  AddRoleButton,
+  AddRoleMappingModal,
+  FilterType,
+} from "../../../components/role-mapping/AddRoleMappingModal";
 import { Row, ServiceRole } from "../../../components/role-mapping/RoleMapping";
 import type { RequiredIdValue } from "./ClientScope";
 
@@ -22,6 +26,8 @@ export const Role = () => {
   const values = getValues("roles");
 
   const [open, setOpen] = useState(false);
+  const [filterType, setFilterType] = useState<FilterType>("clients");
+
   const [selectedRoles, setSelectedRoles] = useState<Row[]>([]);
 
   useFetch(
@@ -66,6 +72,8 @@ export const Role = () => {
                 <AddRoleMappingModal
                   id="role"
                   type="roles"
+                  title={t("assignRole")}
+                  filterType={filterType}
                   onAssign={(rows) => {
                     field.onChange([
                       ...(field.value || []),
@@ -77,18 +85,16 @@ export const Role = () => {
                   onClose={() => {
                     setOpen(false);
                   }}
-                  isLDAPmapper
                 />
               )}
-              <Button
+              <AddRoleButton
                 data-testid="select-role-button"
                 variant="secondary"
-                onClick={() => {
+                onFilerTypeChange={(type) => {
+                  setFilterType(type);
                   setOpen(true);
                 }}
-              >
-                {t("addRoles")}
-              </Button>
+              />
             </>
           )}
         />

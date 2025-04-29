@@ -15,4 +15,11 @@ public class MetricsOptions {
             .defaultValue(Boolean.TRUE)
             .hidden() // This is intended to be enabled all the time when global metrics are enabled, therefore this option is hidden
             .build();
+
+    public static final Option<Boolean> INFINISPAN_METRICS_ENABLED = new OptionBuilder<>("infinispan-metrics-enabled", Boolean.class)
+            .category(OptionCategory.METRICS)
+            .description("If Infinispan metrics should be collected and exposed.")
+            .defaultValue(Boolean.FALSE)
+            .hidden()  // Intentional, Infinispan metrics are enabled when '--metrics-enabled' are enabled.
+            .build();
 }

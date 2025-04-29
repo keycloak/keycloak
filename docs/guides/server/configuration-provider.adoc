@@ -5,7 +5,7 @@
 
 <@tmpl.guide
 title="Configuring providers"
-summary="Understand how to configure providers">
+summary="Configure providers for {project_name}.">
 
 The server is built with extensibility in mind and for that it provides a number of Service Provider Interfaces or SPIs, each one
 responsible for providing a specific capability to the server. In this {section}, you are going to understand the core concepts around

@@ -22,7 +22,6 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSource;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
-import io.fabric8.kubernetes.api.model.ObjectMetaFluent;
 import io.fabric8.kubernetes.api.model.PodSpecFluent;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -130,7 +129,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
     public StatefulSet desired(Keycloak primary, Context<Keycloak> context) {
         Config operatorConfig = ContextUtils.getOperatorConfig(context);
         WatchedResources watchedResources = ContextUtils.getWatchedResources(context);
- 
+
         StatefulSet baseDeployment = createBaseDeployment(primary, context, operatorConfig);
         TreeSet<String> allSecrets = new TreeSet<>();
         if (isTlsConfigured(primary)) {
@@ -147,22 +146,32 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
             watchedResources.annotateDeployment(new ArrayList<>(allSecrets), Secret.class, baseDeployment, context.getClient());
         }
 
-        // add revision from CR if set
+        // default to the new revision - will be overriden to the old one if needed
         UpdateSpec.getRevision(primary).ifPresent(rev -> addUpdateRevisionAnnotation(rev, baseDeployment));
 
-        var updateType = ContextUtils.getUpdateType(context);
-        // empty means no existing stateful set.
-        if (updateType.isEmpty()) {
-            return baseDeployment;
+        var existingDeployment = ContextUtils.getCurrentStatefulSet(context).orElse(null);
+
+        if (existingDeployment != null) {
+            // copy the existing annotations to keep the status consistent
+            CRDUtils.findUpdateReason(existingDeployment).ifPresent(r -> baseDeployment.getMetadata().getAnnotations()
+                    .put(Constants.KEYCLOAK_UPDATE_REASON_ANNOTATION, r));
+            CRDUtils.fetchIsRecreateUpdate(existingDeployment).ifPresent(b -> baseDeployment.getMetadata()
+                    .getAnnotations().put(Constants.KEYCLOAK_RECREATE_UPDATE_ANNOTATION, b.toString()));
         }
 
-        var existingDeployment = ContextUtils.getCurrentStatefulSet(context).orElseThrow();
+        var updateType = ContextUtils.getUpdateType(context);
+
+        if (existingDeployment == null || updateType.isEmpty()) {
+            return baseDeployment;
+        }
 
         // version 22 changed the match labels, account for older versions
         if (!existingDeployment.isMarkedForDeletion() && !hasExpectedMatchLabels(existingDeployment, primary)) {
             context.getClient().resource(existingDeployment).lockResourceVersion().delete();
             Log.info("Existing Deployment found with old label selector, it will be recreated");
         }
+
+        baseDeployment.getMetadata().getAnnotations().put(Constants.KEYCLOAK_UPDATE_REASON_ANNOTATION, ContextUtils.getUpdateReason(context));
 
         return switch (updateType.get()) {
             case ROLLING -> handleRollingUpdate(baseDeployment, context, primary);
@@ -518,7 +527,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         }
 
         envVars.add(new EnvVarBuilder().withName(POD_IP).withNewValueFrom().withNewFieldRef()
-                .withFieldPath("status.podIP").endFieldRef().endValueFrom().build());
+                .withFieldPath("status.podIP").withApiVersion("v1").endFieldRef().endValueFrom().build());
 
         return envVars;
     }
@@ -551,43 +560,31 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
     private static StatefulSet handleRollingUpdate(StatefulSet desired, Context<Keycloak> context, Keycloak primary) {
         // return the desired stateful set since Kubernetes does a rolling in-place update by default.
         Log.debug("Performing a rolling update");
-        var builder = desired.toBuilder()
-                .editMetadata()
-                .addToAnnotations(Constants.KEYCLOAK_RECREATE_UPDATE_ANNOTATION, "false")
-                .addToAnnotations(Constants.KEYCLOAK_UPDATE_REASON_ANNOTATION, ContextUtils.getUpdateReason(context));
-        return builder.endMetadata().build();
+        desired.getMetadata().getAnnotations().put(Constants.KEYCLOAK_RECREATE_UPDATE_ANNOTATION, Boolean.FALSE.toString());
+        return desired;
     }
 
-    private static StatefulSet handleRecreateUpdate(StatefulSet actual, StatefulSet desired, Context<Keycloak> context) {
-        if (actual.getStatus().getReplicas() == 0) {
+    private static StatefulSet handleRecreateUpdate(StatefulSet actual, StatefulSet desired,
+            Context<Keycloak> context) {
+        desired.getMetadata().getAnnotations().put(Constants.KEYCLOAK_RECREATE_UPDATE_ANNOTATION, Boolean.TRUE.toString());
+
+        if (Optional.ofNullable(actual.getStatus().getReplicas()).orElse(0) == 0) {
             Log.debug("Performing a recreate update - scaling up the stateful set");
-            return desired;
+
+            // desired state correct as is
+        } else {
+            Log.debug("Performing a recreate update - scaling down the stateful set");
+
+            // keep the old revision, mark as migrating, and scale down
+            CRDUtils.getRevision(actual).ifPresent(rev -> addUpdateRevisionAnnotation(rev, desired));
+            desired.getMetadata().getAnnotations().put(Constants.KEYCLOAK_MIGRATING_ANNOTATION, Boolean.TRUE.toString());
+            desired.getSpec().setReplicas(0);
         }
-        Log.debug("Performing a recreate update - scaling down the stateful set");
-        // return the existing stateful set, but set replicas to zero
-        var builder = actual.toBuilder();
-        builder.editSpec()
-                .withReplicas(0)
-                .endSpec();
-        // update metadata from the new stateful set, it is safe to do so.
-        var metadataBuilder = desired.getMetadata().edit()
-                .addToAnnotations(Constants.KEYCLOAK_MIGRATING_ANNOTATION, Boolean.TRUE.toString())
-                .addToAnnotations(Constants.KEYCLOAK_RECREATE_UPDATE_ANNOTATION, Boolean.TRUE.toString())
-                .addToAnnotations(Constants.KEYCLOAK_UPDATE_REASON_ANNOTATION, ContextUtils.getUpdateReason(context));
-        // copy revision number from the previous stateful set.
-        CRDUtils.getRevision(actual).ifPresent(rev -> addUpdateRevisionAnnotation(rev, metadataBuilder));
-        return builder
-                .withMetadata(metadataBuilder.build())
-                .build();
+        return desired;
     }
 
     private static void addUpdateRevisionAnnotation(String revision, StatefulSet toUpdate) {
-        var metadataBuilder = toUpdate.getMetadata().edit();
-        addUpdateRevisionAnnotation(revision, metadataBuilder);
-        toUpdate.setMetadata(metadataBuilder.build());
+        toUpdate.getMetadata().getAnnotations().put(Constants.KEYCLOAK_UPDATE_REVISION_ANNOTATION, revision);
     }
 
-    private static void addUpdateRevisionAnnotation(String revision, ObjectMetaFluent<?> builder) {
-        builder.addToAnnotations(Constants.KEYCLOAK_UPDATE_REVISION_ANNOTATION, revision);
-    }
 }

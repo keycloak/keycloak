@@ -4,8 +4,8 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Using a reverse proxy"
-summary="Learn how to configure {project_name} together with a reverse proxy, api gateway, or load balancer."
+title="Configuring a reverse proxy"
+summary="Configure {project_name} with a reverse proxy, API gateway, or load balancer."
 includedOptions="proxy-* hostname hostname-admin http-relative-path">
 
 Distributed environments frequently require the use of a reverse proxy. {project_name} offers several options to securely integrate with such environments.
@@ -221,6 +221,9 @@ to load additional certificates from headers `CERT_CHAIN_0` to `CERT_CHAIN_9` if
 
 |trust-proxy-verification
 | Enable trusting NGINX proxy certificate verification, instead of forwarding the certificate to {project_name} and verifying it in {project_name}.
+
+|cert-is-url-encoded
+| Whether the forwarded certificate is url-encoded or not. In NGINX, this corresponds to the `$ssl_client_cert` and `$ssl_client_escaped_cert` variables. This can also be used for the Traefik PassTlsClientCert middleware, as it sends the client certficate unencoded.
 |===
 
 === Configuring the NGINX provider

@@ -37,7 +37,9 @@ jobs:
       ci-sssd: ${{ steps.conditional.outputs.ci-sssd }}
       ci-webauthn: ${{ steps.conditional.outputs.ci-webauthn }}
       ci-aurora: ${{ steps.auroradb-tests.outputs.run-aurora-tests }}
-
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
 
@@ -119,8 +121,6 @@ jobs:
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
 
-      - uses: ./.github/actions/install-chrome
-
       - name: Run base tests
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/base-suite.sh ${{ matrix.group }}`
@@ -161,8 +161,6 @@ jobs:
 
       - name: Build app servers
         run: ./mvnw install -DskipTests -Pbuild-app-servers -f testsuite/integration-arquillian/servers/app-server/pom.xml
-
-      - uses: ./.github/actions/install-chrome
 
       - name: Run adapter tests
         run: |
@@ -691,7 +689,7 @@ jobs:
 
       - name: Run new base tests
         run: |
-          KC_TEST_DATABASE=${{ matrix.db }} KC_TEST_DATABASE_REUSE=true TESTCONTAINERS_REUSE_ENABLE=true ./mvnw package -f tests/pom.xml -Dtest=DatabaseTestSuite
+          KC_TEST_DATABASE=${{ matrix.db }} KC_TEST_DATABASE_REUSE=true TESTCONTAINERS_REUSE_ENABLE=true ./mvnw package -f tests/pom.xml -Dtest=DatabaseTestSuite -Dkeycloak.distribution.start.timeout=360
 
       - name: Database container port
         run: |
@@ -709,6 +707,7 @@ jobs:
             -Ddocker.database.skip=true \
             -Ddocker.database.port=$DATABASE_PORT \
             -Ddocker.container.testdb.ip=localhost \
+            -Dkeycloak.distribution.start.timeout=360 \
             -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
       - name: Run cluster JDBC_PING2 UDP smoke test

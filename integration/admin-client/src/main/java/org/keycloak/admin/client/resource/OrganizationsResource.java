@@ -18,6 +18,7 @@
 package org.keycloak.admin.client.resource;
 
 import java.util.List;
+import java.util.Map;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -149,6 +150,48 @@ public interface OrganizationsResource {
             @QueryParam("first") Integer first,
             @QueryParam("max") Integer max
     );
+
+    /**
+     * Counts organizations by search.
+     * @param search text to look for.
+     * @return the number of organizations that match the search.
+     */
+    @GET
+    @Path("count")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    long count(@QueryParam("search") String search);
+
+    /**
+     * Counts organizations by search.
+     * @param search text to look for.
+     * @param exact if {@code true}, the organizations will be searched using exact match for the {@code search} param - i.e.
+     *              either the organization name or one of its domains must match exactly the {@code search} param. If false,
+     *              the method returns all organizations whose name or (domains) partially match the {@code search} param.
+     * @return the number of organizations that match the search.
+     */
+    @GET
+    @Path("count")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    long count(
+            @QueryParam("search") String search,
+            @QueryParam("exact") Boolean exact
+    );
+
+    /**
+     * Counts all organizations that contain attributes matching the specified query.
+     * @param searchQuery a query to search for organization attributes, in the format 'key1:value2 key2:value2'.
+     * @return the number of the organizations that match the attribute query.
+     */
+    @GET
+    @Path("count")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    long countByAttribute(
+            @QueryParam("q") String searchQuery
+    );
+
 
     @Path("members")
     OrganizationsMembersResource members();

@@ -6,7 +6,7 @@
 
 <@tmpl.guide
 title="Avoiding downtime with rolling updates"
-summary="Avoid downtimes when changing themes, providers or configurations in optimized images.">
+summary="Avoid downtime when changing themes, providers, or configurations in optimized images.">
 
 By default, the {project_name} Operator will perform rolling updates on configuration changes without downtime, and recreate updates with downtime when the image name or tag changes.
 
@@ -70,6 +70,15 @@ If it matches the previous deployment, it performs a rolling update.
 When using the `Auto` update strategy, the {project_name} Operator automatically starts a Job to assess the feasibility of a rolling update.
 Read more about the process in the <@links.server id="update-compatibility"/> {section}.
 This process consumes cluster resources for the time of the check and introduces a slight delay before the StatefulSet update begins.
+
+[WARNING]
+====
+If the Keycloak CR configured a `podTemplate` as part of the `unsupported` configuration parameters, the Keycloak Operator will do its best to use those settings for the started Job. Still it might miss some settings due to the flexibility of the `podTemplate` feature and its unsupported nature.
+
+As a consequence, the Operator might draw the wrong conclusions if a rolling update is possible from changes to the `podTemplate` or information pulled in from Secrets, ConfigMaps or Volumes in the `podTemplate`.
+
+Therefore, if you are using the unsupported `podTemplate`, you may need to use one of the other update strategies.
+====
 
 The `Explicit` update strategy delegates the update decision to the user.
 The `revision` field acts as a user-controlled trigger.

@@ -315,6 +315,12 @@ public class OIDCLoginProtocol implements LoginProtocol {
                 redirectUri.addParam(OAuth2Constants.TOKEN_TYPE, res.getTokenType());
                 redirectUri.addParam(OAuth2Constants.EXPIRES_IN, String.valueOf(res.getExpiresIn()));
             }
+
+            boolean offlineTokenRequested = clientSessionCtx.isOfflineTokenRequested();
+            if (!responseType.isImplicitFlow() && offlineTokenRequested) {
+                // Allow creating offline token early, so the tokens issued from authz-enpdpoint can lookup offline-user-session if used before code-to-token request
+                responseBuilder.createOrUpdateOfflineSession();
+            }
         }
 
         return buildRedirectUri(redirectUri, authSession, userSession, clientSessionCtx);
@@ -528,6 +534,9 @@ public class OIDCLoginProtocol implements LoginProtocol {
         if (userSession != null && authSession.getClientNote(Constants.KC_ACTION) != null) {
             String providerId = authSession.getClientNote(Constants.KC_ACTION);
             RequiredActionProvider requiredActionProvider = this.session.getProvider(RequiredActionProvider.class, providerId);
+            if (requiredActionProvider == null) {
+                return false;
+            }
             String authTime = userSession.getNote(AuthenticationManager.AUTH_TIME);
             int authTimeInt = authTime == null ? 0 : Integer.parseInt(authTime);
             int maxAgeInt = requiredActionProvider.getMaxAuthAge();

@@ -4,6 +4,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.keycloak.common.util.Base64;
 import org.keycloak.credential.CredentialMetadata;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.PasswordPolicy;
@@ -64,7 +65,7 @@ public class RecoveryAuthnCodesCredentialModel extends CredentialModel {
         try {
             List<RecoveryAuthnCodeRepresentation> recoveryCodes = IntStream.range(0, originalGeneratedCodes.size())
                     .mapToObj(i -> new RecoveryAuthnCodeRepresentation(i + 1,
-                            RecoveryAuthnCodesUtils.hashRawCode(originalGeneratedCodes.get(i))))
+                            Base64.encodeBytes(RecoveryAuthnCodesUtils.hashRawCode(originalGeneratedCodes.get(i)))))
                     .collect(Collectors.toList());
             secretData = new RecoveryAuthnCodesSecretData(recoveryCodes);
             credentialData = new RecoveryAuthnCodesCredentialData(RecoveryAuthnCodesUtils.NUM_HASH_ITERATIONS,

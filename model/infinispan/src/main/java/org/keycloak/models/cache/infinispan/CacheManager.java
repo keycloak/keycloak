@@ -215,7 +215,7 @@ public abstract class CacheManager {
 
     public void sendInvalidationEvents(KeycloakSession session, Collection<InvalidationEvent> invalidationEvents, String eventKey) {
         session.getProvider(ClusterProvider.class)
-                .notify(eventKey, invalidationEvents, true, ClusterProvider.DCNotify.ALL_DCS);
+                .notify(eventKey, invalidationEvents, true);
     }
 
 

@@ -5,6 +5,16 @@
 {project_name} can automatically migrate the database schema, or you can choose to do it manually. By default the
 database is automatically migrated when you start the new installation for the first time.
 
+[NOTE]
+====
+Before you migrate the database, shut down all {project_name} nodes running the old version of {project_name}.
+====
+
+[NOTE]
+====
+Migration is not supported with the default H2 based `dev-file` database type.
+====
+
 === Automatic relational database migration
 
 To perform an automatic migration, start the server connected to the desired database.  If the database schema has changed for the new server version, the migration starts automatically unless the database has too many records.
@@ -28,8 +38,7 @@ default `connections-jpa` provider:
 kc.[sh|bat] start --spi-connections-jpa-quarkus-migration-strategy=manual
 ----
 
-When you start the server with this configuration, the server checks if the database needs to be migrated.
-The required changes are written to the `bin/keycloak-database-update.sql` SQL file that you can review and manually run against the database.
+When you start the server with this configuration, the server checks if the database needs to be migrated. If migration is needed, the required changes are written to the `bin/keycloak-database-update.sql` SQL file. You can review and manually run these commands against the database.
 
 To change the path and name of the exported SQL file, set the `migration-export` property for the
 default `connections-jpa` provider:

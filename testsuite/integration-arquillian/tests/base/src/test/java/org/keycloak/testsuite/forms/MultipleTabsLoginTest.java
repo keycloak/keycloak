@@ -46,9 +46,8 @@ import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
@@ -80,13 +79,9 @@ import org.openqa.selenium.htmlunit.HtmlUnitDriver;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
+public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTest {
 
     private String userId;
-
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-    }
 
     @Override
     protected boolean modifyRealmForSSL() {
@@ -103,7 +98,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
                 .requiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString())
                 .build();
 
-        userId = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password", true);
+        userId = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, generatePassword("login-test"), true);
         getCleanup().addUserId(userId);
 
         oauth.clientId("test-app");
@@ -159,7 +154,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
             oauth.openLoginForm();
             loginPage.assertCurrent();
 
-            loginPage.login("login-test", "password");
+            loginPage.login("login-test", getPassword("login-test"));
             updatePasswordPage.assertCurrent();
 
             // Simulate login in different browser tab tab2. I will be on loginPage again.
@@ -188,7 +183,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
             multipleTabsParallelLogin(tabUtil);
 
-            waitForAppPage(() -> loginPage.login("login-test", "password"));
+            waitForAppPage(() -> loginPage.login("login-test", getPassword("login-test")));
             assertOnAppPageWithAlreadyLoggedInError(EventType.LOGIN);
         }
     }
@@ -210,7 +205,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         // Wait until authentication session expires
         setTimeOffset(7200000);
 
-        loginPage.login("login-test", "password");
+        loginPage.login("login-test", getPassword("login-test"));
         loginPage.assertCurrent();
         Assert.assertEquals(loginPage.getError(), "Your login attempt timed out. Login will start from the beginning.");
         events.clear();
@@ -258,7 +253,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         WaitUtils.pause(2000);
 
         // Try to login in tab2. After fill login form, the login will be restarted (due KC_RESTART cookie). User can continue login
-        loginPage.login("login-test", "password");
+        loginPage.login("login-test", getPassword("login-test"));
         loginPage.assertCurrent();
         Assert.assertEquals(loginPage.getError(), "Your login attempt timed out. Login will start from the beginning.");
         events.clear();
@@ -270,8 +265,8 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void loginSuccessAndDoRequiredActions() {
-        loginPage.login("login-test", "password");
-        updatePasswordPage.changePassword("password", "password");
+        loginPage.login("login-test", getPassword("login-test"));
+        updatePasswordPage.changePassword(getPassword("login-test"), getPassword("login-test"));
         updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3")
                 .email("john@doe3.com").submit();
         appPage.assertCurrent();
@@ -325,7 +320,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
             assertThat(tabUtil.getCountOfTabs(), Matchers.is(1));
             oauth.openLoginForm();
             loginPage.assertCurrent();
-            loginPage.login("login-test", "password");
+            loginPage.login("login-test", getPassword("login-test"));
             updatePasswordPage.assertCurrent();
             getLogger().info("URL in tab1: " + driver.getCurrentUrl());
 
@@ -342,7 +337,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
             WaitUtils.pause(2000);
 
             // Try to login in tab2. After fill login form, the login will be restarted (due KC_RESTART cookie). User can continue login
-            loginPage.login("login-test", "password");
+            loginPage.login("login-test", getPassword("login-test"));
             loginPage.assertCurrent();
             Assert.assertEquals(loginPage.getError(), "Your login attempt timed out. Login will start from the beginning.");
 
@@ -352,7 +347,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
             tabUtil.closeTab(1);
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(1));
 
-            waitForAppPage(() -> updatePasswordPage.changePassword("password", "password"));
+            waitForAppPage(() -> updatePasswordPage.changePassword(getPassword("login-test"), getPassword("login-test")));
             assertOnAppPageWithAlreadyLoggedInError(EventType.CUSTOM_REQUIRED_ACTION);
         }
     }
@@ -381,7 +376,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
             WaitUtils.pause(2000);
 
             // Try to login in tab2. After fill login form, the login will be restarted (due KC_RESTART cookie). User can continue login
-            loginPage.login("login-test", "password");
+            loginPage.login("login-test", getPassword("login-test"));
             loginPage.assertCurrent();
             Assert.assertEquals(loginPage.getError(), "Your login attempt timed out. Login will start from the beginning.");
 
@@ -420,7 +415,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
             events.expectLogout(accessToken.getSessionState()).user(userId).session(accessToken.getSessionState()).assertEvent();
             // re-login in the second tab
             oauth.openLoginForm();
-            loginPage.login("login-test", "password");
+            loginPage.login("login-test", getPassword("login-test"));
             appPage.assertCurrent();
 
             // seamless authentication in the first tab
@@ -444,7 +439,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
 
             // continue with the login in the first tab
             util.switchToTab(originalTab);
-            loginPage.login("login-test", "password");
+            loginPage.login("login-test", getPassword("login-test"));
             updatePasswordPage.assertCurrent();
         }
     }
@@ -507,7 +502,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         String actionUrl1 = ActionURIUtils.getActionURIFromPageSource(driver.getPageSource());
 
         // Authenticate in tab2
-        loginPage.login("login-test", "password");
+        loginPage.login("login-test", getPassword("login-test"));
         updatePasswordPage.assertCurrent();
 
         // Simulate going back to tab1 and confirm login form. Page "Page expired" should be shown (NOTE: WebDriver does it with GET, when real browser would do it with POST. Improve test if needed...)
@@ -518,7 +513,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         loginExpiredPage.clickLoginContinueLink();
         updatePasswordPage.assertCurrent();
 
-        updatePasswordPage.changePassword("password", "password");
+        updatePasswordPage.changePassword(getPassword("login-test"), getPassword("login-test"));
         updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3")
                 .email("john@doe3.com").submit();
         appPage.assertCurrent();
@@ -545,7 +540,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         oauth.openLoginForm();
         loginPage.assertCurrent();
 
-        loginPage.login("login-test", "password");
+        loginPage.login("login-test", getPassword("login-test"));
         updatePasswordPage.assertCurrent();
 
         // Manually remove execution from the URL and try to simulate the request just with "code" parameter
@@ -557,7 +552,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         // Back on updatePasswordPage now
         updatePasswordPage.assertCurrent();
 
-        updatePasswordPage.changePassword("password", "password");
+        updatePasswordPage.changePassword(getPassword("login-test"), getPassword("login-test"));
         updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3")
                 .email("john@doe3.com").submit();
         appPage.assertCurrent();
@@ -671,7 +666,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
             oauth.openLoginForm();
             loginPage.assertCurrent();
 
-            loginPage.login("login-test", "password");
+            loginPage.login("login-test", getPassword("login-test"));
             updatePasswordPage.assertCurrent();
 
             String tab1Url = driver.getCurrentUrl();
@@ -728,7 +723,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
 
            tabUtil.switchToTab(1);
 
-           waitForAppPage(() -> loginPage.login("login-test", "password"));
+           waitForAppPage(() -> loginPage.login("login-test", getPassword("login-test")));
        }
     }
 

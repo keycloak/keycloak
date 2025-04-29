@@ -20,6 +20,15 @@ Check the Recovery Codes action is enabled in {project_name}:
 
 Toggle the *Default Action* switch to *On* if you want all the new users to register their Recovery Codes credentials in the first login.
 
+==== Configure the Recovery Codes required action
+
+From the *Required Actions* tab of the admin console, you have the option to configure the *Recovery Authentication Codes* required action. So far, there is a configuration option
+*Warning Threshold* available. When user has smaller amount of remaining recovery codes on his account than the value configured here, account console will show warning to the user, which will
+recommend him to setup new set of recovery codes. The warning displayed to the user may look similar to this:
+
+.Recovery Codes Account console warning
+image:images/recovery-codes-account-console-warn.png[Recovery Codes Account console warning]
+
 ==== Adding Recovery Codes to the browser flow
 
 The following procedure adds the `Recovery Authentication Code Form` as an alternative way of login in the default *Browser* flow.

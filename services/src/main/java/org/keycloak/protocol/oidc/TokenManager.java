@@ -195,14 +195,8 @@ public class TokenManager {
         ClientModel client = session.getContext().getClient();
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
 
-        // Can theoretically happen in cross-dc environment. Try to see if userSession with our client is available in remoteCache
         if (clientSession == null) {
-            userSession = session.sessions().getUserSessionIfClientExists(realm, userSession.getId(), offline, client.getId());
-            if (userSession != null) {
-                clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
-            } else {
-                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Session doesn't have required client", "Session doesn't have required client");
-            }
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Session doesn't have required client", "Session doesn't have required client");
         }
 
         if (!AuthenticationManager.isClientSessionValid(realm, client, userSession, clientSession)) {
@@ -1173,17 +1167,11 @@ public class TokenManager {
             UserSessionModel userSession = clientSession.getUserSession();
             userSession.setLastSessionRefresh(refreshToken.getIat().intValue());
             if (offlineTokenRequested) {
-                UserSessionManager sessionManager = new UserSessionManager(session);
-                if (!sessionManager.isOfflineTokenAllowed(clientSessionCtx)) {
-                    event.detail(Details.REASON, "Offline tokens not allowed for the user or client");
-                    event.error(Errors.NOT_ALLOWED);
-                    throw new ErrorResponseException(Errors.NOT_ALLOWED, "Offline tokens not allowed for the user or client", Response.Status.BAD_REQUEST);
-                }
                 refreshToken.type(TokenUtil.TOKEN_TYPE_OFFLINE);
                 if (realm.isOfflineSessionMaxLifespanEnabled()) {
                     refreshToken.exp(getExpiration(true));
                 }
-                sessionManager.createOrUpdateOfflineSession(clientSessionCtx.getClientSession(), userSession);
+                createOrUpdateOfflineSession();
             } else {
                 refreshToken.exp(getExpiration(false));
             }
@@ -1193,6 +1181,16 @@ public class TokenManager {
                         .map(ClientModel::getClientId)
                         .collect(Collectors.toSet()));
             }
+        }
+
+        public void createOrUpdateOfflineSession() {
+            UserSessionManager sessionManager = new UserSessionManager(session);
+            if (!sessionManager.isOfflineTokenAllowed(clientSessionCtx)) {
+                event.detail(Details.REASON, "Offline tokens not allowed for the user or client");
+                event.error(Errors.NOT_ALLOWED);
+                throw new ErrorResponseException(Errors.NOT_ALLOWED, "Offline tokens not allowed for the user or client", Response.Status.BAD_REQUEST);
+            }
+            sessionManager.createOrUpdateOfflineSession(clientSessionCtx.getClientSession(), userSession);
         }
 
        /**

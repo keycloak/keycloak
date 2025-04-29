@@ -21,6 +21,7 @@ type ThemesTabProps = {
 };
 
 export type ThemeRealmRepresentation = RealmRepresentation & {
+  fileName?: string;
   favicon?: File;
   logo?: File;
   bgimage?: File;
@@ -36,8 +37,7 @@ export default function ThemesTab({ realm, save }: ThemesTabProps) {
     const zip = new JSZip();
 
     const styles = JSON.parse(realm.attributes?.style ?? "{}");
-
-    const { favicon, logo, bgimage, ...rest } = realm;
+    const { favicon, logo, bgimage, fileName } = realm;
 
     const logoName =
       "img/logo" + logo?.name?.substring(logo?.name?.lastIndexOf("."));
@@ -96,6 +96,20 @@ styles=css/login.css css/theme-styles.css
 }`,
     );
 
+    zip.file(
+      "theme-settings.json",
+      JSON.stringify({
+        ...styles,
+        logo: logo ? `theme/quick-theme/common/resources/${logoName}` : "",
+        bgimage: bgimage
+          ? `theme/quick-theme/common/resources/${bgimageName}`
+          : "",
+        favicon: favicon
+          ? "theme/quick-theme/common/resources/img/favicon.ico"
+          : "",
+      }),
+    );
+
     const toCss = (obj?: object) =>
       Object.entries(obj || {})
         .map(([key, value]) => `--pf-v5-global--${key}: ${value};`)
@@ -120,22 +134,11 @@ styles=css/login.css css/theme-styles.css
       }
       `,
     );
-    save({
-      ...rest,
-      attributes: {
-        ...rest.attributes,
-        style: JSON.stringify({
-          ...styles,
-          logo: logoName,
-          bgimage: bgimageName,
-        }),
-      },
-    });
     zip.generateAsync({ type: "blob" }).then((content) => {
       const url = URL.createObjectURL(content);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "quick-theme.jar";
+      a.download = fileName || "quick-theme.jar";
       a.click();
       URL.revokeObjectURL(url);
     });

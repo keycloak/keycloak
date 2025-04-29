@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 
+import com.google.common.base.CaseFormat;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import org.keycloak.common.Profile;
 import org.keycloak.config.CachingOptions;
@@ -24,7 +25,7 @@ import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.
 final class CachingPropertyMappers {
 
     private static final String REMOTE_HOST_SET = "remote host is set";
-    private static final String MULTI_SITE_OR_EMBEDDED_REMOTE_FEATURE_SET = "feature '%s', '%s' or '%s' is set".formatted(Profile.Feature.MULTI_SITE.getKey(), Profile.Feature.CLUSTERLESS.getKey(), Profile.Feature.CACHE_EMBEDDED_REMOTE_STORE.getKey());
+    private static final String MULTI_SITE_OR_EMBEDDED_REMOTE_FEATURE_SET = "feature '%s' or '%s' is set".formatted(Profile.Feature.MULTI_SITE.getKey(), Profile.Feature.CLUSTERLESS.getKey());
     private static final String MULTI_SITE_FEATURE_SET = "feature '%s' or '%s' is set".formatted(Profile.Feature.MULTI_SITE.getKey(), Profile.Feature.CLUSTERLESS.getKey());
 
     private static final String CACHE_STACK_SET_TO_ISPN = "'cache' type is set to '" + CachingOptions.Mechanism.ispn.name() + "'";
@@ -39,7 +40,7 @@ final class CachingPropertyMappers {
                         .build(),
                 fromOption(CachingOptions.CACHE_STACK)
                         .isEnabled(CachingPropertyMappers::cacheSetToInfinispan, CACHE_STACK_SET_TO_ISPN)
-                        .to("kc.spi-connections-infinispan-quarkus-stack")
+                        .to("kc.spi-cache-embedded-default-stack")
                         .paramLabel("stack")
                         .build(),
                 fromOption(CachingOptions.CACHE_CONFIG_FILE)
@@ -51,7 +52,7 @@ final class CachingPropertyMappers {
                             } else
                                 return null;
                         })
-                        .to("kc.spi-connections-infinispan-quarkus-config-file")
+                        .to("kc.spi-cache-embedded-default-config-file")
                         .transformer(CachingPropertyMappers::resolveConfigFile)
                         .validator(s -> {
                             if (!Files.exists(Paths.get(resolveConfigFile(s, null)))) {
@@ -61,60 +62,72 @@ final class CachingPropertyMappers {
                         .paramLabel("file")
                         .build(),
                 fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED)
+                        .to("kc.spi-jgroups-mtls-default-enabled")
                         .isEnabled(CachingPropertyMappers::getDefaultMtlsEnabled, "a TCP based cache-stack is used")
                         .build(),
                 fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE.withRuntimeSpecificDefault(getDefaultKeystorePathValue()))
                         .paramLabel("file")
+                        .to("kc.spi-jgroups-mtls-default-keystore-file")
                         .isEnabled(() -> Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED), "property '%s' is enabled".formatted(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED.getKey()))
                         .validator(value -> checkOptionPresent(CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE, CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD))
                         .build(),
                 fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD)
                         .paramLabel("password")
                         .isMasked(true)
+                        .to("kc.spi-jgroups-mtls-default-keystore-password")
                         .isEnabled(() -> Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED), "property '%s' is enabled".formatted(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED.getKey()))
                         .validator(value -> checkOptionPresent(CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD, CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE))
                         .build(),
                 fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE.withRuntimeSpecificDefault(getDefaultTruststorePathValue()))
                         .paramLabel("file")
+                        .to("kc.spi-jgroups-mtls-default-truststore-file")
                         .isEnabled(() -> Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED), "property '%s' is enabled".formatted(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED.getKey()))
                         .validator(value -> checkOptionPresent(CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE, CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD))
                         .build(),
                 fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD)
                         .paramLabel("password")
                         .isMasked(true)
+                        .to("kc.spi-jgroups-mtls-default-truststore-password")
                         .isEnabled(() -> Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED), "property '%s' is enabled".formatted(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED.getKey()))
                         .validator(value -> checkOptionPresent(CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD, CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE))
                         .build(),
                 fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_ROTATION)
                         .paramLabel("days")
+                        .to("kc.spi-jgroups-mtls-default-rotation")
                         .isEnabled(() -> Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED), "property '%s' is enabled".formatted(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED.getKey()))
                         .validator(CachingPropertyMappers::validateCertificateRotationIsPositive)
                         .build(),
                 fromOption(CachingOptions.CACHE_REMOTE_HOST)
                         .paramLabel("hostname")
+                        .to("kc.spi-cache-remote-default-hostname")
                         .addValidateEnabled(CachingPropertyMappers::isRemoteCacheHostEnabled, MULTI_SITE_OR_EMBEDDED_REMOTE_FEATURE_SET)
                         .isRequired(InfinispanUtils::isRemoteInfinispan, MULTI_SITE_FEATURE_SET)
                         .build(),
                 fromOption(CachingOptions.CACHE_REMOTE_PORT)
                         .isEnabled(CachingPropertyMappers::remoteHostSet, CachingPropertyMappers.REMOTE_HOST_SET)
+                        .to("kc.spi-cache-remote-default-port")
                         .paramLabel("port")
                         .build(),
                 fromOption(CachingOptions.CACHE_REMOTE_TLS_ENABLED)
                         .isEnabled(CachingPropertyMappers::remoteHostSet, CachingPropertyMappers.REMOTE_HOST_SET)
+                        .to("kc.spi-cache-remote-default-tls-enabled")
                         .build(),
                 fromOption(CachingOptions.CACHE_REMOTE_USERNAME)
                         .isEnabled(CachingPropertyMappers::remoteHostSet, CachingPropertyMappers.REMOTE_HOST_SET)
+                        .to("kc.spi-cache-remote-default-username")
                         .validator((value) -> validateCachingOptionIsPresent(CachingOptions.CACHE_REMOTE_USERNAME, CachingOptions.CACHE_REMOTE_PASSWORD))
                         .paramLabel("username")
                         .build(),
                 fromOption(CachingOptions.CACHE_REMOTE_PASSWORD)
                         .isEnabled(CachingPropertyMappers::remoteHostSet, CachingPropertyMappers.REMOTE_HOST_SET)
+                        .to("kc.spi-cache-remote-default-password")
                         .validator((value) -> validateCachingOptionIsPresent(CachingOptions.CACHE_REMOTE_PASSWORD, CachingOptions.CACHE_REMOTE_USERNAME))
                         .paramLabel("password")
                         .isMasked(true)
                         .build(),
                 fromOption(CachingOptions.CACHE_METRICS_HISTOGRAMS_ENABLED)
                         .isEnabled(MetricsPropertyMappers::metricsEnabled, MetricsPropertyMappers.METRICS_ENABLED_MSG)
+                        .to("kc.spi-cache-embedded-default-metrics-histograms-enabled")
                         .build()
         );
 
@@ -199,11 +212,12 @@ final class CachingPropertyMappers {
         return fromOption(CachingOptions.maxCountOption(cacheName))
                 .isEnabled(isEnabled, enabledWhen)
                 .paramLabel("max-count")
+                .to("kc.spi-cache-embedded-default-%s-max-count".formatted(CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_HYPHEN, cacheName)))
                 .build();
     }
 
     private static boolean isRemoteCacheHostEnabled() {
-        return InfinispanUtils.isRemoteInfinispan() || Profile.isFeatureEnabled(Profile.Feature.CACHE_EMBEDDED_REMOTE_STORE);
+        return InfinispanUtils.isRemoteInfinispan();
     }
 
     private static void validateCachingOptionIsPresent(Option<?> optionSet, Option<?> optionRequired) {

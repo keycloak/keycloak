@@ -581,16 +581,21 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
     @Override
     public int getUsersCount(RealmModel realm, boolean includeServiceAccount) {
-        String namedQuery = "getRealmUserCountExcludeServiceAccount";
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Long> query = cb.createQuery(Long.class);
+        Root<UserEntity> root = query.from(UserEntity.class);
 
-        if (includeServiceAccount) {
-            namedQuery = "getRealmUserCount";
+        List<Predicate> predicates = new ArrayList<>();
+        predicates.add(cb.equal(root.get("realmId"), realm.getId()));
+
+        if (!includeServiceAccount) {
+            predicates.add(cb.isNull(root.get("serviceAccountClientLink")));
         }
 
-        Object count = em.createNamedQuery(namedQuery)
-                .setParameter("realmId", realm.getId())
-                .getSingleResult();
-        return ((Number)count).intValue();
+        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, this, realm, cb, query, root));
+        query.select(cb.count(root)).where(predicates.toArray(Predicate[]::new));
+
+        return em.createQuery(query).getSingleResult().intValue();
     }
 
     @Override
@@ -613,7 +618,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         CriteriaQuery<Long> queryBuilder = builder.createQuery(Long.class);
         Root<UserEntity> root = queryBuilder.from(UserEntity.class);
 
-        queryBuilder.select(builder.count(root));
+        queryBuilder.select(builder.countDistinct(root));
 
         List<Predicate> predicates = new ArrayList<>();
 
@@ -642,7 +647,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         Root<UserGroupMembershipEntity> groupMembership = queryBuilder.from(UserGroupMembershipEntity.class);
         Join<UserGroupMembershipEntity, UserEntity> userJoin = groupMembership.join("user");
 
-        queryBuilder.select(builder.count(userJoin));
+        queryBuilder.select(builder.countDistinct(userJoin));
 
         List<Predicate> predicates = new ArrayList<>();
 
@@ -664,7 +669,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         CriteriaBuilder qb = em.getCriteriaBuilder();
         CriteriaQuery<Long> userQuery = qb.createQuery(Long.class);
         Root<UserEntity> from = userQuery.from(UserEntity.class);
-        Expression<Long> count = qb.count(from);
+        Expression<Long> count = qb.countDistinct(from);
 
         userQuery = userQuery.select(count);
         List<Predicate> restrictions = predicates(params, from, Map.of());
@@ -689,7 +694,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
         CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
         Root<UserEntity> root = countQuery.from(UserEntity.class);
-        countQuery.select(cb.count(root));
+        countQuery.select(cb.countDistinct(root));
 
         List<Predicate> restrictions = predicates(params, root, Map.of());
         restrictions.add(cb.equal(root.get("realmId"), realm.getId()));
@@ -727,13 +732,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
     @Override
     public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, String search, Boolean exact, Integer first, Integer max) {
-        TypedQuery<UserEntity> query;
         if (StringUtil.isBlank(search)) {
             return getGroupMembersStream(realm, group, first, max);
         }
-
-        // select g.user from UserGroupMembershipEntity g where g.groupId = :groupId and " +
-        //                "(g.user.username = :search or g.user.email = :search or g.user.firstName = :search or g.user.lastName = :search) order by g.user.username
 
         CriteriaBuilder builder = em.getCriteriaBuilder();
         CriteriaQuery<UserEntity> queryBuilder = builder.createQuery(UserEntity.class);
@@ -807,7 +808,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
         predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, this, realm, builder, queryBuilder, root));
 
-        queryBuilder.where(predicates.toArray(Predicate[]::new)).orderBy(builder.asc(root.get(UserModel.USERNAME)));
+        queryBuilder.distinct(true).where(predicates.toArray(Predicate[]::new)).orderBy(builder.asc(root.get(UserModel.USERNAME)));
 
         TypedQuery<UserEntity> query = em.createQuery(queryBuilder);
 

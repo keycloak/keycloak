@@ -310,8 +310,8 @@ public class LDAPUtils {
      * @return
      */
     public static List<LDAPObject> loadAllLDAPObjects(LDAPQuery ldapQuery, LDAPConfig ldapConfig) {
-        boolean pagination = ldapConfig.isPagination();
-        if (pagination) {
+
+        if (ldapConfig.isPagination() && ldapConfig.getBatchSizeForSync() > 0) {
             // For now reuse globally configured batch size in LDAP provider page
             int pageSize = ldapConfig.getBatchSizeForSync();
 

@@ -4,7 +4,7 @@
 
 <@tmpl.guide
 title="Configuring outgoing HTTP requests"
-summary="How to configure the client used for outgoing HTTP requests."
+summary="Configure the client used for outgoing HTTP requests."
 includedOptions="truststore-*">
 
 {project_name} often needs to make requests to the applications and services that it secures. {project_name} manages these outgoing connections using an HTTP client. This {section} shows how to configure the client, connection pool, proxy environment settings, timeouts, and more.

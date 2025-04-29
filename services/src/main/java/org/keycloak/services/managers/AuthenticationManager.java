@@ -1132,11 +1132,6 @@ public class AuthenticationManager {
         }
     }
 
-    public static Response actionRequired(final KeycloakSession session, final AuthenticationSessionModel authSession,
-            final HttpRequest request, final EventBuilder event) {
-        return actionRequired(session, authSession, request, event, new HashSet<>());
-    }
-
     private static Response actionRequired(final KeycloakSession session, final AuthenticationSessionModel authSession,
             final HttpRequest request, final EventBuilder event, Set<String> ignoredActions) {
         final var realm = authSession.getRealm();
@@ -1458,6 +1453,11 @@ public class AuthenticationManager {
             @Override
             public void success() {
                 throw new RuntimeException("Not allowed to call success() within evaluateTriggers()");
+            }
+
+            @Override
+            public void cancel() {
+                throw new RuntimeException("Not allowed to call cancel() within evaluateTriggers()");
             }
 
             @Override

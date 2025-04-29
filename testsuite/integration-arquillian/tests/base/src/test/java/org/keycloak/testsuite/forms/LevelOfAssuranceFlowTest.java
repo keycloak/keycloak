@@ -64,7 +64,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.account.AccountRestClient;
@@ -102,7 +102,7 @@ import static org.keycloak.testsuite.actions.AppInitiatedActionDeleteCredentialT
  * @author <a href="mailto:sebastian.zoescher@prime-sign.com">Sebastian Zoescher</a>
  */
 @EnableFeature(value = RECOVERY_CODES, skipRestart = true)
-public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
+public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPasswordsTest {
 
     private final static String FLOW_ALIAS = "browser -  Level of Authentication FLow";
 
@@ -142,6 +142,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
+        super.configureTestRealm(testRealm);
         try {
             testRealm.setOtpPolicyCodeReusable(true);
             findTestApp(testRealm).setAttributes(Collections.singletonMap(Constants.ACR_LOA_MAP, getAcrToLoaMappingForClient()));
@@ -162,7 +163,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
 
         userRep.setId(null);
         UserBuilder.edit(userRep)
-                .password("password")
+                .password(generatePassword("test-user@localhost"))
                 .totpSecret("totpSecret")
                 .otpEnabled();
         Response response = testRealm().users().create(userRep);
@@ -1100,13 +1101,13 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
 
     private void authenticateWithUsernamePassword() {
         loginPage.assertCurrent();
-        loginPage.login("test-user@localhost", "password");
+        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
     }
 
     private void reauthenticateWithPassword() {
         loginPage.assertCurrent();
         Assert.assertEquals("test-user@localhost", loginPage.getAttemptedUsername());
-        loginPage.login("password");
+        loginPage.login(getPassword("test-user@localhost"));
     }
 
     private void authenticateWithTotp() {

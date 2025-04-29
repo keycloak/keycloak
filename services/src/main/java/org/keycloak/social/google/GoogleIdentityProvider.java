@@ -32,6 +32,7 @@ import org.keycloak.representations.JsonWebToken;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.UriBuilder;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -112,8 +113,9 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
     protected JsonWebToken validateToken(final String encodedToken, final boolean ignoreAudience) {
         JsonWebToken token = super.validateToken(encodedToken, ignoreAudience);
         String hostedDomain = ((GoogleIdentityProviderConfig) getConfig()).getHostedDomain();
+        boolean anyHostedDomain = hostedDomain == null || "*".equals(hostedDomain);
 
-        if (hostedDomain == null) {
+        if (anyHostedDomain) {
             return token;
         }
 
@@ -123,7 +125,7 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
             throw new IdentityBrokerException("Identity token does not contain hosted domain parameter.");
         }
 
-        if (hostedDomain.equals("*") || Arrays.asList(hostedDomain.split(",")).contains(receivedHdParam))  {
+        if (List.of(hostedDomain.split(",")).contains(receivedHdParam))  {
             return token;
         }
 

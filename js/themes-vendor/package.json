@@ -20,7 +20,7 @@
     }
   },
   "dependencies": {
-    "@noble/hashes": "^1.7.1",
+    "@noble/hashes": "^1.7.2",
     "@patternfly-v5/patternfly": "npm:@patternfly/patternfly@^5.4.2",
     "@patternfly/patternfly": "^4.224.5",
     "patternfly": "^3.59.5",
@@ -34,6 +34,6 @@
     "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-replace": "^6.0.2",
     "@rollup/plugin-terser": "^0.4.4",
-    "rollup": "^4.39.0"
+    "rollup": "^4.40.0"
   }
 }

@@ -4,8 +4,8 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="{project_name} Realm Import"
-summary="How to perform an automated {project_name} Realm Import using the operator">
+title="Automating a realm import"
+summary="Automate a realm import using the operator.">
 
 == Importing a {project_name} Realm
 

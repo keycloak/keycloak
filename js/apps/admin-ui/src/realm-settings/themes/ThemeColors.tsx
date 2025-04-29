@@ -2,7 +2,6 @@ import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmR
 import { TextControl } from "@keycloak/keycloak-ui-shared";
 import {
   Alert,
-  Button,
   Flex,
   FlexItem,
   FormGroup,
@@ -23,11 +22,14 @@ import {
 import { useTranslation } from "react-i18next";
 import { FixedButtonsGroup } from "../../components/form/FixedButtonGroup";
 import { FormAccess } from "../../components/form/FormAccess";
+import useToggle from "../../utils/useToggle";
+import { FileNameDialog } from "./FileNameDialog";
 import { ImageUpload } from "./ImageUpload";
 import { usePreviewLogo } from "./LogoContext";
 import { darkTheme, lightTheme } from "./PatternflyVars";
 import { PreviewWindow } from "./PreviewWindow";
 import { ThemeRealmRepresentation } from "./ThemesTab";
+import { UploadJar } from "./UploadJar";
 
 type ThemeType = "light" | "dark";
 
@@ -81,6 +83,7 @@ export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
   const { handleSubmit, watch } = form;
   const style = watch();
   const contextLogo = usePreviewLogo();
+  const [open, toggle, setOpen] = useToggle();
 
   const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
   const mapping = useMemo(
@@ -101,12 +104,14 @@ export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
   };
 
   const setupForm = () => {
-    const values = JSON.parse(realm.attributes?.style || "{}");
-    if (values[theme]) {
-      form.reset(values);
-    } else {
-      reset();
-    }
+    reset();
+  };
+
+  const upload = (values: ThemeRealmRepresentation) => {
+    form.setValue("bgimage", values.bgimage);
+    form.setValue("favicon", values.favicon);
+    form.setValue("logo", values.logo);
+    form.reset(values);
   };
 
   const convert = (values: Record<string, File | string>) => {
@@ -116,6 +121,7 @@ export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
       favicon: values.favicon as File,
       logo: values.logo as File,
       bgimage: values.bgimage as File,
+      fileName: values.name as string,
       attributes: {
         ...realm.attributes,
         style: JSON.stringify({
@@ -135,54 +141,63 @@ export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
   }, [realm]);
 
   return (
-    <PageSection variant="light">
-      <TextContent className="pf-v5-u-mb-lg">
-        <Text>{t("themeColorInfo")}</Text>
-      </TextContent>
-      {mediaQuery.matches && theme === "light" && (
-        <Alert variant="info" isInline title={t("themePreviewInfo")} />
+    <>
+      {open && (
+        <FileNameDialog
+          onSave={(name) => {
+            handleSubmit((data) => convert({ ...data, name }))();
+            setOpen(false);
+          }}
+          onClose={toggle}
+        />
       )}
-      <Flex className="pf-v5-u-pt-lg">
-        <FlexItem>
-          <FormAccess isHorizontal role="manage-realm">
-            <FormProvider {...form}>
-              <FormGroup label={t("favicon")}>
-                <ImageUpload name="favicon" />
-              </FormGroup>
-              <FormGroup label={t("logo")}>
-                <ImageUpload
-                  name="logo"
-                  onChange={(logo) => contextLogo?.setLogo(logo)}
-                />
-              </FormGroup>
-              <FormGroup label={t("backgroundImage")}>
-                <ImageUpload name="bgimage" />
-              </FormGroup>
-              {mapping.map((m) => (
-                <ColorControl
-                  key={m.name}
-                  color={m.defaultValue!}
-                  name={`${theme}.${m.variable!}`}
-                  label={m.name}
-                />
-              ))}
-            </FormProvider>
-          </FormAccess>
-        </FlexItem>
-        <FlexItem grow={{ default: "grow" }} style={{ zIndex: 0 }}>
-          <PreviewWindow cssVars={style?.[theme] || {}} />
-        </FlexItem>
-      </Flex>
-      <FixedButtonsGroup
-        name="colors"
-        saveText={t("downloadThemeJar")}
-        save={handleSubmit(convert)}
-        reset={setupForm}
-      >
-        <Button type="button" variant="link" onClick={reset}>
-          {t("defaults")}
-        </Button>
-      </FixedButtonsGroup>
-    </PageSection>
+      <PageSection variant="light">
+        <TextContent className="pf-v5-u-mb-lg">
+          <Text>{t("themeColorInfo")}</Text>
+        </TextContent>
+        {mediaQuery.matches && theme === "light" && (
+          <Alert variant="info" isInline title={t("themePreviewInfo")} />
+        )}
+        <Flex className="pf-v5-u-pt-lg">
+          <FlexItem>
+            <FormAccess isHorizontal role="manage-realm">
+              <FormProvider {...form}>
+                <FormGroup label={t("favicon")}>
+                  <ImageUpload name="favicon" />
+                </FormGroup>
+                <FormGroup label={t("logo")}>
+                  <ImageUpload
+                    name="logo"
+                    onChange={(logo) => contextLogo?.setLogo(logo)}
+                  />
+                </FormGroup>
+                <FormGroup label={t("backgroundImage")}>
+                  <ImageUpload name="bgimage" />
+                </FormGroup>
+                {mapping.map((m) => (
+                  <ColorControl
+                    key={m.name}
+                    color={m.defaultValue!}
+                    name={`${theme}.${m.variable!}`}
+                    label={m.name}
+                  />
+                ))}
+              </FormProvider>
+            </FormAccess>
+          </FlexItem>
+          <FlexItem grow={{ default: "grow" }} style={{ zIndex: 0 }}>
+            <PreviewWindow cssVars={style?.[theme] || {}} />
+          </FlexItem>
+        </Flex>
+        <FixedButtonsGroup
+          name="colors"
+          saveText={t("downloadThemeJar")}
+          save={toggle}
+          reset={setupForm}
+        >
+          <UploadJar onUpload={upload} />
+        </FixedButtonsGroup>
+      </PageSection>
+    </>
   );
 };

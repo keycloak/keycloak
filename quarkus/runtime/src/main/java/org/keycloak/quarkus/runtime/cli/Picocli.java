@@ -26,6 +26,7 @@ import static org.keycloak.quarkus.runtime.Environment.isRebuilt;
 import static org.keycloak.quarkus.runtime.cli.OptionRenderer.decorateDuplicitOptionName;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.parseConfigArgs;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.isUserModifiable;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.maskValue;
 import static picocli.CommandLine.Model.UsageMessageSpec.SECTION_KEY_COMMAND_LIST;
@@ -200,10 +201,7 @@ public class Picocli {
     }
 
     public void exit(int exitCode) {
-        if (exitCode != CommandLine.ExitCode.OK && (!Environment.isTestLaunchMode() || isRebuildCheck())) {
-            // hard exit wanted, as build failed and no subsequent command should be executed. no quarkus involved.
-            System.exit(exitCode);
-        }
+        System.exit(exitCode);
     }
 
     private int runReAugmentationIfNeeded(List<String> cliArgs, CommandLine cmd, CommandLine currentCommand) {
@@ -508,12 +506,6 @@ public class Picocli {
         mapper.validate(configValue);
 
         mapper.getDeprecatedMetadata().ifPresent(metadata -> handleDeprecated(deprecatedInUse, mapper, configValueStr, metadata));
-    }
-
-    private static boolean isUserModifiable(ConfigValue configValue) {
-        // This could check as low as SysPropConfigSource DEFAULT_ORDINAL, which is 400
-        // for now we won't validate these as it's not expected for the user to specify options via system properties
-        return configValue.getConfigSourceOrdinal() >= KeycloakPropertiesConfigSource.PROPERTIES_FILE_ORDINAL;
     }
 
     private static void checkRuntimeSpiOptions(String key, final List<String> ignoredRunTime) {
@@ -985,7 +977,7 @@ public class Picocli {
     }
 
     public void start() {
-        KeycloakMain.start(errorHandler, getErrWriter());
+        KeycloakMain.start(this, errorHandler);
     }
 
     public void build() throws Throwable {

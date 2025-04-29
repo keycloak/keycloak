@@ -4,7 +4,7 @@
 
 <@tmpl.guide
 title="Configuring trusted certificates for mTLS"
-summary="Learn how to configure Mutual TLS to verify clients that are connecting to {project_name}."
+summary="Configure Mutual TLS to verify clients that are connecting to {project_name}."
 includedOptions="https-trust-store-* https-client-auth https-management-client-auth">
 
 In order to properly validate client certificates and enable certain authentication methods like two-way TLS or mTLS, you can set

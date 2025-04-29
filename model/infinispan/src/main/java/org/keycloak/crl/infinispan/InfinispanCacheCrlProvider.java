@@ -38,7 +38,7 @@ public class InfinispanCacheCrlProvider implements CacheCrlProvider {
     public void clearCache() {
         crlCache.clear();
         ClusterProvider cluster = session.getProvider(ClusterProvider.class);
-        cluster.notify(InfinispanCacheCrlProviderFactory.CRL_CLEAR_CACHE_EVENTS, ClearCacheEvent.getInstance(), true, ClusterProvider.DCNotify.ALL_DCS);
+        cluster.notify(InfinispanCacheCrlProviderFactory.CRL_CLEAR_CACHE_EVENTS, ClearCacheEvent.getInstance(), true);
     }
 
     @Override

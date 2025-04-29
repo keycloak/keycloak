@@ -58,6 +58,7 @@ public class NginxProxySslClientCertificateLookup extends AbstractClientCertific
     private static final Logger log = Logger.getLogger(NginxProxySslClientCertificateLookup.class);
 
     private final boolean isTruststoreLoaded;
+    private final boolean certIsUrlEncoded;
     private final Set<X509Certificate> trustedRootCerts;
     private final Set<X509Certificate> intermediateCerts;
 
@@ -67,7 +68,8 @@ public class NginxProxySslClientCertificateLookup extends AbstractClientCertific
                                                 int certificateChainLength,
                                                 Set<X509Certificate> intermediateCerts,
                                                 Set<X509Certificate> trustedRootCerts,
-                                                boolean isTruststoreLoaded
+                                                boolean isTruststoreLoaded,
+                                                boolean certIsUrlEncoded
                                                 ) {
         super(sslClientCertHttpHeader, sslCertChainHttpHeaderPrefix, certificateChainLength);
 
@@ -76,6 +78,7 @@ public class NginxProxySslClientCertificateLookup extends AbstractClientCertific
       this.intermediateCerts = intermediateCerts;
       this.trustedRootCerts = trustedRootCerts;
       this.isTruststoreLoaded = isTruststoreLoaded;
+      this.certIsUrlEncoded = certIsUrlEncoded;
 
         if (!this.isTruststoreLoaded) {
             log.warn("Keycloak Truststore is null or empty, but it's required for NGINX x509cert-lookup provider");
@@ -107,7 +110,9 @@ public class NginxProxySslClientCertificateLookup extends AbstractClientCertific
             log.warn("End user TLS Certificate is NULL! ");
             return null;
         }
-        pem = java.net.URLDecoder.decode(pem, StandardCharsets.UTF_8);
+        if (certIsUrlEncoded) {
+            pem = java.net.URLDecoder.decode(pem, StandardCharsets.UTF_8);
+        }
 
         if (pem.startsWith(PemUtils.BEGIN_CERT)) {
             pem = removeBeginEnd(pem);

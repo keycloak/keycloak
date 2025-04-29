@@ -106,6 +106,7 @@ import static org.junit.Assert.*;
 public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
     private String userId;
+    private String password;
     private UserRepresentation defaultUser;
 
     @Rule
@@ -130,7 +131,8 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
                 .enabled(true)
                 .build();
 
-        userId = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), defaultUser, "password");
+        password = generatePassword();
+        userId = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), defaultUser, password);
         defaultUser.setId(userId);
         expectedMessagesCount = 0;
         getCleanup().addUserId(userId);
@@ -190,7 +192,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     public void resetPasswordLoggedUser() throws IOException {
         String username = "login-test";
         loginPage.open();
-        loginPage.login(username, "password");
+        loginPage.login(username, password);
 
         events.expectLogin().user(userId).detail(Details.USERNAME, username).assertEvent();
 
@@ -421,7 +423,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
                 .session((String) null)
                 .detail(Details.EMAIL, "test-user@localhost").assertEvent();
 
-        loginPage.login("login@test.com", "password");
+        loginPage.login("login@test.com", password);
 
         EventRepresentation loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "login@test.com").assertEvent();
 
@@ -1206,7 +1208,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             resetPasswordInvalidPassword("login-test", "password3", "Invalid password: must not be equal to any of last 3 passwords.");
 
             setTimeOffset(8000000);
-            resetPassword("login-test", "password");
+            resetPassword("login-test", password);
         } finally {
             setTimeOffset(0);
         }

@@ -3,7 +3,7 @@
 
 <@tmpl.guide
 title="Database Metrics"
-summary="Learn about metrics describing {project_name}'s connection to the database"
+summary="Use metrics to describe {project_name}'s connection to the database."
 tileVisible="false"
 >
 

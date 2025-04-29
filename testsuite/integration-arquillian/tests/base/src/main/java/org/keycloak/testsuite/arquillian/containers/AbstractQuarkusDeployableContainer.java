@@ -44,7 +44,6 @@ import java.util.stream.Collectors;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
@@ -134,7 +133,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
     }
 
     @Override
-    public void undeploy(Descriptor descriptor) throws DeploymentException {
+    public void undeploy(Descriptor descriptor) {
 
     }
 
@@ -183,7 +182,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
         }
 
         if (configuration.getRoute() != null) {
-            commands.add("-Djboss.node.name=" + configuration.getRoute());
+            commands.add("--spi-cache-embedded-default-node-name=" + configuration.getRoute());
         }
 
         if (System.getProperty("auth.server.quarkus.log-level") != null) {
@@ -231,7 +230,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
             commands.add("--cache-remote-username=keycloak");
             commands.add("--cache-remote-password=Password1!");
             commands.add("--cache-remote-tls-enabled=false");
-            commands.add("--spi-connections-infinispan-quarkus-site-name=test");
+            commands.add("--spi-cache-embedded-default-site-name=test");
             configuration.appendJavaOpts("-Dkc.cache-remote-create-caches=true");
             System.setProperty("kc.cache-remote-create-caches", "true");
         }
@@ -359,8 +358,8 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
                 }
 
                 connection.disconnect();
-            } catch (Exception ignore) {
-                e = ignore;
+            } catch (Exception exception) {
+                e = exception;
             }
         }
 

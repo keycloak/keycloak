@@ -72,6 +72,19 @@ public class AppInitiatedActionTest extends AbstractTestRealmKeycloakTest {
         assertEquals("error", kcActionStatus);
     }
 
+    // Issue 37526
+    @Test
+    public void executeUnknownActionAfterBeingAuthenticated() {
+        oauth.loginForm().doLogin("test-user@localhost", "password");
+        appPage.assertCurrent();
+
+        oauth.loginForm().kcAction("nosuch").open();
+        appPage.assertCurrent();
+
+        String kcActionStatus = oauth.parseLoginResponse().getKcActionStatus();
+        assertEquals("error", kcActionStatus);
+    }
+
     @Test
     public void executeUnsupportedAction() {
         oauth.loginForm().kcAction(TermsAndConditions.PROVIDER_ID).open();

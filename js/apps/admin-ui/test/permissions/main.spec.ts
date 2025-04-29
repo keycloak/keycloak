@@ -11,6 +11,7 @@ import {
   clickCreatePermission,
   clickCreatePolicySaveButton,
   clickSearchButton,
+  deletePermission,
   fillPermissionForm,
   goToEvaluation,
   goToPermissions,
@@ -76,6 +77,7 @@ test.describe("Permissions section tests", () => {
 
     await goToPermissions(page);
     await assertRowExists(page, "test-permission");
+    await deletePermission(page, "test-permission");
     await goToPolicies(page);
     await assertRowExists(page, "test-policy");
   });
@@ -95,7 +97,7 @@ test.describe("Permissions section tests", () => {
     await fillPolicyForm(
       page,
       {
-        name: "test-policy",
+        name: "test-policy2",
         description: "test-description",
         type: "User",
         user: "test-user",

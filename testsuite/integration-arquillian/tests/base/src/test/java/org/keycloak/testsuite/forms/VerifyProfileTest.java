@@ -34,7 +34,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.pages.AppPage;
@@ -78,7 +78,7 @@ import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.VALIDATION
 /**
  * @author Vlastimil Elias <velias@redhat.com>
  */
-public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
+public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
 
     private static String userId;
 
@@ -105,13 +105,14 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
-        UserRepresentation user = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-test").email("login@test.com").enabled(true).password("password").build();
-        UserRepresentation user2 = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-test2").email("login2@test.com").enabled(true).password("password").build();
-        UserRepresentation user3 = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-test3").email("login3@test.com").enabled(true).password("password").lastName("ExistingLast").build();
-        UserRepresentation user4 = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-test4").email("login4@test.com").enabled(true).password("password").lastName("ExistingLast").build();
-        UserRepresentation user5 = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-test5").email("login5@test.com").enabled(true).password("password").firstName("ExistingFirst").lastName("ExistingLast").build();
-        UserRepresentation user6 = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-test6").email("login6@test.com").enabled(true).password("password").firstName("ExistingFirst").lastName("ExistingLast").build();
-        UserRepresentation userWithoutEmail = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-nomail").enabled(true).password("password").firstName("NoMailFirst").lastName("NoMailLast").build();
+        super.configureTestRealm(testRealm);
+        UserRepresentation user = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-test").email("login@test.com").enabled(true).password(generatePassword("login-test")).build();
+        UserRepresentation user2 = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-test2").email("login2@test.com").enabled(true).password(generatePassword("login-test2")).build();
+        UserRepresentation user3 = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-test3").email("login3@test.com").enabled(true).password(generatePassword("login-test3")).lastName("ExistingLast").build();
+        UserRepresentation user4 = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-test4").email("login4@test.com").enabled(true).password(generatePassword("login-test4")).lastName("ExistingLast").build();
+        UserRepresentation user5 = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-test5").email("login5@test.com").enabled(true).password(generatePassword("login-test5")).firstName("ExistingFirst").lastName("ExistingLast").build();
+        UserRepresentation user6 = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-test6").email("login6@test.com").enabled(true).password(generatePassword("login-test6")).firstName("ExistingFirst").lastName("ExistingLast").build();
+        UserRepresentation userWithoutEmail = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-nomail").enabled(true).password(generatePassword("login-nomail")).firstName("NoMailFirst").lastName("NoMailLast").build();
 
         RealmBuilder.edit(testRealm).user(user).user(user2).user(user3).user(user4).user(user5).user(user6).user(userWithoutEmail);
 
@@ -169,7 +170,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
                 + "]}");
 
         loginPage.open();
-        loginPage.login("login-test5", "password");
+        loginPage.login("login-test5", getPassword("login-test5"));
 
         verifyProfilePage.assertCurrent();
 
@@ -200,7 +201,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
                 + "]}");
 
         loginPage.open();
-        loginPage.login("login-test5", "password");
+        loginPage.login("login-test5", getPassword("login-test5"));
 
         verifyProfilePage.assertCurrent();
 
@@ -240,7 +241,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         testRealm().update(realm);
 
         loginPage.open();
-        loginPage.login("login-test5", "password");
+        loginPage.login("login-test5", getPassword("login-test5"));
 
         verifyProfilePage.assertCurrent();
 
@@ -266,7 +267,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
                 + "]}");
 
         loginPage.open();
-        loginPage.login("login-test5", "password");
+        loginPage.login("login-test5", getPassword("login-test5"));
 
         verifyProfilePage.assertCurrent();
 
@@ -286,7 +287,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
                 + "]}");
 
         loginPage.open();
-        loginPage.login("login-test5", "password");
+        loginPage.login("login-test5", getPassword("login-test5"));
 
         verifyProfilePage.assertCurrent();
         //event when form is shown
@@ -312,7 +313,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         testingClient.server(TEST_REALM_NAME).run(setEmptyFirstNameAndCustomAttribute());
 
         loginPage.open();
-        loginPage.login("login-test", "password");
+        loginPage.login("login-test", getPassword("login-test"));
 
         //submit with error
         verifyProfilePage.assertCurrent();
@@ -366,7 +367,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
             testRealm().update(realm);
 
             loginPage.open();
-            loginPage.login("login-test5", "password");
+            loginPage.login("login-test5", getPassword("login-test5"));
 
             verifyProfilePage.assertCurrent();
             assertFalse(verifyProfilePage.isUsernamePresent());
@@ -398,7 +399,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
             testRealm().update(realm);
 
             loginPage.open();
-            loginPage.login("login-test5", "password");
+            loginPage.login("login-test5", getPassword("login-test5"));
 
             verifyProfilePage.assertCurrent();
             assertFalse(verifyProfilePage.isUsernamePresent());
@@ -445,7 +446,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
             testRealm().update(realm);
 
             loginPage.open();
-            loginPage.login("login-test5", "password");
+            loginPage.login("login-test5", getPassword("login-test5"));
 
             verifyProfilePage.assertCurrent();
             assertFalse(verifyProfilePage.isUsernamePresent());
@@ -483,7 +484,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
                 + "]}");
 
         loginPage.open();
-        loginPage.login("login-test2", "password");
+        loginPage.login("login-test2", getPassword("login-test2"));
 
         verifyProfilePage.assertCurrent();
         verifyProfilePage.update("First", "");
@@ -509,7 +510,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
                 + "]}");
 
         loginPage.open();
-        loginPage.login("login-test5", "password");
+        loginPage.login("login-test5", getPassword("login-test5"));
 
         verifyProfilePage.assertCurrent();
         //submit with error
@@ -541,7 +542,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
                 + "]}");
 
         loginPage.open();
-        loginPage.login("login-test5", "password");
+        loginPage.login("login-test5", getPassword("login-test5"));
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.parseLoginResponse().getCode());
@@ -566,7 +567,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
                     + "]}");
 
             loginPage.open();
-            loginPage.login("login6@test.com", "password");
+            loginPage.login("login6@test.com", getPassword("login-test6"));
 
             Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
             Assert.assertNotNull(oauth.parseLoginResponse().getCode());
@@ -586,7 +587,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
                 + "]}");
 
         loginPage.open();
-        loginPage.login("login-test3", "password");
+        loginPage.login("login-test3", getPassword("login-test3"));
 
         verifyProfilePage.assertCurrent();
         Assert.assertEquals("ExistingLast", verifyProfilePage.getLastName());
@@ -614,7 +615,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
                 + "]}");
 
         loginPage.open();
-        loginPage.login("login-test6", "password");
+        loginPage.login("login-test6", getPassword("login-test6"));
 
         verifyProfilePage.assertCurrent();
         Assert.assertEquals("ExistingLast", verifyProfilePage.getLastName());
@@ -633,7 +634,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
                 + "]}");
 
         loginPage.open();
-        loginPage.login("login-test6", "password");
+        loginPage.login("login-test6", getPassword("login-test6"));
 
         verifyProfilePage.assertCurrent();
         Assert.assertEquals("ExistingLast", verifyProfilePage.getLastName());
@@ -652,7 +653,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
                 + "]}");
 
         loginPage.open();
-        loginPage.login("login-test6", "password");
+        loginPage.login("login-test6", getPassword("login-test6"));
 
         verifyProfilePage.assertCurrent();
         Assert.assertEquals("ExistingLast", verifyProfilePage.getLastName());
@@ -671,7 +672,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
                 + "]}");
 
         loginPage.open();
-        loginPage.login("login-nomail", "password");
+        loginPage.login("login-nomail", getPassword("login-nomail"));
 
         // no email is set => expect verify profile page to be displayed
         verifyProfilePage.assertCurrent();
@@ -702,7 +703,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
                 + "]}");
 
         loginPage.open();
-        loginPage.login("login-test4", "password");
+        loginPage.login("login-test4", getPassword("login-test4"));
 
         verifyProfilePage.assertCurrent();
         Assert.assertEquals("ExistingLast", verifyProfilePage.getLastName());
@@ -732,7 +733,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
                 + "]}");
 
         loginPage.open();
-        loginPage.login("login-test5", "password");
+        loginPage.login("login-test5", getPassword("login-test5"));
 
         verifyProfilePage.assertCurrent();
 
@@ -765,7 +766,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
 
 
         loginPage.open();
-        loginPage.login("login-test5", "password");
+        loginPage.login("login-test5", getPassword("login-test5"));
 
         verifyProfilePage.assertCurrent();
 
@@ -799,7 +800,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
 
         oauth.clientId(client_scope_optional.getClientId()).openLoginForm();
 
-        loginPage.login("login-test5", "password");
+        loginPage.login("login-test5", getPassword("login-test5"));
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.parseLoginResponse().getCode());
@@ -823,7 +824,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         oauth.scope(SCOPE_DEPARTMENT).clientId(client_scope_optional.getClientId()).openLoginForm();
 
         loginPage.assertCurrent();
-        loginPage.login("login-test5", "password");
+        loginPage.login("login-test5", getPassword("login-test5"));
 
         verifyProfilePage.assertCurrent();
 
@@ -852,7 +853,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         oauth.clientId(client_scope_default.getClientId()).openLoginForm();
 
         loginPage.assertCurrent();
-        loginPage.login("login-test5", "password");
+        loginPage.login("login-test5", getPassword("login-test5"));
 
         verifyProfilePage.assertCurrent();
 
@@ -886,7 +887,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         oauth.clientId(client_scope_default.getClientId()).openLoginForm();
 
         loginPage.assertCurrent();
-        loginPage.login("login-test5", "password");
+        loginPage.login("login-test5", getPassword("login-test5"));
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.parseLoginResponse().getCode());
@@ -912,7 +913,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         oauth.clientId(client_scope_optional.getClientId()).openLoginForm();
 
         loginPage.assertCurrent();
-        loginPage.login("login-test5", "password");
+        loginPage.login("login-test5", getPassword("login-test5"));
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.parseLoginResponse().getCode());
@@ -933,7 +934,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         oauth.scope(SCOPE_DEPARTMENT).clientId(client_scope_optional.getClientId()).openLoginForm();
 
         loginPage.assertCurrent();
-        loginPage.login("login-test5", "password");
+        loginPage.login("login-test5", getPassword("login-test5"));
 
         verifyProfilePage.assertCurrent();
 
@@ -963,7 +964,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         oauth.scope(SCOPE_DEPARTMENT).clientId(client_scope_optional.getClientId()).openLoginForm();
 
         loginPage.assertCurrent();
-        loginPage.login("login-test5", "password");
+        loginPage.login("login-test5", getPassword("login-test5"));
 
         verifyProfilePage.assertCurrent();
 
@@ -994,7 +995,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         oauth.clientId(client_scope_optional.getClientId()).openLoginForm();
 
         loginPage.assertCurrent();
-        loginPage.login("login-test5", "password");
+        loginPage.login("login-test5", getPassword("login-test5"));
 
         verifyProfilePage.assertCurrent();
 
@@ -1023,7 +1024,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
                 + "]}");
 
         loginPage.open();
-        loginPage.login("login-test5", "password");
+        loginPage.login("login-test5", getPassword("login-test5"));
 
         verifyProfilePage.assertCurrent();
 
@@ -1055,7 +1056,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
                 + "]}");
 
         loginPage.open();
-        loginPage.login("login-test5", "password");
+        loginPage.login("login-test5", getPassword("login-test5"));
 
         verifyProfilePage.assertCurrent();
 
@@ -1083,7 +1084,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
                 + "]}");
 
         loginPage.open();
-        loginPage.login("login-test5", "password");
+        loginPage.login("login-test5", getPassword("login-test5"));
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.parseLoginResponse().getCode());

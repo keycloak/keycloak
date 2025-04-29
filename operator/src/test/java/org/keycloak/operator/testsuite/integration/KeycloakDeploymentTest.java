@@ -47,6 +47,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.BootstrapAdminSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
+import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.unit.WatchedResourcesTest;
 import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
@@ -76,6 +77,7 @@ import static org.keycloak.operator.testsuite.utils.K8sUtils.enableHttp;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.getResourceFromFile;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.waitForKeycloakToBeReady;
 
+@DisabledIfApiServerTest
 @Tag(BaseOperatorTest.SLOW)
 @QuarkusTest
 public class KeycloakDeploymentTest extends BaseOperatorTest {
@@ -599,7 +601,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
 
         var updateCondition = k8sclient.resource(kc).informOnCondition(kcs -> {
             try {
-                assertKeycloakStatusCondition(kcs.get(0), KeycloakStatusCondition.READY, false, "Performing Keycloak update");
+                assertKeycloakStatusCondition(kcs.get(0), KeycloakStatusCondition.READY, false, null);
                 return true;
             } catch (AssertionError e) {
                 return false;

@@ -4,7 +4,7 @@
 
 <@tmpl.guide
 title="Configuring the Management Interface"
-summary="Learn how to configure {project_name}'s management interface for endpoints like metrics and health checks."
+summary="Configure {project_name}'s management interface for endpoints such as metrics and health checks."
 includedOptions="http-management-* https-management-* legacy-observability-interface">
 
 The management interface allows accessing management endpoints via a different HTTP server than the primary one.

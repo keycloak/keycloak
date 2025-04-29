@@ -76,8 +76,8 @@ Cache:
                      The maximum number of entries that can be stored in-memory by the users cache.
 --cache-remote-host <hostname>
                      The hostname of the external Infinispan cluster. Available only when feature
-                       'multi-site', 'clusterless' or 'cache-embedded-remote-store' is set.
-                       Required when feature 'multi-site' or 'clusterless' is set.
+                       'multi-site' or 'clusterless' is set. Required when feature 'multi-site' or
+                       'clusterless' is set.
 --cache-stack <stack>
                      Define the default stack to use for cluster communication and node discovery.
                        Possible values are: jdbc-ping, kubernetes, jdbc-ping-udp (deprecated), tcp
@@ -314,6 +314,12 @@ Logging:
 
 --log <handler>      Enable one or more log handlers in a comma-separated list. Possible values
                        are: console, file, syslog. Default: console.
+--log-async <true|false>
+                     Indicates whether to log asynchronously to all handlers. Default: false.
+--log-console-async <true|false>
+                     Indicates whether to log asynchronously to console. If not set, value from the
+                       parent property 'log-async' is used. Default: false. Available only when
+                       Console log handler is activated.
 --log-console-color <true|false>
                      Enable or disable colors when logging to console. Default: false. Available
                        only when Console log handler is activated.

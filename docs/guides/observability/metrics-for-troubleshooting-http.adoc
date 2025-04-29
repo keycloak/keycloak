@@ -3,7 +3,7 @@
 
 <@tmpl.guide
 title="HTTP metrics"
-summary="Learn about metrics for monitoring the {project_name} HTTP requests processing"
+summary="Use metrics to monitor the {project_name} HTTP requests processing."
 tileVisible="false"
 includedOptions="http-metrics-histograms-enabled http-metrics-slos"
 >

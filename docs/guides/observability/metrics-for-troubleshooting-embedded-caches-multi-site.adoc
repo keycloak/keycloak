@@ -3,7 +3,7 @@
 
 <@tmpl.guide
 title="Embedded Infinispan metrics for multi-site deployments"
-summary="Learn about metrics monitoring caching health"
+summary="Use metrics to monitor caching health."
 tileVisible="false"
 >
 

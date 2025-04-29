@@ -81,6 +81,10 @@ public class RegisterPage extends LanguageComboboxAwarePage
     @FindBy(linkText = "« Back to Login")
     private WebElement backToLoginLink;
 
+    public void register(String firstName, String lastName, String email, String username, String password) {
+        register(firstName, lastName, email, username, password, password, null, null, null);
+    }
+
     public void register(String firstName, String lastName, String email, String username, String password, String passwordConfirm) {
         register(firstName, lastName, email, username, password, passwordConfirm, null, null, null);
     }
@@ -144,6 +148,10 @@ public class RegisterPage extends LanguageComboboxAwarePage
         }
 
         UIUtils.clickLink(submitButton);
+    }
+
+    public void registerWithEmailAsUsername(String firstName, String lastName, String email, String password) {
+        registerWithEmailAsUsername(firstName, lastName, email, password, password);
     }
 
     public void registerWithEmailAsUsername(String firstName, String lastName, String email, String password, String passwordConfirm) {

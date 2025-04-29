@@ -33,7 +33,7 @@ import org.keycloak.cluster.infinispan.LockEntry;
 import org.keycloak.cluster.infinispan.LockEntryPredicate;
 import org.keycloak.cluster.infinispan.WrapperClusterEvent;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.infinispan.module.certificates.ReloadCertificateFunction;
+import org.keycloak.jgroups.certificates.ReloadCertificateFunction;
 import org.keycloak.keys.infinispan.PublicKeyStorageInvalidationEvent;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.cache.infinispan.ClearCacheEvent;
@@ -80,7 +80,6 @@ import org.keycloak.models.cache.infinispan.stream.InIdentityProviderPredicate;
 import org.keycloak.models.cache.infinispan.stream.InRealmPredicate;
 import org.keycloak.models.sessions.infinispan.changes.ReplaceFunction;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
-import org.keycloak.models.sessions.infinispan.changes.sessions.LastSessionRefreshEvent;
 import org.keycloak.models.sessions.infinispan.changes.sessions.SessionData;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionStore;
@@ -96,7 +95,6 @@ import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.RemoveAllUserLoginFailuresEvent;
 import org.keycloak.models.sessions.infinispan.events.RemoveUserSessionsEvent;
-import org.keycloak.models.sessions.infinispan.initializer.InitializerState;
 import org.keycloak.models.sessions.infinispan.stream.AuthClientSessionSetMapper;
 import org.keycloak.models.sessions.infinispan.stream.CollectionToStreamMapper;
 import org.keycloak.models.sessions.infinispan.stream.GroupAndCountCollectorSupplier;
@@ -150,14 +148,10 @@ import org.keycloak.storage.managers.UserStorageSyncManager;
                 ScopeUpdatedEvent.class,
                 ScopeRemovedEvent.class,
 
-                // models.sessions.infinispan.initializer package
-                InitializerState.class,
-
                 // models.sessions.infinispan.changes package
                 SessionEntityWrapper.class,
 
                 // models.sessions.infinispan.changes.sessions package
-                LastSessionRefreshEvent.class,
                 SessionData.class,
 
                 // models.cache.infinispan.authorization.stream package

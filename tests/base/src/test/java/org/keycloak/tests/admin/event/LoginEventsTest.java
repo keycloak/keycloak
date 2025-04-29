@@ -35,6 +35,9 @@ import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 
@@ -202,17 +205,28 @@ public class LoginEventsTest {
             event.setType(EventType.LOGIN);
             event.setRealmId(realmId);
 
+            event.setTime(currentTime - 2*24*3600*1000);
+            provider.onEvent(event);
             event.setTime(currentTime - 1000);
             provider.onEvent(event);
             event.setTime(currentTime);
             provider.onEvent(event);
             event.setTime(currentTime + 1000);
             provider.onEvent(event);
+            event.setTime(currentTime + 2*24*3600*1000);
+            provider.onEvent(event);
         });
 
-        List<EventRepresentation> events = managedRealm.admin().getEvents(null, null, null, currentTime, currentTime, null, null, null, null);
+        List<EventRepresentation> events = managedRealm.admin().getEvents();
+        Assertions.assertEquals(5, events.size());
+        events = managedRealm.admin().getEvents(null, null, null, currentTime, currentTime, null, null, null, null);
         Assertions.assertEquals(1, events.size());
         events = managedRealm.admin().getEvents(null, null, null, currentTime - 1000, currentTime + 1000, null, null, null, null);
+        Assertions.assertEquals(3, events.size());
+
+        LocalDate dateFrom = Instant.ofEpochMilli(currentTime - 1000).atZone(ZoneOffset.UTC).toLocalDate();
+        LocalDate dateTo = Instant.ofEpochMilli(currentTime + 1000).atZone(ZoneOffset.UTC).toLocalDate();
+        events = managedRealm.admin().getEvents(null, null, null, dateFrom.toString(), dateTo.toString(), null, null, null, null);
         Assertions.assertEquals(3, events.size());
     }
 

@@ -130,6 +130,16 @@ Logging:
 
 --log <handler>      Enable one or more log handlers in a comma-separated list. Possible values
                        are: console, file, syslog. Default: console.
+--log-async <true|false>
+                     Indicates whether to log asynchronously to all handlers. Default: false.
+--log-console-async <true|false>
+                     Indicates whether to log asynchronously to console. If not set, value from the
+                       parent property 'log-async' is used. Default: false. Available only when
+                       Console log handler is activated.
+--log-console-async-queue-length <queue-length>
+                     The queue length to use before flushing writing when logging to console.
+                       Default: 512. Available only when Console log handler is activated and
+                       asynchronous logging is enabled.
 --log-console-color <true|false>
                      Enable or disable colors when logging to console. Default: false. Available
                        only when Console log handler is activated.
@@ -158,6 +168,14 @@ Logging:
                        handler is activated.
 --log-file <file>    Set the log file path and filename. Default: data/log/keycloak.log. Available
                        only when File log handler is activated.
+--log-file-async <true|false>
+                     Indicates whether to log asynchronously to file log. If not set, value from
+                       the parent property 'log-async' is used. Default: false. Available only when
+                       File log handler is activated.
+--log-file-async-queue-length <queue-length>
+                     The queue length to use before flushing writing when logging to file log.
+                       Default: 512. Available only when File log handler is activated and
+                       asynchronous logging is enabled.
 --log-file-format <format>
                      Set a format specific to file log entries. Default: %d{yyyy-MM-dd HH:mm:ss,
                        SSS} %-5p [%c] (%t) %s%e%n. Available only when File log handler is
@@ -192,6 +210,14 @@ Logging:
 --log-syslog-app-name <name>
                      Set the app name used when formatting the message in RFC5424 format. Default:
                        keycloak. Available only when Syslog is activated.
+--log-syslog-async <true|false>
+                     Indicates whether to log asynchronously to Syslog. If not set, value from the
+                       parent property 'log-async' is used. Default: false. Available only when
+                       Syslog is activated.
+--log-syslog-async-queue-length <queue-length>
+                     The queue length to use before flushing writing when logging to Syslog.
+                       Default: 512. Available only when Syslog is activated and asynchronous
+                       logging is enabled.
 --log-syslog-endpoint <host:port>
                      Set the IP address and port of the Syslog server. Default: localhost:514.
                        Available only when Syslog is activated.

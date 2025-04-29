@@ -4,15 +4,10 @@ import adminClient from "../utils/AdminClient";
 import { login } from "../utils/login";
 import { assertNotificationMessage } from "../utils/masthead";
 import { confirmModal } from "../utils/modal";
-import {
-  changeRoleTypeFilter,
-  confirmModalAssign,
-  pickRole,
-} from "../utils/roles";
+import { pickRoleType, confirmModalAssign, pickRole } from "../utils/roles";
 import { goToRealm, goToRealmSettings } from "../utils/sidebar";
 import { assertRowExists, clickRowKebabItem, searchItem } from "../utils/table";
 import {
-  clickAssignRole,
   goToDefaultGroupTab,
   goToUserRegistrationTab,
 } from "./user-registration";
@@ -41,8 +36,7 @@ test.describe("Realm settings - User registration tab", () => {
   test(`Add / remove ${roleName} role`, async ({ page }) => {
     const roleType = "roles";
 
-    await clickAssignRole(page);
-    await changeRoleTypeFilter(page, roleType);
+    await pickRoleType(page, roleType);
     await pickRole(page, roleName, true);
     await confirmModalAssign(page);
     await assertNotificationMessage(page, "Associated roles have been added");

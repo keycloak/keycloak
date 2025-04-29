@@ -311,7 +311,8 @@ public final class CRAssert {
     public static CompletableFuture<Void> eventuallyRecreateUpdateStatus(KubernetesClient client, Keycloak keycloak, String reason) {
         var cf1 = client.resource(keycloak).informOnCondition(kcs -> {
             try {
-                assertKeycloakStatusCondition(kcs.get(0), KeycloakStatusCondition.READY, false, "Performing Keycloak update");
+                // could be not ready "Performing Keycloak update", or "Waiting for more replicas"
+                assertKeycloakStatusCondition(kcs.get(0), KeycloakStatusCondition.READY, false, null);
                 return true;
             } catch (AssertionError e) {
                 return false;

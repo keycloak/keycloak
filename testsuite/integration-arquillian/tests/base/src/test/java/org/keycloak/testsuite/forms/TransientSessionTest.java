@@ -24,9 +24,8 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.FlowUtil;
@@ -41,14 +40,10 @@ import static org.keycloak.models.AuthenticationExecutionModel.Requirement.REQUI
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class TransientSessionTest extends AbstractTestRealmKeycloakTest {
+public class TransientSessionTest extends AbstractChangeImportedUserPasswordsTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
-
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-    }
 
     @Test
     public void loginSuccess() throws Exception {
@@ -57,7 +52,7 @@ public class TransientSessionTest extends AbstractTestRealmKeycloakTest {
         oauth.client("direct-grant", "password");
 
         // Signal that we want userSession to be transient
-        AccessTokenResponse response = oauth.passwordGrantRequest("test-user@localhost", "password")
+        AccessTokenResponse response = oauth.passwordGrantRequest("test-user@localhost", getPassword("test-user@localhost"))
                 .param(SetClientNoteAuthenticator.PREFIX + AuthenticationManager.USER_SESSION_PERSISTENT_STATE, UserSessionModel.SessionPersistenceState.TRANSIENT.toString())
                 .send();
 

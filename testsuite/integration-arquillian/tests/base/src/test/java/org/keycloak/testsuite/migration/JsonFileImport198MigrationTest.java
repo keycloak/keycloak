@@ -81,6 +81,7 @@ public class JsonFileImport198MigrationTest extends AbstractJsonFileImportMigrat
         testMigrationTo24_x(false);
         testMigrationTo25_0_0();
         testMigrationTo26_0_0(false);
+        testMigrationTo26_3_0();
     }
 
     @Override

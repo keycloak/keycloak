@@ -6,7 +6,7 @@
 
 <@tmpl.guide
 title="Advanced configuration"
-summary="How to tune advanced aspects of the Keycloak CR">
+summary="Tune advanced aspects of the Keycloak CR.">
 
 == Advanced configuration
 This {section} describes how to use Custom Resources (CRs) for advanced configuration of your {project_name} deployment.

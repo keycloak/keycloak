@@ -45,7 +45,7 @@ test.describe("Realm settings events tab tests", () => {
     await confirmModal(page);
     await assertNotificationMessage(page, "The user events have been cleared");
 
-    const eventTypes = ["Identity provider login", "Client info error"];
+    const eventTypes = ["Identity provider response", "Client info error"];
     await addSavedEventTypes(page, eventTypes);
 
     await assertNotificationMessage(page, "Successfully saved configuration");

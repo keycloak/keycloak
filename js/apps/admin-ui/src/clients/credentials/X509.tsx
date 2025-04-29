@@ -14,6 +14,7 @@ export const X509 = () => {
         )}
         label={t("allowRegexComparison")}
         labelIcon={t("allowRegexComparisonHelp")}
+        stringify
       />
       <TextControl
         name={convertAttributeNameToForm("attributes.x509.subjectdn")}

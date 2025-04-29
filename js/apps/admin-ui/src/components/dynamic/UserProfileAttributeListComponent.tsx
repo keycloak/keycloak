@@ -46,6 +46,12 @@ export const UserProfileAttributeListComponent = ({
 
   if (!config) return null;
 
+  const getError = () => {
+    return convertedName
+      .split(".")
+      .reduce((record: any, key) => record?.[key], errors);
+  };
+
   return (
     <FormGroup
       label={t(label!)}
@@ -58,7 +64,7 @@ export const UserProfileAttributeListComponent = ({
         rules={required ? { required: true } : {}}
         selectItems={convert(config)}
       />
-      {errors[convertedName!] && <FormErrorText message={t("required")} />}
+      {getError() && <FormErrorText message={t("required")} />}
     </FormGroup>
   );
 };

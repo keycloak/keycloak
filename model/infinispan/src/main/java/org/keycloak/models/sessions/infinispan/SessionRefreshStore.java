@@ -17,13 +17,8 @@
 
 package org.keycloak.models.sessions.infinispan;
 
-import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshStore;
 import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStore;
 
 public interface SessionRefreshStore {
-    CrossDCLastSessionRefreshStore getLastSessionRefreshStore();
-
-    CrossDCLastSessionRefreshStore getOfflineLastSessionRefreshStore();
-
     PersisterLastSessionRefreshStore getPersisterLastSessionRefreshStore();
 }

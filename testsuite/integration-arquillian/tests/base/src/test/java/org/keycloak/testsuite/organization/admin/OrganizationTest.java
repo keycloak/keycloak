@@ -139,7 +139,9 @@ public class OrganizationTest extends AbstractOrganizationTest {
 
         // test exact search by name (e.g. 'wayne-industries'), e-mail (e.g. 'gtbank.net'), and no result (e.g. 'nonexistent.com')
         List<OrganizationRepresentation> existing = testRealm().organizations().search("wayne-industries", true, 0, 10);
+        long count = testRealm().organizations().count("wayne-industries", true);
         assertThat(existing, hasSize(1));
+        assertThat(existing, hasSize((int) count));
         OrganizationRepresentation orgRep = existing.get(0);
         assertThat(orgRep.getName(), is(equalTo("wayne-industries")));
         assertThat(orgRep.isEnabled(), is(true));
@@ -149,7 +151,10 @@ public class OrganizationTest extends AbstractOrganizationTest {
         assertThat(orgRep.getAttributes(), nullValue());
 
         existing = testRealm().organizations().search("gtbank.net", true, 0, 10);
+        count = testRealm().organizations().count("gtbank.net", true);
+
         assertThat(existing, hasSize(1));
+        assertThat(existing, hasSize((int) count));
         orgRep = existing.get(0);
         assertThat(orgRep.getName(), is(equalTo("Gotham-Bank")));
         assertThat(orgRep.isEnabled(), is(true));
@@ -168,34 +173,47 @@ public class OrganizationTest extends AbstractOrganizationTest {
         assertThat(2, is(orgRep.getAttributes().size()));
 
         existing = testRealm().organizations().search("nonexistent.org", true, 0, 10);
+        count = testRealm().organizations().count("nonexistent.org", true);
         assertThat(existing, is(empty()));
+        assertThat(count, is(equalTo(0L)));
 
         // partial search matching name (e.g. 'wa' matching 'wayne-industries', and 'TheWave')
         existing = testRealm().organizations().search("wa", false, 0, 10);
+        count = testRealm().organizations().count("wa", false);
         assertThat(existing, hasSize(2));
+        assertThat(existing, hasSize((int) count));
         List<String> orgNames = existing.stream().map(OrganizationRepresentation::getName).collect(Collectors.toList());
         assertThat(orgNames, containsInAnyOrder("wayne-industries", "TheWave"));
 
         // partial search matching domain (e.g. '.net', matching acme and gotham-bank)
         existing = testRealm().organizations().search(".net", false, 0, 10);
+        count = testRealm().organizations().count(".net", false);
         assertThat(existing, hasSize(2));
+        assertThat(existing, hasSize((int) count));
         orgNames = existing.stream().map(OrganizationRepresentation::getName).collect(Collectors.toList());
         assertThat(orgNames, containsInAnyOrder("Gotham-Bank", "acme"));
 
         // partial search matching both a domain and org name, on two different orgs (e.g. 'gotham' matching 'Gotham-Bank' by name and 'wayne-industries' by domain)
         existing = testRealm().organizations().search("gotham", false, 0, 10);
+        count = testRealm().organizations().count("gotham", false);
         assertThat(existing, hasSize(2));
+        assertThat(existing, hasSize((int) count));
         orgNames = existing.stream().map(OrganizationRepresentation::getName).collect(Collectors.toList());
         assertThat(orgNames, containsInAnyOrder("Gotham-Bank", "wayne-industries"));
 
         // partial search matching no org (e.g. nonexistent)
         existing = testRealm().organizations().search("nonexistent", false, 0, 10);
+        count = testRealm().organizations().count("nonexistent", false);
         assertThat(existing, is(empty()));
+        assertThat(existing, hasSize((int) count));
 
         // paginated search - create more orgs, try to fetch them all in paginated form.
         for (int i = 0; i < 10; i++) {
             createOrganization("ztest-" + i);
         }
+        count = testRealm().organizations().count("", false);
+        assertThat(count, equalTo(14L));
+
         existing = testRealm().organizations().search("", false, 0, 10);
         // first page should have 10 results.
         assertThat(existing, hasSize(10));
@@ -244,8 +262,10 @@ public class OrganizationTest extends AbstractOrganizationTest {
 
         // search for "attr1:value1" - should match testorg.0, testorg.1, and testorg.2
         List<OrganizationRepresentation> fetchedOrgs = testRealm().organizations().searchByAttribute("attr1:value1");
+        long count = testRealm().organizations().countByAttribute("attr1:value1");
         fetchedOrgs.sort(Comparator.comparing(OrganizationRepresentation::getName));
         assertThat(fetchedOrgs, hasSize(3));
+        assertThat(fetchedOrgs, hasSize((int) count));
         assertThat(fetchedOrgs.get(0).getName(), is(equalTo(expected.get(0).getName())));
         assertThat(fetchedOrgs.get(1).getName(), is(equalTo(expected.get(1).getName())));
         assertThat(fetchedOrgs.get(2).getName(), is(equalTo(expected.get(2).getName())));
@@ -253,27 +273,46 @@ public class OrganizationTest extends AbstractOrganizationTest {
         // search for "attr2:value2" - should match testorg.1 and testorg.3
         fetchedOrgs = testRealm().organizations().searchByAttribute("attr2:value2");
         fetchedOrgs.sort(Comparator.comparing(OrganizationRepresentation::getName));
+        count = testRealm().organizations().countByAttribute("attr2:value2");
         assertThat(fetchedOrgs, hasSize(2));
+        assertThat(fetchedOrgs, hasSize((int) count));
         assertThat(fetchedOrgs.get(0).getName(), is(equalTo(expected.get(1).getName())));
         assertThat(fetchedOrgs.get(1).getName(), is(equalTo(expected.get(3).getName())));
 
         // search for "attr3:value3" - should match only testorg.2
         fetchedOrgs = testRealm().organizations().searchByAttribute("attr3:value3");
+        count = testRealm().organizations().countByAttribute("attr3:value3");
         assertThat(fetchedOrgs, hasSize(1));
+        assertThat(fetchedOrgs, hasSize((int) count));
         assertThat(fetchedOrgs.get(0).getName(), is(equalTo(expected.get(2).getName())));
 
         // search for both "attr1:value1 attr2:value2" - should match only testorg.1
         fetchedOrgs = testRealm().organizations().searchByAttribute("attr1:value1 attr2:value2");
+        count = testRealm().organizations().countByAttribute("attr1:value1 attr2:value2");
         assertThat(fetchedOrgs, hasSize(1));
+        assertThat(fetchedOrgs, hasSize((int) count));
         assertThat(fetchedOrgs.get(0).getName(), is(equalTo(expected.get(1).getName())));
 
         // search for both "attr2:value2 attr3:value3" - not org has both of these attributes at the same time.
         fetchedOrgs = testRealm().organizations().searchByAttribute("attr2:value2 attr3:value3");
+        count = testRealm().organizations().countByAttribute("attr2:value2 attr3:value3");
         assertThat(fetchedOrgs, hasSize(0));
+        assertThat(fetchedOrgs, hasSize((int) count));
 
         // search for "anything:anyvalue" - should again match no org because no org has this attribute.
         fetchedOrgs = testRealm().organizations().searchByAttribute("anything:anyvalue");
+        count = testRealm().organizations().countByAttribute("anything:anyvalue");
         assertThat(fetchedOrgs, hasSize(0));
+        assertThat(fetchedOrgs, hasSize((int) count));
+    }
+
+    @Test
+    public void testCountEndpoint() {
+        createOrganization("testorg.1");
+        createOrganization("testorg.2");
+
+        assertThat(testRealm().organizations().count(null), is(equalTo(2L)));
+        assertThat(testRealm().organizations().count(".1"), is(equalTo(1L)));
     }
 
     @Test
