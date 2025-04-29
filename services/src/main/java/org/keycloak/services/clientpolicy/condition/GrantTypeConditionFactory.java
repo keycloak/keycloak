@@ -38,12 +38,6 @@ public class GrantTypeConditionFactory extends AbstractClientPolicyConditionProv
     public static final String PROVIDER_ID = "grant-type";
     public static final String GRANT_TYPES = "grant_types";
 
-    private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
-
-    static {
-        addCommonConfigProperties(configProperties);
-    }
-
     @Override
     public GrantTypeCondition create(KeycloakSession session) {
         return new GrantTypeCondition(session);
@@ -61,6 +55,9 @@ public class GrantTypeConditionFactory extends AbstractClientPolicyConditionProv
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
+        List<ProviderConfigProperty> configProperties = new ArrayList<>();
+        addCommonConfigProperties(configProperties);
+
         ProviderConfigProperty property = new ProviderConfigProperty(GRANT_TYPES, "Grant Types",
                 "The condition evaluates to true if the current grant type is one of those in the list",
                 ProviderConfigProperty.MULTIVALUED_LIST_TYPE, null);
