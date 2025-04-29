@@ -63,7 +63,10 @@ public class AdminRootTest {
 
     @Test
     public void testNoRedirectWithFrontendUrl() throws Exception {
-        HttpResponse response = client.execute(new HttpGet(HOSTNAME + "/admin"));
+        HttpGet request = new HttpGet(HOSTNAME + "/admin");
+        // make the request seem like it's coming from a proxy so that it won't seem local
+        request.addHeader("Forwarded", "for=192.0.2.60");
+        HttpResponse response = client.execute(request);
 
         assertEquals(404, response.getStatusLine().getStatusCode());
 
