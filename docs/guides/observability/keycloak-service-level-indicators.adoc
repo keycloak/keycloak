@@ -58,12 +58,12 @@ At the same time, if you enter a Service Level Agreement (SLA) with stakeholders
 
 | Latency
 | Response time for authentication related HTTP requests as measured by the server
-| 95% of all authentication related requests should be faster than 250 ms within a 5-minute-range.
+| 95% of all authentication related requests should be faster than 250 ms within a month.
 | {project_name} server-side metrics to track latency for specific endpoints along with Response Time Distribution using `http_server_requests_seconds_bucket` and `http_server_requests_seconds_count`.
 
 | Errors
 | Failed authentication requests due to server problems as measured by the server
-| The rate of errors due to server problems for authentication requests should be less than 0.1% within a 5-minute-range.
+| The rate of errors due to server problems for authentication requests should be less than 0.1% within a month.
 | Identify server side error by filtering the metric `http_server_requests_seconds_count` on the tag `outcome` for value `SERVER_ERROR`.
 
 |===
