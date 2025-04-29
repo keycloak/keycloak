@@ -13,51 +13,55 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.mapper.ModelMapper;
 import org.keycloak.representations.admin.v2.ClientRepresentation;
+import org.keycloak.services.ServiceException;
+import org.keycloak.services.client.ClientService;
 
 import java.util.stream.Stream;
 
 public class DefaultClientsApi implements ClientsApi {
     private final KeycloakSession session;
     private final RealmModel realm;
-    private final ModelMapper mapper;
     private final HttpResponse response;
+    private final ClientService clientService;
 
     public DefaultClientsApi(KeycloakSession session, RealmModel realm) {
         this.session = session;
         this.realm = realm;
+        this.clientService = session.services().clients();
         this.response = session.getContext().getHttpResponse();
-        this.mapper = session.getProvider(ModelMapper.class);
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Override
     public Stream<ClientRepresentation> getClients() {
-        return realm.getClientsStream().map(mapper.clients()::fromModel);
+        return clientService.getClients(realm);
     }
 
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public ClientRepresentation createOrUpdateClient(ClientRepresentation client) {
-        // TODO return 200, or 201 if did not exist
-        response.setStatus(Response.Status.OK.getStatusCode());
-        return null;
+        try {
+            // TODO return 200, or 201 if did not exist
+            response.setStatus(Response.Status.OK.getStatusCode());
+            return clientService.createOrUpdateClient(realm, client);
+        } catch (ServiceException e) {
+            throw new WebApplicationException(e.getMessage(), e.getSuggestedResponseStatus().orElse(Response.Status.BAD_REQUEST));
+        }
     }
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public ClientRepresentation createClient(ClientRepresentation client) {
-        if (realm.getClientByClientId(client.getClientId()) != null) {
-            throw new WebApplicationException("Client already exists", Response.Status.CONFLICT.getStatusCode());
+        try {
+            response.setStatus(Response.Status.CREATED.getStatusCode());
+            return clientService.createClient(realm, client);
+        } catch (ServiceException e) {
+            throw new WebApplicationException(e.getMessage(), e.getSuggestedResponseStatus().orElse(Response.Status.BAD_REQUEST));
         }
-
-        var model = realm.addClient(client.getClientId());
-        response.setStatus(Response.Status.CREATED.getStatusCode());
-        return mapper.clients().fromModel(model);
     }
 
     @Path("{name}")
