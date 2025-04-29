@@ -81,7 +81,12 @@ public class EntityManagers {
     /**
      * Run the operation in batch mode with a pre-flush.
      * <p>
-     * It is desirable to use nestedEntityManagers to keep the existing context free of newly created entities.
+     * It is desirable to use nestedEntityManagers=true to keep the existing context free of newly created entities.
+     * <p>
+     * flush and detach operations are NOT automatically inhibited in batch mode. For even greater performance, and
+     * statement level batching by Hibernate, you may use the {@link #isBatchMode()} to conditionally not perform those
+     * operations - however keep in mind that especially when running with nestedEntityManagers=false, the current
+     * persistence context will accumulate anything that is not detached.
      * <p>
      * WARNING: Any queries run while batching will be in COMMIT mode, so they cannot see non-flushed changes made
      * within the batch. Most of Keycloak's JPA code however persists and flushes together.

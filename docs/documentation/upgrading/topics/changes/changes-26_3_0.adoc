@@ -24,6 +24,10 @@ When you want the user, who is authenticated to your client application, to link
 mechanism with the action `idp_link`. The proprietary custom protocol for client initiated account linking is deprecated now and might be removed in the future versions. For more information, see the
 Client initiated account link section of the link:{developerguide_link}[{developerguide_name}].
 
+=== `KeycloakSessionTask.useExistingSession` method removed
+
+`KeycloakSessionTask.useExistingSession` was only useful to private server logic. Now that this logic has been refined, there is no need for this method. 
+
 === Deprecation of `spi-connections-infinispan-quarkus-site-name`
 
 The option `spi-connections-infinispan-quarkus-site-name` is deprecated and no longer used for multi-site setups, and it will be removed in the future.
