@@ -3,6 +3,7 @@ package org.keycloak.services.client;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.admin.v2.ClientRepresentation;
 import org.keycloak.services.Service;
+import org.keycloak.services.ServiceException;
 
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -15,7 +16,7 @@ public interface ClientService extends Service {
 
     Stream<ClientRepresentation> getClients(RealmModel realm);
 
-    ClientRepresentation createOrUpdateClient(ClientRepresentation client);
+    ClientRepresentation createOrUpdateClient(RealmModel realm, ClientRepresentation client) throws ServiceException;
 
-    ClientRepresentation createClient(ClientRepresentation client);
+    ClientRepresentation createClient(RealmModel realm, ClientRepresentation client) throws ServiceException;
 }
