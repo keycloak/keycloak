@@ -1,4 +1,4 @@
-package org.keycloak.admin.api.mapper;
+package org.keycloak.models.mapper;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Mapper
-public interface MapStructClientMapper extends ApiClientMapper {
+public interface MapStructClientModelMapper extends ClientModelMapper {
     @Mapping(target = "displayName", source = "name")
     @Mapping(target = "appUrl", source = "baseUrl")
     @Mapping(target = "appRedirectUrls", source = "redirectUris")

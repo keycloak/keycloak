@@ -1,11 +1,12 @@
-package org.keycloak.admin.api;
+package org.keycloak.models.mapper;
 
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
-public class DefaultAdminApiFactory implements AdminApiFactory {
+public class MapStructModelMapperFactory implements ModelMapperFactory {
     public static final String PROVIDER_ID = "default";
+    private static ModelMapper SINGLETON;
 
     @Override
     public String getId() {
@@ -13,8 +14,11 @@ public class DefaultAdminApiFactory implements AdminApiFactory {
     }
 
     @Override
-    public AdminApi create(KeycloakSession session) {
-        return new DefaultAdminApi(session);
+    public ModelMapper create(KeycloakSession session) {
+        if (SINGLETON == null) {
+            SINGLETON = new MapStructModelMapper();
+        }
+        return SINGLETON;
     }
 
     @Override

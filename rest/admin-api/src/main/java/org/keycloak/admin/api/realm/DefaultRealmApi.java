@@ -3,6 +3,7 @@ package org.keycloak.admin.api.realm;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
 import org.keycloak.admin.api.client.ClientsApi;
+import org.keycloak.admin.api.client.DefaultClientsApi;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 
@@ -21,7 +22,6 @@ public class DefaultRealmApi implements RealmApi {
     @Path("clients")
     @Override
     public ClientsApi clients() {
-        return Optional.ofNullable(session.getProvider(ClientsApi.class))
-                .orElseThrow(() -> new NotFoundException("Cannot find provider for Clients API"));
+        return new DefaultClientsApi(session, realm);
     }
 }

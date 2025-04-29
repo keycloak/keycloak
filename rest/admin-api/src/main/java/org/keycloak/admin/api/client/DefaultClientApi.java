@@ -5,7 +5,7 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
-import org.keycloak.admin.api.mapper.ApiModelMapper;
+import org.keycloak.models.mapper.ModelMapper;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.admin.v2.ClientRepresentation;
@@ -16,13 +16,13 @@ public class DefaultClientApi implements ClientApi {
     private final KeycloakSession session;
     private final RealmModel realm;
     private final String clientId;
-    private final ApiModelMapper mapper;
+    private final ModelMapper mapper;
 
     public DefaultClientApi(KeycloakSession session, String clientId) {
         this.session = session;
         this.clientId = clientId;
         this.realm = session.getContext().getRealm();
-        this.mapper = session.getProvider(ApiModelMapper.class);
+        this.mapper = session.getProvider(ModelMapper.class);
     }
 
     @GET

@@ -10,10 +10,10 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.keycloak.admin.api.mapper.ApiModelMapper;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.mapper.ModelMapper;
 import org.keycloak.representations.admin.v2.ClientRepresentation;
 
 import java.util.stream.Stream;
@@ -21,14 +21,14 @@ import java.util.stream.Stream;
 public class DefaultClientsApi implements ClientsApi {
     private final KeycloakSession session;
     private final RealmModel realm;
-    private final ApiModelMapper mapper;
+    private final ModelMapper mapper;
     private final HttpResponse response;
 
-    public DefaultClientsApi(KeycloakSession session) {
+    public DefaultClientsApi(KeycloakSession session, RealmModel realm) {
         this.session = session;
-        this.realm = session.getContext().getRealm();
+        this.realm = realm;
         this.response = session.getContext().getHttpResponse();
-        this.mapper = session.getProvider(ApiModelMapper.class);
+        this.mapper = session.getProvider(ModelMapper.class);
     }
 
     @GET

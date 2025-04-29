@@ -1,9 +1,9 @@
-package org.keycloak.admin.api.mapper;
+package org.keycloak.models.mapper;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.representations.admin.v2.ClientRepresentation;
 
-public interface ApiClientMapper {
+public interface ClientModelMapper {
 
     ClientRepresentation fromModel(ClientModel model);
 
