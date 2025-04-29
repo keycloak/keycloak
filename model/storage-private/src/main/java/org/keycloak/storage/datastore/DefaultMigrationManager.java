@@ -21,46 +21,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.Version;
 import org.keycloak.migration.MigrationModel;
 import org.keycloak.migration.ModelVersion;
-import org.keycloak.migration.migrators.MigrateTo12_0_0;
-import org.keycloak.migration.migrators.MigrateTo14_0_0;
-import org.keycloak.migration.migrators.MigrateTo18_0_0;
-import org.keycloak.migration.migrators.MigrateTo20_0_0;
-import org.keycloak.migration.migrators.MigrateTo1_2_0;
-import org.keycloak.migration.migrators.MigrateTo1_3_0;
-import org.keycloak.migration.migrators.MigrateTo1_4_0;
-import org.keycloak.migration.migrators.MigrateTo1_5_0;
-import org.keycloak.migration.migrators.MigrateTo1_6_0;
-import org.keycloak.migration.migrators.MigrateTo1_7_0;
-import org.keycloak.migration.migrators.MigrateTo1_8_0;
-import org.keycloak.migration.migrators.MigrateTo1_9_0;
-import org.keycloak.migration.migrators.MigrateTo1_9_2;
-import org.keycloak.migration.migrators.MigrateTo21_0_0;
-import org.keycloak.migration.migrators.MigrateTo22_0_0;
-import org.keycloak.migration.migrators.MigrateTo23_0_0;
-import org.keycloak.migration.migrators.MigrateTo24_0_0;
-import org.keycloak.migration.migrators.MigrateTo24_0_3;
-import org.keycloak.migration.migrators.MigrateTo25_0_0;
-import org.keycloak.migration.migrators.MigrateTo26_0_0;
-import org.keycloak.migration.migrators.MigrateTo2_0_0;
-import org.keycloak.migration.migrators.MigrateTo2_1_0;
-import org.keycloak.migration.migrators.MigrateTo2_2_0;
-import org.keycloak.migration.migrators.MigrateTo2_3_0;
-import org.keycloak.migration.migrators.MigrateTo2_5_0;
-import org.keycloak.migration.migrators.MigrateTo3_0_0;
-import org.keycloak.migration.migrators.MigrateTo3_1_0;
-import org.keycloak.migration.migrators.MigrateTo3_2_0;
-import org.keycloak.migration.migrators.MigrateTo3_4_0;
-import org.keycloak.migration.migrators.MigrateTo3_4_1;
-import org.keycloak.migration.migrators.MigrateTo3_4_2;
-import org.keycloak.migration.migrators.MigrateTo4_0_0;
-import org.keycloak.migration.migrators.MigrateTo4_2_0;
-import org.keycloak.migration.migrators.MigrateTo4_6_0;
-import org.keycloak.migration.migrators.MigrateTo6_0_0;
-import org.keycloak.migration.migrators.MigrateTo8_0_0;
-import org.keycloak.migration.migrators.MigrateTo8_0_2;
-import org.keycloak.migration.migrators.MigrateTo9_0_0;
-import org.keycloak.migration.migrators.MigrateTo9_0_4;
-import org.keycloak.migration.migrators.Migration;
+import org.keycloak.migration.migrators.*;
 import org.keycloak.models.Constants;
 import org.keycloak.models.DeploymentStateProvider;
 import org.keycloak.models.KeycloakSession;
@@ -120,6 +81,7 @@ public class DefaultMigrationManager implements MigrationManager {
             new MigrateTo24_0_0(),
             new MigrateTo24_0_3(),
             new MigrateTo25_0_0(),
+            new MigrateTo25_0_13(),
             new MigrateTo26_0_0(),
     };
 
