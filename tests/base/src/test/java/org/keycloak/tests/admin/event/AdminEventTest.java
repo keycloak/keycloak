@@ -51,6 +51,9 @@ import org.keycloak.tests.utils.admin.ApiUtil;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -297,17 +300,28 @@ public class AdminEventTest {
             event.setAuthDetails(new AuthDetails());
             event.setRealmId(realmId);
 
+            event.setTime(currentTime - 2*24*3600*1000);
+            provider.onEvent(event, false);
             event.setTime(currentTime - 1000);
             provider.onEvent(event, false);
             event.setTime(currentTime);
             provider.onEvent(event, false);
             event.setTime(currentTime + 1000);
             provider.onEvent(event, false);
+            event.setTime(currentTime + 2*24*3600*1000);
+            provider.onEvent(event, false);
         });
 
-        List<AdminEventRepresentation> events = realm.getAdminEvents(null, null, null, null, null, null, null, currentTime, currentTime, null, null, null);
+        List<AdminEventRepresentation> events = realm.getAdminEvents();
+        Assertions.assertEquals(5, events.size());
+        events = realm.getAdminEvents(null, null, null, null, null, null, null, currentTime, currentTime, null, null, null);
         Assertions.assertEquals(1, events.size());
         events = realm.getAdminEvents(null, null, null, null, null, null, null, currentTime - 1000, currentTime + 1000, null, null, null);
+        Assertions.assertEquals(3, events.size());
+
+        LocalDate dateFrom = Instant.ofEpochMilli(currentTime - 1000).atZone(ZoneOffset.UTC).toLocalDate();
+        LocalDate dateTo = Instant.ofEpochMilli(currentTime + 1000).atZone(ZoneOffset.UTC).toLocalDate();
+        events = realm.getAdminEvents(null, null, null, null, null, null, null, dateFrom.toString(), dateTo.toString(), null, null, null);
         Assertions.assertEquals(3, events.size());
     }
 
