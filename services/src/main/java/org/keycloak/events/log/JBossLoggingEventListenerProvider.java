@@ -44,16 +44,19 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
     private final Logger.Level errorLevel;
     private final boolean sanitize;
     private final Character quotes;
+    private final boolean includeRepresentation;
     private final EventListenerTransaction tx = new EventListenerTransaction(this::logAdminEvent, this::logEvent);
 
     public JBossLoggingEventListenerProvider(KeycloakSession session, Logger logger,
-            Logger.Level successLevel, Logger.Level errorLevel, Character quotes, boolean sanitize) {
+            Logger.Level successLevel, Logger.Level errorLevel, Character quotes,
+            boolean sanitize, boolean includeRepresentation) {
         this.session = session;
         this.logger = logger;
         this.successLevel = successLevel;
         this.errorLevel = errorLevel;
         this.sanitize = sanitize;
         this.quotes = quotes;
+        this.includeRepresentation = includeRepresentation;
         this.session.getTransactionManager().enlistAfterCompletion(tx);
     }
 
@@ -80,7 +83,7 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
         }
     }
 
-    private void logEvent(Event event) {
+    protected void logEvent(Event event) {
         Logger.Level level = event.getError() != null ? errorLevel : successLevel;
 
         if (logger.isEnabled(level)) {
@@ -137,7 +140,7 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
         }
     }
 
-    private void logAdminEvent(AdminEvent adminEvent, boolean includeRepresentation) {
+    protected void logAdminEvent(AdminEvent adminEvent, boolean realmIncludeRepresentation) {
         Logger.Level level = adminEvent.getError() != null ? errorLevel : successLevel;
 
         if (logger.isEnabled(level)) {
@@ -172,6 +175,11 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
                     sb.append("=");
                     sanitize(sb, e.getValue());
                 }
+            }
+
+            if (realmIncludeRepresentation && includeRepresentation && adminEvent.getRepresentation() != null) {
+                sb.append(", representation=");
+                sanitize(sb, adminEvent.getRepresentation());
             }
 
             if(logger.isTraceEnabled()) {
