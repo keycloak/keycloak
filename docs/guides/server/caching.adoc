@@ -280,6 +280,39 @@ The keys and the certificate are stored in the database so they are available to
 By default, the certificate is valid for 60 days and is rotated at runtime every 30 days.
 Use the option `cache-embedded-mtls-rotation-interval-days` to change this.
 
+=== Running inside a service mesh
+
+When using a service mesh like Istio, you might need to allow a direct mTLS communication between the {project_name} Pods to allow for the mutual authentication to work.
+Otherwise, you might see error messages like `JGRP000006: failed accepting connection from peer SSLSocket` that indicate that a wrong certificate was presented, and the cluster will not form correctly.
+
+You then have the option to allow direct mTLS communication between the {project_name} nodes, or rely on the service mesh transport security to encrypt the communication and to authenticate peers.
+
+To allow direct mTLS communication for {project_name} when using Istio:
+
+* Apply the following configuration to allow direct communication.
++
+[source,yaml]
+----
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: infinispan-allow-nomtls
+spec:
+  selector:
+    matchLabels:
+      app: keycloak # <1>
+  portLevelMtls:
+    "7800": # <2>
+      mode: PERMISSIVE
+----
+<.> Update the labels to match your {project_name} deployment.
+<.> Port 7800 is the default. Adjust it if you change the data transmission port.
+
+As an alternative, to disable the mTLS communication, and rely on the service mesh to encrypt the traffic:
+
+* Set the option `cache-embedded-mtls-enabled` to `false`.
+* Configure your service mesh to authorize only traffic from other {project_name} nodes for the data transmission port (default: 7800).
+
 === Proving your own keys and certificates
 
 Although not recommended for standard setups, if it is essential in a specific setup, you can configure the keystore with the certificate for the transport stack manually. `cache-embedded-mtls-key-store-file` sets the path to the keystore, and `cache-embedded-mtls-key-store-password` sets the password to decrypt it.
