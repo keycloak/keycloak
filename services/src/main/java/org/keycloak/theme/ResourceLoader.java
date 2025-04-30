@@ -36,7 +36,7 @@ public class ResourceLoader {
         if (root == null || resource == null) {
             return null;
         }
-        Path rootPath = root.toPath().normalize().toAbsolutePath();
+        Path rootPath = root.toPath().toAbsolutePath().normalize();
         Path resourcePath = rootPath.resolve(resource).normalize().toAbsolutePath();
         if (resourcePath.startsWith(rootPath)) {
             return resourcePath.toFile();

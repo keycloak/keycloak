@@ -11,6 +11,7 @@ import {
   UseControllerProps,
   useController,
 } from "react-hook-form";
+import { getRuleValue } from "../utils/getRuleValue";
 import { FormLabel } from "./FormLabel";
 import { PasswordInput, PasswordInputProps } from "./PasswordInput";
 
@@ -32,7 +33,7 @@ export const PasswordControl = <
   props: PasswordControlProps<T, P>,
 ) => {
   const { labelIcon, ...rest } = props;
-  const required = !!props.rules?.required;
+  const required = !!getRuleValue(props.rules?.required);
   const defaultValue = props.defaultValue ?? ("" as PathValue<T, P>);
 
   const { field, fieldState } = useController({

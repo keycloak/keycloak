@@ -1,3 +1,5 @@
+import { NetworkError } from "@keycloak/keycloak-admin-client";
+import { type FallbackProps } from "@keycloak/keycloak-ui-shared";
 import {
   Alert,
   AlertActionCloseButton,
@@ -7,8 +9,6 @@ import {
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 
-import { type FallbackProps } from "@keycloak/keycloak-ui-shared";
-
 export const ErrorRenderer = ({ error }: FallbackProps) => {
   const { t } = useTranslation();
 
@@ -16,17 +16,25 @@ export const ErrorRenderer = ({ error }: FallbackProps) => {
     window.location.href = window.location.origin + window.location.pathname;
   };
 
+  let message;
+  if (error instanceof NetworkError && error.response.status === 403) {
+    message = t("forbiddenAdminConsole");
+  } else {
+    message = error.message;
+  }
   return (
     <PageSection>
       <Alert
         isInline
         variant={AlertVariant.danger}
-        title={error.message}
+        title={message}
         actionClose={
           <AlertActionCloseButton title={error.message} onClose={reset} />
         }
         actionLinks={
-          <AlertActionLink onClick={reset}>{t("retry")}</AlertActionLink>
+          <AlertActionLink onClick={() => location.reload()}>
+            {t("reload")}
+          </AlertActionLink>
         }
       ></Alert>
     </PageSection>

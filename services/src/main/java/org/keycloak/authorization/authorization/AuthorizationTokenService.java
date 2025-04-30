@@ -314,7 +314,7 @@ public class AuthorizationTokenService {
         if (accessToken.getSessionState() == null) {
             // Create temporary (request-scoped) transient session
             UserModel user = TokenManager.lookupUserFromStatelessToken(keycloakSession, realm, accessToken);
-            userSessionModel = new UserSessionManager(keycloakSession).createUserSession(KeycloakModelUtils.generateId(), realm, user, user.getUsername(), request.getClientConnection().getRemoteAddr(),
+            userSessionModel = new UserSessionManager(keycloakSession).createUserSession(KeycloakModelUtils.generateId(), realm, user, user.getUsername(), request.getClientConnection().getRemoteHost(),
                     ServiceAccountConstants.CLIENT_AUTH, false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
         } else {
             userSessionModel = sessions.getUserSession(realm, accessToken.getSessionState());
@@ -810,7 +810,7 @@ public class AuthorizationTokenService {
             return clientConnection;
         }
 
-        public void addPermissions(List<String> permissionList, String permissionResourceFormat, boolean matchingUri) {
+        public void addPermissions(List<String> permissionList, String permissionResourceFormat, boolean matchingUri, Integer maxResults) {
             if (permissionResourceFormat == null) {
                 permissionResourceFormat = "id";
             }
@@ -820,7 +820,7 @@ public class AuthorizationTokenService {
                     addPermissionsById(permissionList);
                     break;
                 case "uri":
-                    addPermissionsByUri(permissionList, matchingUri);
+                    addPermissionsByUri(permissionList, matchingUri, maxResults);
                     break;
             }
 
@@ -840,7 +840,7 @@ public class AuthorizationTokenService {
             }
         }
 
-        private void addPermissionsByUri(List<String> permissionList, boolean matchingUri) {
+        private void addPermissionsByUri(List<String> permissionList, boolean matchingUri, Integer maxResults) {
             StoreFactory storeFactory = authorization.getStoreFactory();
 
             for (String permission : permissionList) {
@@ -856,7 +856,7 @@ public class AuthorizationTokenService {
                         throw invalidResourceException;
                     }
 
-                    List<Resource> resources = getResourceListByUri(uri, storeFactory, matchingUri);
+                    List<Resource> resources = getResourceListByUri(uri, storeFactory, matchingUri, maxResults);
 
                     if (resources == null || resources.isEmpty()) {
                         CorsErrorResponseException invalidResourceException = new CorsErrorResponseException(getCors(),
@@ -876,7 +876,7 @@ public class AuthorizationTokenService {
                         return;
                     }
 
-                    List<Resource> resources = getResourceListByUri(uri, storeFactory, matchingUri);
+                    List<Resource> resources = getResourceListByUri(uri, storeFactory, matchingUri, maxResults);
 
                     if (resources == null || resources.isEmpty()) {
                         CorsErrorResponseException invalidResourceException = new CorsErrorResponseException(getCors(),
@@ -890,13 +890,13 @@ public class AuthorizationTokenService {
             }
         }
 
-        private List<Resource> getResourceListByUri(String uri, StoreFactory storeFactory, boolean matchingUri) {
+        private List<Resource> getResourceListByUri(String uri, StoreFactory storeFactory, boolean matchingUri, Integer maxResults) {
             Map<Resource.FilterOption, String[]> search = new EnumMap<>(Resource.FilterOption.class);
             search.put(Resource.FilterOption.URI, new String[] { uri });
             ResourceServer resourceServer = storeFactory.getResourceServerStore()
                 .findByClient(getRealm().getClientByClientId(getAudience()));
-            List<Resource> resources = storeFactory.getResourceStore().find(resourceServer, search, -1,
-                Constants.DEFAULT_MAX_RESULTS);
+
+            List<Resource> resources = storeFactory.getResourceStore().find(resourceServer, search, -1, maxResults);
 
             if (!matchingUri || !resources.isEmpty()) {
                 return resources;

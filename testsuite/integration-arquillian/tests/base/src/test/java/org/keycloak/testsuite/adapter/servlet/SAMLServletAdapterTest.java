@@ -41,6 +41,7 @@ import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.net.URI;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
@@ -73,6 +74,7 @@ import jakarta.xml.soap.MessageFactory;
 import jakarta.xml.soap.SOAPHeader;
 import jakarta.xml.soap.SOAPHeaderElement;
 import jakarta.xml.soap.SOAPMessage;
+import java.security.cert.X509Certificate;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
@@ -106,6 +108,7 @@ import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 
 import org.keycloak.admin.client.Keycloak;
@@ -122,6 +125,8 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
+import org.keycloak.dom.saml.v2.metadata.IDPSSODescriptorType;
+import org.keycloak.dom.saml.v2.metadata.KeyDescriptorType;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.dom.saml.v2.protocol.StatusCodeType;
@@ -133,12 +138,15 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.protocol.saml.SamlProtocolUtils;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.rotation.HardcodedKeyLocator;
+import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
@@ -147,6 +155,9 @@ import org.keycloak.saml.common.util.XmlKeyInfoKeyNameTransformer;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
+import org.keycloak.saml.processing.core.saml.v2.util.SAMLMetadataUtil;
+import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
+import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.testsuite.adapter.page.*;
@@ -165,10 +176,12 @@ import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.Creator;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
+import org.keycloak.testsuite.util.BrowserDriverUtil;
 import org.keycloak.testsuite.util.BrowserTabUtil;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
@@ -1390,8 +1403,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         }
     }
 
-    @Test
-    public void idpMetadataValidation() throws Exception {
+    public void idpMetadataValidation(boolean signature) throws Exception {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             HttpGet httpGet = new HttpGet(authServerPage.toString() + "/realms/" + SAMLSERVLETDEMO + "/protocol/saml/descriptor");
             try (CloseableHttpResponse response = client.execute(httpGet)) {
@@ -1399,7 +1411,42 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
                 validateXMLWithSchema(stringResponse, "/adapter-test/keycloak-saml/metadata-schema/saml-schema-metadata-2.0.xsd");
                 Object descriptor = SAMLParser.getInstance().parse(new ByteArrayInputStream(stringResponse.getBytes(GeneralConstants.SAML_CHARSET)));
                 assertThat(descriptor, instanceOf(EntityDescriptorType.class));
+
+                Document doc = DocumentUtil.getDocument(stringResponse);
+
+                if (signature) {
+                    Assert.assertNotNull("IdP metadata is not signed", XMLSignatureUtil.getSignature(doc.getDocumentElement()));
+                    EntityDescriptorType entityType = (EntityDescriptorType) descriptor;
+                    IDPSSODescriptorType idpDescriptor = SAMLMetadataUtil.locateIDPSSODescriptorType(entityType);
+                    Assert.assertNotNull("No IDPSSODescriptorType in the IdP metadata", idpDescriptor);
+                    List<KeyDescriptorType> keyDescriptors = idpDescriptor.getKeyDescriptor();
+                    X509Certificate cert = null;
+                    if (keyDescriptors != null) {
+                        for (KeyDescriptorType keyDescriptorType : keyDescriptors) {
+                            cert = SAMLMetadataUtil.getCertificate(keyDescriptorType);
+                            break;
+                        }
+                    }
+                    Assert.assertNotNull("No signing certificate found in the IdP metadata", cert);
+                    SamlProtocolUtils.verifyDocumentSignature(doc, new HardcodedKeyLocator(cert.getPublicKey()));
+                } else {
+                    Assert.assertNull("IdP metadata is signed", XMLSignatureUtil.getSignature(doc.getDocumentElement()));
+                }
             }
+        }
+    }
+
+    @Test
+    public void idpMetadataValidationNoSignature() throws Exception {
+        idpMetadataValidation(false);
+    }
+
+    @Test
+    public void idpMetadataValidationSignature() throws Exception {
+        try (RealmAttributeUpdater realmUpdater = new RealmAttributeUpdater(testRealmResource())
+                .setAttribute(SamlConfigAttributes.SAML_SIGNATURE_ALGORITHM, SignatureAlgorithm.RSA_SHA256.name())
+                .update()) {
+            idpMetadataValidation(true);
         }
     }
 
@@ -1888,7 +1935,8 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
             final String authSessionId = sessionCookie.getValue();
             testingClient.server().run(session -> {
                 RealmModel realm = session.realms().getRealmByName(DEMO);
-                RootAuthenticationSessionModel root = session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId);
+                String decodedAuthSessionId = new AuthenticationSessionManager(session).decodeBase64AndValidateSignature(authSessionId, false);
+                RootAuthenticationSessionModel root = session.authenticationSessions().getRootAuthenticationSession(realm, decodedAuthSessionId);
                 session.authenticationSessions().removeRootAuthenticationSession(realm, root);
             });
 
@@ -1928,7 +1976,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         BasicCookieStore cookieStore = new BasicCookieStore();
         try (Keycloak client = KeycloakBuilder.builder().serverUrl(loginPage.getAuthRoot()).realm(SAMLSERVLETDEMO)
                 .username(admin).password(adminPassword).clientId(Constants.ADMIN_CLI_CLIENT_ID)
-                .resteasyClient(ResteasyClientBuilder.newBuilder().build()).build();
+                .resteasyClient(AdminClientUtil.createResteasyClient()).build();
                 CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build()) {
             HttpUriRequest req = RequestBuilder.post()
                     .setUri(loginPage.getAuthRoot() + "/admin/realms/" + SAMLSERVLETDEMO + "/users/" + userId + "/impersonation")
@@ -1952,6 +2000,8 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
 
     @Test
     public void testImpersonationForSaml() throws IOException {
+        Assume.assumeFalse("The firefox driver does not allow to set the cookies", BrowserDriverUtil.isDriverFirefox(driver));
+
         RealmResource realm = adminClient.realm(SAMLSERVLETDEMO);
         List<UserRepresentation> users = realm.users().search("bburke", true);
         Assert.assertNotNull(users);
@@ -1987,12 +2037,21 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         checkLoggedOut(salesPostSigEmailServletPage, testRealmSAMLPostLoginPage);
     }
 
+    private String getCookieValue(String name, String path) {
+        return driver.manage().getCookies()
+                .stream()
+                .filter(c -> name.equals(c.getName()) && path.equals(c.getPath()))
+                .findAny()
+                .map(Cookie::getValue)
+                .orElse(null);
+    }
+
     @Test
     public void testChangeSessionID() throws Exception {
         // login in the employeeDom application
         assertSuccessfulLogin(employeeDomServletPage, bburkeUser, testRealmSAMLPostLoginPage, "principal=bburke");
         assertSuccessfullyLoggedIn(employeeDomServletPage, "principal=bburke");
-        String sessionId = driver.manage().getCookieNamed("JSESSIONID").getValue();
+        String sessionId = getCookieValue("JSESSIONID", "/employee-dom");
 
         // retrieve the saml document
         driver.navigate().to(employeeDomServletPage.getUriBuilder().clone().path("getAssertionFromDocument").build().toURL());
@@ -2003,7 +2062,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         // change the session id
         driver.navigate().to(employeeDomServletPage.getUriBuilder().clone().path("change-session-id").build().toURL());
         waitForPageToLoad();
-        Assert.assertNotEquals("SessionID has not been changed at login", sessionId, driver.manage().getCookieNamed("JSESSIONID").getValue());
+        Assert.assertNotEquals("SessionID has not been changed at login", sessionId, getCookieValue("JSESSIONID", "/employee-dom"));
 
         // retrieve again the saml document and should be the same as login should be maintained
         driver.navigate().to(employeeDomServletPage.getUriBuilder().clone().path("getAssertionFromDocument").build().toURL());
@@ -2025,7 +2084,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
 
         transformer.transform(doc,
-                new StreamResult(new OutputStreamWriter(out, "UTF-8")));
+                new StreamResult(new OutputStreamWriter(out, StandardCharsets.UTF_8)));
     }
 
     private URI getAuthServerSamlEndpoint(String realm) throws IllegalArgumentException, UriBuilderException {

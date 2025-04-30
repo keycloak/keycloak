@@ -22,9 +22,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.keycloak.testsuite.account.AccountRestServiceTest.assertUserProfileAttributeMetadata;
 import static org.keycloak.testsuite.account.AccountRestServiceTest.getUserProfileAttributeMetadata;
-import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_ALL;
-import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_ADMIN_EDITABLE;
-import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_ADMIN_ONLY;
+import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.PERMISSIONS_ALL;
+import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.PERMISSIONS_ADMIN_EDITABLE;
+import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.PERMISSIONS_ADMIN_ONLY;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -44,7 +44,7 @@ import org.keycloak.representations.idm.UserProfileMetadata;
 import org.keycloak.representations.account.UserRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
-import org.keycloak.testsuite.forms.VerifyProfileTest;
+import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.keycloak.userprofile.UserProfileContext;
 
 /**
@@ -105,7 +105,7 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
         assertUserProfileAttributeMetadata(user, "username", "${username}", true, false);
         assertUserProfileAttributeMetadata(user, "email", "${email}", true, false);
         
-        UserProfileAttributeMetadata uam = assertUserProfileAttributeMetadata(user, "firstName", "${profile.firstName}", false, false);
+        UserProfileAttributeMetadata uam = assertUserProfileAttributeMetadata(user, "firstName", "${profile.firstName}", true, false);
         assertNull(uam.getAnnotations());
         Map<String, Object> vc = assertValidatorExists(uam, "length");
         assertEquals(255, vc.get("max"));
@@ -121,7 +121,7 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
         assertUserProfileAttributeMetadata(user, "attr_required", "attr_required", true, false);
         assertUserProfileAttributeMetadata(user, "attr_required_by_role", "attr_required_by_role", true, false);
         
-        assertUserProfileAttributeMetadata(user, "attr_required_by_scope", "attr_required_by_scope", false, false);
+        assertUserProfileAttributeMetadata(user, "attr_required_by_scope", "attr_required_by_scope", true, false);
         
         assertUserProfileAttributeMetadata(user, "attr_not_required_due_to_role", "attr_not_required_due_to_role", false, false);
         assertUserProfileAttributeMetadata(user, "attr_readonly", "attr_readonly", false, true);
@@ -229,7 +229,7 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             assertUserProfileAttributeMetadata(user, "username", "${username}", true, true);
             assertUserProfileAttributeMetadata(user, "email", "${email}", true, false);
             
-            UserProfileAttributeMetadata uam = assertUserProfileAttributeMetadata(user, "firstName", "${profile.firstName}", false, false);
+            UserProfileAttributeMetadata uam = assertUserProfileAttributeMetadata(user, "firstName", "${profile.firstName}", true, false);
             assertNull(uam.getAnnotations());
             Map<String, Object> vc = assertValidatorExists(uam, "length");
             assertEquals(255, vc.get("max"));
@@ -245,7 +245,7 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             assertUserProfileAttributeMetadata(user, "attr_required", "attr_required", true, false);
             assertUserProfileAttributeMetadata(user, "attr_required_by_role", "attr_required_by_role", true, false);
             
-            assertUserProfileAttributeMetadata(user, "attr_required_by_scope", "attr_required_by_scope", false, false);
+            assertUserProfileAttributeMetadata(user, "attr_required_by_scope", "attr_required_by_scope", true, false);
             
             assertUserProfileAttributeMetadata(user, "attr_not_required_due_to_role", "attr_not_required_due_to_role", false, false);
             assertUserProfileAttributeMetadata(user, "attr_readonly", "attr_readonly", false, true);
@@ -372,7 +372,7 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
     }
 
     protected void setUserProfileConfiguration(String configuration) {
-        VerifyProfileTest.setUserProfileConfiguration(testRealm(), configuration);
+        UserProfileUtil.setUserProfileConfiguration(testRealm(), configuration);
     }
 
     protected UserRepresentation getUser() throws IOException {

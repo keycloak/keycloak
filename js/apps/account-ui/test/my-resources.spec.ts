@@ -57,7 +57,7 @@ test.describe("My resources page", () => {
     await page.getByTestId("resources").click();
 
     await page.getByTestId("sharedWithMe").click();
-    const rowData = await page.getByTestId("row[0].name").allTextContents();
-    expect(rowData).toEqual(["one"]);
+    const rowData = page.getByTestId("row[0].name");
+    await expect(rowData).toHaveText("one");
   });
 });

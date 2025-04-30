@@ -17,18 +17,14 @@
 
 package org.keycloak.jose.jwk;
 
-import java.util.Arrays;
-import java.util.List;
-
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.crypto.KeyType;
-import org.keycloak.crypto.KeyUse;
-import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.rule.CryptoInitRule;
 import org.keycloak.util.JsonSerialization;
 
@@ -42,12 +38,13 @@ import java.security.Signature;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECGenParameterSpec;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.keycloak.common.util.CertificateUtils.generateV1SelfSignedCertificate;
 import static org.keycloak.common.util.CertificateUtils.generateV3Certificate;
 
@@ -229,15 +226,15 @@ public abstract class JWKTest {
     }
 
     @Test
-    public void parse() {
+    public void parseRsa() {
         String jwkJson = "{" +
-                "   \"kty\": \"RSA\"," +
-                "   \"alg\": \"RS256\"," +
-                "   \"use\": \"sig\"," +
-                "   \"kid\": \"3121adaa80ace09f89d80899d4a5dc4ce33d0747\"," +
-                "   \"n\": \"soFDjoZ5mQ8XAA7reQAFg90inKAHk0DXMTizo4JuOsgzUbhcplIeZ7ks83hsEjm8mP8lUVaHMPMAHEIp3gu6Xxsg-s73ofx1dtt_Fo7aj8j383MFQGl8-FvixTVobNeGeC0XBBQjN8lEl-lIwOa4ZoERNAShplTej0ntDp7TQm0=\"," +
-                "   \"e\": \"AQAB\"" +
-                "  }";
+                         "   \"kty\": \"RSA\"," +
+                         "   \"alg\": \"RS256\"," +
+                         "   \"use\": \"sig\"," +
+                         "   \"kid\": \"3121adaa80ace09f89d80899d4a5dc4ce33d0747\"," +
+                         "   \"n\": \"soFDjoZ5mQ8XAA7reQAFg90inKAHk0DXMTizo4JuOsgzUbhcplIeZ7ks83hsEjm8mP8lUVaHMPMAHEIp3gu6Xxsg-s73ofx1dtt_Fo7aj8j383MFQGl8-FvixTVobNeGeC0XBBQjN8lEl-lIwOa4ZoERNAShplTej0ntDp7TQm0=\"," +
+                         "   \"e\": \"AQAB\"" +
+                         "  }";
 
         PublicKey key = JWKParser.create().parse(jwkJson).toPublicKey();
         assertEquals("RSA", key.getAlgorithm());
@@ -245,20 +242,41 @@ public abstract class JWKTest {
     }
 
     @Test
-    public void emptyEcOverclaim() throws Exception {
-        JWKBuilder builder = JWKBuilder.create();
-        KeyPairGenerator generator = KeyPairGenerator.getInstance("EC");
-        KeyPair keyPair = generator.generateKeyPair();
-        JWK jwk = builder.ec(keyPair.getPublic(), KeyUse.ENC);
-        JWKParser parser = new JWKParser(jwk);
+    public void parseEc() {
 
-        try {
-            parser.toPublicKey();
-        } catch (NullPointerException e) {
-            fail("NullPointerException is thrown: " + e.getMessage());
-        } catch (RuntimeException e) {
-            // Other runtime exception is expected.
-        }
+        String jwkJson = "{\n" +
+                         "    \"kty\": \"EC\",\n" +
+                         "    \"use\": \"sig\",\n" +
+                         "    \"crv\": \"P-384\",\n" +
+                         "    \"kid\": \"KTGEM0qFeO9VGjTLjmXiE_R_eSBUkU87xmytygI1pFQ\",\n" +
+                         "    \"x\": \"_pYSppQj0JkrXFQdJPOTiktUxy_giDnqc-PEmNShrWrZm8Ol6E5qB3m1kmZJ7HUF\",\n" +
+                         "    \"y\": \"BVlstiJytsgOxrsC1VuNYdx86KKMeJg5WvJhEi-5kMpF2aMHZqbJCcIq0uRdzi7Q\",\n" +
+                         "    \"alg\": \"ES256\"\n" +
+                         "}";
+
+        JWKParser sut = JWKParser.create().parse(jwkJson);
+
+        PublicKey pub = sut.toPublicKey();
+        assertNotNull(pub);
+        assertTrue( pub.getAlgorithm().startsWith("EC"));
+        assertEquals("X.509", pub.getFormat());
+    }
+
+    @Test
+    public void toPublicKey_EC() {
+
+        ECPublicJWK ecJwk = new ECPublicJWK();
+        ecJwk.setKeyType(KeyType.EC);
+        ecJwk.setCrv("P-256");
+        ecJwk.setX("zHXlTZt3yU_oNnLIjgpt-ZaiStrYIzR2oxxq53J0uIs");
+        ecJwk.setY("cOsAvnh6olE8KHWPHmB-pJawRWmTtbChmWtSeWZRJdc");
+
+        JWKParser sut = JWKParser.create(ecJwk);
+
+        PublicKey pub = sut.toPublicKey();
+        assertNotNull(pub);
+        assertTrue(pub.getAlgorithm().startsWith("EC"));
+        assertEquals("X.509", pub.getFormat());
     }
 
     private byte[] sign(byte[] data, String javaAlgorithm, PrivateKey key) throws Exception {

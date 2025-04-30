@@ -61,7 +61,7 @@ export const CapabilityConfig = ({
               render={({ field }) => (
                 <Switch
                   data-testid="authentication"
-                  id="kc-authentication-switch"
+                  id="kc-authentication"
                   label={t("on")}
                   labelOff={t("off")}
                   isChecked={!field.value}
@@ -73,6 +73,12 @@ export const CapabilityConfig = ({
                       setValue(
                         convertAttributeNameToForm<FormFields>(
                           "attributes.oidc.ciba.grant.enabled",
+                        ),
+                        false,
+                      );
+                      setValue(
+                        convertAttributeNameToForm<FormFields>(
+                          "attributes.standard.token.exchange.enabled",
                         ),
                         false,
                       );
@@ -152,7 +158,7 @@ export const CapabilityConfig = ({
               <GridItem lg={8} sm={6}>
                 <Controller
                   name="directAccessGrantsEnabled"
-                  defaultValue={true}
+                  defaultValue={false}
                   control={control}
                   render={({ field }) => (
                     <InputGroup>
@@ -234,6 +240,41 @@ export const CapabilityConfig = ({
                   )}
                 />
               </GridItem>
+              {isFeatureEnabled(Feature.StandardTokenExchangeV2) && (
+                <GridItem lg={8} sm={6}>
+                  <Controller
+                    name={convertAttributeNameToForm<
+                      Required<ClientRepresentation["attributes"]>
+                    >("attributes.standard.token.exchange.enabled")}
+                    defaultValue={false}
+                    control={control}
+                    render={({ field }) => (
+                      <InputGroup>
+                        <InputGroupItem>
+                          <Checkbox
+                            data-testid="standard-token-exchange-enabled"
+                            label={t("standardTokenExchangeEnabled")}
+                            id="kc-standard-token-exchange-enabled"
+                            name="standard-token-exchange-enabled"
+                            isChecked={
+                              field.value.toString() === "true" &&
+                              !clientAuthentication
+                            }
+                            onChange={field.onChange}
+                            isDisabled={clientAuthentication}
+                          />
+                        </InputGroupItem>
+                        <InputGroupItem>
+                          <HelpItem
+                            helpText={t("standardTokenExchangeEnabledHelp")}
+                            fieldLabelId="standardTokenExchangeEnabled"
+                          />
+                        </InputGroupItem>
+                      </InputGroup>
+                    )}
+                  />
+                </GridItem>
+              )}
               {isFeatureEnabled(Feature.DeviceFlow) && (
                 <GridItem lg={8} sm={6}>
                   <Controller

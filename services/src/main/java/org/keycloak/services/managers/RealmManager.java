@@ -16,10 +16,16 @@
  */
 package org.keycloak.services.managers;
 
+import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.core.Response;
 import org.keycloak.Config;
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.Encode;
+import org.keycloak.connections.jpa.support.EntityManagers;
+import org.keycloak.events.EventListenerProvider;
+import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
@@ -28,6 +34,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.ProtocolMapperModel;
@@ -170,7 +177,7 @@ public class RealmManager {
     }
 
     protected void createDefaultClientScopes(RealmModel realm) {
-        DefaultClientScopes.createDefaultClientScopes(session, realm, true);
+        EntityManagers.runInBatch(session, () -> DefaultClientScopes.createDefaultClientScopes(session, realm, true), false);
     }
 
     protected void setupAdminConsole(RealmModel realm) {
@@ -253,6 +260,7 @@ public class RealmManager {
         realm.setBruteForceProtected(false); // default settings off for now todo set it on
         realm.setPermanentLockout(false);
         realm.setMaxTemporaryLockouts(0);
+        realm.setBruteForceStrategy(RealmRepresentation.BruteForceStrategy.MULTIPLE);
         realm.setMaxFailureWaitSeconds(900);
         realm.setMinimumQuickLoginWaitSeconds(60);
         realm.setWaitIncrementSeconds(60);
@@ -295,6 +303,15 @@ public class RealmManager {
         realm.setEventsEnabled(rep.isEventsEnabled());
         realm.setEventsExpiration(rep.getEventsExpiration() != null ? rep.getEventsExpiration() : 0);
         if (rep.getEventsListeners() != null) {
+            for (String el : rep.getEventsListeners()) {
+                EventListenerProviderFactory elpf = (EventListenerProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(EventListenerProvider.class, el);
+                if (elpf == null) {
+                    throw new ClientErrorException("Unknown event listener", Response.Status.BAD_REQUEST);
+                }
+                if (elpf.isGlobal()) {
+                    throw new ClientErrorException("Global event listeners not allowed in realm specific configuration", Response.Status.BAD_REQUEST);
+                }
+            }
             realm.setEventsListeners(new HashSet<>(rep.getEventsListeners()));
         }
         if(rep.getEnabledEventTypes() != null) {
@@ -527,6 +544,9 @@ public class RealmManager {
         if (StringUtil.isBlank(rep.getRealm())) {
             throw new ModelException("Realm name cannot be empty");
         }
+        if (session.realms().getRealmByName(rep.getRealm()) != null) {
+            throw new ModelDuplicateException("Realm " + rep.getRealm() + " already exists");
+        }
 
         RealmModel realm = model.createRealm(id, rep.getRealm());
         RealmModel currentRealm = session.getContext().getRealm();
@@ -535,6 +555,7 @@ public class RealmManager {
             session.getContext().setRealm(realm);
             ReservedCharValidator.validate(rep.getRealm());
             ReservedCharValidator.validateLocales(rep.getSupportedLocales());
+            ReservedCharValidator.validateSecurityHeaders(rep.getBrowserSecurityHeaders());
             realm.setName(rep.getRealm());
 
             // setup defaults
@@ -545,6 +566,16 @@ public class RealmManager {
                 KeycloakModelUtils.setupDefaultRole(realm, determineDefaultRoleName(rep));
             } else {
                 realm.setDefaultRole(RepresentationToModel.createRole(realm, rep.getDefaultRole()));
+            }
+
+            if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2)) {
+                if (rep.getAdminPermissionsClient() != null) {
+                    ClientModel client = RepresentationToModel.createClient(session, realm, rep.getAdminPermissionsClient());
+                    realm.setAdminPermissionsClient(client);
+                    RepresentationToModel.createResourceServer(client, session, false);
+                } else if (Boolean.TRUE.equals(rep.isAdminPermissionsEnabled())) {
+                    AdminPermissionsSchema.SCHEMA.init(session, realm);
+                }
             }
 
             boolean postponeMasterClientSetup = postponeMasterClientSetup(rep);

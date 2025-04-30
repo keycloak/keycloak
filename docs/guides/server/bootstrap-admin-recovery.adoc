@@ -3,8 +3,8 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Admin bootstrap and recovery"
-summary="Learn how to bootstrap and recover admin account.">
+title="Bootstrapping and recovering an admin account"
+summary="Bootstrap {project_name} and recover access by creating a temporary admin account.">
 
 == A temporary admin account
 
@@ -71,11 +71,11 @@ Passwordless, OTP, or other advanced authentication methods can be enforced for 
 
 Next, retrieve the `credentialId`. For this example, the OTP credential is the relevant one. Use the following command to get an array of `CredentialRepresentation` objects and find the one with `type` set to `otp`:
 
-<@kc.admin parameters="get users/{userId}/credentials -r {realm}"/>
+<@kc.admin parameters="get users/{userId}/credentials -r {realm-name}"/>
 
 Finally, the retrieved ID can be used to remove the advanced authentication method (in our case, OTP):
 
-<@kc.admin parameters="delete users/{userId}/credentials/{credentialId} -r {realm}"/>
+<@kc.admin parameters="delete users/{userId}/credentials/{credentialId} -r {realm-name}"/>
 
 == Default values
 

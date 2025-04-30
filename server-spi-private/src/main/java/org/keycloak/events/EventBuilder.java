@@ -17,23 +17,29 @@
 
 package org.keycloak.events;
 
+import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.trace.StatusCode;
 import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.tracing.TracingAttributes;
+import org.keycloak.tracing.TracingProvider;
+
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -54,7 +60,7 @@ public class EventBuilder {
 
     public EventBuilder(RealmModel realm, KeycloakSession session, ClientConnection clientConnection) {
         this(realm, session);
-        ipAddress(clientConnection.getRemoteAddr());
+        ipAddress(clientConnection.getRemoteHost());
     }
 
     public EventBuilder(RealmModel realm, KeycloakSession session) {
@@ -80,17 +86,18 @@ public class EventBuilder {
     }
 
     private static List<EventListenerProvider> getEventListeners(KeycloakSession session, RealmModel realm) {
-        return realm.getEventsListenersStream().map(id -> {
-            EventListenerProvider listener = session.getProvider(EventListenerProvider.class, id);
-            if (listener != null) {
-                return listener;
-            } else {
-                log.error("Event listener '" + id + "' registered, but provider not found");
-                return null;
-            }
-        })
-        .filter(Objects::nonNull)
-        .collect(Collectors.toList());
+        HashSet<String> realmListeners = new HashSet<>(realm.getEventsListenersStream().toList());
+        List<EventListenerProvider> result = session.getKeycloakSessionFactory().getProviderFactoriesStream(EventListenerProvider.class)
+                .filter(providerFactory -> realmListeners.contains(providerFactory.getId()) || ((EventListenerProviderFactory) providerFactory).isGlobal())
+                .map(providerFactory -> {
+                    realmListeners.remove(providerFactory.getId());
+                    return session.getProvider(EventListenerProvider.class, providerFactory.getId());
+                })
+                .toList();
+        if (!realmListeners.isEmpty()) {
+            log.error("Event listeners " + realmListeners + " registered, but provider not found");
+        }
+        return result;
     }
 
     private EventBuilder(KeycloakSession session, EventStoreProvider store, List<EventListenerProvider> listeners, RealmModel realm, Event event) {
@@ -159,10 +166,10 @@ public class EventBuilder {
         event.getDetails().put(key, value);
         return this;
     }
-    
+
     /**
-     * Add event detail where strings from the input Collection are filtered not to contain <code>null</code> and then joined using <code>::</code> character. 
-     * 
+     * Add event detail where strings from the input Collection are filtered not to contain <code>null</code> and then joined using <code>::</code> character.
+     *
      * @param key of the detail
      * @param values, can be null
      * @return builder for chaining
@@ -173,10 +180,10 @@ public class EventBuilder {
         }
         return detail(key, values.stream().filter(Objects::nonNull).collect(Collectors.joining("::")));
     }
-    
+
     /**
-     * Add event detail where strings from the input Stream are filtered not to contain <code>null</code> and then joined using <code>::</code> character. 
-     * 
+     * Add event detail where strings from the input Stream are filtered not to contain <code>null</code> and then joined using <code>::</code> character.
+     *
      * @param key of the detail
      * @param values, can be null
      * @return builder for chaining
@@ -229,6 +236,7 @@ public class EventBuilder {
         send(this.storeImmediately == null ? true : this.storeImmediately);
     }
 
+    @Override
     public EventBuilder clone() {
         return new EventBuilder(session, store, listeners, realm, event.clone());
     }
@@ -257,12 +265,40 @@ public class EventBuilder {
             }
         }
 
+        traceEvent();
+
         for (EventListenerProvider l : targetListeners) {
             try {
                 l.onEvent(event);
             } catch (Throwable t) {
                 log.error("Failed to send type to " + l, t);
             }
+        }
+    }
+
+    private void traceEvent() {
+        var tracing = session.getProvider(TracingProvider.class);
+        var span = tracing.getCurrentSpan();
+
+        if (span.isRecording()) {
+            final var ab = Attributes.builder();
+            ab.put(TracingAttributes.EVENT_ID, event.getId());
+            ab.put(TracingAttributes.REALM_ID, event.getRealmId());
+            ab.put(TracingAttributes.REALM_NAME, event.getRealmName());
+            ab.put(TracingAttributes.CLIENT_ID, event.getClientId());
+            ab.put(TracingAttributes.USER_ID, event.getUserId());
+            ab.put(TracingAttributes.SESSION_ID, event.getSessionId());
+            ab.put("ipAddress", event.getIpAddress());
+            ab.put(TracingAttributes.EVENT_ERROR, event.getError());
+
+            var details = event.getDetails();
+            if (details != null) {
+                details.forEach((k, v) -> ab.put(TracingAttributes.KC_PREFIX + "details." + k, v));
+            }
+            if (event.getType().name().endsWith("_ERROR")) {
+                span.setStatus(StatusCode.ERROR);
+            }
+            span.addEvent(event.getType().name(), ab.build(), event.getTime(), TimeUnit.MILLISECONDS);
         }
     }
 

@@ -53,6 +53,11 @@ public interface ResourcesResource {
                   @QueryParam("max") Integer maxResult);
 
     @GET
+    @Path("/search")
+    @Produces(MediaType.APPLICATION_JSON)
+    ResourceRepresentation searchByName(@QueryParam("name") String name);
+
+    @GET
     @Produces(MediaType.APPLICATION_JSON)
     List<ResourceRepresentation> findByName(@QueryParam("name") String name);
 

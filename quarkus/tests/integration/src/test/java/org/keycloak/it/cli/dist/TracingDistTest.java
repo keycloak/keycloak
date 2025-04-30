@@ -35,15 +35,17 @@ public class TracingDistTest {
     private void assertTracingEnabled(CLIResult result) {
         result.assertMessage("opentelemetry");
         result.assertMessage("service.name=\"keycloak\"");
-        result.assertMessage("Preview features enabled: opentelemetry");
     }
 
     private void assertTracingDisabled(CLIResult result) {
         result.assertMessage("opentelemetry");
         result.assertNoMessage("service.name=\"keycloak\"");
+        assertSamplingDisabled(result);
+    }
+
+    private void assertSamplingDisabled(CLIResult result) {
         result.assertNoMessage("Failed to export spans.");
         result.assertNoMessage("Connection refused: localhost/127.0.0.1:4317");
-        result.assertNoMessage("Preview features enabled: opentelemetry");
     }
 
     @Test
@@ -62,12 +64,12 @@ public class TracingDistTest {
     void disabledOption(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
 
-        cliResult.assertError("Disabled option: '--tracing-service-name'. Available only when 'opentelemetry' feature and Tracing is enabled");
+        cliResult.assertError("Disabled option: '--tracing-service-name'. Available only when Tracing is enabled");
     }
 
     @Test
     @Order(3)
-    @Launch({"start-dev", "--tracing-enabled=true"})
+    @Launch({"start-dev", "--features-disabled=opentelemetry", "--tracing-enabled=true"})
     void disabledFeature(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
 
@@ -76,16 +78,16 @@ public class TracingDistTest {
 
     @Test
     @Order(4)
-    @Launch({"start-dev", "--features=opentelemetry", "--tracing-enabled=false", "--tracing-endpoint=something"})
+    @Launch({"start-dev", "--tracing-enabled=false", "--tracing-endpoint=something"})
     void disabledTracing(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
 
-        cliResult.assertError("Disabled option: '--tracing-endpoint'. Available only when 'opentelemetry' feature and Tracing is enabled");
+        cliResult.assertError("Disabled option: '--tracing-endpoint'. Available only when Tracing is enabled");
     }
 
     @Test
     @Order(5)
-    @Launch({"build", "--tracing-enabled=true", "--features=opentelemetry"})
+    @Launch({"build", "--db=dev-file", "--tracing-enabled=true"})
     void buildTracingEnabled(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
 
@@ -101,6 +103,16 @@ public class TracingDistTest {
         assertTracingEnabled(cliResult);
         // Initial system logs do not have any tracing data
         cliResult.assertMessage("traceId=, parentId=, spanId=, sampled=");
+    }
+
+    @Test
+    @Launch({"start", "--hostname-strict=false", "--http-enabled=true", "--optimized", "--tracing-sampler-ratio=0.0", "--log-level=io.opentelemetry:fine"})
+    void samplingDisabledViaRatioZero(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+
+        cliResult.assertStarted();
+        assertTracingEnabled(cliResult);
+        assertSamplingDisabled(cliResult);
     }
 
     @Test
@@ -145,11 +157,11 @@ public class TracingDistTest {
     }
 
     @Test
-    @Launch({"start", "--hostname-strict=false", "--http-enabled=true", "--optimized", "--tracing-sampler-ratio=0.0"})
+    @Launch({"start", "--hostname-strict=false", "--http-enabled=true", "--optimized", "--tracing-sampler-ratio=1.1"})
     void wrongSamplerRatio(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
 
-        cliResult.assertError("Ratio in 'tracing-sampler-ratio' option must be a double value in interval <0,1).");
+        cliResult.assertError("Ratio in 'tracing-sampler-ratio' option must be a double value in interval [0,1].");
     }
 
     @Test

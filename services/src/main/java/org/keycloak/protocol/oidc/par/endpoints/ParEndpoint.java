@@ -17,6 +17,8 @@
 
 package org.keycloak.protocol.oidc.par.endpoints;
 
+import jakarta.ws.rs.core.MultivaluedMap;
+import org.keycloak.events.Details;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.Profile;
@@ -31,8 +33,10 @@ import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest
 import org.keycloak.protocol.oidc.par.ParResponse;
 import org.keycloak.protocol.oidc.par.clientpolicy.context.PushedAuthorizationRequestContext;
 import org.keycloak.protocol.oidc.par.endpoints.request.ParEndpointRequestParserProcessor;
+import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.cors.Cors;
+import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.utils.ProfileHelper;
 
 import jakarta.ws.rs.Consumes;
@@ -46,6 +50,7 @@ import jakarta.ws.rs.core.UriBuilder;
 import static org.keycloak.protocol.oidc.OIDCLoginProtocol.REQUEST_URI_PARAM;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -55,6 +60,7 @@ import java.util.UUID;
 public class ParEndpoint extends AbstractParEndpoint {
 
     public static final String PAR_CREATED_TIME = "par.created.time";
+    public static final String PAR_DPOP_PROOF_JKT = "par.dpop.proof.jkt";
     private static final String REQUEST_URI_PREFIX = "urn:ietf:params:oauth:request_uri:";
     public static final int REQUEST_URI_PREFIX_LENGTH = REQUEST_URI_PREFIX.length();
 
@@ -88,12 +94,19 @@ public class ParEndpoint extends AbstractParEndpoint {
         checkRealm();
         authorizeClient();
 
-        if (httpRequest.getDecodedFormParameters().containsKey(REQUEST_URI_PARAM)) {
+        MultivaluedMap<String, String> decodedFormParameters = httpRequest.getDecodedFormParameters();
+
+        if (decodedFormParameters.containsKey(REQUEST_URI_PARAM)) {
             throw throwErrorResponseException(OAuthErrorException.INVALID_REQUEST, "It is not allowed to include request_uri to PAR.", Response.Status.BAD_REQUEST);
         }
 
+        // https://datatracker.ietf.org/doc/html/rfc9449#section-10.1
+        DPoPUtil.retrieveDPoPHeaderIfPresent(session, event, cors).ifPresent(dPoP -> {
+            session.setAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, dPoP);
+        });
+
         try {
-            authorizationRequest = ParEndpointRequestParserProcessor.parseRequest(event, session, client, httpRequest.getDecodedFormParameters());
+            authorizationRequest = ParEndpointRequestParserProcessor.parseRequest(event, session, client, decodedFormParameters);
         } catch (Exception e) {
             throw throwErrorResponseException(OAuthErrorException.INVALID_REQUEST_OBJECT, e.getMessage(), Response.Status.BAD_REQUEST);
         }
@@ -133,13 +146,18 @@ public class ParEndpoint extends AbstractParEndpoint {
             checker.checkOIDCRequest();
             checker.checkOIDCParams();
             checker.checkPKCEParams();
+            checker.checkParDPoPParams();
         } catch (AuthorizationEndpointChecker.AuthorizationCheckException ex) {
             ex.throwAsCorsErrorResponseException(cors);
         }
 
         try {
-            session.clientPolicy().triggerOnEvent(new PushedAuthorizationRequestContext(authorizationRequest, httpRequest.getDecodedFormParameters()));
+            session.clientPolicy().triggerOnEvent(new PushedAuthorizationRequestContext(authorizationRequest, decodedFormParameters));
         } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+            event.error(cpe.getError());
             throw throwErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
 
@@ -150,12 +168,14 @@ public class ParEndpoint extends AbstractParEndpoint {
 
         int expiresIn = realm.getParPolicy().getRequestUriLifespan();
 
-        httpRequest.getDecodedFormParameters().forEach((k, v) -> {
-                // PAR store only accepts Map so that MultivaluedMap needs to be converted to Map.
-                String singleValue = String.valueOf(v).replace("[", "").replace("]", "");
-                params.put(k, singleValue);
-            });
+        flattenDecodedFormParametersToParamsMap(decodedFormParameters, params);
+
         params.put(PAR_CREATED_TIME, String.valueOf(System.currentTimeMillis()));
+        // If DPoP Proof exists, its public key needs to be matched with the one with Token Request afterward
+        DPoP dpop = session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, DPoP.class);
+        if (dpop != null) {
+            params.put(PAR_DPOP_PROOF_JKT, dpop.getThumbprint());
+        }
 
         SingleUseObjectProvider singleUseStore = session.singleUseObjects();
         singleUseStore.put(key, expiresIn, params);
@@ -166,6 +186,32 @@ public class ParEndpoint extends AbstractParEndpoint {
         return cors.add(Response.status(Response.Status.CREATED)
                 .entity(parResponse)
                 .type(MediaType.APPLICATION_JSON_TYPE));
+    }
+
+    /**
+     * Flattens the given decodedFormParameters MultivaluedMap to a plain Map.
+     * Rationale: The SingleUseObjectProvider used as store for PARs only accepts Map so that MultivaluedMap needs to be converted to Map.
+     * @param decodedFormParameters form parameters sent in request body
+     * @param params target parameter Map
+     */
+    public static void flattenDecodedFormParametersToParamsMap(
+            MultivaluedMap<String, String> decodedFormParameters,
+            Map<String, String> params) {
+
+        for (var parameterEntry : decodedFormParameters.entrySet()) {
+            String parameterName = parameterEntry.getKey();
+            List<String> parameterValues = parameterEntry.getValue();
+
+            if (parameterValues.isEmpty()) {
+                // We emit the empty parameter as a marker, but only if it does not exist yet. This prevents "accidental" value overrides.
+                params.putIfAbsent(parameterName, null);
+            } else {
+                // We flatten the MultivaluedMap values list by emitting the first value only.
+                // We override potential empty parameters that were added to the params map before.
+                params.put(parameterName, parameterValues.get(0));
+            }
+
+        }
     }
 
 }

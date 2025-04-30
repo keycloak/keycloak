@@ -27,7 +27,9 @@ import org.jboss.logging.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.FixMethodOrder;
 import org.junit.runner.RunWith;
+import org.junit.runners.MethodSorters;
 import org.junit.runners.model.TestTimedOutException;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
@@ -35,7 +37,9 @@ import org.keycloak.admin.client.resource.RealmsResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -43,7 +47,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.KcArquillian;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.arquillian.TestContext;
@@ -58,7 +61,7 @@ import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.util.BrowserTabUtil;
 import org.keycloak.testsuite.util.CryptoInitRule;
 import org.keycloak.testsuite.util.DroneUtils;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.TestCleanup;
 import org.keycloak.testsuite.util.TestEventsLogger;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -95,7 +98,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
-import org.keycloak.models.UserModel;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST;
@@ -111,6 +113,7 @@ import static org.keycloak.testsuite.util.URLUtils.navigateToUri;
  */
 @RunWith(KcArquillian.class)
 @RunAsClient
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public abstract class AbstractKeycloakTest {
     protected static final String ENGLISH_LOCALE_NAME = "English";
 
@@ -179,11 +182,6 @@ public abstract class AbstractKeycloakTest {
 
         TestEventsLogger.setDriver(driver);
 
-        // The backend cluster nodes may not be yet started. Password will be updated later for cluster setup.
-        if (!AuthServerTestEnricher.AUTH_SERVER_CLUSTER) {
-            updateMasterAdminPassword();
-        }
-
         beforeAbstractKeycloakTestRealmImport();
 
         if (testContext.getTestRealmReps().isEmpty()) {
@@ -196,7 +194,7 @@ public abstract class AbstractKeycloakTest {
             afterAbstractKeycloakTestRealmImport();
         }
 
-        oauth.init(driver);
+        oauth.driver(driver).init();
     }
 
     public void reconnectAdminClient() throws Exception {
@@ -261,6 +259,7 @@ public abstract class AbstractKeycloakTest {
         // Remove all browsers from queue
         DroneUtils.resetQueue();
         BrowserTabUtil.cleanup();
+        oauth.httpClient().reset();
     }
 
     protected TestCleanup getCleanup(String realmName) {
@@ -787,4 +786,15 @@ public abstract class AbstractKeycloakTest {
         }
     }
 
+    protected static String generatePassword() {
+        return generatePassword(64);
+    }
+
+    protected static String generatePassword(int length) {
+        return SecretGenerator.getInstance().randomString(length);
+    }
+
+    protected String getAccountRootUrl() {
+        return suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/test/account";
+    }
 }

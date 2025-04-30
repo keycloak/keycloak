@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
@@ -41,6 +42,7 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -170,6 +172,13 @@ public class Organizations {
         return email.substring(domainSeparator + 1);
     }
 
+    public static String getEmailDomain(UserModel user) {
+        if (user == null) {
+            return null;
+        }
+        return getEmailDomain(user.getEmail());
+    }
+
     public static OrganizationModel resolveOrganization(KeycloakSession session) {
         return resolveOrganization(session, null, null);
     }
@@ -199,25 +208,35 @@ public class Organizations {
         AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
 
         if (authSession != null) {
-            String rawScopes = authSession.getClientNote(OAuth2Constants.SCOPE);
-            OrganizationScope scope = OrganizationScope.valueOfScope(rawScopes);
+            OrganizationScope scope = OrganizationScope.valueOfScope(session);
 
             List<OrganizationModel> organizations = ofNullable(authSession.getAuthNote(OrganizationModel.ORGANIZATION_ATTRIBUTE))
                     .map(provider::getById)
                     .map(List::of)
-                    .orElseGet(() -> scope == null ? List.of() : scope.resolveOrganizations(user, rawScopes, session).toList());
+                    .orElseGet(() -> scope == null ? List.of() : scope.resolveOrganizations(user, session).toList());
 
             if (organizations.size() == 1) {
                 // single organization mapped from authentication session
-                return organizations.get(0);
-            } else if (scope != null) {
-                // organization scope requested but no single organization mapped from the scope
+                OrganizationModel resolved = organizations.get(0);
+
+                if (user == null) {
+                    return resolved;
+                }
+
+                // make sure the user still maps to the organization from the authentication session
+                if (matchesOrganization(resolved, user)) {
+                    return resolved;
+                }
+
+                return null;
+            } else if (scope != null && user != null) {
+                // organization scope requested but no user and no single organization mapped from the scope
                 return null;
             }
         }
 
         organization = ofNullable(user).stream().flatMap(provider::getByMember)
-                .filter(o -> o.isEnabled() && provider.isManagedMember(o, user))
+                .filter(OrganizationModel::isEnabled)
                 .findAny();
 
         if (organization.isPresent()) {
@@ -225,7 +244,7 @@ public class Organizations {
         }
 
         if (user != null && domain == null) {
-            domain = getEmailDomain(user.getEmail());
+            domain = getEmailDomain(user);
         }
 
         return ofNullable(domain)
@@ -240,5 +259,38 @@ public class Organizations {
     public static boolean isRegistrationAllowed(KeycloakSession session, RealmModel realm) {
         if (session.getContext().getOrganization() != null) return true;
         return realm.isRegistrationAllowed();
+    }
+
+    public static boolean isReadOnlyOrganizationMember(KeycloakSession session, UserModel delegate) {
+        if (delegate == null) {
+            return false;
+        }
+
+        if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
+            return false;
+        }
+
+        var organizationProvider = getProvider(session);
+
+        if (organizationProvider.count() == 0) {
+            return false;
+        }
+
+        // check if provider is enabled and user is managed member of a disabled organization OR provider is disabled and user is managed member
+        return organizationProvider.getByMember(delegate)
+                .anyMatch((org) -> (organizationProvider.isEnabled() && org.isManaged(delegate) && !org.isEnabled()) ||
+                        (!organizationProvider.isEnabled() && org.isManaged(delegate)));
+    }
+
+    private static boolean matchesOrganization(OrganizationModel organization, UserModel user) {
+        if (organization == null || user == null) {
+            return false;
+        }
+
+        String emailDomain = Optional.ofNullable(getEmailDomain(user)).orElse("");
+        Stream<OrganizationDomainModel> domains = organization.getDomains();
+        Stream<String> domainNames = domains.map(OrganizationDomainModel::getName);
+
+        return organization.isMember(user) || domainNames.anyMatch(emailDomain::equals);
     }
 }

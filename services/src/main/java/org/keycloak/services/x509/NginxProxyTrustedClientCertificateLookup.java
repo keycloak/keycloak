@@ -5,7 +5,7 @@ import org.keycloak.http.HttpRequest;
 import org.keycloak.common.util.PemException;
 import org.keycloak.common.util.PemUtils;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
 
@@ -39,10 +39,15 @@ public class NginxProxyTrustedClientCertificateLookup extends AbstractClientCert
 
     private static final Logger log = Logger.getLogger(NginxProxyTrustedClientCertificateLookup.class);
 
+    private final boolean certIsUrlEncoded;
+
     public NginxProxyTrustedClientCertificateLookup(String sslCientCertHttpHeader,
                                                 String sslCertChainHttpHeaderPrefix,
-                                                int certificateChainLength) {
+                                                int certificateChainLength,
+                                                boolean certIsUrlEncoded) {
         super(sslCientCertHttpHeader, sslCertChainHttpHeaderPrefix, certificateChainLength);
+
+        this.certIsUrlEncoded = certIsUrlEncoded;
     }
 
     @Override
@@ -67,11 +72,10 @@ public class NginxProxyTrustedClientCertificateLookup extends AbstractClientCert
             log.warn("End user TLS Certificate is NULL! ");
             return null;
         }
-        try {
-            pem = java.net.URLDecoder.decode(pem, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            log.error("Cannot URL decode the end user TLS Certificate : " + pem,e);
+        if (certIsUrlEncoded) {
+            pem = java.net.URLDecoder.decode(pem, StandardCharsets.UTF_8);
         }
+
 
         return PemUtils.decodeCertificate(pem);
     }

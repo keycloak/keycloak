@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.model;
 
+import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -49,6 +50,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -148,9 +150,19 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
                 UserSessionModel userSession = kcSession.sessions().getUserSession(realm, sessions[0].getId());
                 assertSession(userSession, kcSession.users().getUserByUsername(realm, "user1"), "127.0.0.1", started, started, "test-app", "third-party");
 
-                userSession.restartSession(realm, kcSession.users().getUserByUsername(realm, "user2"), "user2", "127.0.0.6", "form", true, null, null);
+                // add some dummy session notes just to test if restart bellow will work
+                userSession.setNote("k1", "v1");
+                userSession.setNote("k2", "v2");
+                userSession.setNote("k3", "v3");
 
-                userSession = kcSession.sessions().getUserSession(realm, sessions[0].getId());
+                userSession.restartSession(realm, kcSession.users().getUserByUsername(realm, "user2"), "user2", "127.0.0.6", "form", true, null, null);
+            });
+
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), kcSession -> {
+                UserSessionModel userSession = kcSession.sessions().getUserSession(realm, sessions[0].getId());
+
+                assertThat(userSession.getNotes(), Matchers.anEmptyMap());
+
                 assertSession(userSession, kcSession.users().getUserByUsername(realm, "user2"), "127.0.0.6", started + 100, started + 100);
             });
         } finally {

@@ -17,6 +17,7 @@
 package org.keycloak.services.resources.admin.permissions;
 
 import org.jboss.logging.Logger;
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.common.ClientModelIdentity;
 import org.keycloak.authorization.common.DefaultEvaluationContext;
@@ -26,6 +27,7 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
+import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
@@ -47,6 +49,7 @@ import java.util.Set;
 
 import jakarta.ws.rs.ForbiddenException;
 
+import static org.keycloak.authorization.AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE;
 import static org.keycloak.services.resources.admin.permissions.AdminPermissionManagement.TOKEN_EXCHANGE;
 
 /**
@@ -63,6 +66,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
     protected final AuthorizationProvider authz;
     protected final MgmtPermissions root;
     protected final ResourceStore resourceStore;
+    protected final PolicyStore policyStore;
 
     private static final String RESOURCE_NAME_PREFIX = "client.resource.";
 
@@ -73,8 +77,10 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
         this.root = root;
         if (authz != null) {
             resourceStore = authz.getStoreFactory().getResourceStore();
+            policyStore = authz.getStoreFactory().getPolicyStore();
         } else {
             resourceStore = null;
+            policyStore = null;
         }
     }
 
@@ -658,13 +664,14 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
     public Map<String, Boolean> getAccess(ClientModel client) {
         Map<String, Boolean> map = new HashMap<>();
         map.put("view", canView(client));
-        map.put("manage", StorageId.isLocalStorage(client) && canManage(client));
-        map.put("configure", StorageId.isLocalStorage(client) && canConfigure(client));
+        boolean isAdminPermissionsClient = AdminPermissionsSchema.SCHEMA.isAdminPermissionClient(realm, client.getId());
+        map.put("manage", !isAdminPermissionsClient && StorageId.isLocalStorage(client) && canManage(client));
+        map.put("configure", !isAdminPermissionsClient && StorageId.isLocalStorage(client) && canConfigure(client));
         return map;
     }
 
     @Override
-    public Set<String> getClientsWithPermission(String scope) {
+    public Set<String> getClientIdsByScope(String scope) {
         if (!root.isAdminSameRealm()) {
             return Collections.emptySet();
         }
@@ -688,7 +695,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
 
     private boolean hasPermission(Resource resource, String scope) {
         ResourceServer server = root.realmResourceServer();
-        Collection<Permission> permissions = root.evaluatePermission(new ResourcePermission(resource, resource.getScopes(), server), server);
+        Collection<Permission> permissions = root.evaluatePermission(new ResourcePermission(CLIENTS_RESOURCE_TYPE, resource, resource.getScopes(), server), server);
         for (Permission permission : permissions) {
             for (String s : permission.getScopes()) {
                 if (scope.equals(s)) {

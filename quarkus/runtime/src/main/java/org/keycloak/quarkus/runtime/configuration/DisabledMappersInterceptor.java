@@ -81,6 +81,10 @@ public class DisabledMappersInterceptor implements ConfigSourceInterceptor {
     }
 
     public static void runWithDisabled(Runnable execution) {
+        if (!isEnabled()) {
+            execution.run();
+            return;
+        }
         try {
             disable();
             execution.run();

@@ -24,12 +24,15 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import org.infinispan.Cache;
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterListener;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ExecutionResult;
 import org.keycloak.common.util.Retry;
+import org.keycloak.common.util.Time;
+import org.keycloak.models.sessions.infinispan.CacheDecorators;
 
 /**
  *
@@ -44,15 +47,15 @@ public class InfinispanClusterProvider implements ClusterProvider {
 
     private final int clusterStartupTime;
     private final String myAddress;
-    private final CrossDCAwareCacheFactory crossDCAwareCacheFactory;
+    private final Cache<String, Object> workCache;
     private final InfinispanNotificationsManager notificationsManager; // Just to extract notifications related stuff to separate class
 
     private final ExecutorService localExecutor;
 
-    public InfinispanClusterProvider(int clusterStartupTime, String myAddress, CrossDCAwareCacheFactory crossDCAwareCacheFactory, InfinispanNotificationsManager notificationsManager, ExecutorService localExecutor) {
+    public InfinispanClusterProvider(int clusterStartupTime, String myAddress, Cache<String, Object> workCache, InfinispanNotificationsManager notificationsManager, ExecutorService localExecutor) {
         this.myAddress = myAddress;
         this.clusterStartupTime = clusterStartupTime;
-        this.crossDCAwareCacheFactory = crossDCAwareCacheFactory;
+        this.workCache = workCache;
         this.notificationsManager = notificationsManager;
         this.localExecutor = localExecutor;
     }
@@ -138,7 +141,7 @@ public class InfinispanClusterProvider implements ClusterProvider {
     private boolean tryLock(String cacheKey, int taskTimeoutInSeconds) {
         LockEntry myLock = new LockEntry(myAddress);
 
-        LockEntry existingLock = InfinispanClusterProviderFactory.putIfAbsentWithRetries(crossDCAwareCacheFactory, cacheKey, myLock, taskTimeoutInSeconds);
+        LockEntry existingLock = (LockEntry) workCache.putIfAbsent(cacheKey, myLock, Time.toMillis(taskTimeoutInSeconds), TimeUnit.MILLISECONDS);
         if (existingLock != null) {
             if (logger.isTraceEnabled()) {
                 logger.tracef("Task %s in progress already by node %s. Ignoring task.", cacheKey, existingLock.node());
@@ -157,7 +160,7 @@ public class InfinispanClusterProvider implements ClusterProvider {
         // More attempts to send the message (it may fail if some node fails in the meantime)
         Retry.executeWithBackoff((int iteration) -> {
 
-            crossDCAwareCacheFactory.getCache().remove(cacheKey);
+            CacheDecorators.ignoreReturnValues(workCache).remove(cacheKey);
             if (logger.isTraceEnabled()) {
                 logger.tracef("Task %s removed from the cache", cacheKey);
             }

@@ -36,7 +36,8 @@ public abstract class AbstractEcKeyProviderFactory<T extends KeyProvider> implem
         return ProviderConfigurationBuilder.create()
                 .property(Attributes.PRIORITY_PROPERTY)
                 .property(Attributes.ENABLED_PROPERTY)
-                .property(Attributes.ACTIVE_PROPERTY);
+                .property(Attributes.ACTIVE_PROPERTY)
+                .property(Attributes.EC_GENERATE_CERTIFICATE_PROPERTY);
     }
 
     @Override
@@ -44,7 +45,8 @@ public abstract class AbstractEcKeyProviderFactory<T extends KeyProvider> implem
         ConfigurationValidationHelper.check(model)
                 .checkLong(Attributes.PRIORITY_PROPERTY, false)
                 .checkBoolean(Attributes.ENABLED_PROPERTY, false)
-                .checkBoolean(Attributes.ACTIVE_PROPERTY, false);
+                .checkBoolean(Attributes.ACTIVE_PROPERTY, false)
+                .checkBoolean(Attributes.EC_GENERATE_CERTIFICATE_PROPERTY, false);
     }
 
     public static KeyPair generateEcKeyPair(String keySpecName) {

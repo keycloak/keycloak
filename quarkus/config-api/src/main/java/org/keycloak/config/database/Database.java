@@ -117,15 +117,15 @@ public final class Database {
                 "org.h2.jdbcx.JdbcDataSource",
                 "org.h2.Driver",
                 "org.hibernate.dialect.H2Dialect",
-                new Function<String, String>() {
+                new Function<>() {
                     @Override
                     public String apply(String alias) {
                         if ("dev-file".equalsIgnoreCase(alias)) {
-                            return addH2NonKeywords("jdbc:h2:file:${kc.home.dir:${kc.db-url-path:" + escapeReplacements(System.getProperty("user.home")) + "}}" + escapeReplacements(File.separator) + "${kc.data.dir:data}"
-                                    + escapeReplacements(File.separator) + "h2" + escapeReplacements(File.separator)
-                                    + "keycloakdb${kc.db-url-properties:}");
+                            return amendH2("jdbc:h2:file:${kc.db-url-path:${kc.home.dir:" + escapeReplacements(System.getProperty("user.home")) + "}}" + escapeReplacements(File.separator) + "${kc.data.dir:data}"
+                                  + escapeReplacements(File.separator) + "h2" + escapeReplacements(File.separator)
+                                  + "keycloakdb${kc.db-url-properties:}");
                         }
-                        return addH2NonKeywords("jdbc:h2:mem:keycloakdb${kc.db-url-properties:}");
+                        return amendH2("jdbc:h2:mem:keycloakdb${kc.db-url-properties:}");
                     }
 
                     private String escapeReplacements(String snippet) {
@@ -154,6 +154,26 @@ public final class Database {
                             jdbcUrl = jdbcUrl + ";NON_KEYWORDS=VALUE";
                         }
                         return jdbcUrl;
+                    }
+
+                    /**
+                     * Required so that the H2 db instance is closed only when the Agroal connection pool is closed during
+                     * Keycloak shutdown. We cannot rely on the default H2 ShutdownHook as this can result in the DB being
+                     * closed before dependent resources, e.g. JDBC_PING2, are shutdown gracefully. This solution also
+                     * requires the Agroal min-pool connection size to be at least 1.
+                     */
+                    private String addH2CloseOnExit(String jdbcUrl) {
+                        if (!jdbcUrl.contains("DB_CLOSE_ON_EXIT=")) {
+                            jdbcUrl = jdbcUrl + ";DB_CLOSE_ON_EXIT=FALSE";
+                        }
+                        if (!jdbcUrl.contains("DB_CLOSE_DELAY=")) {
+                            jdbcUrl = jdbcUrl + ";DB_CLOSE_DELAY=0";
+                        }
+                        return jdbcUrl;
+                    }
+
+                    private String amendH2(String jdbcUrl) {
+                        return addH2CloseOnExit(addH2NonKeywords(jdbcUrl));
                     }
                 },
                 asList("liquibase.database.core.H2Database"),

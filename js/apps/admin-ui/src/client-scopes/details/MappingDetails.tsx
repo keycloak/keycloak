@@ -34,7 +34,7 @@ export default function MappingDetails() {
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
-  const { id, mapperId } = useParams<MapperParams>();
+  const { id, mapperId, viewMode } = useParams<MapperParams>();
   const form = useForm();
   const { setValue, handleSubmit } = form;
   const [mapping, setMapping] = useState<ProtocolMapperTypeRepresentation>();
@@ -46,8 +46,7 @@ export default function MappingDetails() {
   const navigate = useNavigate();
   const { realm } = useRealm();
   const serverInfo = useServerInfo();
-  const isGuid = /^[{]?[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}[}]?$/;
-  const isUpdating = !!isGuid.exec(mapperId);
+  const isUpdating = viewMode === "edit";
 
   const isOnClientScope = !!useMatch(MapperRoute.path);
   const toDetails = () =>
@@ -217,7 +216,7 @@ export default function MappingDetails() {
               label={t("name")}
               labelIcon={t("mapperNameHelp")}
               readOnlyVariant={isUpdating ? "default" : undefined}
-              rules={{ required: { value: true, message: t("required") } }}
+              rules={{ required: t("required") }}
             />
             <DynamicComponents
               properties={mapping?.properties || []}
@@ -225,10 +224,11 @@ export default function MappingDetails() {
               stringify
             />
             <ActionGroup>
-              <Button variant="primary" type="submit">
+              <Button variant="primary" type="submit" data-testid="save">
                 {t("save")}
               </Button>
               <Button
+                data-testid="cancel"
                 variant="link"
                 component={(props) => <Link {...props} to={toDetails()} />}
               >

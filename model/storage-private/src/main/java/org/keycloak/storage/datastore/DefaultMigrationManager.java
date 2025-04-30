@@ -41,6 +41,9 @@ import org.keycloak.migration.migrators.MigrateTo24_0_0;
 import org.keycloak.migration.migrators.MigrateTo24_0_3;
 import org.keycloak.migration.migrators.MigrateTo25_0_0;
 import org.keycloak.migration.migrators.MigrateTo26_0_0;
+import org.keycloak.migration.migrators.MigrateTo26_1_0;
+import org.keycloak.migration.migrators.MigrateTo26_2_0;
+import org.keycloak.migration.migrators.MigrateTo26_3_0;
 import org.keycloak.migration.migrators.MigrateTo2_0_0;
 import org.keycloak.migration.migrators.MigrateTo2_1_0;
 import org.keycloak.migration.migrators.MigrateTo2_2_0;
@@ -121,12 +124,17 @@ public class DefaultMigrationManager implements MigrationManager {
             new MigrateTo24_0_3(),
             new MigrateTo25_0_0(),
             new MigrateTo26_0_0(),
+            new MigrateTo26_1_0(),
+            new MigrateTo26_2_0(),
+            new MigrateTo26_3_0(),
     };
 
     private final KeycloakSession session;
+    private final boolean allowMigrateExistingDatabaseToSnapshot;
 
-    public DefaultMigrationManager(KeycloakSession session) {
+    public DefaultMigrationManager(KeycloakSession session, boolean allowMigrateExistingDatabaseToSnapshot) {
         this.session = session;
+        this.allowMigrateExistingDatabaseToSnapshot = allowMigrateExistingDatabaseToSnapshot;
     }
 
     @Override
@@ -139,6 +147,11 @@ public class DefaultMigrationManager implements MigrationManager {
         ModelVersion latestUpdate = migrations[migrations.length-1].getVersion();
         ModelVersion databaseVersion = model.getStoredVersion() != null ? new ModelVersion(model.getStoredVersion()) : null;
 
+        if (SNAPSHOT_VERSION.equals(currentVersion) && databaseVersion != null && databaseVersion.lessThan(SNAPSHOT_VERSION) && !allowMigrateExistingDatabaseToSnapshot) {
+            throw new ModelException("Incorrect state of migration. You are trying to run nightly server version '" + currentVersion + "' against a database, which was previously migrated to version '" + databaseVersion +
+                    "'. This indicates that you are trying to run development server version against production database, which can result in a loss or corruption of data, and also does not allow upgrading. If it is intended, " +
+                    "use the option spi-datastore-legacy-allow-migrate-existing-database-to-snapshot of the datastore provider when starting the server and explicitly set it to true.");
+        }
         if (databaseVersion == null || databaseVersion.lessThan(latestUpdate)) {
             for (Migration m : migrations) {
                 if (databaseVersion == null || databaseVersion.lessThan(m.getVersion())) {
@@ -170,7 +183,7 @@ public class DefaultMigrationManager implements MigrationManager {
     public static final ModelVersion RHSSO_VERSION_7_2_KEYCLOAK_VERSION = new ModelVersion("3.4.3");
     public static final ModelVersion RHSSO_VERSION_7_3_KEYCLOAK_VERSION = new ModelVersion("4.8.3");
     public static final ModelVersion RHSSO_VERSION_7_4_KEYCLOAK_VERSION = new ModelVersion("9.0.3");
-    public static final ModelVersion SNAPSHOT_VERSION = new ModelVersion("999.0.0-SNAPSHOT");
+    public static final ModelVersion SNAPSHOT_VERSION = new ModelVersion(Constants.SNAPSHOT_VERSION);
 
     private static final Map<Pattern, ModelVersion> PATTERN_MATCHER = new LinkedHashMap<>();
     static {

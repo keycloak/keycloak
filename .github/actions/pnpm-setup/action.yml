@@ -5,7 +5,7 @@ inputs:
   node-version:
     description: Node.js version
     required: false
-    default: "20"
+    default: "22"
 
 runs:
   using: composite
@@ -20,26 +20,10 @@ runs:
       shell: bash
       run: corepack enable
 
-    - name: Get PNPM store directory
-      id: pnpm-cache
-      shell: bash
-      run: |
-        echo "store-path=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
-
-    - uses: actions/cache@v4
-      name: Setup PNPM cache
-      with:
-        # Also cache Cypress binary.
-        path: |
-          ~/.cache/Cypress
-          ${{ steps.pnpm-cache.outputs.store-path }}
-        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
-        restore-keys: |
-          ${{ runner.os }}-pnpm-store-
+    - name: PNPM store cache
+      uses: ./.github/actions/pnpm-store-cache
 
     - name: Install dependencies
       shell: bash
-      # Run the store prune after the installation to avoid having caches which grow over time
-      run: |
-        pnpm install --prefer-offline --frozen-lockfile
-        pnpm store prune
+      run: pnpm install --prefer-offline --frozen-lockfile
+      working-directory: js

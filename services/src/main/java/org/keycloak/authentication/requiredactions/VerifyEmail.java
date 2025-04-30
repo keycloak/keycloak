@@ -17,9 +17,17 @@
 
 package org.keycloak.authentication.requiredactions;
 
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilderException;
+import jakarta.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.authentication.*;
+import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.authentication.InitiatedActionSupport;
+import org.keycloak.authentication.RequiredActionContext;
+import org.keycloak.authentication.RequiredActionFactory;
+import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.verifyemail.VerifyEmailActionToken;
 import org.keycloak.common.util.Time;
 import org.keycloak.email.EmailException;
@@ -29,16 +37,20 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
-import org.keycloak.models.*;
+import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.services.Urls;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import jakarta.ws.rs.core.*;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -53,8 +65,18 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
             logger.debug("User is required to verify email");
         }
     }
+
+    @Override
+    public InitiatedActionSupport initiatedActionSupport() {
+        return InitiatedActionSupport.SUPPORTED;
+    }
+
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
+        process(context, true);
+    }
+
+    private void process(RequiredActionContext context, boolean isChallenge) {
         AuthenticationSessionModel authSession = context.getAuthenticationSession();
 
         if (context.getUser().isEmailVerified()) {
@@ -70,14 +92,15 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
         }
 
         LoginFormsProvider loginFormsProvider = context.form();
+        loginFormsProvider.setAuthenticationSession(context.getAuthenticationSession());
         Response challenge;
         authSession.setClientNote(AuthorizationEndpointBase.APP_INITIATED_FLOW, null);
 
         // Do not allow resending e-mail by simple page refresh, i.e. when e-mail sent, it should be resent properly via email-verification endpoint
-        if (! Objects.equals(authSession.getAuthNote(Constants.VERIFY_EMAIL_KEY), email)) {
+        if (!Objects.equals(authSession.getAuthNote(Constants.VERIFY_EMAIL_KEY), email) && !(isCurrentActionTriggeredFromAIA(context) && isChallenge)) {
             authSession.setAuthNote(Constants.VERIFY_EMAIL_KEY, email);
             EventBuilder event = context.getEvent().clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, email);
-            challenge = sendVerifyEmail(context.getSession(), loginFormsProvider, context.getUser(), context.getAuthenticationSession(), event);
+            challenge = sendVerifyEmail(context, event);
         } else {
             challenge = loginFormsProvider.createResponse(UserModel.RequiredAction.VERIFY_EMAIL);
         }
@@ -85,6 +108,9 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
         context.challenge(challenge);
     }
 
+    private boolean isCurrentActionTriggeredFromAIA(RequiredActionContext context) {
+        return Objects.equals(context.getAuthenticationSession().getClientNote(Constants.KC_ACTION), getId());
+    }
 
     @Override
     public void processAction(RequiredActionContext context) {
@@ -93,7 +119,7 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
         // This will allow user to re-send email again
         context.getAuthenticationSession().removeAuthNote(Constants.VERIFY_EMAIL_KEY);
 
-        requiredActionChallenge(context);
+        process(context, false);
     }
 
 
@@ -128,9 +154,12 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
         return UserModel.RequiredAction.VERIFY_EMAIL.name();
     }
 
-    private Response sendVerifyEmail(KeycloakSession session, LoginFormsProvider forms, UserModel user, AuthenticationSessionModel authSession, EventBuilder event) throws UriBuilderException, IllegalArgumentException {
-        RealmModel realm = session.getContext().getRealm();
-        UriInfo uriInfo = session.getContext().getUri();
+    private Response sendVerifyEmail(RequiredActionContext context, EventBuilder event) throws UriBuilderException, IllegalArgumentException {
+        RealmModel realm = context.getRealm();
+        UriInfo uriInfo = context.getUriInfo();
+        UserModel user = context.getUser();
+        AuthenticationSessionModel authSession = context.getAuthenticationSession();
+        KeycloakSession session = context.getSession();
 
         int validityInSecs = realm.getActionTokenGeneratedByUserLifespan(VerifyEmailActionToken.TOKEN_TYPE);
         int absoluteExpirationInSecs = Time.currentTime() + validityInSecs;
@@ -150,11 +179,17 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
               .setUser(user)
               .sendVerifyEmail(link, expirationInMinutes);
             event.success();
+            return context.form().createResponse(UserModel.RequiredAction.VERIFY_EMAIL);
         } catch (EmailException e) {
+            event.clone().event(EventType.SEND_VERIFY_EMAIL)
+                    .detail(Details.REASON, e.getMessage())
+                    .user(user)
+                    .error(Errors.EMAIL_SEND_FAILED);
             logger.error("Failed to send verification email", e);
-            event.error(Errors.EMAIL_SEND_FAILED);
+            context.failure(Messages.EMAIL_SENT_ERROR);
+            return context.form()
+                    .setError(Messages.EMAIL_SENT_ERROR)
+                    .createErrorPage(Response.Status.INTERNAL_SERVER_ERROR);
         }
-
-        return forms.createResponse(UserModel.RequiredAction.VERIFY_EMAIL);
     }
 }

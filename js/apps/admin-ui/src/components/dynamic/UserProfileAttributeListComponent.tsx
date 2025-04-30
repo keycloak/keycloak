@@ -10,7 +10,6 @@ import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
 import { KeySelect } from "../key-value-form/KeySelect";
-import { convertToName } from "./DynamicComponents";
 import type { ComponentProps } from "./components";
 
 export const UserProfileAttributeListComponent = ({
@@ -18,6 +17,7 @@ export const UserProfileAttributeListComponent = ({
   label,
   helpText,
   required = false,
+  convertToName,
 }: ComponentProps) => {
   const { adminClient } = useAdminClient();
 
@@ -46,6 +46,12 @@ export const UserProfileAttributeListComponent = ({
 
   if (!config) return null;
 
+  const getError = () => {
+    return convertedName
+      .split(".")
+      .reduce((record: any, key) => record?.[key], errors);
+  };
+
   return (
     <FormGroup
       label={t(label!)}
@@ -58,7 +64,7 @@ export const UserProfileAttributeListComponent = ({
         rules={required ? { required: true } : {}}
         selectItems={convert(config)}
       />
-      {errors[convertedName!] && <FormErrorText message={t("required")} />}
+      {getError() && <FormErrorText message={t("required")} />}
     </FormGroup>
   );
 };

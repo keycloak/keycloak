@@ -2,9 +2,9 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Client registration service"
+title="Using the client registration service"
 priority=100
-summary="Using the client registration service">
+summary="Use the client registration service.">
 
 In order for an application or service to utilize {project_name} it has to register a client in {project_name}.
 An admin can do this through the admin console (or admin REST endpoints), but clients can also register themselves through the {project_name} client registration service.
@@ -12,15 +12,16 @@ An admin can do this through the admin console (or admin REST endpoints), but cl
 The Client Registration Service provides built-in support for {project_name} Client Representations, OpenID Connect Client Meta Data and SAML Entity Descriptors.
 The Client Registration Service endpoint is `/realms/<realm>/clients-registrations/<provider>`.
 
-The built-in supported `providers` are: 
+The built-in supported `providers` are:
 
 * default - {project_name} Client Representation (JSON)
 * install - {project_name} Adapter Configuration (JSON)
 * openid-connect - OpenID Connect Client Metadata Description (JSON)
 * saml2-entity-descriptor - SAML Entity Descriptor (XML)
 
-The following sections will describe how to use the different providers. 
+The following sections will describe how to use the different providers.
 
+[#_authentication]
 == Authentication
 
 To invoke the Client Registration Services you usually need a token. The token can be a bearer token, an initial access token or a registration access token.
@@ -40,7 +41,7 @@ If you are using a bearer token to create clients it's recommend to use a token 
 === Initial Access Token
 
 The recommended approach to registering new clients is by using initial access tokens.
-An initial access token can only be used to create clients and has a configurable expiration as well as a configurable limit on how many clients can be created. 
+An initial access token can only be used to create clients and has a configurable expiration as well as a configurable limit on how many clients can be created.
 
 An initial access token can be created through the admin console.
 To create a new initial access token first select the realm in the admin console, then click on `Client` in the menu on the left, followed by
@@ -53,12 +54,12 @@ many clients can be created using the token. After you click on `Save` the token
 It is important that you copy/paste this token now as you won't be able to retrieve it later. If you forget to copy/paste it, then delete the token and create another one.
 
 The token value is used as a standard bearer token when invoking the Client Registration Services, by adding it to the Authorization header in the request.
-For example: 
+For example:
 
 [source]
 ----
 Authorization: bearer eyJhbGciOiJSUz...
-----            
+----
 
 [[_registration_access_token]]
 === Registration Access Token
@@ -82,16 +83,16 @@ console, including for example configuring protocol mappers.
 To create a client create a Client Representation (JSON) then perform an HTTP POST request to `/realms/<realm>/clients-registrations/default`.
 
 It will return a Client Representation that also includes the registration access token.
-You should save the registration access token somewhere if you want to retrieve the config, update or delete the client later. 
+You should save the registration access token somewhere if you want to retrieve the config, update or delete the client later.
 
 To retrieve the Client Representation perform an HTTP GET request to `/realms/<realm>/clients-registrations/default/<client id>`.
 
-It will also return a new registration access token. 
+It will also return a new registration access token.
 
 To update the Client Representation perform an HTTP PUT request with the updated Client Representation to:
 `/realms/<realm>/clients-registrations/default/<client id>`.
 
-It will also return a new registration access token. 
+It will also return a new registration access token.
 
 To delete the Client Representation perform an HTTP DELETE request to:
 `/realms/<realm>/clients-registrations/default/<client id>`
@@ -100,12 +101,12 @@ To delete the Client Representation perform an HTTP DELETE request to:
 
 The `installation` client registration provider can be used to retrieve the adapter configuration for a client.
 In addition to token authentication you can also authenticate with client credentials using HTTP basic authentication.
-To do this include the following header in the request: 
+To do this include the following header in the request:
 
 [source]
 ----
 Authorization: basic BASE64(client-id + ':' + client-secret)
-----        
+----
 
 To retrieve the Adapter Configuration then perform an HTTP GET request to `/realms/<realm>/clients-registrations/install/<client id>`.
 
@@ -146,7 +147,7 @@ curl -X POST \
 == Example using Java Client Registration API
 
 The Client Registration Java API makes it easy to use the Client Registration Service using Java.
-To use include the dependency `org.keycloak:keycloak-client-registration-api:>VERSION<` from Maven. 
+To use include the dependency `org.keycloak:keycloak-client-registration-api:>VERSION<` from Maven.
 
 For full instructions on using the Client Registration refer to the JavaDocs.
 Below is an example of creating a client. You need to replace `eyJhbGciOiJSUz...` with a proper initial access token or bearer token.

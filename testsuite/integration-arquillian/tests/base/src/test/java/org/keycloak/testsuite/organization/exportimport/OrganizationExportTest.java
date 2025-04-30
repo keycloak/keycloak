@@ -117,7 +117,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
 
         assertTrue(importedRealm.isOrganizationsEnabled());
 
-        List<OrganizationRepresentation> organizations = testRealm().organizations().getAll();
+        List<OrganizationRepresentation> organizations = testRealm().organizations().list(-1, -1);
         assertEquals(expectedOrganizations.size(), organizations.size());
         // id, name, alias, description and redirectUrl should have all been preserved.
         assertThat(organizations.stream().map(OrganizationRepresentation::getId).toList(),
@@ -145,7 +145,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
 
         for (OrganizationRepresentation orgRep : organizations) {
             OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
-            List<String> members = organization.members().getAll().stream().map(UserRepresentation::getEmail).toList();
+            List<String> members = organization.members().list(-1, -1).stream().map(UserRepresentation::getEmail).toList();
             assertEquals(members.size(), expectedUnmanagedMembers.get(orgRep.getName()).size() + expectedManagedMembers.get(orgRep.getName()).size());
             assertTrue(members.containsAll(expectedUnmanagedMembers.get(orgRep.getName())));
             assertTrue(members.containsAll(expectedManagedMembers.get(orgRep.getName())));
@@ -172,14 +172,14 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         try (Response response = testRealm().organizations().create(orgRep)) {
             assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
         }
-        List<OrganizationRepresentation> orgs = testRealm().organizations().getAll();
+        List<OrganizationRepresentation> orgs = testRealm().organizations().list(-1, -1);
         assertEquals(1, orgs.size());
 
         RealmRepresentation importedRealm = exportRemoveImportRealm();
 
         assertTrue(importedRealm.isOrganizationsEnabled());
 
-        orgs = testRealm().organizations().getAll();
+        orgs = testRealm().organizations().list(-1, -1);
         assertEquals(1, orgs.size());
         assertEquals("acme", orgs.get(0).getName());
     }

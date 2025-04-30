@@ -23,6 +23,7 @@ import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.connections.jpa.support.EntityManagers;
 import org.keycloak.deployment.DeployedConfigurationsManager;
 import org.keycloak.exportimport.ExportAdapter;
 import org.keycloak.exportimport.ExportOptions;
@@ -124,10 +125,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.keycloak.models.utils.DefaultRequiredActions.getDefaultRequiredActionCaseInsensitively;
+import static org.keycloak.models.utils.ModelToRepresentation.stripRealmAttributesIncludedAsFields;
 import static org.keycloak.models.utils.RepresentationToModel.createCredentials;
 import static org.keycloak.models.utils.RepresentationToModel.createFederatedIdentities;
 import static org.keycloak.models.utils.RepresentationToModel.createGroups;
@@ -144,6 +147,21 @@ import static org.keycloak.models.utils.StripSecretsUtils.stripSecrets;
 public class DefaultExportImportManager implements ExportImportManager {
     private final KeycloakSession session;
     private static final Logger logger = Logger.getLogger(DefaultExportImportManager.class);
+
+    public static class UserBatcher implements Consumer<KeycloakSession> {
+        private int count;
+
+        @Override
+        public void accept(KeycloakSession session) {
+            // TODO: determine what a good number is here
+            // There actually doesn't seem to be much difference with setting this
+            // higher - the important part is to clear the contexts - which could be even more optimal
+            // as detaching just users and their children
+            if (++count % 64 == 0) {
+                EntityManagers.flush(session, true);
+            }
+        };
+    }
 
     public DefaultExportImportManager(KeycloakSession session) {
         this.session = session;
@@ -186,6 +204,7 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (rep.isBruteForceProtected() != null) newRealm.setBruteForceProtected(rep.isBruteForceProtected());
         if (rep.isPermanentLockout() != null) newRealm.setPermanentLockout(rep.isPermanentLockout());
         if (rep.getMaxTemporaryLockouts() != null) newRealm.setMaxTemporaryLockouts(rep.getMaxTemporaryLockouts());
+        if (rep.getBruteForceStrategy() != null) newRealm.setBruteForceStrategy(rep.getBruteForceStrategy());
         if (rep.getMaxFailureWaitSeconds() != null) newRealm.setMaxFailureWaitSeconds(rep.getMaxFailureWaitSeconds());
         if (rep.getMinimumQuickLoginWaitSeconds() != null)
             newRealm.setMinimumQuickLoginWaitSeconds(rep.getMinimumQuickLoginWaitSeconds());
@@ -287,6 +306,7 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (rep.isResetPasswordAllowed() != null) newRealm.setResetPasswordAllowed(rep.isResetPasswordAllowed());
         if (rep.isEditUsernameAllowed() != null) newRealm.setEditUsernameAllowed(rep.isEditUsernameAllowed());
         if (rep.isOrganizationsEnabled() != null) newRealm.setOrganizationsEnabled(rep.isOrganizationsEnabled());
+        if (rep.isAdminPermissionsEnabled() != null) newRealm.setAdminPermissionsEnabled(rep.isAdminPermissionsEnabled());
         if (rep.getLoginTheme() != null) newRealm.setLoginTheme(rep.getLoginTheme());
         if (rep.getAccountTheme() != null) newRealm.setAccountTheme(rep.getAccountTheme());
         if (rep.getAdminTheme() != null) newRealm.setAdminTheme(rep.getAdminTheme());
@@ -439,16 +459,26 @@ public class DefaultExportImportManager implements ExportImportManager {
 
         // create users and their role mappings and social mappings
 
-        if (rep.getUsers() != null) {
-            for (UserRepresentation userRep : rep.getUsers()) {
-                createUser(newRealm, userRep);
-            }
-        }
+        if (Optional.ofNullable(rep.getUsers()).filter(l -> !l.isEmpty()).isPresent() ||
+                Optional.ofNullable(rep.getFederatedUsers()).filter(l -> !l.isEmpty()).isPresent()) {
+            // run in a batch to mimic the behavior of directory based import
+            // this is using nested entity managers to keep the parent context clean
+            EntityManagers.runInBatch(session, () -> {
+                UserBatcher onUserAdded = new UserBatcher();
+                if (rep.getUsers() != null) {
+                    for (UserRepresentation userRep : rep.getUsers()) {
+                        createUser(newRealm, userRep);
+                        onUserAdded.accept(session);
+                    }
+                }
 
-        if (rep.getFederatedUsers() != null) {
-            for (UserRepresentation userRep : rep.getFederatedUsers()) {
-                importFederatedUser(session, newRealm, userRep);
-            }
+                if (rep.getFederatedUsers() != null) {
+                    for (UserRepresentation userRep : rep.getFederatedUsers()) {
+                        importFederatedUser(session, newRealm, userRep);
+                        onUserAdded.accept(session);
+                    }
+                }
+            }, true);
         }
 
         if (!skipUserDependent) {
@@ -457,6 +487,9 @@ public class DefaultExportImportManager implements ExportImportManager {
 
         if (rep.isInternationalizationEnabled() != null) {
             newRealm.setInternationalizationEnabled(rep.isInternationalizationEnabled());
+        }
+        if (rep.isVerifiableCredentialsEnabled() != null) {
+            newRealm.setVerifiableCredentialsEnabled(rep.isVerifiableCredentialsEnabled());
         }
         if (rep.getSupportedLocales() != null) {
             newRealm.setSupportedLocales(new HashSet<String>(rep.getSupportedLocales()));
@@ -529,8 +562,13 @@ public class DefaultExportImportManager implements ExportImportManager {
     }
 
     private static Map<String, ClientModel> createClients(KeycloakSession session, RealmRepresentation rep, RealmModel realm, Map<String, String> mappedFlows) {
-        Map<String, ClientModel> appMap = new HashMap<String, ClientModel>();
+        Map<String, ClientModel> appMap = new HashMap<>();
         for (ClientRepresentation resourceRep : rep.getClients()) {
+            if (Profile.isFeatureEnabled(Feature.ADMIN_FINE_GRAINED_AUTHZ_V2)) {
+                if (realm.getAdminPermissionsClient() != null && realm.getAdminPermissionsClient().getClientId().equals(resourceRep.getClientId())) {
+                    continue; // admin-permission-client is already imported at this point
+                }
+            }
             ClientModel app = RepresentationToModel.createClient(session, realm, resourceRep, mappedFlows);
             String postLogoutRedirectUris = app.getAttribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS);
             if (postLogoutRedirectUris == null) {
@@ -728,9 +766,8 @@ public class DefaultExportImportManager implements ExportImportManager {
 
         // Import attributes first, so the stuff saved directly on representation (displayName, bruteForce etc) has bigger priority
         if (rep.getAttributes() != null) {
-            Set<String> attrsToRemove = new HashSet<>(realm.getAttributes().keySet());
+            Set<String> attrsToRemove = stripRealmAttributesIncludedAsFields(realm.getAttributes()).keySet();
             attrsToRemove.removeAll(rep.getAttributes().keySet());
-            attrsToRemove.removeAll(ModelToRepresentation.REALM_EXCLUDED_ATTRIBUTES);
 
             for (Map.Entry<String, String> entry : rep.getAttributes().entrySet()) {
                 realm.setAttribute(entry.getKey(), entry.getValue());
@@ -751,6 +788,7 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (rep.isBruteForceProtected() != null) realm.setBruteForceProtected(rep.isBruteForceProtected());
         if (rep.isPermanentLockout() != null) realm.setPermanentLockout(rep.isPermanentLockout());
         if (rep.getMaxTemporaryLockouts() != null) realm.setMaxTemporaryLockouts(rep.getMaxTemporaryLockouts());
+        if (rep.getBruteForceStrategy() != null) realm.setBruteForceStrategy(rep.getBruteForceStrategy());
         if (rep.getMaxFailureWaitSeconds() != null) realm.setMaxFailureWaitSeconds(rep.getMaxFailureWaitSeconds());
         if (rep.getMinimumQuickLoginWaitSeconds() != null)
             realm.setMinimumQuickLoginWaitSeconds(rep.getMinimumQuickLoginWaitSeconds());
@@ -769,6 +807,8 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (rep.isResetPasswordAllowed() != null) realm.setResetPasswordAllowed(rep.isResetPasswordAllowed());
         if (rep.isEditUsernameAllowed() != null) realm.setEditUsernameAllowed(rep.isEditUsernameAllowed());
         if (rep.isOrganizationsEnabled() != null) realm.setOrganizationsEnabled(rep.isOrganizationsEnabled());
+        if (rep.isAdminPermissionsEnabled() != null) realm.setAdminPermissionsEnabled(rep.isAdminPermissionsEnabled());
+        if (rep.isVerifiableCredentialsEnabled() != null) realm.setVerifiableCredentialsEnabled(rep.isVerifiableCredentialsEnabled());
         if (rep.getSslRequired() != null) realm.setSslRequired(SslRequired.valueOf(rep.getSslRequired().toUpperCase()));
         if (rep.getAccessCodeLifespan() != null) realm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
         if (rep.getAccessCodeLifespanUserAction() != null)
@@ -847,11 +887,28 @@ public class DefaultExportImportManager implements ExportImportManager {
         session.clientPolicy().updateRealmModelFromRepresentation(realm, rep);
 
         if (rep.getSmtpServer() != null) {
-            Map<String, String> config = new HashMap(rep.getSmtpServer());
-            if (rep.getSmtpServer().containsKey("password") && ComponentRepresentation.SECRET_VALUE.equals(rep.getSmtpServer().get("password"))) {
-                String passwordValue = realm.getSmtpConfig() != null ? realm.getSmtpConfig().get("password") : null;
-                config.put("password", passwordValue);
+
+            Map<String, String> config = new HashMap<>(rep.getSmtpServer());
+
+            if(rep.getSmtpServer().containsKey("authType") && "basic".equals(rep.getSmtpServer().get("authType"))) {
+                if (rep.getSmtpServer().containsKey("password") && ComponentRepresentation.SECRET_VALUE.equals(rep.getSmtpServer().get("password"))) {
+                    String passwordValue = realm.getSmtpConfig() != null ? realm.getSmtpConfig().get("password") : null;
+                    config.put("password", passwordValue);
+                }
+                config.remove("authTokenUrl");
+                config.remove("authTokenScope");
+                config.remove("authTokenClientId");
+                config.remove("authTokenClientSecret");
             }
+
+            if(rep.getSmtpServer().containsKey("authType") && "token".equals(rep.getSmtpServer().get("authType"))) {
+                if (rep.getSmtpServer().containsKey("authTokenClientSecret") && ComponentRepresentation.SECRET_VALUE.equals(rep.getSmtpServer().get("authTokenClientSecret"))) {
+                    String authTokenClientSecretValue = realm.getSmtpConfig() != null ? realm.getSmtpConfig().get("authTokenClientSecret") : null;
+                    config.put("authTokenClientSecret", authTokenClientSecretValue);
+                }
+                config.remove("password");
+            }
+
             realm.setSmtpConfig(config);
         }
 

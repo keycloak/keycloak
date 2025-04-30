@@ -22,6 +22,7 @@ import org.keycloak.models.KeycloakSession;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+// TODO: mhajas Do not delete, is still used as an optimization for offline sessions update into the database with persistent_user_sessions disabled
 public class PersisterLastSessionRefreshStoreFactory extends AbstractLastSessionRefreshStoreFactory {
 
     // Name of periodic task to update DB with lastSessionRefreshes
@@ -32,7 +33,7 @@ public class PersisterLastSessionRefreshStoreFactory extends AbstractLastSession
     }
 
 
-    private PersisterLastSessionRefreshStore createAndInit(KeycloakSession kcSession,
+    public PersisterLastSessionRefreshStore createAndInit(KeycloakSession kcSession,
                                                           long timerIntervalMs, int maxIntervalBetweenMessagesSeconds, int maxCount, boolean offline) {
         PersisterLastSessionRefreshStore store = createStoreInstance(maxIntervalBetweenMessagesSeconds, maxCount, offline);
 

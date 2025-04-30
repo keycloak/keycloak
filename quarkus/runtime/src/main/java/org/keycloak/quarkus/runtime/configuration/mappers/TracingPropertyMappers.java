@@ -18,7 +18,6 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import org.keycloak.common.Profile;
-import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.utils.StringUtil;
@@ -40,7 +39,7 @@ import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.
 
 public class TracingPropertyMappers {
     private static final String OTEL_FEATURE_ENABLED_MSG = "'opentelemetry' feature is enabled";
-    private static final String TRACING_ENABLED_MSG = "'opentelemetry' feature and Tracing is enabled";
+    private static final String TRACING_ENABLED_MSG = "Tracing is enabled";
 
     private TracingPropertyMappers() {
     }
@@ -49,7 +48,7 @@ public class TracingPropertyMappers {
         return new PropertyMapper[]{
                 fromOption(TRACING_ENABLED)
                         .isEnabled(TracingPropertyMappers::isFeatureEnabled, OTEL_FEATURE_ENABLED_MSG)
-                        .to("quarkus.otel.traces.enabled")
+                        .to("quarkus.otel.enabled") // enable/disable whole OTel, tracing is enabled by default
                         .build(),
                 fromOption(TRACING_ENDPOINT)
                         .isEnabled(TracingPropertyMappers::isTracingEnabled, TRACING_ENABLED_MSG)
@@ -113,16 +112,16 @@ public class TracingPropertyMappers {
 
         try {
             var ratio = Double.parseDouble(value);
-            if (ratio <= 0.0 || ratio > 1.0) {
+            // note: 0.0 is a legal value, see https://quarkus.io/guides/opentelemetry-tracing#sampler
+            if (ratio < 0.0 || ratio > 1.0) {
                 throw new NumberFormatException();
             }
         } catch (NumberFormatException e) {
-            throw new PropertyException("Ratio in 'tracing-sampler-ratio' option must be a double value in interval <0,1).");
+            throw new PropertyException("Ratio in 'tracing-sampler-ratio' option must be a double value in interval [0,1].");
         }
     }
 
     private static boolean isFeatureEnabled() {
-        Environment.getCurrentOrCreateFeatureProfile();
         return Profile.isFeatureEnabled(Profile.Feature.OPENTELEMETRY);
     }
 

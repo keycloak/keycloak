@@ -21,6 +21,7 @@ import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Profile;
 import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
@@ -109,14 +110,32 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     public static final String ROLES_SCOPE_CONSENT_TEXT = "${rolesScopeConsentText}";
     public static final String ORGANIZATION_SCOPE_CONSENT_TEXT = "${organizationScopeConsentText}";
 
+    public static final String CONFIG_OIDC_REQ_PARAMS_MAX_NUMBER = "add-req-params-max-number";
+    public static final String CONFIG_OIDC_REQ_PARAMS_MAX_SIZE = "add-req-params-max-size";
+    public static final String CONFIG_OIDC_REQ_PARAMS_MAX_OVERALL_SIZE = "add-req-params-max-overall-size";
+    public static final String CONFIG_OIDC_REQ_PARAMS_FAIL_FAST = "add-req-params-fail-fast";
+
+    /**
+     * @deprecated To be removed in Keycloak 27
+     */
+    public static final String CONFIG_OIDC_ALLOW_MULTIPLE_AUDIENCES_FOR_JWT_CLIENT_AUTHENTICATION = "allow-multiple-audiences-for-jwt-client-authentication";
+
+    private OIDCProviderConfig providerConfig;
+
     @Override
     public void init(Config.Scope config) {
+        this.providerConfig = new OIDCProviderConfig(config);
+        if (this.providerConfig.isAllowMultipleAudiencesForJwtClientAuthentication()) {
+            logger.warnf("It is allowed to have multiple audiences for the JWT client authentication. This option is not recommended and will be removed in one of the future releases."
+                    + " It is recommended to update your OAuth/OIDC clients to rather use single audience in the JWT token used for the client authentication.");
+        }
+
         initBuiltIns();
     }
 
     @Override
     public LoginProtocol create(KeycloakSession session) {
-        return new OIDCLoginProtocol().setSession(session);
+        return new OIDCLoginProtocol(this.providerConfig).setSession(session);
     }
 
     @Override
@@ -298,6 +317,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         addMicroprofileJWTClientScope(newRealm);
         addAcrClientScope(newRealm);
         addBasicClientScope(newRealm);
+        addServiceAccountClientScope(newRealm);
 
         if (Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
             ClientScopeModel organizationScope = newRealm.addClientScope(OAuth2Constants.ORGANIZATION);
@@ -425,6 +445,36 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         }
         return basicScope;
     }
+
+    public ClientScopeModel addServiceAccountClientScope(RealmModel newRealm) {
+        ClientScopeModel serviceAccountScope = KeycloakModelUtils.getClientScopeByName(newRealm, ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE);
+        if (serviceAccountScope == null) {
+            serviceAccountScope = newRealm.addClientScope(ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE);
+            serviceAccountScope.setDescription("Specific scope for a client enabled for service accounts");
+            serviceAccountScope.setDisplayOnConsentScreen(false);
+            serviceAccountScope.setIncludeInTokenScope(false);
+            serviceAccountScope.setProtocol(getId());
+            serviceAccountScope.addProtocolMapper(UserSessionNoteMapper.createClaimMapper(ServiceAccountConstants.CLIENT_ID_PROTOCOL_MAPPER,
+                    ServiceAccountConstants.CLIENT_ID,
+                    ServiceAccountConstants.CLIENT_ID, "String",
+                    true, true, true));
+            serviceAccountScope.addProtocolMapper(UserSessionNoteMapper.createClaimMapper(ServiceAccountConstants.CLIENT_HOST_PROTOCOL_MAPPER,
+                    ServiceAccountConstants.CLIENT_HOST,
+                    ServiceAccountConstants.CLIENT_HOST, "String",
+                    true, true, true));
+            serviceAccountScope.addProtocolMapper(UserSessionNoteMapper.createClaimMapper(ServiceAccountConstants.CLIENT_ADDRESS_PROTOCOL_MAPPER,
+                    ServiceAccountConstants.CLIENT_ADDRESS,
+                    ServiceAccountConstants.CLIENT_ADDRESS, "String",
+                    true, true, true));
+
+            logger.debugf("Client scope '%s' created in the realm '%s'.", ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE, newRealm.getName());
+        } else {
+            logger.debugf("Client scope '%s' already exists in realm '%s'. Skip creating it.", ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE, newRealm.getName());
+        }
+
+        return serviceAccountScope;
+    }
+
 
     @Override
     protected void addDefaults(ClientModel client) {

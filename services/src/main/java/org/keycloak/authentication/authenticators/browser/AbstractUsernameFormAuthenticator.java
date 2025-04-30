@@ -83,8 +83,11 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         return form.createLoginUsernamePassword();
     }
 
-    protected String disabledByBruteForceError() {
-        return Messages.INVALID_USER;
+    protected String disabledByBruteForceError(String error) {
+        if(Errors.USER_TEMPORARILY_DISABLED.equals(error)) {
+            return Messages.ACCOUNT_TEMPORARILY_DISABLED;
+        }
+        return Messages.ACCOUNT_PERMANENTLY_DISABLED;
     }
 
     protected String disabledByBruteForceFieldError(){
@@ -240,7 +243,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         if (bruteForceError != null) {
             context.getEvent().user(user);
             context.getEvent().error(bruteForceError);
-            Response challengeResponse = challenge(context, disabledByBruteForceError(), disabledByBruteForceFieldError());
+            Response challengeResponse = challenge(context, disabledByBruteForceError(bruteForceError), disabledByBruteForceFieldError());
             context.forceChallenge(challengeResponse);
             return true;
         }

@@ -79,10 +79,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           label={t("name")}
           labelIcon={t("scopeNameHelp")}
           rules={{
-            required: {
-              value: true,
-              message: t("required"),
-            },
+            required: t("required"),
             onChange: (e) => {
               if (isDynamicScopesEnabled)
                 setDynamicRegex(e.target.validated, true);
@@ -189,6 +186,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         />
         <ActionGroup>
           <FormSubmitButton
+            data-testid="save"
             formState={formState}
             disabled={!isDirty || !isValid}
           >

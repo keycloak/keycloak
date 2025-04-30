@@ -127,7 +127,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
 
     public LDAPObject createLDAPGroup(String groupName, Map<String, Set<String>> additionalAttributes) {
         LDAPObject ldapGroup = LDAPUtils.createLDAPGroup(ldapProvider, groupName, config.getGroupNameLdapAttribute(), config.getGroupObjectClasses(ldapProvider),
-                config.getGroupsDn(), additionalAttributes, config.getMembershipLdapAttribute());
+                config.getRelativeCreateDn() + config.getGroupsDn(), additionalAttributes, config.getMembershipLdapAttribute());
 
         logger.debugf("Creating group [%s] to LDAP with DN [%s]", groupName, ldapGroup.getDn().toString());
         return ldapGroup;
@@ -569,14 +569,20 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
             return Collections.emptyList();
         }
 
+        if (!isGroupInGroupPath(realm, kcGroup)) {
+            // group being inspected is not managed by this mapper - return empty collection
+            return Collections.emptyList();
+        }
+
         // TODO: with ranged search in AD we can improve the search using the specific range (not done for the moment)
         LDAPObject ldapGroup = loadLDAPGroupByName(kcGroup.getName());
         if (ldapGroup == null) {
             return Collections.emptyList();
         }
 
-        MembershipType membershipType = config.getMembershipTypeLdapAttribute();
-        return membershipType.getGroupMembers(realm, this, ldapGroup, firstResult, maxResults);
+        String strategyKey = config.getUserGroupsRetrieveStrategy();
+        UserRolesRetrieveStrategy strategy = factory.getUserGroupsRetrieveStrategy(strategyKey);
+        return strategy.getLDAPRoleMembers(realm, this, ldapGroup, firstResult, maxResults);
     }
 
     public void addGroupMappingInLDAP(RealmModel realm, GroupModel kcGroup, LDAPObject ldapUser) {
@@ -703,18 +709,18 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         @Override
         public Stream<GroupModel> getGroupsStream() {
             Stream<GroupModel> ldapGroupMappings = getLDAPGroupMappingsConverted();
-            if (config.getMode() == LDAPGroupMapperMode.LDAP_ONLY) {
+            if (config.isTopLevelGroupsPath() && config.getMode() == LDAPGroupMapperMode.LDAP_ONLY) {
                 // Use just group mappings from LDAP
                 return ldapGroupMappings;
             } else {
-                // Merge mappings from both DB and LDAP
+                // Merge mappings from both DB and LDAP (including groups assigned from other group mappers)
                 return Stream.concat(ldapGroupMappings, super.getGroupsStream());
             }
         }
 
         @Override
         public void joinGroup(GroupModel group) {
-            if (config.getMode() == LDAPGroupMapperMode.LDAP_ONLY) {
+            if (config.getMode() == LDAPGroupMapperMode.LDAP_ONLY && isGroupInGroupPath(realm, group)) {
                 // We need to create new role mappings in LDAP
                 cachedLDAPGroupMappings = null;
                 addGroupMappingInLDAP(realm, group, ldapUser);
@@ -725,6 +731,11 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
 
         @Override
         public void leaveGroup(GroupModel group) {
+            // if user is leaving group not managed by this mapper, let the call proceed to the next mapper or to the DB.
+            if (!isGroupInGroupPath(realm, group)) {
+                super.leaveGroup(group);
+            }
+
             try (LDAPQuery ldapQuery = createGroupQuery(true)) {
                 LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
                 Condition roleNameCondition = conditionsBuilder.equal(config.getGroupNameLdapAttribute(), group.getName());
@@ -756,7 +767,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
 
         @Override
         public boolean isMemberOf(GroupModel group) {
-            return RoleUtils.isDirectMember(getGroupsStream(),group);
+            return isGroupInGroupPath(realm, group) && RoleUtils.isDirectMember(getGroupsStream(),group);
         }
 
         protected Stream<GroupModel> getLDAPGroupMappingsConverted() {
@@ -793,6 +804,26 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
      */
     protected GroupModel getKcGroupsPathGroup(RealmModel realm) {
         return config.isTopLevelGroupsPath() ? null : KeycloakModelUtils.findGroupByPath(session, realm, config.getGroupsPath());
+    }
+
+    protected boolean isGroupInGroupPath(RealmModel realm, GroupModel group) {
+        if (group.getType() == GroupModel.Type.ORGANIZATION) {
+            return false; // always skip organization groups as those are internal groups.
+        }
+        if (config.isTopLevelGroupsPath()) {
+            return true; // any group is in the path of the top level path.
+        }
+        GroupModel groupPathGroup = KeycloakModelUtils.findGroupByPath(session, realm, config.getGroupsPath());
+        if (groupPathGroup != null) {
+            while(!groupPathGroup.getId().equals(group.getId())) {
+                group = group.getParent();
+                if (group == null) {
+                    return false; // we checked every ancestor group, and none matches the group path group.
+                }
+            }
+            return true;
+        }
+        return false;
     }
 
     /**

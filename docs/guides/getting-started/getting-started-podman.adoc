@@ -2,7 +2,7 @@
 
 <@tmpl.guide
 title="Podman"
-summary="Get started with {project_name} on Podman">
+summary="Get started with {project_name} on Podman.">
 
 :containerCommand: podman
 

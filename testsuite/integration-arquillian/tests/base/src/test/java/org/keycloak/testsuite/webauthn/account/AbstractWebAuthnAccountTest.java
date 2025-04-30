@@ -52,6 +52,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.REQUIRED;
+import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.util.BrowserDriverUtil.isDriverFirefox;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
@@ -104,9 +105,12 @@ public abstract class AbstractWebAuthnAccountTest extends AbstractAuthTest imple
         webAuthnCredentialType = signingInPage.getCredentialType(WebAuthnCredentialModel.TYPE_TWOFACTOR);
         webAuthnPwdlessCredentialType = signingInPage.getCredentialType(WebAuthnCredentialModel.TYPE_PASSWORDLESS);
 
-        createTestUserWithAdminClient(false);
+        final String password = generatePassword();
+        setPasswordFor(testUser, password);
+        createTestUserWithAdminClient(false, password);
 
         signingInPage.navigateTo();
+        waitForPageToLoad();
         loginToAccount();
         signingInPage.assertCurrent();
     }
@@ -158,6 +162,10 @@ public abstract class AbstractWebAuthnAccountTest extends AbstractAuthTest imple
     }
 
     protected void loginToAccount() {
+        if (!loginPage.isCurrent()) {
+            signingInPage.navigateTo();
+            waitForPageToLoad();
+        }
         loginPage.assertCurrent();
         loginPage.form().login(testUser);
         waitForPageToLoad();

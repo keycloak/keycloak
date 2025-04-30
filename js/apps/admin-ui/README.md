@@ -33,7 +33,7 @@ import { KeycloakProvider } from "@keycloak/keycloak-ui-shared";
 ### Translation
 
 For the translation we use `react-i18next` you can [set it up](https://react.i18next.com/) as described on their website.
-If you want to use the translations that are provided then you need to add `i18next-http-backend` to your project and add:
+If you want to use the translations that are provided then you need to add `i18next-fetch-backend` to your project and add:
 
 ```ts
 
@@ -42,9 +42,9 @@ backend: {
   parse: (data: string) => {
     const messages = JSON.parse(data);
 
-    const result: Record<string, string> = {};
-    messages.forEach((v) => (result[v.key] = v.value));
-    return result;
+    return Object.fromEntries(
+      messages.map(({ key, value }) => [key, value])
+    );
   },
 },
 ```

@@ -96,6 +96,17 @@ public class ClientAttributeUpdater extends ServerResourceUpdater<ClientAttribut
         return this;
     }
 
+    public ClientAttributeUpdater setAuthenticationFlowBindingOverrides(Map<String, String> bindings) {
+        rep.setAuthenticationFlowBindingOverrides(bindings);
+        if (origRep.getAuthenticationFlowBindingOverrides() == null) {
+            origRep.setAuthenticationFlowBindingOverrides(new HashMap<>());
+        }
+        for (String key : bindings.keySet()) {
+            origRep.getAuthenticationFlowBindingOverrides().putIfAbsent(key, "");
+        }
+        return this;
+    }
+
     public ClientAttributeUpdater setConsentRequired(Boolean consentRequired) {
         rep.setConsentRequired(consentRequired);
         return this;
@@ -145,6 +156,11 @@ public class ClientAttributeUpdater extends ServerResourceUpdater<ClientAttribut
 
     public ClientAttributeUpdater addDefaultClientScope(String clientScope) {
         rep.getDefaultClientScopes().add(clientScope);
+        return this;
+    }
+
+    public ClientAttributeUpdater addOptionalClientScope(String clientScope) {
+        rep.getOptionalClientScopes().add(clientScope);
         return this;
     }
 

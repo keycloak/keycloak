@@ -36,6 +36,8 @@ import org.keycloak.provider.ProviderConfigProperty;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.TypedQuery;
+import org.keycloak.representations.idm.RealmRepresentation;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -266,6 +268,20 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public int getMaxTemporaryLockouts() {
         return getAttribute("maxTemporaryLockouts", 0);
+    }
+
+    @Override
+    public RealmRepresentation.BruteForceStrategy getBruteForceStrategy() {
+        String name = getAttribute("bruteForceStrategy");
+        if(name == null)
+            return RealmRepresentation.BruteForceStrategy.MULTIPLE;
+
+        return RealmRepresentation.BruteForceStrategy.valueOf(name);
+    }
+
+    @Override
+    public void setBruteForceStrategy(final RealmRepresentation.BruteForceStrategy val) {
+        setAttribute("bruteForceStrategy", val.toString());
     }
 
     @Override
@@ -1184,6 +1200,53 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     }
 
     @Override
+    public boolean isAdminPermissionsEnabled() {
+        return getAttribute(RealmAttributes.ADMIN_PERMISSIONS_ENABLED, Boolean.FALSE);
+    }
+
+    @Override
+    public void setAdminPermissionsEnabled(boolean adminPermissionsEnabled) {
+        boolean isAdminPermissionsAlreadyEnabled = getAdminPermissionsClient() != null;
+        setAttribute(RealmAttributes.ADMIN_PERMISSIONS_ENABLED, adminPermissionsEnabled);
+
+        // sending an event if we are enabling the permissions and it was not enabled already
+        if (adminPermissionsEnabled && !isAdminPermissionsAlreadyEnabled) {
+            session.getKeycloakSessionFactory().publish(new RealmModel.RealmAttributeUpdateEvent() {
+
+                @Override
+                public RealmModel getRealm() {
+                    return RealmAdapter.this;
+                }
+
+                @Override
+                public String getAttributeName() {
+                    return RealmAttributes.ADMIN_PERMISSIONS_ENABLED;
+                }
+
+                @Override
+                public String getAttributeValue() {
+                    return String.valueOf(adminPermissionsEnabled);
+                }
+
+                @Override
+                public KeycloakSession getKeycloakSession() {
+                    return session;
+                }
+            });
+        }
+    }
+
+    @Override
+    public boolean isVerifiableCredentialsEnabled() {
+        return getAttribute(RealmAttributes.VERIFIABLE_CREDENTIALS_ENABLED, Boolean.FALSE);
+    }
+
+    @Override
+    public void setVerifiableCredentialsEnabled(boolean verifiableCredentialsEnabled) {
+        setAttribute(RealmAttributes.VERIFIABLE_CREDENTIALS_ENABLED, verifiableCredentialsEnabled);
+    }
+
+    @Override
     public ClientModel getMasterAdminClient() {
         String masterAdminClientId = realm.getMasterAdminClient();
         if (masterAdminClientId == null) {
@@ -1213,6 +1276,19 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
             return null;
         }
         return session.roles().getRoleById(this, realm.getDefaultRoleId());
+    }
+
+    @Override
+    public void setAdminPermissionsClient(ClientModel client) {
+        setAttribute(RealmAttributes.ADMIN_PERMISSIONS_CLIENT_ID, client.getId());
+    }
+
+    @Override
+    public ClientModel getAdminPermissionsClient() {
+        if (getAttribute(RealmAttributes.ADMIN_PERMISSIONS_CLIENT_ID) == null) {
+            return null;
+        }
+        return session.clients().getClientById(this, getAttribute(RealmAttributes.ADMIN_PERMISSIONS_CLIENT_ID));
     }
 
     @Override

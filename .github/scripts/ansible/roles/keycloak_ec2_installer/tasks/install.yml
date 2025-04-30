@@ -27,3 +27,10 @@
     src: "{{ keycloak_src }}"
     dest: "{{ kc_home }}"
     owner: "{{ ansible_ssh_user }}"
+
+- name: Install Maven repository on the remote hosts
+  unarchive:
+    src: "{{ maven_archive }}"
+    creates: "{{ kc_home }}"
+    dest: "{{ kc_home }}"
+    owner: "{{ ansible_ssh_user }}"

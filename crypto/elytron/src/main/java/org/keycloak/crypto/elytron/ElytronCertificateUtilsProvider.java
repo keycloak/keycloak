@@ -166,6 +166,13 @@ public class ElytronCertificateUtilsProvider implements CertificateUtilsProvider
     @Override
     public X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject,
             BigInteger serialNumber) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.YEAR, 10);
+        return generateV1SelfSignedCertificate(caKeyPair, subject, serialNumber, calendar.getTime());
+    }
+
+    @Override
+    public X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject, BigInteger serialNumber, Date validityEndDate) {
         try {
 
             X500Principal subjectdn = subjectToX500Principle(subject);
@@ -173,9 +180,7 @@ public class ElytronCertificateUtilsProvider implements CertificateUtilsProvider
             ZonedDateTime notBefore = ZonedDateTime.ofInstant(
                     (new Date(System.currentTimeMillis() - 100000)).toInstant(),
                     ZoneId.systemDefault());
-            Calendar calendar = Calendar.getInstance();
-            calendar.add(Calendar.YEAR, 10);
-            Date validityEndDate = new Date(calendar.getTime().getTime());
+
             ZonedDateTime notAfter = ZonedDateTime.ofInstant(validityEndDate.toInstant(),
                     ZoneId.systemDefault());
 

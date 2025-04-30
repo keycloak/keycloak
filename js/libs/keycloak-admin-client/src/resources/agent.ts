@@ -36,7 +36,7 @@ export interface RequestArgs {
    * Keys to be ignored, meaning that they will not be filtered out of the request payload even if they are a part of `urlParamKeys` or `queryParamKeys`,
    */
   ignoredKeys?: string[];
-  headers?: HeadersInit;
+  headers?: [string, string][] | Record<string, string> | Headers;
 }
 
 const pick = (value: Record<string, unknown>, keys: string[]) =>
@@ -197,7 +197,7 @@ export class Agent {
     catchNotFound: boolean;
     payloadKey?: string;
     returnResourceIdInLocationHeader?: { field: string };
-    headers?: HeadersInit;
+    headers?: [string, string][] | Record<string, string> | Headers;
   }) {
     const newPath = urlJoin(this.#basePath, path);
 
@@ -231,7 +231,11 @@ export class Agent {
           : JSON.stringify(payloadKey ? payload[payloadKey] : payload);
     }
 
-    if (!requestHeaders.has("content-type") && !(payload instanceof FormData)) {
+    if (
+      requestOptions.body &&
+      !requestHeaders.has("content-type") &&
+      !(payload instanceof FormData)
+    ) {
       requestHeaders.set("content-type", "application/json");
     }
 

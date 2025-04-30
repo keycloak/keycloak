@@ -36,22 +36,21 @@ public class SessionEventsSenderTransaction extends AbstractKeycloakTransaction 
 
     private final KeycloakSession session;
 
-    private final Map<EventGroup, List<ClusterEvent>> sessionEvents = new HashMap<>();
+    private final Map<String, List<ClusterEvent>> sessionEvents = new HashMap<>();
 
     public SessionEventsSenderTransaction(KeycloakSession session) {
         this.session = session;
     }
 
-    public void addEvent(SessionClusterEvent event, ClusterProvider.DCNotify dcNotify) {
-        var group = new EventGroup(event.getEventKey(), dcNotify);
-        sessionEvents.computeIfAbsent(group, eventGroup -> new ArrayList<>()).add(event);
+    public void addEvent(SessionClusterEvent event) {
+        sessionEvents.computeIfAbsent(event.getEventKey(), eventGroup -> new ArrayList<>()).add(event);
     }
 
     @Override
     protected void commitImpl() {
         var cluster = session.getProvider(ClusterProvider.class);
         for (var entry : sessionEvents.entrySet()) {
-            cluster.notify(entry.getKey().eventKey(), entry.getValue(), false, entry.getKey().dcNotify());
+            cluster.notify(entry.getKey(), entry.getValue(), false);
         }
     }
 
@@ -61,5 +60,4 @@ public class SessionEventsSenderTransaction extends AbstractKeycloakTransaction 
         sessionEvents.clear();
     }
 
-    private record EventGroup(String eventKey, ClusterProvider.DCNotify dcNotify) {}
 }

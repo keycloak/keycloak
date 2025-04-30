@@ -29,9 +29,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static org.keycloak.exportimport.ExportImportConfig.PROVIDER;
@@ -48,7 +49,7 @@ public class ExportImportManager {
     private final KeycloakSession session;
 
     private ExportProvider exportProvider;
-    private ImportProvider importProvider;
+    private List<ImportProvider> importProviders = List.of();
 
     public ExportImportManager(KeycloakSession session) {
         this.sessionFactory = session.getKeycloakSessionFactory();
@@ -69,41 +70,28 @@ public class ExportImportManager {
             }
         } else if (ExportImportConfig.ACTION_IMPORT.equals(exportImportAction)) {
             String providerId = System.getProperty(PROVIDER, Config.scope("import").get("importer", PROVIDER_DEFAULT));
-            importProvider = session.getProvider(ImportProvider.class, providerId);
+            ImportProvider importProvider = session.getProvider(ImportProvider.class, providerId);
             if (importProvider == null) {
                 throw new RuntimeException("Import provider '" + providerId + "' not found");
             }
+            importProviders = List.of(importProvider);
+        } else if (ExportImportConfig.getDir().isPresent()) { // import at startup
+            ExportImportConfig.setStrategy(Strategy.IGNORE_EXISTING);
+            ExportImportConfig.setReplacePlaceholders(true);
+            // enables logging of what is imported
+            ExportImportConfig.setAction(ExportImportConfig.ACTION_IMPORT);
+            importProviders = getStartupImportProviders();
         }
-    }
-
-    public boolean isRunImport() {
-        return importProvider != null;
     }
 
     public boolean isImportMasterIncluded() {
-        if (!isRunImport()) {
-            throw new IllegalStateException("Import not enabled");
-        }
-        try {
-            return importProvider.isMasterRealmExported();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-    
-    public boolean isImportMasterIncludedAtStartup(String dir) {
-        if (dir == null) {
-            throw new IllegalStateException("Import not enabled");
-        }
-        ExportImportConfig.setReplacePlaceholders(true);
-        
-        return getStartupImportProviders(dir).map(Supplier::get).anyMatch(provider -> {
-            try {
-                return provider.isMasterRealmExported();
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to run import", e);
-            }
-        });
+        return importProviders.stream().anyMatch(provider -> {
+                    try {
+                        return provider.isMasterRealmExported();
+                    } catch (IOException e) {
+                        throw new RuntimeException("Failed to run import", e);
+                    }
+                });
     }
 
     public boolean isRunExport() {
@@ -111,22 +99,7 @@ public class ExportImportManager {
     }
 
     public void runImport() {
-        try {
-            importProvider.importModel();
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to run import", e);
-        }
-    }
-    
-    public void runImportAtStartup(String dir) throws IOException {
-        System.setProperty(ExportImportConfig.STRATEGY, Strategy.IGNORE_EXISTING.toString());
-        ExportImportConfig.setReplacePlaceholders(true);
-        // enables logging of what is imported
-        ExportImportConfig.setAction(ExportImportConfig.ACTION_IMPORT);
-        
-        // TODO: ideally the static setting above should be unset after this is run 
-        
-        getStartupImportProviders(dir).map(Supplier::get).forEach(ip -> {
+        importProviders.forEach(ip -> {
             try {
                 ip.importModel();
             } catch (IOException e) {
@@ -135,18 +108,20 @@ public class ExportImportManager {
         });
     }
 
-    private Stream<Supplier<ImportProvider>> getStartupImportProviders(String dir) {
+    private List<ImportProvider> getStartupImportProviders() {
+        var dirProp = ExportImportConfig.getDir();
+        if (dirProp.isEmpty()) {
+            return List.of();
+        }
+        String dir = dirProp.get();
+
         Stream<ProviderFactory> factories = sessionFactory.getProviderFactoriesStream(ImportProvider.class);
 
         return factories.flatMap(factory -> {
             String providerId = factory.getId();
 
             if ("dir".equals(providerId)) {
-                Supplier<ImportProvider> func = () -> {
-                    ExportImportConfig.setDir(dir);
-                    return session.getProvider(ImportProvider.class, providerId);
-                };
-                return Stream.of(func);
+                return Stream.of(session.getProvider(ImportProvider.class, providerId));
             }
             if ("singleFile".equals(providerId)) {
                 Set<String> filesToImport = new HashSet<>();
@@ -169,14 +144,13 @@ public class ExportImportManager {
 
                     filesToImport.add(file.getAbsolutePath());
                 }
-                
-                return filesToImport.stream().map(file -> () -> {
-                    ExportImportConfig.setFile(file);
-                    return session.getProvider(ImportProvider.class, providerId);
-                });
+
+                if (factory instanceof ImportProviderFactory) {
+                    return filesToImport.stream().map(file -> ((ImportProviderFactory)factory).create(session, Map.of(ExportImportConfig.FILE, file)));
+                }
             }
             return Stream.empty();
-        });
+        }).toList();
     }
 
     public void runExport() {

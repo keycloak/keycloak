@@ -21,6 +21,7 @@ import static org.keycloak.adapters.saml.SamlPrincipal.DEFAULT_ROLE_ATTRIBUTE_NA
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -689,7 +690,7 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
         try {
             //byte[] decodedSignature = RedirectBindingUtil.urlBase64Decode(signature);
             byte[] decodedSignature = Base64.decode(signature);
-            byte[] rawQueryBytes = rawQuery.getBytes("UTF-8");
+            byte[] rawQueryBytes = rawQuery.getBytes(StandardCharsets.UTF_8);
 
             SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.getFromXmlMethod(decodedAlgorithm);
 

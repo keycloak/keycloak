@@ -36,7 +36,8 @@ import org.openqa.selenium.support.FindBy;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class RegisterPage extends AbstractPage {
+public class RegisterPage extends LanguageComboboxAwarePage
+{
 
     @Page
     private AccountFields.AccountErrors accountErrors;
@@ -80,6 +81,10 @@ public class RegisterPage extends AbstractPage {
     @FindBy(linkText = "« Back to Login")
     private WebElement backToLoginLink;
 
+    public void register(String firstName, String lastName, String email, String username, String password) {
+        register(firstName, lastName, email, username, password, password, null, null, null);
+    }
+
     public void register(String firstName, String lastName, String email, String username, String password, String passwordConfirm) {
         register(firstName, lastName, email, username, password, passwordConfirm, null, null, null);
     }
@@ -103,9 +108,11 @@ public class RegisterPage extends AbstractPage {
             lastNameInput.sendKeys(lastName);
         }
 
-        emailInput.clear();
-        if (email != null) {
-            emailInput.sendKeys(email);
+        if (isEmailPresent()) {
+            emailInput.clear();
+            if (email != null) {
+                emailInput.sendKeys(email);
+            }
         }
 
         usernameInput.clear();
@@ -140,7 +147,11 @@ public class RegisterPage extends AbstractPage {
             }
         }
 
-        submitButton.click();
+        UIUtils.clickLink(submitButton);
+    }
+
+    public void registerWithEmailAsUsername(String firstName, String lastName, String email, String password) {
+        registerWithEmailAsUsername(firstName, lastName, email, password, password);
     }
 
     public void registerWithEmailAsUsername(String firstName, String lastName, String email, String password, String passwordConfirm) {
@@ -176,11 +187,11 @@ public class RegisterPage extends AbstractPage {
             passwordConfirmInput.sendKeys(passwordConfirm);
         }
 
-        submitButton.click();
+        UIUtils.clickLink(submitButton);
     }
 
     public void clickBackToLogin() {
-        backToLoginLink.click();
+        UIUtils.clickLink(backToLoginLink);
     }
 
     public String getAlertError() {
@@ -201,7 +212,7 @@ public class RegisterPage extends AbstractPage {
     }
 
     public String getLabelForField(String fieldId) {
-        return driver.findElement(By.cssSelector("label[for="+fieldId+"]")).getText();
+        return driver.findElement(By.cssSelector("label[for="+fieldId+"]")).getText().replaceAll("\\s\\*$", "");
     }
 
     public String getFirstName() {
@@ -244,6 +255,22 @@ public class RegisterPage extends AbstractPage {
         }
     }
 
+    public boolean isEmailPresent() {
+        try {
+            return driver.findElement(By.name("email")).isDisplayed();
+        } catch (NoSuchElementException nse) {
+            return false;
+        }
+    }
+
+    public boolean isUsernamePresent() {
+        try {
+            return driver.findElement(By.name("username")).isDisplayed();
+        } catch (NoSuchElementException nse) {
+            return false;
+        }
+    }
+
 
     public boolean isCurrent() {
         return isCurrent("Register");
@@ -257,14 +284,8 @@ public class RegisterPage extends AbstractPage {
         return passwordErrors;
     }
 
-    @Override
-    public void open() {
-        oauth.openRegistrationForm();
-        assertCurrent();
-    }
-
     public void openWithLoginHint(String loginHint) {
-        oauth.addCustomParameter(OIDCLoginProtocol.LOGIN_HINT_PARAM, loginHint).openRegistrationForm();
+        oauth.registrationForm().loginHint(loginHint).open();
         assertCurrent();
     }
 

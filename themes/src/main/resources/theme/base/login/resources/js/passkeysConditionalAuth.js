@@ -4,7 +4,7 @@ import { returnSuccess, returnFailure } from "./webauthnAuthenticate.js";
 export function initAuthenticate(input) {
     // Check if WebAuthn is supported by this browser
     if (!window.PublicKeyCredential) {
-        returnFailure(input.errmsg);
+        // Fail silently as WebAuthn Conditional UI is not required
         return;
     }
     if (input.isUserIdentified || typeof PublicKeyCredential.isConditionalMediationAvailable === "undefined") {
@@ -17,7 +17,7 @@ export function initAuthenticate(input) {
 function doAuthenticate(input) {
     // Check if WebAuthn is supported by this browser
     if (!window.PublicKeyCredential) {
-        returnFailure(input.errmsg);
+        // Fail silently as WebAuthn Conditional UI is not required
         return;
     }
 
@@ -50,8 +50,8 @@ async function tryAutoFillUI(input) {
         try {
             const result = await doAuthenticate(input);
             returnSuccess(result);
-        } catch (error) {
-            returnFailure(error);
+        } catch {
+            // Fail silently as WebAuthn Conditional UI is not required
         }
     } else {
         document.getElementById("kc-form-passkey-button").style.display = 'block';

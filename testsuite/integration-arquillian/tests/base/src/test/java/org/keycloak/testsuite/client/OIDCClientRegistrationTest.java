@@ -55,7 +55,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
-import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
+import static org.keycloak.testsuite.util.oauth.OAuthClient.AUTH_SERVER_ROOT;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -840,51 +840,6 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         ClientRepresentation kcClient = getClient(response.getClientId());
         OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
         Assert.assertNames(config.getRequestUris(), "http://host/foo", "https://host2/bar");
-    }
-
-    @Test
-    public void testClientWithoutRefreshToken() throws Exception {
-        OIDCClientRepresentation clientRep = null;
-        OIDCClientRepresentation response = null;
-
-        clientRep = createRep();
-        clientRep.setGrantTypes(Arrays.asList(OAuth2Constants.AUTHORIZATION_CODE));
-
-        response = reg.oidc().create(clientRep);
-
-        // Test Keycloak representation
-        ClientRepresentation kcClient = getClient(response.getClientId());
-        OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
-        Assert.assertFalse(config.isUseRefreshToken());
-    }
-
-    @Test
-    public void testClientWithRefreshToken() throws Exception {
-        OIDCClientRepresentation clientRep = null;
-        OIDCClientRepresentation response = null;
-
-        clientRep = createRep();
-        clientRep.setGrantTypes(Arrays.asList(OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.REFRESH_TOKEN));
-
-        response = reg.oidc().create(clientRep);
-
-        // Test Keycloak representation
-        ClientRepresentation kcClient = getClient(response.getClientId());
-        OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
-        Assert.assertTrue(config.isUseRefreshToken());
-    }
-
-    @Test
-    public void testClientWithoutGrantTypes() throws Exception {
-        OIDCClientRepresentation response = create();
-
-        assertTrue(CollectionUtil.collectionEquals(
-            Arrays.asList(OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.REFRESH_TOKEN), response.getGrantTypes()));
-
-        // Test Keycloak representation
-        ClientRepresentation kcClient = getClient(response.getClientId());
-        OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
-        Assert.assertTrue(config.isUseRefreshToken());
     }
 
     @Test

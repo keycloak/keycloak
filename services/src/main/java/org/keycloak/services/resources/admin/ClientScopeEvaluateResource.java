@@ -19,14 +19,22 @@ package org.keycloak.services.resources.admin;
 
 import static org.keycloak.protocol.ProtocolMapperUtils.isEnabled;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.BiFunction;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
@@ -40,10 +48,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.authentication.actiontoken.TokenUtils;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.CollectionUtil;
+import org.keycloak.common.util.TriFunction;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -89,7 +101,6 @@ public class ClientScopeEvaluateResource {
         this.clientConnection = clientConnection;
     }
 
-
     /**
      *
      * @param scopeParam
@@ -112,7 +123,6 @@ public class ClientScopeEvaluateResource {
         return new ClientScopeEvaluateScopeMappingsResource(session, roleContainer, auth, client, scopeParam);
     }
 
-
     /**
      * Return list of all protocol mappers, which will be used when generating tokens issued for particular client. This means
      * protocol mappers assigned to this client directly and protocol mappers assigned to all client scopes of this client.
@@ -124,8 +134,12 @@ public class ClientScopeEvaluateResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
-    @Operation( summary = "Return list of all protocol mappers, which will be used when generating tokens issued for particular client.",
+    @Operation(summary = "Return list of all protocol mappers, which will be used when generating tokens issued for particular client.",
             description = "This means protocol mappers assigned to this client directly and protocol mappers assigned to all client scopes of this client.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = ProtocolMapperEvaluationRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public Stream<ProtocolMapperEvaluationRepresentation> getGrantedProtocolMappers(@QueryParam("scope") String scopeParam) {
         auth.clients().requireView(client);
 
@@ -134,7 +148,6 @@ public class ClientScopeEvaluateResource {
                     .filter(current -> isEnabled(session, current) && Objects.equals(current.getProtocol(), client.getProtocol()))
                     .map(current -> toProtocolMapperEvaluationRepresentation(current, mapperContainer)));
     }
-
 
     private ProtocolMapperEvaluationRepresentation toProtocolMapperEvaluationRepresentation(ProtocolMapperModel mapper,
                                                                                             ClientScopeModel mapperContainer) {
@@ -167,7 +180,11 @@ public class ClientScopeEvaluateResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
-    @Operation( summary = "Create JSON with payload of example user info")
+    @Operation(summary = "Create JSON with payload of example user info")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = Map.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public Map<String, Object> generateExampleUserinfo(@QueryParam("scope") String scopeParam, @QueryParam("userId") String userId) {
         auth.clients().requireView(client);
 
@@ -175,7 +192,7 @@ public class ClientScopeEvaluateResource {
 
         logger.debugf("generateExampleUserinfo invoked. User: %s", user.getUsername());
 
-        return sessionAware(user, scopeParam, (userSession, clientSessionCtx) -> {
+        return sessionAware(user, scopeParam, "", (userSession, clientSessionCtx, audienceClients) -> {
             AccessToken userInfo = new AccessToken();
             TokenManager tokenManager = new TokenManager();
 
@@ -194,19 +211,31 @@ public class ClientScopeEvaluateResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
-    @Operation( summary = "Create JSON with payload of example id token")
-    public IDToken generateExampleIdToken(@QueryParam("scope") String scopeParam, @QueryParam("userId") String userId) {
+    @Operation(summary = "Create JSON with payload of example id token")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = IDToken.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
+    public IDToken generateExampleIdToken(@QueryParam("scope") String scopeParam, @QueryParam("userId") String userId, @QueryParam("audience") String audience) {
         auth.clients().requireView(client);
 
         UserModel user = getUserModel(userId);
 
-        logger.debugf("generateExampleIdToken invoked. User: %s, Scope param: %s", user.getUsername(), scopeParam);
+        logger.debugf("generateExampleIdToken invoked. User: %s, Scope param: %s, Target Audience: %s", user.getUsername(), scopeParam);
 
-        return sessionAware(user, scopeParam, (userSession, clientSessionCtx) ->
+        return sessionAware(user, scopeParam, audience, (userSession, clientSessionCtx, audienceClients) ->
         {
             TokenManager tokenManager = new TokenManager();
-            return tokenManager.responseBuilder(realm, client, null, session, userSession, clientSessionCtx)
-                    .generateAccessToken().generateIDToken().getIdToken();
+            TokenManager.AccessTokenResponseBuilder response = tokenManager.responseBuilder(realm, client, null, session, userSession, clientSessionCtx)
+                    .generateAccessToken().generateIDToken();
+            IDToken idToken = response.getIdToken();
+
+            // Retrieve accessToken just to check the audience
+            AccessToken accessToken = response.getAccessToken();
+            validateAudience(accessToken, audienceClients);
+
+            return idToken;
         });
     }
 
@@ -220,23 +249,30 @@ public class ClientScopeEvaluateResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
-    @Operation( summary = "Create JSON with payload of example access token")
-    public AccessToken generateExampleAccessToken(@QueryParam("scope") String scopeParam, @QueryParam("userId") String userId) {
+    @Operation(summary = "Create JSON with payload of example access token")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = AccessToken.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
+    public AccessToken generateExampleAccessToken(@QueryParam("scope") String scopeParam, @QueryParam("userId") String userId, @QueryParam("audience") String audience) {
         auth.clients().requireView(client);
 
         UserModel user = getUserModel(userId);
 
-        logger.debugf("generateExampleAccessToken invoked. User: %s, Scope param: %s", user.getUsername(), scopeParam);
+        logger.debugf("generateExampleAccessToken invoked. User: %s, Scope param: %s, Target Audience: %s", user.getUsername(), scopeParam, audience);
 
-        return sessionAware(user, scopeParam, (userSession, clientSessionCtx) ->
+        return sessionAware(user, scopeParam, audience, (userSession, clientSessionCtx, audienceClients) ->
         {
             TokenManager tokenManager = new TokenManager();
-            return tokenManager.responseBuilder(realm, client, null, session, userSession, clientSessionCtx)
+            AccessToken accessToken =  tokenManager.responseBuilder(realm, client, null, session, userSession, clientSessionCtx)
                     .generateAccessToken().getAccessToken();
+            validateAudience(accessToken, audienceClients);
+            return accessToken;
         });
     }
 
-    private<R> R sessionAware(UserModel user, String scopeParam, BiFunction<UserSessionModel, ClientSessionContext,R> function) {
+    private<R> R sessionAware(UserModel user, String scopeParam, String audienceParam, TriFunction<UserSessionModel, ClientSessionContext, ClientModel[], R> function) {
         AuthenticationSessionModel authSession = null;
         AuthenticationSessionManager authSessionManager = new AuthenticationSessionManager(session);
 
@@ -250,17 +286,46 @@ public class ClientScopeEvaluateResource {
             authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, scopeParam);
 
             UserSessionModel userSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, user, user.getUsername(),
-                    clientConnection.getRemoteAddr(), "example-auth", false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
+                    clientConnection.getRemoteHost(), "example-auth", false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
 
             AuthenticationManager.setClientScopesInSession(session, authSession);
             ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(session, userSession, authSession);
 
-            return function.apply(userSession, clientSessionCtx);
+            ClientModel[] audienceClients = getClients(audienceParam);
+            if (audienceClients.length > 0) {
+                clientSessionCtx.setAttribute(Constants.REQUESTED_AUDIENCE_CLIENTS, audienceClients);
+            }
+
+            return function.apply(userSession, clientSessionCtx, audienceClients);
 
         } finally {
             if (authSession != null) {
                 authSessionManager.removeAuthenticationSession(realm, authSession, false);
             }
+        }
+    }
+
+    private ClientModel[] getClients(String clientsStr) {
+        List<ClientModel> clients = new ArrayList<>();
+        if(clientsStr != null && !clientsStr.isEmpty()) {
+            for (String clientId : clientsStr.split("\\s+")) {
+                ClientModel client = realm.getClientByClientId(clientId);
+                if (client != null) {
+                    clients.add(client);
+                }
+            }
+        }
+        return clients.toArray(ClientModel[]::new);
+    }
+    
+    private void validateAudience(AccessToken accessToken, ClientModel[] requestedAudience) {
+        List<String> requestedAudienceClientIds = Stream.of(requestedAudience)
+                .map(ClientModel::getClientId)
+                .collect(Collectors.toList());
+        Set<String> missingAudience = TokenUtils.checkRequestedAudiences(accessToken, requestedAudienceClientIds);
+        if (!missingAudience.isEmpty()) {
+            String missingAudienceStr = CollectionUtil.join(missingAudience);
+            throw new NotFoundException("Requested audience not available: " + missingAudienceStr);
         }
     }
 

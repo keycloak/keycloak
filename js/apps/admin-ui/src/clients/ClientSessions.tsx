@@ -3,7 +3,7 @@ import type UserSessionRepresentation from "@keycloak/keycloak-admin-client/lib/
 import { PageSection } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
-import type { LoaderFunction } from "@keycloak/keycloak-ui-shared";
+import { fetchAdminUI } from "../context/auth/admin-ui-endpoint";
 import SessionsTable from "../sessions/SessionsTable";
 
 type ClientSessionsProps = {
@@ -15,32 +15,18 @@ export const ClientSessions = ({ client }: ClientSessionsProps) => {
 
   const { t } = useTranslation();
 
-  const loader: LoaderFunction<UserSessionRepresentation> = async (
-    first,
-    max,
-  ) => {
-    const mapSessionsToType =
-      (type: string) => (sessions: UserSessionRepresentation[]) =>
-        sessions.map((session) => ({
-          type,
-          ...session,
-        }));
-
-    const allSessions = await Promise.all([
-      adminClient.clients
-        .listSessions({ id: client.id!, first, max })
-        .then(mapSessionsToType(t("sessionsType.regularSSO"))),
-      adminClient.clients
-        .listOfflineSessions({
-          id: client.id!,
-          first,
-          max,
-        })
-        .then(mapSessionsToType(t("sessionsType.offline"))),
-    ]);
-
-    return allSessions.flat();
-  };
+  const loader = async (first?: number, max?: number, search?: string) =>
+    fetchAdminUI<UserSessionRepresentation[]>(
+      adminClient,
+      "ui-ext/sessions/client",
+      {
+        first: `${first}`,
+        max: `${max}`,
+        type: "ALL",
+        clientId: client.id!,
+        search: search || "",
+      },
+    );
 
   return (
     <PageSection variant="light" className="pf-v5-u-p-0">

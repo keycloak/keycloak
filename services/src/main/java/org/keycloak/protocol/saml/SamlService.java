@@ -266,6 +266,10 @@ public class SamlService extends AuthorizationEndpointBase {
             try {
                 session.clientPolicy().triggerOnEvent(ctx);
             } catch (ClientPolicyException cpe) {
+                event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+                event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+                event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+                event.error(cpe.getError());
                 logger.warnf("Error in client policies processing the request: %s - %s", cpe.getError(), cpe.getErrorDetail());
                 return error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             }
@@ -587,8 +591,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
                     //artifact binding state must be attached to the user session upon logout, as authenticated session
                     //no longer exists when the LogoutResponse message is sent
-                    if ("true".equals(clientSession.getNote(JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.get()))
-                            && SamlProtocol.useArtifactForLogout(client)){
+                    if (SamlProtocol.SAML_ARTIFACT_BINDING.equals(SamlProtocol.getLogoutBindingTypeForClientSession(clientSession))){
                         clientSession.setAction(AuthenticationSessionModel.Action.LOGGING_OUT.name());
                         userSession.setNote(JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.get(), "true");
                         userSession.setNote(SamlProtocol.SAML_LOGOUT_INITIATOR_CLIENT_ID, client.getId());
@@ -914,8 +917,10 @@ public class SamlService extends AuthorizationEndpointBase {
 
     public static String getIDPMetadataDescriptor(UriInfo uriInfo, KeycloakSession session, RealmModel realm) {
         try {
-            List<Element> signingKeys = session.keys().getKeysStream(realm, KeyUse.SIG, Algorithm.RS256)
+            List<KeyWrapper> keys = session.keys().getKeysStream(realm, KeyUse.SIG, Algorithm.RS256)
                     .sorted(SamlService::compareKeys)
+                    .collect(Collectors.toList());
+            List<Element> signingKeys = keys.stream()
                     .map(key -> {
                         try {
                             return IDPMetadataDescriptor
@@ -927,6 +932,8 @@ public class SamlService extends AuthorizationEndpointBase {
                     .collect(Collectors.toList());
 
             return IDPMetadataDescriptor.getIDPDescriptor(
+                keys.isEmpty()? null : keys.iterator().next(),
+                realm.getAttribute(SamlConfigAttributes.SAML_SIGNATURE_ALGORITHM, SignatureAlgorithm.class, null),
                 RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL),
                 RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL),
                 RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL),
@@ -1158,8 +1165,8 @@ public class SamlService extends AuthorizationEndpointBase {
      * @throws ProcessingException
      */
     public Response artifactResolve(ArtifactResolveType artifactResolveMessage, SAMLDocumentHolder artifactResolveHolder) throws ParsingException, ConfigurationException, ProcessingException {
-        logger.debug("Received artifactResolve message for artifact " + artifactResolveMessage.getArtifact() + "\n" +
-                "Message: \n" + DocumentUtil.getDocumentAsString(artifactResolveHolder.getSamlDocument()));
+        logger.debugf("Received artifactResolve message for artifact %s\n" +
+                "Message: \n%s", artifactResolveMessage.getArtifact(), DocumentUtil.getDocumentAsString(artifactResolveHolder.getSamlDocument()));
 
         String artifact = artifactResolveMessage.getArtifact(); // Artifact from resolve request
         if (artifact == null) {

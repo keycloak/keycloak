@@ -17,8 +17,11 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
+import java.util.EnumSet;
+
 import org.keycloak.common.util.IoUtils;
 import org.keycloak.config.BootstrapAdminOptions;
+import org.keycloak.config.OptionCategory;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
@@ -37,18 +40,18 @@ public class BootstrapAdminUser extends AbstractNonServerCommand {
     public static final String HEADER = "Add an admin user with a password";
 
     static class UsernameOptions {
-        @Option(names = { "--username" }, description = "Username of admin user, defaults to "
+        @Option(paramLabel = "username", names = { "--username" }, description = "Username of admin user, defaults to "
                 + BootstrapAdminOptions.DEFAULT_TEMP_ADMIN_USERNAME)
         String username;
 
-        @Option(names = { "--username:env" }, description = "Environment variable name for the admin username")
+        @Option(paramLabel = "USERNAME", names = { "--username:env" }, description = "Environment variable name for the admin username")
         String usernameEnv;
     }
 
     @ArgGroup(exclusive = true, multiplicity = "0..1")
     UsernameOptions usernameOptions;
 
-    @Option(names = { "--password:env" }, description = "Environment variable name for the admin user password")
+    @Option(paramLabel = "PASSWORD", names = { "--password:env" }, description = "Environment variable name for the admin user password")
     String passwordEnv;
 
     String password;
@@ -103,6 +106,11 @@ public class BootstrapAdminUser extends AbstractNonServerCommand {
         KeycloakSessionFactory sessionFactory = KeycloakApplication.getSessionFactory();
         KeycloakModelUtils.runJobInTransaction(sessionFactory, session -> application
                 .createTemporaryMasterRealmAdminUser(username, password, /* bootstrap.expiration, */ session));
+    }
+
+    @Override
+    protected EnumSet<OptionCategory> excludedCategories() {
+        return EnumSet.of(OptionCategory.IMPORT, OptionCategory.EXPORT, OptionCategory.BOOTSTRAP_ADMIN);
     }
 
 }

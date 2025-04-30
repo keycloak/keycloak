@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.saml;
 
+import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
@@ -73,6 +74,7 @@ public abstract class AbstractSamlTest extends AbstractAuthTest {
 
     static {
         try {
+            CryptoIntegration.init(Thread.currentThread().getContextClassLoader());
             KeyFactory kfRsa = KeyFactory.getInstance("RSA");
             SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY_PK = kfRsa.generatePrivate(new PKCS8EncodedKeySpec(Base64.getDecoder().decode(SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY)));
             SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY_PK = kfRsa.generatePublic(new X509EncodedKeySpec(Base64.getDecoder().decode(SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY)));

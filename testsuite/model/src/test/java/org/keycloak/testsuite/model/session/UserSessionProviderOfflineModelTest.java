@@ -66,6 +66,7 @@ import org.keycloak.testsuite.model.infinispan.InfinispanTestUtil;
 import org.keycloak.timer.TimerProvider;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assume.assumeFalse;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -502,10 +503,9 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
 
     @Test
     public void testOfflineSessionLifespanOverride() {
-        // skip the test for CrossDC
-        Assume.assumeFalse(Objects.equals(CONFIG.scope("connectionsInfinispan.default").get("remoteStoreEnabled"), "true"));
         // As offline session's timeout is not overriden when PERSISTENT_USER_SESSIONS is enabled
         Assume.assumeFalse(MultiSiteUtils.isPersistentSessionsEnabled());
+        assumeFalse("Clusterless Feature enabled", Profile.isFeatureEnabled(Profile.Feature.CLUSTERLESS));
 
         createOfflineSessions("user1", 2, new LinkedList<>(), new LinkedList<>());
 

@@ -34,6 +34,7 @@ public interface Config {
         String imagePullPolicy();
         boolean startOptimized();
         int pollIntervalSeconds();
+        long updatePodDeadlineSeconds();
 
         ResourceRequirements resources();
         Map<String, String> podLabels();

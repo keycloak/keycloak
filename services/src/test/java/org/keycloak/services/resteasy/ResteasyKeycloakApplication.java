@@ -28,7 +28,6 @@ import org.keycloak.services.filters.KeycloakSecurityHeadersFilter;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.services.resources.LoadBalancerResource;
 import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.services.resources.RobotsResource;
 import org.keycloak.services.resources.ThemeResource;
 import org.keycloak.services.resources.WelcomeResource;
 import org.keycloak.services.resources.admin.AdminRoot;
@@ -43,7 +42,6 @@ public class ResteasyKeycloakApplication extends KeycloakApplication {
     protected Set<Class<?>> classes = new HashSet<>();
 
     public ResteasyKeycloakApplication() {
-        classes.add(RobotsResource.class);
         classes.add(RealmsResource.class);
         if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_API)) {
             classes.add(AdminRoot.class);

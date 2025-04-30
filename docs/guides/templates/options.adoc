@@ -1,8 +1,19 @@
 <#macro expectedValues option>
     <#assign optionObj = ctx.options.getOption(option) />
     <#list optionObj.expectedValues as expectedValue>
-        * ${expectedValue} <#if optionObj.defaultValue?has_content && expectedValue == optionObj.defaultValue> (default)</#if>
+        * `+${expectedValue}+` <#if optionObj.defaultValue?has_content && expectedValue == optionObj.defaultValue> (default)</#if> <#if optionObj.deprecated?has_content && optionObj.deprecated.deprecatedValues?seq_contains(expectedValue)> (deprecated)</#if>
     </#list>
+</#macro>
+
+<#macro includeOptions includedOptions excludedOptions="" deniedCategories="">
+<@list options=ctx.options.getOptions(includedOptions, excludedOptions, deniedCategories) anchor=false></@list>
+</#macro>
+
+<#macro printRelevantOptions includedOptions excludedOptions="" deniedCategories="">
+== Relevant options
+
+<@includeOptions includedOptions=includedOptions excludedOptions=excludedOptions deniedCategories=deniedCategories></@includeOptions>
+<#nested>
 </#macro>
 
 <#macro list options buildIcon=true anchor=true>
@@ -40,7 +51,7 @@ ${option.deprecated.note!}<#if option.deprecated.newOptionsKeys?has_content><#if
 </#if>
 
 |<#if option.expectedValues?has_content>
-<#list option.expectedValues as value>`+${value!}+`<#if option.defaultValue?has_content && value = option.defaultValue> (default)</#if><#if value?has_next>, </#if></#list><#if !option.strictExpectedValues>, or any</#if>
+<#list option.expectedValues as value>`+${value!}+`<#if option.defaultValue?has_content && value = option.defaultValue> (default)</#if><#if option.deprecated?has_content && option.deprecated.deprecatedValues?seq_contains(value)> (deprecated)</#if><#if value?has_next>, </#if></#list><#if !option.strictExpectedValues>, or any</#if>
 <#else>
 <#if option.defaultValue?has_content>[.options-default]#`+${option.defaultValue!}+`# (default)</#if><#if option.type?has_content && option.defaultValue?has_content> or </#if><#if option.type?has_content && !option.expectedValues?has_content>any `+${option.type!}+`</#if>
 </#if>

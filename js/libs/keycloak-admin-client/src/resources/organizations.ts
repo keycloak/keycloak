@@ -16,6 +16,7 @@ export interface OrganizationQuery extends PaginatedQuery {
 
 interface MemberQuery extends PaginatedQuery {
   orgId: string; //Id of the organization to get the members of
+  membershipType?: string;
 }
 
 export class Organizations extends Resource<{ realm?: string }> {

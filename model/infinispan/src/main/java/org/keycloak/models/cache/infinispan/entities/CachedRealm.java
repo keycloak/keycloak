@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -39,6 +40,8 @@ import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.ParConfig;
@@ -50,6 +53,7 @@ import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.cache.infinispan.DefaultLazyLoader;
 import org.keycloak.models.cache.infinispan.LazyLoader;
+import org.keycloak.representations.idm.RealmRepresentation;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -72,10 +76,13 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected boolean identityFederationEnabled;
     protected boolean editUsernameAllowed;
     protected boolean organizationsEnabled;
+    protected boolean adminPermissionsEnabled;
+    protected boolean verifiableCredentialsEnabled;
     //--- brute force settings
     protected boolean bruteForceProtected;
     protected boolean permanentLockout;
     protected int maxTemporaryLockouts;
+    protected RealmRepresentation.BruteForceStrategy bruteForceStrategy;
     protected int maxFailureWaitSeconds;
     protected int minimumQuickLoginWaitSeconds;
     protected int waitIncrementSeconds;
@@ -155,11 +162,12 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected boolean adminEventsEnabled;
     protected boolean adminEventsDetailsEnabled;
     protected String defaultRoleId;
+    protected String adminPermissionsClientId;
     private boolean allowUserManagedAccess;
 
     protected List<String> defaultGroups;
-    protected List<String> defaultDefaultClientScopes = new LinkedList<>();
-    protected List<String> optionalDefaultClientScopes = new LinkedList<>();
+    protected DefaultLazyLoader<RealmModel, List<String>> defaultDefaultClientScopes;
+    protected DefaultLazyLoader<RealmModel, List<String>> optionalDefaultClientScopes;
     protected boolean internationalizationEnabled;
     protected Set<String> supportedLocales;
     protected String defaultLocale;
@@ -187,10 +195,13 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         resetPasswordAllowed = model.isResetPasswordAllowed();
         editUsernameAllowed = model.isEditUsernameAllowed();
         organizationsEnabled = model.isOrganizationsEnabled();
+        adminPermissionsEnabled = model.isAdminPermissionsEnabled();
+        verifiableCredentialsEnabled = model.isVerifiableCredentialsEnabled();
         //--- brute force settings
         bruteForceProtected = model.isBruteForceProtected();
         permanentLockout = model.isPermanentLockout();
         maxTemporaryLockouts = model.getMaxTemporaryLockouts();
+        bruteForceStrategy = model.getBruteForceStrategy();
         maxFailureWaitSeconds = model.getMaxFailureWaitSeconds();
         minimumQuickLoginWaitSeconds = model.getMinimumQuickLoginWaitSeconds();
         waitIncrementSeconds = model.getWaitIncrementSeconds();
@@ -248,12 +259,20 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
         adminEventsEnabled = model.isAdminEventsEnabled();
         adminEventsDetailsEnabled = model.isAdminEventsDetailsEnabled();
+        adminPermissionsClientId = model.getAdminPermissionsClient() == null ? null : model.getAdminPermissionsClient().getId();
 
-        defaultRoleId = model.getDefaultRole().getId();
+        if(Objects.isNull(model.getDefaultRole())) {
+            throw new ModelException("Default Role is null for Realm " + name);
+        } else {
+            defaultRoleId = model.getDefaultRole().getId();
+        }
         ClientModel masterAdminClient = model.getMasterAdminClient();
         this.masterAdminClient = (masterAdminClient != null) ? masterAdminClient.getId() : null;
 
-        cacheClientScopes(model);
+        defaultDefaultClientScopes = new DefaultLazyLoader<>(realm -> realm.getDefaultClientScopesStream(true).map(ClientScopeModel::getId)
+                .collect(Collectors.toList()), null);
+        optionalDefaultClientScopes = new DefaultLazyLoader<>(realm -> realm.getDefaultClientScopesStream(false).map(ClientScopeModel::getId)
+                .collect(Collectors.toList()), null);
 
         internationalizationEnabled = model.isInternationalizationEnabled();
         supportedLocales = model.getSupportedLocalesStream().collect(Collectors.toSet());
@@ -311,19 +330,16 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         realmLocalizationTexts = model.getRealmLocalizationTexts();
     }
 
-    protected void cacheClientScopes(RealmModel model) {
-        defaultDefaultClientScopes = model.getDefaultClientScopesStream(true).map(ClientScopeModel::getId)
-                .collect(Collectors.toList());
-        optionalDefaultClientScopes = model.getDefaultClientScopesStream(false).map(ClientScopeModel::getId)
-                .collect(Collectors.toList());
-    }
-
     public String getMasterAdminClient() {
         return masterAdminClient;
     }
 
     public String getDefaultRoleId() {
         return defaultRoleId;
+    }
+
+    public String getAdminPermissionsClientId() {
+        return adminPermissionsClientId;
     }
 
     public String getName() {
@@ -368,6 +384,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public int getMaxTemporaryLockouts() {
         return maxTemporaryLockouts;
+    }
+
+    public RealmRepresentation.BruteForceStrategy getBruteForceStrategy() {
+        return bruteForceStrategy;
     }
 
     public int getMaxFailureWaitSeconds() {
@@ -416,6 +436,14 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public boolean isOrganizationsEnabled() {
         return organizationsEnabled;
+    }
+
+    public boolean isAdminPermissionsEnabled() {
+        return adminPermissionsEnabled;
+    }
+
+    public boolean isVerifiableCredentialsEnabled() {
+        return verifiableCredentialsEnabled;
     }
 
     public String getDefaultSignatureAlgorithm() {
@@ -499,16 +527,16 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return accessCodeLifespanLogin;
     }
 
-    public OAuth2DeviceConfig getOAuth2DeviceConfig(Supplier<RealmModel> modelSupplier) {
-        return deviceConfig.get(modelSupplier);
+    public OAuth2DeviceConfig getOAuth2DeviceConfig(KeycloakSession session, Supplier<RealmModel> modelSupplier) {
+        return deviceConfig.get(session, modelSupplier);
     }
 
-    public CibaConfig getCibaConfig(Supplier<RealmModel> modelSupplier) {
-        return cibaConfig.get(modelSupplier);
+    public CibaConfig getCibaConfig(KeycloakSession session, Supplier<RealmModel> modelSupplier) {
+        return cibaConfig.get(session, modelSupplier);
     }
 
-    public ParConfig getParConfig(Supplier<RealmModel> modelSupplier) {
-        return parConfig.get(modelSupplier);
+    public ParConfig getParConfig(KeycloakSession session, Supplier<RealmModel> modelSupplier) {
+        return parConfig.get(session, modelSupplier);
     }
 
     public int getActionTokenGeneratedByAdminLifespan() {
@@ -675,12 +703,12 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return defaultGroups;
     }
 
-    public List<String> getDefaultDefaultClientScopes() {
-        return defaultDefaultClientScopes;
+    public List<String> getDefaultDefaultClientScopes(KeycloakSession session, Supplier<RealmModel> modelSupplier) {
+        return defaultDefaultClientScopes.get(session, modelSupplier);
     }
 
-    public List<String> getOptionalDefaultClientScopes() {
-        return optionalDefaultClientScopes;
+    public List<String> getOptionalDefaultClientScopes(KeycloakSession session, Supplier<RealmModel> modelSupplier) {
+        return optionalDefaultClientScopes.get(session, modelSupplier);
     }
 
     public List<AuthenticationFlowModel> getAuthenticationFlowList() {

@@ -175,6 +175,35 @@ export const LdapSettingsSynchronization = ({
             defaultValue={86400}
           />
         )}
+        <FormGroup
+          label={t("removeInvalidUsers")}
+          labelIcon={
+            <HelpItem
+              helpText={t("removeInvalidUsersHelp")}
+              fieldLabelId="removeInvalidUsers"
+            />
+          }
+          fieldId="kc-remove-invalid-users"
+          hasNoPaddingTop
+        >
+          <Controller
+            name="config.removeInvalidUsersEnabled"
+            defaultValue={["true"]}
+            control={form.control}
+            render={({ field }) => (
+              <Switch
+                id="kc-remove-invalid-users"
+                data-testid="remove-invalid-users"
+                isDisabled={false}
+                onChange={(_event, value) => field.onChange([`${value}`])}
+                isChecked={field.value[0] === "true"}
+                label={t("on")}
+                labelOff={t("off")}
+                aria-label={t("removeInvalidUsers")}
+              />
+            )}
+          />
+        </FormGroup>
       </FormAccess>
     </FormProvider>
   );

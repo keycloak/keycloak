@@ -1,6 +1,5 @@
 package org.keycloak.config;
 
-import io.quarkus.runtime.configuration.MemorySize;
 import org.jboss.logmanager.handlers.SyslogHandler;
 
 import java.io.File;
@@ -60,9 +59,31 @@ public class LoggingOptions {
             .description("The log level of the root category or a comma-separated list of individual categories and their levels. For the root category, you don't need to specify a category.")
             .build();
 
+    public static final Option<Level> LOG_LEVEL_CATEGORY = new OptionBuilder<>("log-level-<category>", Level.class)
+            .category(OptionCategory.LOGGING)
+            .description("The log level of a category. Takes precedence over the 'log-level' option.")
+            .caseInsensitiveExpectedValues(true)
+            .build();
+
+    public static final Option<Boolean> LOG_ASYNC = new OptionBuilder<>("log-async", Boolean.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(false)
+            .description("Indicates whether to log asynchronously to all handlers.")
+            .build();
+
     public enum Output {
         DEFAULT,
         JSON;
+
+        @Override
+        public String toString() {
+            return super.toString().toLowerCase(Locale.ROOT);
+        }
+    }
+
+    public enum JsonFormat {
+        DEFAULT,
+        ECS;
 
         @Override
         public String toString() {
@@ -79,6 +100,7 @@ public class LoggingOptions {
 
     public static final Option<Level> LOG_CONSOLE_LEVEL = new OptionBuilder<>("log-console-level", Level.class)
             .category(OptionCategory.LOGGING)
+            .caseInsensitiveExpectedValues(true)
             .defaultValue(Level.ALL)
             .description("Set the log level for the console handler. It specifies the most verbose log level for logs shown in the output. "
                     + "It respects levels specified in the 'log-level' option, which represents the maximal verbosity for the whole logging system. "
@@ -89,6 +111,12 @@ public class LoggingOptions {
             .category(OptionCategory.LOGGING)
             .description("The format of unstructured console log entries. If the format has spaces in it, escape the value using \"<format>\".")
             .defaultValue(DEFAULT_LOG_FORMAT)
+            .build();
+
+    public static final Option<JsonFormat> LOG_CONSOLE_JSON_FORMAT = new OptionBuilder<>("log-console-json-format", JsonFormat.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(JsonFormat.DEFAULT)
+            .description("Set the format of the produced JSON.")
             .build();
 
     public static final Option<Boolean> LOG_CONSOLE_INCLUDE_TRACE = new OptionBuilder<>("log-console-include-trace", Boolean.class)
@@ -108,6 +136,19 @@ public class LoggingOptions {
             .hidden()
             .build();
 
+    // Console Async
+    public static final Option<Boolean> LOG_CONSOLE_ASYNC = new OptionBuilder<>("log-console-async", Boolean.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(false)
+            .description("Indicates whether to log asynchronously to console. If not set, value from the parent property '%s' is used.".formatted(LOG_ASYNC.getKey()))
+            .build();
+
+    public static final Option<Integer> LOG_CONSOLE_ASYNC_QUEUE_LENGTH = new OptionBuilder<>("log-console-async-queue-length", Integer.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(512)
+            .description("The queue length to use before flushing writing when logging to console.")
+            .build();
+
     // File
     public static final Option<Boolean> LOG_FILE_ENABLED = new OptionBuilder<>("log-file-enabled", Boolean.class)
             .category(OptionCategory.LOGGING)
@@ -122,6 +163,7 @@ public class LoggingOptions {
 
     public static final Option<Level> LOG_FILE_LEVEL = new OptionBuilder<>("log-file-level", Level.class)
             .category(OptionCategory.LOGGING)
+            .caseInsensitiveExpectedValues(true)
             .defaultValue(Level.ALL)
             .description("Set the log level for the file handler. It specifies the most verbose log level for logs shown in the output. "
                     + "It respects levels specified in the 'log-level' option, which represents the maximal verbosity for the whole logging system. "
@@ -134,6 +176,12 @@ public class LoggingOptions {
             .defaultValue(DEFAULT_LOG_FORMAT)
             .build();
 
+    public static final Option<JsonFormat> LOG_FILE_JSON_FORMAT = new OptionBuilder<>("log-file-json-format", JsonFormat.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(JsonFormat.DEFAULT)
+            .description("Set the format of the produced JSON.")
+            .build();
+
     public static final Option<Boolean> LOG_FILE_INCLUDE_TRACE = new OptionBuilder<>("log-file-include-trace", Boolean.class)
             .category(OptionCategory.LOGGING)
             .description(format("Include tracing information in the file log. If the '%s' option is specified, this option has no effect.", LOG_FILE_FORMAT.getKey()))
@@ -144,6 +192,19 @@ public class LoggingOptions {
             .category(OptionCategory.LOGGING)
             .defaultValue(DEFAULT_CONSOLE_OUTPUT)
             .description("Set the log output to JSON or default (plain) unstructured logging.")
+            .build();
+
+    // File async
+    public static final Option<Boolean> LOG_FILE_ASYNC = new OptionBuilder<>("log-file-async", Boolean.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(false)
+            .description("Indicates whether to log asynchronously to file log. If not set, value from the parent property '%s' is used.".formatted(LOG_ASYNC.getKey()))
+            .build();
+
+    public static final Option<Integer> LOG_FILE_ASYNC_QUEUE_LENGTH = new OptionBuilder<>("log-file-async-queue-length", Integer.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(512)
+            .description("The queue length to use before flushing writing when logging to file log.")
             .build();
 
     // Syslog
@@ -160,6 +221,7 @@ public class LoggingOptions {
 
     public static final Option<Level> LOG_SYSLOG_LEVEL = new OptionBuilder<>("log-syslog-level", Level.class)
             .category(OptionCategory.LOGGING)
+            .caseInsensitiveExpectedValues(true)
             .defaultValue(Level.ALL)
             .description("Set the log level for the Syslog handler. It specifies the most verbose log level for logs shown in the output. "
                     + "It respects levels specified in the 'log-level' option, which represents the maximal verbosity for the whole logging system. "
@@ -173,7 +235,7 @@ public class LoggingOptions {
             .defaultValue(SyslogHandler.SyslogType.RFC5424.toString().toLowerCase())
             .build();
 
-    public static final Option<MemorySize> LOG_SYSLOG_MAX_LENGTH = new OptionBuilder<>("log-syslog-max-length", MemorySize.class)
+    public static final Option<String> LOG_SYSLOG_MAX_LENGTH = new OptionBuilder<>("log-syslog-max-length", String.class)
             .category(OptionCategory.LOGGING)
             // based on the 'quarkus.log.syslog.max-length' property
             .description("Set the maximum length, in bytes, of the message allowed to be sent. The length includes the header and the message. " +
@@ -199,6 +261,12 @@ public class LoggingOptions {
             .defaultValue(DEFAULT_LOG_FORMAT)
             .build();
 
+    public static final Option<JsonFormat> LOG_SYSLOG_JSON_FORMAT = new OptionBuilder<>("log-syslog-json-format", JsonFormat.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(JsonFormat.DEFAULT)
+            .description("Set the format of the produced JSON.")
+            .build();
+
     public static final Option<Boolean> LOG_SYSLOG_INCLUDE_TRACE = new OptionBuilder<>("log-syslog-include-trace", Boolean.class)
             .category(OptionCategory.LOGGING)
             .description(format("Include tracing information in the Syslog. If the '%s' option is specified, this option has no effect.", LOG_SYSLOG_FORMAT.getKey()))
@@ -211,4 +279,16 @@ public class LoggingOptions {
             .description("Set the Syslog output to JSON or default (plain) unstructured logging.")
             .build();
 
+    // Syslog async
+    public static final Option<Boolean> LOG_SYSLOG_ASYNC = new OptionBuilder<>("log-syslog-async", Boolean.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(false)
+            .description("Indicates whether to log asynchronously to Syslog. If not set, value from the parent property '%s' is used.".formatted(LOG_ASYNC.getKey()))
+            .build();
+
+    public static final Option<Integer> LOG_SYSLOG_ASYNC_QUEUE_LENGTH = new OptionBuilder<>("log-syslog-async-queue-length", Integer.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(512)
+            .description("The queue length to use before flushing writing when logging to Syslog.")
+            .build();
 }

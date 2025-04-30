@@ -2,9 +2,9 @@ import {
   Button,
   ButtonVariant,
   InputGroup,
+  InputGroupItem,
   TextInput,
   TextInputProps,
-  InputGroupItem,
 } from "@patternfly/react-core";
 import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
 import { Fragment, useEffect, useMemo } from "react";
@@ -25,6 +25,7 @@ export type MultiLineInputProps = Omit<TextInputProps, "form"> & {
   isDisabled?: boolean;
   defaultValue?: string[];
   stringify?: boolean;
+  isRequired?: boolean;
 };
 
 export const MultiLineInput = ({
@@ -33,6 +34,7 @@ export const MultiLineInput = ({
   isDisabled = false,
   defaultValue,
   stringify = false,
+  isRequired = false,
   id,
   ...rest
 }: MultiLineInputProps) => {
@@ -78,11 +80,17 @@ export const MultiLineInput = ({
     const fieldValue = values.flatMap((field) => field);
     setValue(name, stringify ? toStringValue(fieldValue) : fieldValue, {
       shouldDirty: true,
+      shouldValidate: true,
     });
   };
 
   useEffect(() => {
-    register(name);
+    register(name, {
+      validate: (value) =>
+        isRequired && toStringValue(value || []).length === 0
+          ? t("required")
+          : undefined,
+    });
   }, [register]);
 
   return (
@@ -119,7 +127,7 @@ export const MultiLineInput = ({
               onClick={append}
               tabIndex={-1}
               aria-label={t("add")}
-              data-testid="addValue"
+              data-testid={`${name}-addValue`}
               isDisabled={!value || isDisabled}
             >
               <PlusCircleIcon /> {t(addButtonLabel || "add")}

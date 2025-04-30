@@ -38,10 +38,4 @@ To upgrade a JavaScript adapter, install the latest version https://www.npmjs.co
 [[_upgrade_nodejs_adapter]]
 == Upgrading the `Node.js` adapter
 
-To upgrade a `Node.js` adapter that has been copied to your web application, perform the following procedure.
-
-.Procedure
-. Download the new adapter archive.
-. Remove the existing `Node.js` adapter directory
-. Unzip the updated file into its place
-. Change the dependency for keycloak-connect in the `package.json` of your application
+To upgrade `Node.js` adapter, please take a look at the https://www.keycloak.org/securing-apps/nodejs-adapter#_upgrade_nodejs_adapter[ `Node.js adapter` documentation]

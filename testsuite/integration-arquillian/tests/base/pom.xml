@@ -49,6 +49,10 @@
     
     <dependencies>
         <dependency>
+            <groupId>org.keycloak.tests</groupId>
+            <artifactId>keycloak-tests-utils-shared</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-util-embedded-ldap</artifactId>
             <exclusions>
@@ -271,6 +275,7 @@
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <runOrder>alphabetical</runOrder>
                     <excludes>
                         <exclude>${exclude.test}</exclude>
                         <exclude>${exclude.console}</exclude>
@@ -409,8 +414,11 @@
                                             <MSSQL_SA_PASSWORD>${keycloak.connectionsJpa.password}</MSSQL_SA_PASSWORD>
 
                                             <!-- Oracle -->
-                                            <ORACLE_SID>${keycloak.connectionsJpa.database}</ORACLE_SID>
-                                            <ORACLE_PWD>sa</ORACLE_PWD>
+<!--                                        <ORACLE_SID>${keycloak.connectionsJpa.database}</ORACLE_SID>-->
+                                            <ORACLE_DATABASE>${keycloak.connectionsJpa.database}</ORACLE_DATABASE>
+                                            <ORACLE_PASSWORD>${keycloak.connectionsJpa.password}</ORACLE_PASSWORD>
+                                            <APP_USER>${keycloak.connectionsJpa.user}</APP_USER>
+                                            <APP_USER_PASSWORD>${keycloak.connectionsJpa.password}</APP_USER_PASSWORD>
                                         </env>
                                         <cmd>${docker.database.cmd}</cmd>
                                         <wait>
@@ -750,11 +758,6 @@
                     <artifactId>junit-vintage-engine</artifactId>
                     <version>${junit-vintage-engine.version}</version>
                     <scope>test</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.jboss.logmanager</groupId>
-                    <artifactId>log4j-jboss-logmanager</artifactId>
-                    <version>1.3.0.Final</version>
                 </dependency>
                 <dependency>
                     <groupId>net.bytebuddy</groupId>

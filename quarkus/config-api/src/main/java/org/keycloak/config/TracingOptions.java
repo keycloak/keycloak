@@ -71,7 +71,7 @@ public class TracingOptions {
 
     public static final Option<Double> TRACING_SAMPLER_RATIO = new OptionBuilder<>("tracing-sampler-ratio", Double.class)
             .category(OptionCategory.TRACING)
-            .description("OpenTelemetry sampler ratio. Probability that a span will be sampled. Expected double value in interval <0,1).")
+            .description("OpenTelemetry sampler ratio. Probability that a span will be sampled. Expected double value in interval [0,1].")
             .defaultValue(1.0d)
             .build();
 

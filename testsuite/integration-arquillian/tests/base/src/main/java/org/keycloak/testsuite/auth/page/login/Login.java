@@ -42,7 +42,7 @@ public abstract class Login extends LoginBase {
         setUriParameter(PROTOCOL, protocol);
     }
     
-    public String getProtocol() {
+    private String getProtocol() {
         return getUriParameter(PROTOCOL).toString();
     }
     

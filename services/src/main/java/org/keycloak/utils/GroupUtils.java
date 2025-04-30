@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
+
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -27,8 +29,11 @@ public class GroupUtils {
     public static Stream<GroupRepresentation> populateGroupHierarchyFromSubGroups(KeycloakSession session, RealmModel realm, Stream<GroupModel> groups, boolean full, GroupPermissionEvaluator groupEvaluator) {
         Map<String, GroupRepresentation> groupIdToGroups = new HashMap<>();
         groups.forEach(group -> {
-            //TODO GROUPS do permissions work in such a way that if you can view the children you can definitely view the parents?
-            if(!groupEvaluator.canView() && !groupEvaluator.canView(group)) return;
+
+            if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+                //TODO GROUPS do permissions work in such a way that if you can view the children you can definitely view the parents?
+                if (!groupEvaluator.canView() && !groupEvaluator.canView(group)) return;
+            }
 
             GroupRepresentation currGroup = toRepresentation(groupEvaluator, group, full);
             populateSubGroupCount(group, currGroup);
@@ -37,11 +42,12 @@ public class GroupUtils {
             while(currGroup.getParentId() != null) {
                 GroupModel parentModel = session.groups().getGroupById(realm, currGroup.getParentId());
 
-                //TODO GROUPS not sure if this is even necessary but if somehow you can't view the parent we need to remove the child and move on
-                if(!groupEvaluator.canView() && !groupEvaluator.canView(parentModel)) {
-                    groupIdToGroups.remove(currGroup.getId());
-                    break;
-                }
+                if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+                    //TODO GROUPS not sure if this is even necessary but if somehow you can't view the parent we need to remove the child and move on
+                    if(!groupEvaluator.canView() && !groupEvaluator.canView(parentModel)) {
+                        groupIdToGroups.remove(currGroup.getId());
+                        break;
+                    }                }
 
                 GroupRepresentation parent = groupIdToGroups.computeIfAbsent(currGroup.getParentId(),
                     id -> toRepresentation(groupEvaluator, parentModel, full));

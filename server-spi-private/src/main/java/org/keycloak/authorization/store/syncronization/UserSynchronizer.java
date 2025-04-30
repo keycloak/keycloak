@@ -18,14 +18,11 @@
 package org.keycloak.authorization.store.syncronization;
 
 import java.util.EnumMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.PermissionTicket;
-import org.keycloak.authorization.model.Policy;
-import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceStore;
@@ -34,7 +31,6 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.UserRemovedEvent;
 import org.keycloak.provider.ProviderFactory;
-import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -46,32 +42,10 @@ public class UserSynchronizer implements Synchronizer<UserRemovedEvent> {
         ProviderFactory<AuthorizationProvider> providerFactory = factory.getProviderFactory(AuthorizationProvider.class);
         AuthorizationProvider authorizationProvider = providerFactory.create(event.getKeycloakSession());
 
+        AdminPermissionsSchema.SCHEMA.removeResourceObject(authorizationProvider, event);
+
         removeFromUserPermissionTickets(event, authorizationProvider);
         removeUserResources(event, authorizationProvider);
-        removeFromUserPolicies(event, authorizationProvider);
-    }
-
-    private void removeFromUserPolicies(UserRemovedEvent event, AuthorizationProvider authorizationProvider) {
-        StoreFactory storeFactory = authorizationProvider.getStoreFactory();
-        PolicyStore policyStore = storeFactory.getPolicyStore();
-        UserModel userModel = event.getUser();
-        Map<Policy.FilterOption, String[]> attributes = new EnumMap<>(Policy.FilterOption.class);
-
-        attributes.put(Policy.FilterOption.TYPE, new String[] {"user"});
-        attributes.put(Policy.FilterOption.CONFIG, new String[] {"users", userModel.getId()});
-        attributes.put(Policy.FilterOption.ANY_OWNER, new String[] {Boolean.TRUE.toString()});
-
-        List<Policy> search = policyStore.find(null, attributes, null, null);
-
-        for (Policy policy : search) {
-            PolicyProviderFactory policyFactory = authorizationProvider.getProviderFactory(policy.getType());
-            UserPolicyRepresentation representation = UserPolicyRepresentation.class.cast(policyFactory.toRepresentation(policy, authorizationProvider));
-            Set<String> users = representation.getUsers();
-
-            users.remove(userModel.getId());
-
-            policyFactory.onUpdate(policy, representation, authorizationProvider);
-        }
     }
 
     private void removeUserResources(UserRemovedEvent event, AuthorizationProvider authorizationProvider) {
@@ -106,7 +80,7 @@ public class UserSynchronizer implements Synchronizer<UserRemovedEvent> {
         }
 
         attributes.clear();
-        
+
         attributes.put(PermissionTicket.FilterOption.REQUESTER, userModel.getId());
 
         for (PermissionTicket ticket : ticketStore.find(null, attributes, null, null)) {

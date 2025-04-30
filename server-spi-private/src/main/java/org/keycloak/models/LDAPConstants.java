@@ -20,7 +20,6 @@ package org.keycloak.models;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -49,6 +48,7 @@ public class LDAPConstants {
     public static final String CONNECTION_URL = "connectionUrl";
     public static final String BASE_DN = "baseDn"; // used for tests only
     public static final String USERS_DN = "usersDn";
+    public static final String RELATIVE_CREATE_DN = "relativeCreateDn";
     public static final String BIND_DN = "bindDn";
     public static final String BIND_CREDENTIAL = "bindCredential";
 
@@ -60,6 +60,8 @@ public class LDAPConstants {
     public static final String USE_TRUSTSTORE_ALWAYS = "always";
     public static final String USE_TRUSTSTORE_NEVER = "never";
 
+    public static final String CONNECTION_TRACE_BER = "com.sun.jndi.ldap.trace.ber";
+
     /**
      * @deprecated Use {@link #USE_TRUSTSTORE_ALWAYS} instead.
      */
@@ -68,13 +70,6 @@ public class LDAPConstants {
 
     public static final String SEARCH_SCOPE = "searchScope";
     public static final String CONNECTION_POOLING = "connectionPooling";
-    public static final String CONNECTION_POOLING_AUTHENTICATION = "connectionPoolingAuthentication";
-    public static final String CONNECTION_POOLING_DEBUG = "connectionPoolingDebug";
-    public static final String CONNECTION_POOLING_INITSIZE = "connectionPoolingInitSize";
-    public static final String CONNECTION_POOLING_MAXSIZE = "connectionPoolingMaxSize";
-    public static final String CONNECTION_POOLING_PREFSIZE = "connectionPoolingPrefSize";
-    public static final String CONNECTION_POOLING_PROTOCOL = "connectionPoolingProtocol";
-    public static final String CONNECTION_POOLING_TIMEOUT = "connectionPoolingTimeout";
     public static final String CONNECTION_TIMEOUT = "connectionTimeout";
     public static final String READ_TIMEOUT = "readTimeout";
     // Could be discovered by rootDse supportedControl: 1.2.840.113556.1.4.319
@@ -125,6 +120,7 @@ public class LDAPConstants {
     public static final String GROUP_OF_UNIQUE_NAMES = "groupOfUniqueNames";
     public static final String USER_ACCOUNT_CONTROL = "userAccountControl";
     public static final String PWD_LAST_SET = "pwdLastSet";
+    public static final String PWD_CHANGED_TIME = "pwdChangedTime";
     public static final String MSDS_USER_ACCOUNT_DISABLED = "msDS-UserAccountDisabled";
     public static final String MSDS_USER_PASSWORD_NOTREQD = "msDS-UserPasswordNotRequired";
     public static final String MSDS_USER_PASSWORD_EXPIRED = "msDS-UserPasswordExpired"; // read-only
@@ -148,6 +144,8 @@ public class LDAPConstants {
     public static final String LDAP_MATCHING_RULE_IN_CHAIN = ":1.2.840.113556.1.4.1941:";
 
     public static final String REFERRAL = "referral";
+
+    public static final String CONNECTION_TRACE = "connectionTrace";
 
     public static String getUuidAttributeName(String vendor) {
         if (vendor != null) {

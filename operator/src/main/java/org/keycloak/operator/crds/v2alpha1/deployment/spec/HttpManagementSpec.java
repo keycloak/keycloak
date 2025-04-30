@@ -20,6 +20,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import io.sundr.builder.annotations.Buildable;
 import org.keycloak.operator.Constants;
+import org.keycloak.operator.crds.v2alpha1.CRDUtils;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder")
@@ -34,5 +37,12 @@ public class HttpManagementSpec {
 
     public void setPort(Integer port) {
         this.port = port;
+    }
+
+    public static int managementPort(Keycloak keycloak) {
+        return CRDUtils.keycloakSpecOf(keycloak)
+                .map(KeycloakSpec::getHttpManagementSpec)
+                .map(HttpManagementSpec::getPort)
+                .orElse(Constants.KEYCLOAK_MANAGEMENT_PORT);
     }
 }

@@ -113,7 +113,6 @@ public class DockerAuthV2Protocol implements LoginProtocol {
         AtomicReference<DockerResponseToken> finalResponseToken = new AtomicReference<>(responseToken);
         ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx, mapper ->
                     mapper.getValue() instanceof DockerAuthV2AttributeMapper && ((DockerAuthV2AttributeMapper) mapper.getValue()).appliesTo(finalResponseToken.get()))
-                .filter(mapper -> mapper instanceof DockerAuthV2AttributeMapper)
                 .forEach(mapper -> finalResponseToken.set(((DockerAuthV2AttributeMapper) mapper.getValue())
                             .transformDockerResponseToken(finalResponseToken.get(), mapper.getKey(), session, userSession, clientSession)));
         responseToken = finalResponseToken.get();
@@ -146,7 +145,7 @@ public class DockerAuthV2Protocol implements LoginProtocol {
     }
 
     @Override
-    public Response sendError(final AuthenticationSessionModel clientSession, final LoginProtocol.Error error) {
+    public Response sendError(final AuthenticationSessionModel clientSession, final LoginProtocol.Error error, String errorMessage) {
         return new ResponseBuilderImpl().status(Response.Status.INTERNAL_SERVER_ERROR).build();
     }
 

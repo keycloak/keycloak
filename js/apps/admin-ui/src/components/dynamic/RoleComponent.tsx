@@ -1,18 +1,15 @@
-import {
-  Button,
-  Chip,
-  FormGroup,
-  Split,
-  SplitItem,
-} from "@patternfly/react-core";
+import { FormErrorText, HelpItem } from "@keycloak/keycloak-ui-shared";
+import { Chip, FormGroup, Split, SplitItem } from "@patternfly/react-core";
+import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
 import useToggle from "../../utils/useToggle";
-import { FormErrorText, HelpItem } from "@keycloak/keycloak-ui-shared";
-import { AddRoleMappingModal } from "../role-mapping/AddRoleMappingModal";
+import {
+  AddRoleButton,
+  AddRoleMappingModal,
+  FilterType,
+} from "../role-mapping/AddRoleMappingModal";
 import { Row, ServiceRole } from "../role-mapping/RoleMapping";
-import { convertToName } from "./DynamicComponents";
 import type { ComponentProps } from "./components";
 
 const parseValue = (value: any) =>
@@ -30,10 +27,13 @@ export const RoleComponent = ({
   defaultValue,
   required,
   isDisabled = false,
+  convertToName,
 }: ComponentProps) => {
   const { t } = useTranslation();
 
   const [openModal, toggleModal] = useToggle();
+  const [filterType, setFilterType] = useState<FilterType>("clients");
+
   const {
     control,
     formState: { errors },
@@ -58,6 +58,7 @@ export const RoleComponent = ({
               <AddRoleMappingModal
                 id="id"
                 type="roles"
+                filterType={filterType}
                 name={name}
                 onAssign={(rows) => field.onChange(parseRow(rows[0]))}
                 onClose={toggleModal}
@@ -76,14 +77,16 @@ export const RoleComponent = ({
               </SplitItem>
             )}
             <SplitItem>
-              <Button
-                onClick={toggleModal}
+              <AddRoleButton
+                label="selectRole.label"
+                onFilerTypeChange={(type) => {
+                  setFilterType(type);
+                  toggleModal();
+                }}
                 variant="secondary"
                 data-testid="add-roles"
-                disabled={isDisabled}
-              >
-                {t("selectRole.label")}
-              </Button>
+                isDisabled={isDisabled}
+              />
             </SplitItem>
           </Split>
         )}

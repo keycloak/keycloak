@@ -140,6 +140,8 @@ public final class Constants {
      */
     public static final String STORAGE_BATCH_SIZE = "org.keycloak.storage.batch_size";
 
+    public static final String SNAPSHOT_VERSION = "999.0.0-SNAPSHOT";
+
     // Client Polices Realm Attributes Keys
     public static final String CLIENT_PROFILES = "client-policies.profiles";
     public static final String CLIENT_POLICIES = "client-policies.policies";
@@ -163,6 +165,7 @@ public final class Constants {
     public static final String FORCE_LEVEL_OF_AUTHENTICATION = "force-level-of-authentication";
     public static final String ACR_LOA_MAP = "acr.loa.map";
     public static final String DEFAULT_ACR_VALUES = "default.acr.values";
+    public static final String MINIMUM_ACR_VALUE = "minimum.acr.value";
     public static final int MINIMUM_LOA = 0;
     public static final int NO_LOA = -1;
 
@@ -185,4 +188,28 @@ public final class Constants {
 
     //attribute name used to mark a temporary admin user/service account as temporary
     public static final String IS_TEMP_ADMIN_ATTR_NAME = "is_temporary_admin";
+
+    public static final String ADMIN_PERMISSIONS_CLIENT_ID = "admin-permissions";
+
+    // Note used to store the authentication flow requested
+    public static final String REQUESTED_AUTHENTICATION_FLOW = "requested-authentication-flow";
+
+    public static final String AUTHENTICATION_FLOW_LEVEL_OF_AUTHENTICATION = "authentication-flow-level-of-authentication";
+
+    // Note used to store the acr values if it is matched by client policy condition
+    public static final String CLIENT_POLICY_REQUESTED_ACR = "client-policy-requested-acr";
+
+    //attribute name used to set clients from requested audience in standard token exchange
+    public static final String REQUESTED_AUDIENCE_CLIENTS = "req-aud-clients";
+    // claim used in refresh token to know the requested audience
+    public static final String REQUESTED_AUDIENCE = "req-aud";
+    // Note in clientSessionContext specifying token grant type used
+    public static final String GRANT_TYPE = OAuth2Constants.GRANT_TYPE;
+    // Note in client session to know the subject client
+    public static final String TOKEN_EXCHANGE_SUBJECT_CLIENT = "token_exchange_subject_client";
+
+    // Note in transient userSession specifying that it was created from "persistent" user session for the temporary purpose. The values of this note could be "online" and "offline"
+    public static final String CREATED_FROM_PERSISTENT = "created_from_persistent";
+    public static final String CREATED_FROM_PERSISTENT_ONLINE = "online";
+    public static final String CREATED_FROM_PERSISTENT_OFFLINE = "offline";
 }

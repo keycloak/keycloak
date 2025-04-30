@@ -26,7 +26,6 @@ export function useFetch<T>(
   useEffect(() => {
     const controller = new AbortController();
     const { signal } = controller;
-    showBoundary();
     adminClientCall()
       .then((result) => {
         if (!signal.aborted) {

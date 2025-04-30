@@ -3,6 +3,7 @@ import path from "path";
 import { defineConfig, loadEnv } from "vite";
 import { checker } from "vite-plugin-checker";
 import dts from "vite-plugin-dts";
+import { configDefaults } from "vitest/config";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -25,6 +26,7 @@ export default defineConfig(({ mode }) => {
       }
     : {
         outDir: "target/classes/theme/keycloak.v2/admin/resources",
+        external: ["src/index.ts"],
       };
   return {
     base: "",
@@ -48,6 +50,7 @@ export default defineConfig(({ mode }) => {
     test: {
       watch: false,
       environment: "jsdom",
+      exclude: [...configDefaults.exclude, "./test/**"],
       server: {
         deps: {
           inline: [/@patternfly\/.*/],

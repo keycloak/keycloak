@@ -35,7 +35,9 @@ import org.keycloak.storage.ldap.mappers.PasswordUpdateCallback;
 import org.keycloak.storage.ldap.mappers.TxAwareLDAPUserModelDelegate;
 
 import javax.naming.AuthenticationException;
+
 import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -54,7 +56,12 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
     private static final Logger logger = Logger.getLogger(MSADUserAccountControlStorageMapper.class);
 
     private static final Pattern AUTH_EXCEPTION_REGEX = Pattern.compile(".*AcceptSecurityContext error, data ([0-9a-f]*), v.*");
-    private static final Pattern AUTH_INVALID_NEW_PASSWORD = Pattern.compile(".*ERROR CODE ([0-9A-F]+) - ([0-9A-F]+): .*WILL_NOT_PERFORM.*");
+    private static final Pattern ERROR_CODE_REGEX = Pattern.compile(".*ERROR CODE ([0-9A-F]*) - ([0-9A-F]*).*");
+
+    // See https://datatracker.ietf.org/doc/html/rfc4511#appendix-A.2
+    public static final Set<String> PASSWORD_UPDATE_LDAP_ERROR_CODES = Set.of("53", "19");
+    // See https://msdn.microsoft.com/en-us/library/windows/desktop/ms681385(v=vs.85).aspx
+    public static final Set<String> PASSWORD_UPDATE_MSAD_ERROR_CODES = Set.of("52D");
 
     public MSADUserAccountControlStorageMapper(ComponentModel mapperModel, LDAPStorageProvider ldapProvider) {
         super(mapperModel, ldapProvider);
@@ -188,13 +195,13 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
         logger.debugf("Failed to update password in Active Directory. Exception message: %s", exceptionMessage);
         exceptionMessage = exceptionMessage.toUpperCase();
 
-        Matcher m = AUTH_INVALID_NEW_PASSWORD.matcher(exceptionMessage);
+        Matcher m = ERROR_CODE_REGEX.matcher(exceptionMessage);
+
         if (m.matches()) {
             String errorCode = m.group(1);
             String errorCode2 = m.group(2);
 
-            // 52D corresponds to ERROR_PASSWORD_RESTRICTION. See https://msdn.microsoft.com/en-us/library/windows/desktop/ms681385(v=vs.85).aspx
-            if ((errorCode.equals("53")) && errorCode2.endsWith("52D")) {
+            if ((PASSWORD_UPDATE_LDAP_ERROR_CODES.contains(errorCode)) && PASSWORD_UPDATE_MSAD_ERROR_CODES.stream().anyMatch(errorCode2::endsWith)) {
                 ModelException me = new ModelException("invalidPasswordGenericMessage", e);
                 return me;
             }
@@ -248,7 +255,7 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
 
         @Override
         public void setEnabled(boolean enabled) {
-            if (ldapProvider.getEditMode() == UserStorageProvider.EditMode.WRITABLE && getPwdLastSet() > 0) {
+            if (UserStorageProvider.EditMode.WRITABLE.equals(ldapProvider.getEditMode())) {
                 MSADUserAccountControlStorageMapper.logger.debugf("Going to propagate enabled=%s for ldapUser '%s' to MSAD", enabled, ldapUser.getDn().toString());
 
                 UserAccountControl control = getUserAccountControl(ldapUser);

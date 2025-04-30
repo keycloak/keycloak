@@ -54,10 +54,11 @@ import org.keycloak.provider.Spi;
 import org.keycloak.services.DefaultComponentFactoryProviderFactory;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.resteasy.ResteasyKeycloakSessionFactory;
+import org.keycloak.spi.infinispan.CacheRemoteConfigProviderFactory;
+import org.keycloak.spi.infinispan.CacheRemoteConfigProviderSpi;
 import org.keycloak.storage.DatastoreProviderFactory;
 import org.keycloak.storage.DatastoreSpi;
 import org.keycloak.timer.TimerSpi;
-import com.google.common.collect.ImmutableSet;
 
 import java.lang.management.LockInfo;
 import java.lang.management.ManagementFactory;
@@ -103,6 +104,8 @@ import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import org.keycloak.models.DeploymentStateProviderFactory;
+import org.keycloak.tracing.TracingProviderFactory;
+import org.keycloak.tracing.TracingSpi;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -173,9 +176,9 @@ public abstract class KeycloakModelTest {
         @Override
         public Statement apply(Statement base, Description description) {
             Stream<RequireProvider> st = Optional.ofNullable(description.getAnnotation(RequireProviders.class))
-              .map(RequireProviders::value)
-              .map(Stream::of)
-              .orElseGet(Stream::empty);
+                    .map(RequireProviders::value)
+                    .stream()
+                    .flatMap(Stream::of);
 
             RequireProvider rp = description.getAnnotation(RequireProvider.class);
             if (rp != null) {
@@ -230,35 +233,37 @@ public abstract class KeycloakModelTest {
         }
     };
 
-    private static final Set<Class<? extends Spi>> ALLOWED_SPIS = ImmutableSet.<Class<? extends Spi>>builder()
-      .add(AuthorizationSpi.class)
-      .add(PolicySpi.class)
-      .add(ClientScopeSpi.class)
-      .add(ClientSpi.class)
-      .add(ComponentFactorySpi.class)
-      .add(ClusterSpi.class)
-      .add(EventStoreSpi.class)
-      .add(ExecutorsSpi.class)
-      .add(GroupSpi.class)
-      .add(RealmSpi.class)
-      .add(RoleSpi.class)
-      .add(DeploymentStateSpi.class)
-      .add(StoreFactorySpi.class)
-      .add(TimerSpi.class)
-      .add(UserLoginFailureSpi.class)
-      .add(UserSessionSpi.class)
-      .add(UserSpi.class)
-      .add(DatastoreSpi.class)
-      .build();
+    private static final Set<Class<? extends Spi>> ALLOWED_SPIS = Set.of(
+            AuthorizationSpi.class,
+            PolicySpi.class,
+            ClientScopeSpi.class,
+            ClientSpi.class,
+            ComponentFactorySpi.class,
+            ClusterSpi.class,
+            EventStoreSpi.class,
+            ExecutorsSpi.class,
+            GroupSpi.class,
+            RealmSpi.class,
+            RoleSpi.class,
+            DeploymentStateSpi.class,
+            StoreFactorySpi.class,
+            TimerSpi.class,
+            TracingSpi.class,
+            UserLoginFailureSpi.class,
+            UserSessionSpi.class,
+            UserSpi.class,
+            DatastoreSpi.class,
+            CacheRemoteConfigProviderSpi.class);
 
-    private static final Set<Class<? extends ProviderFactory>> ALLOWED_FACTORIES = ImmutableSet.<Class<? extends ProviderFactory>>builder()
-      .add(ComponentFactoryProviderFactory.class)
-      .add(DefaultAuthorizationProviderFactory.class)
-      .add(PolicyProviderFactory.class)
-      .add(DefaultExecutorsProviderFactory.class)
-      .add(DeploymentStateProviderFactory.class)
-      .add(DatastoreProviderFactory.class)
-      .build();
+    private static final Set<Class<? extends ProviderFactory>> ALLOWED_FACTORIES = Set.of(
+            ComponentFactoryProviderFactory.class,
+            DefaultAuthorizationProviderFactory.class,
+            PolicyProviderFactory.class,
+            DefaultExecutorsProviderFactory.class,
+            DeploymentStateProviderFactory.class,
+            DatastoreProviderFactory.class,
+            TracingProviderFactory.class,
+            CacheRemoteConfigProviderFactory.class);
 
     protected static final List<KeycloakModelParameters> MODEL_PARAMETERS;
     protected static final Config CONFIG = new Config(KeycloakModelTest::useDefaultFactory);

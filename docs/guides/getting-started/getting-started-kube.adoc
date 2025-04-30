@@ -1,8 +1,9 @@
 <#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
 title="Kubernetes"
-summary="Get started with {project_name} on Kubernetes">
+summary="Get started with {project_name} on Kubernetes.">
 
 :links-admin-console: {project_name} Admin Console
 :links-account-console: {project_name} Account Console
@@ -35,11 +36,13 @@ As a first step, create the {project_name} deployment and service by entering th
 
 [source,bash,subs="attributes+"]
 ----
-kubectl create -f https://raw.githubusercontent.com/keycloak/keycloak-quickstarts/latest/kubernetes/keycloak.yaml
+kubectl create -f https://raw.githubusercontent.com/keycloak/keycloak-quickstarts/refs/heads/main/kubernetes/keycloak.yaml
 ----
 
 This command starts {project_name} on Kubernetes and creates an initial admin user with the username `admin` and password
 `admin`.
+
+NOTE: If you will eventually want more than one server replica, please see the <@links.gettingstarted id="getting-started-scaling-and-tuning" anchor="horizontal-scaling" /> {section}.
 
 === Access {project_name} with Ingress addon enabled
 
@@ -47,7 +50,7 @@ Now create an Ingress for {project_name} by entering the following command:
 
 [source,bash,subs="attributes+"]
 ----
-wget -q -O - https://raw.githubusercontent.com/keycloak/keycloak-quickstarts/latest/kubernetes/keycloak-ingress.yaml | \
+wget -q -O - https://raw.githubusercontent.com/keycloak/keycloak-quickstarts/refs/heads/main/kubernetes/keycloak-ingress.yaml | \
 sed "s/KEYCLOAK_HOST/keycloak.$(minikube ip).nip.io/" | \
 kubectl create -f -
 ----

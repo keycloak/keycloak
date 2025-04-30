@@ -22,6 +22,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.EventListenerProvider;
+import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AuthDetails;
@@ -31,17 +32,17 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.StripSecretsUtils;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.util.JsonSerialization;
 
 import jakarta.ws.rs.core.UriInfo;
+import org.keycloak.utils.StringUtil;
+
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Predicate;
 
 public class AdminEventBuilder {
 
@@ -56,7 +57,7 @@ public class AdminEventBuilder {
     private EventStoreProvider store;
 
     public AdminEventBuilder(RealmModel realm, AdminAuth auth, KeycloakSession session, ClientConnection clientConnection) {
-        this(realm, auth, session, clientConnection.getRemoteAddr(), null);
+        this(realm, auth, session, clientConnection.getRemoteHost(), null);
     }
 
     private AdminEventBuilder(RealmModel realm, AdminAuth auth, KeycloakSession session, String ipAddress, AdminEvent adminEvent) {
@@ -130,16 +131,16 @@ public class AdminEventBuilder {
     }
 
     private AdminEventBuilder addListeners(KeycloakSession session) {
-        realm.getEventsListenersStream()
-                .filter(((Predicate<String>) listeners::containsKey).negate())
-                .forEach(id -> {
-                    EventListenerProvider listener = session.getProvider(EventListenerProvider.class, id);
-                    if (listener != null) {
-                        listeners.put(id, listener);
-                    } else {
-                        ServicesLogger.LOGGER.providerNotFound(id);
+        HashSet<String> realmListeners = new HashSet<>(realm.getEventsListenersStream().toList());
+        session.getKeycloakSessionFactory().getProviderFactoriesStream(EventListenerProvider.class)
+                .filter(providerFactory -> realmListeners.contains(providerFactory.getId()) || ((EventListenerProviderFactory) providerFactory).isGlobal())
+                .forEach(providerFactory -> {
+                    realmListeners.remove(providerFactory.getId());
+                    if (!listeners.containsKey(providerFactory.getId())) {
+                        listeners.put(providerFactory.getId(), ((EventListenerProviderFactory) providerFactory).create(session));
                     }
                 });
+        realmListeners.forEach(ServicesLogger.LOGGER::providerNotFound);
         return this;
     }
 
@@ -261,6 +262,20 @@ public class AdminEventBuilder {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        return this;
+    }
+
+    public AdminEventBuilder detail(String key, String value) {
+        if (StringUtil.isBlank(value)) {
+            return this;
+        }
+
+        if (adminEvent.getDetails() == null) {
+            adminEvent.setDetails(new HashMap<>());
+        }
+
+        adminEvent.getDetails().put(key, value);
+
         return this;
     }
 

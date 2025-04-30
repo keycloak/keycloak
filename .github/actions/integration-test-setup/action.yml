@@ -14,6 +14,10 @@ inputs:
 runs:
   using: composite
   steps:
+    - id: update-hosts
+      name: Update /etc/hosts
+      uses: ./.github/actions/update-hosts
+
     - id: setup-java
       name: Setup Java
       uses: ./.github/actions/java-setup
@@ -25,9 +29,9 @@ runs:
       name: Maven cache
       uses: ./.github/actions/maven-cache
 
-    - id: frontend-plugin-cache
-      name: Frontend Plugin Cache
-      uses: ./.github/actions/frontend-plugin-cache
+    - id: pnpm-store-cache
+      name: PNPM store cache
+      uses: ./.github/actions/pnpm-store-cache
 
     - id: download-keycloak
       name: Download Keycloak Maven artifacts

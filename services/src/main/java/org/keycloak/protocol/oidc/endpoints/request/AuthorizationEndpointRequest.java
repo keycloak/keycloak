@@ -51,6 +51,8 @@ public class AuthorizationEndpointRequest {
     String codeChallenge;
     String codeChallengeMethod;
 
+    String dpopJkt;
+
     String acr;
 
     AuthorizationRequestContext authorizationRequestContext;
@@ -132,6 +134,10 @@ public class AuthorizationEndpointRequest {
     public String getCodeChallengeMethod() {
         return codeChallengeMethod;
     }
+
+    public String getDpopJkt() { return dpopJkt; }
+
+    public void setDpopJkt(String dpopJkt) { this.dpopJkt = dpopJkt; }
 
     public String getDisplay() {
         return display;

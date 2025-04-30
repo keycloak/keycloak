@@ -17,13 +17,19 @@ export const TextComponent = (props: UserProfileFieldProps) => {
         id={attribute.name}
         data-testid={attribute.name}
         type={type}
-        placeholder={label(
-          props.t,
-          attribute.annotations?.["inputTypePlaceholder"] as string,
-          attribute.name,
-          attribute.annotations?.["inputOptionLabelsI18nPrefix"] as string,
-        )}
-        readOnly={attribute.readOnly}
+        placeholder={
+          attribute.readOnly
+            ? ""
+            : label(
+                props.t,
+                attribute.annotations?.["inputTypePlaceholder"] as string,
+                "",
+                attribute.annotations?.[
+                  "inputOptionLabelsI18nPrefix"
+                ] as string,
+              )
+        }
+        isDisabled={attribute.readOnly}
         isRequired={isRequired}
         {...form.register(fieldName(attribute.name))}
       />

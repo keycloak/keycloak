@@ -79,6 +79,15 @@ public class LDAPConfig {
         return usersDn;
     }
 
+    public String getRelativeCreateDn() {
+        String relativeCreateDn = config.getFirst(LDAPConstants.RELATIVE_CREATE_DN);
+        if(relativeCreateDn != null) {
+            relativeCreateDn = relativeCreateDn.trim();
+            return relativeCreateDn.endsWith(",") ? relativeCreateDn : relativeCreateDn + ",";
+        }
+        return "";
+    }
+
     public String getBaseDn() {
         return config.getFirst(LDAPConstants.BASE_DN);
     }
@@ -130,34 +139,6 @@ public class LDAPConfig {
         } else {
             return config.getFirst(LDAPConstants.CONNECTION_POOLING);
         }
-    }
-
-    public String getConnectionPoolingAuthentication() {
-        return config.getFirst(LDAPConstants.CONNECTION_POOLING_AUTHENTICATION);
-    }
-
-    public String getConnectionPoolingDebug() {
-        return config.getFirst(LDAPConstants.CONNECTION_POOLING_DEBUG);
-    }
-
-    public String getConnectionPoolingInitSize() {
-        return config.getFirst(LDAPConstants.CONNECTION_POOLING_INITSIZE);
-    }
-
-    public String getConnectionPoolingMaxSize() {
-        return config.getFirst(LDAPConstants.CONNECTION_POOLING_MAXSIZE);
-    }
-
-    public String getConnectionPoolingPrefSize() {
-        return config.getFirst(LDAPConstants.CONNECTION_POOLING_PREFSIZE);
-    }
-
-    public String getConnectionPoolingProtocol() {
-        return config.getFirst(LDAPConstants.CONNECTION_POOLING_PROTOCOL);
-    }
-
-    public String getConnectionPoolingTimeout() {
-        return config.getFirst(LDAPConstants.CONNECTION_POOLING_TIMEOUT);
     }
 
     public String getConnectionTimeout() {
@@ -280,6 +261,9 @@ public class LDAPConfig {
         return binaryAttributeNames;
     }
 
+    public boolean isConnectionTrace() {
+        return Boolean.parseBoolean(config.getFirstOrDefault(LDAPConstants.CONNECTION_TRACE, Boolean.FALSE.toString()));
+    }
 
     @Override
     public boolean equals(Object obj) {

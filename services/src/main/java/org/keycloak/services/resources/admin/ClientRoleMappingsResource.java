@@ -183,7 +183,9 @@ public class ClientRoleMappingsResource {
             throw new ErrorResponseException("invalid_request", "Could not add user role or group mappings!", Response.Status.BAD_REQUEST);
         }
 
-        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(roles).success();
+        if (!roles.isEmpty()) {
+            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(roles).success();
+        }
 
     }
 

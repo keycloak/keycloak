@@ -17,6 +17,8 @@
 package org.keycloak.testsuite.util;
 
 import org.jboss.arquillian.graphene.wait.ElementBuilder;
+import org.keycloak.executors.ExecutorsProvider;
+import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.openqa.selenium.By;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
@@ -27,10 +29,16 @@ import org.openqa.selenium.support.ui.FluentWait;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.jboss.arquillian.graphene.Graphene.waitGui;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.util.DroneUtils.getCurrentDriver;
 import static org.openqa.selenium.support.ui.ExpectedConditions.javaScriptThrowsNoExceptions;
 import static org.openqa.selenium.support.ui.ExpectedConditions.not;
@@ -129,19 +137,19 @@ public final class WaitUtils {
             return; // not needed
         }
 
-        String currentUrl = null;
-
         // Ensure the URL is "stable", i.e. is not changing anymore; if it'd changing, some redirects are probably still in progress
         for (int maxRedirects = 4; maxRedirects > 0; maxRedirects--) {
-            currentUrl = driver.getCurrentUrl();
-            FluentWait<WebDriver> wait = new FluentWait<>(driver).withTimeout(Duration.ofMillis(250));
             try {
+                String currentUrl = driver.getCurrentUrl();
+                FluentWait<WebDriver> wait = new FluentWait<>(driver).withTimeout(Duration.ofMillis(250));
                 wait.until(not(urlToBe(currentUrl)));
-            }
-            catch (TimeoutException e) {
+            } catch (TimeoutException e) {
                 if (driver.getPageSource() != null) {
                     break; // URL has not changed recently - ok, the URL is stable and page is current
                 }
+            } catch (Exception e) {
+                log.warnf("Unknown exception thrown waiting stabilization of the URL: %s", e.getMessage());
+                pause(250);
             }
             if (maxRedirects == 1) {
                 log.warn("URL seems unstable! (Some redirect are probably still in progress)");
@@ -157,4 +165,28 @@ public final class WaitUtils {
         waitUntilElementIsNotPresent(By.className("modal-backdrop"));
     }
 
+    public static void waitForBruteForceExecutors(KeycloakTestingClient testingClient) {
+        testingClient.server().run(session -> {
+            ExecutorsProvider provider = session.getProvider(ExecutorsProvider.class);
+            ExecutorService executor = provider.getExecutor("bruteforce");
+            ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executor;
+            try {
+                CompletableFuture.runAsync(() -> {
+                    do {
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                    } while (!threadPoolExecutor.getQueue().isEmpty() || threadPoolExecutor.getActiveCount() > 0);
+                }).get(30, TimeUnit.SECONDS);
+            } catch (java.util.concurrent.TimeoutException te) {
+                fail("Timeout while waiting for brute force executors!");
+            } catch (Exception e) {
+                e.printStackTrace();
+                fail("Unexpected error while waiting for brute force executors!");
+            }
+            assertEquals(0, threadPoolExecutor.getActiveCount());
+        });
+    }
 }

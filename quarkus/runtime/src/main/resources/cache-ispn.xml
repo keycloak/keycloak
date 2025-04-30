@@ -22,7 +22,7 @@
         xmlns="urn:infinispan:config:15.0">
 
     <cache-container name="keycloak">
-        <transport lock-timeout="60000" stack="udp"/>
+        <transport lock-timeout="60000"/>
         <local-cache name="realms" simple-cache="true">
             <encoding>
                 <key media-type="application/x-java-object"/>
@@ -75,6 +75,14 @@
                 <value media-type="application/x-java-object"/>
             </encoding>
             <expiration max-idle="3600000"/>
+            <memory max-count="1000"/>
+        </local-cache>
+        <local-cache name="crl" simple-cache="true">
+            <encoding>
+                <key media-type="application/x-java-object"/>
+                <value media-type="application/x-java-object"/>
+            </encoding>
+            <expiration lifespan="-1"/>
             <memory max-count="1000"/>
         </local-cache>
         <distributed-cache name="actionTokens" owners="2">

@@ -195,7 +195,7 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
 
     @Override
     public void removeUserSessions(RealmModel realm) {
-        transaction.removeOnlineSessionsByRealmId(realm.getId());
+        transaction.removeAllSessionsByRealmId(realm.getId());
     }
 
     @Override

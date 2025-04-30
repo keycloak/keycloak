@@ -69,4 +69,6 @@ public interface KeycloakDistribution {
     }
 
     <D extends KeycloakDistribution> D unwrap(Class<D> type);
+
+    void clearEnv();
 }

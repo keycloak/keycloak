@@ -43,12 +43,18 @@ class IterablePermissionEvaluator implements PermissionEvaluator {
     private final EvaluationContext executionContext;
     private final PolicyEvaluator policyEvaluator;
     private final AuthorizationProvider authorizationProvider;
+    private final ResourceServer resourceServer;
 
-    IterablePermissionEvaluator(Iterator<ResourcePermission> permissions, EvaluationContext executionContext, AuthorizationProvider authorizationProvider) {
+    IterablePermissionEvaluator(Iterator<ResourcePermission> permissions, ResourceServer resourceServer, EvaluationContext executionContext, AuthorizationProvider authorizationProvider) {
         this.permissions = permissions;
+        this.resourceServer = resourceServer;
         this.executionContext = executionContext;
         this.authorizationProvider = authorizationProvider;
-        this.policyEvaluator = authorizationProvider.getPolicyEvaluator();
+        this.policyEvaluator = authorizationProvider.getPolicyEvaluator(resourceServer);
+    }
+
+    IterablePermissionEvaluator(Iterator<ResourcePermission> permissions, EvaluationContext executionContext, AuthorizationProvider authorizationProvider) {
+        this(permissions, null, executionContext, authorizationProvider);
     }
 
     @Override

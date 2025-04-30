@@ -84,6 +84,15 @@ public class ManagementOptions {
             .hidden()
             .build();
 
+    public static final Option<String> HTTPS_MANAGEMENT_CERTIFICATES_RELOAD_PERIOD = new OptionBuilder<>("https-management-certificates-reload-period", String.class)
+            .category(OptionCategory.MANAGEMENT)
+            .description("Interval on which to reload key store, trust store, and certificate files referenced by https-management-* options for the management server. " +
+                    "May be a java.time.Duration value, an integer number of seconds, or an integer followed by one of [ms, h, m, s, d]. " +
+                    "Must be greater than 30 seconds. Use -1 to disable. " +
+                    "If not given, the value is inherited from HTTP options. " + RELEVANT_MSG)
+            .defaultValue("1h")
+            .build();
+
     public static final Option<File> HTTPS_MANAGEMENT_CERTIFICATE_FILE = new OptionBuilder<>("https-management-certificate-file", File.class)
             .category(OptionCategory.MANAGEMENT)
             .description("The file path to a server certificate or certificate chain in PEM format for the management server. If not given, the value is inherited from HTTP options. " + RELEVANT_MSG)

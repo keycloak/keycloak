@@ -1,3 +1,4 @@
+import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   Modal,
@@ -11,12 +12,11 @@ import { CheckCircleIcon } from "@patternfly/react-icons";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
 import { fetchUsedBy } from "../../components/role-mapping/resource";
-import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
+import { useRealm } from "../../context/realm-context/RealmContext";
 import useToggle from "../../utils/useToggle";
-import { AuthenticationType, REALM_FLOWS } from "../AuthenticationSection";
+import { AuthenticationType, REALM_FLOWS } from "../constants";
 
 import style from "./used-by.module.css";
-import { useRealm } from "../../context/realm-context/RealmContext";
 
 type UsedByProps = {
   authType: AuthenticationType;

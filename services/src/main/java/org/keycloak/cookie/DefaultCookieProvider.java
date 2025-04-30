@@ -3,8 +3,9 @@ package org.keycloak.cookie;
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.NewCookie;
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.SecureContextResolver;
 import org.keycloak.models.KeycloakContext;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.utils.SecureContextResolver;
 
 import java.util.Map;
 
@@ -12,7 +13,7 @@ public class DefaultCookieProvider implements CookieProvider {
 
     private static final Logger logger = Logger.getLogger(DefaultCookieProvider.class);
 
-    private final KeycloakContext context;
+    private final KeycloakSession session;
 
     private final CookiePathResolver pathResolver;
 
@@ -20,11 +21,13 @@ public class DefaultCookieProvider implements CookieProvider {
 
     private final Map<String, Cookie> cookies;
 
-    public DefaultCookieProvider(KeycloakContext context) {
-        this.context = context;
+    public DefaultCookieProvider(KeycloakSession session) {
+        KeycloakContext context = session.getContext();
+
+        this.session = session;
         this.cookies = context.getRequestHeaders().getCookies();
         this.pathResolver = new CookiePathResolver(context);
-        this.secure = SecureContextResolver.isSecureContext(context.getUri().getRequestUri());
+        this.secure = SecureContextResolver.isSecureContext(session);
 
         if (logger.isTraceEnabled()) {
             logger.tracef("Received cookies: %s, path: %s", String.join(", ", this.cookies.keySet()), context.getUri().getRequestUri().getRawPath());
@@ -67,7 +70,7 @@ public class DefaultCookieProvider implements CookieProvider {
                 .sameSite(sameSite)
                 .build();
 
-        context.getHttpResponse().setCookieIfAbsent(newCookie);
+        session.getContext().getHttpResponse().setCookieIfAbsent(newCookie);
 
         logger.tracef("Setting cookie: name: %s, path: %s, same-site: %s, secure: %s, http-only: %s, max-age: %d", name, path, sameSite, secure, httpOnly, maxAge);
     }
@@ -90,7 +93,7 @@ public class DefaultCookieProvider implements CookieProvider {
                     .maxAge(CookieMaxAge.EXPIRED)
                     .build();
 
-            context.getHttpResponse().setCookieIfAbsent(newCookie);
+            session.getContext().getHttpResponse().setCookieIfAbsent(newCookie);
 
             logger.tracef("Expiring cookie: name: %s, path: %s", cookie.getName(), path);
         }

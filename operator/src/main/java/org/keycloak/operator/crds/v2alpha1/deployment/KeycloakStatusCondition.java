@@ -26,4 +26,5 @@ public class KeycloakStatusCondition extends StatusCondition {
     public static final String READY = "Ready";
     public static final String HAS_ERRORS = "HasErrors";
     public static final String ROLLING_UPDATE = "RollingUpdate";
+    public static final String UPDATE_TYPE = "RecreateUpdateUsed";
 }

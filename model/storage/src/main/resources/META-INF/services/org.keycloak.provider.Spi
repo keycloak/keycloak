@@ -17,3 +17,4 @@
 
 org.keycloak.storage.UserStorageProviderSpi
 org.keycloak.storage.federated.UserFederatedStorageProviderSpi
+org.keycloak.storage.configuration.ServerConfigurationStorageProviderSpi

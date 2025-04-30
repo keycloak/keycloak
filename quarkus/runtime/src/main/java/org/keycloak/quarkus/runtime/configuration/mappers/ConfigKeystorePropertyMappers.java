@@ -1,16 +1,15 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
-import io.smallrye.config.ConfigValue;
 import org.keycloak.config.ConfigKeystoreOptions;
+import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Optional;
 
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
-final class ConfigKeystorePropertyMappers {
+public final class ConfigKeystorePropertyMappers {
     private static final String SMALLRYE_KEYSTORE_PATH = "smallrye.config.source.keystore.kc-default.path";
     private static final String SMALLRYE_KEYSTORE_PASSWORD = "smallrye.config.source.keystore.kc-default.password";
 
@@ -38,33 +37,29 @@ final class ConfigKeystorePropertyMappers {
         };
     }
 
-    private static Optional<String> validatePath(Optional<String> option, ConfigSourceInterceptorContext context) {
-        ConfigValue path = context.proceed(SMALLRYE_KEYSTORE_PATH);
-        boolean isPasswordDefined = context.proceed(SMALLRYE_KEYSTORE_PASSWORD) != null;
-
-        if (path == null) {
-            throw new IllegalArgumentException("config-keystore must be specified");
+    private static String validatePath(String option, ConfigSourceInterceptorContext context) {
+        if (option == null) {
+            return null;
         }
+        boolean isPasswordDefined = context.proceed(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + ConfigKeystoreOptions.CONFIG_KEYSTORE_PASSWORD.getKey()) != null;
 
         if (!isPasswordDefined) {
             throw new IllegalArgumentException("config-keystore-password must be specified");
         }
 
-        final Path realPath = Path.of(path.getValue()).toAbsolutePath().normalize();
+        final Path realPath = Path.of(option).toAbsolutePath().normalize();
         if (!Files.exists(realPath)) {
             throw new IllegalArgumentException("config-keystore path does not exist: " + realPath);
         }
 
-        return Optional.of(realPath.toUri().toString());
+        return realPath.toUri().toString();
     }
 
-    private static Optional<String> validatePassword(Optional<String> option, ConfigSourceInterceptorContext context) {
-        boolean isPasswordDefined = context.proceed(SMALLRYE_KEYSTORE_PASSWORD).getValue() != null;
-        boolean isPathDefined = context.proceed(SMALLRYE_KEYSTORE_PATH) != null;
-
-        if (!isPasswordDefined) {
-            throw new IllegalArgumentException("config-keystore-password must be specified");
+    private static String validatePassword(String option, ConfigSourceInterceptorContext context) {
+        if (option == null) {
+            return null;
         }
+        boolean isPathDefined = context.proceed(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + ConfigKeystoreOptions.CONFIG_KEYSTORE.getKey()) != null;
 
         if (!isPathDefined) {
             throw new IllegalArgumentException("config-keystore must be specified");

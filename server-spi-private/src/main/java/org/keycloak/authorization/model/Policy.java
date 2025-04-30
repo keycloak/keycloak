@@ -22,7 +22,9 @@ import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Represents an authorization policy and all the configuration associated with it.
@@ -31,7 +33,7 @@ import java.util.Set;
  */
 public interface Policy {
 
-    public static enum FilterOption {
+    enum FilterOption {
         ID("id"),
         PERMISSION("permission"),
         OWNER("owner"),
@@ -167,6 +169,15 @@ public interface Policy {
     Set<Resource> getResources();
 
     /**
+     * Returns the name of the {@link Resource} instances where this policy applies.
+     *
+     * @return a set with all names of resource instances where this policy applies. Or an empty set if there is no resource associated with this policy
+     */
+    default Set<String> getResourceNames() {
+        return getResources().stream().map(Resource::getName).collect(Collectors.toSet());
+    }
+
+    /**
      * Returns the {@link Scope} instances where this policy applies.
      *
      * @return a set with all scope instances where this policy applies. Or an empty set if there is no scope associated with this policy
@@ -188,4 +199,16 @@ public interface Policy {
     void addResource(Resource resource);
 
     void removeResource(Resource resource);
+
+    default String getResourceType() {
+        return Optional.ofNullable(getConfig()).orElse(Map.of()).get("defaultResourceType");
+    }
+
+    default void setResourceType(String resourceType) {
+        Map<String, String> config = getConfig();
+
+        if (config != null) {
+            putConfig("defaultResourceType", resourceType);
+        }
+    }
 }

@@ -28,11 +28,10 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
 
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 
 /**
@@ -118,7 +117,7 @@ public class StackoverflowIdentityProvider extends AbstractOAuth2IdentityProvide
 					}
 					String[] pe = path.split("/");
 					if (pe.length >= 3) {
-						return URLDecoder.decode(pe[2], "UTF-8");
+						return URLDecoder.decode(pe[2], StandardCharsets.UTF_8);
 					} else {
 						log.warn("Stackoverflow profile URL path is without third part: " + profileURL);
 					}

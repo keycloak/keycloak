@@ -9,7 +9,7 @@ The Policy API is available at:
 
 [source,subs="attributes+"]
 ----
-http://${host}:${port}{kc_realms_path}/${realm_name}/authz/protection/uma-policy/{resource_id}
+http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/uma-policy/{resource_id}
 ----
 
 This API is protected by a bearer token that must represent a consent granted by the user to the resource server to manage permissions on his behalf. The bearer token can be a regular access token obtained from the
@@ -136,28 +136,28 @@ To query the permissions associated with a resource, send an HTTP GET request as
 
 [source,subs="attributes+"]
 ----
-http://${host}:${port}{kc_realms_path}/${realm}/authz/protection/uma-policy?resource={resource_id}
+http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/uma-policy?resource={resource_id}
 ----
 
 To query the permissions given its name, send an HTTP GET request as follows:
 
 [source,bash,subs="attributes+"]
 ----
-http://${host}:${port}{kc_realms_path}/${realm}/authz/protection/uma-policy?name=Any people manager
+http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/uma-policy?name=Any people manager
 ----
 
 To query the permissions associated with a specific scope, send an HTTP GET request as follows:
 
 [source,subs="attributes+"]
 ----
-http://${host}:${port}{kc_realms_path}/${realm}/authz/protection/uma-policy?scope=read
+http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/uma-policy?scope=read
 ----
 
 To query all permissions, send an HTTP GET request as follows:
 
 [source,subs="attributes+"]
 ----
-http://${host}:${port}{kc_realms_path}/${realm}/authz/protection/uma-policy
+http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/uma-policy
 ----
 
 When querying the server for permissions use parameters `first` and `max` results to limit the result.

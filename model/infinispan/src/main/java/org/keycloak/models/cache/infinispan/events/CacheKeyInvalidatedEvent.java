@@ -23,9 +23,10 @@ import org.infinispan.protostream.annotations.ProtoFactory;
 import org.infinispan.protostream.annotations.ProtoTypeId;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.cache.infinispan.RealmCacheManager;
+import org.keycloak.models.cache.infinispan.UserCacheManager;
 
 @ProtoTypeId(Marshalling.CACHE_KEY_INVALIDATION_EVENT)
-public class CacheKeyInvalidatedEvent extends InvalidationEvent implements RealmCacheInvalidationEvent {
+public class CacheKeyInvalidatedEvent extends InvalidationEvent implements RealmCacheInvalidationEvent, UserCacheInvalidationEvent {
 
     @ProtoFactory
     public CacheKeyInvalidatedEvent(String id) {
@@ -35,5 +36,10 @@ public class CacheKeyInvalidatedEvent extends InvalidationEvent implements Realm
     @Override
     public void addInvalidations(RealmCacheManager realmCache, Set<String> invalidations) {
         realmCache.invalidateCacheKey(getId(), invalidations);
+    }
+
+    @Override
+    public void addInvalidations(UserCacheManager userCache, Set<String> invalidations) {
+        userCache.invalidateCacheKey(getId(), invalidations);
     }
 }

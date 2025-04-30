@@ -17,30 +17,54 @@
 
 package org.keycloak.exportimport.util;
 
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionTask;
-
 import java.io.IOException;
+
+import org.keycloak.connections.jpa.support.EntityManagers;
+import org.keycloak.exportimport.ExportImportConfig;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.utils.KeycloakSessionUtil;
 
 /**
  * Just to wrap {@link IOException}
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public abstract class ExportImportSessionTask implements KeycloakSessionTask {
+public abstract class ExportImportSessionTask {
 
-    @Override
-    public void run(KeycloakSession session) {
-        try {
-            runExportImportTask(session);
-        } catch (IOException ioe) {
-            throw new RuntimeException("Error during export/import: " + ioe.getMessage(), ioe);
+    public enum Mode {
+        BATCHED, // turn on batched optimizations - good for read-only and bulk inserts, and flush / clear when done
+        NORMAL
+    }
+
+    public void runTask(KeycloakSessionFactory factory) {
+        runTask(factory, Mode.NORMAL);
+    }
+
+    public void runTask(KeycloakSessionFactory factory, Mode mode) {
+        boolean useExistingSession = ExportImportConfig.isSingleTransaction();
+        KeycloakSession existing = KeycloakSessionUtil.getKeycloakSession();
+        if (useExistingSession && existing != null && existing.getTransactionManager().isActive()) {
+            run(mode, existing);
+        } else {
+            KeycloakModelUtils.runJobInTransaction(factory, session -> this.run(mode, session));
         }
     }
-    
-    @Override
-    public boolean useExistingSession() {
-        return true;
+
+    private void run(Mode mode, KeycloakSession session) {
+        Runnable task = () -> {
+            try {
+                runExportImportTask(session);
+            } catch (IOException ioe) {
+                throw new RuntimeException("Error during export/import: " + ioe.getMessage(), ioe);
+            }
+        };
+        if (mode == Mode.BATCHED) {
+            EntityManagers.runInBatch(session, task, true);
+        } else {
+            task.run();
+        }
     }
 
     protected abstract void runExportImportTask(KeycloakSession session) throws IOException;

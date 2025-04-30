@@ -184,11 +184,6 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest{
     public void cleanup() {
         clearAmr("browser");
 
-        // remove claims config for acr
-        ClaimsRepresentation claims = new ClaimsRepresentation();
-        claims.setIdTokenClaims(Collections.emptyMap());
-        oauth.claims(claims);
-
         // reset default browser flow
         setBrowserFlow("browser");
 
@@ -395,7 +390,7 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest{
         if (execution.getAuthenticationConfig() == null){
             // create config if it doesn't exist
             AuthenticatorConfigRepresentation config = new AuthenticatorConfigRepresentation();
-            config.setAlias("test");
+            config.setAlias(KeycloakModelUtils.generateId());
             config.setConfig(new HashMap<>(){{
                 put(AMR_VALUE_KEY, amrValue);
                 put(AMR_MAX_AGE_KEY, maxAge.toString());
@@ -477,7 +472,7 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest{
      */
     private void logout(String userId, Tokens tokens){
         // Logout
-        oauth.doLogout(tokens.refreshToken, CLIENT_SECRET);
+        oauth.doLogout(tokens.refreshToken);
         events.expectLogout(tokens.idToken.getSessionState())
                 .client(CLIENT_ID)
                 .user(userId)

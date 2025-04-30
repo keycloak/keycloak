@@ -33,7 +33,7 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Environment;
-import org.keycloak.common.util.SecureContextResolver;
+import org.keycloak.utils.SecureContextResolver;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.http.HttpRequest;
@@ -54,14 +54,12 @@ import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.util.ViteManifest;
 import org.keycloak.theme.FreeMarkerException;
-import org.keycloak.theme.Theme;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
 import org.keycloak.utils.MediaType;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -293,7 +291,11 @@ public class AdminConsole {
 
     private void addMasterRealmAccess(UserModel user, String currentRealm, Map<String, Set<String>> realmAdminAccess) {
         final RealmModel realm = session.realms().getRealmByName(currentRealm);
-        getRealmAdminAccess(realm, realm.getMasterAdminClient(), user, realmAdminAccess);
+        if (realm != null) {
+            getRealmAdminAccess(realm, realm.getMasterAdminClient(), user, realmAdminAccess);
+        } else {
+            throw new NotFoundException("Realm not found");
+        }
     }
 
     private void getRealmAdminAccess(RealmModel realm, ClientModel client, UserModel user, Map<String, Set<String>> realmAdminAccess) {
@@ -348,7 +350,7 @@ public class AdminConsole {
 
             final var map = new HashMap<String, Object>();
             final var theme = AdminRoot.getTheme(session, realm);
-            final var isSecureContext = SecureContextResolver.isSecureContext(adminBaseUri);
+            final var isSecureContext = SecureContextResolver.isSecureContext(session);
 
             map.put("isSecureContext", isSecureContext);
             map.put("serverBaseUrl", serverBaseUrl);
@@ -365,6 +367,8 @@ public class AdminConsole {
             map.put("loginRealm", realm.getName());
             map.put("clientId", Constants.ADMIN_CONSOLE_CLIENT_ID);
             map.put("properties", theme.getProperties());
+            map.put("darkMode", "true".equals(theme.getProperties().getProperty("darkMode"))
+                    && realm.getAttribute("darkMode", true));
 
             final var devServerUrl = Environment.isDevMode() ? System.getenv(ViteManifest.ADMIN_VITE_URL) : null;
 

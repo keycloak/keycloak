@@ -15,6 +15,7 @@ public class CachingOptions {
     public static final String CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD_PROPERTY = CACHE_EMBEDDED_MTLS_PREFIX + "-key-store-password";
     public static final String CACHE_EMBEDDED_MTLS_TRUSTSTORE_FILE_PROPERTY = CACHE_EMBEDDED_MTLS_PREFIX + "-trust-store-file";
     public static final String CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD_PROPERTY = CACHE_EMBEDDED_MTLS_PREFIX + "-trust-store-password";
+    public static final String CACHE_EMBEDDED_MTLS_ROTATION_PROPERTY = CACHE_EMBEDDED_MTLS_PREFIX + "-rotation-interval-days";
 
     private static final String CACHE_REMOTE_PREFIX = "cache-remote";
     public static final String CACHE_REMOTE_HOST_PROPERTY = CACHE_REMOTE_PREFIX + "-host";
@@ -26,7 +27,7 @@ public class CachingOptions {
     private static final String CACHE_METRICS_PREFIX = "cache-metrics";
     public static final String CACHE_METRICS_HISTOGRAMS_ENABLED_PROPERTY = CACHE_METRICS_PREFIX + "-histograms-enabled";
 
-    public static final String[] LOCAL_MAX_COUNT_CACHES = new String[]{"authorization", "keys", "realms", "users", };
+    public static final String[] LOCAL_MAX_COUNT_CACHES = new String[]{"authorization", "crl", "keys", "realms", "users", };
 
     public static final String[] CLUSTERED_MAX_COUNT_CACHES = new String[]{"clientSessions", "offlineSessions", "offlineClientSessions", "sessions"};
 
@@ -44,18 +45,27 @@ public class CachingOptions {
             .build();
 
     public enum Stack {
+        jdbc_ping,
+        kubernetes,
+        jdbc_ping_udp,
         tcp,
         udp,
-        kubernetes,
         ec2,
         azure,
-        google
+        google;
+
+        @Override
+        public String toString() {
+            return CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_HYPHEN, super.toString());
+        }
     }
 
     public static final Option<Stack> CACHE_STACK = new OptionBuilder<>("cache-stack", Stack.class)
             .category(OptionCategory.CACHE)
-            .expectedValues(false)
-            .description("Define the default stack to use for cluster communication and node discovery. This option only takes effect if 'cache' is set to 'ispn'. Default: udp.")
+            .strictExpectedValues(false)
+            .description("Define the default stack to use for cluster communication and node discovery.")
+            .defaultValue(Stack.jdbc_ping)
+            .deprecatedValues("Use 'jdbc-ping' instead", Stack.azure, Stack.ec2, Stack.google, Stack.tcp, Stack.udp, Stack.jdbc_ping_udp)
             .build();
 
     public static final Option<File> CACHE_CONFIG_FILE = new OptionBuilder<>(CACHE_CONFIG_FILE_PROPERTY, File.class)
@@ -66,14 +76,14 @@ public class CachingOptions {
 
     public static final Option<Boolean> CACHE_EMBEDDED_MTLS_ENABLED = new OptionBuilder<>(CACHE_EMBEDDED_MTLS_ENABLED_PROPERTY, Boolean.class)
             .category(OptionCategory.CACHE)
-            .description("Encrypts the network communication between Keycloak servers.")
-            .defaultValue(Boolean.FALSE)
+            .description("Encrypts the network communication between Keycloak servers. If no additional parameters about a keystore and truststore are provided, ephemeral key pairs and certificates are created and rotated automatically, which is recommended for standard setups.")
+            .defaultValue(Boolean.TRUE)
             .build();
 
     public static final Option<String> CACHE_EMBEDDED_MTLS_KEYSTORE = new OptionBuilder<>(CACHE_EMBEDDED_MTLS_KEYSTORE_FILE_PROPERTY, String.class)
             .category(OptionCategory.CACHE)
             .description("The Keystore file path. The Keystore must contain the certificate to use by the TLS protocol. " +
-                    "By default, it lookup 'cache-mtls-keystore.p12' under conf/ directory.")
+                    "By default, it looks up 'cache-mtls-keystore.p12' under conf/ directory.")
             .build();
 
     public static final Option<String> CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD = new OptionBuilder<>(CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD_PROPERTY, String.class)
@@ -93,36 +103,37 @@ public class CachingOptions {
             .description("The password to access the Truststore.")
             .build();
 
+    public static final Option<Integer> CACHE_EMBEDDED_MTLS_ROTATION = new OptionBuilder<>(CACHE_EMBEDDED_MTLS_ROTATION_PROPERTY, Integer.class)
+            .category(OptionCategory.CACHE)
+            .defaultValue(30)
+            .description("Rotation period in days of automatic JGroups MTLS certificates.")
+            .build();
+
     public static final Option<String> CACHE_REMOTE_HOST = new OptionBuilder<>(CACHE_REMOTE_HOST_PROPERTY, String.class)
             .category(OptionCategory.CACHE)
-            .description(String.format("The hostname of the remote server for the remote store configuration. "
-                    + "It replaces the 'host' attribute of 'remote-server' tag of the configuration specified via XML file (see '%s' option.). "
-                    + "If the option is specified, '%s' and '%s' are required as well and the related configuration in XML file should not be present.",
-                    CACHE_CONFIG_FILE_PROPERTY, CACHE_REMOTE_USERNAME_PROPERTY, CACHE_REMOTE_PASSWORD_PROPERTY))
+            .description("The hostname of the external Infinispan cluster.")
             .build();
 
     public static final Option<Integer> CACHE_REMOTE_PORT = new OptionBuilder<>(CACHE_REMOTE_PORT_PROPERTY, Integer.class)
             .category(OptionCategory.CACHE)
-            .description(String.format("The port of the remote server for the remote store configuration. "
-                    + "It replaces the 'port' attribute of 'remote-server' tag of the configuration specified via XML file (see '%s' option.).",
-                    CACHE_CONFIG_FILE_PROPERTY))
+            .description("The port of the external Infinispan cluster.")
             .defaultValue(11222)
             .build();
 
     public static final Option<String> CACHE_REMOTE_USERNAME = new OptionBuilder<>(CACHE_REMOTE_USERNAME_PROPERTY, String.class)
             .category(OptionCategory.CACHE)
-            .description(String.format("The username for the authentication to the remote server for the remote store. "
-                    + "It replaces the 'username' attribute of 'digest' tag of the configuration specified via XML file (see '%s' option.). "
-                    + "If the option is specified, '%s' is required as well and the related configuration in XML file should not be present.",
-                    CACHE_CONFIG_FILE_PROPERTY, CACHE_REMOTE_PASSWORD_PROPERTY))
+            .description(String.format("The username for the authentication to the external Infinispan cluster. "
+                            + "It is optional if connecting to an unsecure external Infinispan cluster. "
+                            + "If the option is specified, '%s' is required as well.",
+                    CACHE_REMOTE_PASSWORD_PROPERTY))
             .build();
 
     public static final Option<String> CACHE_REMOTE_PASSWORD = new OptionBuilder<>(CACHE_REMOTE_PASSWORD_PROPERTY, String.class)
             .category(OptionCategory.CACHE)
-            .description(String.format("The password for the authentication to the remote server for the remote store. "
-                    + "It replaces the 'password' attribute of 'digest' tag of the configuration specified via XML file (see '%s' option.). "
-                    + "If the option is specified, '%s' is required as well and the related configuration in XML file should not be present.",
-                    CACHE_CONFIG_FILE_PROPERTY, CACHE_REMOTE_USERNAME_PROPERTY))
+            .description(String.format("The password for the authentication to the external Infinispan cluster. "
+                            + "It is optional if connecting to an unsecure external Infinispan cluster. "
+                            + "If the option is specified, '%s' is required as well.",
+                    CACHE_REMOTE_USERNAME_PROPERTY))
             .build();
 
     public static final Option<Boolean> CACHE_METRICS_HISTOGRAMS_ENABLED = new OptionBuilder<>(CACHE_METRICS_HISTOGRAMS_ENABLED_PROPERTY, Boolean.class)

@@ -37,6 +37,7 @@ import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -176,8 +177,8 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
 
     private static class TruststoreCertificatesLoader {
 
-        private Map<X500Principal, X509Certificate> trustedRootCerts = new HashMap<>();
-        private Map<X500Principal, X509Certificate> intermediateCerts = new HashMap<>();
+        private Map<X500Principal, List<X509Certificate>> trustedRootCerts = new HashMap<>();
+        private Map<X500Principal, List<X509Certificate>> intermediateCerts = new HashMap<>();
 
 
         public TruststoreCertificatesLoader(KeyStore truststore) {
@@ -213,11 +214,21 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
                     X509Certificate cax509cert = (X509Certificate) certificate;
                     if (isSelfSigned(cax509cert)) {
                         X500Principal principal = cax509cert.getSubjectX500Principal();
-                        trustedRootCerts.put(principal, cax509cert);
+                        List<X509Certificate> certs = trustedRootCerts.get(principal);
+                        if (certs == null) {
+                            certs = new ArrayList<>();
+                            trustedRootCerts.put(principal, certs);
+                        }
+                        certs.add(cax509cert);
                         log.debug("Trusted root CA found in truststore : alias : " + alias + " | Subject DN : " + principal);
                     } else {
                         X500Principal principal = cax509cert.getSubjectX500Principal();
-                        intermediateCerts.put(principal, cax509cert);
+                        List<X509Certificate> certs = intermediateCerts.get(principal);
+                        if (certs == null) {
+                            certs = new ArrayList<>();
+                            intermediateCerts.put(principal, certs);
+                        }
+                        certs.add(cax509cert);
                         log.debug("Intermediate CA found in truststore : alias : " + alias + " | Subject DN : " + principal);
                     }
                 } else

@@ -57,7 +57,6 @@ import liquibase.snapshot.SnapshotControl;
 import liquibase.snapshot.SnapshotGeneratorFactory;
 import liquibase.statement.SqlStatement;
 import liquibase.statement.core.AddColumnStatement;
-import liquibase.statement.core.CreateDatabaseChangeLogTableStatement;
 import liquibase.statement.core.SetNullableStatement;
 import liquibase.statement.core.UpdateStatement;
 import liquibase.structure.core.Column;
@@ -145,7 +144,7 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
 
             // create DEPLOYMENT_ID column if it doesn't exist
             if (!hasDeploymentIdColumn) {
-                ChangeLogHistoryService changelogHistoryService = ChangeLogHistoryServiceFactory.getInstance().getChangeLogService(database);
+                ChangeLogHistoryService changelogHistoryService = getChangeLogHistoryService().getChangeLogService(database);
                 changelogHistoryService.generateDeploymentId();
                 String deploymentId = changelogHistoryService.getDeploymentId();
 
@@ -213,12 +212,10 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
         loggingExecutor.comment("* Keycloak database creation script - apply this script to empty DB *");
         loggingExecutor.comment("*********************************************************************" + StreamUtil.getLineSeparator());
 
-        loggingExecutor.execute(new CreateDatabaseChangeLogTableStatement());
+        // DatabaseChangeLogTable is automatically added to the script by Liquibase
         // DatabaseChangeLogLockTable is created before this code is executed and recreated if it does not exist automatically
         // in org.keycloak.connections.jpa.updater.liquibase.lock.CustomLockService.init() called indirectly from
         // KeycloakApplication constructor (search for waitForLock() call). Hence it is not included in the creation script.
-
-        loggingExecutor.comment("*********************************************************************" + StreamUtil.getLineSeparator());
 
         executorService.setExecutor(LiquibaseConstants.JDBC_EXECUTOR, database, oldTemplate);
     }
@@ -284,7 +281,11 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
 
     private void resetLiquibaseServices(KeycloakLiquibase liquibase) {
         liquibase.resetServices();
-        ChangeLogHistoryServiceFactory.getInstance().register(new CustomChangeLogHistoryService());
+        getChangeLogHistoryService().register(new CustomChangeLogHistoryService());
+    }
+
+    private ChangeLogHistoryServiceFactory getChangeLogHistoryService() {
+        return Scope.getCurrentScope().getSingleton(ChangeLogHistoryServiceFactory.class);
     }
 
     private List<ChangeSet> getLiquibaseUnrunChangeSets(Liquibase liquibase) {

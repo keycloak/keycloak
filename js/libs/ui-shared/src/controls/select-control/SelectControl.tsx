@@ -41,6 +41,7 @@ export type SelectControlProps<
     name: string;
     label?: string;
     options: OptionType;
+    selectedOptions?: SelectControlOption[];
     labelIcon?: string;
     controller: Omit<ControllerProps, "name" | "render">;
     onFilter?: (value: string) => void;
@@ -49,6 +50,10 @@ export type SelectControlProps<
     menuAppendTo?: string;
     placeholderText?: string;
     chipGroupProps?: ChipGroupProps;
+    onSelect?: (
+      value: string | string[],
+      onChangeHandler: (value: string | string[]) => void,
+    ) => void;
   };
 
 export const isSelectBasedOptions = (

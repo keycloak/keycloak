@@ -4,7 +4,7 @@
 
 <@tmpl.guide
 title="Configuring the hostname (v2)"
-summary="Learn how to configure the frontend and backchannel endpoints exposed by {project_name}."
+summary="Configure the frontend and backchannel endpoints exposed by {project_name}."
 includedOptions="hostname hostname-* proxy"
 deniedCategories="hostname_v1">
 
@@ -66,7 +66,7 @@ The `proxy-headers` option can be also used to resolve the URL partially dynamic
 
 <@kc.start parameters="--hostname my.keycloak.org --proxy-headers xforwarded"/>
 
-In this case, scheme, port and context path are resolved dynamically from X-Forwarded-* headers, while hostname is statically defined as `my.keycloak.org`.
+In this case, scheme, and port are resolved dynamically from X-Forwarded-* headers, while hostname is statically defined as `my.keycloak.org`.
 
 === Fixed URLs
 

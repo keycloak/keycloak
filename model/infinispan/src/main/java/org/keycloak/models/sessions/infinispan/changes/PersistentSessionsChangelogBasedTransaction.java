@@ -25,7 +25,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.SessionFunction;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
-import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.HashMap;
@@ -44,7 +43,6 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
     private final String cacheName;
     private final Cache<K, SessionEntityWrapper<V>> cache;
     private final Cache<K, SessionEntityWrapper<V>> offlineCache;
-    private final RemoteCacheInvoker remoteCacheInvoker;
     private final SessionFunction<V> lifespanMsLoader;
     private final SessionFunction<V> maxIdleTimeMsLoader;
     private final SessionFunction<V> offlineLifespanMsLoader;
@@ -57,7 +55,6 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
                                                        String cacheName,
                                                        Cache<K, SessionEntityWrapper<V>> cache,
                                                        Cache<K, SessionEntityWrapper<V>> offlineCache,
-                                                       RemoteCacheInvoker remoteCacheInvoker,
                                                        SessionFunction<V> lifespanMsLoader,
                                                        SessionFunction<V> maxIdleTimeMsLoader,
                                                        SessionFunction<V> offlineLifespanMsLoader,
@@ -69,7 +66,6 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
         this.cacheName = cacheName;
         this.cache = cache;
         this.offlineCache = offlineCache;
-        this.remoteCacheInvoker = remoteCacheInvoker;
         this.lifespanMsLoader = lifespanMsLoader;
         this.maxIdleTimeMsLoader = maxIdleTimeMsLoader;
         this.offlineLifespanMsLoader = offlineLifespanMsLoader;
@@ -160,22 +156,10 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
                     return !entity.isOffline();
                 }
             });
-            changesPerformers.add(new RemoteCachesChangesPerformer<>(kcSession, cache, remoteCacheInvoker) {
-                @Override
-                public boolean shouldConsumeChange(V entity) {
-                    return !entity.isOffline();
-                }
-            });
         }
 
         if (offlineCache != null) {
             changesPerformers.add(new EmbeddedCachesChangesPerformer<>(offlineCache, serializerOffline){
-                @Override
-                public boolean shouldConsumeChange(V entity) {
-                    return entity.isOffline();
-                }
-            });
-            changesPerformers.add(new RemoteCachesChangesPerformer<>(kcSession, offlineCache, remoteCacheInvoker) {
                 @Override
                 public boolean shouldConsumeChange(V entity) {
                     return entity.isOffline();
@@ -191,6 +175,9 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
         List<SessionChangesPerformer<K, V>> changesPerformers = null;
         for (Map.Entry<K, SessionUpdatesList<V>> entry : Stream.concat(updates.entrySet().stream(), offlineUpdates.entrySet().stream()).toList()) {
             SessionUpdatesList<V> sessionUpdates = entry.getValue();
+            if (sessionUpdates.getUpdateTasks().isEmpty()) {
+                continue;
+            }
             SessionEntityWrapper<V> sessionWrapper = sessionUpdates.getEntityWrapper();
             V entity = sessionWrapper.getEntity();
             boolean isOffline = entity.isOffline();

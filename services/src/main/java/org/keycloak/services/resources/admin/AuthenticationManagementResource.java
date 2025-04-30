@@ -404,7 +404,7 @@ public class AuthenticationManagementResource {
 
         AuthenticationFlowModel flow = realm.getFlowByAlias(flowAlias);
         if (flow == null) {
-            logger.debug("flow not found: " + flowAlias);
+            logger.debugf("flow not found: %s", flowAlias);
             throw new NotFoundException("Flow not found");
         }
 
@@ -413,8 +413,7 @@ public class AuthenticationManagementResource {
         data.put("id", copy.getId());
         adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri()).representation(data).success();
 
-        return Response.status(Response.Status.CREATED).build();
-
+        return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(copy.getId()).build()).build();
     }
 
     public static AuthenticationFlowModel copyFlow(KeycloakSession session, RealmModel realm, AuthenticationFlowModel flow, String newName) {
@@ -461,6 +460,10 @@ public class AuthenticationManagementResource {
 
                     if (config.getAlias() != null) {
                         config.setAlias(newName + " " + config.getAlias());
+                        if (configManager.getAuthenticatorConfigByAlias(realm, config.getAlias()) != null) {
+                            logger.warnf("Authentication execution configuration [%s] already exists", config.getAlias());
+                            throw new IllegalStateException("Authentication execution configuration " + config.getAlias() + " already exists.");
+                        }
                     }
 
                     AuthenticatorConfigModel newConfig = realm.addAuthenticatorConfig(config);
@@ -476,11 +479,15 @@ public class AuthenticationManagementResource {
     }
 
     /**
-     * Add new flow with new execution to existing flow
+     * Add new flow with new execution to existing flow.
+     *
+     * This method creates two entities under the covers. Firstly the new authentication flow entity, which will be a subflow of existing parent flow, which was referenced by the path of this endpoint.
+     * Secondly the authentication execution entity, which will be added under the parent flow. This execution entity provides the binding between the parent flow and the new subflow. The new execution
+     * contains the "parentFlow" with the ID of the parent flow and the "flowId" with the ID of the newly created flow
      *
      * @param flowAlias Alias of parent authentication flow
      * @param data New authentication flow / execution JSON data containing 'alias', 'type', 'provider', 'priority', and 'description' attributes
-     * @return
+     * @return The response with the "Location" header pointing to the newly created flow (not the newly created execution!)
      */
     @Path("/flows/{flowAlias}/executions/flow")
     @POST
@@ -644,7 +651,7 @@ public class AuthenticationManagementResource {
 
         AuthenticationFlowModel flow = realm.getFlowByAlias(flowAlias);
         if (flow == null) {
-            logger.debug("flow not found: " + flowAlias);
+            logger.debugf("flow not found: %s", flowAlias);
             throw new NotFoundException("Flow not found");
         }
         List<AuthenticationExecutionInfoRepresentation> result = new LinkedList<>();
@@ -653,6 +660,19 @@ public class AuthenticationManagementResource {
 
         recurseExecutions(flow, result, level);
         return result;
+    }
+
+    private String getAuthenticationConfig(String flowAlias, AuthenticationExecutionModel model) {
+        if (model.getAuthenticatorConfig() == null) {
+            return null;
+        }
+        AuthenticatorConfigModel config = new DeployedConfigurationsManager(session).getAuthenticatorConfig(realm, model.getAuthenticatorConfig());
+        if (config == null) {
+            logger.warnf("Authenticator configuration '%s' is missing for execution '%s' (%s) in flow '%s'",
+                    model.getAuthenticatorConfig(), model.getId(), model.getAuthenticator(), flowAlias);
+            return null;
+        }
+        return config.getId();
     }
 
     public void recurseExecutions(AuthenticationFlowModel flow, List<AuthenticationExecutionInfoRepresentation> result, int level) {
@@ -674,7 +694,7 @@ public class AuthenticationManagementResource {
                     rep.getRequirementChoices().add(AuthenticationExecutionModel.Requirement.REQUIRED.name());
                     rep.getRequirementChoices().add(AuthenticationExecutionModel.Requirement.DISABLED.name());
                     rep.setProviderId(execution.getAuthenticator());
-                    rep.setAuthenticationConfig(execution.getAuthenticatorConfig());
+                    rep.setAuthenticationConfig(getAuthenticationConfig(flow.getAlias(), execution));
                 } else if (AuthenticationFlow.CLIENT_FLOW.equals(flowRef.getProviderId())) {
                     rep.getRequirementChoices().add(AuthenticationExecutionModel.Requirement.ALTERNATIVE.name());
                     rep.getRequirementChoices().add(AuthenticationExecutionModel.Requirement.REQUIRED.name());
@@ -724,7 +744,7 @@ public class AuthenticationManagementResource {
                 }
 
                 rep.setProviderId(providerId);
-                rep.setAuthenticationConfig(execution.getAuthenticatorConfig());
+                rep.setAuthenticationConfig(getAuthenticationConfig(flow.getAlias(), execution));
                 result.add(rep);
             }
         });
@@ -749,7 +769,7 @@ public class AuthenticationManagementResource {
 
         AuthenticationFlowModel flow = realm.getFlowByAlias(flowAlias);
         if (flow == null) {
-            logger.debug("flow not found: " + flowAlias);
+            logger.debugf("flow not found: %s", flowAlias);
             throw new NotFoundException("flow not found");
         }
 
@@ -824,7 +844,7 @@ public class AuthenticationManagementResource {
     @Operation( summary = "Get Single Execution")
     public AuthenticationExecutionRepresentation getExecution(final @PathParam("executionId") String executionId) {
     	//http://localhost:8080/auth/admin/realms/master/authentication/executions/cf26211b-9e68-4788-b754-1afd02e59d7f
-        auth.realm().requireManageRealm();
+        auth.realm().requireViewRealm();
 
         final Optional<AuthenticationExecutionModel> model = Optional.ofNullable(realm.getAuthenticationExecutionById(executionId));
         if (!model.isPresent()) {
@@ -1021,24 +1041,41 @@ public class AuthenticationManagementResource {
     public Response newExecutionConfig(@Parameter(description = "Execution id") @PathParam("executionId") String execution, @Parameter(description = "JSON with new configuration") AuthenticatorConfigRepresentation json) {
         auth.realm().requireManageRealm();
 
+        if (json.getAlias() == null || json.getAlias().isEmpty()) {
+            throw ErrorResponse.exists("Failed to create authentication execution configuration with empty alias name");
+        }
+
         ReservedCharValidator.validate(json.getAlias());
 
         AuthenticationExecutionModel model = realm.getAuthenticationExecutionById(execution);
         if (model == null) {
             session.getTransactionManager().setRollbackOnly();
             throw new NotFoundException("Illegal execution");
+        }
 
+        // retrieve the previous configuration if assigned
+        AuthenticatorConfigModel prevConfig = null;
+        if (model.getAuthenticatorConfig() != null) {
+            prevConfig = realm.getAuthenticatorConfigById(model.getAuthenticatorConfig());
         }
+
+        AuthenticatorConfigModel otherConfig = realm.getAuthenticatorConfigByAlias(json.getAlias());
+        if (otherConfig != null && (prevConfig == null || !prevConfig.getId().equals(otherConfig.getId()))) {
+            throw ErrorResponse.exists("Authentication execution configuration " + json.getAlias() + " already exists");
+        }
+
+        // remove the previous config
+        if (prevConfig != null) {
+            realm.removeAuthenticatorConfig(prevConfig);
+        }
+
         AuthenticatorConfigModel config = RepresentationToModel.toModel(json);
-        if (config.getAlias() == null) {
-            throw ErrorResponse.error("Alias missing", Response.Status.BAD_REQUEST);
-        }
         config = realm.addAuthenticatorConfig(config);
         model.setAuthenticatorConfig(config.getId());
         realm.updateAuthenticatorExecution(model);
 
         json.setId(config.getId());
-        adminEvent.operation(OperationType.CREATE).resource(ResourceType.AUTH_EXECUTION).resourcePath(session.getContext().getUri()).representation(json).success();
+        adminEvent.operation(OperationType.CREATE).resource(ResourceType.AUTHENTICATOR_CONFIG).resourcePath(session.getContext().getUri()).representation(json).success();
         return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(config.getId()).build()).build();
     }
 
@@ -1524,6 +1561,14 @@ public class AuthenticationManagementResource {
     @Deprecated
     public Response createAuthenticatorConfig(@Parameter(description = "JSON describing new authenticator configuration") AuthenticatorConfigRepresentation rep) {
         auth.realm().requireManageRealm();
+
+        if (rep.getAlias() == null || rep.getAlias().isEmpty()) {
+            throw ErrorResponse.exists("Failed to create authentication execution configuration with empty alias name");
+        }
+
+        if (realm.getAuthenticatorConfigByAlias(rep.getAlias()) != null) {
+            throw ErrorResponse.exists("Authentication execution configuration " + rep.getAlias() + " already exists");
+        }
 
         ReservedCharValidator.validate(rep.getAlias());
 

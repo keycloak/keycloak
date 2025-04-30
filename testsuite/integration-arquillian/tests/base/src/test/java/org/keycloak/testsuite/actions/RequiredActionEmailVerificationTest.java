@@ -73,9 +73,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.hamcrest.Matchers;
 import org.junit.Assume;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -239,6 +241,26 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
           .assertEvent();
 
         events.expectLogin().user(userId).session(mailCodeId).detail(Details.USERNAME, "verifyemail").assertEvent();
+    }
+
+    @Test
+    public void verifyEmailRegisterSetLocale() throws IOException, MessagingException {
+        RealmRepresentation realm = testRealm().toRepresentation();
+        realm.setInternationalizationEnabled(true);
+        realm.setSupportedLocales(Set.of("en", "pt"));
+        testRealm().update(realm);
+        loginPage.open();
+        loginPage.clickRegister();
+        loginPage.openLanguage("Português");
+        registerPage.register("firstName", "lastName", "locale@mail.com", "locale", "password", "password");
+
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+        MimeMessage message = greenMail.getReceivedMessages()[0];
+        String verificationUrl = getEmailLink(message);
+
+        driver.manage().deleteAllCookies();
+        driver.navigate().to(verificationUrl.trim());
+        assertTrue(driver.getPageSource().contains("Confirme a validade do endereço"));
     }
 
     @Test
@@ -867,7 +889,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
             appPage.assertCurrent();
 
             // Browser 2: Log in
-            driver2.navigate().to(oauth.getLoginFormUrl());
+            driver2.navigate().to(oauth.loginForm().build());
 
             assertThat(driver2.getTitle(), is("Sign in to " + testRealmName));
             driver2.findElement(By.id("username")).sendKeys("test-user@localhost");
@@ -1022,7 +1044,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         assertThat(driver2.getPageSource(), Matchers.containsString("kc-info-message"));
         assertThat(driver2.getPageSource(), Matchers.containsString("Your email address has been verified."));
 
-        driver2.navigate().to(oauth.getLoginFormUrl());
+        driver2.navigate().to(oauth.loginForm().build());
 
         // login page should be shown in the second browser
         assertThat(driver2.getPageSource(), Matchers.containsString("kc-login"));
@@ -1042,9 +1064,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     public void verifyEmailExpiredRegistration() throws IOException, MessagingException {
         final String COMMON_ATTR = "verifyEmailRegistrationUser";
 
-        String appInitiatedRegisterUrl = oauth.getLoginFormUrl();
-        appInitiatedRegisterUrl = appInitiatedRegisterUrl.replace("openid-connect/auth", "openid-connect/registrations");
-        driver.navigate().to(appInitiatedRegisterUrl);
+        driver.navigate().to(oauth.registrationForm().build());
 
         registerPage.assertCurrent();
         registerPage.register(COMMON_ATTR, COMMON_ATTR, COMMON_ATTR + "@" + COMMON_ATTR, COMMON_ATTR, COMMON_ATTR, COMMON_ATTR);

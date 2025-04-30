@@ -45,6 +45,10 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-storage-private</artifactId>
         </dependency>
         <dependency>
@@ -79,6 +83,16 @@
             <artifactId>infinispan-component-annotations</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-component-processor</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
 
         <dependency>
             <groupId>junit</groupId>
@@ -106,8 +120,26 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration combine.self="append">
+                    <remoteLockFiles>https://raw.githubusercontent.com/keycloak/keycloak/refs/heads/release/26.0/model/infinispan/proto.lock,https://raw.githubusercontent.com/keycloak/keycloak/refs/heads/archive/release/26.1/model/infinispan/proto.lock,https://raw.githubusercontent.com/keycloak/keycloak/refs/heads/release/26.2/model/infinispan/proto.lock</remoteLockFiles>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <remoteLockFiles>https://raw.githubusercontent.com/keycloak/keycloak/refs/heads/release/26.0/model/infinispan/proto.lock</remoteLockFiles>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.infinispan</groupId>
+                            <artifactId>infinispan-component-processor</artifactId>
+                            <version>${infinispan.version}</version>
+                        </path>
+                        <path>
+                            <groupId>org.infinispan.protostream</groupId>
+                            <artifactId>protostream-processor</artifactId>
+                            <version>${protostream.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
         </plugins>

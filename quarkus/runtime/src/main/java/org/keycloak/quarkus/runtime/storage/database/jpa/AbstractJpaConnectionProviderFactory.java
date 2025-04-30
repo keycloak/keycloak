@@ -29,7 +29,7 @@ import jakarta.persistence.SynchronizationType;
 import org.hibernate.internal.SessionFactoryImpl;
 import org.keycloak.Config;
 import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
-import org.keycloak.connections.jpa.PersistenceExceptionConverter;
+import org.keycloak.connections.jpa.support.EntityManagerProxy;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
@@ -108,7 +108,7 @@ public abstract class AbstractJpaConnectionProviderFactory implements JpaConnect
     }
 
     protected EntityManager createEntityManager(EntityManagerFactory emf, KeycloakSession session) {
-        EntityManager entityManager = PersistenceExceptionConverter.create(session, emf.createEntityManager(SynchronizationType.SYNCHRONIZED));
+        EntityManager entityManager = EntityManagerProxy.create(session, emf.createEntityManager(SynchronizationType.SYNCHRONIZED));
 
         entityManager.setFlushMode(FlushModeType.AUTO);
 

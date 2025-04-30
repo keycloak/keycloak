@@ -17,26 +17,32 @@
 
 package org.keycloak.quarkus.runtime;
 
+import java.io.File;
+import java.lang.annotation.Annotation;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Stream;
+
 import io.agroal.api.AgroalDataSource;
 import io.quarkus.agroal.DataSource;
 import io.quarkus.arc.Arc;
 import io.quarkus.arc.InstanceHandle;
 import io.quarkus.hibernate.orm.runtime.integration.HibernateOrmIntegrationRuntimeInitListener;
-import io.quarkus.runtime.RuntimeValue;
-import io.quarkus.runtime.ShutdownContext;
 import io.quarkus.runtime.annotations.Recorder;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
 import liquibase.Scope;
 import liquibase.servicelocator.ServiceLocator;
 import org.hibernate.cfg.AvailableSettings;
-import org.infinispan.commons.util.FileLookupFactory;
+import org.infinispan.protostream.SerializationContextInitializer;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.config.TruststoreOptions;
+import org.keycloak.marshalling.Marshalling;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
@@ -44,33 +50,13 @@ import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.storage.database.liquibase.FastServiceLocator;
-import org.keycloak.quarkus.runtime.storage.infinispan.CacheManagerFactory;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.theme.ClasspathThemeProviderFactory;
 import org.keycloak.truststore.TruststoreBuilder;
 import org.keycloak.userprofile.DeclarativeUserProfileProviderFactory;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.lang.annotation.Annotation;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getKcConfigValue;
-
 @Recorder
 public class KeycloakRecorder {
-
-    public static final String DEFAULT_HEALTH_ENDPOINT = "/health";
-    public static final String DEFAULT_METRICS_ENDPOINT = "/metrics";
 
     public void initConfig() {
         Config.init(new MicroProfileConfigProvider());
@@ -118,88 +104,33 @@ public class KeycloakRecorder {
             Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories,
             Map<Class<? extends Provider>, String> defaultProviders,
             Map<String, ProviderFactory> preConfiguredProviders,
-            List<ClasspathThemeProviderFactory.ThemesRepresentation> themes, boolean reaugmented) {
-        QuarkusKeycloakSessionFactory.setInstance(new QuarkusKeycloakSessionFactory(factories, defaultProviders, preConfiguredProviders, themes, reaugmented));
-    }
-
-    public RuntimeValue<CacheManagerFactory> createCacheInitializer(ShutdownContext shutdownContext) {
-        try {
-            CacheManagerFactory cacheManagerFactory = new CacheManagerFactory(getInfinispanConfigFile());
-            shutdownContext.addShutdownTask(cacheManagerFactory::shutdown);
-            return new RuntimeValue<>(cacheManagerFactory);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private String getInfinispanConfigFile() {
-        String configFile = getKcConfigValue("spi-connections-infinispan-quarkus-config-file").getValue();
-
-        if (configFile != null) {
-            Path configPath = Paths.get(configFile);
-            String path;
-
-            if (configPath.toFile().exists()) {
-                path = configPath.toFile().getAbsolutePath();
-            } else {
-                path = configPath.getFileName().toString();
-            }
-
-            InputStream url = FileLookupFactory.newInstance().lookupFile(path, KeycloakRecorder.class.getClassLoader());
-
-            if (url == null) {
-                throw new IllegalArgumentException("Could not load cluster configuration file at [" + configPath + "]");
-            }
-
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(url))) {
-                return reader.lines().collect(Collectors.joining("\n"));
-            } catch (Exception cause) {
-                throw new RuntimeException("Failed to read clustering configuration from [" + url + "]", cause);
-            }
-        } else {
-            throw new IllegalArgumentException("Option 'configFile' needs to be specified");
-        }
+            List<ClasspathThemeProviderFactory.ThemesRepresentation> themes) {
+        QuarkusKeycloakSessionFactory.setInstance(new QuarkusKeycloakSessionFactory(factories, defaultProviders, preConfiguredProviders, themes));
     }
 
     public void setDefaultUserProfileConfiguration(UPConfig configuration) {
         DeclarativeUserProfileProviderFactory.setDefaultConfig(configuration);
     }
 
-    public void registerShutdownHook(ShutdownContext shutdownContext) {
-        shutdownContext.addShutdownTask(new Runnable() {
-            @Override
-            public void run() {
-                QuarkusKeycloakSessionFactory.getInstance().close();
-            }
-        });
-    }
-
     public HibernateOrmIntegrationRuntimeInitListener createUserDefinedUnitListener(String name) {
-        return new HibernateOrmIntegrationRuntimeInitListener() {
-            @Override
-            public void contributeRuntimeProperties(BiConsumer<String, Object> propertyCollector) {
-                InstanceHandle<AgroalDataSource> instance = Arc.container().instance(
-                        AgroalDataSource.class, new DataSource() {
-                            @Override public Class<? extends Annotation> annotationType() {
-                                return DataSource.class;
-                            }
+        return propertyCollector -> {
+            try (InstanceHandle<AgroalDataSource> instance = Arc.container().instance(
+                    AgroalDataSource.class, new DataSource() {
+                        @Override public Class<? extends Annotation> annotationType() {
+                            return DataSource.class;
+                        }
 
-                            @Override public String value() {
-                                return name;
-                            }
-                        });
+                        @Override public String value() {
+                            return name;
+                        }
+                    })) {
                 propertyCollector.accept(AvailableSettings.DATASOURCE, instance.get());
             }
         };
     }
 
     public HibernateOrmIntegrationRuntimeInitListener createDefaultUnitListener() {
-        return new HibernateOrmIntegrationRuntimeInitListener() {
-            @Override
-            public void contributeRuntimeProperties(BiConsumer<String, Object> propertyCollector) {
-                propertyCollector.accept(AvailableSettings.DEFAULT_SCHEMA, Configuration.getRawValue("kc.db-schema"));
-            }
-        };
+        return propertyCollector -> propertyCollector.accept(AvailableSettings.DEFAULT_SCHEMA, Configuration.getRawValue("kc.db-schema"));
     }
 
     public void setCryptoProvider(FipsMode fipsMode) {
@@ -216,5 +147,9 @@ public class KeycloakRecorder {
         } catch (Exception cause) {
             throw new RuntimeException("Unexpected error when configuring the crypto provider: " + cryptoProvider, cause);
         }
+    }
+
+    public void configureProtoStreamSchemas(List<SerializationContextInitializer> schemas) {
+        Marshalling.setSchemas(schemas);
     }
 }

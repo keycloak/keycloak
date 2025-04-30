@@ -32,6 +32,8 @@ import { emptyFormatter } from "../util";
 import { MemberModal } from "./MembersModal";
 import { useSubGroups } from "./SubGroupsContext";
 import { getLastId } from "./groupIdUtils";
+import { MembershipsModal } from "./MembershipsModal";
+import useToggle from "../utils/useToggle";
 
 const UserDetailLink = (user: UserRepresentation) => {
   const { realm } = useRealm();
@@ -50,9 +52,7 @@ const UserDetailLink = (user: UserRepresentation) => {
 
 export const Members = () => {
   const { adminClient } = useAdminClient();
-
   const { t } = useTranslation();
-
   const { addAlert, addError } = useAlerts();
   const location = useLocation();
   const id = getLastId(location.pathname);
@@ -62,6 +62,8 @@ export const Members = () => {
   const [addMembers, setAddMembers] = useState(false);
   const [isKebabOpen, setIsKebabOpen] = useState(false);
   const [selectedRows, setSelectedRows] = useState<UserRepresentation[]>([]);
+  const [selectedUser, setSelectedUser] = useState<UserRepresentation>();
+  const [showMemberships, toggleShowMemberships] = useToggle();
   const { hasAccess } = useAccess();
 
   useFetch(
@@ -162,6 +164,14 @@ export const Members = () => {
           }}
         />
       )}
+      {showMemberships && (
+        <MembershipsModal
+          onClose={() => {
+            toggleShowMemberships();
+          }}
+          user={selectedUser!}
+        />
+      )}
       <KeycloakDataTable
         data-testid="members-table"
         key={`${id}${key}${includeSubGroup}`}
@@ -196,6 +206,7 @@ export const Members = () => {
                   onOpenChange={(isOpen) => setIsKebabOpen(isOpen)}
                   toggle={(ref) => (
                     <MenuToggle
+                      data-testid="kebab"
                       ref={ref}
                       variant="plain"
                       onClick={() => setIsKebabOpen(!isKebabOpen)}
@@ -242,8 +253,8 @@ export const Members = () => {
             </>
           )
         }
-        actions={
-          isManager
+        actions={[
+          ...(isManager
             ? [
                 {
                   title: t("leave"),
@@ -257,13 +268,19 @@ export const Members = () => {
                     } catch (error) {
                       addError("usersLeftError", error);
                     }
-
                     return true;
                   },
                 } as Action<UserRepresentation>,
               ]
-            : []
-        }
+            : []),
+          {
+            title: t("showMemberships"),
+            onRowClick: (user) => {
+              setSelectedUser(user);
+              toggleShowMemberships();
+            },
+          } as Action<UserRepresentation>,
+        ]}
         columns={[
           {
             name: "username",

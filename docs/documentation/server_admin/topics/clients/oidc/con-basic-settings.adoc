@@ -66,6 +66,8 @@ For client-side clients that perform browser logins. As it is not possible to en
 
 *Service account roles*:: If enabled, this client can authenticate to {project_name} and retrieve access token dedicated to this client. In terms of OAuth2 specification, this enables support of `Client Credentials Grant` for this client.
 
+*Standard Token Exchange*:: If enabled, this client can use the link:{securing_apps_token_exchange_link}#_standard-token-exchange[Standard token exchange].
+
 *Auth 2.0 Device Authorization Grant*:: If enabled, this client can use the OIDC xref:con-oidc-auth-flows_server_administration_guide[Device Authorization Grant].
 
 *OIDC CIBA Grant*:: If enabled, this client can use the OIDC xref:con-oidc-auth-flows_{context}[Client Initiated Backchannel Authentication Grant].
@@ -94,10 +96,12 @@ There will be also one item on the consent screen about this client itself.
 [[_front-channel-logout]]
 *Front channel logout*:: If *Front Channel Logout* is enabled, the application should be able to log out users through the front channel as per link:https://openid.net/specs/openid-connect-frontchannel-1_0.html[OpenID Connect Front-Channel Logout] specification. If enabled, you should also provide the `Front-Channel Logout URL`.
 
-*Front-channel logout URL*:: URL that will be used by {project_name} to send logout requests to clients through the front-channel.
+*Front-channel logout URL*:: URL that will be used by {project_name} to send logout requests to clients through the front-channel. If not provided, it defaults to the Home URL. This option is applicable just if `Front channel logout` option is ON.
+
+*Front-channel logout session required*:: Specifies whether a sid (session ID) and iss (issuer) parameters are included in the Logout request when the Front-channel Logout URL is used.
 
 [[_back-channel-logout-url]]
-*Backchannel logout URL*:: URL that will cause the client to log itself out when a logout request is sent to this realm (via end_session_endpoint). If omitted, no logout requests are sent to the client.
+*Backchannel logout URL*:: URL that will cause the client to log itself out when a logout request is sent to this realm (via end_session_endpoint). The logout is done by sending logout token as specified in the OIDC Backchannel logout specification. If omitted, the logout request might be sent to the specified `Admin URL` (if configured) in the format specific to {project_name} adapters. If even `Admin URL` is not configured, no logout request will be sent to the client. This option is applicable just if `Front channel logout` option is OFF.
 
 *Backchannel logout session required*::
 Specifies whether a session ID Claim is included in the Logout Token when the *Backchannel Logout URL* is used.

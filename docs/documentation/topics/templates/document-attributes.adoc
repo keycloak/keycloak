@@ -48,14 +48,19 @@
 :adminguide_bruteforce_link: {adminguide_link}#password-guess-brute-force-attacks
 :adminguide_eventlistener_name: Event listener
 :adminguide_eventlistener_link: {adminguide_link}#event-listener
+:adminguide_finegrained_name: fine-grained admin permissions
+:adminguide_finegrained_link: {adminguide_link}#_fine_grained_permissions
 :adminguide_timeouts_name: Timeouts
 :adminguide_timeouts_link: {adminguide_link}#_timeouts
 :adminguide_clearcache_name: Clearing Server Caches
 :adminguide_clearcache_link: {adminguide_link}#_clear-cache
 :apidocs_name: API Documentation
 :apidocs_link: https://www.keycloak.org/docs/{project_version}/api_documentation/
+:adminguide_email_name: Configuring email for a realm
+:adminguide_email_link: {adminguide_link}#_email
 :bootstrapadminrecovery_name: Admin Bootstrap and Recovery
 :bootstrapadminrecovery_link: https://www.keycloak.org/server/bootstrap-admin-recovery
+:client_certificate_lookup_link: https://www.keycloak.org/server/reverseproxy#_enabling_client_certificate_lookup
 :developerguide_name: Server Developer Guide
 :developerguide_name_short: Server Developer
 :developerguide_link: {project_doc_base_url}/server_development/
@@ -69,14 +74,18 @@
 :gettingstarted_name_short: Getting Started
 :gettingstarted_link: https://www.keycloak.org/guides#getting-started
 :gettingstarted_link_latest: https://www.keycloak.org/guides#getting-started
+:grafanadashboards_link: https://www.keycloak.org/observability/grafana-dashboards
 :highavailabilityguide_name: High Availability Guide
 :highavailabilityguide_link: https://www.keycloak.org/guides#high-availability
+:observablitycategory_link: https://www.keycloak.org/guides#observability
 :tracingguide_name: Enabling Tracing
-:tracingguide_link: https://www.keycloak.org/server/tracing
+:tracingguide_link: https://www.keycloak.org/observability/tracing
 :upgradingguide_name: Upgrading Guide
 :upgradingguide_name_short: Upgrading
 :upgradingguide_link: {project_doc_base_url}/upgrading/
 :upgradingguide_link_latest: {project_doc_base_url_latest}/upgrading/
+:upgradingclientlibs_link: https://www.keycloak.org/securing-apps/upgrading
+:upgradingclientlibs_name: Upgrading {project_name} Client libraries
 :releasenotes_name: Release Notes
 :releasenotes_name_short: {releasenotes_name}
 :releasenotes_link: {project_doc_base_url}/release_notes/
@@ -111,9 +120,6 @@
 
 :jdgserver_name: Infinispan
 :jdgserver_version: 9.4.19
-:jdgserver_version_latest: 11.0.9
-:jdgserver_crossdcdocs_link: https://infinispan.org/docs/11.0.x/titles/xsite/xsite.html
-:jdgserver_version_latest: 11.0.8
 
 :subsystem_undertow_xml_urn: urn:jboss:domain:undertow:12.0
 :subsystem_infinispan_xml_urn: urn:jboss:domain:infinispan:12.0
@@ -125,3 +131,8 @@
 :securing_apps_name: Securing applications Guides
 :securing_apps_name_short: Securing applications
 :securing_apps_link: https://www.keycloak.org/guides#securing-apps
+:securing_apps_base_link: https://www.keycloak.org/securing-apps
+:securing_apps_java_policy_enforcer_link: {securing_apps_base_link}/policy-enforcer
+:securing_apps_java_policy_enforcer_name: Java Policy enforcer
+:securing_apps_token_exchange_link: {securing_apps_base_link}/token-exchange
+:securing_apps_token_exchange_name: Token exchange Documentation

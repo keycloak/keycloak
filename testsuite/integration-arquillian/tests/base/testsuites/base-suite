@@ -9,7 +9,6 @@ client,4
 cluster,IGNORED
 composites,4
 cookies,4
-crossdc,IGNORED
 docker,4
 domainextension,4
 error,4
@@ -19,7 +18,6 @@ feature,4
 federation,5
 forms,5
 i18n,5
-javascript,5
 keys,4
 login,4
 metrics,4
@@ -39,6 +37,7 @@ session,6
 sessionlimits,6
 ssl,6
 theme,6
+tracing,4
 transactions,6
 url,6
 user,4
@@ -46,5 +45,4 @@ util,4
 validation,6
 vault,4
 webauthn,IGNORED
-welcomepage,6
 x509,4

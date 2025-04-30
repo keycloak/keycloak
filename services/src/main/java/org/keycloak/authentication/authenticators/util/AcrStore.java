@@ -188,6 +188,17 @@ public class AcrStore {
         authSession.setAuthNote(Constants.LEVEL_OF_AUTHENTICATION, String.valueOf(level));
     }
 
+    /**
+     * Set level to the current authentication session if an auth flow loa is present and is higher then the current loa
+     */
+    public void setAuthFlowLevelAuthenticatedToCurrentRequest() {
+        if (authSession.getAuthNote(Constants.AUTHENTICATION_FLOW_LEVEL_OF_AUTHENTICATION) != null) {
+            int authFlowLoa = Integer.parseInt(authSession.getAuthNote(Constants.AUTHENTICATION_FLOW_LEVEL_OF_AUTHENTICATION));
+            if (getLevelOfAuthenticationFromCurrentAuthentication() < authFlowLoa) {
+                setLevelAuthenticatedToCurrentRequest(authFlowLoa);
+            }
+        }
+    }
 
     private void setLevelAuthenticatedToMap(int level) {
         Map<Integer, Integer> levels = getCurrentAuthenticatedLevelsMap();
@@ -207,7 +218,7 @@ public class AcrStore {
     /**
      * @return highest authenticated level from previous authentication, which is still valid (not yet expired)
      */
-    public int getHighestAuthenticatedLevelFromPreviousAuthentication() {
+    public int getHighestAuthenticatedLevelFromPreviousAuthentication(String flowId) {
         // No map found. User was not yet authenticated in this session
         Map<Integer, Integer> levels = getCurrentAuthenticatedLevelsMap();
         if (levels == null || levels.isEmpty()) return NO_LOA;
@@ -216,7 +227,7 @@ public class AcrStore {
         int maxLevel = Constants.MINIMUM_LOA;
         int currentTime = Time.currentTime();
 
-        Map<Integer, Integer> configuredMaxAges = LoAUtil.getLoaMaxAgesConfiguredInRealmBrowserFlow(authSession.getRealm());
+        Map<Integer, Integer> configuredMaxAges = LoAUtil.getLoaMaxAgesConfiguredInRealmFlow(authSession.getRealm(), flowId);
         levels = new TreeMap<>(levels);
 
         for (Map.Entry<Integer, Integer> entry : levels.entrySet()) {

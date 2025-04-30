@@ -31,6 +31,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
 import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
@@ -39,6 +40,7 @@ import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
@@ -74,7 +76,7 @@ public class PolicyResourceService {
     @NoCache
     public Response update(String payload) {
         if (auth != null) {
-            this.auth.realm().requireManageAuthorization();
+            this.auth.realm().requireManageAuthorization(resourceServer);
         }
 
         AbstractPolicyRepresentation representation = doCreateRepresentation(payload);
@@ -96,7 +98,7 @@ public class PolicyResourceService {
     @DELETE
     public Response delete() {
         if (auth != null) {
-            this.auth.realm().requireManageAuthorization();
+            this.auth.realm().requireManageAuthorization(resourceServer);
         }
 
         if (policy == null) {
@@ -126,7 +128,7 @@ public class PolicyResourceService {
     @NoCache
     public Response findById(@QueryParam("fields") String fields) {
         if (auth != null) {
-            this.auth.realm().requireViewAuthorization();
+            this.auth.realm().requireViewAuthorization(resourceServer);
         }
 
         if (policy == null) {
@@ -150,7 +152,7 @@ public class PolicyResourceService {
     @NoCache
     public Response getDependentPolicies() {
         if (auth != null) {
-            this.auth.realm().requireViewAuthorization();
+            this.auth.realm().requireViewAuthorization(resourceServer);
         }
 
         if (policy == null) {
@@ -176,7 +178,7 @@ public class PolicyResourceService {
     @NoCache
     public Response getScopes() {
         if (auth != null) {
-            this.auth.realm().requireViewAuthorization();
+            this.auth.realm().requireViewAuthorization(resourceServer);
         }
 
         if (policy == null) {
@@ -199,18 +201,21 @@ public class PolicyResourceService {
     @NoCache
     public Response getResources() {
         if (auth != null) {
-            this.auth.realm().requireViewAuthorization();
+            this.auth.realm().requireViewAuthorization(resourceServer);
         }
 
         if (policy == null) {
             return Response.status(Status.NOT_FOUND).build();
         }
 
+        KeycloakSession session = authorization.getKeycloakSession();
+
         return Response.ok(policy.getResources().stream().map(resource -> {
             ResourceRepresentation representation = new ResourceRepresentation();
 
             representation.setId(resource.getId());
             representation.setName(resource.getName());
+            representation.setDisplayName(AdminPermissionsSchema.SCHEMA.getResourceName(session, policy, resource));
 
             return representation;
         }).collect(Collectors.toList())).build();
@@ -222,7 +227,7 @@ public class PolicyResourceService {
     @NoCache
     public Response getAssociatedPolicies() {
         if (auth != null) {
-            this.auth.realm().requireViewAuthorization();
+            this.auth.realm().requireViewAuthorization(resourceServer);
         }
 
         if (policy == null) {

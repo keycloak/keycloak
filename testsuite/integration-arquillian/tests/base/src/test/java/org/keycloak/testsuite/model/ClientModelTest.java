@@ -299,7 +299,7 @@ public class ClientModelTest extends AbstractKeycloakTest {
 
             client = realm.addClient(id, "application2");
             return client.getId();
-        }, false);
+        }, "ClientModel task");
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), (KeycloakSession sessionAppWithId2) -> {
             currentSession = sessionAppWithId2;

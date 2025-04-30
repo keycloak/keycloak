@@ -40,7 +40,7 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.runonserver.FetchOnServer;
 import org.keycloak.testsuite.runonserver.FetchOnServerWrapper;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 
 /**
@@ -93,9 +93,9 @@ public class OfflineTokenMigrationTest extends AbstractTestRealmKeycloakTest {
     private void testOfflineTokenMigration(OfflineTokenConverter offlineTokenConverter) throws Exception {
         // Send request to obtain offline token
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
-        oauth.clientId("direct-grant");
+        oauth.client("direct-grant", "password");
 
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
         Assert.assertNull(tokenResponse.getErrorDescription());
         String offlineTokenString = tokenResponse.getRefreshToken();
 
@@ -117,7 +117,7 @@ public class OfflineTokenMigrationTest extends AbstractTestRealmKeycloakTest {
         getLogger().infof("Modified offline token: %s", modifiedOfflineToken);
 
         // Check it is possible to successfully refresh with the modified offline token
-        OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(modifiedOfflineToken, "password");
+        AccessTokenResponse response = oauth.doRefreshTokenRequest(modifiedOfflineToken);
         AccessToken refreshedToken = oauth.verifyToken(response.getAccessToken());
         Assert.assertEquals(200, response.getStatusCode());
     }

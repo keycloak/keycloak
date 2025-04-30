@@ -156,6 +156,17 @@ export const upperCaseFormatter =
     return (value ? toUpperCase(value) : undefined) as string;
   };
 
+export const capitalizeFirstLetterFormatter =
+  (): IFormatter => (data?: IFormatterValueType) => {
+    const value = data?.toString();
+
+    return (
+      value
+        ? value.charAt(0).toUpperCase() + value.slice(1).toLowerCase()
+        : undefined
+    ) as string;
+  };
+
 export const alphaRegexPattern = /[^A-Za-z]/g;
 
 export const emailRegexPattern =

@@ -85,4 +85,12 @@ public interface MigrationProvider extends Provider {
      * @return created or already existing client scope 'basic'
      */
     ClientScopeModel addOIDCBasicClientScope(RealmModel realm);
+
+    /**
+     * Add 'service_account' client scope or return it if already exists
+     *
+     * @param realm
+     * @return created or already existing client scope 'service_account'
+     */
+    ClientScopeModel addOIDCServiceAccountClientScope(RealmModel realm);
 }

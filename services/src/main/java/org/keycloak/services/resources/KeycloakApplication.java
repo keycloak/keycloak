@@ -20,6 +20,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.config.ConfigProviderFactory;
+import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ExportImportManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -48,7 +49,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 import java.util.ServiceLoader;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -114,10 +114,11 @@ public abstract class KeycloakApplication extends Application {
     }
 
     protected void shutdown() {
-        if (sessionFactory != null)
+        if (sessionFactory != null) {
             sessionFactory.close();
+        }
     }
-    
+
     private static class BootstrapState {
         ExportImportManager exportImportManager;
         boolean newInstall;
@@ -152,35 +153,29 @@ public abstract class KeycloakApplication extends Application {
                 var exportImportManager = bootstrapState.exportImportManager = new ExportImportManager(session);
                 bootstrapState.newInstall = applianceBootstrap.isNewInstall();
                 if (bootstrapState.newInstall) {
-                    // check if this is an import command that is importing the master realm
-                    boolean importingMaster = exportImportManager.isRunImport() && exportImportManager.isImportMasterIncluded();
-                    // check if this is a start command that is importing the master realm
-                    importingMaster |= getImportDirectory().filter(exportImportManager::isImportMasterIncludedAtStartup).isPresent();
-                    if (!importingMaster) {
-                        applianceBootstrap.createMasterRealm();
+                    boolean existing = ExportImportConfig.isSingleTransaction();
+                    ExportImportConfig.setSingleTransaction(true);
+                    try {
+                        if (!exportImportManager.isImportMasterIncluded()) {
+                            applianceBootstrap.createMasterRealm();
+                        }
+                        // these are also running in the initial bootstrap transaction - if there is a problem, the server won't be initialized at all
+                        exportImportManager.runImport();
+                        createTemporaryAdmin(session);
+                    } finally {
+                        ExportImportConfig.setSingleTransaction(existing);
                     }
-                    // these are also running in the initial bootstrap transaction - if there is a problem, the server won't be initialized at all
-                    runImports(exportImportManager);
-                    createTemporaryAdmin(session);
-                } 
+                }
             }
         });
 
         if (!bootstrapState.newInstall) {
-            runImports(bootstrapState.exportImportManager);
+            bootstrapState.exportImportManager.runImport();
         }
-        
+
         importAddUser();
 
         return bootstrapState.exportImportManager;
-    }
-
-    private void runImports(ExportImportManager exportImportManager) {
-        if (exportImportManager.isRunImport()) {
-            exportImportManager.runImport();
-        } else {
-            importRealms(exportImportManager);
-        }
     }
 
     protected abstract void createTemporaryAdmin(KeycloakSession session);
@@ -203,52 +198,6 @@ public abstract class KeycloakApplication extends Application {
 
     public static KeycloakSessionFactory getSessionFactory() {
         return sessionFactory;
-    }
-
-    public void importRealms(ExportImportManager exportImportManager) {
-        getImportDirectory().ifPresent(dir -> {
-            try {
-                exportImportManager.runImportAtStartup(dir);
-            } catch (IOException cause) {
-                throw new RuntimeException("Failed to import realms", cause);
-            }
-        });
-    }
-
-    private Optional<String> getImportDirectory() {
-        return Optional.ofNullable(System.getProperty("keycloak.import"));
-    }
-
-    public void importRealm(RealmRepresentation rep, String from) {
-        boolean exists = false;
-        try (KeycloakSession session = sessionFactory.create()) {
-            session.getTransactionManager().begin();
-
-            try {
-                RealmManager manager = new RealmManager(session);
-
-                if (rep.getId() != null && manager.getRealm(rep.getId()) != null) {
-                    ServicesLogger.LOGGER.realmExists(rep.getRealm(), from);
-                    exists = true;
-                }
-
-                if (manager.getRealmByName(rep.getRealm()) != null) {
-                    ServicesLogger.LOGGER.realmExists(rep.getRealm(), from);
-                    exists = true;
-                }
-                if (!exists) {
-                    RealmModel realm = manager.importRealm(rep);
-                    ServicesLogger.LOGGER.importedRealm(realm.getName(), from);
-                }
-            } catch (Throwable t) {
-                session.getTransactionManager().setRollbackOnly();
-                throw t;
-            }
-        } catch (Throwable t) {
-            if (!exists) {
-                ServicesLogger.LOGGER.unableToImportRealm(t, rep.getRealm(), from);
-            }
-        }
     }
 
     public void importAddUser() {

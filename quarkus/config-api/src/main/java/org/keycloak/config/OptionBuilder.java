@@ -1,15 +1,15 @@
 package org.keycloak.config;
 
-import org.keycloak.common.util.CollectionUtil;
+import io.smallrye.common.constraint.Assert;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@SuppressWarnings({"unchecked", "OptionalUsedAsFieldOrParameterType", "rawtypes"})
 public class OptionBuilder<T> {
 
     private static final List<String> BOOLEAN_TYPE_VALUES = List.of(Boolean.TRUE.toString(), Boolean.FALSE.toString());
@@ -22,9 +22,10 @@ public class OptionBuilder<T> {
     private boolean build;
     private String description;
     private Optional<T> defaultValue;
-    private List<String> expectedValues = List.of();
+    private List<String> expectedValues;
     // Denotes whether a custom value can be provided among the expected values
     private boolean strictExpectedValues;
+    private boolean caseInsensitiveExpectedValues;
     private DeprecatedMetadata deprecatedMetadata;
 
     public static <A> OptionBuilder<List<A>> listOptionBuilder(String key, Class<A> type) {
@@ -81,68 +82,43 @@ public class OptionBuilder<T> {
     }
 
     public OptionBuilder<T> expectedValues(List<String> expected) {
-        return expectedValues(true, expected);
-    }
-
-    /**
-     * @param strict   if only expected values are allowed, or some other custom value can be specified
-     * @param expected expected values
-     */
-    public OptionBuilder<T> expectedValues(boolean strict, List<String> expected) {
-        this.strictExpectedValues = strict;
+        Assert.assertNotNull(expected);
         this.expectedValues = expected;
         return this;
     }
 
     public OptionBuilder<T> expectedValues(Class<? extends Enum> expected) {
-        return expectedValues(true, expected);
-    }
-
-    public OptionBuilder<T> expectedValues(boolean strict, Class<? extends Enum> expected) {
-        this.strictExpectedValues = strict;
-        this.expectedValues = Stream.of(expected.getEnumConstants()).map(Object::toString).collect(Collectors.toList());
-        return this;
+        return expectedValues(Stream.of(expected.getEnumConstants()).map(Object::toString).collect(Collectors.toList()));
     }
 
     public OptionBuilder<T> expectedValues(T ... expected) {
-        return expectedValues(true, expected);
+        return expectedValues(Stream.of(expected).map(Object::toString).collect(Collectors.toList()));
     }
 
-    /**
-     * @param strict   if only expected values are allowed, or some other custom value can be specified
-     * @param expected expected values - if empty and the {@link #type} or {@link #auxiliaryType} is enum, values are inferred
-     */
-    public OptionBuilder<T> expectedValues(boolean strict, T... expected) {
-        this.strictExpectedValues = strict;
-        this.expectedValues = Stream.of(expected).map(Object::toString).collect(Collectors.toList());
+    public OptionBuilder<T> strictExpectedValues(boolean strictExpectedValues) {
+        this.strictExpectedValues = strictExpectedValues;
+        return this;
+    }
+
+    public OptionBuilder<T> caseInsensitiveExpectedValues(boolean caseInsensitiveExpectedValues) {
+        this.caseInsensitiveExpectedValues = caseInsensitiveExpectedValues;
         return this;
     }
 
     public OptionBuilder<T> deprecated() {
-        this.deprecatedMetadata = DeprecatedMetadata.deprecateOption(null, null);
+        this.deprecatedMetadata = DeprecatedMetadata.deprecateOption(null);
         return this;
     }
 
-    public OptionBuilder<T> deprecated(String note) {
-        this.deprecatedMetadata = DeprecatedMetadata.deprecateOption(note, null);
+    public OptionBuilder<T> deprecatedMetadata(DeprecatedMetadata deprecatedMetadata) {
+        this.deprecatedMetadata = deprecatedMetadata;
         return this;
     }
 
-    public OptionBuilder<T> deprecated(Set<String> newOptionsKeys) {
-        this.deprecatedMetadata = DeprecatedMetadata.deprecateOption(null, newOptionsKeys);
+    public OptionBuilder<T> deprecatedValues(String note, T... values) {
+        this.deprecatedMetadata = DeprecatedMetadata.deprecateValues(note, Stream.of(values).map(Object::toString).toArray(String[]::new));
         return this;
     }
-
-    public OptionBuilder<T> deprecated(String note, Set<String> newOptionsKeys) {
-        this.deprecatedMetadata = DeprecatedMetadata.deprecateOption(note, newOptionsKeys);
-        return this;
-    }
-
-    public OptionBuilder<T> deprecatedValues(Set<String> values, String note) {
-        this.deprecatedMetadata = DeprecatedMetadata.deprecateValues(values, note);
-        return this;
-    }
-
 
     public Option<T> build() {
         if (deprecatedMetadata == null && category.getSupportLevel() == ConfigSupportLevel.DEPRECATED) {
@@ -154,13 +130,13 @@ public class OptionBuilder<T> {
             expected = auxiliaryType;
         }
 
-        if (CollectionUtil.isEmpty(expectedValues)) {
+        if (expectedValues == null) {
             if (Boolean.class.equals(expected)) {
-                expectedValues(strictExpectedValues, BOOLEAN_TYPE_VALUES);
-            }
-
-            if (Enum.class.isAssignableFrom(expected)) {
-                expectedValues(strictExpectedValues, (Class<? extends Enum>) expected);
+                expectedValues(BOOLEAN_TYPE_VALUES);
+            } else if (Enum.class.isAssignableFrom(expected)) {
+                expectedValues((Class<? extends Enum>) expected);
+            } else {
+                expectedValues = List.of();
             }
         }
 
@@ -168,7 +144,7 @@ public class OptionBuilder<T> {
             defaultValue = Optional.of((T) Boolean.FALSE);
         }
 
-        return new Option<T>(type, key, category, hidden, build, description, defaultValue, expectedValues, strictExpectedValues, deprecatedMetadata);
+        return new Option<T>(type, key, category, hidden, build, description, defaultValue, expectedValues, strictExpectedValues, caseInsensitiveExpectedValues, deprecatedMetadata);
     }
 
 }

@@ -24,8 +24,11 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.broker.provider.util.SimpleHttp;
+import org.keycloak.authentication.AuthenticationFlow;
+import org.keycloak.authentication.authenticators.browser.RecoveryAuthnCodesFormAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
@@ -43,22 +46,29 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
+import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.federation.BackwardsCompatibilityUserStorageFactory;
+import org.keycloak.testsuite.forms.BrowserFlowTest;
 import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.pages.EnterRecoveryAuthnCodePage;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.pages.SetupRecoveryAuthnCodesPage;
+import org.keycloak.testsuite.util.FlowUtil;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.TestAppHelper;
 
 import jakarta.ws.rs.core.Response;
 import org.keycloak.testsuite.util.TokenUtil;
+import org.openqa.selenium.WebDriver;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.wildfly.common.Assert.assertTrue;
 
@@ -68,6 +78,8 @@ import static org.wildfly.common.Assert.assertTrue;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeycloakTest {
+
+    private static final String BROWSER_FLOW_WITH_RECOVERY_AUTHN_CODES = "Browser with Recovery Authentication Codes";
 
     private String backwardsCompProviderId;
 
@@ -83,6 +95,12 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeyc
     @Page
     protected LoginConfigTotpPage configureTotpRequiredActionPage;
 
+    @Page
+    protected SetupRecoveryAuthnCodesPage setupRecoveryAuthnCodesPage;
+
+    @Page
+    protected EnterRecoveryAuthnCodePage enterRecoveryAuthnCodePage;
+
 
     private TimeBasedOTP totp = new TimeBasedOTP();
 
@@ -97,6 +115,28 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeyc
 
         backwardsCompProviderId = addComponent(memProvider);
 
+    }
+
+    void configureBrowserFlowWithRecoveryAuthnCodes(KeycloakTestingClient testingClient, long delay) {
+        final String newFlowAlias = BROWSER_FLOW_WITH_RECOVERY_AUTHN_CODES;
+        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(newFlowAlias));
+        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session)
+                .selectFlow(newFlowAlias)
+                .inForms(forms -> forms
+                        .clear()
+                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, UsernamePasswordFormFactory.PROVIDER_ID)
+                        .addSubFlowExecution(AuthenticationExecutionModel.Requirement.REQUIRED, reqSubFlow -> reqSubFlow
+                                .addSubFlowExecution("Recovery-Authn-Codes subflow", AuthenticationFlow.BASIC_FLOW, AuthenticationExecutionModel.Requirement.ALTERNATIVE, altSubFlow -> altSubFlow
+                                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, RecoveryAuthnCodesFormAuthenticatorFactory.PROVIDER_ID)
+                                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, "delayed-authenticator", config -> {
+                                            config.setAlias("delayed-suthenticator-config");
+                                            config.setConfig(Map.of("delay", Long.toString(delay)));
+                                        })
+                                )
+                        )
+                )
+                .defineAsBrowserFlow()
+        );
     }
 
     protected String addComponent(ComponentRepresentation component) {
@@ -195,6 +235,37 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeyc
     }
 
     @Test
+    public void testRecoveryKeysSetupAndLogin() throws URISyntaxException, IOException {
+        try {
+            configureBrowserFlowWithRecoveryAuthnCodes(testingClient, 0);
+
+            String userId = addUserAndResetPassword("otp1", "pass");
+            getCleanup().addUserId(userId);
+
+            // Setup RecoveryKeys
+            List<String> recoveryKeys = setupRecoveryKeysForUserWithRequiredAction(userId, true);
+
+            // Assert user has RecoveryKeys in the userStorage
+            assertUserDontHaveDBCredentials();
+            assertUserHasRecoveryKeysCredentialInUserStorage(true);
+
+            TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage, appPage);
+
+            // Authenticate as the user
+            testAppHelper.startLogin("otp1", "pass");
+            enterRecoveryCodes(enterRecoveryAuthnCodePage, driver, 0, recoveryKeys);
+            enterRecoveryAuthnCodePage.clickSignInButton();
+
+            appPage.assertCurrent();
+
+            testAppHelper.logout();
+        } finally {
+            // Revert copy of browser flow to original to keep clean slate after this test
+            BrowserFlowTest.revertFlows(testRealm(), BROWSER_FLOW_WITH_RECOVERY_AUTHN_CODES);
+        }
+    }
+
+    @Test
     public void testOTPSetupThroughAdminRESTAndLogin() throws URISyntaxException, IOException {
         String userId = addUserAndResetPassword("otp1", "pass");
         getCleanup().addUserId(userId);
@@ -241,23 +312,22 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeyc
         assertUserDontHaveDBCredentials();
         assertUserHasOTPCredentialInUserStorage(true);
 
-        try (CloseableHttpClient httpClient = oauth.getHttpClient().get()) {
-            String accountCredentialsUrl = OAuthClient.AUTH_SERVER_ROOT + "/realms/test/account/credentials";
+        CloseableHttpClient httpClient = oauth.httpClient().get();
+        String accountCredentialsUrl = OAuthClient.AUTH_SERVER_ROOT + "/realms/test/account/credentials";
 
-            // Get credentials by account REST. User should have OTP credential
-            List<CredentialMetadataRepresentation> otpCreds = getOtpCredentialFromAccountREST(accountCredentialsUrl, httpClient, tokenUtil);
-            Assert.assertEquals(1, otpCreds.size());
-            String otpCredentialId = otpCreds.get(0).getCredential().getId();
+        // Get credentials by account REST. User should have OTP credential
+        List<CredentialMetadataRepresentation> otpCreds = getOtpCredentialFromAccountREST(accountCredentialsUrl, httpClient, tokenUtil);
+        Assert.assertEquals(1, otpCreds.size());
+        String otpCredentialId = otpCreds.get(0).getCredential().getId();
 
-            // Delete OTP credential from federated storage
-            int deleteStatus = SimpleHttpDefault.doDelete(accountCredentialsUrl + "/" + otpCredentialId, httpClient)
+        // Delete OTP credential from federated storage
+        int deleteStatus = SimpleHttpDefault.doDelete(accountCredentialsUrl + "/" + otpCredentialId, oauth.httpClient().get())
                 .auth(accountToken).acceptJson().asStatus();
-            Assert.assertEquals(204, deleteStatus);
+        Assert.assertEquals(204, deleteStatus);
 
-            // Get credentials by account REST. User should not have OTP credential
-            otpCreds = getOtpCredentialFromAccountREST(accountCredentialsUrl, httpClient, tokenUtil);
-            Assert.assertEquals(0, otpCreds.size());
-        }
+        // Get credentials by account REST. User should not have OTP credential
+        otpCreds = getOtpCredentialFromAccountREST(accountCredentialsUrl, httpClient, tokenUtil);
+        Assert.assertEquals(0, otpCreds.size());
 
         assertUserDontHaveDBCredentials();
         assertUserHasOTPCredentialInUserStorage(false);
@@ -334,6 +404,34 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeyc
         return totpSecret;
     }
 
+    private List<String> setupRecoveryKeysForUserWithRequiredAction(String userId, boolean logoutOtherSessions) throws URISyntaxException, IOException {
+        // Add required action to the user to reset RecoveryKeys
+        UserResource user = testRealm().users().get(userId);
+        UserRepresentation userRep = user.toRepresentation();
+        userRep.setRequiredActions(Arrays.asList(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name()));
+        user.update(userRep);
+
+        TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage, appPage);
+
+        // Login as the user and setup RecoveryKeys
+        testAppHelper.startLogin("otp1", "pass");
+
+        setupRecoveryAuthnCodesPage.assertCurrent();
+        if (!logoutOtherSessions) {
+            setupRecoveryAuthnCodesPage.uncheckLogoutSessions();
+        }
+        List<String> codes = setupRecoveryAuthnCodesPage.getRecoveryAuthnCodes();
+        setupRecoveryAuthnCodesPage.clickSaveRecoveryAuthnCodesButton();
+        appPage.assertCurrent();
+
+        testAppHelper.completeLogin();
+
+        // Logout
+        assertTrue(testAppHelper.logout());
+
+        return codes;
+    }
+
 
     private void assertUserDontHaveDBCredentials() {
         testingClient.server().run(session -> {
@@ -352,14 +450,33 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeyc
         Assert.assertEquals(expectedUserHasOTP, hasUserOTP);
     }
 
+    private void assertUserHasRecoveryKeysCredentialInUserStorage(boolean expectedUserHasRecoveryKeys) {
+        boolean hasRecoveryKeys = testingClient.server().fetch(session -> {
+            BackwardsCompatibilityUserStorageFactory storageFactory = (BackwardsCompatibilityUserStorageFactory) session.getKeycloakSessionFactory()
+                    .getProviderFactory(UserStorageProvider.class, BackwardsCompatibilityUserStorageFactory.PROVIDER_ID);
+            return storageFactory.hasRecoveryCodes("otp1");
+        }, Boolean.class);
+        Assert.assertEquals(expectedUserHasRecoveryKeys, hasRecoveryKeys);
+    }
+
     private List<CredentialMetadataRepresentation> getOtpCredentialFromAccountREST(String accountCredentialsUrl, CloseableHttpClient httpClient, TokenUtil tokenUtil) throws IOException {
         List<AccountCredentialResource.CredentialContainer> credentials = SimpleHttpDefault.doGet(accountCredentialsUrl, httpClient)
-                .auth(tokenUtil.getToken()).asJson(new TypeReference<>() {});
+                .auth(tokenUtil.getToken()).asJson(new TypeReference<>() {
+                });
 
         return credentials.stream()
                 .filter(credentialContainer -> OTPCredentialModel.TYPE.equals(credentialContainer.getType()))
                 .map(AccountCredentialResource.CredentialContainer::getUserCredentialMetadatas)
                 .findFirst().get();
+    }
+
+    private void enterRecoveryCodes(EnterRecoveryAuthnCodePage enterRecoveryAuthnCodePage, WebDriver driver,
+                                    int expectedCode, List<String> generatedRecoveryAuthnCodes) {
+        enterRecoveryAuthnCodePage.setDriver(driver);
+        enterRecoveryAuthnCodePage.assertCurrent();
+        int requestedCode = enterRecoveryAuthnCodePage.getRecoveryAuthnCodeToEnterNumber();
+        org.junit.Assert.assertEquals("Incorrect code presented to login", expectedCode, requestedCode);
+        enterRecoveryAuthnCodePage.enterRecoveryAuthnCode(generatedRecoveryAuthnCodes.get(requestedCode));
     }
 
     @Override

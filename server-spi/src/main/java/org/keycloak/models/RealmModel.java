@@ -22,6 +22,7 @@ import org.keycloak.common.enums.SslRequired;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderEvent;
+import org.keycloak.representations.idm.RealmRepresentation;
 
 import java.util.Map;
 import java.util.Set;
@@ -59,6 +60,13 @@ public interface RealmModel extends RoleContainerModel {
     interface IdentityProviderRemovedEvent extends ProviderEvent {
         RealmModel getRealm();
         IdentityProviderModel getRemovedIdentityProvider();
+        KeycloakSession getKeycloakSession();
+    }
+
+    interface RealmAttributeUpdateEvent extends ProviderEvent {
+        RealmModel getRealm();
+        String getAttributeName();
+        String getAttributeValue();
         KeycloakSession getKeycloakSession();
     }
 
@@ -109,6 +117,14 @@ public interface RealmModel extends RoleContainerModel {
 
     void setOrganizationsEnabled(boolean organizationsEnabled);
 
+    boolean isAdminPermissionsEnabled();
+
+    void setAdminPermissionsEnabled(boolean adminPermissionsEnabled);
+
+    boolean isVerifiableCredentialsEnabled();
+
+    void setVerifiableCredentialsEnabled(boolean verifiableCredentialsEnabled);
+
     void setAttribute(String name, String value);
     default void setAttribute(String name, Boolean value) {
         setAttribute(name, value.toString());
@@ -133,6 +149,17 @@ public interface RealmModel extends RoleContainerModel {
         String v = getAttribute(name);
         return v != null && !v.isEmpty() ? Boolean.valueOf(v) : defaultValue;
     }
+    default <V extends Enum<V>> V getAttribute(String name, Class<V> enumClass, V defaultValue) {
+        String value = getAttribute(name);
+        if (value == null) {
+            return defaultValue;
+        }
+        try {
+            return Enum.valueOf(enumClass, value);
+        } catch (IllegalArgumentException e) {
+            return defaultValue;
+        }
+    }
     Map<String, String> getAttributes();
 
     //--- brute force settings
@@ -142,6 +169,8 @@ public interface RealmModel extends RoleContainerModel {
     void setPermanentLockout(boolean val);
     int getMaxTemporaryLockouts();
     void setMaxTemporaryLockouts(int val);
+    RealmRepresentation.BruteForceStrategy getBruteForceStrategy();
+    void setBruteForceStrategy(RealmRepresentation.BruteForceStrategy val);
     int getMaxFailureWaitSeconds();
     void setMaxFailureWaitSeconds(int val);
     int getWaitIncrementSeconds();
@@ -665,6 +694,10 @@ public interface RealmModel extends RoleContainerModel {
      * @param role to be set
      */
     void setDefaultRole(RoleModel role);
+
+    ClientModel getAdminPermissionsClient();
+
+    void setAdminPermissionsClient(ClientModel client);
 
     /**
      * @deprecated use {@link IdentityProviderStorageProvider#isIdentityFederationEnabled()} instead.

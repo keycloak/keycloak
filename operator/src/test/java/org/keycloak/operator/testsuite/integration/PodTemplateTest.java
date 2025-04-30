@@ -30,6 +30,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
@@ -54,6 +55,7 @@ public class PodTemplateTest extends BaseOperatorTest {
                 .withName("example-podtemplate");
     }
 
+    @DisabledIfApiServerTest
     @Test
     public void testPodTemplateIsMerged() {
         // Act
@@ -92,7 +94,7 @@ public class PodTemplateTest extends BaseOperatorTest {
                 .withName("foo")
                 .endMetadata()
                 .build();
-        plainKc.getSpec().getUnsupported().setPodTeplate(podTemplate);
+        plainKc.getSpec().getUnsupported().setPodTemplate(podTemplate);
 
         // Act
         K8sUtils.set(k8sclient, plainKc);
@@ -120,7 +122,7 @@ public class PodTemplateTest extends BaseOperatorTest {
                     .withNamespace(wrongNamespace)
                     .endMetadata()
                     .build();
-            plainKc.getSpec().getUnsupported().setPodTeplate(podTemplate);
+            plainKc.getSpec().getUnsupported().setPodTemplate(podTemplate);
 
             // Act
             K8sUtils.set(k8sclient, plainKc);
@@ -151,7 +153,7 @@ public class PodTemplateTest extends BaseOperatorTest {
                 .endContainer()
                 .endSpec()
                 .build();
-        plainKc.getSpec().getUnsupported().setPodTeplate(podTemplate);
+        plainKc.getSpec().getUnsupported().setPodTemplate(podTemplate);
 
         // Act
         K8sUtils.set(k8sclient, plainKc);
@@ -177,7 +179,7 @@ public class PodTemplateTest extends BaseOperatorTest {
                 .endContainer()
                 .endSpec()
                 .build();
-        plainKc.getSpec().getUnsupported().setPodTeplate(podTemplate);
+        plainKc.getSpec().getUnsupported().setPodTemplate(podTemplate);
 
         // Act
         K8sUtils.set(k8sclient, plainKc);
@@ -211,7 +213,7 @@ public class PodTemplateTest extends BaseOperatorTest {
                 .build();
 
         var plainKc = getEmptyPodTemplateKeycloak();
-        plainKc.getSpec().getUnsupported().setPodTeplate(podTemplate);
+        plainKc.getSpec().getUnsupported().setPodTemplate(podTemplate);
 
         // Act
         K8sUtils.set(k8sclient, plainKc);

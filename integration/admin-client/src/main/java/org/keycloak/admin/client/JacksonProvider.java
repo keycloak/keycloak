@@ -1,5 +1,6 @@
 package org.keycloak.admin.client;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import jakarta.ws.rs.core.MediaType;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -14,7 +15,10 @@ public class JacksonProvider extends ResteasyJackson2Provider {
 
         // Same like JSONSerialization class. Makes it possible to use admin-client against older versions of Keycloak server where the properties on representations might be different
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        
+
+        // The client must work with the newer versions of Keycloak server, which might contain the JSON fields not yet known by the client. So unknown fields will be ignored.
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
         return objectMapper;
     }
 }

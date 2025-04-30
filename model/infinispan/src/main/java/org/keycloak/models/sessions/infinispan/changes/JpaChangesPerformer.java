@@ -544,7 +544,7 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
 
                             @Override
                             public void clear() {
-                                userSessionModel.getNotes().forEach((k, v) -> userSessionModel.removeNote(k));
+                                userSessionModel.getNotes().clear();
                             }
                         };
                     }

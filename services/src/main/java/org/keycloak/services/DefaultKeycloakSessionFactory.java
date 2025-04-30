@@ -16,6 +16,7 @@
  */
 package org.keycloak.services;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -24,10 +25,13 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Stack;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.jboss.logging.Logger;
@@ -38,6 +42,7 @@ import org.keycloak.component.ComponentFactoryProviderFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.ThemeManager;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.InvalidationHandler;
 import org.keycloak.provider.KeycloakDeploymentInfo;
@@ -50,7 +55,7 @@ import org.keycloak.provider.ProviderManagerDeployer;
 import org.keycloak.provider.ProviderManagerRegistry;
 import org.keycloak.provider.Spi;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
-import org.keycloak.theme.DefaultThemeManagerFactory;
+import org.keycloak.theme.ThemeManagerFactory;
 
 public abstract class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, ProviderManagerDeployer {
 
@@ -61,17 +66,8 @@ public abstract class DefaultKeycloakSessionFactory implements KeycloakSessionFa
     protected volatile Map<Class<? extends Provider>, Map<String, ProviderFactory>> factoriesMap = new HashMap<>();
     protected CopyOnWriteArrayList<ProviderEventListener> listeners = new CopyOnWriteArrayList<>();
 
-    private final DefaultThemeManagerFactory themeManagerFactory = new DefaultThemeManagerFactory();
-
     // TODO: Likely should be changed to int and use Time.currentTime() to be compatible with all our "time" reps
     protected long serverStartupTimestamp;
-
-    /**
-     * Timeouts are used as time boundary for obtaining models from an external storage. Default value is set
-     * to 3000 milliseconds and it's configurable.
-     */
-    private Long clientStorageProviderTimeout;
-    private Long roleStorageProviderTimeout;
 
     protected ComponentFactoryProviderFactory componentFactoryPF;
 
@@ -117,23 +113,60 @@ public abstract class DefaultKeycloakSessionFactory implements KeycloakSessionFa
                 }
             }
             checkProvider();
-            // Component factory must be initialized first, so that postInit in other factories can use component factories
-            updateComponentFactoryProviderFactory();
-            if (componentFactoryPF != null) {
-                componentFactoryPF.postInit(this);
-            }
-            for (Map<String, ProviderFactory> factories : factoriesMap.values()) {
-                for (ProviderFactory factory : factories.values()) {
-                    if (factory != componentFactoryPF) {
-                        factory.postInit(this);
-                    }
-                }
-            }
+            initProviderFactories();
             // make the session factory ready for hot deployment
             ProviderManagerRegistry.SINGLETON.setDeployer(this);
         }
 
         AdminPermissions.registerListener(this);
+    }
+
+    protected void initProviderFactories() {
+        initProviderFactories(true, factoriesMap);
+    }
+
+    protected void initProviderFactories(boolean updateComponentFactory, Map<Class<? extends Provider>, Map<String, ProviderFactory>> factories) {
+        if (updateComponentFactory) {
+            // Component factory must be initialized first, so that postInit in other factories can use component factories
+            updateComponentFactoryProviderFactory();
+            if (componentFactoryPF != null) {
+                componentFactoryPF.postInit(this);
+            }
+        }
+
+        Set<Class<? extends Provider>> initializedProviders = new HashSet<>();
+        Stack<ProviderFactory> recursionPrevention = new Stack<>();
+
+        for(Map.Entry<Class<? extends Provider>, Map<String, ProviderFactory>>  f : factories.entrySet()) {
+            if (initializedProviders.contains(f.getKey())) {
+                continue;
+            }
+            initializeProviders(f.getKey(), factories, initializedProviders, recursionPrevention);
+        }
+    }
+
+    private void initializeProviders(Class<? extends Provider> provider, Map<Class<? extends Provider>, Map<String, ProviderFactory>> factories, Set<Class<? extends Provider>> intializedProviders, Stack<ProviderFactory> recursionPrevention) {
+        for (ProviderFactory<?> factory : factories.get(provider).values()) {
+            if (factory == componentFactoryPF)
+                continue;
+
+            for (Class<? extends Provider> providerDep : factory.dependsOn()) {
+                if (recursionPrevention.contains(factory)) {
+                    List<String> stackForException = recursionPrevention.stream().map(providerFactory -> providerFactory.getClass().getName()).toList();
+                    throw new RuntimeException("Detected a recursive dependency on provider " + providerDep.getName() +
+                          " while the initialization of the following provider factories is ongoing: " + stackForException);
+                }
+                Map<String, ProviderFactory> f = factories.get(providerDep);
+                if (f == null) {
+                    throw new RuntimeException("No provider factories exists for provider " + providerDep.getSimpleName() + " required by " + factory.getClass().getName() + " (" + factory.getId() + ")");
+                }
+                recursionPrevention.push(factory);
+                initializeProviders(providerDep, factories, intializedProviders, recursionPrevention);
+                recursionPrevention.pop();
+            }
+            factory.postInit(this);
+            intializedProviders.add(provider);
+        }
     }
 
     protected Map<Class<? extends Provider>, Map<String, ProviderFactory>> getFactoriesCopy() {
@@ -148,19 +181,26 @@ public abstract class DefaultKeycloakSessionFactory implements KeycloakSessionFa
 
     @Override
     public void deploy(ProviderManager pm) {
+        registerNewSpis(pm);
+
         Map<Class<? extends Provider>, Map<String, ProviderFactory>> copy = getFactoriesCopy();
         Map<Class<? extends Provider>, Map<String, ProviderFactory>> newFactories = loadFactories(pm);
-        List<ProviderFactory> deployed = new LinkedList<>();
+        Map<Class<? extends Provider>, Map<String, ProviderFactory>> deployed = new HashMap<>();
         List<ProviderFactory> undeployed = new LinkedList<>();
 
         for (Map.Entry<Class<? extends Provider>, Map<String, ProviderFactory>> entry : newFactories.entrySet()) {
-            Map<String, ProviderFactory> current = copy.get(entry.getKey());
+            Class<? extends Provider> provider = entry.getKey();
+            Map<String, ProviderFactory> current = copy.get(provider);
             if (current == null) {
-                copy.put(entry.getKey(), entry.getValue());
+                copy.put(provider, entry.getValue());
             } else {
-                for (ProviderFactory f : entry.getValue().values()) {
-                    deployed.add(f);
-                    ProviderFactory old = current.remove(f.getId());
+                for (Map.Entry<String, ProviderFactory> e : entry.getValue().entrySet()) {
+                    deployed.compute(provider, (k, v) -> {
+                        Map<String, ProviderFactory> map = Objects.requireNonNullElseGet(v, HashMap::new);
+                        map.put(e.getKey(), e.getValue());
+                        return map;
+                    });
+                    ProviderFactory old = current.remove(e.getValue().getId());
                     if (old != null) {
                         undeployed.add(old);
                     }
@@ -178,21 +218,24 @@ public abstract class DefaultKeycloakSessionFactory implements KeycloakSessionFa
             factory.close();
             cfChanged |= (componentFactoryPF == factory);
         }
-        // Component factory must be initialized first, so that postInit in other factories can use component factories
-        if (cfChanged) {
-            updateComponentFactoryProviderFactory();
-            if (componentFactoryPF != null) {
-                componentFactoryPF.postInit(this);
-            }
-        }
-        for (ProviderFactory factory : deployed) {
-            if (factory != componentFactoryPF) {
-                factory.postInit(this);
-            }
-        }
+        initProviderFactories(cfChanged, deployed);
 
         if (pm.getInfo().hasThemes() || pm.getInfo().hasThemeResources()) {
-            themeManagerFactory.clearCache();
+            ((ThemeManagerFactory)getProviderFactory(ThemeManager.class)).clearCache();
+        }
+    }
+
+    // Register SPIs of this providerManager, which are possibly not yet registered in this factory
+    private void registerNewSpis(ProviderManager pm) {
+        Set<String> existingSpiNames = this.spis.stream()
+                .map(spi -> spi.getName())
+                .collect(Collectors.toSet());
+
+        this.spis = new HashSet<>(this.spis);
+        for (Spi newSpi : pm.loadSpis()) {
+            if (!existingSpiNames.contains(newSpi.getName())) {
+                this.spis.add(newSpi);
+            }
         }
     }
 
@@ -217,10 +260,6 @@ public abstract class DefaultKeycloakSessionFactory implements KeycloakSessionFa
         for (ProviderFactory factory : undeployed) {
             factory.close();
         }
-    }
-
-    protected DefaultThemeManagerFactory getThemeManagerFactory() {
-        return themeManagerFactory;
     }
 
     protected void checkProvider() {
@@ -415,30 +454,57 @@ public abstract class DefaultKeycloakSessionFactory implements KeycloakSessionFa
     @Override
     public void close() {
         ProviderManagerRegistry.SINGLETON.setDeployer(null);
-        for (Map<String, ProviderFactory> factories : factoriesMap.values()) {
-            for (ProviderFactory factory : factories.values()) {
-                factory.close();
+
+        // Create a tree-structure to represent reverse relation of ProviderFactory#dependsOn to Providers
+        Map<Class<? extends Provider>, Node<Set<ProviderFactory>>> nodes = new HashMap<>();
+        for (Map.Entry<Class<? extends Provider>, Map<String, ProviderFactory>>  f : factoriesMap.entrySet()) {
+            Class<? extends Provider> provider = f.getKey();
+            for (Map.Entry<String, ProviderFactory> entry : f.getValue().entrySet()) {
+                ProviderFactory pf = entry.getValue();
+                Node<Set<ProviderFactory>> node = nodes.computeIfAbsent(provider, k -> new Node<>(new HashSet<>()));
+                // Add ProviderFactory to the associated Provider node
+                node.data.add(pf);
+                // If dependencies exist, make this node a child of the Provider dependencies node so that we can ensure
+                // that the leaves of the tree are closed first
+                pf.dependsOn().forEach(dep -> {
+                    node.parent = nodes.computeIfAbsent((Class<? extends Provider>) dep, k -> new Node<>(new HashSet<>()));
+                    node.parent.children.add(node);
+                });
             }
+        }
+        nodes.values().forEach(this::closeProvider);
+    }
+
+    private void closeProvider(Node<Set<ProviderFactory>> node) {
+        for (var it = node.children.iterator(); it.hasNext(); ) {
+            closeProvider(it.next());
+            it.remove();
+        }
+
+        // Provider has no other dependent ProviderFactories, it's ProviderFactories can safely be closed
+        for (var it = node.data.iterator(); it.hasNext(); ) {
+            ProviderFactory pf = it.next();
+            logger.debugf("Closing ProviderFactory: %s", pf.getClass().getName());
+            pf.close();
+            it.remove();
+        }
+    }
+
+    private static class Node<T> {
+        private final T data;
+        private Node<T> parent;
+        private List<Node<T>> children;
+
+        public Node(T data) {
+            this.data = data;
+            this.parent = null;
+            this.children = new ArrayList<>();
         }
     }
 
     public static boolean isInternal(ProviderFactory<?> factory) {
         String packageName = factory.getClass().getPackage().getName();
         return packageName.startsWith("org.keycloak") && !packageName.startsWith("org.keycloak.examples");
-    }
-
-    public long getClientStorageProviderTimeout() {
-        if (clientStorageProviderTimeout == null) {
-            clientStorageProviderTimeout = Config.scope("client").getLong("storageProviderTimeout", 3000L);
-        }
-        return clientStorageProviderTimeout;
-    }
-
-    public long getRoleStorageProviderTimeout() {
-        if (roleStorageProviderTimeout == null) {
-            roleStorageProviderTimeout = Config.scope("role").getLong("storageProviderTimeout", 3000L);
-        }
-        return roleStorageProviderTimeout;
     }
 
     /**

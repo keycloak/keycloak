@@ -120,7 +120,7 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
                 .peek(keys::remove)
                 .map(PublicKeyStorageInvalidationEvent::create)
                 .toList();
-        cluster.notify(InfinispanCachePublicKeyProviderFactory.PUBLIC_KEY_STORAGE_INVALIDATION_EVENT, events, true, ClusterProvider.DCNotify.ALL_DCS);
+        cluster.notify(InfinispanCachePublicKeyProviderFactory.PUBLIC_KEY_STORAGE_INVALIDATION_EVENT, events, true);
     }
 
     @Override

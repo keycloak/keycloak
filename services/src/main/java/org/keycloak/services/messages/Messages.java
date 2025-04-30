@@ -47,6 +47,12 @@ public class Messages {
 
     public static final String ACCOUNT_TEMPORARILY_DISABLED = "accountTemporarilyDisabledMessage";
 
+    public static final String ACCOUNT_PERMANENTLY_DISABLED = "accountPermanentlyDisabledMessage";
+
+    public static final String ACCOUNT_TEMPORARILY_DISABLED_TOTP = "accountTemporarilyDisabledMessageTotp";
+
+    public static final String ACCOUNT_PERMANENTLY_DISABLED_TOTP = "accountPermanentlyDisabledMessageTotp";
+
     public static final String EXPIRED_CODE = "expiredCodeMessage";
 
     public static final String EXPIRED_ACTION = "expiredActionMessage";
@@ -270,6 +276,8 @@ public class Messages {
     public static final String FAILED_LOGOUT = "failedLogout";
 
     public static final String CONSENT_DENIED="consentDenied";
+
+    public static final String TERMS_AND_CONDITIONS_DECLINED="termsAndConditionsDeclined";
 
     public static final String ALREADY_LOGGED_IN="alreadyLoggedIn";
 

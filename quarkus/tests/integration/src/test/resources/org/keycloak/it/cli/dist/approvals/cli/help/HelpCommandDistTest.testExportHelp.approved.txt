@@ -25,8 +25,10 @@ Config:
 
 Database:
 
---db <vendor>        The database vendor. Possible values are: dev-file, dev-mem, mariadb, mssql,
-                       mysql, oracle, postgres. Default: dev-file.
+--db <vendor>        The database vendor. In production mode the default value of 'dev-file' is
+                       deprecated, you should explicitly specify the db instead. Possible values
+                       are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres. Default:
+                       dev-file.
 --db-driver <driver> The fully qualified class name of the JDBC driver. If not set, a default
                        driver is set accordingly to the chosen database.
 --db-password <password>
@@ -87,6 +89,14 @@ Management:
                      The file path to a private key in PEM format for the management server. If not
                        given, the value is inherited from HTTP options. Relevant only when
                        something is exposed on the management interface - see the guide for details.
+--https-management-certificates-reload-period <reload period>
+                     Interval on which to reload key store, trust store, and certificate files
+                       referenced by https-management-* options for the management server. May be a
+                       java.time.Duration value, an integer number of seconds, or an integer
+                       followed by one of [ms, h, m, s, d]. Must be greater than 30 seconds. Use -1
+                       to disable. If not given, the value is inherited from HTTP options. Relevant
+                       only when something is exposed on the management interface - see the guide
+                       for details. Default: 1h.
 --https-management-client-auth <auth>
                      Configures the management interface to require/request client authentication.
                        If not given, the value is inherited from HTTP options. Relevant only when
@@ -120,6 +130,12 @@ Logging:
 
 --log <handler>      Enable one or more log handlers in a comma-separated list. Possible values
                        are: console, file, syslog. Default: console.
+--log-async <true|false>
+                     Indicates whether to log asynchronously to all handlers. Default: false.
+--log-console-async <true|false>
+                     Indicates whether to log asynchronously to console. If not set, value from the
+                       parent property 'log-async' is used. Default: false. Available only when
+                       Console log handler is activated.
 --log-console-color <true|false>
                      Enable or disable colors when logging to console. Default: false. Available
                        only when Console log handler is activated.
@@ -132,8 +148,8 @@ Logging:
                        level for logs shown in the output. It respects levels specified in the
                        'log-level' option, which represents the maximal verbosity for the whole
                        logging system. For more information, check the Logging guide. Possible
-                       values are: off, fatal, error, warn, info, debug, trace, all. Default: all.
-                       Available only when Console log handler is activated.
+                       values are (case insensitive): off, fatal, error, warn, info, debug, trace,
+                       all. Default: all. Available only when Console log handler is activated.
 --log-console-output <output>
                      Set the log output to JSON or default (plain) unstructured logging. Possible
                        values are: default, json. Default: default. Available only when Console log
@@ -142,6 +158,16 @@ Logging:
                      The log level of the root category or a comma-separated list of individual
                        categories and their levels. For the root category, you don't need to
                        specify a category. Default: info.
+--log-level-<category> <level>
+                     The log level of a category. Takes precedence over the 'log-level' option.
+                       Possible values are (case insensitive): off, fatal, error, warn, info,
+                       debug, trace, all.
+
+Tracing:
+
+--tracing-enabled <true|false>
+                     Enables the OpenTelemetry tracing. Default: false. Available only when
+                       'opentelemetry' feature is enabled.
 
 Truststore:
 
@@ -150,8 +176,8 @@ Truststore:
                        Possible values are: ANY, WILDCARD (deprecated), STRICT (deprecated),
                        DEFAULT. Default: DEFAULT.
 --truststore-paths <truststore-paths>
-                     List of pkcs12 (p12 or pfx file extensions), PEM files, or directories
-                       containing those files that will be used as a system truststore.
+                     List of pkcs12 (p12, pfx, or pkcs12 file extensions), PEM files, or
+                       directories containing those files that will be used as a system truststore.
 
 Export:
 

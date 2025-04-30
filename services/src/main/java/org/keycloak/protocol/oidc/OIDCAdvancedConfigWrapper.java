@@ -17,12 +17,13 @@
 
 package org.keycloak.protocol.oidc;
 
+import static org.keycloak.protocol.oidc.OIDCConfigAttributes.USE_RFC9068_ACCESS_TOKEN_HEADER_TYPE;
 import static org.keycloak.protocol.oidc.OIDCConfigAttributes.USE_LOWER_CASE_IN_TOKEN_RESPONSE;
 
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.utils.StringUtil;
 
 import java.util.ArrayList;
@@ -34,6 +35,8 @@ import java.util.stream.Collectors;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
+
+    public static enum TokenExchangeRefreshTokenEnabled {NO, SAME_SESSION};
 
     private OIDCAdvancedConfigWrapper(ClientModel client, ClientRepresentation clientRep) {
         super(client,clientRep);
@@ -106,7 +109,7 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
     public String getRequestObjectRequired() {
         return getAttribute(OIDCConfigAttributes.REQUEST_OBJECT_REQUIRED);
     }
-    
+
     public void setRequestObjectRequired(String requestObjectRequired) {
         setAttribute(OIDCConfigAttributes.REQUEST_OBJECT_REQUIRED, requestObjectRequired);
     }
@@ -211,8 +214,16 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
         return Boolean.parseBoolean(getAttribute(USE_LOWER_CASE_IN_TOKEN_RESPONSE, "false"));
     }
 
-    public void setUseLowerCaseInTokenResponse(boolean useRefreshToken) {
-        setAttribute(USE_LOWER_CASE_IN_TOKEN_RESPONSE, String.valueOf(useRefreshToken));
+    public void setUseLowerCaseInTokenResponse(boolean useLowerCaseInTokenResponse) {
+        setAttribute(USE_LOWER_CASE_IN_TOKEN_RESPONSE, String.valueOf(useLowerCaseInTokenResponse));
+    }
+
+    public boolean isUseRfc9068AccessTokenHeaderType() {
+        return Boolean.parseBoolean(getAttribute(USE_RFC9068_ACCESS_TOKEN_HEADER_TYPE, "false"));
+    }
+
+    public void setUseRfc9068AccessTokenHeaderType(boolean useRfc9068AccessTokenHeaderType) {
+        setAttribute(USE_RFC9068_ACCESS_TOKEN_HEADER_TYPE, String.valueOf(useRfc9068AccessTokenHeaderType));
     }
 
     /**
@@ -227,6 +238,30 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
     public void setUseRefreshTokenForClientCredentialsGrant(boolean enable) {
         String val =  String.valueOf(enable);
         setAttribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, val);
+    }
+
+    public boolean isStandardTokenExchangeEnabled() {
+        String val = getAttribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_ENABLED, "false");
+        return Boolean.parseBoolean(val);
+    }
+    
+    public void setStandardTokenExchangeEnabled(boolean enable) {
+        String val = String.valueOf(enable);
+        setAttribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_ENABLED, val);
+    }
+
+    public TokenExchangeRefreshTokenEnabled getStandardTokenExchangeRefreshEnabled() {
+        final String value = getAttribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED);
+        try {
+            return value == null? TokenExchangeRefreshTokenEnabled.NO : TokenExchangeRefreshTokenEnabled.valueOf(value);
+        } catch (IllegalArgumentException e) {
+            return TokenExchangeRefreshTokenEnabled.NO;
+        }
+    }
+
+    public void setStandardTokenExchangeRefreshEnabled(TokenExchangeRefreshTokenEnabled enable) {
+        setAttribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED,
+                enable == null || enable == TokenExchangeRefreshTokenEnabled.NO? null : enable.name());
     }
 
     public String getTlsClientAuthSubjectDn() {
@@ -307,6 +342,26 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
 
     public void setTokenEndpointAuthSigningAlg(String algName) {
         setAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG, algName);
+    }
+
+    public int getTokenEndpointAuthSigningMaxExp() {
+        final String value = getAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_MAX_EXP);
+        try {
+            final int maxExp = Integer.parseInt(value);
+            if (maxExp > 0) {
+                return maxExp;
+            }
+        } catch (NumberFormatException e) {
+            // ignore and return default value
+        }
+        return 60; // default to 60s
+    }
+
+    public void setTokenEndpointAuthSigningMaxExp(int maxExp) {
+        if (maxExp <= 0) {
+            throw new IllegalArgumentException("Maximum expiration is a positive number in seconds");
+        }
+        setAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_MAX_EXP, String.valueOf(maxExp));
     }
 
     public String getBackchannelLogoutUrl() {
@@ -413,4 +468,11 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
         setAttributeMultivalued(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, postLogoutRedirectUris);
     }
 
+    public String getMinimumAcrValue() {
+        return getAttribute(Constants.MINIMUM_ACR_VALUE);
+    }
+
+    public void setMinimumAcrValue(String minimumAcrValue) {
+        setAttribute(Constants.MINIMUM_ACR_VALUE, minimumAcrValue);
+    }
 }

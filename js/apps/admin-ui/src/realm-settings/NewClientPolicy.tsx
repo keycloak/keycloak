@@ -476,7 +476,7 @@ export default function NewClientPolicy() {
               name="name"
               label={t("name")}
               rules={{
-                required: { value: true, message: t("required") },
+                required: t("required"),
                 validate: (value) =>
                   policies.some((policy) => policy.name === value)
                     ? t("createClientProfileNameHelperText").toString()
@@ -632,6 +632,7 @@ export default function NewClientPolicy() {
                   <>
                     <Divider />
                     <Text
+                      data-testid="no-conditions"
                       className="kc-emptyConditions"
                       component={TextVariants.h2}
                     >

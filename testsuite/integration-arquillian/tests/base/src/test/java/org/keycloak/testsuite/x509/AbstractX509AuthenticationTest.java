@@ -105,6 +105,7 @@ import static org.keycloak.utils.StringUtil.isBlank;
 public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKeycloakTest {
 
     public static final String EMPTY_CRL_PATH = "empty.crl";
+    public static final String EMPTY_EXPIRED_CRL_PATH = "empty-expired.crl";
     public static final String INTERMEDIATE_CA_CRL_PATH = "intermediate-ca.crl";
     public static final String INTERMEDIATE_CA_INVALID_SIGNATURE_CRL_PATH = "intermediate-ca-invalid-signature.crl";
     public static final String INTERMEDIATE_CA_3_CRL_PATH = "intermediate-ca-3.crl";
@@ -564,7 +565,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
         String cfgId = createConfig(browserExecution.getId(), cfg);
         Assert.assertNotNull(cfgId);
 
-        loginConfirmationPage.open();
+        oauth.openLoginForm();
 
         WaitUtils.waitForPageToLoad();
 
@@ -574,7 +575,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
         loginConfirmationPage.confirm();
 
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
 
         AssertEvents.ExpectedEvent expectedEvent = events.expectLogin()
                 .user(userId)

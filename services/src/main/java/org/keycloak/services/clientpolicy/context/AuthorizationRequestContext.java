@@ -24,6 +24,7 @@ import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -35,14 +36,18 @@ public class AuthorizationRequestContext implements ClientPolicyContext {
     private final String redirectUri;
     private final MultivaluedMap<String, String> requestParameters;
 
+    private final AuthenticationSessionModel authenticationSession;
+
     public AuthorizationRequestContext(OIDCResponseType parsedResponseType,
-            AuthorizationEndpointRequest request,
-            String redirectUri,
-            MultivaluedMap<String, String> requestParameters) {
+        AuthorizationEndpointRequest request,
+        String redirectUri,
+        MultivaluedMap<String, String> requestParameters,
+        AuthenticationSessionModel authenticationSession) {
         this.parsedResponseType = parsedResponseType;
         this.request = request;
         this.redirectUri = redirectUri;
         this.requestParameters = requestParameters;
+        this.authenticationSession = authenticationSession;
     }
 
     @Override
@@ -68,5 +73,9 @@ public class AuthorizationRequestContext implements ClientPolicyContext {
 
     public boolean isParRequest() {
         return requestParameters.containsKey(OIDCLoginProtocol.REQUEST_URI_PARAM);
+    }
+
+    public AuthenticationSessionModel getAuthenticationSession() {
+        return authenticationSession;
     }
 }

@@ -2,11 +2,11 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Deploy an AWS Lambda to disable a non-responding site"
-summary="Building block for loadbalancer resilience"
+title="Deploying an AWS Lambda to disable a non-responding site"
+summary="Deploy an AWS Lambda as part of the load-balancer building block in a multi-site deployment."
 tileVisible="false" >
 
-This {section} explains how to resolve a split-brain scenarios between two sites in a multi-site deployment.
+This {section} explains how to resolve split-brain scenarios between two sites in a multi-site deployment.
 It also disables replication if one site fails, so the other site can continue to serve requests.
 
 This deployment is intended to be used with the setup described in the <@links.ha id="concepts-multi-site"/> {section}.
@@ -16,14 +16,14 @@ include::partials/blueprint-disclaimer.adoc[]
 
 == Architecture
 
-In the event of a network communication failure between sites in a multi-site deployment, it is no longer possible for the two sites to continue to replicate data between them.
+In the event of a network communication failure between sites in a multi-site deployment, it is no longer possible for the two sites to continue to replicate the data between them.
 The {jdgserver_name} is configured with a `FAIL` failure policy, which ensures consistency over availability. Consequently, all user requests are served with an error message until the failure is resolved, either by restoring the network connection or by disabling cross-site replication.
 
 In such scenarios, a quorum is commonly used to determine which sites are marked as online or offline.
 However, as multi-site deployments only consist of two sites, this is not possible.
-Instead, we leverage "`fencing`" to ensure that when one of the sites is unable to connect to the other site, only one site remains in the loadbalancer configuration, and hence only this site is able to serve subsequent users requests.
+Instead, we leverage "`fencing`" to ensure that when one of the sites is unable to connect to the other site, only one site remains in the load balancer configuration, and hence only this site is able to serve subsequent users requests.
 
-In addition to the loadbalancer configuration, the fencing procedure disables replication between the two {jdgserver_name} clusters to allow serving user requests from the site that remains in the loadbalancer configuration.
+In addition to the load balancer configuration, the fencing procedure disables replication between the two {jdgserver_name} clusters to allow serving user requests from the site that remains in the load balancer configuration.
 As a result, the sites will be out-of-sync once the replication has been disabled.
 
 To recover from the out-of-sync state, a manual re-sync is necessary as described in <@links.ha id="operate-synchronize" />.
@@ -36,13 +36,13 @@ The triggered Lambda function inspects the current Global Accelerator configurat
 
 In a true split-brain scenario, where both sites are still up but network communication is down, it is possible that both sites will trigger the webhook simultaneously.
 We guard against this by ensuring that only a single Lambda instance can be executed at a given time.
-The logic in the AWS Lambda ensures that always one site entry remains in the loadbalancer configuration.
+The logic in the AWS Lambda ensures that always one site entry remains in the load balancer configuration.
 
 == Prerequisites
 
 * ROSA HCP based multi-site Keycloak deployment
 * AWS CLI Installed
-* AWS Global Accelerator loadbalancer
+* AWS Global Accelerator load balancer
 * `jq` tool installed
 
 == Procedure

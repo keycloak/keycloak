@@ -23,6 +23,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -90,7 +91,7 @@ public class UPConfigUtils {
      * @throws IOException if JSON configuration can't be loaded (eg due to JSON format errors etc)
      */
     public static UPConfig parseConfig(String rawConfig) throws IOException {
-        return readConfig(new ByteArrayInputStream(rawConfig.getBytes("UTF-8")));
+        return readConfig(new ByteArrayInputStream(rawConfig.getBytes(StandardCharsets.UTF_8)));
     }
 
     /**

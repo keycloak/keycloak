@@ -57,7 +57,7 @@ spec:
       locking:
         acquireTimeout: "4000"
       transaction:
-        mode: "NON_XA" # <1>
+        mode: "NON_DURABLE_XA" # <1>
         locking: "PESSIMISTIC" # <2>
       stateTransfer:
         chunkSize: "16"
@@ -85,10 +85,14 @@ spec:
       locking:
         acquireTimeout: "4000"
       transaction:
-        mode: "NON_XA" # <1>
+        mode: "NON_DURABLE_XA" # <1>
         locking: "PESSIMISTIC" # <2>
       stateTransfer:
         chunkSize: "16"
+      indexing:
+        enabled: true
+        indexed-entities:
+        - keycloak.RootAuthenticationSessionEntity
       
 # end::infinispan-cache-authenticationSessions[]
 ---
@@ -113,10 +117,14 @@ spec:
       locking:
         acquireTimeout: "4000"
       transaction:
-        mode: "NON_XA" # <1>
+        mode: "NON_DURABLE_XA" # <1>
         locking: "PESSIMISTIC" # <2>
       stateTransfer:
         chunkSize: "16"
+      indexing:
+        enabled: true
+        indexed-entities:
+        - keycloak.RemoteAuthenticatedClientSessionEntity
       
 # end::infinispan-cache-clientSessions[]
 ---
@@ -141,10 +149,14 @@ spec:
       locking:
         acquireTimeout: "4000"
       transaction:
-        mode: "NON_XA" # <1>
+        mode: "NON_DURABLE_XA" # <1>
         locking: "PESSIMISTIC" # <2>
       stateTransfer:
         chunkSize: "16"
+      indexing:
+        enabled: true
+        indexed-entities:
+        - keycloak.LoginFailureEntity
       
 # end::infinispan-cache-loginFailures[]
 ---
@@ -169,10 +181,14 @@ spec:
       locking:
         acquireTimeout: "4000"
       transaction:
-        mode: "NON_XA" # <1>
+        mode: "NON_DURABLE_XA" # <1>
         locking: "PESSIMISTIC" # <2>
       stateTransfer:
         chunkSize: "16"
+      indexing:
+        enabled: true
+        indexed-entities:
+        - keycloak.RemoteAuthenticatedClientSessionEntity
       
 # end::infinispan-cache-offlineClientSessions[]
 ---
@@ -197,10 +213,14 @@ spec:
       locking:
         acquireTimeout: "4000"
       transaction:
-        mode: "NON_XA" # <1>
+        mode: "NON_DURABLE_XA" # <1>
         locking: "PESSIMISTIC" # <2>
       stateTransfer:
         chunkSize: "16"
+      indexing:
+        enabled: true
+        indexed-entities:
+        - keycloak.RemoteUserSessionEntity
       
 # end::infinispan-cache-offlineSessions[]
 ---
@@ -225,10 +245,14 @@ spec:
       locking:
         acquireTimeout: "4000"
       transaction:
-        mode: "NON_XA" # <1>
+        mode: "NON_DURABLE_XA" # <1>
         locking: "PESSIMISTIC" # <2>
       stateTransfer:
         chunkSize: "16"
+      indexing:
+        enabled: true
+        indexed-entities:
+        - keycloak.RemoteUserSessionEntity
       
 # end::infinispan-cache-sessions[]
 ---
@@ -253,7 +277,7 @@ spec:
       locking:
         acquireTimeout: "4000"
       transaction:
-        mode: "NON_XA" # <1>
+        mode: "NON_DURABLE_XA" # <1>
         locking: "PESSIMISTIC" # <2>
       stateTransfer:
         chunkSize: "16"
@@ -281,12 +305,14 @@ spec:
   expose:
     type: Route
   configMapName: "cluster-config"
-  image: quay.io/infinispan-test/server:15.0.x
+  image: quay.io/infinispan/server:15.0.11.Final
   version: 15.0.4
   configListener:
     enabled: false
   container:
     extraJvmOpts: '-Dorg.infinispan.openssl=false -Dinfinispan.cluster.name=ISPN  -Djgroups.xsite.fd.interval=2000 -Djgroups.xsite.fd.timeout=15000'
+    cpu: 4:2
+    memory: 2Gi:1Gi
   logging:
     categories:
       org.infinispan: info

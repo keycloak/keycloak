@@ -19,7 +19,6 @@ package org.keycloak.services.resources.admin;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.jboss.logging.Logger;
 import org.keycloak.http.HttpRequest;
-import org.keycloak.http.HttpResponse;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.NotAuthorizedException;
 import org.keycloak.common.Profile;
@@ -27,6 +26,7 @@ import org.keycloak.common.util.Encode;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
@@ -34,6 +34,7 @@ import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.resources.WelcomeResource;
 import org.keycloak.services.resources.admin.info.ServerInfoAdminResource;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.theme.Theme;
@@ -93,15 +94,31 @@ public class AdminRoot {
     @GET
     @Operation(hidden = true)
     public Response masterRealmAdminConsoleRedirect() {
-
-        if (!isAdminConsoleEnabled()) {
-            return Response.status(Response.Status.NOT_FOUND).build();
+        KeycloakUriInfo adminUriInfo = session.getContext().getUri(UrlType.ADMIN);
+        if (shouldRedirect(adminUriInfo)) {
+            RealmModel master = new RealmManager(session).getKeycloakAdminstrationRealm();
+            return Response.status(302).location(
+                    adminUriInfo.getBaseUriBuilder().path(AdminRoot.class).path(AdminRoot.class, "getAdminConsole").path("/").build(master.getName())
+            ).build();
         }
+        return Response.status(Response.Status.NOT_FOUND).build();
+    }
 
-        RealmModel master = new RealmManager(session).getKeycloakAdminstrationRealm();
-        return Response.status(302).location(
-                session.getContext().getUri(UrlType.ADMIN).getBaseUriBuilder().path(AdminRoot.class).path(AdminRoot.class, "getAdminConsole").path("/").build(master.getName())
-        ).build();
+    boolean shouldRedirect(KeycloakUriInfo adminUriInfo) {
+        if (!isAdminConsoleEnabled()) {
+            return false;
+        }
+        KeycloakUriInfo frontEndUriInfo = session.getContext().getUri();
+        String frontEndUrl = frontEndUriInfo.getBaseUri().toString();
+        String adminUrl = adminUriInfo.getBaseUri().toString();
+
+        if (adminUrl.equals(frontEndUrl)) {
+            return true; // admin is the same as front-end, we're not leaking information
+        }
+        String requestUrl = frontEndUriInfo.getRequestUri().toString();
+
+        // if we're using the admin url or are local, it's also safe to redirect
+        return requestUrl.startsWith(adminUrl) || WelcomeResource.isLocal(session);
     }
 
     /**
@@ -190,6 +207,8 @@ public class AdminRoot {
             throw new NotAuthorizedException("Bearer");
         }
 
+        session.getContext().setBearerToken(authResult.getToken());
+
         return new AdminAuth(realm, authResult.getToken(), authResult.getUser(), authResult.getClient());
     }
 
@@ -221,7 +240,9 @@ public class AdminRoot {
 
         AdminAuth auth = authenticateRealmAdminRequest(session.getContext().getRequestHeaders());
         if (auth != null) {
-            logger.debug("authenticated admin access for: " + auth.getUser().getUsername());
+            if (logger.isDebugEnabled()) {
+                logger.debugf("authenticated admin access for: %s", auth.getUser().getUsername());
+            }
         }
 
         Cors.builder().allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").exposedHeaders("Location").auth().add();
@@ -265,16 +286,12 @@ public class AdminRoot {
         }
 
         if (auth != null) {
-            logger.debug("authenticated admin access for: " + auth.getUser().getUsername());
+            logger.debugf("authenticated admin access for: %s", auth.getUser().getUsername());
         }
 
         Cors.builder().allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().add();
 
         return new ServerInfoAdminResource(session);
-    }
-
-    private HttpResponse getHttpResponse() {
-        return session.getContext().getHttpResponse();
     }
 
     private HttpRequest getHttpRequest() {

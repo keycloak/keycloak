@@ -56,12 +56,16 @@ public class KeycloakTestingClient implements AutoCloseable {
     public static ResteasyClientBuilder getRestEasyClientBuilder(String serverUrl) {
         ResteasyClientBuilder resteasyClientBuilder = (ResteasyClientBuilder) ResteasyClientBuilder.newBuilder();
         resteasyClientBuilder.connectionPoolSize(10);
-        if (serverUrl.startsWith("https")) {
+        if ((serverUrl != null && serverUrl.startsWith("https")) || "true".equals(System.getProperty("auth.server.ssl.required"))) {
             // Disable PKIX path validation errors when running tests using SSL
             resteasyClientBuilder.disableTrustManager().hostnameVerification(ResteasyClientBuilder.HostnameVerificationPolicy.ANY);
         }
         resteasyClientBuilder.httpEngine(AdminClientUtil.getCustomClientHttpEngine(resteasyClientBuilder, 10, null));
         return resteasyClientBuilder;
+    }
+
+    public static ResteasyClientBuilder getRestEasyClientBuilder() {
+        return getRestEasyClientBuilder(null);
     }
 
     public static KeycloakTestingClient getInstance(String serverUrl) {
@@ -81,13 +85,25 @@ public class KeycloakTestingClient implements AutoCloseable {
     }
 
     public void enableFeature(Profile.Feature feature) {
-        Set<Profile.Feature> enabledFeatures = testing().enableFeature(feature.toString());
-        Assert.assertFalse(enabledFeatures.contains(feature));
-        ProfileAssume.updateDisabledFeatures(enabledFeatures);
+        String featureString;
+        if (Profile.getFeatureVersions(feature.getUnversionedKey()).size() > 1) {
+            featureString = feature.getVersionedKey();
+        } else {
+            featureString = feature.getKey();
+        }
+        Set<Profile.Feature> disabledFeatures = testing().enableFeature(featureString);
+        Assert.assertFalse(disabledFeatures.contains(feature));
+        ProfileAssume.updateDisabledFeatures(disabledFeatures);
     }
 
     public void disableFeature(Profile.Feature feature) {
-        Set<Profile.Feature> disabledFeatures = testing().disableFeature(feature.toString());
+        String featureString;
+        if (Profile.getFeatureVersions(feature.getUnversionedKey()).size() > 1) {
+            featureString = feature.getVersionedKey();
+        } else {
+            featureString = feature.getKey();
+        }
+        Set<Profile.Feature> disabledFeatures = testing().disableFeature(featureString);
         Assert.assertTrue(disabledFeatures.contains(feature));
         ProfileAssume.updateDisabledFeatures(disabledFeatures);
     }
@@ -98,7 +114,17 @@ public class KeycloakTestingClient implements AutoCloseable {
      * @param feature
      */
     public void resetFeature(Profile.Feature feature) {
-        testing().resetFeature(feature.toString());
+        String featureString;
+        if (Profile.getFeatureVersions(feature.getUnversionedKey()).size() > 1) {
+            featureString = feature.getVersionedKey();
+            Profile.Feature featureVersionHighestPriority = Profile.getFeatureVersions(feature.getKey()).iterator().next();
+            if (featureVersionHighestPriority.getType().equals(Profile.Feature.Type.DEFAULT)) {
+                enableFeature(featureVersionHighestPriority);
+            }
+        } else {
+            featureString = feature.getKey();
+        }
+        testing().resetFeature(featureString);
     }
 
     public TestApplicationResource testApp() { return target.proxy(TestApplicationResource.class); }

@@ -4,7 +4,7 @@
 *NOTE:* This installation method is intended for development use only.  Please don't ever let this anywhere near prod!
 
 ## Keycloak Realm Assumptions:
- - Client configuration has not changed since the installtion files were generated.  If you change your client configuration, be sure to grab a re-generated installtion .zip from the 'Installation' tab.
+ - Client configuration has not changed since the installation files were generated.  If you change your client configuration, be sure to grab a re-generated installation .zip from the 'Installation' tab.
  - Keycloak server is started with the 'docker' feature enabled.  I.E. -Dkeycloak.profile.feature.docker=enabled
 
 ## Running the Installation:

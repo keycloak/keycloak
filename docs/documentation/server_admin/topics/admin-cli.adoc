@@ -89,7 +89,7 @@ c:\> kcadm config truststore --trustpass %PASSWORD% %HOMEPATH%\.keycloak\trustst
 
 === Sensitive Options
 
-Sensitive values, such as passwords, may be specified as command options. That is generally not recommended. There are also mechanisms by which you can be prompted for the sensitive value - by either omitting the option or providing a value or -. Finally all will have a corresponding env variable that can be used instead - check the help of the command you are running to see all possible options.
+Sensitive values, such as passwords, may be specified as command options. That is generally not recommended. There are also mechanisms by which you can be prompted for the sensitive value by either omitting the option or providing a value. Finally all will have a corresponding env variable that can be used instead. Check the help of the command you are running to see all possible options.
 
 === Authenticating
 
@@ -850,7 +850,7 @@ $ kcadm.sh add-roles -r demorealm --gname Group --cclientid realm-management --r
 
 Use the `remove-roles` command to remove client roles from a group.
 
-The following example removes two roles defined on the client `realm management`, `create-client` and `view-users`, from the `Group` group.
+The following example removes two roles defined on the client `realm-management`, `create-client` and `view-users`, from the `Group` group.
 
 See <<_group_operations, Group operations>> for more information.
 [options="nowrap"]
@@ -1198,7 +1198,7 @@ $ kcadm.sh remove-roles --uusername testuser --rolename user -r demorealm
 
 Use an `add-roles` command to add client roles to a user.
 
-Use the following example to add two roles defined on the client `realm management`, the `create-client` role and the `view-users` role, to the user `testuser`.
+Use the following example to add two roles defined on the client `realm-management`, the `create-client` role and the `view-users` role, to the user `testuser`.
 [options="nowrap"]
 ----
 $ kcadm.sh add-roles -r demorealm --uusername testuser --cclientid realm-management --rolename create-client --rolename view-users
@@ -1209,7 +1209,7 @@ $ kcadm.sh add-roles -r demorealm --uusername testuser --cclientid realm-managem
 
 Use a `remove-roles` command to remove client roles from a user.
 
-Use the following example to remove two roles defined on the realm management client:
+Use the following example to remove two roles defined on the realm-management client:
 [options="nowrap"]
 ----
 $ kcadm.sh remove-roles -r demorealm --uusername testuser --cclientid realm-management --rolename create-client --rolename view-users

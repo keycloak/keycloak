@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import org.keycloak.provider.ProviderEvent;
+
 public interface OrganizationModel {
 
     String ORGANIZATION_ATTRIBUTE = "kc.org";
@@ -44,6 +46,54 @@ public interface OrganizationModel {
 
         public String getKey() {
             return key;
+        }
+    }
+
+    interface OrganizationMembershipEvent extends ProviderEvent {
+        OrganizationModel getOrganization();
+        UserModel getUser();
+        KeycloakSession getSession();
+    }
+
+    interface OrganizationMemberJoinEvent extends OrganizationMembershipEvent {
+        static void fire(OrganizationModel organization, UserModel user, KeycloakSession session) {
+            session.getKeycloakSessionFactory().publish(new OrganizationModel.OrganizationMemberJoinEvent() {
+                @Override
+                public UserModel getUser() {
+                    return user;
+                }
+
+                @Override
+                public OrganizationModel getOrganization() {
+                    return organization;
+                }
+
+                @Override
+                public KeycloakSession getSession() {
+                    return session;
+                }
+            });
+        }
+    }
+
+    interface OrganizationMemberLeaveEvent extends OrganizationMembershipEvent {
+        static void fire(OrganizationModel organization, UserModel user, KeycloakSession session) {
+            session.getKeycloakSessionFactory().publish(new OrganizationModel.OrganizationMemberLeaveEvent() {
+                @Override
+                public UserModel getUser() {
+                    return user;
+                }
+
+                @Override
+                public OrganizationModel getOrganization() {
+                    return organization;
+                }
+
+                @Override
+                public KeycloakSession getSession() {
+                    return session;
+                }
+            });
         }
     }
 

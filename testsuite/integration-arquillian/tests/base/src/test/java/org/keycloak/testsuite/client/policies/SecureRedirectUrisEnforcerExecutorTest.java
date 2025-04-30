@@ -35,7 +35,8 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExecutorFactory;
 import org.keycloak.testsuite.util.ClientPoliciesUtil;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.ServerURLs;
 
 import java.util.Arrays;
@@ -49,6 +50,62 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation realm = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
         testRealms.add(realm);
+    }
+
+    @Test
+    public void testNotRedirectBasedFlowClient_normalUri() throws Exception {
+        // register profiles
+        String json = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile(
+                (new ClientPoliciesUtil.ClientProfileBuilder()).createProfile(PROFILE_NAME, "Le Premier Profil")
+                        .addExecutor(SecureRedirectUrisEnforcerExecutorFactory.PROVIDER_ID,
+                                createSecureRedirectUrisEnforcerExecutorConfig(it->{}))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
+                (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
+                        .addCondition(AnyClientConditionFactory.PROVIDER_ID,
+                                createAnyClientConditionConfig())
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        // The executor's check logic is not executed to an auth code flow or implicit flow disabled client.
+
+        // Registration
+        // Success - even if not setting a valid redirect uri
+        String clientId = null;
+        String cId = null;
+        try {
+            clientId = generateSuffixedName(CLIENT_NAME);
+            cId = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+                clientRep.setSecret("secret");
+                clientRep.setRedirectUris(List.of("http://oauth.redirect/some")); // normally, a redirect url with http scheme is not allowed.
+                clientRep.setStandardFlowEnabled(false);
+                clientRep.setImplicitFlowEnabled(false);
+                clientRep.setServiceAccountsEnabled(true);
+            });
+            ClientRepresentation cRep = getClientByAdmin(cId);
+            assertEquals(new HashSet<>(List.of("http://oauth.redirect/some")), new HashSet<>(cRep.getRedirectUris()));
+        } catch (ClientPolicyException cpe) {
+            fail();
+        }
+
+        // Update
+        // Success - even if not setting a valid redirect uri
+        try {
+            updateClientByAdmin(cId, (ClientRepresentation clientRep) -> {
+                clientRep.setAttributes(new HashMap<>());
+                clientRep.setRedirectUris(List.of("")); // nomally, vacant redirect uri is not allowed.
+            });
+            ClientRepresentation cRep = getClientByAdmin(cId);
+            assertEquals(new HashSet<>(List.of("")), new HashSet<>(cRep.getRedirectUris()));
+        } catch (ClientPolicyException cpe) {
+            fail();
+        }
     }
 
     @Test
@@ -644,12 +701,12 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
     }
 
     private void testSecureRedirectUrisEnforcerExecutor_successAuthorizationRequest(String clientId, String redirectUri) {
-        oauth.clientId(clientId);
+        oauth.client(clientId, "secret");
         oauth.redirectUri(redirectUri);
-        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
         Assert.assertNotNull(response.getCode());
-        OAuthClient.AccessTokenResponse res = oauth.doAccessTokenRequest(response.getCode(), "secret");
+        AccessTokenResponse res = oauth.doAccessTokenRequest(response.getCode());
         assertEquals(200, res.getStatusCode());
-        oauth.doLogout(res.getRefreshToken(), "secret");
+        oauth.doLogout(res.getRefreshToken());
     }
 }

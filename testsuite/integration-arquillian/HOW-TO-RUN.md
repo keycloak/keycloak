@@ -270,7 +270,7 @@ An example social.properties file looks like:
     facebook.profile.lastName=Test
 
 In the example above the common username, password and profile are shared for all providers, but Facebook has a
-different last name. Profile informations are used for assertion after login, so you have to set them to be same as
+different last name. Profile information is used for assertion after login, so you have to set it to be same as
 user profile information returned by given social login provider for used sample user.
 
 Some providers actively block bots so you need to use a proper browser to test. Either Firefox or Chrome should work.
@@ -394,7 +394,6 @@ Then run any cluster test as usual.
     mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
     -Pauth-server-cluster-undertow,db-mysql \
     -Dsession.cache.owners=2 \
-    -Dkeycloak.connectionsInfinispan.sessionsOwners=2 \
     -Dbackends.console.output=true \
     -Dauth.server.log.check=false \
     -Dfrontend.console.output=true \
@@ -410,8 +409,8 @@ You can use any cluster test (eg. AuthenticationSessionFailoverClusterTest) and 
 
     -Dauth.server.undertow=false -Dauth.server.undertow.cluster=true -Dauth.server.cluster=true
     -Dkeycloak.connectionsJpa.url=jdbc:mysql://localhost/keycloak -Dkeycloak.connectionsJpa.driver=com.mysql.jdbc.Driver
-    -Dkeycloak.connectionsJpa.user=keycloak -Dkeycloak.connectionsJpa.password=keycloak -Dkeycloak.connectionsInfinispan.clustered=true -Dresources
-    -Dkeycloak.connectionsInfinispan.sessionsOwners=2 -Dsession.cache.owners=2
+    -Dkeycloak.connectionsJpa.user=keycloak -Dkeycloak.connectionsJpa.password=keycloak -Dresources
+    -Dsession.cache.owners=2
 
 Invalidation tests (subclass of `AbstractInvalidationClusterTest`) don't need last two properties.
 
@@ -423,159 +422,14 @@ This mode is useful for develop/manual tests of clustering features. You will ne
 1) Run KeycloakServer server1 with:
 
     -Dkeycloak.connectionsJpa.url=jdbc:mysql://localhost/keycloak -Dkeycloak.connectionsJpa.driver=com.mysql.jdbc.Driver
-    -Dkeycloak.connectionsJpa.user=keycloak -Dkeycloak.connectionsJpa.password=keycloak -Dkeycloak.connectionsInfinispan.clustered=true
-    -Dkeycloak.connectionsInfinispan.sessionsOwners=2 -Dresources
+    -Dkeycloak.connectionsJpa.user=keycloak -Dkeycloak.connectionsJpa.password=keycloak
+    -Dresources
 
 and argument: `-p 8181`
 
 2) Run KeycloakServer server2 with same parameters but argument: `-p 8182`
 
 3) Run loadbalancer (class `SimpleUndertowLoadBalancer`) without arguments and system properties. Loadbalancer runs on port 8180, so you can access Keycloak on `http://localhost:8180/auth`
-
-## Cross-DC tests
-
-Cross-DC tests use 2 data centers, each with one automatically started and one manually controlled backend servers,
-and 1 frontend loadbalancer server node that sits in front of all servers.
-The browser usually communicates directly with the frontend node and the test controls where the HTTP requests
-land by adjusting load balancer configuration (e.g. to direct the traffic to only a single DC).
-
-For an example of a test, see [org.keycloak.testsuite.crossdc.ActionTokenCrossDCTest](tests/base/src/test/java/org/keycloak/testsuite/crossdc/ActionTokenCrossDCTest.java).
-
-The cross DC requires setting a profile specifying the used cache server.
-Use `cache-server-infinispan` Maven profile for Infinispan 10 or higher, or `cache-server-legacy-infinispan` profile for Infinispan 9 and lower.
-Use `cache-server-datagrid` Maven profile for Datagrid 8 or higher, or `cache-server-legacy-datagrid` profile for Datagrid 7 and lower.
-
-To specify a custom Java platform to run the cache server it is possible to set parameter: `-Dcache.server.java.home=<PATH_TO_JDK>`.
-
-### Cache Authentication
-
-With WildFLy/EAP based auth server option it is possible to enable authentication for the HotRod protocol by enabling profile `cache-auth`.
-
-It is possible to specify additional parameters:
-- `-Dhotrod.sasl.mechanism`: SASL mechanism used by the hotrod protocol. Default value is `DIGEST-MD5`.
-- `-Dkeycloak.connectionsInfinispan.hotrodProtocolVersion`: Version of the hotrod protocol.
-
-Example: `-Pauth-server-wildfly,cache-server-infinispan,cache-auth -Dhotrod.sasl.mechanism=SCRAM-SHA-512`
-
-Note: The cache authentication is not implemented for `SAMLAdapterCrossDCTest`.
-
-Note: The `cache-auth` profile currently doesn't work with the legacy Infinispan/Datagrid modules. See: [KEYCLOAK-18336](https://issues.redhat.com/browse/KEYCLOAK-18336).
-
-### Data Grid
-
-Since Datagrid does not distribute `infinispan-server` zip artifact, for `cache-server-datagrid` profile it is
-necessary to download the artifact and install it to local Maven repository. For Red Hat Data Grid 8 and above, the command is the following:
-
-    mvn install:install-file \
-    -DgroupId=com.redhat -DartifactId=datagrid -Dpackaging=zip -Dclassifier=bin -DgeneratePom=true \
-    -Dversion=${DATAGRID_VERSION} -Dfile=redhat-datagrid-${DATAGRID_VERSION}-server.zip
-
-For Data Grid 7 and older use: `-Dfile=jboss-datagrid-${DATAGRID_VERSION}-server.zip`.
-
-### Run Cross-DC Tests from Maven
-
-Warning: The Cross-DC tests doesn't work with Quarkus distribution
-
-Note: Profile `auth-servers-crossdc-undertow` currently doesn't work (see [KEYCLOAK-18335](https://issues.redhat.com/browse/KEYCLOAK-18335)).
-Use `-Pauth-servers-crossdc-jboss,auth-server-wildfly` instead.
-
-a) Prepare the environment. Compile the infinispan server and eventually Keycloak on JBoss server.
-
-a1) If you want to use **Undertow** based Keycloak container, you just need to download and prepare the
-Infinispan/JDG test server via the following command:
-
-  `mvn -Pcache-server-infinispan,auth-servers-crossdc-undertow -f testsuite/integration-arquillian -DskipTests clean install`
-
-*note: 'cache-server-infinispan' can be replaced by 'cache-server-datagrid'*
-
-a2) If you want to use **JBoss-based** Keycloak backend containers instead of containers on Embedded Undertow,
- you need to prepare both the Infinispan/JDG test server and the Keycloak server on Wildfly/EAP. Run following command:
-
-  `mvn -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly -f testsuite/integration-arquillian -DskipTests clean install`
-
-*note: 'cache-server-infinispan' can be replaced by 'cache-server-datagrid'*
-
-*note: 'auth-server-wildfly' can be replaced by 'auth-server-eap'*
-
-By default JBoss-based containers use TCP-based h2 database. It can be configured to use real DB spawn in Docker, e.g. with following command:
-
-  `mvn -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly,jpa,db-mariadb -f testsuite/integration-arquillian -DskipTests clean install`
-
-b1) For **Undertow** Keycloak backend containers, you can run the tests using the following command (adjust the test specification according to your needs):
-
-  `mvn -Pcache-server-infinispan,auth-servers-crossdc-undertow -Dtest=org.keycloak.testsuite.crossdc.**.*Test -pl testsuite/integration-arquillian/tests/base clean install`
-
-*note: 'cache-server-infinispan' can be replaced by 'cache-server-datagrid'*
-
-*note: It can be useful to add additional system property to enable logging:*
-
-  `-Dkeycloak.infinispan.logging.level=debug`
-
-b2) For **JBoss-based** Keycloak backend containers, you can run the tests like this:
-
-  `mvn -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly -Dtest=org.keycloak.testsuite.crossdc.**.*Test -pl testsuite/integration-arquillian/tests/base clean install`
-
-*note: 'cache-server-infinispan' can be replaced by 'cache-server-datagrid'*
-
-*note: 'auth-server-wildfly can be replaced by auth-server-eap'*
-
-**note**:
-For **JBoss-based** Keycloak backend containers on real DB, the previous commands from (a2) and (b2) can be "squashed" into one. E.g.:
-
-  `mvn -f testsuite/integration-arquillian -Dtest=org.keycloak.testsuite.crossdc.**.*Test -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly,jpa,db-mariadb clean install`
-
-
-### Run Cross-DC Tests from Intellij IDEA
-
-Note: Profile `auth-servers-crossdc-undertow` which is required in step (3) currently doesn't work (see [KEYCLOAK-18335](https://issues.redhat.com/browse/KEYCLOAK-18335)).
-
-First we will manually download, configure and run infinispan servers. Then we can run the tests from IDE against the servers.
-It's more effective during development as there is no need to restart infinispan server(s) among test runs.
-
-1) Download infinispan server of corresponding version (See "infinispan.version" property in [root pom.xml](../../pom.xml))
-from http://infinispan.org/download/ and go through the steps from the
-[Keycloak Cross-DC documentation](http://www.keycloak.org/docs/latest/server_installation/index.html#jdgsetup) for setup infinispan servers.
-
-The difference to original docs is, that you need to have JDG servers available on localhost with port offsets. So:
-
-* The TCPPING hosts should be like this:
-
-```xml
-<property name="initial_hosts">localhost[8610],localhost[9610]"</property>
-```
-
-* The port offset when starting node `jdg1` should be like: `-Djboss.socket.binding.port-offset=1010` and when
-starting the `jdg2` server, then `-Djboss.socket.binding.port-offset=2010` . In both cases, the bind address should be just
-default `localhost` (In other words, the `-b` switch can be omitted).
-
-So assume you have both Infinispan/JDG servers up and running.
-
-2) Setup MySQL database or some other shared database.
-
-3) Ensure that `org.wildfly.arquillian:wildfly-arquillian-container-managed` is on the classpath when running test. On Intellij, it can be
-done by going to: `View` -> `Tool Windows` -> `Maven projects`. Then check profile `cache-server-infinispan` and `auth-servers-crossdc-undertow`.
-The tests will use this profile when executed.
-
-4) Run the LoginCrossDCTest (or any other test) with those properties. In shortcut, it's using MySQL database and
-connects to the remoteStore provided by infinispan server configured in previous steps:
-
-  `-Dauth.server.crossdc=true -Dauth.server.undertow.crossdc=true -Dcache.server.lifecycle.skip=true -Dkeycloak.connectionsInfinispan.clustered=true -Dkeycloak.connectionsJpa.url.crossdc=jdbc:mysql://localhost/keycloak -Dkeycloak.connectionsJpa.driver.crossdc=com.mysql.jdbc.Driver -Dkeycloak.connectionsJpa.user=keycloak -Dkeycloak.connectionsJpa.password=keycloak -Dkeycloak.connectionsInfinispan.clustered=true -Dkeycloak.connectionsInfinispan.remoteStorePort=12232 -Dkeycloak.connectionsInfinispan.remoteStorePort.2=13232 -Dkeycloak.connectionsInfinispan.sessionsOwners=1 -Dsession.cache.owners=1 -Dkeycloak.infinispan.logging.level=debug -Dresources`
-
-**NOTE**: Tests from package `manual` (eg. SessionsPreloadCrossDCTest) needs to be executed with managed containers.
-So skip steps 1,2 and add property `-Dmanual.mode=true` and change "cache.server.lifecycle.skip" to false `-Dcache.server.lifecycle.skip=false` or remove it.
-
-5) If you want to debug or test manually, the servers are running on these ports (Note that not all backend servers are running by default and some might be also unused by loadbalancer):
-
-* *Loadbalancer* -> "http://localhost:8180/auth"
-
-* *auth-server-undertow-cross-dc-0_1* -> "http://localhost:8101/auth"
-
-* *auth-server-undertow-cross-dc-0_2-manual* -> "http://localhost:8102/auth"
-
-* *auth-server-undertow-cross-dc-1_1* -> "http://localhost:8111/auth"
-
-* *auth-server-undertow-cross-dc-1_2-manual* -> "http://localhost:8112/auth"
-
 
 ## Run Docker Authentication test
 

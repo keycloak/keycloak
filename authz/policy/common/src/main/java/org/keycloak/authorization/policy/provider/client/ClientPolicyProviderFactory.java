@@ -108,7 +108,7 @@ public class ClientPolicyProviderFactory implements PolicyProviderFactory<Client
 
     @Override
     public PolicyProvider create(KeycloakSession session) {
-        return null;
+        return provider;
     }
 
     @Override

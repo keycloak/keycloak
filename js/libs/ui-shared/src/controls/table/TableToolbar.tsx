@@ -32,25 +32,20 @@ export const TableToolbar = ({
   const { t } = useTranslation();
   const [searchValue, setSearchValue] = useState<string>("");
 
-  const onSearch = () => {
-    if (searchValue !== "") {
-      setSearchValue(searchValue);
-      inputGroupOnEnter?.(searchValue);
-    } else {
-      setSearchValue("");
-      inputGroupOnEnter?.("");
-    }
+  const onSearch = (searchValue: string) => {
+    setSearchValue(searchValue.trim());
+    inputGroupOnEnter?.(searchValue.trim());
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      onSearch();
+      onSearch(searchValue);
     }
   };
 
   return (
     <>
-      <Toolbar>
+      <Toolbar data-testid="table-toolbar">
         <ToolbarContent>
           {inputGroupName && (
             <ToolbarItem>
@@ -65,12 +60,9 @@ export const TableToolbar = ({
                     onChange={(_, value) => {
                       setSearchValue(value);
                     }}
-                    onSearch={onSearch}
+                    onSearch={() => onSearch(searchValue)}
                     onKeyDown={handleKeyDown}
-                    onClear={() => {
-                      setSearchValue("");
-                      inputGroupOnEnter?.("");
-                    }}
+                    onClear={() => onSearch("")}
                   />
                 )}
               </InputGroup>

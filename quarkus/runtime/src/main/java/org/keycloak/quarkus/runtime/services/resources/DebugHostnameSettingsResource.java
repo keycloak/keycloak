@@ -62,7 +62,7 @@ public class DebugHostnameSettingsResource {
     public DebugHostnameSettingsResource() {
 
         this.allConfigPropertiesMap = new LinkedHashMap<>();
-        String[] relevantOptions = Profile.isFeatureEnabled(Profile.Feature.HOSTNAME_V2) ? ConstantsDebugHostname.RELEVANT_OPTIONS_V2 : ConstantsDebugHostname.RELEVANT_OPTIONS;
+        String[] relevantOptions = ConstantsDebugHostname.RELEVANT_OPTIONS_V2;
         for (String key : relevantOptions) {
             addOption(key);
         }

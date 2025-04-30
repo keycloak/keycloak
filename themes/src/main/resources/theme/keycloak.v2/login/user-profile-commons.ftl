@@ -4,51 +4,57 @@
 	
 	<#list profile.attributes as attribute>
 
-		<#assign group = (attribute.group)!"">
-		<#if group != currentGroup>
-			<#assign currentGroup=group>
-			<#if currentGroup != "">
-				<div class="${properties.kcFormGroupClass!}"
-				<#list group.html5DataAnnotations as key, value>
-					data-${key}="${value}"
-				</#list>
-				>
+		<#if attribute.name=='locale' && realm.internationalizationEnabled && locale.currentLanguageTag?has_content>
+			<input type="hidden" id="${attribute.name}" name="${attribute.name}" value="${locale.currentLanguageTag}"/>
+		<#else>
 
-					<#assign groupDisplayHeader=group.displayHeader!"">
-					<#if groupDisplayHeader != "">
-						<#assign groupHeaderText=advancedMsg(groupDisplayHeader)!group>
-					<#else>
-						<#assign groupHeaderText=group.name!"">
-					</#if>
-					<div class="${properties.kcContentWrapperClass!}">
-						<label id="header-${attribute.group.name}" class="${kcFormGroupHeader!}">${groupHeaderText}</label>
-					</div>
+			<#assign group = (attribute.group)!"">
+			<#if group != currentGroup>
+				<#assign currentGroup=group>
+				<#if currentGroup != "">
+					<div class="${properties.kcFormGroupClass!}"
+					<#list group.html5DataAnnotations as key, value>
+						data-${key}="${value}"
+					</#list>
+					>
 
-					<#assign groupDisplayDescription=group.displayDescription!"">
-					<#if groupDisplayDescription != "">
-						<#assign groupDescriptionText=advancedMsg(groupDisplayDescription)!"">
-						<div class="${properties.kcLabelWrapperClass!}">
-							<label id="description-${group.name}" class="${properties.kcLabelClass!}">${groupDescriptionText}</label>
+						<#assign groupDisplayHeader=group.displayHeader!"">
+						<#if groupDisplayHeader != "">
+							<#assign groupHeaderText=advancedMsg(groupDisplayHeader)!group>
+						<#else>
+							<#assign groupHeaderText=group.name!"">
+						</#if>
+						<div class="${properties.kcContentWrapperClass!}">
+							<label id="header-${attribute.group.name}" class="${kcFormGroupHeader!}">${groupHeaderText}</label>
 						</div>
+
+						<#assign groupDisplayDescription=group.displayDescription!"">
+						<#if groupDisplayDescription != "">
+							<#assign groupDescriptionText=advancedMsg(groupDisplayDescription)!"">
+							<div class="${properties.kcLabelWrapperClass!}">
+								<label id="description-${group.name}" class="${properties.kcLabelClass!}">${groupDescriptionText}</label>
+							</div>
+						</#if>
+					</div>
+				</#if>
+			</#if>
+
+			<#nested "beforeField" attribute>
+
+			<@field.group name=attribute.name label=advancedMsg(attribute.displayName!'') error=kcSanitize(messagesPerField.get('${attribute.name}'))?no_esc required=attribute.required>
+				<div class="${properties.kcInputWrapperClass!}">
+					<#if attribute.annotations.inputHelperTextBefore??>
+						<div class="${properties.kcInputHelperTextBeforeClass!}" id="form-help-text-before-${attribute.name}" aria-live="polite">${kcSanitize(advancedMsg(attribute.annotations.inputHelperTextBefore))?no_esc}</div>
+					</#if>
+					<@inputFieldByType attribute=attribute/>
+					<#if attribute.annotations.inputHelperTextAfter??>
+						<div class="${properties.kcInputHelperTextAfterClass!}" id="form-help-text-after-${attribute.name}" aria-live="polite">${kcSanitize(advancedMsg(attribute.annotations.inputHelperTextAfter))?no_esc}</div>
 					</#if>
 				</div>
-			</#if>
+			</@field.group>
+			<#nested "afterField" attribute>
+
 		</#if>
-
-		<#nested "beforeField" attribute>
-
-		<@field.group name=attribute.name label=advancedMsg(attribute.displayName!'') error=kcSanitize(messagesPerField.get('${attribute.name}'))?no_esc required=attribute.required>
-			<div class="${properties.kcInputWrapperClass!}">
-				<#if attribute.annotations.inputHelperTextBefore??>
-					<div class="${properties.kcInputHelperTextBeforeClass!}" id="form-help-text-before-${attribute.name}" aria-live="polite">${kcSanitize(advancedMsg(attribute.annotations.inputHelperTextBefore))?no_esc}</div>
-				</#if>
-				<@inputFieldByType attribute=attribute/>
-				<#if attribute.annotations.inputHelperTextAfter??>
-					<div class="${properties.kcInputHelperTextAfterClass!}" id="form-help-text-after-${attribute.name}" aria-live="polite">${kcSanitize(advancedMsg(attribute.annotations.inputHelperTextAfter))?no_esc}</div>
-				</#if>
-			</div>
-		</@field.group>
-		<#nested "afterField" attribute>
 	</#list>
 
 	<#list profile.html5DataAnnotations?keys as key>
@@ -93,7 +99,6 @@
 			<#if attribute.annotations.inputTypeMinlength??>minlength="${attribute.annotations.inputTypeMinlength}"</#if>
 			<#if attribute.annotations.inputTypeMax??>max="${attribute.annotations.inputTypeMax}"</#if>
 			<#if attribute.annotations.inputTypeMin??>min="${attribute.annotations.inputTypeMin}"</#if>
-			<#if attribute.annotations.inputTypeStep??>step="${attribute.annotations.inputTypeStep}"</#if>
 			<#if attribute.annotations.inputTypeStep??>step="${attribute.annotations.inputTypeStep}"</#if>
 			<#list attribute.html5DataAnnotations as key, value>
 					data-${key}="${value}"
@@ -177,7 +182,8 @@
 		<#assign classDiv=properties.kcInputClassRadio!>
 		<#assign classInput=properties.kcInputClassRadioInput!>
 		<#assign classLabel=properties.kcInputClassRadioLabel!>
-	<#else>	
+	<#else>
+		<input type="hidden" id="${attribute.name}-empty" name="${attribute.name}" value=""/>
 		<#assign inputType='checkbox'>
 		<#assign classDiv=properties.kcInputClassCheckbox!>
 		<#assign classInput=properties.kcInputClassCheckboxInput!>

@@ -7,7 +7,7 @@ Also see [Operator guides](https://www.keycloak.org/guides#operator)
 
 ## Activating the Module
 
-When build from the project root directory, this module is only enabled if the installed JDK is 11 or newer. 
+When build from the project root directory, this module is only enabled if the installed JDK is 17 or newer. 
 
 ## Building
 
@@ -43,6 +43,14 @@ kc.operator.keycloak.image-pull-policy
 
 ### Quick start on Minikube
 
+Start minikube with `ingress` addon and `cilium` Container Network Interface (CNI).
+Vanilla minikube does not support Network Policies, and Cilium implements the CNI and supports Network Policies.
+Another CNI implementation may work too.
+
+```bash
+minikube start --addons ingress --cni cilium
+```
+
 Enable the Minikube Docker daemon:
 
 ```bash
@@ -76,7 +84,9 @@ kubectl delete -k <previously-used-folder>
 
 ### Testing
 
-Testing allows 2 methods specified in the property `test.operator.deployment` : `local` & `remote`. 
+Testing allows 3 methods specified in the property `test.operator.deployment` : `local_apiserver`, `local` & `remote`. 
+
+`local_apiserver` : the default, where resources will be deployed to a jenvtest controlled api server (not a full kube environment) and the operator will run locally - not all tests can run in this mode. This is the fastest mode of testing as no externally managed kube environment is needed. As long as your test does not need a running Keycloak instance, this level of testing should be applicable.
 
 `local` : resources will be deployed to the local cluster and the operator will run out of the cluster
 
@@ -109,7 +119,7 @@ To avoid skipping tests that are depending on custom Keycloak images, you need t
 And run the tests passing an extra Java property:
 
 ```bash
--Dtest.kc.operator.custom.image=custom-keycloak:latest
+-Dtest.operator.custom.image=custom-keycloak:latest
 ```
 
 ### Testing using a pre-built operator image from a remote registry

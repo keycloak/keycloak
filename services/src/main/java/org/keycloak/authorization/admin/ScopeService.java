@@ -23,6 +23,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
@@ -34,7 +35,6 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
@@ -75,8 +75,8 @@ public class ScopeService {
     private final AuthorizationProvider authorization;
     private final AdminPermissionEvaluator auth;
     private final AdminEventBuilder adminEvent;
-    private KeycloakSession session;
-    private ResourceServer resourceServer;
+    private final KeycloakSession session;
+    private final ResourceServer resourceServer;
 
     public ScopeService(KeycloakSession session, ResourceServer resourceServer, AuthorizationProvider authorization, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.session = session;
@@ -91,7 +91,8 @@ public class ScopeService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response create(ScopeRepresentation scope) {
-            this.auth.realm().requireManageAuthorization();
+        AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, resourceServer.getId());
+        this.auth.realm().requireManageAuthorization(resourceServer);
         Scope model = toModel(scope, this.resourceServer, authorization);
 
         scope.setId(model.getId());
@@ -106,7 +107,8 @@ public class ScopeService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response update(@PathParam("scope-id") String id, ScopeRepresentation scope) {
-            this.auth.realm().requireManageAuthorization();
+        AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, resourceServer.getId());
+        this.auth.realm().requireManageAuthorization(resourceServer);
         scope.setId(id);
         StoreFactory storeFactory = authorization.getStoreFactory();
         Scope model = storeFactory.getScopeStore().findById(resourceServer, scope.getId());
@@ -125,7 +127,8 @@ public class ScopeService {
     @Path("{scope-id}")
     @DELETE
     public Response delete(@PathParam("scope-id") String id) {
-        this.auth.realm().requireManageAuthorization();
+        AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, resourceServer.getId());
+        this.auth.realm().requireManageAuthorization(resourceServer);
         StoreFactory storeFactory = authorization.getStoreFactory();
         Scope scope = storeFactory.getScopeStore().findById(resourceServer, id);
         if (scope == null) {
@@ -171,7 +174,7 @@ public class ScopeService {
         @APIResponse(responseCode = "404", description = "Not found")
     })
     public Response findById(@PathParam("scope-id") String id) {
-        this.auth.realm().requireViewAuthorization();
+        this.auth.realm().requireViewAuthorization(resourceServer);
         Scope model = this.authorization.getStoreFactory().getScopeStore().findById(resourceServer, id);
 
         if (model == null) {
@@ -193,7 +196,7 @@ public class ScopeService {
         @APIResponse(responseCode = "404", description = "Not found")
     })
     public Response getResources(@PathParam("scope-id") String id) {
-        this.auth.realm().requireViewAuthorization();
+        this.auth.realm().requireViewAuthorization(resourceServer);
         StoreFactory storeFactory = this.authorization.getStoreFactory();
         Scope model = storeFactory.getScopeStore().findById(resourceServer, id);
 
@@ -223,7 +226,7 @@ public class ScopeService {
         @APIResponse(responseCode = "404", description = "Not found")
     })
     public Response getPermissions(@PathParam("scope-id") String id) {
-        this.auth.realm().requireViewAuthorization();
+        this.auth.realm().requireViewAuthorization(resourceServer);
         StoreFactory storeFactory = this.authorization.getStoreFactory();
         Scope model = storeFactory.getScopeStore().findById(resourceServer, id);
 
@@ -257,7 +260,7 @@ public class ScopeService {
         @APIResponse(responseCode = "400", description = "Bad Request")
     })
     public Response find(@QueryParam("name") String name) {
-        this.auth.realm().requireViewAuthorization();
+        this.auth.realm().requireViewAuthorization(resourceServer);
         StoreFactory storeFactory = authorization.getStoreFactory();
 
         if (name == null) {
@@ -280,7 +283,7 @@ public class ScopeService {
                             @QueryParam("name") String name,
                             @QueryParam("first") Integer firstResult,
                             @QueryParam("max") Integer maxResult) {
-        this.auth.realm().requireViewAuthorization();
+        this.auth.realm().requireViewAuthorization(resourceServer);
 
         Map<Scope.FilterOption, String[]> search = new EnumMap<>(Scope.FilterOption.class);
 

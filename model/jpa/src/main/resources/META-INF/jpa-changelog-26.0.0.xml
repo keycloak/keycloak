@@ -74,6 +74,7 @@
     </changeSet>
 
     <changeSet author="keycloak" id="26.0.0-idps-for-login">
+        <validCheckSum>9:51f5fffadf986983d4bd59582c6c1604</validCheckSum>
         <addColumn tableName="IDENTITY_PROVIDER">
             <column name="ORGANIZATION_ID" type="VARCHAR(255)"/>
             <column name="HIDE_ON_LOGIN" type="BOOLEAN" defaultValueBoolean="false"/>
@@ -90,9 +91,15 @@
             <column name="ORGANIZATION_ID"/>
         </createIndex>
         <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_0_0_IdentityProviderAttributesMigration"/>
+        <modifySql dbms="mssql">
+            <replace replace="DEFAULT 0" with="DEFAULT 0 WITH VALUES" />
+        </modifySql>
     </changeSet>
 
     <changeSet author="keycloak" id="26.0.0-32583-drop-redundant-index-on-client-session">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <indexExists indexName="IDX_US_SESS_ID_ON_CL_SESS" tableName="OFFLINE_CLIENT_SESSION" />
+        </preConditions>
         <dropIndex indexName="IDX_US_SESS_ID_ON_CL_SESS" tableName="OFFLINE_CLIENT_SESSION" />
     </changeSet>
     

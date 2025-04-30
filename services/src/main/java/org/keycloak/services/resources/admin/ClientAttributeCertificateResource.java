@@ -32,22 +32,18 @@ import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.http.FormPartValue;
-import org.keycloak.jose.jwk.JSONWebKeySet;
-import org.keycloak.jose.jwk.JWK;
-import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.KeyStoreConfig;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.util.CertificateInfoHelper;
-import org.keycloak.util.JWKSUtils;
-import org.keycloak.util.JsonSerialization;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
@@ -60,10 +56,9 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Set;
@@ -140,7 +135,6 @@ public class ClientAttributeCertificateResource {
     /**
      * Upload certificate and eventually private key
      *
-     * @param input
      * @return
      * @throws IOException
      */
@@ -151,12 +145,8 @@ public class ClientAttributeCertificateResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_ATTRIBUTE_CERTIFICATE)
     @Operation( summary = "Upload certificate and eventually private key")
     public CertificateRepresentation uploadJks() throws IOException {
-        auth.clients().requireConfigure(client);
-
         try {
-            CertificateRepresentation info = getCertFromRequest();
-            CertificateInfoHelper.updateClientModelCertificateInfo(client, info, attributePrefix);
-
+            CertificateRepresentation info = updateCertFromRequest();
             adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(info).success();
             return info;
         } catch (IllegalStateException ise) {
@@ -167,7 +157,6 @@ public class ClientAttributeCertificateResource {
     /**
      * Upload only certificate, not private key
      *
-     * @param input
      * @return information extracted from uploaded certificate - not necessarily the new state of certificate on the server
      * @throws IOException
      */
@@ -178,13 +167,8 @@ public class ClientAttributeCertificateResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_ATTRIBUTE_CERTIFICATE)
     @Operation( summary = "Upload only certificate, not private key")
     public CertificateRepresentation uploadJksCertificate() throws IOException {
-        auth.clients().requireConfigure(client);
-
         try {
-            CertificateRepresentation info = getCertFromRequest();
-            info.setPrivateKey(null);
-            CertificateInfoHelper.updateClientModelCertificateInfo(client, info, attributePrefix);
-
+            CertificateRepresentation info = updateCertFromRequest();
             adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(info).success();
             return info;
         } catch (IllegalStateException ise) {
@@ -192,7 +176,7 @@ public class ClientAttributeCertificateResource {
         }
     }
 
-    private CertificateRepresentation getCertFromRequest() throws IOException {
+    private CertificateRepresentation updateCertFromRequest() throws IOException {
         auth.clients().requireManage(client);
         CertificateRepresentation info = new CertificateRepresentation();
         MultivaluedMap<String, FormPartValue> uploadForm = session.getContext().getHttpRequest().getMultiPartFormParameters();
@@ -203,38 +187,34 @@ public class ClientAttributeCertificateResource {
         String keystoreFormat = keystoreFormatPart.asString();
         FormPartValue inputParts = uploadForm.getFirst("file");
         if (keystoreFormat.equals(CERTIFICATE_PEM)) {
-            String pem = StreamUtil.readString(inputParts.asInputStream());
-
+            String pem = StreamUtil.readString(inputParts.asInputStream(), StandardCharsets.UTF_8);
             pem = PemUtils.removeBeginEnd(pem);
 
             // Validate format
             KeycloakModelUtils.getCertificate(pem);
-
             info.setCertificate(pem);
+            CertificateInfoHelper.updateClientModelCertificateInfo(client, info, attributePrefix);
             return info;
         } else if (keystoreFormat.equals(PUBLIC_KEY_PEM)) {
-            String pem = StreamUtil.readString(inputParts.asInputStream());
+            String pem = StreamUtil.readString(inputParts.asInputStream(), StandardCharsets.UTF_8);
 
             // Validate format
             KeycloakModelUtils.getPublicKey(pem);
-
             info.setPublicKey(pem);
+            CertificateInfoHelper.updateClientModelCertificateInfo(client, info, attributePrefix);
             return info;
         } else if (keystoreFormat.equals(JSON_WEB_KEY_SET)) {
-            InputStream stream = inputParts.asInputStream();
-            JSONWebKeySet keySet = JsonSerialization.readValue(stream, JSONWebKeySet.class);
-            JWK publicKeyJwk = JWKSUtils.getKeyForUse(keySet, JWK.Use.SIG);
-            if (publicKeyJwk == null) {
-                throw new IllegalStateException("Certificate not found for use sig");
-            } else {
-                PublicKey publicKey = JWKParser.create(publicKeyJwk).toPublicKey();
-                String publicKeyPem = KeycloakModelUtils.getPemFromKey(publicKey);
-                info.setPublicKey(publicKeyPem);
-                info.setKid(publicKeyJwk.getKeyId());
-                return info;
-            }
-        }
+            String jwks = StreamUtil.readString(inputParts.asInputStream(), StandardCharsets.UTF_8);
 
+            info = CertificateInfoHelper.jwksStringToSigCertificateRepresentation(jwks);
+            // jwks is only valid for OIDC clients
+            if (OIDCLoginProtocol.LOGIN_PROTOCOL.equals(client.getProtocol())) {
+                CertificateInfoHelper.updateClientModelJwksString(client, attributePrefix, jwks);
+            } else {
+                CertificateInfoHelper.updateClientModelCertificateInfo(client, info, attributePrefix);
+            }
+            return info;
+        }
 
         String keyAlias = uploadForm.getFirst("keyAlias").asString();
         FormPartValue keyPasswordPart = uploadForm.getFirst("keyPassword");
@@ -267,6 +247,7 @@ public class ClientAttributeCertificateResource {
             info.setCertificate(certPem);
         }
 
+        CertificateInfoHelper.updateClientModelCertificateInfo(client, info, attributePrefix);
         return info;
     }
 

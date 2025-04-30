@@ -41,18 +41,22 @@
         </local-cache>
         <local-cache name="sessions">
             <expiration lifespan="-1"/>
+            <memory max-count="10000"/>
         </local-cache>
         <local-cache name="authenticationSessions">
             <expiration lifespan="-1"/>
         </local-cache>
         <local-cache name="offlineSessions">
             <expiration lifespan="-1"/>
+            <memory max-count="10000"/>
         </local-cache>
         <local-cache name="clientSessions">
             <expiration lifespan="-1"/>
+            <memory max-count="10000"/>
         </local-cache>
         <local-cache name="offlineClientSessions">
             <expiration lifespan="-1"/>
+            <memory max-count="10000"/>
         </local-cache>
         <local-cache name="loginFailures">
             <expiration lifespan="-1"/>
@@ -73,6 +77,14 @@
                 <value media-type="application/x-java-object"/>
             </encoding>
             <expiration max-idle="3600000"/>
+            <memory max-count="1000"/>
+        </local-cache>
+        <local-cache name="crl" simple-cache="true">
+            <encoding>
+                <key media-type="application/x-java-object"/>
+                <value media-type="application/x-java-object"/>
+            </encoding>
+            <expiration lifespan="-1"/>
             <memory max-count="1000"/>
         </local-cache>
         <local-cache name="actionTokens">

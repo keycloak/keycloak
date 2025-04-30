@@ -17,8 +17,6 @@
 
 package org.keycloak.quarkus.runtime;
 
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuildTimeProperty;
-
 import java.io.File;
 import java.io.FilenameFilter;
 import java.nio.file.Path;
@@ -33,15 +31,15 @@ import java.util.stream.Collectors;
 import io.quarkus.runtime.LaunchMode;
 import io.smallrye.config.SmallRyeConfig;
 
-import org.apache.commons.lang3.SystemUtils;
 import org.keycloak.common.Profile;
-import org.keycloak.common.profile.PropertiesFileProfileConfigResolver;
-import org.keycloak.common.profile.PropertiesProfileConfigResolver;
+import org.keycloak.common.util.NetworkUtils;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 public final class Environment {
 
+    private static final String KC_HOME_DIR = "kc.home.dir";
     public static final String NON_SERVER_MODE = "nonserver";
     public static final String PROFILE ="kc.profile";
     public static final String ENV_PROFILE ="KC_PROFILE";
@@ -63,7 +61,7 @@ public final class Environment {
     }
 
     public static String getHomeDir() {
-        return System.getProperty("kc.home.dir");
+        return System.getProperty(KC_HOME_DIR);
     }
 
     public static Path getHomePath() {
@@ -111,21 +109,18 @@ public final class Environment {
         }
     }
 
-    public static String getCurrentOrPersistedProfile() {
+    /**
+     * Update the profile settings based upon what was set in the system, environment, or optionally persistent values
+     */
+    public static String updateProfile(boolean usePersistent) {
         String profile = org.keycloak.common.util.Environment.getProfile();
-        if(profile == null) {
+        if(profile == null && usePersistent) {
             profile = PersistedConfigSource.getInstance().getValue(org.keycloak.common.util.Environment.PROFILE);
         }
-        return profile;
-    }
-
-    public static String getProfileOrDefault(String defaultProfile) {
-        String profile = org.keycloak.common.util.Environment.getProfile();
-
         if (profile == null) {
-            profile = defaultProfile;
+            profile = Environment.PROD_PROFILE_VALUE;
         }
-
+        setProfile(profile);
         return profile;
     }
 
@@ -134,7 +129,7 @@ public final class Environment {
             return true;
         }
 
-        return org.keycloak.common.util.Environment.DEV_PROFILE_VALUE.equals(getBuildTimeProperty(org.keycloak.common.util.Environment.PROFILE).orElse(null));
+        return org.keycloak.common.util.Environment.DEV_PROFILE_VALUE.equals(Configuration.getNonPersistedConfigValue(org.keycloak.common.util.Environment.PROFILE).getValue());
     }
 
     public static boolean isDevProfile(){
@@ -146,7 +141,7 @@ public final class Environment {
     }
 
     public static boolean isWindows() {
-        return SystemUtils.IS_OS_WINDOWS;
+        return NetworkUtils.checkForWindows();
     }
 
     public static void forceDevProfile() {
@@ -223,12 +218,16 @@ public final class Environment {
         return Boolean.getBoolean("kc.config.build-and-exit");
     }
 
+    public static void setRebuildCheck() {
+        System.setProperty("kc.config.build-and-exit", "true");
+    }
+
     public static boolean isRebuilt() {
         return Boolean.getBoolean("kc.config.built");
     }
 
     public static void setHomeDir(Path path) {
-        System.setProperty("kc.home.dir", path.toFile().getAbsolutePath());
+        System.setProperty(KC_HOME_DIR, path.toFile().getAbsolutePath());
     }
 
     /**
@@ -242,7 +241,7 @@ public final class Environment {
         Profile profile = Profile.getInstance();
 
         if (profile == null) {
-            profile = Profile.configure(new QuarkusProfileConfigResolver(), new PropertiesProfileConfigResolver(QuarkusProfileConfigResolver::getConfig), new PropertiesFileProfileConfigResolver());
+            profile = Profile.configure(new QuarkusProfileConfigResolver());
         }
 
         return profile;
@@ -261,5 +260,9 @@ public final class Environment {
 
     public static void setParsedCommand(AbstractCommand command) {
         Environment.parsedCommand = command;
+    }
+
+    public static void removeHomeDir() {
+        System.getProperties().remove(KC_HOME_DIR);
     }
 }

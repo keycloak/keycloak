@@ -3,7 +3,7 @@
 
 {project_name} provides the following features:
 
-* Single-Sign On and Single-Sign Out for browser applications.
+* Single Sign-On and Single Sign-Out for browser applications.
 * OpenID Connect support.
 * OAuth 2.0 support.
 * SAML support.

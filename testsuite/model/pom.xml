@@ -164,8 +164,6 @@
                     <!-- See also https://github.com/wildfly/wildfly-core/blob/7e5624cf92ebe4b64a4793a8c0b2a340c0d6d363/core-feature-pack/common/src/main/resources/content/bin/common.sh#L57-L60 -->
                     <argLine>@{argLine} -Xmx1536m -XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED</argLine>
                     <systemPropertyVariables>
-                        <!-- ensure a log entry if we're running out of JGroup threads -->
-                        <jgroups.thread_dumps_threshold>1</jgroups.thread_dumps_threshold>
                         <!-- keycloak.model.parameters lists parameter classes from 
                              org.keycloak.model.parameters package and determine enabled providers -->
                         <keycloak.model.parameters>${keycloak.model.parameters}</keycloak.model.parameters>
@@ -238,9 +236,9 @@
         </profile>
 
         <profile>
-            <id>jpa+cross-dc-infinispan</id>
+            <id>jpa+multi-site-infinispan</id>
             <properties>
-                <keycloak.model.parameters>CrossDCInfinispan,Jpa</keycloak.model.parameters>
+                <keycloak.model.parameters>RemoteInfinispan,Jpa</keycloak.model.parameters>
             </properties>
             <build>
                 <plugins>

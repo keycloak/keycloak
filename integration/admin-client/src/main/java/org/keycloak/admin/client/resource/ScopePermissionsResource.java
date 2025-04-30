@@ -16,6 +16,8 @@
  */
 package org.keycloak.admin.client.resource;
 
+import java.util.List;
+
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -45,4 +47,12 @@ public interface ScopePermissionsResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     ScopePermissionRepresentation findByName(@QueryParam("name") String name);
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<ScopePermissionRepresentation> findAll(@QueryParam("policyId") String id,
+                                        @QueryParam("name") String name,
+                                        @QueryParam("resource") String resource,
+                                        @QueryParam("first") Integer firstResult,
+                                        @QueryParam("max") Integer maxResult);
 }

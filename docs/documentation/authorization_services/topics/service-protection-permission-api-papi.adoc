@@ -5,14 +5,14 @@ Resource servers using the UMA protocol can use a specific endpoint to manage pe
 
 [source,subs="attributes+"]
 ----
-http://${host}:${port}{kc_realms_path}/${realm_name}/authz/protection/permission
+http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/permission
 ----
 
 A <<_overview_terminology_permission_ticket, permission ticket>> is a special security token type representing a permission request. Per the UMA specification, a permission ticket is:
 
 `A correlation handle that is conveyed from an authorization server to a resource server, from a resource server to a client, and ultimately from a client back to an authorization server, to enable the authorization server to assess the correct policies to apply to a request for authorization data.`
 
-In most cases, you won't need to deal with this endpoint directly. {project_name} provides a policy enforcer that enables UMA for your
+In most cases, you do not need to deal with this endpoint directly. {project_name} provides a <<_enforcer_overview, policy enforcer>> that enables UMA for your
 resource server so it can obtain a permission ticket from the authorization server, return this ticket to client application, and enforce authorization decisions based on a final requesting party token (RPT).
 
 The process of obtaining permission tickets from {project_name} is performed by resource servers and not regular client applications,
@@ -38,7 +38,7 @@ To create a permission ticket, send an HTTP POST request as follows:
 [source,bash,subs="attributes+"]
 ----
 curl -X POST \
-  http://${host}:${port}{kc_realms_path}/${realm_name}/authz/protection/permission \
+  http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/permission \
   -H 'Authorization: Bearer '$pat \
   -H 'Content-Type: application/json' \
   -d '[
@@ -56,7 +56,7 @@ When creating tickets you can also push arbitrary claims and associate these cla
 [source,bash,subs="attributes+"]
 ----
 curl -X POST \
-  http://${host}:${port}{kc_realms_path}/${realm_name}/authz/protection/permission \
+  http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/permission \
   -H 'Authorization: Bearer '$pat \
   -H 'Content-Type: application/json' \
   -d '[
@@ -84,7 +84,7 @@ To grant permissions for a specific resource with id {resource_id} to a user wit
 [source,bash,subs="attributes+"]
 ----
 curl -X POST \
-     http://${host}:${port}{kc_realms_path}/${realm_name}/authz/protection/permission/ticket \
+     http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/permission/ticket \
      -H 'Authorization: Bearer '$access_token \
      -H 'Content-Type: application/json' \
      -d '{
@@ -99,7 +99,7 @@ curl -X POST \
 
 [source,bash,subs="attributes+"]
 ----
-curl http://${host}:${port}{kc_realms_path}/${realm_name}/authz/protection/permission/ticket \
+curl http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/permission/ticket \
      -H 'Authorization: Bearer '$access_token
 ----
 
@@ -119,7 +119,7 @@ You can use any of these query parameters:
 [source,bash,subs="attributes+"]
 ----
 curl -X PUT \
-     http://${host}:${port}{kc_realms_path}/${realm_name}/authz/protection/permission/ticket \
+     http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/permission/ticket \
      -H 'Authorization: Bearer '$access_token \
      -H 'Content-Type: application/json' \
      -d '{
@@ -135,6 +135,6 @@ curl -X PUT \
 
 [source,bash,subs="attributes+"]
 ----
-curl -X DELETE http://${host}:${port}{kc_realms_path}/${realm_name}/authz/protection/permission/ticket/{ticket_id} \
+curl -X DELETE http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/permission/ticket/{ticket_id} \
      -H 'Authorization: Bearer '$access_token
 ----

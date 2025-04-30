@@ -3,7 +3,7 @@
 
 <@template.guide
 title="All provider configuration"
-summary="Complete list of all the available provider configuration options">
+summary="Review provider configuration options.">
 
 <#list ctx.options.getProviderOptions() as spi, providers>
 == ${spi}

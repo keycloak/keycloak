@@ -25,7 +25,6 @@ import static org.hamcrest.Matchers.containsString;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response.Status;
 
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
 
 import static org.hamcrest.Matchers.notNullValue;
@@ -112,9 +111,7 @@ import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResou
 import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExceptionExecutorFactory;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
-import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.MutualTLSUtils;
-import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -123,12 +120,11 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
-import org.keycloak.testsuite.util.OAuthClient.AuthenticationRequestAcknowledgement;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.ciba.AuthenticationRequestAcknowledgement;
+import org.keycloak.testsuite.util.oauth.LogoutResponse;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Tests for the CIBA "poll" mode and generic CIBA functionality tests
@@ -236,7 +232,9 @@ public class CIBATest extends AbstractClientPoliciesTest {
             doAuthenticationChannelCallback(victimClientAuthenticationChannelReq);
 
             // attacker client Token Request
-            OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(attackerClientName, attackerClientPassword, victimClientAuthReqId);
+
+            oauth.client(attackerClientName, attackerClientPassword);
+            AccessTokenResponse tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(victimClientAuthReqId);
             assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
             assertThat(tokenRes.getError(), is(equalTo(OAuthErrorException.INVALID_GRANT)));
             assertThat(tokenRes.getErrorDescription(), is(equalTo("unauthorized client")));
@@ -265,11 +263,11 @@ public class CIBATest extends AbstractClientPoliciesTest {
 
             // This request should not ever pass. Client should not be allowed to send the successfull "approve" request to the BackchannelAuthenticationCallbackEndpoint
             // with using the "authReqId" as a bearer token
-            int statusCode = oauth.doAuthenticationChannelCallback(response.getAuthReqId(), SUCCEED);
+            int statusCode = oauth.ciba().doAuthenticationChannelCallback(response.getAuthReqId(), SUCCEED);
             assertThat(statusCode, is(equalTo(403)));
 
             // client sends TokenRequest - This should not pass and should return 400
-            OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, response.getAuthReqId());
+            AccessTokenResponse tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
             assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
             assertThat(tokenRes.getError(), is(equalTo(OAuthErrorException.AUTHORIZATION_PENDING)));
         } finally {
@@ -291,12 +289,14 @@ public class CIBATest extends AbstractClientPoliciesTest {
             prepareCIBASettings(clientResource, clientRep);
             oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
 
+            oauth.client(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD);
+
             // user Backchannel Authentication Request
-            AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, signal, null);
+            AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(signal).send();
             assertThat(response.getStatusCode(), is(equalTo(503)));
 
             // user Token Request
-            OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, response.getAuthReqId());
+            AccessTokenResponse tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest("invalid");
             assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
             assertThat(tokenRes.getError(), is(equalTo(OAuthErrorException.INVALID_GRANT)));
             assertThat(tokenRes.getErrorDescription(), is(equalTo("Invalid Auth Req ID")));
@@ -317,9 +317,10 @@ public class CIBATest extends AbstractClientPoliciesTest {
             clientRep = clientResource.toRepresentation();
             prepareCIBASettings(clientResource, clientRep);
             oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+            oauth.client(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD);
 
             // user Backchannel Authentication Request
-            AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, null, "acr2");
+            AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(username).acrValues("acr2").send();
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
         } finally {
@@ -340,9 +341,10 @@ public class CIBATest extends AbstractClientPoliciesTest {
             clientRep = clientResource.toRepresentation();
             prepareCIBASettings(clientResource, clientRep);
             oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+            oauth.client(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD);
 
             // user Backchannel Authentication Request
-            AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, "urn:mace:incommon:iap:silver urn:mace:incommon:iap:gold");
+            AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).acrValues("urn:mace:incommon:iap:silver urn:mace:incommon:iap:gold").send();
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
         } finally {
@@ -363,9 +365,10 @@ public class CIBATest extends AbstractClientPoliciesTest {
             clientRep = clientResource.toRepresentation();
             prepareCIBASettings(clientResource, clientRep);
             oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+            oauth.client(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD);
 
             // user Backchannel Authentication Request
-            AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, "ACR1");
+            AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).acrValues("ACR1").send();
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
         } finally {
@@ -388,8 +391,10 @@ public class CIBATest extends AbstractClientPoliciesTest {
             rep.setAttributes(attrMap);
             testRealm().update(rep);
 
+            oauth.client(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD);
+
             // user Backchannel Authentication Request
-            AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, null, null);
+            AuthenticationRequestAcknowledgement response = oauth.ciba().doBackchannelAuthenticationRequest(username);
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
         } finally {
@@ -404,6 +409,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
         ClientResource clientResource = null;
         ClientRepresentation clientRep = null;
         try {
+            oauth.client(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD);
+
             final String username = "nutzername-schwarz";
             clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             clientRep = clientResource.toRepresentation();
@@ -411,25 +418,25 @@ public class CIBATest extends AbstractClientPoliciesTest {
 
             // Binding message with non plain-text characters
             String bindingMessage = "1234 \uD83D\uDC4D\uD83C\uDFFF 品川 Lor";
-            AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, null);
+            AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).send();
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_BINDING_MESSAGE));
 
             // Long binding message
             bindingMessage = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud.";
-            response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, null);
+            response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).send();
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_BINDING_MESSAGE));
 
             // Empty binding message
             bindingMessage = "";
-            response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, null);
+            response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).send();
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_BINDING_MESSAGE));
 
             // Valid binding message
             bindingMessage = "Lorem_ipsum";
-            response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, null);
+            response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).send();
             assertThat(response.getStatusCode(), is(equalTo(200)));
             assertThat(response.getError(), is(nullValue()));
         } finally {
@@ -461,10 +468,10 @@ public class CIBATest extends AbstractClientPoliciesTest {
             assertThat(authenticationChannelReq.getRequest().getScope(), is(containsString(OAuth2Constants.OFFLINE_ACCESS)));
 
             // different user Authentication Channel completed
-//            oauth.doAuthenticationChannelCallback(SECOND_TEST_CLIENT_NAME, SECOND_TEST_CLIENT_SECRET, usernameAuthenticated, authenticationChannelReq.getBearerToken(), SUCCEEDED);
+//            oauth.ciba().doAuthenticationChannelCallback(SECOND_TEST_CLIENT_NAME, SECOND_TEST_CLIENT_SECRET, usernameAuthenticated, authenticationChannelReq.getBearerToken(), SUCCEEDED);
 
             // user Token Request
-            OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, response.getAuthReqId());
+            AccessTokenResponse tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
             assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
             assertThat(tokenRes.getError(), is(OAuthErrorException.INVALID_GRANT));
         } finally {
@@ -500,19 +507,19 @@ public class CIBATest extends AbstractClientPoliciesTest {
             String userId = loginEvent.getUserId();
 
             // user Token Request
-            OAuthClient.AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequest(username, response.getAuthReqId());
+            AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequest(username, response.getAuthReqId());
 
             // token introspection
-            String tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
+            doIntrospectAccessTokenWithClientCredential(tokenRes, username);
 
             // token refresh
             tokenRes = doRefreshTokenRequest(tokenRes.getRefreshToken(), username, sessionId, true);
 
             // token introspection after token refresh
-            tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
+            doIntrospectAccessTokenWithClientCredential(tokenRes, username);
 
             // revoke by refresh token
-            EventRepresentation logoutEvent = doTokenRevokeByRefreshToken(tokenRes.getRefreshToken(), sessionId, userId, true);
+            EventRepresentation logoutEvent = doTokenRevokeByRefreshToken(tokenRes.getRefreshToken(), tokenRes.getSessionState(), userId, true);
 
         } finally {
             revertCIBASettings(clientResource, clientRep);
@@ -582,15 +589,15 @@ public class CIBATest extends AbstractClientPoliciesTest {
             assertThat(authenticationChannelReq.getRequest().getBindingMessage(), is(equalTo(bindingMessage)));
 
             // user Token Request
-            OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, response.getAuthReqId());
+            AccessTokenResponse tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
             assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
             assertThat(tokenRes.getError(), is(OAuthErrorException.AUTHORIZATION_PENDING)); // 10+5+5 sec
 
-            tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, response.getAuthReqId());
+            tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
             assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
             assertThat(tokenRes.getError(), is(OAuthErrorException.SLOW_DOWN)); // 10+5+5 sec
 
-            tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, response.getAuthReqId());
+            tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
             assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
             assertThat(tokenRes.getError(), is(OAuthErrorException.SLOW_DOWN)); // 10+5+5+5 sec
 
@@ -605,16 +612,16 @@ public class CIBATest extends AbstractClientPoliciesTest {
             tokenRes = doBackchannelAuthenticationTokenRequest(username, response.getAuthReqId());
 
             // token introspection
-            String tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
+            doIntrospectAccessTokenWithClientCredential(tokenRes, username);
 
             // token refresh
             tokenRes = doRefreshTokenRequest(tokenRes.getRefreshToken(), username, sessionId, false);
 
             // token introspection after token refresh
-            tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
+            doIntrospectAccessTokenWithClientCredential(tokenRes, username);
 
             // revoke by refresh token
-            EventRepresentation logoutEvent = doTokenRevokeByRefreshToken(tokenRes.getRefreshToken(), sessionId, userId, false);
+            EventRepresentation logoutEvent = doTokenRevokeByRefreshToken(tokenRes.getRefreshToken(), tokenRes.getSessionState(), userId, false);
 
         } finally {
             revertCIBASettings(clientResource, clientRep);
@@ -644,12 +651,12 @@ public class CIBATest extends AbstractClientPoliciesTest {
             AuthenticationRequestAcknowledgement response = doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage);
 
             // user Token Request but not yet user being authenticated
-            OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, response.getAuthReqId());
+            AccessTokenResponse tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
             assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
             assertThat(tokenRes.getError(), is(OAuthErrorException.AUTHORIZATION_PENDING));
 
             // user Token Request but not yet user being authenticated
-            tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, response.getAuthReqId());
+            tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
             assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
             assertThat(tokenRes.getError(), is(OAuthErrorException.SLOW_DOWN));
 
@@ -669,16 +676,16 @@ public class CIBATest extends AbstractClientPoliciesTest {
             tokenRes = doBackchannelAuthenticationTokenRequest(username, response.getAuthReqId());
 
             // token introspection
-            String tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
+            doIntrospectAccessTokenWithClientCredential(tokenRes, username);
 
             // token refresh
             tokenRes = doRefreshTokenRequest(tokenRes.getRefreshToken(), username, sessionId, false);
 
             // token introspection after token refresh
-            tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
+            doIntrospectAccessTokenWithClientCredential(tokenRes, username);
 
             // revoke by refresh token
-            EventRepresentation logoutEvent = doTokenRevokeByRefreshToken(tokenRes.getRefreshToken(), sessionId, userId, false);
+            EventRepresentation logoutEvent = doTokenRevokeByRefreshToken(tokenRes.getRefreshToken(), tokenRes.getSessionState(), userId, false);
 
         } finally {
             revertCIBASettings(clientResource, clientRep);
@@ -837,14 +844,16 @@ public class CIBATest extends AbstractClientPoliciesTest {
             clientRep = clientResource.toRepresentation();
             prepareCIBASettings(clientResource, clientRep, "ping");
 
+            oauth.client(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD);
+
             // Backchannel Authentication Request without client_notification should fail
-            AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, "nutzername-rot", "BASTION_PING", null,null, Collections.emptyMap());
+            AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest("nutzername-rot").bindingMessage("BASTION_PING").send();
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
 
             // Backchannel Authentication Request without client_notification should fail
             String clientNotificationLongerThan1024Characters = "123456789123456789123465789123456789123456789123456789123456789123456789123456789123456789123456789123456789123456789_123456789123456789123465789123456789123456789123456789123456789123456789123456789123456789123456789123456789123456789_123456789123456789123465789123456789123456789123456789123456789123456789123456789123456789123456789123456789123456789_123456789123456789123465789123456789123456789123456789123456789123456789123456789123456789123456789123456789123456789_123456789123456789123465789123456789123456789123456789123456789123456789123456789123456789123456789123456789123456789_123456789123456789123465789123456789123456789123456789123456789123456789123456789123456789123456789123456789123456789_123456789123456789123465789123456789123456789123456789123456789123456789123456789123456789123456789123456789123456789_123456789123456789123465789123456789123456789123456789123456789123456789123456789123456789123456789123456789123456789_123456789123456789123465789123456789123456789123456789123456789123456789123456789123456789123456789123456789123456789_123456789123456789123465789123456789123456789123456789123456789123456789123456789123456789123456789123456789123456789_123456789123456789123465789123456789123456789123456789123456789123456789123456789123456789123456789123456789123456789_123456789123456789123465789123456789123456789123456789123456789123456789123456789123456789123456789123456789123456789";
-            response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, "nutzername-rot", "BASTION_PING", null,clientNotificationLongerThan1024Characters, Collections.emptyMap());
+            response = oauth.ciba().backchannelAuthenticationRequest("nutzername-rot").bindingMessage("BASTION_PING").clientNotificationToken(clientNotificationLongerThan1024Characters).send();
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
         } finally {
@@ -898,7 +907,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             Assert.assertEquals(pushedClientNotification.getAuthReqId(), response.getAuthReqId());
 
             // user Token Request
-            OAuthClient.AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequest(username, response.getAuthReqId());
+            AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequest(username, response.getAuthReqId());
             IDToken idToken = oauth.verifyIDToken(tokenRes.getIdToken());
             long currentTime = Time.currentTime();
             long authTime = idToken.getAuth_time().longValue();
@@ -906,13 +915,13 @@ public class CIBATest extends AbstractClientPoliciesTest {
             assertTrue(authTime <= currentTime + 5);
 
             // token introspection
-            String tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
+            doIntrospectAccessTokenWithClientCredential(tokenRes, username);
 
             // token refresh
             tokenRes = doRefreshTokenRequest(tokenRes.getRefreshToken(), username, sessionId, false);
 
             // token introspection after token refresh
-            tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
+            doIntrospectAccessTokenWithClientCredential(tokenRes, username);
 
             // logout by refresh token
             EventRepresentation logoutEvent = doLogoutByRefreshToken(tokenRes.getRefreshToken(), sessionId, userId, false);
@@ -950,7 +959,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             Assert.assertEquals(pushedClientNotification.getAuthReqId(), response.getAuthReqId());
 
             // user Token Request
-            OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_PASSWORD, response.getAuthReqId());
+            AccessTokenResponse tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
             assertThat(tokenRes.getStatusCode(), is(equalTo(Status.BAD_REQUEST.getStatusCode())));
             assertThat(tokenRes.getError(), is(OAuthErrorException.ACCESS_DENIED));
 
@@ -997,7 +1006,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             String secondUserSessionCodeId = secondUserloginEvent.getDetails().get(Details.CODE_ID);
 
             // second user Token Request
-            OAuthClient.AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequest(secondUsername, secondUserAuthReqId);
+            AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequest(secondUsername, secondUserAuthReqId);
 
             // first user Token Request
             tokenRes = doBackchannelAuthenticationTokenRequest(firstUsername, firstUserAuthReqId);
@@ -1038,8 +1047,10 @@ public class CIBATest extends AbstractClientPoliciesTest {
 
             String clientSessionCodeId = clientloginEvent.getDetails().get(Details.CODE_ID);
 
+            oauth.client(clientName, clientPassword);
+
             // client Token Request
-            OAuthClient.AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequest(clientName, clientPassword, username, clientAuthReqId);
+            AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequest(username, clientAuthReqId);
 
         } finally {
             revertCIBASettings(clientResource, clientRep);
@@ -1094,10 +1105,12 @@ public class CIBATest extends AbstractClientPoliciesTest {
             EventRepresentation secondClientloginEvent = doAuthenticationChannelCallback(secondClientAuthenticationChannelReq);
 
             // second client Token Request
-            OAuthClient.AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequest(secondClientName, secondClientPassword, username, secondClientAuthReqId);
+            oauth.client(secondClientName, secondClientPassword);
+            AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequest(username, secondClientAuthReqId);
 
             // first client Token Request
-            tokenRes = doBackchannelAuthenticationTokenRequest(firstClientName, firstClientPassword, username, firstClientAuthReqId);
+            oauth.client(firstClientName, firstClientPassword);
+            tokenRes = doBackchannelAuthenticationTokenRequest(username, firstClientAuthReqId);
 
         } finally {
             revertCIBASettings(firstClientResource, firstClientRep);
@@ -1142,7 +1155,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
             doAuthenticationChannelCallback(firstClientAuthenticationChannelReq);
 
             // second client Token Request
-            OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(secondClientName, secondClientPassword, firstClientAuthReqId);
+            oauth.client(secondClientName, secondClientPassword);
+            AccessTokenResponse tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(firstClientAuthReqId);
             assertEquals(400, tokenRes.getStatusCode());
             assertEquals("unauthorized client", tokenRes.getErrorDescription());
         } finally {
@@ -1169,7 +1183,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             AuthenticationRequestAcknowledgement response = doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, "kvoDKw98");
 
             // user Token Request before Authentication Channel completion
-            OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_PASSWORD, response.getAuthReqId());
+            AccessTokenResponse tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
             assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
             assertThat(tokenRes.getError(), is(OAuthErrorException.AUTHORIZATION_PENDING));
 
@@ -1182,7 +1196,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             setTimeOffset(6);
 
             // user Token Request after Authentication Channel completion
-            tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_PASSWORD, response.getAuthReqId());
+            tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
             assertThat(tokenRes.getStatusCode(), is(equalTo(200)));
 
             IDToken idToken = oauth.verifyIDToken(tokenRes.getIdToken());
@@ -1228,7 +1242,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             setTimeOffset(70);
 
             // user Token Request before Authentication Channel completion
-            OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_PASSWORD, response.getAuthReqId());
+            AccessTokenResponse tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
             assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
             assertThat(tokenRes.getError(), is(OAuthErrorException.EXPIRED_TOKEN));
 
@@ -1266,7 +1280,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
 
             setTimeOffset(70);
 
-            int statusCode = oauth.doAuthenticationChannelCallback(authenticationChannelReq.getBearerToken(), SUCCEED);
+            int statusCode = oauth.ciba().doAuthenticationChannelCallback(authenticationChannelReq.getBearerToken(), SUCCEED);
             assertThat(statusCode, is(equalTo(Status.FORBIDDEN.getStatusCode())));
             events.expect(EventType.LOGIN_ERROR).clearDetails().client((String) null).error(Errors.INVALID_TOKEN).user((String) null).session(CoreMatchers.nullValue(String.class)).assertEvent();
         } finally {
@@ -1299,7 +1313,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             doAuthenticationChannelCallback(authenticationChannelReq);
 
             // user Token Request
-            OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_PASSWORD, response.getAuthReqId());
+            AccessTokenResponse tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
             assertThat(tokenRes.getStatusCode(), is(equalTo(200)));
 
             IDToken idToken = oauth.verifyIDToken(tokenRes.getIdToken());
@@ -1308,7 +1322,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             AccessToken accessToken = oauth.verifyToken(tokenRes.getAccessToken());
 
             // duplicate user Token Request
-            tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_PASSWORD, response.getAuthReqId());
+            tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
             assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
             assertThat(tokenRes.getError(), is(OAuthErrorException.INVALID_GRANT));
 
@@ -1341,7 +1355,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
             doAuthenticationChannelCallback(authenticationChannelReq);
 
             // user Token Request
-            OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(SECOND_TEST_CLIENT_NAME, SECOND_TEST_CLIENT_SECRET, response.getAuthReqId());
+            oauth.client(SECOND_TEST_CLIENT_NAME, SECOND_TEST_CLIENT_SECRET);
+            AccessTokenResponse tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
             assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
             assertThat(tokenRes.getError(), is(OAuthErrorException.INVALID_GRANT));
 
@@ -1382,6 +1397,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
         ClientResource clientResource = null;
         ClientRepresentation clientRep = null;
         try {
+            oauth.client(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD);
+
             final String username = "nutzername-rot";
 
             // prepare CIBA settings with ciba grant deactivated
@@ -1401,7 +1418,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             assertThat(clientRep.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG), is(Algorithm.RS256));
 
             // user Backchannel Authentication Request
-            AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, "gilwekDe3", "acr2");
+            AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage("gilwekDe3").acrValues("acr2").send();
             assertThat(response.getStatusCode(), is(equalTo(401)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_GRANT));
             assertThat(response.getErrorDescription(), is("Client not allowed OIDC CIBA Grant"));
@@ -1444,7 +1461,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
             assertThat(clientRep.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG), is("none"));
 
             // user Token Request
-            OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(SECOND_TEST_CLIENT_NAME, SECOND_TEST_CLIENT_SECRET, response.getAuthReqId());
+            oauth.client(SECOND_TEST_CLIENT_NAME, SECOND_TEST_CLIENT_SECRET);
+            AccessTokenResponse tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
             assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
             assertThat(tokenRes.getError(), is(OAuthErrorException.INVALID_GRANT));
             assertThat(tokenRes.getErrorDescription(), is("Client not allowed OIDC CIBA Grant"));
@@ -1528,8 +1546,10 @@ public class CIBATest extends AbstractClientPoliciesTest {
                 ).toString();
         updatePolicies(json);
 
+        oauth.client(clientId, clientSecret);
+
         // user Backchannel Authentication Request
-        AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(clientId, clientSecret, username, null, null, null, additionalParameters);
+        AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(username).additionalParams(additionalParameters).send();
         assertThat(response.getStatusCode(), is(equalTo(400)));
         assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
         assertThat(response.getErrorDescription(), is("Missing parameter: binding_message"));
@@ -1583,11 +1603,17 @@ public class CIBATest extends AbstractClientPoliciesTest {
 
             registerSharedAuthenticationRequest(requestObject, TEST_CLIENT_NAME, sigAlg, useRequestUri);
 
+            oauth.client(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD);
+
             // user Backchannel Authentication Request
-            AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, null, null, null);
+            AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(username).request(request).bindingMessage(bindingMessage).send();
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
             assertThat(response.getErrorDescription(), is("Missing parameter in the signed authentication request: exp"));
+            events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
+                    Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
+                    "Missing parameter in the signed authentication request: exp").user((String) null)
+                    .assertEvent();
 
             useRequestUri = true;
             bindingMessage = "Flughafen-Wien-Schwechat";
@@ -1597,10 +1623,14 @@ public class CIBATest extends AbstractClientPoliciesTest {
             registerSharedAuthenticationRequest(requestObject, TEST_CLIENT_NAME, sigAlg, useRequestUri);
 
             // user Backchannel Authentication Request
-            response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, null, null, null);
+            response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).requestUri(requestUri).send();
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
             assertThat(response.getErrorDescription(), is("Missing parameter in the signed authentication request: nbf"));
+            events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
+                    Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
+                    "Missing parameter in the signed authentication request: nbf").user((String) null)
+                    .assertEvent();
 
             useRequestUri = false;
             bindingMessage = "Stuttgart-Hauptbahnhof";
@@ -1611,10 +1641,14 @@ public class CIBATest extends AbstractClientPoliciesTest {
             registerSharedAuthenticationRequest(requestObject, TEST_CLIENT_NAME, sigAlg, useRequestUri);
 
             // user Backchannel Authentication Request
-            response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, null, null, null);
+            response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).request(request).send();
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
             assertThat(response.getErrorDescription(), is("signed authentication request's available period is long"));
+            events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
+                    Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
+                    "signed authentication request's available period is long").user((String) null)
+                    .assertEvent();
 
             useRequestUri = true;
             bindingMessage = "Flughafen-Wien-Schwechat";
@@ -1626,10 +1660,14 @@ public class CIBATest extends AbstractClientPoliciesTest {
             registerSharedAuthenticationRequest(requestObject, TEST_CLIENT_NAME, sigAlg, useRequestUri);
 
             // user Backchannel Authentication Request
-            response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, null, null, null);
+            response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).requestUri(requestUri).send();
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
             assertThat(response.getErrorDescription(), is("Missing parameter in the 'request' object: aud"));
+            events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
+                    Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
+                    "Missing parameter in the 'request' object: aud").user((String) null)
+                    .assertEvent();
 
             useRequestUri = false;
             bindingMessage = "Stuttgart-Hauptbahnhof";
@@ -1641,10 +1679,14 @@ public class CIBATest extends AbstractClientPoliciesTest {
             registerSharedAuthenticationRequest(requestObject, TEST_CLIENT_NAME, sigAlg, useRequestUri);
 
             // user Backchannel Authentication Request
-            response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, null, null, null);
+            response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).request(request).send();
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
             assertThat(response.getErrorDescription(), is("Invalid parameter in the 'request' object: aud"));
+            events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
+                    Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
+                    "Invalid parameter in the 'request' object: aud").user((String) null)
+                    .assertEvent();
 
             useRequestUri = true;
             bindingMessage = "Flughafen-Wien-Schwechat";
@@ -1656,10 +1698,14 @@ public class CIBATest extends AbstractClientPoliciesTest {
             registerSharedAuthenticationRequest(requestObject, TEST_CLIENT_NAME, sigAlg, useRequestUri);
 
             // user Backchannel Authentication Request
-            response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, null, null, null);
+            response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).requestUri(requestUri).send();
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
             assertThat(response.getErrorDescription(), is("Missing parameter in the 'request' object: iss"));
+            events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
+                    Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
+                    "Missing parameter in the 'request' object: iss").user((String) null)
+                    .assertEvent();
 
             useRequestUri = false;
             bindingMessage = "Stuttgart-Hauptbahnhof";
@@ -1672,10 +1718,14 @@ public class CIBATest extends AbstractClientPoliciesTest {
             registerSharedAuthenticationRequest(requestObject, TEST_CLIENT_NAME, sigAlg, useRequestUri);
 
             // user Backchannel Authentication Request
-            response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, null, null, null);
+            response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).request(request).send();
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
             assertThat(response.getErrorDescription(), is("Invalid parameter in the 'request' object: iss"));
+            events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
+                    Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
+                    "Invalid parameter in the 'request' object: iss").user((String) null)
+                    .assertEvent();
 
             useRequestUri = true;
             bindingMessage = "Flughafen-Wien-Schwechat";
@@ -1690,10 +1740,14 @@ public class CIBATest extends AbstractClientPoliciesTest {
             registerSharedAuthenticationRequest(requestObject, TEST_CLIENT_NAME, sigAlg, useRequestUri);
 
             // user Backchannel Authentication Request
-            response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, null, null, null);
+            response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).requestUri(requestUri).send();
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
             assertThat(response.getErrorDescription(), is("Missing parameter in the signed authentication request: iat"));
+            events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
+                    Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
+                    "Missing parameter in the signed authentication request: iat").user((String) null)
+                    .assertEvent();
 
             useRequestUri = false;
             bindingMessage = "Stuttgart-Hauptbahnhof";
@@ -1708,10 +1762,14 @@ public class CIBATest extends AbstractClientPoliciesTest {
             registerSharedAuthenticationRequest(requestObject, TEST_CLIENT_NAME, sigAlg, useRequestUri);
 
             // user Backchannel Authentication Request
-            response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, null, null, null);
+            response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).request(request).send();
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
             assertThat(response.getErrorDescription(), is("Missing parameter in the signed authentication request: jti"));
+            events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
+                    Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
+                    "Missing parameter in the signed authentication request: jti").user((String) null)
+                    .assertEvent();
 
             useRequestUri = true;
             bindingMessage = "Brno-hlavni-nadrazif";
@@ -1791,8 +1849,10 @@ public class CIBATest extends AbstractClientPoliciesTest {
                     ).toString();
             updatePolicies(json);
 
+            oauth.client(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD);
+
             // user Backchannel Authentication Request
-            AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, null, null, null, null);
+            AuthenticationRequestAcknowledgement response = oauth.ciba().doBackchannelAuthenticationRequest(username);
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
             assertThat(response.getErrorDescription(), is("Missing parameter: binding_message"));
@@ -1866,7 +1926,9 @@ public class CIBATest extends AbstractClientPoliciesTest {
         ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
         clientResource.roles().create(RoleBuilder.create().name(roleName).build());
 
-        AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(clientId, clientSecret, TEST_USER_NAME, "Pjb9eD8w", null, null, null);
+        oauth.client(clientId, clientSecret);
+
+        AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(TEST_USER_NAME).bindingMessage("Pjb9eD8w").send();
         assertEquals(400, response.getStatusCode());
         assertEquals(ClientPolicyEvent.BACKCHANNEL_AUTHENTICATION_REQUEST.toString(), response.getError());
         assertEquals("Exception thrown intentionally", response.getErrorDescription());
@@ -1892,14 +1954,16 @@ public class CIBATest extends AbstractClientPoliciesTest {
         Map<String, String> additionalParameters = new HashMap<>();
         additionalParameters.put("user_device", "mobile");
 
+        oauth.client(clientId, clientSecret);
+
         // user Backchannel Authentication Request
-        AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(clientId, clientSecret, TEST_USER_NAME, bindingMessage, null, null, additionalParameters);
+        AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(TEST_USER_NAME).bindingMessage(bindingMessage).additionalParams(additionalParameters).send();
         assertThat(response.getStatusCode(), is(equalTo(200)));
         Assert.assertNotNull(response.getAuthReqId());
 
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
         TestAuthenticationChannelRequest authenticationChannelReq = oidcClientEndpointsResource.getAuthenticationChannel(bindingMessage);
-        int statusCode = oauth.doAuthenticationChannelCallback(authenticationChannelReq.getBearerToken(), SUCCEED);
+        int statusCode = oauth.ciba().doAuthenticationChannelCallback(authenticationChannelReq.getBearerToken(), SUCCEED);
         assertThat(statusCode, is(equalTo(200)));
 
         // register profiles
@@ -1926,7 +1990,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
         ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
         clientResource.roles().create(RoleBuilder.create().name(roleName).build());
 
-        OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(clientId, clientSecret, response.getAuthReqId());
+        oauth.client(clientId, clientSecret);
+        AccessTokenResponse tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
         assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
         assertThat(tokenRes.getError(), is(OAuthErrorException.INVALID_GRANT));
         assertThat(tokenRes.getErrorDescription(), is("Exception thrown intentionally"));
@@ -1953,14 +2018,16 @@ public class CIBATest extends AbstractClientPoliciesTest {
         Map<String, String> additionalParameters = new HashMap<>();
         additionalParameters.put("user_device", "mobile");
 
+        oauth.client(clientId, clientSecret);
+
         // user Backchannel Authentication Request
-        AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(clientId, clientSecret, TEST_USER_NAME, bindingMessage, null, null, additionalParameters);
+        AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(TEST_USER_NAME).bindingMessage(bindingMessage).additionalParams(additionalParameters).send();
         assertThat(response.getStatusCode(), is(equalTo(200)));
         Assert.assertNotNull(response.getAuthReqId());
 
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
         TestAuthenticationChannelRequest authenticationChannelReq = oidcClientEndpointsResource.getAuthenticationChannel(bindingMessage);
-        int statusCode = oauth.doAuthenticationChannelCallback(authenticationChannelReq.getBearerToken(), SUCCEED);
+        int statusCode = oauth.ciba().doAuthenticationChannelCallback(authenticationChannelReq.getBearerToken(), SUCCEED);
         assertThat(statusCode, is(equalTo(200)));
 
         // register profiles
@@ -1981,7 +2048,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
         ).toString();
         updatePolicies(json);
 
-        OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(clientId, clientSecret, response.getAuthReqId());
+        oauth.client(clientId, clientSecret);
+        AccessTokenResponse tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
         assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
         assertThat(tokenRes.getError(), is(ClientPolicyEvent.BACKCHANNEL_TOKEN_RESPONSE.toString()));
         assertThat(tokenRes.getErrorDescription(), is("Exception thrown intentionally"));
@@ -2197,29 +2265,37 @@ public class CIBATest extends AbstractClientPoliciesTest {
             doAuthenticationChannelCallback(testRequest);
 
             // Token Request without MTLS
-            OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, response.getAuthReqId());
+            oauth.httpClient().set(MutualTLSUtils.newCloseableHttpClientWithoutKeyStoreAndTrustStore());
+            AccessTokenResponse tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
             assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
             assertThat(tokenRes.getError(), is(equalTo(OAuthErrorException.INVALID_GRANT)));
             assertThat(tokenRes.getErrorDescription(), is(equalTo("Client Certification missing for MTLS HoK Token Binding")));
             events.expect(EventType.AUTHREQID_TO_TOKEN_ERROR).clearDetails().user((String)null).client(TEST_CLIENT_NAME).error(OAuthErrorException.INVALID_REQUEST).assertEvent();
+            oauth.httpClient().reset();
 
             // Check token obtaining.
-            OAuthClient.AccessTokenResponse accessTokenResponse;
+            AccessTokenResponse accessTokenResponse;
             try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
-                accessTokenResponse = doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, response.getAuthReqId(), client);
+                oauth.httpClient().set(client);
+                accessTokenResponse = doBackchannelAuthenticationTokenRequest(username, response.getAuthReqId());
                 AccessToken accessToken = oauth.verifyToken(accessTokenResponse.getAccessToken(), AccessToken.class);
                 assertThat(accessTokenResponse.getStatusCode(), is(equalTo(200)));
                 assertThat(accessToken.getConfirmation().getCertThumbprint(), notNullValue());
+            } finally {
+                oauth.httpClient().reset();
             }
 
             // Check logout.
-            CloseableHttpResponse logoutResponse;
+            LogoutResponse logoutResponse;
             try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
-                logoutResponse = oauth.doLogout(accessTokenResponse.getRefreshToken(), TEST_CLIENT_SECRET, client);
+                oauth.httpClient().set(client);
+                logoutResponse = oauth.doLogout(accessTokenResponse.getRefreshToken());
             }  catch (IOException ioe) {
                 throw new RuntimeException(ioe);
+            } finally {
+                oauth.httpClient().reset();
             }
-            assertEquals(204, logoutResponse.getStatusLine().getStatusCode());
+            assertTrue(logoutResponse.isSuccess());
         } finally {
             updatePolicies("{}");
             clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
@@ -2268,8 +2344,10 @@ public class CIBATest extends AbstractClientPoliciesTest {
                 ).toString();
         updatePolicies(json);
 
+        oauth.client(clientPublicId, "app-secret");
+
         // user Backchannel Authentication Request
-        AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(clientPublicId, "app-secret", username, bindingMessage, null, null, additionalParameters);
+        AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).additionalParams(additionalParameters).send();
         assertThat(response.getStatusCode(), is(equalTo(400)));
         assertThat(response.getError(), is(OAuthErrorException.INVALID_CLIENT));
         assertThat(response.getErrorDescription(), is("invalid client access type"));
@@ -2296,7 +2374,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
         });
 
         // user Token Request
-        OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(clientConfidentialId, clientConfidentialSecret, response.getAuthReqId());
+        oauth.client(clientConfidentialId, clientConfidentialSecret);
+        AccessTokenResponse tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
         assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
         assertThat(tokenRes.getError(), is(OAuthErrorException.INVALID_GRANT));
         assertThat(tokenRes.getErrorDescription(), is("invalid client access type"));
@@ -2323,7 +2402,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             clientRep.setAttributes(attributes);
         });
 
-        oauth.clientId(clientConfidentialId);
+        oauth.client(clientConfidentialId, clientConfidentialSecret);
         oauth.scope("microprofile-jwt");
 
         // register profiles
@@ -2345,15 +2424,17 @@ public class CIBATest extends AbstractClientPoliciesTest {
                 ).toString();
         updatePolicies(json);
 
+        oauth.client(clientConfidentialId, clientConfidentialSecret);
+
         // user Backchannel Authentication Request
-        AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(clientConfidentialId, clientConfidentialSecret, username, bindingMessage, null, null, additionalParameters);
+        AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).additionalParams(additionalParameters).send();
         assertThat(response.getStatusCode(), is(equalTo(400)));
         assertThat(response.getError(), is(ClientPolicyEvent.BACKCHANNEL_AUTHENTICATION_REQUEST.name()));
         assertThat(response.getErrorDescription(), is("Exception thrown intentionally"));
 
         updatePolicies("{}");
 
-        response = oauth.doBackchannelAuthenticationRequest(clientConfidentialId, clientConfidentialSecret, username, bindingMessage, null, null, additionalParameters);
+        response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).additionalParams(additionalParameters).send();
         assertThat(response.getStatusCode(), is(equalTo(200)));
         Assert.assertNotNull(response.getAuthReqId());
 
@@ -2374,7 +2455,9 @@ public class CIBATest extends AbstractClientPoliciesTest {
                 ).toString();
         updatePolicies(json);
 
-        OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(clientConfidentialId, clientConfidentialSecret, response.getAuthReqId());
+        oauth.client(clientConfidentialId, clientConfidentialSecret);
+
+        AccessTokenResponse tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
         assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
         assertThat(tokenRes.getError(), is(OAuthErrorException.INVALID_GRANT));
         assertThat(tokenRes.getErrorDescription(), is("Exception thrown intentionally"));
@@ -2391,7 +2474,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         // user Authentication Channel completed
         doAuthenticationChannelCallback(testRequest);
 
-        tokenRes = oauth.doBackchannelAuthenticationTokenRequest(clientConfidentialId, clientConfidentialSecret, response.getAuthReqId());
+        tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
         assertThat(tokenRes.getStatusCode(), is(equalTo(200)));
         AccessToken accessToken = oauth.verifyToken(tokenRes.getAccessToken());
         assertThat(accessToken.getIssuedFor(), is(equalTo(clientConfidentialId)));
@@ -2424,10 +2507,12 @@ public class CIBATest extends AbstractClientPoliciesTest {
             prepareCIBASettings(clientResource, clientRep);
             oauth.scope(invalidScope);
 
+            oauth.client(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD);
+
             // user Backchannel Authentication Request
-            AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, null, null, null);
+            AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).send();
             assertThat(response.getStatusCode(), is(equalTo(400)));
-            assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
+            assertThat(response.getError(), is(OAuthErrorException.INVALID_SCOPE));
             assertThat(response.getErrorDescription(), is("Invalid scopes: " + OAuth2Constants.SCOPE_OPENID + " " + invalidScope));
 
         } finally {
@@ -2457,6 +2542,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
             final String username = "nutzername-rot";
             final String bindingMessage = "BASTION";
 
+            oauth.client(clientId, clientSecret);
+
             // prepare CIBA settings
             clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), clientId);
             clientRep = clientResource.toRepresentation();
@@ -2468,7 +2555,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             registerSharedAuthenticationRequest(sharedAuthenticationRequest, clientId, requestedSigAlg, sigAlg, useRequestUri, clientSecret, null);
 
             // user Backchannel Authentication Request
-            AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(clientId, clientSecret, null, null, null);
+            AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(null).request(request).requestUri(requestUri).send();
             assertThat(response.getStatusCode(), is(equalTo(statusCode)));
             assertThat(response.getError(), is(error));
             assertThat(response.getErrorDescription(), is(errorDescription));
@@ -2499,11 +2586,11 @@ public class CIBATest extends AbstractClientPoliciesTest {
         oidcClientEndpointsResource.registerOIDCRequest(encodedRequestObject, sigAlg);
 
         if (isUseRequestUri) {
-            oauth.request(null);
-            oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
+            requestUri = TestApplicationResourceUrls.clientRequestUri();
+            request = null;
         } else {
-            oauth.requestUri(null);
-            oauth.request(oidcClientEndpointsResource.getOIDCRequest());
+            request = oidcClientEndpointsResource.getOIDCRequest();
+            requestUri = null;
         }
     }
 
@@ -2544,16 +2631,16 @@ public class CIBATest extends AbstractClientPoliciesTest {
             String userId = loginEvent.getUserId();
 
             // user Token Request
-            OAuthClient.AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequest(username, response.getAuthReqId());
+            AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequest(username, response.getAuthReqId());
 
             // token introspection
-            String tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
+            doIntrospectAccessTokenWithClientCredential(tokenRes, username);
 
             // token refresh
             tokenRes = doRefreshTokenRequest(tokenRes.getRefreshToken(), username, sessionId, false);
 
             // token introspection after token refresh
-            tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
+            doIntrospectAccessTokenWithClientCredential(tokenRes, username);
 
             // logout by refresh token
             EventRepresentation logoutEvent = doLogoutByRefreshToken(tokenRes.getRefreshToken(), sessionId, userId, false);
@@ -2624,11 +2711,11 @@ public class CIBATest extends AbstractClientPoliciesTest {
         }
 
         if (isUseRequestUri) {
-            oauth.request(null);
-            oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
+            request = null;
+            requestUri = TestApplicationResourceUrls.clientRequestUri();
         } else {
-            oauth.requestUri(null);
-            oauth.request(oidcClientEndpointsResource.getOIDCRequest());
+            request = oidcClientEndpointsResource.getOIDCRequest();
+            requestUri = null;
         }
     }
 
@@ -2655,7 +2742,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             doAuthenticationChannelCallbackError(statusCallback, TEST_CLIENT_NAME, authenticationChannelReq, authStatus, username, errorEvent);
 
             // user Token Request
-            OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_PASSWORD, response.getAuthReqId());
+            AccessTokenResponse tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
             assertThat(tokenRes.getStatusCode(), is(equalTo(statusTokenEndpont.getStatusCode())));
             assertThat(tokenRes.getError(), is(error));
 
@@ -2718,7 +2805,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
     }
 
     private AuthenticationRequestAcknowledgement doBackchannelAuthenticationRequest(String clientId, String clientSecret, String username, String bindingMessage, String clientNotificationToken, Map<String, String> additionalParameters) throws Exception {
-        AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(clientId, clientSecret, username, bindingMessage, null, clientNotificationToken, additionalParameters);
+        oauth.client(clientId, clientSecret);
+        AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(username).request(request).requestUri(requestUri).bindingMessage(bindingMessage).clientNotificationToken(clientNotificationToken).additionalParams(additionalParameters).send();
         assertThat(response.getStatusCode(), is(equalTo(200)));
         Assert.assertNotNull(response.getAuthReqId());
         return response;
@@ -2732,7 +2820,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
     }
 
     private EventRepresentation doAuthenticationChannelCallback(TestAuthenticationChannelRequest request) throws Exception {
-        int statusCode = oauth.doAuthenticationChannelCallback(request.getBearerToken(), SUCCEED);
+        int statusCode = oauth.ciba().doAuthenticationChannelCallback(request.getBearerToken(), SUCCEED);
         assertThat(statusCode, is(equalTo(200)));
         // check login event : ignore user id and other details except for username
         EventRepresentation representation = new EventRepresentation();
@@ -2743,28 +2831,18 @@ public class CIBATest extends AbstractClientPoliciesTest {
     }
 
     private EventRepresentation doAuthenticationChannelCallbackError(Status status, String clientId, TestAuthenticationChannelRequest authenticationChannelReq, AuthenticationChannelResponse.Status authStatus, String username, String error) throws Exception {
-        int statusCode = oauth.doAuthenticationChannelCallback(authenticationChannelReq.getBearerToken(), authStatus);
+        int statusCode = oauth.ciba().doAuthenticationChannelCallback(authenticationChannelReq.getBearerToken(), authStatus);
         assertThat(statusCode, is(equalTo(status.getStatusCode())));
         return events.expect(EventType.LOGIN_ERROR).clearDetails().client(clientId).error(error).user((String)null).session(CoreMatchers.nullValue(String.class)).assertEvent();
     }
 
-    private OAuthClient.AccessTokenResponse doBackchannelAuthenticationTokenRequest(String username, String authReqId) throws Exception {
-        return doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, authReqId);
-    }
-
-    private OAuthClient.AccessTokenResponse doBackchannelAuthenticationTokenRequest(String clientId, String clientSecret, String username, String authReqId) throws Exception {
-        OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(clientId, clientSecret, authReqId);
-        verifyBackchannelAuthenticationTokenRequest(tokenRes, clientId, username);
+    private AccessTokenResponse doBackchannelAuthenticationTokenRequest(String username, String authReqId) throws Exception {
+        AccessTokenResponse tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(authReqId);
+        verifyBackchannelAuthenticationTokenRequest(tokenRes, oauth.getClientId(), username);
         return tokenRes;
     }
 
-    private OAuthClient.AccessTokenResponse doBackchannelAuthenticationTokenRequest(String clientId, String clientSecret, String username, String authReqId, CloseableHttpClient httpClient) throws Exception {
-        OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(clientId, clientSecret, authReqId, httpClient);
-        verifyBackchannelAuthenticationTokenRequest(tokenRes, clientId, username);
-        return tokenRes;
-    }
-
-    private void verifyBackchannelAuthenticationTokenRequest(OAuthClient.AccessTokenResponse tokenRes, String clientId, String username) {
+    private void verifyBackchannelAuthenticationTokenRequest(AccessTokenResponse tokenRes, String clientId, String username) {
         assertThat(tokenRes.getStatusCode(), is(equalTo(200)));
 
         AccessToken accessToken = oauth.verifyToken(tokenRes.getAccessToken());
@@ -2782,49 +2860,33 @@ public class CIBATest extends AbstractClientPoliciesTest {
         assertThat(idToken.getAudience()[0], is(equalTo(idToken.getIssuedFor())));
     }
 
-    private String doIntrospectAccessTokenWithClientCredential(OAuthClient.AccessTokenResponse tokenRes, String username) throws IOException {
+    private void doIntrospectAccessTokenWithClientCredential(AccessTokenResponse tokenRes, String username) throws IOException {
         AccessToken accessToken = oauth.verifyToken(tokenRes.getAccessToken());
-        String tokenResponse = oauth.introspectAccessTokenWithClientCredential(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, tokenRes.getAccessToken());
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode jsonNode = objectMapper.readTree(tokenResponse);
-        assertThat(jsonNode.get("active").asBoolean(), is(equalTo(true)));
-        assertThat(jsonNode.get("username").asText(), is(equalTo(username)));
-        assertThat(jsonNode.get("client_id").asText(), is(equalTo(TEST_CLIENT_NAME)));
-        TokenMetadataRepresentation rep = objectMapper.readValue(tokenResponse, TokenMetadataRepresentation.class);
+        TokenMetadataRepresentation rep = oauth.doIntrospectionAccessTokenRequest(tokenRes.getAccessToken()).asTokenMetadata();
         assertThat(rep.isActive(), is(equalTo(true)));
         assertThat(rep.getClientId(), is(equalTo(TEST_CLIENT_NAME)));
         assertThat(rep.getIssuedFor(), is(equalTo(TEST_CLIENT_NAME)));
-        events.expect(EventType.INTROSPECT_TOKEN).user((String) null).session(accessToken.getSessionId()).clearDetails().assertEvent();
+        events.expect(EventType.INTROSPECT_TOKEN).user(AssertEvents.isUUID()).session(accessToken.getSessionId()).clearDetails().assertEvent();
 
-        tokenResponse = oauth.introspectAccessTokenWithClientCredential(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, tokenRes.getRefreshToken());
-        jsonNode = objectMapper.readTree(tokenResponse);
-        assertThat(jsonNode.get("active").asBoolean(), is(equalTo(true)));
-        assertThat(jsonNode.get("client_id").asText(), is(equalTo(TEST_CLIENT_NAME)));
-        rep = objectMapper.readValue(tokenResponse, TokenMetadataRepresentation.class);
+        rep = oauth.doIntrospectionAccessTokenRequest(tokenRes.getRefreshToken()).asTokenMetadata();
         assertThat(rep.isActive(), is(equalTo(true)));
         assertThat(rep.getClientId(), is(equalTo(TEST_CLIENT_NAME)));
         assertThat(rep.getIssuedFor(), is(equalTo(TEST_CLIENT_NAME)));
         assertThat(rep.getAudience()[0], is(equalTo(rep.getIssuer())));
-        events.expect(EventType.INTROSPECT_TOKEN).user((String) null).session(accessToken.getSessionId()).clearDetails().assertEvent();
+        events.expect(EventType.INTROSPECT_TOKEN).user(AssertEvents.isUUID()).session(accessToken.getSessionId()).clearDetails().assertEvent();
 
-        tokenResponse = oauth.introspectAccessTokenWithClientCredential(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, tokenRes.getIdToken());
-        jsonNode = objectMapper.readTree(tokenResponse);
-        assertThat(jsonNode.get("active").asBoolean(), is(equalTo(true)));
-        assertThat(jsonNode.get("client_id").asText(), is(equalTo(TEST_CLIENT_NAME)));
-        rep = objectMapper.readValue(tokenResponse, TokenMetadataRepresentation.class);
+        rep = oauth.doIntrospectionAccessTokenRequest(tokenRes.getIdToken()).asTokenMetadata();
         assertThat(rep.isActive(), is(equalTo(true)));
         assertThat(rep.getUserName(), is(equalTo(username)));
         assertThat(rep.getClientId(), is(equalTo(TEST_CLIENT_NAME)));
         assertThat(rep.getIssuedFor(), is(equalTo(TEST_CLIENT_NAME)));
         assertThat(rep.getPreferredUsername(), is(equalTo(username)));
         assertThat(rep.getAudience()[0], is(equalTo(rep.getIssuedFor())));
-        events.expect(EventType.INTROSPECT_TOKEN).user((String) null).session(accessToken.getSessionId()).clearDetails().assertEvent();
-
-        return tokenResponse;
+        events.expect(EventType.INTROSPECT_TOKEN).user(AssertEvents.isUUID()).session(accessToken.getSessionId()).clearDetails().assertEvent();
     }
 
-    private OAuthClient.AccessTokenResponse doRefreshTokenRequest(String oldRefreshToken, String username, String sessionId, boolean isOfflineAccess) {
-        OAuthClient.AccessTokenResponse tokenRes = oauth.doRefreshTokenRequest(oldRefreshToken, TEST_CLIENT_PASSWORD);
+    private AccessTokenResponse doRefreshTokenRequest(String oldRefreshToken, String username, String sessionId, boolean isOfflineAccess) {
+        AccessTokenResponse tokenRes = oauth.doRefreshTokenRequest(oldRefreshToken);
         assertThat(tokenRes.getStatusCode(), is(equalTo(200)));
 
         AccessToken accessToken = oauth.verifyToken(tokenRes.getAccessToken());
@@ -2861,12 +2923,10 @@ public class CIBATest extends AbstractClientPoliciesTest {
     }
 
     private EventRepresentation doLogoutByRefreshToken(String refreshToken, String sessionId, String userId, boolean isOfflineAccess) throws IOException {
-        try (CloseableHttpResponse res = oauth.doLogout(refreshToken, TEST_CLIENT_PASSWORD)) {
-            assertThat(res, Matchers.statusCodeIsHC(Status.NO_CONTENT));
-        }
+        assertTrue(oauth.doLogout(refreshToken).isSuccess());
 
         // confirm logged out
-        OAuthClient.AccessTokenResponse tokenRes = oauth.doRefreshTokenRequest(refreshToken, TEST_CLIENT_PASSWORD);
+        AccessTokenResponse tokenRes = oauth.doRefreshTokenRequest(refreshToken);
         assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
         assertThat(tokenRes.getError(), is(equalTo(OAuthErrorException.INVALID_GRANT)));
         if (isOfflineAccess) assertThat(tokenRes.getErrorDescription(), is(equalTo("Offline user session not found")));
@@ -2877,19 +2937,21 @@ public class CIBATest extends AbstractClientPoliciesTest {
     }
 
     private EventRepresentation doTokenRevokeByRefreshToken(String refreshToken, String sessionId, String userId, boolean isOfflineAccess) throws IOException {
-        try (CloseableHttpResponse res = oauth.doTokenRevoke(refreshToken, "refresh_token", TEST_CLIENT_PASSWORD)) {
-            assertThat(res, Matchers.statusCodeIsHC(Status.OK));
-        }
+        assertTrue(oauth.tokenRevocationRequest(refreshToken).refreshToken().send().isSuccess());
 
         // confirm revocation
-        OAuthClient.AccessTokenResponse tokenRes = oauth.doRefreshTokenRequest(refreshToken, TEST_CLIENT_PASSWORD);
+        AccessTokenResponse tokenRes = oauth.doRefreshTokenRequest(refreshToken);
         assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
         assertThat(tokenRes.getError(), is(equalTo(OAuthErrorException.INVALID_GRANT)));
         if (isOfflineAccess) assertThat(tokenRes.getErrorDescription(), is(equalTo("Offline user session not found")));
         else assertThat(tokenRes.getErrorDescription(), is(equalTo("Session not active")));
 
         RefreshToken rt = oauth.parseRefreshToken(refreshToken);
-        return events.expect(EventType.REVOKE_GRANT).clearDetails().client(TEST_CLIENT_NAME).user(rt.getSubject()).assertEvent();
+        return events.expect(EventType.REVOKE_GRANT).clearDetails()
+                .client(TEST_CLIENT_NAME)
+                .user(rt.getSubject())
+                .session(sessionId)
+                .assertEvent();
     }
 
     private void testBackchannelAuthenticationFlow(boolean isOfflineAccess) throws Exception {
@@ -2940,7 +3002,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             String userId = loginEvent.getUserId();
 
             // user Token Request
-            OAuthClient.AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequest(username, response.getAuthReqId());
+            AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequest(username, response.getAuthReqId());
             IDToken idToken = oauth.verifyIDToken(tokenRes.getIdToken());
             long currentTime = Time.currentTime();
             long authTime = idToken.getAuth_time().longValue();
@@ -2948,13 +3010,13 @@ public class CIBATest extends AbstractClientPoliciesTest {
             assertTrue(authTime <= currentTime + 5);
 
             // token introspection
-            String tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
+            doIntrospectAccessTokenWithClientCredential(tokenRes, username);
 
             // token refresh
             tokenRes = doRefreshTokenRequest(tokenRes.getRefreshToken(), username, sessionId, isOfflineAccess);
 
             // token introspection after token refresh
-            tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
+            doIntrospectAccessTokenWithClientCredential(tokenRes, username);
 
             // logout by refresh token
             EventRepresentation logoutEvent = doLogoutByRefreshToken(tokenRes.getRefreshToken(), sessionId, userId, isOfflineAccess);

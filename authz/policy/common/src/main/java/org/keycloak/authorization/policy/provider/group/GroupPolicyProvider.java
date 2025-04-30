@@ -20,22 +20,33 @@ import static org.keycloak.models.utils.ModelToRepresentation.buildGroupPath;
 
 import java.util.List;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.jboss.logging.Logger;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.attribute.Attributes;
 import org.keycloak.authorization.attribute.Attributes.Entry;
 import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
+import org.keycloak.authorization.policy.provider.PartialEvaluationPolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
+import org.keycloak.authorization.store.PolicyStore;
+import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceType;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class GroupPolicyProvider implements PolicyProvider {
+public class GroupPolicyProvider implements PolicyProvider, PartialEvaluationPolicyProvider {
 
     private static final Logger logger = Logger.getLogger(GroupPolicyProvider.class);
     private final BiFunction<Policy, AuthorizationProvider, GroupPolicyRepresentation> representationFunction;
@@ -56,6 +67,14 @@ public class GroupPolicyProvider implements PolicyProvider {
             groupsClaim = new Entry(policy.getGroupsClaim(), userGroups);
         }
 
+        if (isGranted(realm, policy, groupsClaim)) {
+            evaluation.grant();
+        }
+
+        logger.debugf("Groups policy %s evaluated to %s with identity groups %s", policy.getName(), evaluation.getEffect(), groupsClaim);
+    }
+
+    private boolean isGranted(RealmModel realm, GroupPolicyRepresentation policy, Attributes.Entry groupsClaim) {
         for (GroupPolicyRepresentation.GroupDefinition definition : policy.getGroups()) {
             GroupModel allowedGroup = realm.getGroupById(definition.getId());
 
@@ -69,19 +88,46 @@ public class GroupPolicyProvider implements PolicyProvider {
                 if (group.indexOf('/') != -1) {
                     String allowedGroupPath = buildGroupPath(allowedGroup);
                     if (group.equals(allowedGroupPath) || (definition.isExtendChildren() && group.startsWith(allowedGroupPath))) {
-                        evaluation.grant();
-                        return;
+                        return true;
                     }
                 }
 
                 // in case the group from the claim does not represent a path, we just check an exact name match
                 if (group.equals(allowedGroup.getName())) {
-                    evaluation.grant();
-                    return;
+                    return true;
                 }
             }
         }
-        logger.debugf("Groups policy %s evaluated to %s with identity groups %s", policy.getName(), evaluation.getEffect(), groupsClaim);
+
+        return false;
+    }
+
+    @Override
+    public Stream<Policy> getPermissions(KeycloakSession session, ResourceType resourceType, UserModel user) {
+        AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
+        RealmModel realm = session.getContext().getRealm();
+        ClientModel adminPermissionsClient = realm.getAdminPermissionsClient();
+        StoreFactory storeFactory = provider.getStoreFactory();
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(adminPermissionsClient);
+        PolicyStore policyStore = storeFactory.getPolicyStore();
+        List<String> groupIds = user.getGroupsStream().map(GroupModel::getId).toList();
+
+        return policyStore.findDependentPolicies(resourceServer, resourceType.getType(), GroupPolicyProviderFactory.ID, "groups", groupIds);
+    }
+
+    @Override
+    public boolean evaluate(KeycloakSession session, Policy policy, UserModel subject) {
+        RealmModel realm = session.getContext().getRealm();
+        AuthorizationProvider authorizationProvider = session.getProvider(AuthorizationProvider.class);
+        GroupPolicyRepresentation groupPolicy = representationFunction.apply(policy, authorizationProvider);
+        List<String> userGroups = subject.getGroupsStream().map(ModelToRepresentation::buildGroupPath)
+                .collect(Collectors.toList());
+        return isGranted(realm, groupPolicy, new Entry(groupPolicy.getGroupsClaim(), userGroups));
+    }
+
+    @Override
+    public boolean supports(Policy policy) {
+        return GroupPolicyProviderFactory.ID.equals(policy.getType());
     }
 
     @Override

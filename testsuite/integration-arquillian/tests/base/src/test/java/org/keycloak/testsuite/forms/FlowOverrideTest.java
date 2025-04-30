@@ -38,7 +38,6 @@ import org.keycloak.models.jpa.entities.AuthenticationFlowEntity;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
@@ -49,6 +48,7 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.FlowUtil;
+import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.util.BasicAuthHelper;
 import org.openqa.selenium.By;
 
@@ -89,10 +89,6 @@ public class FlowOverrideTest extends AbstractFlowTest {
     protected ErrorPage errorPage;
 
     private TimeBasedOTP totp = new TimeBasedOTP();
-
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-    }
 
     @Before
     public void setupFlows() {
@@ -204,23 +200,18 @@ public class FlowOverrideTest extends AbstractFlowTest {
     @Test
     public void testWithClientBrowserOverride() throws Exception {
         oauth.clientId(TEST_APP_FLOW);
-        String loginFormUrl = oauth.getLoginFormUrl();
-        log.info("loginFormUrl: " + loginFormUrl);
-
-        //Thread.sleep(10000000);
-
-        driver.navigate().to(loginFormUrl);
+        oauth.openLoginForm();
 
         Assert.assertEquals("PushTheButton", driver.getTitle());
 
         // Push the button. I am redirected to username+password form
-        driver.findElement(By.name("submit1")).click();
+        UIUtils.clickLink(driver.findElement(By.name("submit1")));
 
 
         loginPage.assertCurrent();
 
         // Fill username+password. I am successfully authenticated
-        oauth.fillLoginForm("test-user@localhost", "password");
+        oauth.fillLoginForm("test-user@localhost", getPassword("test-user@localhost"));
         appPage.assertCurrent();
 
         events.expectLogin().client("test-app-flow").detail(Details.USERNAME, "test-user@localhost").assertEvent();
@@ -247,17 +238,12 @@ public class FlowOverrideTest extends AbstractFlowTest {
 
     private void testNoOverrideBrowser(String clientId) {
         oauth.clientId(clientId);
-        String loginFormUrl = oauth.getLoginFormUrl();
-        log.info("loginFormUrl: " + loginFormUrl);
-
-        //Thread.sleep(10000000);
-
-        driver.navigate().to(loginFormUrl);
+        oauth.openLoginForm();
 
         loginPage.assertCurrent();
 
         // Fill username+password. I am successfully authenticated
-        oauth.fillLoginForm("test-user@localhost", "password");
+        oauth.fillLoginForm("test-user@localhost", getPassword("test-user@localhost"));
         appPage.assertCurrent();
 
         events.expectLogin().client(clientId).detail(Details.USERNAME, "test-user@localhost").assertEvent();
@@ -275,7 +261,7 @@ public class FlowOverrideTest extends AbstractFlowTest {
 
     private void testDirectGrantNoOverride(String clientId) {
         Client httpClient = AdminClientUtil.createResteasyClient();
-        String grantUri = oauth.getResourceOwnerPasswordCredentialGrantUrl();
+        String grantUri = oauth.getEndpoints().getToken();
         WebTarget grantTarget = httpClient.target(grantUri);
 
         {   // test no password
@@ -308,7 +294,7 @@ public class FlowOverrideTest extends AbstractFlowTest {
             Form form = new Form();
             form.param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD);
             form.param("username", "test-user@localhost");
-            form.param("password", "password");
+            form.param("password", getPassword("test-user@localhost"));
 
             Response response = grantTarget.request()
                     .header(HttpHeaders.AUTHORIZATION, header)
@@ -325,7 +311,7 @@ public class FlowOverrideTest extends AbstractFlowTest {
     public void testGrantAccessTokenWithClientOverride() throws Exception {
         String clientId = TEST_APP_DIRECT_OVERRIDE;
         Client httpClient = AdminClientUtil.createResteasyClient();
-        String grantUri = oauth.getResourceOwnerPasswordCredentialGrantUrl();
+        String grantUri = oauth.getEndpoints().getToken();
         WebTarget grantTarget = httpClient.target(grantUri);
 
         {   // test no password

@@ -1,24 +1,73 @@
-import { Card, CardBody, Text, TextVariants } from "@patternfly/react-core";
-
-import "./flow-title.css";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
+import { Label } from "@patternfly/react-core";
+import {
+  CodeBranchIcon,
+  MapMarkerIcon,
+  ProcessAutomationIcon,
+  TaskIcon,
+} from "@patternfly/react-icons";
+import { useTranslation } from "react-i18next";
+import { useAuthenticationProvider } from "./AuthenticationProviderContext";
+import { FlowType } from "./FlowRow";
 
 type FlowTitleProps = {
   id?: string;
+  type: FlowType;
   title: string;
-  alias: string;
+  subtitle: string;
+  providerId?: string;
 };
 
-export const FlowTitle = ({ id, title, alias }: FlowTitleProps) => {
+const FlowIcon = ({ type }: { type: FlowType }) => {
+  switch (type) {
+    case "condition":
+      return <TaskIcon />;
+    case "flow":
+      return <CodeBranchIcon />;
+    case "execution":
+      return <ProcessAutomationIcon />;
+    case "step":
+      return <MapMarkerIcon />;
+    default:
+      return undefined;
+  }
+};
+
+function mapTypeToColor(type: FlowType) {
+  switch (type) {
+    case "condition":
+      return "purple";
+    case "flow":
+      return "green";
+    case "execution":
+      return "blue";
+    case "step":
+      return "cyan";
+    default:
+      return "grey";
+  }
+}
+
+export const FlowTitle = ({
+  id,
+  type,
+  title,
+  subtitle,
+  providerId,
+}: FlowTitleProps) => {
+  const { t } = useTranslation();
+  const { providers } = useAuthenticationProvider();
+  const helpText =
+    providers?.find((p) => p.id === providerId)?.description || subtitle;
   return (
-    <Card
-      data-testid={title}
-      className="keycloak__authentication__title"
-      isFlat
-    >
-      <CardBody data-id={id} id={`title-id-${id}`}>
-        {title} <br />
-        <Text component={TextVariants.small}>{alias}</Text>
-      </CardBody>
-    </Card>
+    <div data-testid={title}>
+      <span data-id={id} id={`title-id-${id}`}>
+        <Label icon={<FlowIcon type={type} />} color={mapTypeToColor(type)}>
+          {t(type)}
+        </Label>{" "}
+        {title}{" "}
+        {helpText && <HelpItem helpText={helpText} fieldLabelId={id!} />}
+      </span>
+    </div>
   );
 };

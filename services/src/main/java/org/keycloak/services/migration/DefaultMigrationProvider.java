@@ -113,6 +113,11 @@ public class DefaultMigrationProvider implements MigrationProvider {
     }
 
     @Override
+    public ClientScopeModel addOIDCServiceAccountClientScope(RealmModel realm) {
+        return getOIDCLoginProtocolFactory().addServiceAccountClientScope(realm);
+    }
+
+    @Override
     public void close() {
     }
 

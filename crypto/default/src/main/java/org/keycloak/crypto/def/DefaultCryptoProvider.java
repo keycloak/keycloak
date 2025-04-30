@@ -79,6 +79,10 @@ public class DefaultCryptoProvider implements CryptoProvider {
         return bcProvider;
     }
 
+    @Override
+    public int order() {
+        return 200;
+    }
 
     @Override
     public <T> T getAlgorithmProvider(Class<T> clazz, String algorithmType) {
@@ -179,7 +183,7 @@ public class DefaultCryptoProvider implements CryptoProvider {
     @Override
     public Signature getSignature(String sigAlgName) throws NoSuchAlgorithmException, NoSuchProviderException {
         return Signature.getInstance(JavaAlgorithm.getJavaAlgorithm(sigAlgName), BouncyIntegration.PROVIDER);
-            
+
     }
 
     @Override

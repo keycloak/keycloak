@@ -1,4 +1,5 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import { SelectControl, useAlerts } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   Button,
@@ -8,11 +9,9 @@ import {
 } from "@patternfly/react-core";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { SelectControl } from "@keycloak/keycloak-ui-shared";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
-import { useRealm } from "../context/realm-context/RealmContext";
-import { REALM_FLOWS } from "./AuthenticationSection";
 import { useAdminClient } from "../admin-client";
+import { useRealm } from "../context/realm-context/RealmContext";
+import { REALM_FLOWS } from "./constants";
 
 type BindingForm = {
   bindingType: keyof RealmRepresentation;

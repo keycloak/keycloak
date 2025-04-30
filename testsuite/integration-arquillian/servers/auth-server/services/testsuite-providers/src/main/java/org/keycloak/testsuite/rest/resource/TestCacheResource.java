@@ -24,18 +24,12 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import org.infinispan.Cache;
-import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.stream.CacheCollectors;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
-import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
-import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.utils.MediaType;
 
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -108,33 +102,4 @@ public class TestCacheResource {
     public void processExpiration() {
         cache.getAdvancedCache().getExpirationManager().processExpiration();
     }
-
-    @GET
-    @Path("/remote-cache-stats")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, String> getRemoteCacheStats() {
-        var remoteCache = InfinispanUtil.getRemoteCache(cache);
-        return remoteCache == null ?
-                Collections.emptyMap() :
-                remoteCache.serverStatistics().getStatsMap();
-    }
-
-
-    @GET
-    @Path("/remote-cache-last-session-refresh/{user-session-id}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public int getRemoteCacheLastSessionRefresh(@PathParam("user-session-id") String userSessionId) {
-        RemoteCache<String, SessionEntityWrapper<UserSessionEntity>> remoteCache = InfinispanUtil.getRemoteCache(cache);
-        if (remoteCache == null) {
-            return -1;
-        } else {
-            SessionEntityWrapper<UserSessionEntity> userSession = remoteCache.get(userSessionId);
-            if (userSession == null) {
-                return -1;
-            } else {
-                return userSession.getEntity().getLastSessionRefresh();
-            }
-        }
-    }
-
 }

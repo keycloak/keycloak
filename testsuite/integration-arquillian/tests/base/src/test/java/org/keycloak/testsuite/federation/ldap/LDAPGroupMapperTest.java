@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
@@ -30,6 +31,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
@@ -40,6 +42,7 @@ import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.mappers.membership.LDAPGroupMapperMode;
 import org.keycloak.storage.ldap.mappers.membership.MembershipType;
 import org.keycloak.storage.ldap.mappers.membership.group.GroupLDAPStorageMapper;
+import org.keycloak.storage.ldap.mappers.membership.group.GroupLDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.membership.group.GroupMapperConfig;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
@@ -50,6 +53,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.keycloak.testsuite.util.LDAPTestUtils.getGroupDescriptionLDAPAttrName;
 
 /**
@@ -70,7 +76,6 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
     protected void afterImportTestRealm() {
         testingClient.testing().ldap(TEST_REALM_NAME).prepareGroupsLDAPTest();
     }
-
 
 
     @Test
@@ -202,7 +207,7 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             mary.leaveGroup(groupTeamChild20182019);
 
             Assert.assertEquals(0, john.getGroupsStream().count());
-            
+
             groupCount = john.getGroupsCount();
             Assert.assertEquals(0, groupCount);
         });
@@ -212,7 +217,6 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
     public void test02_readOnlyGroupMappings() {
         test02_readOnlyGroupMappings(true);
     }
-
 
 
     protected void test02_readOnlyGroupMappings(boolean importEnabled) {
@@ -276,7 +280,7 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
                 try {
                     mary.joinGroup(group12);
                     Assert.fail("Not expected to successfully add group12 in no-import mode and READ_ONLY mode of the group mapper");
-                } catch (ModelException me) {
+                } catch (ReadOnlyException me) {
                     // Ignore
                 }
             });
@@ -582,6 +586,11 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             Assert.assertFalse(carlosGroups.contains(group12));
 
             Assert.assertEquals(1, carlosGroups.size());
+
+            // check the user is listed as the sole member of group1
+            List<UserModel> group1Members = session.users().getGroupMembersStream(appRealm, group1, 0, 10).toList();
+            assertThat(group1Members, hasSize(1));
+            assertThat(group1Members.get(0).getUsername(), equalTo("carloskeycloak"));
         });
 
         // Revert mappers
@@ -617,7 +626,7 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
 
             UserModel john = session.users().getUserByUsername(appRealm, "johnkeycloak");
 
-            GroupModel group4 =  KeycloakModelUtils.findGroupByPath(session, appRealm, "/group4");
+            GroupModel group4 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group4");
             john.joinGroup(group4);
 
             GroupModel group31 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group3/group31");
@@ -637,11 +646,11 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
 
             UserModel john = session.users().getUserByUsername(appRealm, "johnkeycloak");
 
-            GroupModel group14 =  KeycloakModelUtils.findGroupByPath(session, appRealm, "/group1/group14");
-            GroupModel group3 =  KeycloakModelUtils.findGroupByPath(session, appRealm, "/group3");
+            GroupModel group14 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group1/group14");
+            GroupModel group3 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group3");
             GroupModel group31 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group3/group31");
             GroupModel group32 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group3/group32");
-            GroupModel group4 =  KeycloakModelUtils.findGroupByPath(session, appRealm, "/group4");
+            GroupModel group4 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group4");
 
             Set<GroupModel> groups = john.getGroupsStream().collect(Collectors.toSet());
             Assert.assertTrue(groups.contains(group14));
@@ -676,17 +685,17 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
 
             UserModel david = session.users().addUser(appRealm, "davidkeycloak");
 
-            GroupModel defaultGroup11 =  KeycloakModelUtils.findGroupByPath(session, appRealm, "/defaultGroup1/defaultGroup11");
+            GroupModel defaultGroup11 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/defaultGroup1/defaultGroup11");
             Assert.assertNotNull(defaultGroup11);
 
-            GroupModel defaultGroup12 =  KeycloakModelUtils.findGroupByPath(session, appRealm, "/defaultGroup1/defaultGroup12");
+            GroupModel defaultGroup12 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/defaultGroup1/defaultGroup12");
             Assert.assertNotNull(defaultGroup12);
 
             GroupModel group31 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group3/group31");
             Assert.assertNotNull(group31);
             GroupModel group32 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group3/group32");
             Assert.assertNotNull(group32);
-            GroupModel group4 =  KeycloakModelUtils.findGroupByPath(session, appRealm, "/group4");
+            GroupModel group4 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group4");
             Assert.assertNotNull(group4);
 
             Set<GroupModel> groups = david.getGroupsStream().collect(Collectors.toSet());
@@ -701,10 +710,10 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
 
     private static LDAPObject searchObjectInBase(LDAPStorageProvider ldapProvider, String dn, String... attrs) {
         LDAPQuery q = new LDAPQuery(ldapProvider)
-                            .setSearchDn(dn)
-                            .setSearchScope(SearchControls.OBJECT_SCOPE);
+                .setSearchDn(dn)
+                .setSearchScope(SearchControls.OBJECT_SCOPE);
         if (attrs != null) {
-            for (String attr: attrs) {
+            for (String attr : attrs) {
                 q.addReturningLdapAttribute(attr);
             }
         }
@@ -776,9 +785,9 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             usernames.clear();
             for (int i = 0; i < membersToTest; i += 10) {
                 groupMembers = session.users().getGroupMembersStream(appRealm, kcBigGroup, i, 10)
-                    .collect(Collectors.toList());
+                        .collect(Collectors.toList());
                 usernames.addAll(groupMembers.stream().map(u -> u.getUsername()).collect(Collectors.toSet()));
-                Assert.assertEquals("Incorrect number of users after pagination " + i, membersToTest < i + 10? membersToTest : i + 10, usernames.size());
+                Assert.assertEquals("Incorrect number of users after pagination " + i, membersToTest < i + 10 ? membersToTest : i + 10, usernames.size());
             }
             for (int i = 0; i < membersToTest; i++) {
                 Assert.assertTrue("Group contains user after pagination " + i, usernames.contains(String.format("user%02d", i)));
@@ -839,4 +848,143 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             Assert.assertEquals(LDAPDn.fromString(LDAPConstants.EMPTY_MEMBER_ATTRIBUTE_VALUE), LDAPDn.fromString(deleteGroup.getAttributeAsString(LDAPConstants.MEMBER)));
         });
     }
+
+    @Test
+    public void test10_multipleGroupMappersInDifferentPaths() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel realm = ctx.getRealm();
+
+            // 1- Remove the group mapper already installed
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "groupsMapper");
+            realm.removeComponent(mapperModel);
+        });
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel realm = ctx.getRealm();
+
+            // 2- Add a couple of local groups
+            realm.createGroup("ldap-groups-1");
+            realm.createGroup("ldap-groups-2");
+
+            // 3- Add a couple of group mappers that map groups from different OUs into different group paths in Keycloak.
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+            LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            String baseDn = ldapModel.getConfig().getFirst(LDAPConstants.BASE_DN);
+            String descriptionName = ldapProvider.getLdapIdentityStore().getConfig().isActiveDirectory() ? "displayName" : "description";
+            LDAPTestUtils.addLdapOUinBaseDn(ldapProvider, "Groups1");
+            LDAPTestUtils.addOrUpdateGroupMapper("group-mapper-1", realm, ldapModel, LDAPGroupMapperMode.LDAP_ONLY, descriptionName,
+                    GroupMapperConfig.GROUPS_DN, "ou=Groups1," + baseDn, GroupMapperConfig.LDAP_GROUPS_PATH, "/ldap-groups-1");
+            LDAPTestUtils.addLdapOUinBaseDn(ldapProvider, "Groups2");
+            LDAPTestUtils.addOrUpdateGroupMapper("group-mapper-2", realm, ldapModel, LDAPGroupMapperMode.LDAP_ONLY, descriptionName,
+                    GroupMapperConfig.GROUPS_DN, "ou=Groups2," + baseDn, GroupMapperConfig.LDAP_GROUPS_PATH, "/ldap-groups-2");
+
+            LDAPTestUtils.createLDAPGroup("group-mapper-1", session, realm, ldapModel, "GroupA", descriptionName, "GroupA Description");
+            LDAPTestUtils.createLDAPGroup("group-mapper-1", session, realm, ldapModel, "GroupB", descriptionName, "GroupB Description");
+            LDAPTestUtils.createLDAPGroup("group-mapper-2", session, realm, ldapModel, "GroupC", descriptionName, "GroupC Description");
+
+            // 4- Sync LDAP groups from both mappers to Keycloak DB
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ldapModel, "group-mapper-1");
+            new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(realm);
+            mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ldapModel, "group-mapper-2");
+            new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(realm);
+        });
+
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+
+            GroupModel groupA = KeycloakModelUtils.findGroupByPath(session, realm, "/ldap-groups-1/GroupA");
+            GroupModel groupB = KeycloakModelUtils.findGroupByPath(session, realm, "/ldap-groups-1/GroupB");
+            GroupModel groupC = KeycloakModelUtils.findGroupByPath(session, realm, "/ldap-groups-2/GroupC");
+
+            UserModel john = session.users().getUserByUsername(realm, "johnkeycloak");
+            UserModel mary = session.users().getUserByUsername(realm, "marykeycloak");
+
+            // 5- Join some of the groups, and check that the correct mapper was applied (i.e. user was added as a member of the correct group)
+            john.joinGroup(groupA);
+            john.joinGroup(groupC);
+            mary.joinGroup(groupB);
+            mary.joinGroup(groupC);
+
+            // 5.1- Check that group mappings are in LDAP and hence available through federation
+            Set<GroupModel> johnGroups = john.getGroupsStream().collect(Collectors.toSet());
+            Assert.assertEquals(4, johnGroups.size());
+            Assert.assertTrue(johnGroups.contains(groupA));
+            Assert.assertFalse(johnGroups.contains(groupB));
+            Assert.assertTrue(johnGroups.contains(groupC));
+
+            Set<GroupModel> maryGroups = mary.getGroupsStream().collect(Collectors.toSet());
+            Assert.assertEquals(4, maryGroups.size());
+            Assert.assertFalse(maryGroups.contains(groupA));
+            Assert.assertTrue(maryGroups.contains(groupB));
+            Assert.assertTrue(maryGroups.contains(groupC));
+
+            // 5.2- Check through userProvider
+            List<String> groupAMembers = session.users().getGroupMembersStream(realm, groupA, 0, 10)
+                    .map(UserModel::getUsername).toList();
+            List<String> groupBMembers = session.users().getGroupMembersStream(realm, groupB, 0, 10)
+                    .map(UserModel::getUsername).toList();
+            List<String> groupCMembers = session.users().getGroupMembersStream(realm, groupC, 0, 10)
+                    .map(UserModel::getUsername).toList();
+
+            Assert.assertEquals(1, groupAMembers.size());
+            Assert.assertEquals("johnkeycloak", groupAMembers.get(0));
+            Assert.assertEquals(1, groupBMembers.size());
+            Assert.assertEquals("marykeycloak", groupBMembers.get(0));
+            Assert.assertEquals(2, groupCMembers.size());
+            Assert.assertTrue(groupCMembers.contains("johnkeycloak"));
+            Assert.assertTrue(groupCMembers.contains("marykeycloak"));
+        });
+
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+
+            // 6- Create a local group with the same name of one of the LDAP groups, and add a local user to this group
+            GroupModel localGroup = realm.createGroup("GroupA");
+            UserModel localUser = UserStoragePrivateUtil.userLocalStorage(session).addUser(realm, "localuser");
+            localUser.joinGroup(localGroup);
+
+            // 7- Check that the members of the local group are not mixed with members of the group with same name from LDAP
+            List<String> localGroupMembers = session.users().getGroupMembersStream(realm, localGroup, 0, 10)
+                    .map(UserModel::getUsername).toList();
+            Assert.assertEquals(1, localGroupMembers.size());
+            Assert.assertEquals("localuser", localGroupMembers.get(0));
+        });
+    }
+
+    @Test
+    public void test11_fetchUsersGroupsWithPaginationAndInvalidBatchSize() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            // batch size 0 effectively disables pagination, code must fall back to non-paginated search
+            ComponentModel mapperModel = LDAPTestUtils.getLdapProviderModel(appRealm);
+            LDAPTestUtils.updateConfigOptions(mapperModel, LDAPConstants.BATCH_SIZE_FOR_SYNC, "0");
+            appRealm.updateComponent(mapperModel);
+        });
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            // verify that getting the user's groups still works
+            UserModel john = session.users().getUserByUsername(appRealm, "johnkeycloak");
+            Set<GroupModel> johnGroups = john.getGroupsStream().collect(Collectors.toSet());
+            Assert.assertEquals(4, johnGroups.size());
+        });
+
+        String configuredBatchSize = ldapRule.getConfig().get(LDAPConstants.BATCH_SIZE_FOR_SYNC);
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            // revert batch size change
+            ComponentModel mapperModel = LDAPTestUtils.getLdapProviderModel(appRealm);
+            LDAPTestUtils.updateConfigOptions(mapperModel, LDAPConstants.BATCH_SIZE_FOR_SYNC, configuredBatchSize);
+            appRealm.updateComponent(mapperModel);
+        });
+    }
 }
+

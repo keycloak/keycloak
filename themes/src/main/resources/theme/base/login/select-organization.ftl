@@ -9,7 +9,7 @@
                     <#list user.organizations as organization>
                         <li>
                             <a id="organization-${organization.alias}" class="${properties.kcFormSocialAccountListButtonClass!} <#if user.organizations?size gt 3>${properties.kcFormSocialAccountGridItem!}</#if>"
-                               type="button" onclick="document.forms[0]['kc.org'].value = '${organization.alias}'; document.forms[0].submit()">
+                               type="button" onclick="document.forms[0]['kc.org'].value = '${organization.alias}'; document.forms[0].requestSubmit()">
                                 <span class="${properties.kcFormSocialAccountNameClass!}">${organization.name!}</span>
                             </a>
                         </li>

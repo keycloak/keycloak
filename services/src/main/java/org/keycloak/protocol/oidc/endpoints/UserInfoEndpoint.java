@@ -22,7 +22,6 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenCategory;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.ClientConnection;
-import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.ContentEncryptionProvider;
 import org.keycloak.crypto.CekManagementProvider;
@@ -52,7 +51,6 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.TokenManager.NotBeforeCheck;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.UserInfoRequestContext;
@@ -77,7 +75,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.MultivaluedMap;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Map;
 
@@ -159,15 +157,19 @@ public class UserInfoEndpoint {
     private Response issueUserInfo() {
         cors.allowAllOrigins();
 
-        try {
-            session.clientPolicy().triggerOnEvent(new UserInfoRequestContext(tokenForUserInfo));
-        } catch (ClientPolicyException cpe) {
-            throw error.error(cpe.getError()).errorDescription(cpe.getErrorDetail()).status(cpe.getErrorStatus()).build();
-        }
-
         EventBuilder event = new EventBuilder(realm, session, clientConnection)
                 .event(EventType.USER_INFO_REQUEST)
                 .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN);
+
+        try {
+            session.clientPolicy().triggerOnEvent(new UserInfoRequestContext(tokenForUserInfo));
+        } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+            event.error(cpe.getError());
+            throw error.error(cpe.getError()).errorDescription(cpe.getErrorDetail()).status(cpe.getErrorStatus()).build();
+        }
 
         if (tokenForUserInfo.getToken() == null) {
             event.detail(Details.REASON, "Missing token");
@@ -180,6 +182,8 @@ public class UserInfoEndpoint {
         try {
             TokenVerifier<AccessToken> verifier = TokenVerifier.create(tokenForUserInfo.getToken(), AccessToken.class).withDefaultChecks()
                     .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
+
+            verifier = DPoPUtil.withDPoPVerifier(verifier, realm, new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).accessToken(tokenForUserInfo.getToken()));
 
             SignatureVerifierContext verifierContext = session.getProvider(SignatureProvider.class, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
             verifier.verifierContext(verifierContext);
@@ -229,7 +233,14 @@ public class UserInfoEndpoint {
             throw error.invalidToken("Client disabled");
         }
 
-        UserSessionModel userSession = UserSessionUtil.findValidSession(session, realm, token, event, clientModel, error);
+        event.session(token.getSessionId());
+        UserSessionUtil.UserSessionValidationResult userSessionValidation = UserSessionUtil.findValidSessionForAccessToken(session, realm, token, clientModel, (invalidUserSession -> {}));
+        if (userSessionValidation.getError() != null) {
+            event.error(userSessionValidation.getError());
+            throw error.invalidToken(userSessionValidation.getError());
+        }
+
+        UserSessionModel userSession = userSessionValidation.getUserSession();
 
         UserModel userModel = userSession.getUser();
         if (userModel == null) {
@@ -253,20 +264,6 @@ public class UserInfoEndpoint {
                 event.detail(Details.REASON, errorMessage);
                 event.error(Errors.NOT_ALLOWED);
                 throw error.invalidToken(errorMessage);
-            }
-        }
-
-        if (Profile.isFeatureEnabled(Profile.Feature.DPOP)) {
-            if (OIDCAdvancedConfigWrapper.fromClientModel(clientModel).isUseDPoP() || DPoPUtil.DPOP_TOKEN_TYPE.equals(token.getType())) {
-                try {
-                    DPoP dPoP = new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).validate();
-                    DPoPUtil.validateBinding(token, dPoP);
-                } catch (VerificationException ex) {
-                    String errorMessage = "DPoP proof and token binding verification failed";
-                    event.detail(Details.REASON, errorMessage + ": " + ex.getMessage());
-                    event.error(Errors.NOT_ALLOWED);
-                    throw error.invalidToken(errorMessage);
-                }
             }
         }
 
@@ -346,9 +343,9 @@ public class UserInfoEndpoint {
         Key encryptionKek = keyWrapper.getPublicKey();
         String encryptionKekId = keyWrapper.getKid();
         try {
-            encryptedToken = TokenUtil.jweKeyEncryptionEncode(encryptionKek, content.getBytes("UTF-8"), algAlgorithm,
+            encryptedToken = TokenUtil.jweKeyEncryptionEncode(encryptionKek, content.getBytes(StandardCharsets.UTF_8), algAlgorithm,
                     encAlgorithm, encryptionKekId, jweAlgorithmProvider, jweEncryptionProvider, jweContentType);
-        } catch (JWEException | UnsupportedEncodingException e) {
+        } catch (JWEException e) {
             throw new RuntimeException(e);
         }
         return encryptedToken;

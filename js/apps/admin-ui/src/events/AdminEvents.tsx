@@ -1,16 +1,23 @@
 import type AdminEventRepresentation from "@keycloak/keycloak-admin-client/lib/defs/adminEventRepresentation";
 import {
+  Action,
+  KeycloakDataTable,
   KeycloakSelect,
+  ListEmptyState,
   SelectVariant,
   TextControl,
+  useFetch,
 } from "@keycloak/keycloak-ui-shared";
-import { CodeEditor, Language } from "@patternfly/react-code-editor";
 import {
   ActionGroup,
   Button,
   Chip,
   ChipGroup,
   DatePicker,
+  DescriptionList,
+  DescriptionListDescription,
+  DescriptionListGroup,
+  DescriptionListTerm,
   Flex,
   FlexItem,
   Form,
@@ -34,9 +41,9 @@ import { PropsWithChildren, useMemo, useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
+import { EventsBanners } from "../Banners";
 import DropdownPanel from "../components/dropdown-panel/DropdownPanel";
-import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
-import { Action, KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
+import CodeEditor from "../components/form/CodeEditor";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { prettyPrintJSON } from "../util";
@@ -62,18 +69,6 @@ type AdminEventSearchForm = {
   authIpAddress: string;
 };
 
-const defaultValues: AdminEventSearchForm = {
-  resourceTypes: [],
-  operationTypes: [],
-  resourcePath: "",
-  dateFrom: "",
-  dateTo: "",
-  authClient: "",
-  authUser: "",
-  authRealm: "",
-  authIpAddress: "",
-};
-
 const DisplayDialog = ({
   titleKey,
   onClose,
@@ -92,7 +87,29 @@ const DisplayDialog = ({
   );
 };
 
-export const AdminEvents = () => {
+const DetailCell = (event: AdminEventRepresentation) => (
+  <DescriptionList isHorizontal className="keycloak_eventsection_details">
+    {event.details &&
+      Object.entries(event.details).map(([key, value]) => (
+        <DescriptionListGroup key={key}>
+          <DescriptionListTerm>{key}</DescriptionListTerm>
+          <DescriptionListDescription>{value}</DescriptionListDescription>
+        </DescriptionListGroup>
+      ))}
+    {event.error && (
+      <DescriptionListGroup key="error">
+        <DescriptionListTerm>error</DescriptionListTerm>
+        <DescriptionListDescription>{event.error}</DescriptionListDescription>
+      </DescriptionListGroup>
+    )}
+  </DescriptionList>
+);
+
+type AdminEventsProps = {
+  resourcePath?: string;
+};
+
+export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
   const { adminClient } = useAdminClient();
 
   const { t } = useTranslation();
@@ -111,7 +128,20 @@ export const AdminEvents = () => {
     Partial<AdminEventSearchForm>
   >({});
 
+  const defaultValues: AdminEventSearchForm = {
+    resourceTypes: [],
+    operationTypes: [],
+    resourcePath: resourcePath ? resourcePath : "",
+    dateFrom: "",
+    dateTo: "",
+    authClient: "",
+    authUser: "",
+    authRealm: "",
+    authIpAddress: "",
+  };
+
   const [authEvent, setAuthEvent] = useState<AdminEventRepresentation>();
+  const [adminEventsEnabled, setAdminEventsEnabled] = useState<boolean>();
   const [representationEvent, setRepresentationEvent] =
     useState<AdminEventRepresentation>();
 
@@ -138,8 +168,17 @@ export const AdminEvents = () => {
     control,
   } = form;
 
+  useFetch(
+    () => adminClient.realms.getConfigEvents({ realm }),
+    (events) => {
+      setAdminEventsEnabled(events?.adminEventsEnabled!);
+    },
+    [],
+  );
+
   function loader(first?: number, max?: number) {
     return adminClient.realms.findAdminEvents({
+      resourcePath,
       // The admin client wants 'dateFrom' and 'dateTo' to be Date objects, however it cannot actually handle them so we need to cast to any.
       ...(activeFilters as any),
       realm,
@@ -185,6 +224,10 @@ export const AdminEvents = () => {
       getValues(),
       (value) => value !== "" || (Array.isArray(value) && value.length > 0),
     );
+
+    if (resourcePath) {
+      delete newFilters.resourcePath;
+    }
 
     setActiveFilters(newFilters);
     setKey(key + 1);
@@ -240,18 +283,20 @@ export const AdminEvents = () => {
           data-testid="representation-dialog"
           onClose={() => setRepresentationEvent(undefined)}
         >
-          <CodeEditor
-            isLineNumbersVisible
-            isReadOnly
-            code={code}
-            language={Language.json}
-            height="8rem"
-          />
+          <CodeEditor readOnly value={code} language="json" />
         </DisplayDialog>
       )}
+      {!adminEventsEnabled && <EventsBanners type="adminEvents" />}
       <KeycloakDataTable
         key={key}
         loader={loader}
+        detailColumns={[
+          {
+            name: "details",
+            enabled: (event) => event.details !== undefined,
+            cellRenderer: DetailCell,
+          },
+        ]}
         isPaginated
         ariaLabelKey="adminEvents"
         toolbarItem={
@@ -406,13 +451,15 @@ export const AdminEvents = () => {
                         )}
                       />
                     </FormGroup>
-                    <TextControl
-                      name="resourcePath"
-                      label={t("resourcePath")}
-                    />
+                    {!resourcePath && (
+                      <TextControl
+                        name="resourcePath"
+                        label={t("resourcePath")}
+                      />
+                    )}
                     <TextControl name="authRealm" label={t("realm")} />
                     <TextControl name="authClient" label={t("client")} />
-                    <TextControl name="authUser" label={t("user")} />
+                    <TextControl name="authUser" label={t("userId")} />
                     <TextControl name="authIpAddress" label={t("ipAddress")} />
                     <FormGroup
                       label={t("dateFrom")}
@@ -479,12 +526,15 @@ export const AdminEvents = () => {
                         string | string[],
                       ];
 
+                      if (key === "resourcePath" && !!resourcePath) {
+                        return null;
+                      }
+
                       return (
                         <ChipGroup
                           className="pf-v5-u-mt-md pf-v5-u-mr-md"
                           key={key}
                           categoryName={filterLabels[key]}
-                          isClosable
                           onClick={() => removeFilter(key)}
                         >
                           {typeof value === "string" ? (
@@ -551,6 +601,8 @@ export const AdminEvents = () => {
           <ListEmptyState
             message={t("emptyAdminEvents")}
             instructions={t("emptyAdminEventsInstructions")}
+            primaryActionText={t("refresh")}
+            onPrimaryAction={() => setKey(key + 1)}
           />
         }
         isSearching={Object.keys(activeFilters).length > 0}

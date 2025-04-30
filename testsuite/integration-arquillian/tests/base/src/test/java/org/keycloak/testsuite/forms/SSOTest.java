@@ -22,24 +22,23 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.drone.Different;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.util.MutualTLSUtils;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.openqa.selenium.WebDriver;
 
 import static org.junit.Assert.assertEquals;
@@ -53,7 +52,7 @@ import jakarta.ws.rs.core.Response;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public class SSOTest extends AbstractTestRealmKeycloakTest {
+public class SSOTest extends AbstractChangeImportedUserPasswordsTest {
 
     @Drone
     @Different
@@ -71,17 +70,13 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-    }
-
     @Test
     public void loginSuccess() {
         loginPage.open();
-        loginPage.login("test-user@localhost", "password");
+        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
 
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
         String sessionId = loginEvent.getSessionId();
@@ -112,7 +107,7 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
         // Expire session
         testingClient.testing().removeUserSession("test", sessionId);
 
-        oauth.doLogin("test-user@localhost", "password");
+        oauth.doLogin("test-user@localhost", getPassword("test-user@localhost"));
 
         String sessionId4 = events.expectLogin().assertEvent().getSessionId();
         assertNotEquals(sessionId, sessionId4);
@@ -124,28 +119,27 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void multipleSessions() {
         loginPage.open();
-        loginPage.login("test-user@localhost", "password");
+        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
 
         EventRepresentation login1 = events.expectLogin().assertEvent();
 
         //OAuthClient oauth2 = new OAuthClient(driver2);
-        OAuthClient oauth2 = new OAuthClient();
-        oauth2.init(driver2);
+        OAuthClient oauth2 = oauth.newConfig().driver(driver2);
 
-        oauth2.doLogin("test-user@localhost", "password");
+        oauth2.doLogin("test-user@localhost", getPassword("test-user@localhost"));
 
         EventRepresentation login2 = events.expectLogin().assertEvent();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, RequestType.valueOf(driver2.getTitle()));
-        Assert.assertNotNull(oauth2.getCurrentQuery().get(OAuth2Constants.CODE));
+        Assert.assertNotNull(oauth2.parseLoginResponse().getCode());
 
         assertNotEquals(login1.getSessionId(), login2.getSessionId());
 
-        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(login1);
-        oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
+        AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(login1);
+        oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
         events.expectLogout(login1.getSessionId()).assertEvent();
 
         oauth.openLoginForm();
@@ -156,12 +150,12 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
 
         events.expectLogin().session(login2.getSessionId()).removeDetail(Details.USERNAME).assertEvent();
         Assert.assertEquals(RequestType.AUTH_RESPONSE, RequestType.valueOf(driver2.getTitle()));
-        Assert.assertNotNull(oauth2.getCurrentQuery().get(OAuth2Constants.CODE));
+        Assert.assertNotNull(oauth2.parseLoginResponse().getCode());
 
-        String code = new OAuthClient.AuthorizationEndpointResponse(oauth2).getCode();
-        OAuthClient.AccessTokenResponse response = oauth2.doAccessTokenRequest(code, "password");
+        String code = oauth2.parseLoginResponse().getCode();
+        AccessTokenResponse response = oauth2.doAccessTokenRequest(code);
         events.poll();
-        oauth2.idTokenHint(response.getIdToken()).openLogout();
+        oauth2.logoutForm().idTokenHint(response.getIdToken()).withRedirect().open();
         events.expectLogout(login2.getSessionId()).assertEvent();
 
         oauth2.openLoginForm();
@@ -174,10 +168,10 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
     public void loginWithRequiredActionAddedInTheMeantime() {
         // SSO login
         loginPage.open();
-        loginPage.login("test-user@localhost", "password");
+        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
 
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
         String sessionId = loginEvent.getSessionId();
@@ -191,7 +185,7 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
         oauth.openLoginForm();
         updatePasswordPage.assertCurrent();
 
-        updatePasswordPage.changePassword("password", "password");
+        updatePasswordPage.changePassword(getPassword("test-user@localhost"), getPassword("test-user@localhost"));
         events.expectRequiredAction(EventType.UPDATE_PASSWORD).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
         events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
 
@@ -208,23 +202,25 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
     public void failIfUsingCodeFromADifferentSession() throws IOException {
         // first client user login
         oauth.openLoginForm();
-        oauth.doLogin("test-user@localhost", "password");
-        String firstCode = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        oauth.doLogin("test-user@localhost", getPassword("test-user@localhost"));
+        String firstCode = oauth.parseLoginResponse().getCode();
 
         // second client user login
-        OAuthClient oauth2 = new OAuthClient();
-        oauth2.init(driver2);
-        oauth2.doLogin("john-doh@localhost", "password");
-        String secondCode = oauth2.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient oauth2 = oauth.newConfig().driver(driver2);
+        oauth2.doLogin("john-doh@localhost", getPassword("john-doh@localhost"));
+        String secondCode = oauth2.parseLoginResponse().getCode();
         String[] firstCodeParts = firstCode.split("\\.");
         String[] secondCodeParts = secondCode.split("\\.");
         secondCodeParts[1] = firstCodeParts[1];
         secondCode = String.join(".", secondCodeParts);
 
-        OAuthClient.AccessTokenResponse tokenResponse;
+        AccessTokenResponse tokenResponse;
 
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithOtherKeyStoreAndTrustStore()) {
-            tokenResponse = oauth2.doAccessTokenRequest(secondCode, "password", client);
+            oauth.httpClient().set(client);
+            tokenResponse = oauth2.doAccessTokenRequest(secondCode);
+        } finally {
+            oauth.httpClient().reset();
         }
 
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), tokenResponse.getStatusCode());

@@ -46,11 +46,6 @@ public class LoginUpdateProfileEditUsernameAllowedPage extends LoginUpdateProfil
         }
     }
 
-    @Override
-    public void open() {
-        throw new UnsupportedOperationException();
-    }
-
     public static class Update extends LoginUpdateProfilePage.Update {
 
         private final LoginUpdateProfileEditUsernameAllowedPage page;

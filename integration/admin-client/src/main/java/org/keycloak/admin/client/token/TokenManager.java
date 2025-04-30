@@ -60,10 +60,6 @@ public class TokenManager {
         }
         this.tokenService = Keycloak.getClientProvider().targetProxy(target, TokenService.class);
         this.accessTokenGrantType = config.getGrantType();
-
-        if (CLIENT_CREDENTIALS.equals(accessTokenGrantType) && config.isPublicClient()) {
-            throw new IllegalArgumentException("Can't use " + GRANT_TYPE + "=" + CLIENT_CREDENTIALS + " with public client");
-        }
     }
 
     public String getAccessTokenString() {
@@ -127,7 +123,7 @@ public class TokenManager {
     }
 
     public synchronized void logout() {
-        if (currentToken.getRefreshToken() == null) {
+        if (currentToken == null || currentToken.getRefreshToken() == null || refreshTokenExpired()) {
             return;
         }
 

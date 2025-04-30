@@ -37,6 +37,7 @@ import org.keycloak.component.PrioritizedComponentModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserProfileAttributeMetadata;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
@@ -269,9 +270,13 @@ public class LDAPUserProfileTest extends AbstractLDAPTest {
             testRealm.addComponentModel(ldapModel);
             LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
 
-            // if AD, create new OU in a base DN because users.ldif is ignored for AD
-            if (LDAPConstants.VENDOR_ACTIVE_DIRECTORY.equals(ldapModel.getConfig().getFirst(LDAPConstants.VENDOR))) {
+            // if AD or RHDS, create new OU in a base DN because users.ldif is ignored for AD/RHDS
+            String vendor = ldapModel.getConfig().getFirst(LDAPConstants.VENDOR);
+            if (LDAPConstants.VENDOR_ACTIVE_DIRECTORY.equals(vendor)) {
                 LDAPTestUtils.addLdapOUinBaseDn(ldapProvider, "OtherPeople2");
+                LDAPTestUtils.removeAllLDAPUsers(ldapProvider, testRealm);
+            } else if (LDAPConstants.VENDOR_RHDS.equals(vendor)) {
+                LDAPTestUtils.addLdapOUinBaseDn(ldapProvider, "OtherPeople");
                 LDAPTestUtils.removeAllLDAPUsers(ldapProvider, testRealm);
             }
             LDAPObject john = LDAPTestUtils.addLDAPUser(ldapProvider, testRealm, "anotherjohn", "AnotherJohn", "AnotherDoe", "anotherjohn@email.org", null, "1234");
@@ -394,6 +399,43 @@ public class LDAPUserProfileTest extends AbstractLDAPTest {
         loginPage.open();
         loginPage.login(upperCaseUsername.toLowerCase(), "Password1");
         appPage.assertCurrent();
+    }
+
+    @Test
+    public void testUpdateEmailWhenEmailAsUsernameEnabledAndEditUsernameDisabled() {
+        String username = "johnkeycloak";
+        UserResource johnResource = ApiUtil.findUserByUsernameId(testRealm(), username);
+        UserRepresentation john = johnResource.toRepresentation(true);
+        String email = "john@email.org";
+        assertUser(john, username, email, "John", "Doe", "1234");
+
+        // enable email as username
+        RealmRepresentation realm = testRealm().toRepresentation();
+        boolean initialEditUserNameAllowed = realm.isEditUsernameAllowed();
+        boolean initialEmailUsernameEnabled = realm.isRegistrationEmailAsUsername();
+        realm.setEditUsernameAllowed(false);
+        realm.setRegistrationEmailAsUsername(true);
+        testRealm().update(realm);
+
+        // update the user to force updating the username as the email
+        john.setEmail("john@newemail.org");
+        johnResource.update(john);
+        john = johnResource.toRepresentation(true);
+        assertUser(john, "john@newemail.org", "john@newemail.org", "John", "Doe", "1234");
+        getCleanup().addCleanup(() -> {
+            try {
+                realm.setEditUsernameAllowed(initialEditUserNameAllowed);
+                realm.setRegistrationEmailAsUsername(initialEmailUsernameEnabled);
+                testRealm().update(realm);
+                UserRepresentation user = johnResource.toRepresentation(true);
+                user.setUsername(username);
+                user.setEmail(email);
+                johnResource.update(user);
+            } finally {
+                testRealm().update(realm);
+            }
+
+        });
     }
 
     private void setLDAPReadOnly() {

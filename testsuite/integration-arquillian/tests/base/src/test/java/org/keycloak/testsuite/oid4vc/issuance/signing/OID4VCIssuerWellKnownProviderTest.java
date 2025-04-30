@@ -18,13 +18,19 @@
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
 import org.junit.Test;
+import org.junit.experimental.runners.Enclosed;
+import org.junit.runner.RunWith;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.arquillian.SuiteContext;
+import org.keycloak.testsuite.client.KeycloakTestingClient;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,14 +38,95 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.AbstractTestRealmKeycloakTest.TEST_REALM_NAME;
+import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCTest.RSA_KEY;
+import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCTest.TEST_DID;
+import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCTest.getCredentialBuilderProvider;
+import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCTest.getRsaKeyProvider;
 
-public class OID4VCIssuerWellKnownProviderTest extends OID4VCTest {
+@RunWith(Enclosed.class)
+public class OID4VCIssuerWellKnownProviderTest {
 
-    @Test
-    public void getConfig() {
+    public static class TestAttributesOverride extends OID4VCTest {
+        @Test
+        public void testRealmAttributesOverrideClientAttributes() {
+            OID4VCIssuerWellKnownProviderTest
+                    .testCredentialConfig(suiteContext, testingClient);
+        }
+
+        @Override
+        public void configureTestRealm(RealmRepresentation testRealm) {
+            ClientRepresentation testClient = getTestClient("did:web:test.org");
+            Map<String, String> clientAttributes = new HashMap<>(getTestCredentialDefinitionAttributes());
+            Map<String, String> realmAttributes = new HashMap<>();
+            // We'll change the client attributes and put the correct value in the realm
+            // attributes and expect the test to work.
+            clientAttributes.put("vc.test-credential.expiry_in_s", "20");
+            realmAttributes.put("vc.test-credential.expiry_in_s", "100");
+            OID4VCIssuerWellKnownProviderTest
+                    .configureTestRealm(testClient, testRealm, clientAttributes, realmAttributes);
+        }
+
+    }
+
+    public static class TestCredentialDefinitionInClientAttributes extends OID4VCTest {
+
+        @Test
+        public void testCredentialConfig() {
+            OID4VCIssuerWellKnownProviderTest
+                    .testCredentialConfig(suiteContext, testingClient);
+        }
+
+        @Override
+        public void configureTestRealm(RealmRepresentation testRealm) {
+            Map<String, String> clientAttributes = new HashMap<>(getTestCredentialDefinitionAttributes());
+            Map<String, String> realmAttributes = new HashMap<>();
+            OID4VCIssuerWellKnownProviderTest
+                    .configureTestRealm(
+                            getTestClient("did:web:test.org"),
+                            testRealm,
+                            clientAttributes,
+                            realmAttributes
+                    );
+        }
+    }
+
+    public static class TestCredentialDefinitionInRealmAttributes extends OID4VCTest {
+
+        @Test
+        public void testCredentialConfig() {
+            OID4VCIssuerWellKnownProviderTest
+                    .testCredentialConfig(suiteContext, testingClient);
+        }
+
+        @Override
+        public void configureTestRealm(RealmRepresentation testRealm) {
+            Map<String, String> realmAttributes = new HashMap<>(getTestCredentialDefinitionAttributes());
+            Map<String, String> clientAttributes = new HashMap<>();
+            OID4VCIssuerWellKnownProviderTest.configureTestRealm(
+                    getTestClient("did:web:test.org"),
+                    testRealm,
+                    clientAttributes,
+                    realmAttributes
+            );
+        }
+    }
+
+    public static void configureTestRealm(
+            ClientRepresentation testClient,
+            RealmRepresentation testRealm,
+            Map<String, String> clientAttributes,
+            Map<String, String> realmAttributes
+    ) {
+        testClient.setAttributes(new HashMap<>(clientAttributes));
+        testRealm.setAttributes(new HashMap<>(realmAttributes));
+        extendConfigureTestRealm(testRealm, testClient);
+    }
+
+    public static void testCredentialConfig(SuiteContext suiteContext, KeycloakTestingClient testingClient) {
         String expectedIssuer = suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/" + TEST_REALM_NAME;
         String expectedCredentialsEndpoint = expectedIssuer + "/protocol/oid4vc/credential";
-        String expectedAuthorizationServer = expectedIssuer;
+        final String expectedAuthorizationServer = expectedIssuer;
         testingClient
                 .server(TEST_REALM_NAME)
                 .run((session -> {
@@ -62,33 +149,31 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCTest {
                 }));
     }
 
-
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-        if (testRealm.getComponents() != null) {
-            testRealm.getComponents().add("org.keycloak.keys.KeyProvider", getRsaKeyProvider(RSA_KEY));
-            testRealm.getComponents().add("org.keycloak.protocol.oid4vc.issuance.signing.VerifiableCredentialsSigningService", getJwtSigningProvider(RSA_KEY));
-        } else {
-            testRealm.setComponents(new MultivaluedHashMap<>(
-                    Map.of("org.keycloak.keys.KeyProvider", List.of(getRsaKeyProvider(RSA_KEY)),
-                            "org.keycloak.protocol.oid4vc.issuance.signing.VerifiableCredentialsSigningService", List.of(getJwtSigningProvider(RSA_KEY))
-                    )));
+    public static void extendConfigureTestRealm(RealmRepresentation testRealm, ClientRepresentation clientRepresentation) {
+        if (testRealm.getComponents() == null) {
+            testRealm.setComponents(new MultivaluedHashMap<>());
         }
-        ClientRepresentation clientRepresentation = getTestClient("did:web:test.org");
+
+        testRealm.getComponents().add("org.keycloak.keys.KeyProvider", getRsaKeyProvider(RSA_KEY));
+        testRealm.getComponents().add("org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder", getCredentialBuilderProvider(Format.JWT_VC));
+
+
         if (testRealm.getClients() != null) {
             testRealm.getClients().add(clientRepresentation);
         } else {
-            testRealm.setClients(List.of(clientRepresentation));
+            testRealm.setClients(new ArrayList<>(List.of(clientRepresentation)));
         }
+
         if (testRealm.getUsers() != null) {
-            testRealm.getUsers().add(getUserRepresentation(Map.of(clientRepresentation.getClientId(), List.of("testRole"))));
+            testRealm.getUsers().add(OID4VCTest.getUserRepresentation(Map.of(clientRepresentation.getClientId(), List.of("testRole"))));
         } else {
-            testRealm.setUsers(List.of(getUserRepresentation(Map.of(clientRepresentation.getClientId(), List.of("testRole")))));
+            testRealm.setUsers(new ArrayList<>(List.of(OID4VCTest.getUserRepresentation(Map.of(clientRepresentation.getClientId(), List.of("testRole"))))));
         }
+
         if (testRealm.getAttributes() != null) {
             testRealm.getAttributes().put("issuerDid", TEST_DID.toString());
         } else {
-            testRealm.setAttributes(Map.of("issuerDid", TEST_DID.toString()));
+            testRealm.setAttributes(new HashMap<>(Map.of("issuerDid", TEST_DID.toString())));
         }
     }
 }

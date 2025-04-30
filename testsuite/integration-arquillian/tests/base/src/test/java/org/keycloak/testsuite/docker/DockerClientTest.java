@@ -16,16 +16,18 @@ import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.containers.wait.strategy.Wait;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assume.assumeTrue;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SCHEME;
@@ -122,7 +124,9 @@ public class DockerClientTest extends AbstractKeycloakTest {
         dockerClientContainer = new GenericContainer(dockerioPrefix + "docker:dind")
                 .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger("dockerClientContainer")))
                 .withNetworkMode("host")
-                .withPrivilegedMode(true);
+                .withPrivilegedMode(true)
+                .waitingFor(Wait.forLogMessage(".*API listen on /var/run/docker.sock.*\\n", 1))
+                .withStartupTimeout(Duration.ofSeconds(120));
         dockerClientContainer.start();
     }
 
@@ -139,12 +143,28 @@ public class DockerClientTest extends AbstractKeycloakTest {
     @Test
     public void shouldPerformDockerAuthAgainstRegistry() throws Exception {
         log.info("Starting the attempt for login...");
-        Container.ExecResult dockerLoginResult = dockerClientContainer.execInContainer("docker", "login", "-u", DOCKER_USER, "-p", DOCKER_USER_PASSWORD, REGISTRY_HOSTNAME + ":" + REGISTRY_PORT);
-        printCommandResult(dockerLoginResult);
-        assertThat(dockerLoginResult.getStdout(), containsString("Login Succeeded"));
+        Container.ExecResult result = dockerClientContainer.execInContainer("docker", "login", "-u", DOCKER_USER, "-p", DOCKER_USER_PASSWORD, REGISTRY_HOSTNAME + ":" + REGISTRY_PORT);
+        printCommandResult(result);
+        assertThat("Error performing login", result.getExitCode(), is(0));
+
+        // create a empty Dockerfile in /tmp
+        result = dockerClientContainer.execInContainer("sh", "-c", "echo -e \"FROM scratch\\nWORKDIR /\" > /tmp/Dockerfile");
+        printCommandResult(result);
+        assertThat("Error creating dockerfile for empty image", result.getExitCode(), is(0));
+
+        // build the empty image
+        result = dockerClientContainer.execInContainer("docker", "build", "--tag", REGISTRY_HOSTNAME + ":" + REGISTRY_PORT + "/empty", "/tmp");
+        printCommandResult(result);
+        assertThat("Error building empty image", result.getExitCode(), is(0));
+
+        // push the image
+        result = dockerClientContainer.execInContainer("docker", "push", REGISTRY_HOSTNAME + ":" + REGISTRY_PORT + "/empty");
+        printCommandResult(result);
+        assertThat("Error pushing to registry", result.getExitCode(), is(0));
     }
 
     private void printCommandResult(Container.ExecResult result) {
-        log.infof("Command executed. Output follows:\nSTDOUT: %s\n---\nSTDERR: %s", result.getStdout(), result.getStderr());
+        log.infof("Command executed with exit code %d. Output follows:\nSTDOUT: %s\n---\nSTDERR: %s",
+                result.getExitCode(), result.getStdout(), result.getStderr());
     }
 }

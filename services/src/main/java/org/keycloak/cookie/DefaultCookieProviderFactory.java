@@ -8,7 +8,7 @@ public class DefaultCookieProviderFactory implements CookieProviderFactory {
 
     @Override
     public CookieProvider create(KeycloakSession session) {
-        return new DefaultCookieProvider(session.getContext());
+        return new DefaultCookieProvider(session);
     }
 
     @Override

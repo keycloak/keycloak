@@ -1,6 +1,8 @@
+import { SelectControl } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   ButtonVariant,
+  FileUpload,
   Form,
   FormGroup,
   Modal,
@@ -8,10 +10,9 @@ import {
   Text,
   TextContent,
 } from "@patternfly/react-core";
+import { useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { SelectControl } from "@keycloak/keycloak-ui-shared";
-import { FileUpload } from "../../components/json-file-upload/patternfly/FileUpload";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { StoreSettings } from "./StoreSettings";
 
@@ -33,6 +34,7 @@ export const ImportKeyDialog = ({
 }: ImportKeyDialogProps) => {
   const { t } = useTranslation();
   const form = useForm<ImportFile>();
+  const [file, setFile] = useState<string>("");
   const { control, handleSubmit } = form;
 
   const baseFormats = useServerInfo().cryptoInfo?.supportedKeystoreTypes ?? [];
@@ -74,9 +76,7 @@ export const ImportKeyDialog = ({
           data-testid="cancel"
           key="cancel"
           variant={ButtonVariant.link}
-          onClick={() => {
-            toggleDialog();
-          }}
+          onClick={toggleDialog}
         >
           {t("cancel")}
         </Button>,
@@ -101,15 +101,22 @@ export const ImportKeyDialog = ({
             <Controller
               name="file"
               control={control}
-              defaultValue={{ filename: "" }}
+              defaultValue={{ value: "", filename: "" }}
               render={({ field }) => (
                 <FileUpload
                   id="importFile"
                   value={field.value.value}
-                  filename={field.value.filename}
-                  onChange={(value, filename) =>
-                    field.onChange({ value, filename })
-                  }
+                  filename={file}
+                  hideDefaultPreview
+                  type="text"
+                  onDataChange={(_, value) => {
+                    field.onChange({
+                      value,
+                    });
+                  }}
+                  onFileInputChange={(_, file) => {
+                    setFile(file.name);
+                  }}
                 />
               )}
             />

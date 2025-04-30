@@ -42,6 +42,7 @@ public class DBLockTest extends KeycloakModelTest {
     private static final Logger log = Logger.getLogger(DBLockTest.class);
 
     private static final int SLEEP_TIME_MILLIS = 10;
+    private static final int SLEEP_TIME_MILLIS_FOR_TWO_LOCKS = 50;
     private static final int THREADS_COUNT = 20;
     private static final int THREADS_COUNT_MEDIUM = 12;
     private static final int ITERATIONS_PER_THREAD = 2;
@@ -192,7 +193,7 @@ public class DBLockTest extends KeycloakModelTest {
             Thread thread = new Thread(() -> {
                 IntStream.range(0, ITERATIONS_PER_THREAD_LONG).parallel().forEach(j -> {
                     try {
-                        KeycloakModelUtils.runJobInTransaction(sessionFactory, session1 -> lock(session1, lock, semaphore));
+                        KeycloakModelUtils.runJobInTransaction(sessionFactory, session1 -> lock(session1, lock, semaphore, SLEEP_TIME_MILLIS_FOR_TWO_LOCKS));
                     } catch (RuntimeException e) {
                         semaphore.setException(e);
                     }
@@ -255,11 +256,15 @@ public class DBLockTest extends KeycloakModelTest {
     }
 
     private void lock(KeycloakSession session, DBLockProvider.Namespace lock, Semaphore semaphore) {
+        this.lock(session, lock, semaphore, SLEEP_TIME_MILLIS);
+    }
+
+    private void lock(KeycloakSession session, DBLockProvider.Namespace lock, Semaphore semaphore, long sleepTime) {
         DBLockProvider dbLock = new DBLockManager(session).getDBLock();
         dbLock.waitForLock(lock);
         try {
             semaphore.increase();
-            Thread.sleep(SLEEP_TIME_MILLIS);
+            Thread.sleep(sleepTime);
             semaphore.decrease();
         } catch (InterruptedException ie) {
             throw new RuntimeException(ie);

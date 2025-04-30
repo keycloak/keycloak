@@ -43,14 +43,13 @@ To add a user to a group:
 . Click *Users* in the menu.
 . Click the user that you want to perform a role mapping on. If the user is not displayed, click *View all users*.
 . Click *Groups*.
-+
-.User groups
-image:images/user-groups.png[]
-+
 . Click *Join Group*.
 . Select a group from the dialog.
 . Select a group from the *Available Groups* tree.
 . Click *Join*.
++
+.Join group
+image:images/user-groups.png[]
 
 To remove a group from a user:
 

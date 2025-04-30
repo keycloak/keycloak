@@ -84,7 +84,7 @@ public interface LoginProtocol extends Provider {
 
     Response authenticated(AuthenticationSessionModel authSession, UserSessionModel userSession, ClientSessionContext clientSessionCtx);
 
-    Response sendError(AuthenticationSessionModel authSession, Error error);
+    Response sendError(AuthenticationSessionModel authSession, Error error, String errorMessage);
 
     /**
      * Returns client data, which will be wrapped in the "clientData" parameter sent within "authentication flow" requests. The purpose of clientData is to be able to send HTTP error

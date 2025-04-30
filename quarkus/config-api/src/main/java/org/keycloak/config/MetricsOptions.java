@@ -8,4 +8,18 @@ public class MetricsOptions {
             .buildTime(true)
             .defaultValue(Boolean.FALSE)
             .build();
+
+    public static final Option<Boolean> PASSWORD_VALIDATION_COUNTER_ENABLED = new OptionBuilder<>("metrics-password-validation-counter-enabled", Boolean.class)
+            .category(OptionCategory.METRICS)
+            .description("If the server should publish counter metric for number of password validations performed.")
+            .defaultValue(Boolean.TRUE)
+            .hidden() // This is intended to be enabled all the time when global metrics are enabled, therefore this option is hidden
+            .build();
+
+    public static final Option<Boolean> INFINISPAN_METRICS_ENABLED = new OptionBuilder<>("infinispan-metrics-enabled", Boolean.class)
+            .category(OptionCategory.METRICS)
+            .description("If Infinispan metrics should be collected and exposed.")
+            .defaultValue(Boolean.FALSE)
+            .hidden()  // Intentional, Infinispan metrics are enabled when '--metrics-enabled' are enabled.
+            .build();
 }

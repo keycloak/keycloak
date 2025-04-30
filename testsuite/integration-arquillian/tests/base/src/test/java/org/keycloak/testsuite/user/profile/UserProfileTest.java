@@ -105,7 +105,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         testRealm.getClientScopes().add(ClientScopeBuilder.create().name("client-a").protocol("openid-connect").build());
         testRealm.getClientScopes().add(ClientScopeBuilder.create().name("some-optional-scope").protocol("openid-connect").build());
         ClientRepresentation client = KeycloakModelUtils.createClient(testRealm, "client-a");
-        client.setDefaultClientScopes(Collections.singletonList("customer"));
+        client.setDefaultClientScopes(List.of("customer"));
         client.setOptionalClientScopes(Collections.singletonList("some-optional-scope"));
         KeycloakModelUtils.createClient(testRealm, "client-b");
     }
@@ -1736,11 +1736,10 @@ public class UserProfileTest extends AbstractUserProfileTest {
     }
 
     @Test
-    public void testRequiredByClientScope() {
-        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testRequiredByClientScope);
-    }
-
-    private static void testRequiredByClientScope(KeycloakSession session) {
+    @ModelTest
+    public void testRequiredByClientScope(KeycloakSession session) {
+        RealmModel realm = session.realms().getRealmByName("test");
+        session.getContext().setRealm(realm);
         UserProfileProvider provider = getUserProfileProvider(session);
         UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
         config.addOrReplaceAttribute(new UPAttribute(ATT_ADDRESS, new UPAttributePermissions(Set.of(), Set.of(ROLE_USER)), new UPAttributeRequired(Set.of(), Set.of("client-a"))));
@@ -1753,33 +1752,22 @@ public class UserProfileTest extends AbstractUserProfileTest {
         attributes.put(UserModel.LAST_NAME, "Doe");
         attributes.put(UserModel.EMAIL, "user@email.test");
 
-        // client with default scopes for which is attribute NOT configured as required
-        configureAuthenticationSession(session, "client-b", null);
-
-        // no fail on User API nor Account console as they do not have scopes
-        UserProfile profile = provider.create(UserProfileContext.USER_API, attributes);
-        profile.validate();
-        profile = provider.create(UserProfileContext.ACCOUNT, attributes);
-        profile.validate();
-
-        // no fail on auth flow scopes when scope is not required
-        profile = provider.create(UserProfileContext.REGISTRATION, attributes);
-        profile.validate();
-        profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
-        profile.validate();
-        profile = provider.create(UserProfileContext.IDP_REVIEW, attributes);
-        profile.validate();
-
         // client with default scope for which is attribute configured as required
         configureAuthenticationSession(session, "client-a", null);
 
-        // no fail on User API nor Account console as they do not have scopes
-        profile = provider.create(UserProfileContext.USER_API, attributes);
-        profile.validate();
-        profile = provider.create(UserProfileContext.ACCOUNT, attributes);
+        // no fail on User API because they don't have access to scopes yet
+        UserProfile profile = provider.create(UserProfileContext.USER_API, attributes);
         profile.validate();
 
         // fail on auth flow scopes when scope is required
+        try {
+            profile = provider.create(UserProfileContext.ACCOUNT, attributes);
+            profile.validate();
+            fail("Should fail validation");
+        } catch (ValidationException ve) {
+            assertTrue(ve.isAttributeOnError(ATT_ADDRESS));
+        }
+
         try {
             profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
             profile.validate();
@@ -1801,7 +1789,6 @@ public class UserProfileTest extends AbstractUserProfileTest {
         } catch (ValidationException ve) {
             assertTrue(ve.isAttributeOnError(ATT_ADDRESS));
         }
-
     }
 
     @Test
@@ -1825,13 +1812,13 @@ public class UserProfileTest extends AbstractUserProfileTest {
         // client with default scopes. No address scope included
         configureAuthenticationSession(session, "client-a", null);
 
-        // No fail on admin and account console as they do not have scopes
+        // no fail on User API because they don't have access to scopes yet
         UserProfile profile = provider.create(UserProfileContext.USER_API, attributes);
-        profile.validate();
-        profile = provider.create(UserProfileContext.ACCOUNT, attributes);
         profile.validate();
 
         // no fail on auth flow scopes when scope is not required
+        profile = provider.create(UserProfileContext.ACCOUNT, attributes);
+        profile.validate();
         profile = provider.create(UserProfileContext.REGISTRATION, attributes);
         profile.validate();
         profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
@@ -1845,10 +1832,15 @@ public class UserProfileTest extends AbstractUserProfileTest {
         // No fail on admin and account console as they do not have scopes
         profile = provider.create(UserProfileContext.USER_API, attributes);
         profile.validate();
-        profile = provider.create(UserProfileContext.ACCOUNT, attributes);
-        profile.validate();
 
         // fail on auth flow scopes when scope is required
+        try {
+            profile = provider.create(UserProfileContext.ACCOUNT, attributes);
+            profile.validate();
+            fail("Should fail validation");
+        } catch (ValidationException ve) {
+            assertTrue(ve.isAttributeOnError(ATT_ADDRESS));
+        }
         try {
             profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
             profile.validate();
@@ -2271,7 +2263,53 @@ public class UserProfileTest extends AbstractUserProfileTest {
             assertTrue(ve.isAttributeOnError(UserModel.EMAIL));
             assertTrue(ve.hasError(LengthValidator.MESSAGE_INVALID_LENGTH));
         }
-     }
+
+        RealmModel realm = session.getContext().getRealm();
+
+        try {
+            upConfig = UPConfigUtils.parseSystemDefaultConfig();
+            upConfig.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);
+            provider.setConfiguration(upConfig);
+            realm.setRegistrationEmailAsUsername(true);
+            attributes.put(UserModel.EMAIL, "new@email.com");
+            profile = provider.create(UserProfileContext.UPDATE_EMAIL, attributes, user);
+            profile.update();
+            assertEquals(attributes.get(UserModel.EMAIL), profile.getAttributes().getFirst(UserModel.EMAIL));
+            assertEquals(attributes.get(UserModel.EMAIL), profile.getAttributes().getFirst(UserModel.USERNAME));
+        } finally {
+            realm.setRegistrationEmailAsUsername(false);
+        }
+
+        try {
+            realm.setEditUsernameAllowed(false);
+            attributes.put(UserModel.EMAIL, "other@email.com");
+            profile = provider.create(UserProfileContext.UPDATE_EMAIL, attributes, user);
+            profile.update();
+            assertEquals(attributes.get(UserModel.EMAIL), profile.getAttributes().getFirst(UserModel.EMAIL));
+            assertEquals("new@email.com", profile.getAttributes().getFirst(UserModel.USERNAME));
+        } catch (ValidationException ve) {
+            assertTrue(ve.isAttributeOnError(UserModel.USERNAME));
+            assertTrue(ve.hasError(Messages.READ_ONLY_USERNAME));
+        } finally {
+            realm.setEditUsernameAllowed(true);
+        }
+
+        try {
+            upConfig = UPConfigUtils.parseSystemDefaultConfig();
+            upConfig.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);
+            provider.setConfiguration(upConfig);
+            realm.setEditUsernameAllowed(false);
+            realm.setRegistrationEmailAsUsername(true);
+            attributes.put(UserModel.EMAIL, "other@email.com");
+            profile = provider.create(UserProfileContext.UPDATE_EMAIL, attributes, user);
+            profile.update();
+            assertEquals(attributes.get(UserModel.EMAIL), profile.getAttributes().getFirst(UserModel.EMAIL));
+            assertEquals(attributes.get(UserModel.EMAIL), profile.getAttributes().getFirst(UserModel.USERNAME));
+        } finally {
+            realm.setEditUsernameAllowed(true);
+            realm.setRegistrationEmailAsUsername(false);
+        }
+    }
 
     @Test
     public void testMultivalued() {

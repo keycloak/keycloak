@@ -36,6 +36,11 @@ public class ClientCredentialsGrantTypeFactory implements OAuth2GrantTypeFactory
     }
 
     @Override
+    public String getShortcut() {
+        return "cc";
+    }
+
+    @Override
     public OAuth2GrantType create(KeycloakSession session) {
         return new ClientCredentialsGrantType();
     }

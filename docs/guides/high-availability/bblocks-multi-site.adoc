@@ -3,7 +3,7 @@
 
 <@tmpl.guide
 title="Building blocks multi-site deployments"
-summary="Overview of building blocks, alternatives and not considered options" >
+summary="Learn about building blocks and suggested setups for multi-site deployments." >
 
 The following building blocks are needed to set up a multi-site deployment with synchronous replication.
 
@@ -23,7 +23,7 @@ Ensures that synchronous replication is available for both the database and the 
 *Suggested setup:* Two AWS Availability Zones within the same AWS Region.
 
 *Not considered:* Two regions on the same or different continents, as it would increase the latency and the likelihood of network failures.
-Synchronous replication of databases as a services with Aurora Regional Deployments on AWS is only available within the same region.
+Synchronous replication of databases as services with Aurora Regional Deployments on AWS is only available within the same region.
 
 == Environment for {project_name} and {jdgserver_name}
 

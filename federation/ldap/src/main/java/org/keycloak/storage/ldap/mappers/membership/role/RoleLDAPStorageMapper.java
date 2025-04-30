@@ -266,7 +266,7 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
 
     public LDAPObject createLDAPRole(String roleName) {
         LDAPObject ldapRole = LDAPUtils.createLDAPGroup(ldapProvider, roleName, config.getRoleNameLdapAttribute(), config.getRoleObjectClasses(ldapProvider),
-                config.getRolesDn(), Collections.<String, Set<String>>emptyMap(), config.getMembershipLdapAttribute());
+                config.getRelativeCreateDn() + config.getRolesDn(), Collections.<String, Set<String>>emptyMap(), config.getMembershipLdapAttribute());
 
         logger.debugf("Creating role [%s] to LDAP with DN [%s]", roleName, ldapRole.getDn().toString());
         return ldapRole;
@@ -500,7 +500,8 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
             return Collections.emptyList();
         }
 
-        MembershipType membershipType = config.getMembershipTypeLdapAttribute();
-        return membershipType.getGroupMembers(realm, this, ldapGroup, firstResult, maxResults);
+        String strategyKey = config.getUserRolesRetrieveStrategy();
+        UserRolesRetrieveStrategy strategy = factory.getUserRolesRetrieveStrategy(strategyKey);
+        return strategy.getLDAPRoleMembers(realm, this, ldapGroup, firstResult, maxResults);
     }
 }

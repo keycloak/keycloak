@@ -16,17 +16,20 @@ import {
   CardBody,
   ClipboardCopy,
   Divider,
+  Form,
   FormGroup,
   PageSection,
   Split,
   SplitItem,
 } from "@patternfly/react-core";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
+import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 import { FormAccess } from "../../components/form/FormAccess";
+import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { FormFields } from "../ClientDetails";
 import { ClientSecret } from "./ClientSecret";
 import { SignedJWT } from "./SignedJWT";
@@ -70,6 +73,15 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
 
   const selectedProvider = providers.find(
     (provider) => provider.id === clientAuthenticatorType,
+  );
+
+  const { componentTypes } = useServerInfo();
+  const providerProperties = useMemo(
+    () =>
+      componentTypes?.["org.keycloak.authentication.ClientAuthenticator"]?.find(
+        (p) => p.id === clientAuthenticatorType,
+      )?.properties,
+    [clientAuthenticatorType, componentTypes],
   );
 
   useFetch(
@@ -170,6 +182,14 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
               </FormGroup>
             )}
             {clientAuthenticatorType === "client-x509" && <X509 />}
+            {providerProperties && (
+              <Form>
+                <DynamicComponents
+                  properties={providerProperties}
+                  convertToName={(name) => `attributes.${name}`}
+                />
+              </Form>
+            )}
             <ActionGroup>
               <Button variant="primary" type="submit" isDisabled={!isDirty}>
                 {t("save")}

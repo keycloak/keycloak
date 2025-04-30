@@ -73,10 +73,10 @@ export function returnSuccess(result) {
     if (result.response.userHandle) {
         document.getElementById("userHandle").value = base64url.stringify(new Uint8Array(result.response.userHandle), { pad: false });
     }
-    document.getElementById("webauth").submit();
+    document.getElementById("webauth").requestSubmit();
 }
 
 export function returnFailure(err) {
     document.getElementById("error").value = err;
-    document.getElementById("webauth").submit();
+    document.getElementById("webauth").requestSubmit();
 }

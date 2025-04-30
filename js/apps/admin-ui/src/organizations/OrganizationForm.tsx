@@ -1,5 +1,6 @@
 import OrganizationRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationRepresentation";
 import {
+  FormErrorText,
   HelpItem,
   TextAreaControl,
   TextControl,
@@ -33,7 +34,10 @@ export const OrganizationForm = ({
   readOnly = false,
 }: OrganizationFormProps) => {
   const { t } = useTranslation();
-  const { setValue } = useFormContext();
+  const {
+    setValue,
+    formState: { errors },
+  } = useFormContext();
   const name = useWatch({ name: "name" });
 
   useEffect(() => {
@@ -64,13 +68,18 @@ export const OrganizationForm = ({
             fieldLabelId="domain"
           />
         }
+        isRequired
       >
         <MultiLineInput
           id="domain"
           name="domains"
           aria-label={t("domain")}
           addButtonLabel="addDomain"
+          isRequired
         />
+        {errors?.["domains"]?.message && (
+          <FormErrorText message={errors["domains"].message.toString()} />
+        )}
       </FormGroup>
       <TextControl
         label={t("redirectUrl")}

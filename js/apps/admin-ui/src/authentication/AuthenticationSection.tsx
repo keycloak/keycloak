@@ -1,7 +1,10 @@
 import { fetchWithError } from "@keycloak/keycloak-admin-client";
-import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
-import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
+import {
+  KeycloakDataTable,
+  KeycloakSpinner,
+  ListEmptyState,
+  useAlerts,
+} from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   Button,
@@ -16,16 +19,12 @@ import { sortBy } from "lodash-es";
 import { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-
 import { useAdminClient } from "../admin-client";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
-import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
 import {
   RoutableTabs,
   useRoutableTab,
 } from "../components/routable-tabs/RoutableTabs";
-import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useRealm } from "../context/realm-context/RealmContext";
 import helpUrls from "../help-urls";
@@ -37,27 +36,11 @@ import { BindFlowDialog } from "./BindFlowDialog";
 import { DuplicateFlowModal } from "./DuplicateFlowModal";
 import { RequiredActions } from "./RequiredActions";
 import { UsedBy } from "./components/UsedBy";
+import { AuthenticationType } from "./constants";
 import { Policies } from "./policies/Policies";
 import { AuthenticationTab, toAuthentication } from "./routes/Authentication";
 import { toCreateFlow } from "./routes/CreateFlow";
 import { toFlow } from "./routes/Flow";
-
-type UsedBy = "SPECIFIC_CLIENTS" | "SPECIFIC_PROVIDERS" | "DEFAULT";
-
-export type AuthenticationType = AuthenticationFlowRepresentation & {
-  usedBy?: { type?: UsedBy; values: string[] };
-  realm: RealmRepresentation;
-};
-
-export const REALM_FLOWS = new Map<string, string>([
-  ["browserFlow", "browser"],
-  ["registrationFlow", "registration"],
-  ["directGrantFlow", "direct grant"],
-  ["resetCredentialsFlow", "reset credentials"],
-  ["clientAuthenticationFlow", "clients"],
-  ["dockerAuthenticationFlow", "docker auth"],
-  ["firstBrokerLoginFlow", "firstBrokerLogin"],
-]);
 
 const AliasRenderer = ({ id, alias, usedBy, builtIn }: AuthenticationType) => {
   const { t } = useTranslation();

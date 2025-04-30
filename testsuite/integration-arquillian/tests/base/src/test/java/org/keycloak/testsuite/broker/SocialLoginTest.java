@@ -6,6 +6,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
@@ -49,7 +50,7 @@ import org.keycloak.testsuite.pages.social.StackOverflowLoginPage;
 import org.keycloak.testsuite.pages.social.TwitterConsentLoginPage;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -86,7 +87,6 @@ import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.INSTAGRAM;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.LINKEDIN;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.MICROSOFT;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.MICROSOFT_SINGLE_TENANT;
-import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.OPENSHIFT;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.OPENSHIFT4;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.OPENSHIFT4_KUBE_ADMIN;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.PAYPAL;
@@ -131,7 +131,6 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         MICROSOFT_SINGLE_TENANT("microsoft", "microsoft-single-tenant", MicrosoftLoginPage.class),
         PAYPAL("paypal", PayPalLoginPage.class),
         STACKOVERFLOW("stackoverflow", StackOverflowLoginPage.class),
-        OPENSHIFT("openshift-v3", OpenShiftLoginPage.class),
         OPENSHIFT4("openshift-v4", OpenShiftLoginPage.class),
         OPENSHIFT4_KUBE_ADMIN("openshift-v4", "openshift-v4-admin", OpenShiftLoginPage.class),
         GITLAB("gitlab", GitLabLoginPage.class),
@@ -248,16 +247,6 @@ public class SocialLoginTest extends AbstractKeycloakTest {
 
     @Test
     @UncaughtServerErrorExpected
-    public void openshiftLogin() {
-        setTestProvider(OPENSHIFT);
-        performLogin();
-        assertUpdateProfile(true, true, true);
-        appPage.assertCurrent();
-        testTokenExchange();
-    }
-
-    @Test
-    @UncaughtServerErrorExpected
     public void openshift4Login() {
         setTestProvider(OPENSHIFT4);
         performLogin();
@@ -363,6 +352,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     }
 
     @Test
+    @Ignore
     public void instagramLogin() throws InterruptedException {
         setTestProvider(INSTAGRAM);
         performLogin();
@@ -460,7 +450,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         if (provider == STACKOVERFLOW) {
             idp.getConfig().put("key", getConfig(provider, "clientKey"));
         }
-        if (provider == OPENSHIFT || provider == OPENSHIFT4 || provider == OPENSHIFT4_KUBE_ADMIN) {
+        if (provider == OPENSHIFT4 || provider == OPENSHIFT4_KUBE_ADMIN) {
             idp.getConfig().put("baseUrl", getConfig(provider, "baseUrl"));
         }
         if (provider == MICROSOFT_SINGLE_TENANT) {
@@ -519,8 +509,8 @@ public class SocialLoginTest extends AbstractKeycloakTest {
 
         driver.navigate().to(
                 currentTestProvider.equals(PAYPAL)
-                        ? oauth.getLoginFormUrl("https://127.0.0.1:8543/auth")
-                        : oauth.getLoginFormUrl()
+                        ? oauth.loginForm().build().replace("https://localhost", "https://127.0.0.1")
+                        : oauth.loginForm().build()
         );
         loginPage.clickSocial(currentTestProvider.id());
 

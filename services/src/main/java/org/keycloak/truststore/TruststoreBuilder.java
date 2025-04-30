@@ -19,6 +19,7 @@ package org.keycloak.truststore;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.KeystoreUtil;
+import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -101,15 +102,14 @@ public class TruststoreBuilder {
             if (f.isDirectory()) {
                 mergeFiles(Stream.of(f.listFiles()).map(File::getAbsolutePath).toArray(String[]::new), truststore, false, discoveredFiles);
             } else {
-                if (file.endsWith(".p12") || file.endsWith(".pfx")) {
+                var format = KeystoreUtil.getKeystoreFormat(file).orElse(null);
+                if (format == KeystoreFormat.PKCS12) {
                     mergeTrustStore(truststore, file, loadStore(file, PKCS12, null));
                     if (!topLevel) {
                         discoveredFiles.add(f.getAbsolutePath());
                     }
-                } else {
-                    if (mergePemFile(truststore, file, topLevel) && !topLevel) {
-                        discoveredFiles.add(f.getAbsolutePath());
-                    }
+                } else if (mergePemFile(truststore, file, topLevel) && !topLevel) {
+                    discoveredFiles.add(f.getAbsolutePath());
                 }
             }
         }

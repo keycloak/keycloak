@@ -18,6 +18,7 @@
 package org.keycloak.email.freemarker;
 
 import java.io.IOException;
+import java.text.Bidi;
 import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.HashMap;
@@ -199,7 +200,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         attributes.put("link", link);
         attributes.put("linkExpiration", expirationInMinutes);
         try {
-            Locale locale = session.getContext().resolveLocale(user);
+            Locale locale = session.getContext().resolveLocale(user, getTheme().getType());
             attributes.put("linkExpirationFormatter", new LinkExpirationFormatterMethod(getTheme().getMessages(locale), locale));
         } catch (IOException e) {
             throw new EmailException("Failed to template email", e);
@@ -214,10 +215,16 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
     protected EmailTemplate processTemplate(String subjectKey, List<Object> subjectAttributes, String template, Map<String, Object> attributes) throws EmailException {
         try {
             Theme theme = getTheme();
-            Locale locale = session.getContext().resolveLocale(user);
+            Locale locale = session.getContext().resolveLocale(user, theme.getType());
             attributes.put("locale", locale);
 
             Properties messages = theme.getEnhancedMessages(realm, locale);
+
+            String currentLanguageTag = locale.getLanguage();
+            String currentLanguage = messages.getProperty("locale_" + currentLanguageTag, currentLanguageTag);
+            boolean isLtr = new Bidi(currentLanguage, Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT).isLeftToRight();
+            attributes.put("ltr", isLtr);
+
             attributes.put("msg", new MessageFormatterMethod(locale, messages));
 
             attributes.put("properties", theme.getProperties());

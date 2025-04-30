@@ -82,7 +82,7 @@ export const SelectComponent = (props: UserProfileFieldProps) => {
             }}
             selections={
               isMultiValue && Array.isArray(field.value)
-                ? field.value
+                ? field.value.map((option) => fetchLabel(option))
                 : fetchLabel(field.value)
             }
             variant={

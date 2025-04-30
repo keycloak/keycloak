@@ -147,8 +147,8 @@ The configurable items and their description follow.
 
 The CIBA grant uses the following two providers.
 
-. Authentication Channel Provider : provides the communication between {project_name} and the entity that actually authenticates the user via AD (Authentication Device).
-. User Resolver Provider : get `UserModel` of {project_name} from the information provided by the client to identify the user.
+. Authentication Channel Provider: provides the communication between {project_name} and the entity that actually authenticates the user via AD (Authentication Device).
+. User Resolver Provider: get `UserModel` of {project_name} from the information provided by the client to identify the user.
 
 {project_name} has both default providers. However, the administrator needs to set up Authentication Channel Provider like this:
 

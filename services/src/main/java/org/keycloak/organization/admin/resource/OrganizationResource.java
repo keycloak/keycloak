@@ -26,9 +26,12 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import jakarta.ws.rs.ext.Provider;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.events.admin.OperationType;
@@ -46,7 +49,8 @@ import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 
-@Provider
+import java.util.Objects;
+
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class OrganizationResource {
 
@@ -54,11 +58,6 @@ public class OrganizationResource {
     private final OrganizationProvider provider;
     private final AdminEventBuilder adminEvent;
     private final OrganizationModel organization;
-
-    public OrganizationResource() {
-        // needed for registering to the JAX-RS stack
-        this(null, null, null);
-    }
 
     public OrganizationResource(KeycloakSession session, OrganizationModel organization, AdminEventBuilder adminEvent) {
         this.session = session;
@@ -72,13 +71,20 @@ public class OrganizationResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Returns the organization representation")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = OrganizationRepresentation.class)))
+    })
     public OrganizationRepresentation get() {
-        return ModelToRepresentation.toRepresentation(organization);
+        return ModelToRepresentation.toRepresentation(organization, false);
     }
 
     @DELETE
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Deletes the organization")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request")
+    })
     public Response delete() {
         boolean removed = provider.remove(organization);
         if (removed) {
@@ -93,7 +99,18 @@ public class OrganizationResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Updates the organization")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "409", description = "Conflict")
+    })
     public Response update(OrganizationRepresentation organizationRep) {
+        // attempt to change organization name to an existing organization name
+        if (!Objects.equals(organization.getName(), organizationRep.getName()) &&
+                provider.getAllStream(organizationRep.getName(), true, -1, -1).findAny().isPresent()) {
+            throw ErrorResponse.error("A organization with the same name already exists.", Status.CONFLICT);
+        }
+
         try {
             OrganizationsValidation.validateUrl(organizationRep.getRedirectUrl());
             RepresentationToModel.toModel(organizationRep, organization);

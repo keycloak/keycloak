@@ -17,7 +17,10 @@
 
 package org.keycloak.authentication;
 
+import jakarta.ws.rs.core.MultivaluedMap;
 import org.jboss.logging.Logger;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.authentication.authenticators.util.AcrStore;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.authentication.authenticators.client.ClientAuthUtil;
@@ -61,11 +64,13 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.TokenUtil;
 
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
+import org.keycloak.utils.StringUtil;
 
 import java.io.IOException;
 import java.net.URI;
@@ -92,6 +97,9 @@ public class AuthenticationProcessor {
 
     // Boolean flag, which is true when authentication-selector screen should be rendered (typically displayed when user clicked on 'try another way' link)
     public static final String AUTHENTICATION_SELECTOR_SCREEN_DISPLAYED = "auth.selector.screen.rendered";
+
+    // Boolean note in the client session indicating it was first created for offline session
+    public static final String FIRST_OFFLINE_ACCESS = "first.offline.access";
 
     protected static final Logger logger = Logger.getLogger(AuthenticationProcessor.class);
     protected RealmModel realm;
@@ -301,6 +309,11 @@ public class AuthenticationProcessor {
         return clientData.encode();
     }
 
+    private String getSignedAuthSessionId() {
+        AuthenticationSessionManager authenticationSessionManager = new AuthenticationSessionManager(session);
+        return authenticationSessionManager.signAndEncodeToBase64AuthSessionId(getAuthenticationSession().getParentSession().getId());
+    }
+
     public URI getRefreshUrl(boolean authSessionIdParam) {
         UriBuilder uriBuilder = LoginActionsService.loginActionsBaseUrl(getUriInfo())
                 .path(AuthenticationProcessor.this.flowPath)
@@ -308,7 +321,7 @@ public class AuthenticationProcessor {
                 .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId())
                 .queryParam(Constants.CLIENT_DATA, getClientData());
         if (authSessionIdParam) {
-            uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getAuthenticationSession().getParentSession().getId());
+            uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getSignedAuthSessionId());
         }
         return uriBuilder
                 .build(getRealm().getName());
@@ -591,15 +604,23 @@ public class AuthenticationProcessor {
 
         @Override
         public URI getActionUrl(String code) {
-            UriBuilder uriBuilder = LoginActionsService.loginActionsBaseUrl(getUriInfo())
+            UriInfo uriInfo = getUriInfo();
+            UriBuilder uriBuilder = LoginActionsService.loginActionsBaseUrl(uriInfo)
                     .path(AuthenticationProcessor.this.flowPath)
                     .queryParam(LoginActionsService.SESSION_CODE, code)
                     .queryParam(Constants.EXECUTION, getExecution().getId())
                     .queryParam(Constants.CLIENT_ID, getAuthenticationSession().getClient().getClientId())
                     .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId())
                     .queryParam(Constants.CLIENT_DATA, getClientData());
-            if (getUriInfo().getQueryParameters().containsKey(LoginActionsService.AUTH_SESSION_ID)) {
-                uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getAuthenticationSession().getParentSession().getId());
+            MultivaluedMap<String, String> queryParameters = uriInfo.getQueryParameters();
+            String token = queryParameters.getFirst(Constants.TOKEN);
+
+            if (StringUtil.isNotBlank(token)) {
+                uriBuilder.queryParam(Constants.TOKEN, token);
+            }
+
+            if (queryParameters.containsKey(LoginActionsService.AUTH_SESSION_ID)) {
+                uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getSignedAuthSessionId());
             }
             return uriBuilder
                     .build(getRealm().getName());
@@ -614,7 +635,7 @@ public class AuthenticationProcessor {
                     .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId())
                     .queryParam(Constants.CLIENT_DATA, getClientData());
             if (getUriInfo().getQueryParameters().containsKey(LoginActionsService.AUTH_SESSION_ID)) {
-                uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getAuthenticationSession().getParentSession().getId());
+                uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getSignedAuthSessionId());
             }
             return uriBuilder
                     .build(getRealm().getName());
@@ -629,7 +650,7 @@ public class AuthenticationProcessor {
                     .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId())
                     .queryParam(Constants.CLIENT_DATA, getClientData());
             if (getUriInfo().getQueryParameters().containsKey(LoginActionsService.AUTH_SESSION_ID)) {
-                uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getAuthenticationSession().getParentSession().getId());
+                uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getSignedAuthSessionId());
             }
             return uriBuilder
                     .build(getRealm().getName());
@@ -648,7 +669,7 @@ public class AuthenticationProcessor {
                     .setHttpHeaders(getHttpRequest().getHttpHeaders())
                     .setUriInfo(getUriInfo())
                     .setEventBuilder(event);
-            Response response = protocol.sendError(getAuthenticationSession(), Error.CANCELLED_BY_USER);
+            Response response = protocol.sendError(getAuthenticationSession(), Error.CANCELLED_BY_USER, null);
             forceChallenge(response);
         }
 
@@ -792,7 +813,7 @@ public class AuthenticationProcessor {
                 ServicesLogger.LOGGER.failedAuthentication(e);
                 event.error(Errors.USER_TEMPORARILY_DISABLED);
                 if (e.getResponse() != null) return e.getResponse();
-                return ErrorPage.error(session,authenticationSession, Response.Status.BAD_REQUEST, Messages.INVALID_USER);
+                return ErrorPage.error(session,authenticationSession, Response.Status.BAD_REQUEST, Messages.ACCOUNT_TEMPORARILY_DISABLED);
 
             } else if (e.getError() == AuthenticationFlowError.INVALID_CLIENT_SESSION) {
                 ServicesLogger.LOGGER.failedAuthentication(e);
@@ -933,7 +954,7 @@ public class AuthenticationProcessor {
     public Response redirectToFlow() {
         URI redirect = new AuthenticationFlowURLHelper(session, realm, uriInfo).getLastExecutionUrl(authenticationSession);
 
-        logger.debug("Redirecting to URL: " + redirect.toString());
+        logger.debugf("Redirecting to URL: %s", redirect.toString());
 
         return Response.status(302).location(redirect).build();
 
@@ -1114,7 +1135,7 @@ public class AuthenticationProcessor {
             if (userSession == null) {
                 UserSessionModel.SessionPersistenceState persistenceState = UserSessionModel.SessionPersistenceState.fromString(authSession.getClientNote(AuthenticationManager.USER_SESSION_PERSISTENT_STATE));
 
-                userSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, authSession.getAuthenticatedUser(), username, connection.getRemoteAddr(), authSession.getProtocol()
+                userSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, authSession.getAuthenticatedUser(), username, connection.getRemoteHost(), authSession.getProtocol()
                         , remember, brokerSessionId, brokerUserId, persistenceState);
 
                 if (isLightweightUser(userSession.getUser())) {
@@ -1122,7 +1143,7 @@ public class AuthenticationProcessor {
                     lua.setOwningUserSessionId(userSession.getId());
                 }
             } else if (userSession.getUser() == null || !AuthenticationManager.isSessionValid(realm, userSession)) {
-                userSession.restartSession(realm, authSession.getAuthenticatedUser(), username, connection.getRemoteAddr(), authSession.getProtocol()
+                userSession.restartSession(realm, authSession.getAuthenticatedUser(), username, connection.getRemoteHost(), authSession.getProtocol()
                         , remember, brokerSessionId, brokerUserId);
             } else {
                 // We have existing userSession even if it wasn't attached to authenticator. Could happen if SSO authentication was ignored (eg. prompt=login) and in some other cases.
@@ -1141,7 +1162,15 @@ public class AuthenticationProcessor {
             event.detail(Details.REMEMBER_ME, "true");
         }
 
+        final int clientSessions = userSession.getAuthenticatedClientSessions().size();
         ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(session, userSession, authSession);
+        if (clientSessions == 0 && userSession.getStarted() == userSession.getLastSessionRefresh()
+                && TokenUtil.hasScope(clientSessionCtx.getScopeString(), OAuth2Constants.OFFLINE_ACCESS)) {
+            // user session is just created, empty and the first access was for offline token, set the note
+            clientSessionCtx.getClientSession().setNote(FIRST_OFFLINE_ACCESS, Boolean.TRUE.toString());
+        } else {
+            clientSessionCtx.getClientSession().removeNote(FIRST_OFFLINE_ACCESS);
+        }
 
         event.user(userSession.getUser())
                 .detail(Details.USERNAME, username)
@@ -1164,11 +1193,16 @@ public class AuthenticationProcessor {
 
     public void validateUser(UserModel authenticatedUser) {
         if (authenticatedUser == null) return;
-        if (!authenticatedUser.isEnabled()) throw new AuthenticationFlowException(AuthenticationFlowError.USER_DISABLED);
+        if (!authenticatedUser.isEnabled()) {
+            event.user(authenticatedUser).detail(Details.USERNAME, authenticatedUser.getUsername());
+            throw new AuthenticationFlowException(AuthenticationFlowError.USER_DISABLED);
+        }
         if (authenticatedUser.getServiceAccountClientLink() != null) throw new AuthenticationFlowException(AuthenticationFlowError.UNKNOWN_USER);
     }
 
     protected Response authenticationComplete() {
+        new AcrStore(session, authenticationSession).setAuthFlowLevelAuthenticatedToCurrentRequest();
+
         // attachSession(); // Session will be attached after requiredActions + consents are finished.
         AuthenticationManager.setClientScopesInSession(session, authenticationSession);
 
@@ -1192,7 +1226,6 @@ public class AuthenticationProcessor {
     public AuthenticationProcessor.Result createClientAuthenticatorContext(AuthenticationExecutionModel model, ClientAuthenticator clientAuthenticator, List<AuthenticationExecutionModel> executions) {
         return new Result(model, clientAuthenticator, executions);
     }
-
 
     // This takes care of CRUD of FormMessage to the authenticationSession, so that message can be displayed on the forms in different HTTP request
     private class ForwardedFormMessageStore {

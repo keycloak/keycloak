@@ -80,6 +80,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public static final String LOGIN_PROTOCOL = "openid-connect";
     public static final String STATE_PARAM = "state";
     public static final String SCOPE_PARAM = "scope";
+    public static final String AUTHORIZATION_DETAILS_PARAM = "authorization_details";
     public static final String CODE_PARAM = "code";
     public static final String RESPONSE_TYPE_PARAM = "response_type";
     public static final String GRANT_TYPE_PARAM = "grant_type";
@@ -109,6 +110,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public static final String PROMPT_VALUE_NONE = "none";
     public static final String PROMPT_VALUE_LOGIN = "login";
     public static final String PROMPT_VALUE_CONSENT = "consent";
+    public static final String PROMPT_VALUE_CREATE = "create";
     public static final String PROMPT_VALUE_SELECT_ACCOUNT = "select_account";
 
     // Client authentication methods
@@ -134,6 +136,9 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public static final String PKCE_METHOD_PLAIN = "plain";
     public static final String PKCE_METHOD_S256 = "S256";
 
+    // https://datatracker.ietf.org/doc/html/rfc9449#section-12.3
+    public static final String DPOP_JKT = "dpop_jkt";
+
     private static final Logger logger = Logger.getLogger(OIDCLoginProtocol.class);
 
     protected KeycloakSession session;
@@ -149,6 +154,8 @@ public class OIDCLoginProtocol implements LoginProtocol {
     protected OIDCResponseType responseType;
     protected OIDCResponseMode responseMode;
 
+    protected OIDCProviderConfig providerConfig;
+
     public OIDCLoginProtocol(KeycloakSession session, RealmModel realm, UriInfo uriInfo, HttpHeaders headers, EventBuilder event) {
         this.session = session;
         this.realm = realm;
@@ -157,8 +164,8 @@ public class OIDCLoginProtocol implements LoginProtocol {
         this.event = event;
     }
 
-    public OIDCLoginProtocol() {
-
+    public OIDCLoginProtocol(OIDCProviderConfig providerConfig) {
+        this.providerConfig = providerConfig;
     }
 
     private void setupResponseTypeAndMode(String responseType, String responseMode) {
@@ -196,6 +203,10 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public OIDCLoginProtocol setEventBuilder(EventBuilder event) {
         this.event = event;
         return this;
+    }
+
+    public OIDCProviderConfig getConfig() {
+        return this.providerConfig;
     }
 
     @Override
@@ -247,6 +258,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
                 authSession.getClientNote(OIDCLoginProtocol.REDIRECT_URI_PARAM),
                 authSession.getClientNote(OIDCLoginProtocol.CODE_CHALLENGE_PARAM),
                 authSession.getClientNote(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM),
+                authSession.getClientNote(OIDCLoginProtocol.DPOP_JKT),
                 userSession.getId());
 
             code = OAuth2CodeParser.persistCode(session, clientSession, codeData);
@@ -280,6 +292,9 @@ public class OIDCLoginProtocol implements LoginProtocol {
             try {
                 session.clientPolicy().triggerOnEvent(new ImplicitHybridTokenResponse(authSession, clientSessionCtx, responseBuilder));
             } catch (ClientPolicyException cpe) {
+                event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+                event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+                event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
                 event.error(cpe.getError());
                 new AuthenticationSessionManager(session).removeTabIdInAuthenticationSession(realm, authSession);
                 redirectUri.addParam(OAuth2Constants.ERROR_DESCRIPTION, cpe.getError());
@@ -299,6 +314,12 @@ public class OIDCLoginProtocol implements LoginProtocol {
                 redirectUri.addParam(OAuth2Constants.ACCESS_TOKEN, res.getToken());
                 redirectUri.addParam(OAuth2Constants.TOKEN_TYPE, res.getTokenType());
                 redirectUri.addParam(OAuth2Constants.EXPIRES_IN, String.valueOf(res.getExpiresIn()));
+            }
+
+            boolean offlineTokenRequested = clientSessionCtx.isOfflineTokenRequested();
+            if (!responseType.isImplicitFlow() && offlineTokenRequested) {
+                // Allow creating offline token early, so the tokens issued from authz-enpdpoint can lookup offline-user-session if used before code-to-token request
+                responseBuilder.createOrUpdateOfflineSession();
             }
         }
 
@@ -340,7 +361,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
     }
 
     @Override
-    public Response sendError(AuthenticationSessionModel authSession, Error error) {
+    public Response sendError(AuthenticationSessionModel authSession, Error error, String errorMessage) {
         if (isOAuth2DeviceVerificationFlow(authSession)) {
             return denyOAuth2DeviceAuthorization(authSession, error, session);
         }
@@ -351,7 +372,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
         String redirect = authSession.getRedirectUri();
         String state = authSession.getClientNote(OIDCLoginProtocol.STATE_PARAM);
 
-        OIDCRedirectUriBuilder redirectUri = buildErrorRedirectUri(redirect, state, error);
+        OIDCRedirectUriBuilder redirectUri = buildErrorRedirectUri(redirect, state, error, errorMessage);
 
         // Remove authenticationSession from current tab
         new AuthenticationSessionManager(session).removeTabIdInAuthenticationSession(realm, authSession);
@@ -359,10 +380,10 @@ public class OIDCLoginProtocol implements LoginProtocol {
         return buildRedirectUri(redirectUri, authSession, null, null, null, error);
     }
 
-    private OIDCRedirectUriBuilder buildErrorRedirectUri(String redirect, String state, Error error) {
+    private OIDCRedirectUriBuilder buildErrorRedirectUri(String redirect, String state, Error error, String errorMessage) {
         OIDCRedirectUriBuilder redirectUri = OIDCRedirectUriBuilder.fromUri(redirect, responseMode, session, null);
 
-        OAuth2ErrorRepresentation oauthError = translateError(error);
+        OAuth2ErrorRepresentation oauthError = translateError(error, errorMessage);
         if (oauthError.getError() != null) {
             redirectUri.addParam(OAuth2Constants.ERROR, oauthError.getError());
         }
@@ -410,19 +431,19 @@ public class OIDCLoginProtocol implements LoginProtocol {
         }
 
         setupResponseTypeAndMode(clientData.getResponseType(), clientData.getResponseMode());
-        OIDCRedirectUriBuilder redirectUri = buildErrorRedirectUri(clientData.getRedirectUri(), clientData.getState(), error);
+        OIDCRedirectUriBuilder redirectUri = buildErrorRedirectUri(clientData.getRedirectUri(), clientData.getState(), error, null);
         return buildRedirectUri(redirectUri, null, null, null, null, error);
     }
 
-    private OAuth2ErrorRepresentation translateError(Error error) {
+    private OAuth2ErrorRepresentation translateError(Error error, String errorMessage) {
         switch (error) {
             case CANCELLED_AIA_SILENT:
                 return new OAuth2ErrorRepresentation(null, null);
             case CANCELLED_AIA:
-                return new OAuth2ErrorRepresentation(OAuthErrorException.ACCESS_DENIED, "User cancelled aplication-initiated action.");
+                return new OAuth2ErrorRepresentation(OAuthErrorException.ACCESS_DENIED, "User cancelled application-initiated action.");
             case CANCELLED_BY_USER:
             case CONSENT_DENIED:
-                return new OAuth2ErrorRepresentation(OAuthErrorException.ACCESS_DENIED, null);
+                return new OAuth2ErrorRepresentation(OAuthErrorException.ACCESS_DENIED, errorMessage);
             case PASSIVE_INTERACTION_REQUIRED:
                 return new OAuth2ErrorRepresentation(OAuthErrorException.INTERACTION_REQUIRED, null);
             case PASSIVE_LOGIN_REQUIRED:
@@ -513,6 +534,9 @@ public class OIDCLoginProtocol implements LoginProtocol {
         if (userSession != null && authSession.getClientNote(Constants.KC_ACTION) != null) {
             String providerId = authSession.getClientNote(Constants.KC_ACTION);
             RequiredActionProvider requiredActionProvider = this.session.getProvider(RequiredActionProvider.class, providerId);
+            if (requiredActionProvider == null) {
+                return false;
+            }
             String authTime = userSession.getNote(AuthenticationManager.AUTH_TIME);
             int authTimeInt = authTime == null ? 0 : Integer.parseInt(authTime);
             int maxAgeInt = requiredActionProvider.getMaxAuthAge();

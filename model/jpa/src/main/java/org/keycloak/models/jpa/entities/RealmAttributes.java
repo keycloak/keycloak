@@ -56,5 +56,9 @@ public interface RealmAttributes {
 
     String FIRST_BROKER_LOGIN_FLOW_ID = "firstBrokerLoginFlowId";
 
+    String VERIFIABLE_CREDENTIALS_ENABLED = "verifiableCredentialsEnabled";
+
     String ORGANIZATIONS_ENABLED = "organizationsEnabled";
+    String ADMIN_PERMISSIONS_ENABLED = "adminPermissionsEnabled";
+    String ADMIN_PERMISSIONS_CLIENT_ID = "adminPermissionsClientId";
 }

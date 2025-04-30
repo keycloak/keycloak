@@ -5,7 +5,7 @@ The Protection API provides a UMA-compliant set of endpoints providing:
 
 * *Resource Management*
 +
-With this endpoint, resource servers can manage their resources remotely and enable policy enforcers to query the server for the resources that need protection.
+With this endpoint, resource servers can manage their resources remotely and enable <<_enforcer_overview, policy enforcers>> to query the server for the resources that need protection.
 
 * *Permission Management*
 +

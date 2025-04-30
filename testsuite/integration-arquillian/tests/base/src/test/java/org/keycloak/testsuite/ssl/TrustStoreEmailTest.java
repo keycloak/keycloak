@@ -35,10 +35,11 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.auth.page.login.VerifyEmail;
+import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.MailServerConfiguration;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.SslMailServer;
 
 import static org.junit.Assert.assertEquals;
@@ -59,6 +60,9 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     private VerifyEmail testRealmVerifyEmailPage;
+
+    @Page
+    private ErrorPage errorPage;
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -98,7 +102,7 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
             SslMailServer.startWithSsl(privateKey);
         }
 
-        driver.navigate().to(oauth.getLoginFormUrl());
+        oauth.openLoginForm();
         testRealmLoginPage.form().login(user.getUsername(), "password");
 
         EventRepresentation sendEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL)
@@ -139,7 +143,7 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
 
         assertCurrentUrlStartsWith(OAuthClient.APP_AUTH_ROOT);
         AccountHelper.logout(testRealm(), user.getUsername());
-        driver.navigate().to(oauth.getLoginFormUrl());
+        oauth.openLoginForm();
         testRealmLoginPage.form().login(user.getUsername(), "password");
         assertCurrentUrlStartsWith(OAuthClient.APP_AUTH_ROOT);
     }
@@ -154,7 +158,7 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
         UserRepresentation user = ApiUtil.findUserByUsername(testRealm(), "test-user@localhost");
 
         SslMailServer.startWithSsl(this.getClass().getClassLoader().getResource(SslMailServer.INVALID_KEY).getFile());
-        driver.navigate().to(oauth.getLoginFormUrl());
+        oauth.openLoginForm();
         loginPage.form().login(user.getUsername(), "password");
 
         events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL_ERROR)
@@ -169,9 +173,9 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
         // Email wasn't send
         Assert.assertNull(SslMailServer.getLastReceivedMessage());
 
-        // Email wasn't send, but we won't notify end user about that. Admin is aware due to the error in the logs and the SEND_VERIFY_EMAIL_ERROR event.
-        assertEquals("You need to verify your email address to activate your account.",
-                testRealmVerifyEmailPage.feedbackMessage().getText());
+        // Email wasn't sent, and we notify end user about that.
+        assertEquals("Failed to send email, please try again later.",
+                errorPage.getError());
     }
 
     @Test
@@ -182,7 +186,7 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
                 .setSmtpServer("host", "localhost.localdomain")
                 .update()) {
             SslMailServer.startWithSsl(this.getClass().getClassLoader().getResource(SslMailServer.PRIVATE_KEY).getFile());
-            driver.navigate().to(oauth.getLoginFormUrl());
+            oauth.openLoginForm();
             loginPage.form().login(user.getUsername(), "password");
 
             events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL_ERROR)
@@ -197,9 +201,9 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
             // Email wasn't send
             Assert.assertNull(SslMailServer.getLastReceivedMessage());
 
-            // Email wasn't send, but we won't notify end user about that. Admin is aware due to the error in the logs and the SEND_VERIFY_EMAIL_ERROR event.
-            assertEquals("You need to verify your email address to activate your account.",
-                    testRealmVerifyEmailPage.feedbackMessage().getText());
+            // Email wasn't sent, and we notify end user about that.
+            assertEquals("Failed to send email, please try again later.",
+                    errorPage.getError());
         }
     }
 

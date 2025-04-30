@@ -41,7 +41,6 @@ export default function CreateUser() {
         throw new Error(t("notFound"));
       }
 
-      form.setValue("attributes.locale", realm?.defaultLocale || "");
       setUserProfileMetadata(userProfileMetadata);
     },
     [],

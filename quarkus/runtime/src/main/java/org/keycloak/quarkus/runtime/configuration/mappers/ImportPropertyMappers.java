@@ -26,8 +26,6 @@ import org.keycloak.config.OptionCategory;
 import org.keycloak.exportimport.Strategy;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 
-import java.util.Optional;
-
 import static org.keycloak.exportimport.ExportImportConfig.PROVIDER;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalValue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
@@ -95,18 +93,18 @@ public final class ImportPropertyMappers {
                 .isPresent();
     }
 
-    private static Optional<String> transformOverride(Optional<String> option, ConfigSourceInterceptorContext context) {
-        if (option.isPresent() && Boolean.parseBoolean(option.get())) {
-            return Optional.of(Strategy.OVERWRITE_EXISTING.name());
+    private static String transformOverride(String option, ConfigSourceInterceptorContext context) {
+        if (Boolean.parseBoolean(option)) {
+            return Strategy.OVERWRITE_EXISTING.name();
         } else {
-            return Optional.of(Strategy.IGNORE_EXISTING.name());
+            return Strategy.IGNORE_EXISTING.name();
         }
     }
 
-    private static Optional<String> transformImporter(Optional<String> option, ConfigSourceInterceptorContext context) {
+    private static String transformImporter(String option, ConfigSourceInterceptorContext context) {
         ConfigValue importer = context.proceed(IMPORTER_PROPERTY);
         if (importer != null) {
-            return Optional.of(importer.getValue());
+            return importer.getValue();
         }
 
         var file = getOptionalValue("kc.spi-import-single-file-file").map(f -> SINGLE_FILE);
@@ -117,7 +115,7 @@ public final class ImportPropertyMappers {
         // Only one option can be specified
         boolean xor = file.isPresent() ^ dir.isPresent();
 
-        return xor ? file.or(() -> dir) : Optional.empty();
+        return xor ? file.or(() -> dir).get() : null;
     }
 
 }

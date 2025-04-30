@@ -15,7 +15,7 @@ describe("Users federation provider", () => {
     kcAdminClient = new KeycloakAdminClient();
     await kcAdminClient.auth(credentials);
 
-    const name = faker.internet.userName();
+    const name = faker.internet.username();
     currentUserFed = await kcAdminClient.components.create({
       name,
       parentId: "master",

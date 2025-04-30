@@ -2,18 +2,18 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Take site offline"
-summary="This describes how to take a site offline so that it no longer processes client requests" >
+title="Taking a site offline"
+summary="Take a site offline so that it no longer processes client requests." >
 
 == When to use this procedure
 
 During the deployment lifecycle it might be required that one of the sites is temporarily taken offline
 for maintenance or to allow for software upgrades. To ensure that no user requests are routed to the site requiring
-maintenance, it is necessary for the site to be removed from your loadbalancer configuration.
+maintenance, it is necessary for the site to be removed from your load balancer configuration.
 
 == Procedure
 
-Follow these steps to remove a site from the loadbalancer so that no traffic can be routed to it.
+Follow these steps to remove a site from the load balancer so that no traffic can be routed to it.
 
 === Global Accelerator
 

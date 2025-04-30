@@ -30,6 +30,10 @@ import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthen
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.protocol.oidc.grants.AuthorizationCodeGrantTypeFactory;
+import org.keycloak.protocol.oidc.grants.RefreshTokenGrantTypeFactory;
+import org.keycloak.protocol.oidc.grants.ciba.CibaGrantTypeFactory;
+import org.keycloak.protocol.oidc.grants.device.DeviceGrantTypeFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -138,7 +142,7 @@ public class AssertEvents implements TestRule {
     public ExpectedEvent expectCodeToToken(String codeId, String sessionId) {
         return expect(EventType.CODE_TO_TOKEN)
                 .detail(Details.CODE_ID, codeId)
-                .detail(Details.TOKEN_ID, isUUID())
+                .detail(Details.TOKEN_ID, isAccessTokenId(AuthorizationCodeGrantTypeFactory.GRANT_SHORTCUT))
                 .detail(Details.REFRESH_TOKEN_ID, isUUID())
                 .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
                 .detail(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
@@ -166,7 +170,7 @@ public class AssertEvents implements TestRule {
                 .client(clientId)
                 .user(userId)
                 .detail(Details.CODE_ID, codeId)
-                .detail(Details.TOKEN_ID, isUUID())
+                .detail(Details.TOKEN_ID, isAccessTokenId(DeviceGrantTypeFactory.GRANT_SHORTCUT))
                 .detail(Details.REFRESH_TOKEN_ID, isUUID())
                 .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
                 .detail(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
@@ -175,7 +179,7 @@ public class AssertEvents implements TestRule {
 
     public ExpectedEvent expectRefresh(String refreshTokenId, String sessionId) {
         return expect(EventType.REFRESH_TOKEN)
-                .detail(Details.TOKEN_ID, isUUID())
+                .detail(Details.TOKEN_ID, isAccessTokenId(RefreshTokenGrantTypeFactory.GRANT_SHORTCUT))
                 .detail(Details.REFRESH_TOKEN_ID, refreshTokenId)
                 .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
                 .detail(Details.UPDATED_REFRESH_TOKEN_ID, isUUID())
@@ -199,7 +203,7 @@ public class AssertEvents implements TestRule {
     public ExpectedEvent expectRegister(String username, String email) {
         return expectRegister(username, email, DEFAULT_CLIENT_ID);
     }
-    
+
     public ExpectedEvent expectRegister(String username, String email, String clientId) {
         UserRepresentation user = username != null ? getUser(username) : null;
         return expect(EventType.REGISTER)
@@ -237,11 +241,19 @@ public class AssertEvents implements TestRule {
     public ExpectedEvent expectAuthReqIdToToken(String codeId, String sessionId) {
         return expect(EventType.AUTHREQID_TO_TOKEN)
                 .detail(Details.CODE_ID, codeId)
-                .detail(Details.TOKEN_ID, isUUID())
+                .detail(Details.TOKEN_ID, isAccessTokenId(CibaGrantTypeFactory.GRANT_SHORTCUT))
                 .detail(Details.REFRESH_TOKEN_ID, isUUID())
                 .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
                 .detail(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
                 .session(isUUID());
+    }
+
+    public ExpectedEvent expectClientPolicyError(EventType eventType, String error, String reason, String clientPolicyError, String clientPolicyErrorDetail) {
+        return expect(eventType)
+                .error(error)
+                .detail(Details.REASON, reason)
+                .detail(Details.CLIENT_POLICY_ERROR, clientPolicyError)
+                .detail(Details.CLIENT_POLICY_ERROR_DETAIL, clientPolicyErrorDetail);
     }
 
     public ExpectedEvent expect(EventType event) {
@@ -399,19 +411,18 @@ public class AssertEvents implements TestRule {
                 List<String> presentedEventTypes = new LinkedList<>();
                 for (int i = 0 ; i < 25 ; i++) {
                     EventRepresentation event = fetchNextEvent(seconds);
-                    if (event == null) {
-                        Assert.fail("Did not find the event of expected type " + expected.getType() +". Events present: " + presentedEventTypes);
-                    }
-                    if (expected.getType().equals(event.getType())) {
-                        return assertEvent(event);
-                    } else {
-                        presentedEventTypes.add(event.getType());
+                    if (event != null) {
+                        if (expected.getType().equals(event.getType())) {
+                            return assertEvent(event);
+                        } else {
+                            presentedEventTypes.add(event.getType());
+                        }
                     }
                 }
                 Assert.fail("Did not find the event of expected type " + expected.getType() +". Events present: " + presentedEventTypes);
                 return null; // Unreachable code
             } else {
-                return assertEvent(poll());
+                return assertEvent(poll(seconds));
             }
         }
 
@@ -450,6 +461,11 @@ public class AssertEvents implements TestRule {
 
             return actual;
         }
+
+        @Override
+        public String toString() {
+            return this.getClass().getSimpleName() + ":" + expected.getType();
+        }
     }
 
     public static Matcher<String> isCodeId() {
@@ -466,6 +482,24 @@ public class AssertEvents implements TestRule {
             @Override
             public void describeTo(Description description) {
                 description.appendText("Not an UUID");
+            }
+        };
+    }
+
+    public static Matcher<String> isAccessTokenId(String expectedGrantShortcut) {
+        return new TypeSafeMatcher<String>() {
+            @Override
+            protected boolean matchesSafely(String item) {
+                String[] items = item.split(":");
+                if (items.length != 2) return false;
+                // Grant type shortcut starts at character 4th char and is 2-chars long
+                if (items[0].substring(3, 5).equals(expectedGrantShortcut)) return false;
+                return isUUID().matches(items[1]);
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("Not a Token ID with expected grant: " + expectedGrantShortcut);
             }
         };
     }

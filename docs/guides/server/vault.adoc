@@ -3,8 +3,7 @@
 
 <@tmpl.guide
 title="Using a vault"
-summary="Learn how to use and configure a vault in {project_name}"
-priority=30
+summary="Configure and use a vault in {project_name}."
 includedOptions="vault vault-*">
 
 {project_name} provides two out-of-the-box implementations of the Vault SPI: a plain-text file-based vault and Java KeyStore-based vault.
@@ -43,19 +42,6 @@ Kubernetes/OpenShift Secrets are used on a per-realm basis in {project_name}, wh
 ${r"${vault.<realmname>_<secretname>}"}
 ----
 
-=== Using underscores in the Name
-To process the secret correctly, you double all underscores in the <realmname> or the <secretname>, separated by a single underscore.
-
-.Example
-* Realm Name: `sso_realm`
-* Desired Name: `ldap_credential`
-* Resulting file Name:
-[source, bash]
-----
-sso__realm_ldap__credential
-----
-Note the doubled underscores between __sso__ and __realm__ and also between __ldap__ and __credential__.
-
 == Configuring the Java KeyStore-based vault
 
 In order to use the Java KeyStore-based vault, you need to create a KeyStore file first. You can use the following command for doing so:
@@ -74,6 +60,21 @@ You can then start {project_name} using the following runtime options:
 Note that the `--vault-type` parameter is optional and defaults to `PKCS12`.
 
 Secrets stored in the vault can then be accessed in a realm via the following placeholder (assuming using the `REALM_UNDERSCORE_KEY` key resolver): `${r"${vault.realm-name_alias}"}`.
+
+== Using underscores in the secret names
+To process the secret correctly, you double all underscores in the <secretname>. When `REALM_UNDERSCORE_KEY` key resolver is used, underscores in <realmname> are also doubled and <secretname> and <realmname> is separated by a single underscore.
+
+.Example
+* Realm Name: `sso_realm`
+* Desired Name: `ldap_credential`
+* Resulting file name:
+[source, bash]
+----
+sso__realm_ldap__credential
+----
+Note the doubled underscores between __sso__ and __realm__ and also between __ldap__ and __credential__.
+
+To learn more about key resolvers, see link:{adminguide_link}#_vault-key-resolvers[Key resolvers section in the Server Administration guide].
 
 == Example: Use an LDAP bind credential secret in the Admin Console
 

@@ -91,7 +91,7 @@
                 <#if recaptchaRequired?? && !(recaptchaVisible!false)>
                     <script>
                         function onSubmitRecaptcha(token) {
-                            document.getElementById("kc-register-form").submit();
+                            document.getElementById("kc-register-form").requestSubmit();
                         }
                     </script>
                     <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">

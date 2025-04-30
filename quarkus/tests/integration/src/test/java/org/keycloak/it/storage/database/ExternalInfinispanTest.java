@@ -18,7 +18,8 @@
 package org.keycloak.it.storage.database;
 
 import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
+
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.keycloak.common.util.Retry;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -31,6 +32,7 @@ import static io.restassured.RestAssured.when;
 
 @DistributionTest(keepAlive = true)
 @WithExternalInfinispan
+@Tag(DistributionTest.STORAGE)
 public class ExternalInfinispanTest {
 
     @Test
@@ -42,7 +44,7 @@ public class ExternalInfinispanTest {
             "--cache-remote-username=keycloak",
             "--cache-remote-password=Password1!",
             "--cache-remote-tls-enabled=false",
-            "--spi-connections-infinispan-quarkus-site-name=ISPN",
+            "--spi-cache-embedded-default-site-name=ISPN",
             "--spi-load-balancer-check-remote-poll-interval=500",
             "-Dkc.cache-remote-create-caches=true",
             "--verbose"
@@ -60,7 +62,7 @@ public class ExternalInfinispanTest {
             "--cache-remote-username=keycloak",
             "--cache-remote-password=Password1!",
             "--cache-remote-tls-enabled=false",
-            "--spi-connections-infinispan-quarkus-site-name=ISPN",
+            "--spi-cache-embedded-default-site-name=ISPN",
             "--spi-load-balancer-check-remote-poll-interval=500",
             "-Dkc.cache-remote-create-caches=true",
             "--verbose"
@@ -90,7 +92,18 @@ public class ExternalInfinispanTest {
             "-Djboss.site.name=ISPN",
             "--verbose"
     })
-    void testSiteNameAsSystemProperty(LaunchResult result) {
-        ((CLIResult) result).assertMessage("System property jboss.site.name is in use. Use --spi-connections-infinispan-quarkus-site-name config option instead");
+    void testSiteNameAsSystemProperty(CLIResult cliResult) {
+        cliResult.assertMessage("System property jboss.site.name is in use. Use --spi-cache-embedded-default-site-name config option instead");
+    }
+
+    @Test
+    @Launch({
+            "start-dev",
+            "--cache=ispn",
+            "-Djboss.node.name=ISPN",
+            "--verbose"
+    })
+    void testNodeNameAsSystemProperty(CLIResult cliResult) {
+        cliResult.assertMessage("System property jboss.node.name is in use. Use --spi-cache-embedded-default-node-name config option instead");
     }
 }

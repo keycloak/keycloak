@@ -8,7 +8,6 @@ import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
 import org.keycloak.testsuite.arquillian.containers.AbstractQuarkusDeployableContainer;
 import org.keycloak.utils.StringUtil;
 
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -82,12 +81,12 @@ public class SpiProvidersSwitchingUtils {
                         }
                     }
                 }
-                getQuarkusContainer(container).setAdditionalBuildArgs(args);
+                getQuarkusContainer(container).setSpiConfig(spiName, args);
             }
 
             @Override
             public void removeProviderConfig(Container container, String spiName) {
-                getQuarkusContainer(container).setAdditionalBuildArgs(Collections.emptyList());
+                getQuarkusContainer(container).removeSpiConfig(spiName);
             }
 
             private AbstractQuarkusDeployableContainer getQuarkusContainer(Container container) {

@@ -25,6 +25,10 @@ const keycloak = new Keycloak({
 });
 
 const authorization = new KeycloakAuthorization(keycloak);
+
+await keycloak.init();
+
+// Now you can use the authorization object to interact with the server.
 ----
 
 The `keycloak-js/authz` library provides two main features:
@@ -45,8 +49,8 @@ responds with a *401* status code and a `WWW-Authenticate` header.
 [source,bash,subs="attributes+"]
 ----
 HTTP/1.1 401 Unauthorized
-WWW-Authenticate: UMA realm="${realm}",
-    as_uri="https://${host}:${port}{kc_realms_path}/${realm}",
+WWW-Authenticate: UMA realm="${realm-name}",
+    as_uri="https://${host}:${port}{kc_realms_path}/${realm-name}",
     ticket="016f84e8-f9b9-11e0-bd6f-0021cc6004de"
 ----
 
@@ -72,7 +76,7 @@ authorization.authorize(authorizationRequest).then((rpt) => {
 
 The `authorize` function is completely asynchronous and supports a few callback functions to receive notifications from the server:
 
-* `onGrant`: The first argument of the function. If authorization was successful and the server returned an RPT with the requested permissions, the callback receives the RPT.
+* `onGrant`: The first argument of the function. If authorization succeeds and the server returns an RPT with the requested permissions, the callback receives the RPT.
 * `onDeny`: The second argument of the function. Only called if the server has denied the authorization request.
 * `onError`: The third argument of the function. Only called if the server responds unexpectedly.
 
@@ -111,7 +115,7 @@ When using the `entitlement` function, you must provide the _client_id_ of the r
 
 The `entitlement` function is completely asynchronous and supports a few callback functions to receive notifications from the server:
 
-* `onGrant`: The first argument of the function. If authorization was successful and the server returned an RPT with the requested permissions, the callback receives the RPT.
+* `onGrant`: The first argument of the function. If authorization succeeds and the server returns an RPT with the requested permissions, the callback receives the RPT.
 * `onDeny`: The second argument of the function. Only called if the server has denied the authorization request.
 * `onError`: The third argument of the function. Only called if the server responds unexpectedly.
 

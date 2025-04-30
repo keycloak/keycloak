@@ -55,7 +55,6 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.exceptions.TokenNotActiveException;
 import org.keycloak.models.KeycloakContext;
-import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.SingleUseObjectKeyModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
@@ -77,6 +76,7 @@ import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.grants.device.DeviceGrantType;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
@@ -446,10 +446,10 @@ public class LoginActionsService {
         AuthenticationSessionModel authSession = new AuthenticationSessionManager(session).getCurrentAuthenticationSession(realm, client, tabId);
         processLocaleParam(authSession);
 
+        event.event(EventType.RESET_PASSWORD);
         // we allow applications to link to reset credentials without going through OAuth or SAML handshakes
         if (authSession == null && code == null && clientData == null) {
             if (!realm.isResetPasswordAllowed()) {
-                event.event(EventType.RESET_PASSWORD);
                 event.error(Errors.NOT_ALLOWED);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.RESET_CREDENTIAL_NOT_ALLOWED);
 
@@ -458,7 +458,6 @@ public class LoginActionsService {
             return processResetCredentials(false, null, authSession, null);
         }
 
-        event.event(EventType.RESET_PASSWORD);
         return resetCredentials(authSessionId, code, execution, clientId, tabId, clientData);
     }
 
@@ -761,7 +760,12 @@ public class LoginActionsService {
                                  @QueryParam(Constants.EXECUTION) String execution,
                                  @QueryParam(Constants.CLIENT_ID) String clientId,
                                  @QueryParam(Constants.CLIENT_DATA) String clientData,
-                                 @QueryParam(Constants.TAB_ID) String tabId) {
+                                 @QueryParam(Constants.TAB_ID) String tabId,
+                                 @QueryParam(Constants.TOKEN) String tokenString) {
+        if (Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION) && tokenString != null) {
+            //this call should extract orgId from token and set the organization to the session context
+            preHandleActionToken(tokenString);
+        }
         return registerRequest(authSessionId, code, execution, clientId,  tabId,clientData);
     }
 
@@ -908,7 +912,8 @@ public class LoginActionsService {
         }
 
         event.detail(Details.IDENTITY_PROVIDER, identityProviderAlias)
-                .detail(Details.IDENTITY_PROVIDER_USERNAME, brokerContext.getUsername());
+                .detail(Details.IDENTITY_PROVIDER_USERNAME, brokerContext.getUsername())
+                .detail(Details.IDENTITY_PROVIDER_BROKER_SESSION_ID, brokerContext.getBrokerSessionId());
 
         event.success();
 
@@ -926,7 +931,7 @@ public class LoginActionsService {
                                 .setHttpHeaders(headers)
                                 .setUriInfo(session.getContext().getUri())
                                 .setEventBuilder(event);
-                        return protocol.sendError(authSession, Error.PASSIVE_INTERACTION_REQUIRED);
+                        return protocol.sendError(authSession, Error.PASSIVE_INTERACTION_REQUIRED, null);
                     }
                 }
                 return challenge;
@@ -1015,9 +1020,14 @@ public class LoginActionsService {
                     .setHttpHeaders(headers)
                     .setUriInfo(session.getContext().getUri())
                     .setEventBuilder(event);
-            Response response = protocol.sendError(authSession, Error.CONSENT_DENIED);
+            Response response = protocol.sendError(authSession, Error.CONSENT_DENIED, null);
             event.error(Errors.REJECTED_BY_USER);
             return response;
+        }
+
+        if (DeviceGrantType.isDeviceCodeDeniedForDeviceVerificationFlow(session, realm, authSession)) {
+            event.error(Errors.REJECTED_BY_USER);
+            return DeviceGrantType.denyOAuth2DeviceAuthorization(authSession, Error.CONSENT_DENIED, session);
         }
 
         UserConsentModel grantedConsent = UserConsentManager.getConsentByClient(session, realm, user, client.getId());
@@ -1164,7 +1174,7 @@ public class LoginActionsService {
         if (isCancelAppInitiatedAction(factory.getId(), authSession, context)) {
             provider.initiatedActionCanceled(session, authSession);
             AuthenticationManager.setKcActionStatus(factory.getId(), RequiredActionContext.KcActionStatus.CANCELLED, authSession);
-            context.success();
+            context.cancel();
         } else {
             provider.processAction(context);
         }
@@ -1173,7 +1183,14 @@ public class LoginActionsService {
             authSession.setAuthNote(AuthenticationProcessor.LAST_PROCESSED_EXECUTION, action);
         }
 
-        if (context.getStatus() == RequiredActionContext.Status.SUCCESS) {
+        if (context.getStatus() == RequiredActionContext.Status.CANCELLED) {
+            event.clone().error(Errors.REJECTED_BY_USER);
+            initLoginEvent(authSession);
+            event.event(EventType.LOGIN);
+            authSession.removeAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION);
+            AuthenticationManager.setKcActionStatus(factory.getId(), RequiredActionContext.KcActionStatus.CANCELLED, authSession);
+            response = AuthenticationManager.nextActionAfterAuthentication(session, authSession, clientConnection, request, session.getContext().getUri(), event);
+        } else if (context.getStatus() == RequiredActionContext.Status.SUCCESS) {
             event.clone().success();
             initLoginEvent(authSession);
             event.event(EventType.LOGIN);
@@ -1204,7 +1221,7 @@ public class LoginActionsService {
         event.detail(Details.CUSTOM_REQUIRED_ACTION, action);
 
         event.error(Errors.REJECTED_BY_USER);
-        return protocol.sendError(authSession, error);
+        return protocol.sendError(authSession, error, context.getErrorMessage());
     }
 
     private boolean isCancelAppInitiatedAction(String providerId, AuthenticationSessionModel authSession, RequiredActionContextResult context) {

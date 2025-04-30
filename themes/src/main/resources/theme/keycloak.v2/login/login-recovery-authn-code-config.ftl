@@ -110,7 +110,7 @@
             for (let i = 0; i < recoveryCodes.length; i++) {
                 const recoveryCodeLiElement = recoveryCodes[i].innerText;
                 <#noparse>
-                recoveryCodeList += `${i}: ${recoveryCodeLiElement}\r\n`;
+                recoveryCodeList += `${i+1}: ${recoveryCodeLiElement}\r\n`;
                 </#noparse>
             }
 

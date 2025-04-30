@@ -183,8 +183,8 @@ public abstract class AbstractSecuredLocalService {
             URI url = uriBuilder.build();
 
             NewCookie cookie = new NewCookie(getStateCookieName(), state, getStateCookiePath(uriInfo), null, null, -1, isSecure, true);
-            logger.debug("NewCookie: " + cookie.toString());
-            logger.debug("Oauth Redirect to: " + url);
+            logger.debugf("NewCookie: %s", cookie);
+            logger.debugf("Oauth Redirect to: %s", url);
             return Response.status(302)
                     .location(url)
                     .cookie(cookie).build();

@@ -10,7 +10,6 @@ import static org.keycloak.models.BrowserSecurityHeaders.STRICT_TRANSPORT_SECURI
 import static org.keycloak.models.BrowserSecurityHeaders.X_CONTENT_TYPE_OPTIONS;
 import static org.keycloak.models.BrowserSecurityHeaders.X_FRAME_OPTIONS;
 import static org.keycloak.models.BrowserSecurityHeaders.X_ROBOTS_TAG;
-import static org.keycloak.models.BrowserSecurityHeaders.X_XSS_PROTECTION;
 import static org.keycloak.models.BrowserSecurityHeaders.realmDefaultHeaders;
 
 import java.util.Arrays;
@@ -52,7 +51,6 @@ public class BrowserSecurityHeadersTest {
                 CONTENT_SECURITY_POLICY_REPORT_ONLY,
                 X_CONTENT_TYPE_OPTIONS,
                 X_ROBOTS_TAG,
-                X_XSS_PROTECTION,
                 STRICT_TRANSPORT_SECURITY,
                 REFERRER_POLICY
         );

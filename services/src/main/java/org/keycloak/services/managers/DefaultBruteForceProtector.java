@@ -33,6 +33,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.ReadOnlyException;
 
 import jakarta.ws.rs.core.HttpHeaders;
@@ -90,13 +91,18 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
 
         int waitSeconds = 0;
         if(!(realm.isPermanentLockout() && realm.getMaxTemporaryLockouts() == 0)) {
-            waitSeconds = realm.getWaitIncrementSeconds() *  (userLoginFailure.getNumFailures() / realm.getFailureFactor());
+            if(RealmRepresentation.BruteForceStrategy.MULTIPLE.equals(realm.getBruteForceStrategy())) {
+                waitSeconds = realm.getWaitIncrementSeconds() *  (userLoginFailure.getNumFailures() / realm.getFailureFactor());
+            } else {
+                waitSeconds = realm.getWaitIncrementSeconds() * (1 + userLoginFailure.getNumFailures() - realm.getFailureFactor());
+            }
         }
+
         logger.debugv("waitSeconds: {0}", waitSeconds);
         logger.debugv("deltaTime: {0}", deltaTime);
 
         boolean quickLoginFailure = false;
-        if (waitSeconds == 0) {
+        if (waitSeconds <= 0) {
             if (last > 0 && deltaTime < realm.getQuickLoginCheckMilliSeconds()) {
                 logger.debugv("quick login, set min wait seconds");
                 waitSeconds = realm.getMinimumQuickLoginWaitSeconds();
@@ -207,7 +213,7 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
             if (success) {
                 success(s, realm, user.getId());
             } else {
-                failure(s, realm, user.getId(), clientConnection.getRemoteAddr(), Time.currentTimeMillis());
+                failure(s, realm, user.getId(), clientConnection.getRemoteHost(), Time.currentTimeMillis());
             }
         }));
     }
@@ -288,6 +294,11 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
         @Override
         public UriInfo getUri() {
             return uriInfo;
+        }
+
+        @Override
+        public boolean isProxyTrusted() {
+            return true;
         }
     }
 

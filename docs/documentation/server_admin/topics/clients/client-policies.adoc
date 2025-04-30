@@ -16,7 +16,7 @@ Client Policies realize the following points mentioned as follows.
 
 Setting policies on what configuration a client can have::
     Configuration settings on the client can be enforced by client policies during client creation/update, but also during OpenID Connect requests to {project_name} server, which are related to particular client.
-    {project_name} supports similar thing also through the *Client Registration Policies* described in the *Client registration service* from link:{securing_apps_link}[{securing_apps_name}].
+    {project_name} supports similar thing also through the *Client Registration Policies* described in the *Client registration service* in the link:{securing_apps_link}[Securing applications and Services guide].
     However, Client Registration Policies can only cover OIDC Dynamic Client Registration. Client Policies cover not only what Client Registration Policies can do, but other client
     registration and configuration ways. The current plans are for Client Registration to be replaced by Client Policies.
 
@@ -94,6 +94,13 @@ Client Attribute::
 Any Client::
     This condition always evaluates to true. It can be used for example to ensure that all clients in the particular realm are FAPI compliant.
 
+ACR Condition::
+    Applied when an ACR value requested in the authentication request matches the value configured in the condition. For example, it can be used to select an authentication flow based on the requested ACR value. For more details, see the <<_client-policy-auth-flow, related documentation>> and the https://openid.net/specs/openid-connect-core-1_0.html#acrSemantics[official OIDC specification].
+
+Grant Type::
+    Evaluates to true when a specific grant type is used. For example, it can be used in combination with Client Scope to block a token exchange request when a specific client scope is requested.
+
+
 === Executor
 
 An executor specifies what action is executed on a client to which a policy is adopted. The executor executes one or several specified actions. For example,
@@ -142,6 +149,8 @@ One of several purposes for this executor is to realize the security requirement
 * Enforce that <<_refresh_token_rotation,refresh token rotation>> is skipped and there is no refresh token returned from the refresh token response
 * Enforce a valid redirect URI that the OAuth 2.1 specification requires
 * Enforce SAML Redirect binding cannot be used or SAML requests and assertions are signed
+
+Another available executor is the `auth-flow-enforce`, which can be used to enforce an authentication flow during an authentication request. For instance, it can be used to select a flow based on certain conditions, such as a specific scope or an ACR value. For more details, see the <<_client-policy-auth-flow, related documentation>>.
 
 [[_client_policy_profile]]
 === Profile

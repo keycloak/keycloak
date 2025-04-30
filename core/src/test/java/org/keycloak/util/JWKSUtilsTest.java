@@ -22,6 +22,7 @@ import org.junit.Test;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.PublicKeysWrapper;
+import org.keycloak.jose.jwk.ECPublicJWK;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.rule.CryptoInitRule;
@@ -29,12 +30,42 @@ import org.keycloak.rule.CryptoInitRule;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 
 
 public abstract class JWKSUtilsTest {
 
     @ClassRule
     public static CryptoInitRule cryptoInitRule = new CryptoInitRule();
+
+    @Test
+    public void publicEcMatches() throws Exception {
+        String keyA = "{" +
+                      "   \"kty\": \"EC\"," +
+                      "   \"use\": \"sig\"," +
+                      "   \"crv\": \"P-384\"," +
+                      "   \"kid\": \"key-a\"," +
+                      "   \"x\": \"KVZ5h_W0-8fXmUrxmyRpO_9vwwI7urXfyxGdxm1hpEuhPj2hhDxivnb2BhNvtC6O\"," +
+                      "   \"y\": \"1J3JVw_zR3uB3biAE7fs3V_4tJy2M1JinzWj9a4je5GSoW6zgGV4bk85OcuyUAhj\"," +
+                      "   \"alg\": \"ES384\"" +
+                      "  }";
+
+        ECPublicJWK ecPublicKey = JsonSerialization.readValue(keyA, ECPublicJWK.class);
+        JWK publicKey = JsonSerialization.readValue(keyA, JWK.class);
+
+        assertEquals(JWKSUtils.computeThumbprint(publicKey), JWKSUtils.computeThumbprint(ecPublicKey));
+    }
+
+    @Test
+    public void unsupportedKeyType() throws Exception {
+        String keyA = "{" +
+                      "   \"kty\": \"OCT\"," +
+                      "   \"use\": \"sig\"" +
+                      "  }";
+
+        JWK publicKey = JsonSerialization.readValue(keyA, JWK.class);
+        assertThrows(UnsupportedOperationException.class, () -> JWKSUtils.computeThumbprint(publicKey));
+    }
 
     @Test
     public void publicRs256() throws Exception {

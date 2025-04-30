@@ -65,6 +65,7 @@ import org.keycloak.services.managers.Auth;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.theme.Theme;
+import org.keycloak.utils.BrokerUtil;
 import org.keycloak.utils.StreamsUtil;
 
 import static org.keycloak.models.Constants.ACCOUNT_CONSOLE_CLIENT_ID;
@@ -229,6 +230,12 @@ public class LinkedAccountsResource {
                 .findFirst().orElse(null);
     }
 
+    /**
+     * Creating URL, which can be used to redirect to link identity provider with currently authenticated user
+     *
+     * @deprecated It is recommended to trigger linking identity provider account with the use of "idp_link" kc_action.
+     * @return response
+     */
     @GET
     @Path("/{providerAlias}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -236,7 +243,10 @@ public class LinkedAccountsResource {
     public Response buildLinkedAccountURI(@PathParam("providerAlias") String providerAlias,
                                      @QueryParam("redirectUri") String redirectUri) {
         auth.require(AccountRoles.MANAGE_ACCOUNT);
-
+        logger.warnf("Using deprecated endpoint of Account REST service for linking user '%s' in the realm '%s' to identity provider '%s'. It is recommended to use application initiated actions (AIA) for linking identity provider with the user.",
+                user.getUsername(),
+                realm.getName(),
+                providerAlias);
         if (redirectUri == null) {
             ErrorResponse.error(Messages.INVALID_REDIRECT_URI, Response.Status.BAD_REQUEST);
         }
@@ -250,25 +260,7 @@ public class LinkedAccountsResource {
         }
 
         try {
-            String nonce = UUID.randomUUID().toString();
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            String input = nonce + auth.getSession().getId() +  ACCOUNT_CONSOLE_CLIENT_ID + providerAlias;
-            byte[] check = md.digest(input.getBytes(StandardCharsets.UTF_8));
-            String hash = Base64Url.encode(check);
-            URI linkUri = Urls.identityProviderLinkRequest(this.session.getContext().getUri().getBaseUri(), providerAlias, realm.getName());
-            linkUri = UriBuilder.fromUri(linkUri)
-                    .queryParam("nonce", nonce)
-                    .queryParam("hash", hash)
-                    // need to use "account-console" client because IdentityBrokerService authenticates user using cookies
-                    // the regular "account" client is used only for REST calls therefore cookies authentication cannot be used
-                    .queryParam("client_id", ACCOUNT_CONSOLE_CLIENT_ID)
-                    .queryParam("redirect_uri", redirectUri)
-                    .build();
-
-            AccountLinkUriRepresentation rep = new AccountLinkUriRepresentation();
-            rep.setAccountLinkUri(linkUri);
-            rep.setHash(hash);
-            rep.setNonce(nonce);
+            AccountLinkUriRepresentation rep = BrokerUtil.createClientInitiatedLinkURI(ACCOUNT_CONSOLE_CLIENT_ID, redirectUri, providerAlias, realm.getName(), auth.getSession().getId(), this.session.getContext().getUri().getBaseUri());
 
             return Cors.builder().auth().allowedOrigins(auth.getToken()).add(Response.ok(rep));
         } catch (Exception spe) {
@@ -302,7 +294,7 @@ public class LinkedAccountsResource {
         }
 
         // Removing last social provider is not possible if you don't have other possibility to authenticate
-        if (!(session.users().getFederatedIdentitiesStream(realm, user).count() > 1 || user.getFederationLink() != null || isPasswordSet())) {
+        if (!(session.users().getFederatedIdentitiesStream(realm, user).count() > 1 || user.isFederated() || isPasswordSet())) {
             throw ErrorResponse.error(translateErrorMessage(Messages.FEDERATED_IDENTITY_REMOVING_LAST_PROVIDER), Response.Status.BAD_REQUEST);
         }
 

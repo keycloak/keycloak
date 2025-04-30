@@ -10,13 +10,13 @@ public class HttpOptions {
 
     public static final Option<Boolean> HTTP_ENABLED = new OptionBuilder<>("http-enabled", Boolean.class)
             .category(OptionCategory.HTTP)
-            .description("Enables the HTTP listener.")
+            .description("Enables the HTTP listener. Enabled by default in development mode. Typically not enabled in production unless the server is fronted by a TLS termination proxy.")
             .defaultValue(Boolean.FALSE)
             .build();
 
     public static final Option<String> HTTP_HOST = new OptionBuilder<>("http-host", String.class)
             .category(OptionCategory.HTTP)
-            .description("The used HTTP Host.")
+            .description("The HTTP Host.")
             .defaultValue("0.0.0.0")
             .build();
 

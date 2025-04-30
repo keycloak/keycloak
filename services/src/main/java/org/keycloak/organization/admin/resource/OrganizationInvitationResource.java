@@ -111,7 +111,7 @@ public class OrganizationInvitationResource {
             session.getProvider(EmailTemplateProvider.class)
                     .setRealm(realm)
                     .setUser(user)
-                    .sendOrgInviteEmail(organization, link, TimeUnit.SECONDS.toMinutes(tokenExpiration));
+                    .sendOrgInviteEmail(organization, link, TimeUnit.SECONDS.toMinutes(getActionTokenLifespan()));
         } catch (EmailException e) {
             ServicesLogger.LOGGER.failedToSendEmail(e);
             throw ErrorResponse.error("Failed to send invite email", Status.INTERNAL_SERVER_ERROR);
@@ -123,7 +123,11 @@ public class OrganizationInvitationResource {
     }
 
     private int getTokenExpiration() {
-        return Time.currentTime() + realm.getActionTokenGeneratedByAdminLifespan();
+        return Time.currentTime() + getActionTokenLifespan();
+    }
+
+    private int getActionTokenLifespan() {
+        return realm.getActionTokenGeneratedByAdminLifespan();
     }
 
     private String createInvitationLink(UserModel user) {

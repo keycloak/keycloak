@@ -3,6 +3,7 @@
 # To test a pattern run '.github/actions/conditional/conditional.sh <remote name> <branch>'
 
 .github/actions/                            ci ci-quarkus ci-store ci-sssd operator js codeql-java codeql-javascript codeql-typescript guides documentation
+.github/fake_fips/                          ci
 .github/scripts/                            ci ci-quarkus ci-sssd
 .github/scripts/ansible/                    ci-store
 .github/scripts/aws/                        ci-store
@@ -32,18 +33,11 @@ operator/                                   operator
 docs/guides/                                guides
 docs/documentation/                         documentation
 
-eslint.config.js                            js
-package.json                                js
-pnpm-lock.yaml                              js
-pnpm-workspace.yaml                         js
-tsconfig.eslint.json                        js
-tsconfig.json                               js
 js/                                         js
 rest/admin-ui-ext/                          js
 services/                                   js
 js/apps/account-ui/                         ci ci-webauthn
 js/libs/ui-shared/                          ci ci-webauthn
-js/libs/keycloak-js/                        ci ci-quarkus
 
 # The sections below contain a sub-set of files existing in the project which are supported languages by CodeQL.
 # See: https://codeql.github.com/docs/codeql-overview/supported-languages-and-frameworks/
@@ -60,5 +54,3 @@ js/libs/keycloak-js/                        ci ci-quarkus
 *.tsx                                       codeql-typescript
 
 testsuite::database-suite                   ci-store
-
-test-poc/                                   ci ci-test-poc

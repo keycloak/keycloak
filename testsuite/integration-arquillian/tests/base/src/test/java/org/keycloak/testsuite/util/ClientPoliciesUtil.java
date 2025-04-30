@@ -34,6 +34,7 @@ import org.keycloak.jose.jwk.ECPublicJWK;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.RSAPublicJWK;
 import org.keycloak.jose.jws.JWSHeader;
+import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.models.utils.MapperTypeSerializer;
 import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.executor.SecureCibaAuthenticationRequestSigningAlgorithmExecutor;
 import org.keycloak.representations.dpop.DPoP;
@@ -54,6 +55,7 @@ import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextConditio
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceGroupsCondition;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceHostsCondition;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceRolesCondition;
+import org.keycloak.services.clientpolicy.condition.GrantTypeCondition;
 import org.keycloak.services.clientpolicy.executor.ConsentRequiredExecutor;
 import org.keycloak.services.clientpolicy.executor.DPoPBindEnforcerExecutor;
 import org.keycloak.services.clientpolicy.executor.FullScopeDisabledExecutor;
@@ -68,6 +70,7 @@ import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtExecutor;
+import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.testsuite.services.clientpolicy.condition.TestRaiseExceptionCondition;
 import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExceptionExecutor;
 import org.keycloak.util.JsonSerialization;
@@ -85,7 +88,6 @@ import java.security.interfaces.RSAPublicKey;
 import java.security.spec.ECGenParameterSpec;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 
 import static org.junit.Assert.fail;
@@ -216,10 +218,15 @@ public final class ClientPoliciesUtil {
     }
 
     public static SecureRequestObjectExecutor.Configuration createSecureRequestObjectExecutorConfig(Integer availablePeriod, Boolean verifyNbf, Boolean encryptionRequired) {
+        return createSecureRequestObjectExecutorConfig(availablePeriod, verifyNbf, encryptionRequired, null);
+    }
+
+    public static SecureRequestObjectExecutor.Configuration createSecureRequestObjectExecutorConfig(Integer availablePeriod, Boolean verifyNbf, Boolean encryptionRequired, Integer allowedClockSkew) {
         SecureRequestObjectExecutor.Configuration config = new SecureRequestObjectExecutor.Configuration();
         if (availablePeriod != null) config.setAvailablePeriod(availablePeriod);
         if (verifyNbf != null) config.setVerifyNbf(verifyNbf);
         if (encryptionRequired != null) config.setEncryptionRequired(encryptionRequired);
+        if (allowedClockSkew != null) config.setAllowedClockSkew(allowedClockSkew);
         return config;
     }
 
@@ -439,6 +446,12 @@ public final class ClientPoliciesUtil {
         return config;
     }
 
+    public static GrantTypeCondition.Configuration createGrantTypeConditionConfig(List<String> grantTypes) {
+        GrantTypeCondition.Configuration config = new GrantTypeCondition.Configuration();
+        config.setGrantTypes(grantTypes);
+        return config;
+    }
+
     // DPoP
     public static  JWK createRsaJwk(Key publicKey) {
         RSAPublicKey rsaKey = (RSAPublicKey) publicKey;
@@ -473,7 +486,7 @@ public final class ClientPoliciesUtil {
         return keyPair;
     }
 
-    public static String generateSignedDPoPProof(String jti, String htm, String htu, Long iat, String algorithm, JWSHeader jwsHeader, PrivateKey privateKey) throws IOException {
+    public static String generateSignedDPoPProof(String jti, String htm, String htu, Long iat, String algorithm, JWSHeader jwsHeader, PrivateKey privateKey, String accessToken) throws IOException {
 
         String dpopProofHeaderEncoded = Base64Url.encode(JsonSerialization.writeValueAsBytes(jwsHeader));
 
@@ -482,6 +495,9 @@ public final class ClientPoliciesUtil {
         dpop.setHttpMethod(htm);
         dpop.setHttpUri(htu);
         dpop.iat(iat);
+        if (accessToken != null) {
+            dpop.setAccessTokenHash(HashUtils.accessTokenHash(DPoPUtil.DPOP_ATH_ALG, accessToken, true));
+        }
 
         String dpopProofPayloadEncoded = Base64Url.encode(JsonSerialization.writeValueAsBytes(dpop));
 

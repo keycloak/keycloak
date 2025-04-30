@@ -20,6 +20,7 @@ package org.keycloak.connections.infinispan.remote;
 import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ScheduledFuture;
@@ -43,6 +44,7 @@ import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
@@ -121,7 +123,12 @@ public class RemoteLoadBalancerCheckProviderFactory implements LoadBalancerCheck
         return InfinispanUtils.PROVIDER_ORDER;
     }
 
-    @Override
+   @Override
+   public Set<Class<? extends Provider>> dependsOn() {
+      return Set.of(InfinispanConnectionProvider.class);
+   }
+
+   @Override
     public List<ProviderConfigProperty> getConfigMetadata() {
         return ProviderConfigurationBuilder.create()
                 .property()

@@ -36,8 +36,11 @@ import java.util.stream.Stream;
 import jakarta.ws.rs.core.Response.Status;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -45,7 +48,6 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.services.ErrorResponse;
@@ -76,15 +78,15 @@ public class GroupsResource {
     }
 
     /**
-     * Get group hierarchy.  Only name and ids are returned.
-     *
+     * Get group hierarchy.  Only {@code name} and {@code id} are returned.  {@code subGroups} are only returned when using the {@code search} or {@code q} parameter.
+     * If none of these parameters is provided, the top-level groups are returned without `{@code subGroups} being filled.
      * @return
      */
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.GROUPS)
-    @Operation( summary = "Get group hierarchy.  Only name and ids are returned.")
+    @Operation( summary = "Get group hierarchy.  Only `name` and `id` are returned.  `subGroups` are only returned when using the `search` or `q` parameter. If none of these parameters is provided, the top-level groups are returned without `subGroups` being filled.")
     public Stream<GroupRepresentation> getGroups(@QueryParam("search") String search,
                                                  @QueryParam("q") String searchQuery,
                                                  @QueryParam("exact") @DefaultValue("false") Boolean exact,
@@ -98,7 +100,7 @@ public class GroupsResource {
         Stream<GroupModel> stream;
         if (Objects.nonNull(searchQuery)) {
             Map<String, String> attributes = SearchQueryUtils.getFields(searchQuery);
-            stream = ModelToRepresentation.searchGroupModelsByAttributes(session, realm, attributes, firstResult, maxResults);
+            stream = session.groups().searchGroupsByAttributes(realm, attributes, firstResult, maxResults);
         } else if (Objects.nonNull(search)) {
             stream = session.groups().searchForGroupByNameStream(realm, search.trim(), exact, firstResult, maxResults);
         } else {
@@ -108,10 +110,12 @@ public class GroupsResource {
         if (populateHierarchy) {
             return GroupUtils.populateGroupHierarchyFromSubGroups(session, realm, stream, !briefRepresentation, groupsEvaluator);
         }
-        boolean canViewGlobal = groupsEvaluator.canView();
-        return stream
-            .filter(g -> canViewGlobal || groupsEvaluator.canView(g))
-            .map(g -> GroupUtils.populateSubGroupCount(g, GroupUtils.toRepresentation(groupsEvaluator, g, !briefRepresentation)));
+
+        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+            stream = stream.filter(groupsEvaluator::canView);
+        }
+
+        return stream.map(g -> GroupUtils.populateSubGroupCount(g, GroupUtils.toRepresentation(groupsEvaluator, g, !briefRepresentation)));
     }
 
     /**
@@ -170,6 +174,10 @@ public class GroupsResource {
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
+    @APIResponses(value = {
+            @APIResponse(responseCode = "201", description = "Created"),
+            @APIResponse(responseCode = "204", description = "No Content")
+    })
     @Tag(name = KeycloakOpenAPI.Admin.Tags.GROUPS)
     @Operation( summary = "create or add a top level realm groupSet or create child.",
         description = "This will update the group and set the parent if it exists. Create it and set the parent if the group doesn’t exist.")

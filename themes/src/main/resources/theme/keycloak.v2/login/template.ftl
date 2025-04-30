@@ -1,4 +1,5 @@
 <#import "field.ftl" as field>
+<#import "footer.ftl" as loginFooter>
 <#macro username>
   <#assign label>
     <#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>
@@ -17,18 +18,20 @@
             <span class="kc-tooltip-text">${msg("restartLoginTooltip")}</span>
         </button>
       </div>
-    </@field.group>
+    </div>
+  </@field.group>
 </#macro>
 
 <#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false>
 <!DOCTYPE html>
-<html class="${properties.kcHtmlClass!}"<#if realm.internationalizationEnabled> lang="${locale.currentLanguageTag}"</#if>>
+<html class="${properties.kcHtmlClass!}" lang="${lang}"<#if realm.internationalizationEnabled> dir="${(locale.rtl)?then('rtl','ltr')}"</#if>>
 
 <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <meta name="robots" content="noindex, nofollow">
-    <meta name="color-scheme" content="light${(properties.darkMode)?boolean?then(' dark', '')}">
+    <meta name="color-scheme" content="light${darkMode?then(' dark', '')}">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <#if properties.meta?has_content>
         <#list properties.meta?split(' ') as meta>
@@ -54,7 +57,7 @@
             }
         }
     </script>
-    <#if properties.darkMode?boolean>
+    <#if darkMode>
       <script type="module" async blocking="render">
           const DARK_MODE_CLASS = "${properties.kcDarkModeClass}";
           const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
@@ -85,16 +88,28 @@
     </#if>
     <script type="module" src="${url.resourcesPath}/js/passwordVisibility.js"></script>
     <script type="module">
-        import { checkCookiesAndSetTimer } from "${url.resourcesPath}/js/authChecker.js";
+        import { startSessionPolling } from "${url.resourcesPath}/js/authChecker.js";
 
-        checkCookiesAndSetTimer(
+        startSessionPolling(
             "${url.ssoLoginInOtherTabsUrl?no_esc}"
         );
     </script>
+    <#if authenticationSession??>
+        <script type="module">
+            import { checkAuthSession } from "${url.resourcesPath}/js/authChecker.js";
+
+            checkAuthSession(
+                "${authenticationSession.authSessionIdHash}"
+            );
+        </script>
+    </#if>
+    <script>
+      // Workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=1404468
+      const isFirefox = true;
+    </script>
 </head>
 
-<body id="keycloak-bg" class="${properties.kcBodyClass!}">
-
+<body id="keycloak-bg" class="${properties.kcBodyClass!}" data-page-id="login-${pageId}">
 <div class="${properties.kcLogin!}">
   <div class="${properties.kcLoginContainer!}">
     <header id="kc-header" class="pf-v5-c-login__header">
@@ -194,24 +209,29 @@
         <#if auth?has_content && auth.showTryAnotherWayLink()>
           <form id="kc-select-try-another-way-form" action="${url.loginAction}" method="post" novalidate="novalidate">
               <input type="hidden" name="tryAnotherWay" value="on"/>
-              <a id="try-another-way" href="javascript:document.forms['kc-select-try-another-way-form'].submit()"
+              <a id="try-another-way" href="javascript:document.forms['kc-select-try-another-way-form'].requestSubmit()"
                   class="${properties.kcButtonSecondaryClass} ${properties.kcButtonBlockClass} ${properties.kcMarginTopClass}">
                     ${kcSanitize(msg("doTryAnotherWay"))?no_esc}
               </a>
           </form>
         </#if>
 
-        <#if displayInfo>
-          <div id="kc-info" class="${properties.kcSignUpClass!}">
-              <div id="kc-info-wrapper" class="${properties.kcInfoAreaWrapperClass!}">
-                  <#nested "info">
-              </div>
+          <div class="${properties.kcLoginMainFooter!}">
+              <#nested "socialProviders">
+
+              <#if displayInfo>
+                  <div id="kc-info" class="${properties.kcLoginMainFooterBand!} ${properties.kcFormClass}">
+                      <div id="kc-info-wrapper" class="${properties.kcLoginMainFooterBandItem!}">
+                          <#nested "info">
+                      </div>
+                  </div>
+              </#if>
           </div>
-        </#if>
       </div>
-      <div class="pf-v5-c-login__main-footer">
-        <#nested "socialProviders">
-      </div>
+
+        <div class="${properties.kcLoginMainFooter!}">
+            <@loginFooter.content/>
+        </div>
     </main>
   </div>
 </div>

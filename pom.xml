@@ -47,12 +47,14 @@
 
         <jboss.repo.nexusUrl>https://s01.oss.sonatype.org/</jboss.repo.nexusUrl>
         <jboss.releases.repo.id>jboss-releases-repository</jboss.releases.repo.id>
+        <jboss.releases.repo.name>keycloak</jboss.releases.repo.name>
         <jboss.releases.repo.url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</jboss.releases.repo.url>
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>3.15.1</quarkus.version>
-        <quarkus.build.version>3.15.1</quarkus.build.version>
+        <quarkus.version>3.20.0</quarkus.version>
+        <quarkus.build.version>3.20.0</quarkus.build.version>
+        <jboss-logging-annotations.version>3.0.4.Final</jboss-logging-annotations.version> <!-- keep in sync with the version used by quarkus -->
 
         <project.build-time>${timestamp}</project.build-time>
 
@@ -95,15 +97,13 @@
         <h2.version>2.3.230</h2.version>
         <hibernate-orm.plugin.version>6.2.13.Final</hibernate-orm.plugin.version>
         <hibernate.c3p0.version>6.2.13.Final</hibernate.c3p0.version>
-        <infinispan.version>15.0.10.Final</infinispan.version>
-        <!-- version number is needed for the proto-schema-compatibility-maven-plugin and needs to be in-sync with the version used in Infinispan -->
-        <protostream.version>5.0.8.Final</protostream.version>
-        <!-- protostream.plugin.version property can be replaced with protostream.version once protostream.version >= 5.0.10.Final -->
-        <protostream.plugin.version>5.0.10.Final</protostream.plugin.version>
+        <infinispan.version>15.0.14.Final</infinispan.version>
+        <protostream.version>5.0.13.Final</protostream.version> <!-- For the annotation processor: keep in sync with the version shipped with Infinispan -->
+        <protostream.plugin.version>${protostream.version}</protostream.plugin.version>
 
         <!--JAKARTA-->
         <jakarta.mail.version>2.1.1</jakarta.mail.version>
-        <angus.mail.version>2.0.1</angus.mail.version>
+        <angus.mail.version>2.0.3</angus.mail.version>
         <jakarta.xml.ws.version>4.0.0</jakarta.xml.ws.version>
         <jakarta.xml.soap.version>3.0.0</jakarta.xml.soap.version>
 
@@ -113,7 +113,8 @@
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>2.0.1.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>
         <jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>2.0.0.Final</jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>
         <log4j.version>1.2.17</log4j.version>
-        <resteasy.version>6.2.9.Final</resteasy.version>
+        <log4j2-api.version>2.24.3</log4j2-api.version> <!-- Odd name needs to align with Quarkus -->
+        <resteasy.version>6.2.12.Final</resteasy.version>
         <resteasy.undertow.version>${resteasy.version}</resteasy.undertow.version>
         <owasp.html.sanitizer.version>20240325.1</owasp.html.sanitizer.version>
         <slf4j.version>2.0.6</slf4j.version>
@@ -126,7 +127,7 @@
         <undertow.version>${undertow-legacy.version}</undertow.version>
         <undertow-legacy.version>2.2.24.Final</undertow-legacy.version>
         <undertow-jakarta.version>2.3.2.Final</undertow-jakarta.version>
-        <wildfly-elytron.version>2.5.2.Final</wildfly-elytron.version>
+        <wildfly-elytron.version>2.6.0.Final</wildfly-elytron.version>
         <elytron.undertow-server.version>1.9.0.Final</elytron.undertow-server.version>
         <woodstox.version>6.0.3</woodstox.version>
         <wildfly.common.quarkus.aligned.version>1.5.4.Final-format-001</wildfly.common.quarkus.aligned.version>
@@ -136,7 +137,7 @@
         <ua-parser.version>1.5.4</ua-parser.version>
         <org.yaml.snakeyaml.version>2.0</org.yaml.snakeyaml.version>
         <picketbox.version>5.0.3.Final</picketbox.version>
-        <xstream.version>1.4.20</xstream.version>
+        <xstream.version>1.4.21</xstream.version>
         <org.snakeyaml.snakeyaml-engine.version>2.6</org.snakeyaml.snakeyaml-engine.version>
 
         <!-- Others -->
@@ -157,23 +158,28 @@
         <twitter4j.version>4.1.2</twitter4j.version>
 
         <!-- Databases - also published to db.adoc as "Tested Version" -->
-        <mysql.version>8.0</mysql.version>
+        <mysql.version>8.4</mysql.version>
+        <mysql.container>mirror.gcr.io/mysql:${mysql.version}</mysql.container>
         <mysql-jdbc.version>8.3.0</mysql-jdbc.version>
-        <postgresql.version>16</postgresql.version>
+        <postgresql.version>17</postgresql.version>
+        <postgresql.container>mirror.gcr.io/postgres:${postgresql.version}</postgresql.container>
         <aurora-postgresql.version>16.1</aurora-postgresql.version>
         <aws-jdbc-wrapper.version>2.3.1</aws-jdbc-wrapper.version>
-        <postgresql-jdbc.version>42.7.4</postgresql-jdbc.version>
-        <mariadb.version>10.11</mariadb.version>
-        <mariadb-jdbc.version>3.4.1</mariadb-jdbc.version>
-        <mssql.version>2022-latest</mssql.version>
+        <postgresql-jdbc.version>42.7.5</postgresql-jdbc.version>
+        <mariadb.version>11.4</mariadb.version>
+        <mariadb.container>mirror.gcr.io/mariadb:${mariadb.version}</mariadb.container>
+        <mariadb-jdbc.version>3.5.2</mariadb-jdbc.version>
+        <mssql.version>2022</mssql.version>
+        <mssql.container>mcr.microsoft.com/mssql/server:${mssql.version}-latest</mssql.container>
         <!-- this is the mssql driver version also used in the Quarkus BOM -->
         <mssql-jdbc.version>12.8.1.jre11</mssql-jdbc.version>
-        <oracledb.version>19.3</oracledb.version>
+        <oracledb.version>23.5</oracledb.version>
+        <oracledb.container>mirror.gcr.io/gvenzl/oracle-free:${oracledb.version}-slim-faststart</oracledb.container>
         <!-- this is the oracle driver version also used in the Quarkus BOM -->
-        <oracle-jdbc.version>23.5.0.24.07</oracle-jdbc.version>
+        <oracle-jdbc.version>23.6.0.24.10</oracle-jdbc.version>
 
         <!-- Test -->
-        <greenmail.version>2.1.0-alpha-1</greenmail.version>
+        <greenmail.version>2.1.3</greenmail.version>
         <jmeter.version>2.10</jmeter.version>
         <junit.version>4.13.2</junit.version>
         <picketlink.version>2.7.0.Final</picketlink.version>
@@ -191,6 +197,7 @@
         <jmeter.analysis.plugin.version>1.0.4</jmeter.analysis.plugin.version>
         <wildfly.plugin.version>5.0.0.Final</wildfly.plugin.version>
         <nexus.staging.plugin.version>1.6.13</nexus.staging.plugin.version>
+        <nexus3.staging.plugin.version>1.0.7</nexus3.staging.plugin.version>
         <frontend.plugin.version>1.15.0</frontend.plugin.version>
         <docker.maven.plugin.version>0.40.3</docker.maven.plugin.version>
         <verifier.plugin.version>1.1</verifier.plugin.version>
@@ -215,11 +222,6 @@
         <webauthn4j.version>0.21.5.RELEASE</webauthn4j.version>
         <org.apache.kerby.kerby-asn1.version>2.0.3</org.apache.kerby.kerby-asn1.version>
 
-        <!-- WildFly Galleon Build related properties -->
-        <org.wildfly.galleon-plugins.version>6.5.2.Final</org.wildfly.galleon-plugins.version>
-        <org.jboss.galleon.version>5.2.2.Final</org.jboss.galleon.version>
-        <org.wildfly.maven.plugins.licenses-plugin.version>2.3.1.Final</org.wildfly.maven.plugins.licenses-plugin.version>
-
         <!-- Used to test SAML Galleon feature-pack layers discovery -->
         <version.org.wildfly.glow>1.0.0.Alpha8</version.org.wildfly.glow>
 
@@ -233,15 +235,9 @@
         <!-- Version suffix that is appended to directories. Default is the maven GAV version but this can be edited to use a short form version -->
         <server.output.dir.version>${project.version}</server.output.dir.version>
 
-        <!-- Frontend -->
-        <node.version>v20.17.0</node.version>
-        <pnpm.version>9.9.0</pnpm.version>
-        <pnpm.args.install>install --prefer-offline --frozen-lockfile --ignore-scripts</pnpm.args.install>
-        <!-- The clean step is skipped on Windows -->
-        <js.skip.clean>false</js.skip.clean>
-
         <!-- Set to true on release to update proto.lock files -->
         <commitProtoLockChanges>false</commitProtoLockChanges>
+        <skipProtoLock>false</skipProtoLock>
     </properties>
 
     <url>http://keycloak.org</url>
@@ -288,7 +284,6 @@
         <module>core</module>
         <module>crypto</module>
         <module>dependencies</module>
-        <module>docs</module>
         <module>server-spi</module>
         <module>server-spi-private</module>
         <module>saml-core-api</module>
@@ -296,14 +291,15 @@
         <module>federation</module>
         <module>services</module>
         <module>themes</module>
+        <module>misc/theme-verifier</module>
         <module>model</module>
         <module>util</module>
         <module>rest</module>
         <module>integration</module>
-        <module>adapters</module>
         <module>authz</module>
         <module>js</module>
         <module>test-framework</module>
+        <module>tests</module>
         <module>quarkus</module>
     </modules>
 
@@ -543,6 +539,16 @@
                 <groupId>log4j</groupId>
                 <artifactId>log4j</artifactId>
                 <version>${log4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-core</artifactId>
+                <version>${log4j2-api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-api</artifactId>
+                <version>${log4j2-api.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
@@ -925,6 +931,11 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-ipatuura-federation</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-dependencies-server-min</artifactId>
                 <version>${project.version}</version>
                 <type>pom</type>
@@ -938,6 +949,11 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-themes</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-themes-vendor</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -1096,7 +1112,12 @@
                 <artifactId>keycloak-rest-admin-ui-ext</artifactId>
                 <version>${project.version}</version>
             </dependency>
-
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-saml-wildfly-modules</artifactId>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-quarkus-dist</artifactId>
@@ -1135,6 +1156,11 @@
                 <artifactId>keycloak-testsuite-tools</artifactId>
                 <version>${project.version}</version>
                 <classifier>classes</classifier>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak.tests</groupId>
+                <artifactId>keycloak-tests-utils-shared</artifactId>
+                <version>${project.version}</version>
             </dependency>
 
             <dependency>
@@ -1284,23 +1310,6 @@
                 <artifactId>infinispan-core</artifactId>
                 <type>test-jar</type>
                 <version>${infinispan.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan.protostream</groupId>
-                <artifactId>protostream</artifactId>
-                <version>${protostream.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan.protostream</groupId>
-                <artifactId>protostream-types</artifactId>
-                <version>${protostream.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan.protostream</groupId>
-                <artifactId>protostream-processor</artifactId>
-                <version>${protostream.version}</version>
-                <!-- compile-only dependency -->
-                <scope>provided</scope>
             </dependency>
 
         </dependencies>
@@ -1473,68 +1482,6 @@
                     </configuration>
                 </plugin>
                 <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-clean-plugin</artifactId>
-                    <configuration>
-                        <followSymLinks>false</followSymLinks>
-                        <!-- Skip this step if on windows -->
-                        <skip>${js.skip.clean}</skip>
-                        <filesets>
-                            <fileset>
-                                <directory>${basedir}</directory>
-                                <includes>
-                                    <include>**/.wireit/**</include>
-                                    <include>**/node_modules/**</include>
-                                </includes>
-                            </fileset>
-                            <!-- include all non-maven projects here as well -->
-                            <fileset>
-                                <directory>js/apps/keycloak-server</directory>
-                                <includes>
-                                    <include>server/**</include>
-                                </includes>
-                            </fileset>
-                        </filesets>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>com.github.eirslett</groupId>
-                    <artifactId>frontend-maven-plugin</artifactId>
-                    <version>${frontend.plugin.version}</version>
-                    <executions>
-                        <execution>
-                            <goals>
-                                <goal>install-node-and-pnpm</goal>
-                            </goals>
-                        </execution>
-                        <execution>
-                            <id>pnpm-install</id>
-                            <goals>
-                                <goal>pnpm</goal>
-                            </goals>
-                            <configuration>
-                                <arguments>install --prefer-offline --frozen-lockfile --ignore-scripts</arguments>
-                                <workingDirectory>${maven.multiModuleProjectDirectory}</workingDirectory>
-                            </configuration>
-                        </execution>
-                        <execution>
-                            <id>pnpm-build</id>
-                            <goals>
-                                <goal>pnpm</goal>
-                            </goals>
-                            <configuration>
-                                <arguments>build</arguments>
-                            </configuration>
-                        </execution>
-                    </executions>
-                    <configuration>
-                        <nodeVersion>${node.version}</nodeVersion>
-                        <pnpmVersion>${pnpm.version}</pnpmVersion>
-                        <installDirectory>${maven.multiModuleProjectDirectory}</installDirectory>
-                        <pnpmInheritsProxyConfigFromMaven>false</pnpmInheritsProxyConfigFromMaven>
-                    </configuration>
-                </plugin>
-                <plugin>
                     <groupId>org.keycloak</groupId>
                     <artifactId>keycloak-distribution-licenses-maven-plugin</artifactId>
                     <version>${project.version}</version>
@@ -1564,6 +1511,7 @@
                     <version>${protostream.plugin.version}</version>
                     <configuration>
                         <commitProtoLock>${commitProtoLockChanges}</commitProtoLock>
+                        <skip>${skipProtoLock}</skip>
                     </configuration>
                 </plugin>
             </plugins>
@@ -1582,11 +1530,26 @@
                 <module>testsuite</module>
             </modules>
         </profile>
-
         <profile>
-            <id>test-poc</id>
+            <id>adapters</id>
+            <activation>
+                <property>
+                    <name>!skipAdapters</name>
+                </property>
+            </activation>
             <modules>
-                <module>test-poc</module>
+                <module>adapters</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>docs</id>
+            <activation>
+                <property>
+                    <name>!skipDocs</name>
+                </property>
+            </activation>
+            <modules>
+                <module>docs</module>
             </modules>
         </profile>
 
@@ -1604,6 +1567,12 @@
                 <wildfly.version>${eap8.version}</wildfly.version>
                 <wildfly.build-tools.version>${eap8.wildfly.build-tools.version}</wildfly.build-tools.version>
                 <wildfly.core.version>${eap8.wildfly.core.version}</wildfly.core.version>
+                <!-- relative directory for galleon pack with layer spec files -->
+                <saml.adapter.galleon.pack.metadata.dir>non-metadata</saml.adapter.galleon.pack.metadata.dir>
+                <!-- WildFly Galleon Build related properties -->
+                <org.wildfly.galleon-plugins.version>6.4.2.Final</org.wildfly.galleon-plugins.version>
+                <org.jboss.galleon.version>5.1.0.Final</org.jboss.galleon.version>
+                <org.wildfly.maven.plugins.licenses-plugin.version>2.3.1.Final</org.wildfly.maven.plugins.licenses-plugin.version>
             </properties>
         </profile>
         <profile>
@@ -1619,6 +1588,12 @@
                 <wildfly.version>${upstream.wildfly.version}</wildfly.version>
                 <wildfly.build-tools.version>${upstream.wildfly.build-tools.version}</wildfly.build-tools.version>
                 <wildfly.core.version>${upstream.wildfly.core.version}</wildfly.core.version>
+                <!-- relative directory for galleon pack with layer spec files -->
+                <saml.adapter.galleon.pack.metadata.dir>metadata</saml.adapter.galleon.pack.metadata.dir>
+                <!-- WildFly Galleon Build related properties -->
+                <org.wildfly.galleon-plugins.version>6.5.2.Final</org.wildfly.galleon-plugins.version>
+                <org.jboss.galleon.version>5.2.2.Final</org.jboss.galleon.version>
+                <org.wildfly.maven.plugins.licenses-plugin.version>2.3.1.Final</org.wildfly.maven.plugins.licenses-plugin.version>
             </properties>
 
         </profile>
@@ -1668,6 +1643,25 @@
                     <plugin>
                         <groupId>org.sonatype.plugins</groupId>
                         <artifactId>nexus-staging-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>nexus3-staging</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nxrm3-maven-plugin</artifactId>
+                        <version>${nexus3.staging.plugin.version}</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <serverId>${jboss.releases.repo.id}</serverId>
+                            <nexusUrl>${jboss.repo.nexusUrl}</nexusUrl>
+                            <repository>${jboss.releases.repo.name}</repository>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>
@@ -1725,18 +1719,6 @@
             </activation>
             <properties>
                 <keycloak.crypto.artifactId>keycloak-crypto-fips1402</keycloak.crypto.artifactId>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>clean-when-not-on-windows</id>
-            <activation>
-                <os>
-                    <family>windows</family>
-                </os>
-            </activation>
-            <properties>
-                <js.skip.clean>true</js.skip.clean>
             </properties>
         </profile>
     </profiles>

@@ -3,7 +3,7 @@
 
 <@tmpl.guide
 title="Concepts for multi-site deployments"
-summary="Understanding a multi-site deployment with synchronous replication" >
+summary="Understand multi-site deployment with synchronous replication." >
 
 This topic describes a highly available multi-site setup and the behavior to expect. It outlines the requirements of the high availability architecture and describes the benefits and tradeoffs.
 
@@ -46,7 +46,7 @@ Monitoring is necessary to detect degraded setups.
 | Seconds to minutes (depending on the database)
 
 | {project_name} node
-| Multiple {project_name} instances run in each site. If one instance fails some incoming requests might receive an error message or are delayed for some seconds.
+| Multiple {project_name} instances run on each site. If one instance fails some incoming requests might receive an error message or are delayed for some seconds.
 | No data loss
 | Less than 30 seconds
 

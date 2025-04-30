@@ -24,6 +24,7 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
+import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
@@ -54,7 +55,8 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
     protected final RealmModel realm;
     protected final AuthorizationProvider authz;
     protected final MgmtPermissions root;
-    private final ResourceStore resourceStore;
+    protected final ResourceStore resourceStore;
+    protected final PolicyStore policyStore;
     private static final String RESOURCE_NAME_PREFIX = "role.resource.";
 
     public RolePermissions(KeycloakSession session, RealmModel realm, AuthorizationProvider authz, MgmtPermissions root) {
@@ -64,8 +66,10 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         this.root = root;
         if (authz != null) {
             resourceStore = authz.getStoreFactory().getResourceStore();
+            policyStore = authz.getStoreFactory().getPolicyStore();
         } else {
             resourceStore = null;
+            policyStore = null;
         }
     }
 
@@ -146,11 +150,11 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         return root.resourceServer(client);
     }
 
-    private boolean checkAdminRoles(RoleModel role) {
+    boolean checkAdminRoles(RoleModel role) {
         if (AdminRoles.ALL_ROLES.contains(role.getName())) {
             if (root.admin().hasRole(role)) return true;
 
-            ClientModel adminClient = root.getRealmManagementClient();
+            ClientModel adminClient = root.getRealmPermissionsClient();
             // is this an admin role in 'realm-management' client of the realm we are managing?
             if (adminClient.equals(role.getContainer())) {
                 // if this is realm admin role, then check to see if admin has similar permissions
@@ -179,13 +183,15 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
                 } else if (role.getName().equals(AdminRoles.QUERY_GROUPS)) {
                     return true;
                 } else if (role.getName().equals(AdminRoles.MANAGE_AUTHORIZATION)) {
-                    if (!root.realm().canManageAuthorization()) {
+                    ResourceServer resourceServer = getResourceServer(role);
+                    if (!root.realm().canManageAuthorization(resourceServer)) {
                         return adminConflictMessage(role);
                     } else {
                         return true;
                     }
                 } else if (role.getName().equals(AdminRoles.VIEW_AUTHORIZATION)) {
-                    if (!root.realm().canViewAuthorization()) {
+                    ResourceServer resourceServer = getResourceServer(role);
+                    if (!root.realm().canViewAuthorization(resourceServer)) {
                         return adminConflictMessage(role);
                     } else {
                         return true;
@@ -287,7 +293,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
     }
 
     private boolean adminConflictMessage(RoleModel role) {
-        logger.debug("Trying to assign admin privileges of role: " + role.getName() + " but admin doesn't have same privilege");
+        logger.debugf("Trying to assign admin privileges of role: %s but admin doesn't have same privilege", role.getName());
         return false;
     }
 
@@ -299,7 +305,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
      */
     @Override
     public boolean canMapRole(RoleModel role) {
-        if (root.users().canManageDefault()) return checkAdminRoles(role);
+        if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS)) return checkAdminRoles(role);
         if (!root.isAdminSameRealm()) {
             return false;
         }
@@ -514,20 +520,20 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         if (role.getContainer() instanceof ClientModel) {
             client = (ClientModel)role.getContainer();
         } else {
-            client = root.getRealmManagementClient();
+            client = root.getRealmPermissionsClient();
         }
         return client;
     }
 
     @Override
     public Policy manageUsersPolicy(ResourceServer server) {
-        RoleModel role = root.getRealmManagementClient().getRole(AdminRoles.MANAGE_USERS);
+        RoleModel role = root.getRealmPermissionsClient().getRole(AdminRoles.MANAGE_USERS);
         return rolePolicy(server, role);
     }
 
     @Override
     public Policy viewUsersPolicy(ResourceServer server) {
-        RoleModel role = root.getRealmManagementClient().getRole(AdminRoles.VIEW_USERS);
+        RoleModel role = root.getRealmPermissionsClient().getRole(AdminRoles.VIEW_USERS);
         return rolePolicy(server, role);
     }
 
@@ -540,7 +546,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
     }
 
     @Override
-    public Set<String> getRolesWithPermission(String scope) {
+    public Set<String> getRoleIdsByScope(String scope) {
         if (!root.isAdminSameRealm()) {
             return Collections.emptySet();
         }
@@ -653,5 +659,14 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
 
     private static String getRoleResourceName(RoleModel role) {
         return "role.resource." + role.getId();
+    }
+
+    private ResourceServer getResourceServer(RoleModel role) {
+        ResourceServer resourceServer = null;
+        if (role.isClientRole()) {
+            RoleContainerModel container = role.getContainer();
+            resourceServer = session.getProvider(AuthorizationProvider.class).getStoreFactory().getResourceServerStore().findById(container.getId());
+        }
+        return resourceServer;
     }
 }

@@ -169,7 +169,7 @@ public abstract class CacheManager {
                 return;
             }
             if (rev.equals(object.getRevision())) {
-                cache.putForExternalRead(id, object);
+                put(id, object, lifespan);
                 return;
             }
             if (rev > object.getRevision()) { // revision is ahead, don't cache
@@ -178,8 +178,7 @@ public abstract class CacheManager {
             }
             // revisions cache has a lower value than the object.revision, so update revision and add it to cache
             revisions.put(id, object.getRevision());
-            if (lifespan < 0) cache.putForExternalRead(id, object);
-            else cache.putForExternalRead(id, object, lifespan, TimeUnit.MILLISECONDS);
+            put(id, object, lifespan);
         } finally {
             endRevisionBatch();
         }
@@ -198,6 +197,14 @@ public abstract class CacheManager {
         }
     }
 
+    private void put(String id, Revisioned object, long lifespan) {
+        if (lifespan < 0) {
+            cache.putForExternalRead(id, object);
+        } else {
+            cache.putForExternalRead(id, object, lifespan, TimeUnit.MILLISECONDS);
+        }
+    }
+
     private Iterator<Map.Entry<String, Revisioned>> getEntryIterator(Predicate<Map.Entry<String, Revisioned>> predicate) {
         return cache
                 .entrySet()
@@ -208,7 +215,7 @@ public abstract class CacheManager {
 
     public void sendInvalidationEvents(KeycloakSession session, Collection<InvalidationEvent> invalidationEvents, String eventKey) {
         session.getProvider(ClusterProvider.class)
-                .notify(eventKey, invalidationEvents, true, ClusterProvider.DCNotify.ALL_DCS);
+                .notify(eventKey, invalidationEvents, true);
     }
 
 

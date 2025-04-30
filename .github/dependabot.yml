@@ -12,7 +12,7 @@ updates:
       - area/dependencies
       - area/ci
   - package-ecosystem: npm
-    directory: /
+    directory: js
     schedule:
       interval: daily
       time: "00:00"
@@ -22,3 +22,16 @@ updates:
     labels:
       - area/dependencies
       - team/ui
+    ignore:
+      - dependency-name: "@patternfly/*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: react
+        update-types: ["version-update:semver-major"]
+      - dependency-name: react-dom
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-router-dom"
+        update-types: ["version-update:semver-major"]

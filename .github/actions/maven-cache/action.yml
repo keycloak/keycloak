@@ -31,15 +31,6 @@ runs:
         # Enable cross-os archive use the cache on both Linux and Windows
         enableCrossOsArchive: true
 
-    - id: download-node-for-windows
-      # This is necessary as the build which creates the cache will run on a Linux node and therefore will never download the Windows artifact by default.
-      # If we wouldn't download it manually, it would be downloaded on each Windows build, which proved to be unstable as downloads would randomly fail in the middle of the download.
-      if: inputs.create-cache-if-it-doesnt-exist == 'true' && steps.cache-maven-repository.outputs.cache-hit != 'true'
-      shell: bash
-      run: |
-        export VERSION=$(mvn help:evaluate -Dexpression=node.version -q -DforceStdout  | cut -c 2-)
-        curl -Lf https://nodejs.org/dist/v${VERSION}/win-x64/node.exe --create-dirs -o ~/.m2/repository/com/github/eirslett/node/${VERSION}/node-${VERSION}-win-x64.exe
-
     - shell: powershell
       name: Link the cached Maven repository to the OS-dependent location
       if: inputs.create-cache-if-it-doesnt-exist == 'false' && runner.os == 'Windows'
@@ -62,3 +53,7 @@ runs:
           !~/.m2/repository/org/keycloak
         key: ${{ steps.weekly-cache-key.outputs.key }}
         enableCrossOsArchive: true
+
+    - id: node-cache
+      name: Node cache
+      uses: ./.github/actions/node-cache

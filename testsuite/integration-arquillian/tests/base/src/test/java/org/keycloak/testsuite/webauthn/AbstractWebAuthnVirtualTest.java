@@ -33,7 +33,7 @@ import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -81,7 +81,7 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
  *
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
-public abstract class AbstractWebAuthnVirtualTest extends AbstractTestRealmKeycloakTest implements UseVirtualAuthenticators {
+public abstract class AbstractWebAuthnVirtualTest extends AbstractChangeImportedUserPasswordsTest implements UseVirtualAuthenticators {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -113,7 +113,6 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractTestRealmKeycl
     protected static final String ALL_ZERO_AAGUID = "00000000-0000-0000-0000-000000000000";
     protected static final String ALL_ONE_AAGUID = "11111111-1111-1111-1111-111111111111";
     protected static final String USERNAME = "UserWebAuthn";
-    protected static final String PASSWORD = "password";
     protected static final String EMAIL = "UserWebAuthn@email";
 
     protected final static String base64EncodedPK =
@@ -153,10 +152,7 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractTestRealmKeycl
         }
 
         testRealms.add(realmRepresentation);
-    }
-
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
+        configureTestRealm(realmRepresentation);
     }
 
     @Override
@@ -223,7 +219,7 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractTestRealmKeycl
     }
 
     private void registerDefaultUser(String authenticatorLabel, boolean shouldSuccess) {
-        registerUser(USERNAME, PASSWORD, EMAIL, authenticatorLabel, shouldSuccess);
+        registerUser(USERNAME, generatePassword(USERNAME), EMAIL, authenticatorLabel, shouldSuccess);
     }
 
     protected void registerUser(String username, String password, String email, String authenticatorLabel, boolean shouldSuccess) {
@@ -291,7 +287,7 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractTestRealmKeycl
     }
 
     protected void authenticateDefaultUser(boolean shouldSuccess) {
-        authenticateUser(USERNAME, PASSWORD, shouldSuccess);
+        authenticateUser(USERNAME, getPassword(USERNAME), shouldSuccess);
     }
 
     protected void authenticateUser(String username, String password, boolean shouldSuccess) {
@@ -387,8 +383,7 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractTestRealmKeycl
     protected void logout() {
         try {
             waitForPageToLoad();
-            String logoutUrl = oauth.getLogoutUrl().build();
-            driver.navigate().to(logoutUrl);
+            oauth.openLogoutForm();
             logoutConfirmPage.assertCurrent();
             logoutConfirmPage.confirmLogout();
             infoPage.assertCurrent();

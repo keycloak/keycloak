@@ -38,6 +38,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.events.log.JBossLoggingEventListenerProviderFactory;
 import org.keycloak.models.AdminRoles;
+import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.models.Constants;
 import org.keycloak.models.OAuth2DeviceConfig;
@@ -73,7 +74,7 @@ import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.CredentialBuilder;
-import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
@@ -105,6 +106,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
@@ -332,6 +334,13 @@ public class RealmTest extends AbstractAdminTest {
     public void testFieldNotErased() {
         Long dummyLong = Long.valueOf(999);
         Integer dummyInt = Integer.valueOf(999);
+        Map<String, String> browserSecurityHeaders = new HashMap<>(Arrays.stream(
+                BrowserSecurityHeaders.values()).collect(Collectors.toMap(
+                BrowserSecurityHeaders::getKey,
+                headerValue -> headerValue.getDefaultValue().isBlank()
+                        ? "non-null-to-test"
+                        : headerValue.getDefaultValue()
+        )));
 
         RealmRepresentation rep = new RealmRepresentation();
         rep.setRealm("attributes");
@@ -350,6 +359,7 @@ public class RealmTest extends AbstractAdminTest {
         rep.setActionTokenGeneratedByUserLifespan(dummyInt);
         rep.setOfflineSessionMaxLifespanEnabled(true);
         rep.setOfflineSessionMaxLifespan(dummyInt);
+        rep.setBrowserSecurityHeaders(browserSecurityHeaders);
 
         rep.setWebAuthnPolicyRpEntityName("RP_ENTITY_NAME");
         rep.setWebAuthnPolicySignatureAlgorithms(Collections.singletonList("RS256"));
@@ -418,6 +428,8 @@ public class RealmTest extends AbstractAdminTest {
         assertEquals(dummyInt, rep.getWebAuthnPolicyPasswordlessCreateTimeout());
         assertTrue(rep.isWebAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister());
         assertEquals(Collections.singletonList("00000000-0000-0000-0000-000000000000"), rep.getWebAuthnPolicyPasswordlessAcceptableAaguids());
+
+        assertEquals(browserSecurityHeaders, rep.getBrowserSecurityHeaders());
     }
 
     @Test
@@ -1005,7 +1017,7 @@ public class RealmTest extends AbstractAdminTest {
         realm.users().get(userId).resetPassword(CredentialBuilder.create().password("password").build());
         assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResetPasswordPath(userId), ResourceType.USER);
 
-        oauth.doLogin("user", "password");
+        oauth.doPasswordGrantRequest("user", "password");
 
         GlobalRequestResult globalRequestResult = realm.logoutAll();
         assertAdminEvents.assertEvent(realmId, OperationType.ACTION, "logout-all", globalRequestResult, ResourceType.REALM);
@@ -1022,7 +1034,7 @@ public class RealmTest extends AbstractAdminTest {
         setupTestAppAndUser();
 
         oauth.doLogin("testuser", "password");
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), "secret");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
         assertEquals(200, tokenResponse.getStatusCode());
 
         EventRepresentation event = events.poll();
@@ -1038,7 +1050,7 @@ public class RealmTest extends AbstractAdminTest {
             assertAdminEvents.assertEmpty();
         }
 
-        tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "secret");
+        tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
         assertEquals(400, tokenResponse.getStatusCode());
         assertEquals("Session not active", tokenResponse.getErrorDescription());
     }
@@ -1053,8 +1065,7 @@ public class RealmTest extends AbstractAdminTest {
         System.out.println(sessionStats.size());
 
         oauth.doLogin("testuser", "password");
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE),
-            "secret");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
         assertEquals(200, tokenResponse.getStatusCode());
 
         sessionStats = realm.getClientSessionStats();
@@ -1141,6 +1152,7 @@ public class RealmTest extends AbstractAdminTest {
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientResourcePath(clientDbId), client, ResourceType.CLIENT);
 
         oauth.realm(REALM_NAME);
+        oauth.client("test-app", "secret");
         oauth.redirectUri(redirectUri);
 
         UserRepresentation userRep = UserBuilder.create().username("testuser").build();

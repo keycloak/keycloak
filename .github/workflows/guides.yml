@@ -21,6 +21,9 @@ defaults:
   run:
     shell: bash
 
+permissions:
+  contents: read
+
 jobs:
 
   conditional:
@@ -29,6 +32,9 @@ jobs:
     outputs:
       guides: ${{ steps.conditional.outputs.guides }}
       ci: ${{ steps.conditional.outputs.ci }}
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
 

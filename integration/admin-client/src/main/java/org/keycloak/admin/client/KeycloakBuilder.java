@@ -139,10 +139,6 @@ public class KeycloakBuilder {
             if (password == null) {
                 throw new IllegalStateException("password required");
             }
-        } else if (CLIENT_CREDENTIALS.equals(grantType)) {
-            if (clientSecret == null) {
-                throw new IllegalStateException("clientSecret required with grant_type=client_credentials");
-            }
         }
 
         if (authorization == null && clientId == null) {

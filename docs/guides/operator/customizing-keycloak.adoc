@@ -5,7 +5,7 @@
 
 <@tmpl.guide
 title="Using custom {project_name} images"
-summary="How to customize and optimize the {project_name} Container">
+summary="Customize and optimize the {project_name} container.">
 
 == {project_name} custom image with the Operator
 
@@ -52,7 +52,7 @@ Use the Keycloak CR for any configuration that requires Operator awareness, name
 
 === Non-optimized custom image
 
-While it is considered a best practice use a pre-augmented image, if you want to use a non-optimized custom image or build time properties with an augmented image that is still possible. You just need set the `startOptimzed` field to `false` as shown in this example:
+While it is considered a best practice use a pre-augmented image, if you want to use a non-optimized custom image or build time properties with an augmented image that is still possible. You just need set the `startOptimized` field to `false` as shown in this example:
 
 [source,yaml]
 ----

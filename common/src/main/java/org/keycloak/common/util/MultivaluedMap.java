@@ -59,6 +59,10 @@ public interface MultivaluedMap<K, V> extends Map<K, List<V>> {
         return Optional.ofNullable(get(key)).filter(l -> !l.isEmpty()).map(l -> l.get(0)).orElse(null);
     }
 
+    default V getFirstOrDefault(K key, V defaultValue) {
+        return Optional.ofNullable(getFirst(key)).orElse(defaultValue);
+    }
+
     public default List<V> getList(K key) {
         return compute(key, (k, v) -> v != null ? v : createListInstance());
     }

@@ -16,6 +16,7 @@
  */
 package org.keycloak.protocol.oid4vc.issuance;
 
+import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBody;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
@@ -30,18 +31,18 @@ import org.keycloak.services.managers.AuthenticationManager;
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
 public class VCIssuanceContext {
-    private VerifiableCredential verifiableCredential;
 
+    private CredentialBody credentialBody;
     private SupportedCredentialConfiguration credentialConfig;
     private CredentialRequest credentialRequest;
     private AuthenticationManager.AuthResult authResult;
 
-    public VerifiableCredential getVerifiableCredential() {
-        return verifiableCredential;
+    public CredentialBody getCredentialBody() {
+        return credentialBody;
     }
 
-    public VCIssuanceContext setVerifiableCredential(VerifiableCredential verifiableCredential) {
-        this.verifiableCredential = verifiableCredential;
+    public VCIssuanceContext setCredentialBody(CredentialBody credentialBody) {
+        this.credentialBody = credentialBody;
         return this;
     }
 

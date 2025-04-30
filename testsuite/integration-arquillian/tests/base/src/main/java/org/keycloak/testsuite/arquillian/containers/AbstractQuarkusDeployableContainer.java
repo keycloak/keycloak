@@ -36,15 +36,14 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
@@ -61,7 +60,10 @@ import org.jboss.logging.Logger;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.descriptor.api.Descriptor;
+import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature.Type;
 import org.keycloak.common.crypto.FipsMode;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.model.StoreProvider;
 import org.keycloak.utils.StringUtil;
@@ -77,6 +79,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
 
     protected KeycloakQuarkusConfiguration configuration;
     protected List<String> additionalBuildArgs = Collections.emptyList();
+    protected Map<String, List<String>> spis = new HashMap<>();
 
     @Override
     public Class<KeycloakQuarkusConfiguration> getConfigurationClass() {
@@ -130,7 +133,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
     }
 
     @Override
-    public void undeploy(Descriptor descriptor) throws DeploymentException {
+    public void undeploy(Descriptor descriptor) {
 
     }
 
@@ -164,20 +167,30 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
 
         commands.add("--http-port=" + configuration.getBindHttpPort());
         commands.add("--https-port=" + configuration.getBindHttpsPort());
+        
+        commands.add("--http-relative-path=/auth");
+        commands.add("--health-enabled=true"); // expose something to management interface to turn it on
 
         if (suiteContext.get().isAuthServerMigrationEnabled()) {
             commands.add("--hostname-strict=false");
-            commands.add("--hostname-strict-https=false");
         } else { // Do not set management port for older versions of Keycloak for migration tests - available since Keycloak 25
             commands.add("--http-management-port=" + configuration.getManagementPort());
         }
 
+        if (suiteContext.get().getMigrationContext().isRunningMigrationTest()) {
+            commands.add("--spi-datastore-legacy-allow-migrate-existing-database-to-snapshot=true");
+        }
+
         if (configuration.getRoute() != null) {
-            commands.add("-Djboss.node.name=" + configuration.getRoute());
+            commands.add("--spi-cache-embedded-default-node-name=" + configuration.getRoute());
         }
 
         if (System.getProperty("auth.server.quarkus.log-level") != null) {
             commands.add("--log-level=" + System.getProperty("auth.server.quarkus.log-level"));
+        }
+
+        if (System.getProperty("auth.server.host") != null) {
+            commands.add("-Dauth.server.host=" + System.getProperty("auth.server.host"));
         }
 
         commands.addAll(getAdditionalBuildArgs());
@@ -185,7 +198,6 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
         commands = configureArgs(commands);
 
         final StoreProvider storeProvider = StoreProvider.getCurrentProvider();
-        final Supplier<Boolean> shouldSetUpDb = () -> !restart.get() && !storeProvider.equals(StoreProvider.DEFAULT);
         final String cacheMode = System.getProperty("auth.server.quarkus.cluster.config", "local");
 
         if ("local".equals(cacheMode)) {
@@ -195,21 +207,22 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
         } else {
             commands.add("--cache=ispn");
             commands.add("--cache-config-file=cluster-" + cacheMode + ".xml");
+
+            var stack = System.getProperty("auth.server.quarkus.cluster.stack");
+            if (stack != null)
+                commands.add("--cache-stack=" + stack);
         }
 
         log.debugf("FIPS Mode: %s", configuration.getFipsMode());
 
-        // only run build during first execution of the server (if the DB is specified), restarts or when running cluster tests
-        if (restart.get() || "ha".equals(cacheMode) || shouldSetUpDb.get() || configuration.getFipsMode() != FipsMode.DISABLED) {
-            prepareCommandsForRebuilding(commands);
-
-            if (configuration.getFipsMode() != FipsMode.DISABLED) {
-                addFipsOptions(commands);
-            }
+        if (configuration.getFipsMode() != FipsMode.DISABLED) {
+            addFipsOptions(commands);
         }
 
         addStorageOptions(storeProvider, commands);
         addFeaturesOption(commands);
+        
+        spis.values().forEach(commands::addAll);
 
         var features = getDefaultFeatures();
         if (features.contains("clusterless") || features.contains("multi-site")) {
@@ -217,7 +230,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
             commands.add("--cache-remote-username=keycloak");
             commands.add("--cache-remote-password=Password1!");
             commands.add("--cache-remote-tls-enabled=false");
-            commands.add("--spi-connections-infinispan-quarkus-site-name=test");
+            commands.add("--spi-cache-embedded-default-site-name=test");
             configuration.appendJavaOpts("-Dkc.cache-remote-create-caches=true");
             System.setProperty("kc.cache-remote-create-caches", "true");
         }
@@ -225,26 +238,31 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
         return commands;
     }
 
-    /**
-     * When enabling automatic rebuilding of the image, the `--optimized` argument must be removed,
-     * and all original build time parameters must be added.
-     */
-    private static void prepareCommandsForRebuilding(List<String> commands) {
-        commands.removeIf("--optimized"::equals);
-        commands.add("--http-relative-path=/auth");
-        commands.add("--health-enabled=true"); // expose something to management interface to turn it on
-    }
-
     protected void addFeaturesOption(List<String> commands) {
-        String enabledFeatures = configuration.getEnabledFeatures();
-        String disabledFeatures = configuration.getDisabledFeatures();
-
-        if (StringUtil.isBlank(enabledFeatures) && StringUtil.isBlank(disabledFeatures)) {
-            return;
-        }
-
-        if (commands.stream().anyMatch(List.of("import", "export")::contains)) {
-            return;
+        String enabledFeatures = Optional.ofNullable(configuration.getEnabledFeatures()).orElse("");
+        String disabledFeatures = Optional.ofNullable(configuration.getDisabledFeatures()).orElse("");
+        
+        var disabled = ProfileAssume.getDisabledFeatures();
+        // TODO: this is not ideal, we're trying to infer what should be enabled / disabled from what was captured
+        // as the disabled features. This at least does not understand the profile and may not age well.
+        // We should consider a direct mechanism - that is part of the persisted configuration - for toggling each
+        // feature
+        if (disabled != null) {
+            enabledFeatures = "";
+            disabledFeatures = "";
+            for (Profile.Feature f : Profile.Feature.values()) {
+                if (disabled.contains(f)) {
+                    if (f.getType() == Type.DEFAULT) {
+                        disabledFeatures = f.getUnversionedKey() + (disabledFeatures.isEmpty() ? "" : ("," + disabledFeatures));
+                    }
+                } else {
+                    if (f.getType() != Type.DEFAULT) {
+                        enabledFeatures = f.getVersionedKey() + (enabledFeatures.isEmpty() ? "" : ("," + enabledFeatures));
+                    }
+                }
+            }
+        } else if (configuration.getFipsMode() != FipsMode.DISABLED) {
+            enabledFeatures = "fips" + (enabledFeatures.isEmpty() ? "" : ("," + enabledFeatures));
         }
 
         if (!StringUtil.isBlank(enabledFeatures)) {
@@ -254,9 +272,6 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
         if (!StringUtil.isBlank(disabledFeatures)) {
             appendOrAddCommand(commands, "--features-disabled=", disabledFeatures);
         }
-
-        // enabling or disabling features requires rebuilding the image
-        prepareCommandsForRebuilding(commands);
     }
 
     private void appendOrAddCommand(List<String> commands, String command, String addition) {
@@ -303,6 +318,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
 
     public void resetConfiguration() {
         additionalBuildArgs = Collections.emptyList();
+        this.spis.clear();
     }
 
     protected void waitForReadiness() throws Exception {
@@ -312,11 +328,12 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
         URL contextRoot = new URL(getBaseUrl(suiteContext) + "/auth/realms/master/");
         HttpURLConnection connection;
         long startTime = System.currentTimeMillis();
+        Exception e = null;
 
         while (true) {
             if (System.currentTimeMillis() - startTime > getStartTimeout()) {
                 stop();
-                throw new IllegalStateException("Timeout [" + getStartTimeout() + "] while waiting for Quarkus server");
+                throw new IllegalStateException("Timeout [" + getStartTimeout() + "] while waiting for Quarkus server", e);
             }
 
             checkLiveness();
@@ -341,7 +358,8 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
                 }
 
                 connection.disconnect();
-            } catch (Exception ignore) {
+            } catch (Exception exception) {
+                e = exception;
             }
         }
 
@@ -363,12 +381,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
     }
 
     private HostnameVerifier createInsecureHostnameVerifier() {
-        return new HostnameVerifier() {
-            @Override
-            public boolean verify(String s, SSLSession sslSession) {
-                return true;
-            }
-        };
+        return (s, sslSession) -> true;
     }
 
     private SSLSocketFactory createInsecureSslSocketFactory() throws IOException {
@@ -407,7 +420,6 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
     }
 
     private void addFipsOptions(List<String> commands) {
-        commands.add("--features=fips");
         commands.add("--fips-mode=" + configuration.getFipsMode().toString());
 
         log.debugf("Keystore file: %s, truststore file: %s",
@@ -439,5 +451,13 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
             return List.of();
         }
         return Arrays.stream(features.split(",")).collect(Collectors.toSet());
+    }
+
+    public void setSpiConfig(String spi, List<String> args) {
+        this.spis.put(spi, args);
+    }
+    
+    public void removeSpiConfig(String spi) {
+        this.spis.remove(spi);
     }
 }

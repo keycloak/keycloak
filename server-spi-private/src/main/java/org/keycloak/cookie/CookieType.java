@@ -19,6 +19,11 @@ public final class CookieType {
             .defaultMaxAge(CookieMaxAge.SESSION)
             .build();
 
+    public static final CookieType AUTH_SESSION_ID_HASH = CookieType.create("KC_AUTH_SESSION_HASH")
+            .scope(CookieScope.FEDERATION_JS)
+            .defaultMaxAge(60)
+            .build();
+
     public static final CookieType AUTH_SESSION_ID = CookieType.create("AUTH_SESSION_ID")
             .scope(CookieScope.FEDERATION)
             .defaultMaxAge(CookieMaxAge.SESSION)

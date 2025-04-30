@@ -109,7 +109,7 @@ public class KcAdmCreateTest extends AbstractAdmCliTest {
                 Assert.assertEquals("consentRequired", false, client.isConsentRequired());
                 Assert.assertEquals("baseUrl", "http://localhost:8980/myapp", client.getBaseUrl());
                 Assert.assertEquals("bearerOnly", true, client.isStandardFlowEnabled());
-                Assert.assertFalse("mappers not empty", client.getProtocolMappers().isEmpty());
+                Assert.assertNull("mappers are not empty", client.getProtocolMappers());
 
                 // create configuration from file as a template and override clientId and other attributes ... output an object
                 exe = execute("create clients --config '" + configFile.getName() + "' -o -f '" + tmpFile.getName() +
@@ -133,7 +133,7 @@ public class KcAdmCreateTest extends AbstractAdmCliTest {
                 Assert.assertEquals("baseUrl", "http://localhost:8980/myapp2", client2.getBaseUrl());
                 Assert.assertEquals("rootUrl", "http://localhost:8980/myapp2", client2.getRootUrl());
                 Assert.assertEquals("bearerOnly", true, client2.isStandardFlowEnabled());
-                Assert.assertFalse("mappers not empty", client2.getProtocolMappers().isEmpty());
+                Assert.assertNull("mappers are not empty", client2.getProtocolMappers());
             }
 
             // simple create, output an id

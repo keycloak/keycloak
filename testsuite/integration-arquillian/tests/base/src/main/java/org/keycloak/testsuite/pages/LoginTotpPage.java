@@ -39,7 +39,7 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
     @FindBy(id = "password-token")
     private WebElement passwordToken;
 
-    @FindBy(css = "button[type=\"submit\"]")
+    @FindBy(css = "[type=\"submit\"]")
     private WebElement submitButton;
 
     @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
@@ -48,11 +48,14 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
     @FindBy(id = "input-error-otp")
     private WebElement totpInputCodeError;
 
+    @FindBy(id = "input-error-otp-code")
+    private WebElement otpInputCodeError;
+
     public void login(String totp) {
         otpInput.clear();
         if (totp != null) otpInput.sendKeys(totp);
 
-        submitButton.click();
+        UIUtils.clickLink(submitButton);
     }
 
     public String getAlertError() {
@@ -67,7 +70,11 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
         try {
             return UIUtils.getTextFromElement(totpInputCodeError);
         } catch (NoSuchElementException e) {
-            return null;
+            try {
+                return UIUtils.getTextFromElement(otpInputCodeError);
+            } catch (NoSuchElementException ex) {
+                return null;
+            }
         }
     }
 
@@ -79,12 +86,6 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
             return false;
         }
     }
-
-    @Override
-    public void open() {
-        throw new UnsupportedOperationException();
-    }
-
 
     // If false, we don't expect that credentials combobox is available. If true, we expect that it is available on the page
     public void assertOtpCredentialSelectorAvailability(boolean expectedAvailability) {

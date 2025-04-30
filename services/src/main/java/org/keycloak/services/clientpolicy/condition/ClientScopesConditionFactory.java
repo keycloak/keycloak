@@ -36,6 +36,7 @@ public class ClientScopesConditionFactory extends AbstractClientPolicyConditionP
     public static final String TYPE = "type";
     public static final String DEFAULT = "Default";
     public static final String OPTIONAL = "Optional";
+    public static final String ANY = "Any";
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
@@ -46,9 +47,10 @@ public class ClientScopesConditionFactory extends AbstractClientPolicyConditionP
         configProperties.add(property);
         property = new ProviderConfigProperty(TYPE, "Scope Type",
                 "If set to 'Default', condition evaluates to true if client has some default scopes of the values specified by the 'Expected Scopes' property. " +
-                        "If set to 'Optional', condition evaluates to true if client has some optional scopes of the values specified by the 'Expected Scopes' property and at the same time, the scope were used as a value of 'scope' parameter in the request",
+                        "If set to 'Optional', condition evaluates to true if client has some optional scopes of the values specified by the 'Expected Scopes' property and at the same time, the scope were used as a value of 'scope' parameter in the request. " +
+                        "If set to 'Any', condition evaluates to true if either of the 'Default' or 'Optional' conditions is satisfied.",
                 ProviderConfigProperty.LIST_TYPE, OPTIONAL);
-        property.setOptions(Arrays.asList(DEFAULT, OPTIONAL));
+        property.setOptions(Arrays.asList(DEFAULT, OPTIONAL, ANY));
         configProperties.add(property);
     }
 

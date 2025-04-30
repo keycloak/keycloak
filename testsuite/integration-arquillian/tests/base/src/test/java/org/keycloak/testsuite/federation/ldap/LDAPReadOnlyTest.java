@@ -18,6 +18,7 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
+import java.util.List;
 import java.util.Map;
 import org.hamcrest.MatcherAssert;
 import org.jboss.arquillian.graphene.page.Page;
@@ -26,7 +27,6 @@ import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -56,7 +56,10 @@ import jakarta.ws.rs.ClientErrorException;
 import java.util.Collections;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -134,7 +137,7 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
         totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
 
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
 
         // Revert TOTP
         setTotpRequirementExecutionForRealm(AuthenticationExecutionModel.Requirement.CONDITIONAL);
@@ -162,6 +165,26 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
         // reset
         userRepresentation.setRequiredActions(Collections.emptyList());
         user.update(userRepresentation);
+    }
+
+    @Test
+    public void testUpdateLocale() {
+        RealmRepresentation realm = testRealm().toRepresentation();
+        realm.setInternationalizationEnabled(true);
+        testRealm().update(realm);
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
+
+        UserRepresentation userRepresentation = user.toRepresentation();
+        String language = "pt_BR";
+        userRepresentation.setAttributes(Map.of(UserModel.LOCALE, List.of(language)));
+        user.update(userRepresentation);
+
+        userRepresentation = user.toRepresentation();
+        assertEquals(language, userRepresentation.getAttributes().get(UserModel.LOCALE).get(0));
+
+        userRepresentation.getAttributes().remove(UserModel.LOCALE);
+        user.update(userRepresentation);
+        assertNull(userRepresentation.getAttributes().get(UserModel.LOCALE));
     }
 
     // KEYCLOAK-3365

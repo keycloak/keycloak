@@ -51,8 +51,4 @@ public class IdpConfirmLinkPage extends LanguageComboboxAwarePage {
         linkAccountButton.click();
     }
 
-    @Override
-    public void open() throws Exception {
-        throw new UnsupportedOperationException();
-    }
 }

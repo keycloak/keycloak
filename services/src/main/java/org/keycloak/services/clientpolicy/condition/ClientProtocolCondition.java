@@ -58,7 +58,7 @@ public class ClientProtocolCondition extends AbstractClientPolicyConditionProvid
 
     @Override
     public String getProviderId() {
-        return ClientAccessTypeConditionFactory.PROVIDER_ID;
+        return ClientProtocolConditionFactory.PROVIDER_ID;
     }
 
     @Override

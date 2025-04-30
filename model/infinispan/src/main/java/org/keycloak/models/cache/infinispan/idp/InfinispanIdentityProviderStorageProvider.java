@@ -17,6 +17,7 @@
 package org.keycloak.models.cache.infinispan.idp;
 
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -45,6 +46,7 @@ public class InfinispanIdentityProviderStorageProvider implements IdentityProvid
     private static final String IDP_ALIAS_KEY_SUFFIX = ".idp.alias";
     private static final String IDP_ORG_ID_KEY_SUFFIX = ".idp.orgId";
     private static final String IDP_LOGIN_SUFFIX = ".idp.login";
+    private static final String IDP_ENABLED_KEY_SUFFIX = ".idp.enabled";
 
     private final KeycloakSession session;
     private final IdentityProviderStorageProvider idpDelegate;
@@ -76,6 +78,10 @@ public class InfinispanIdentityProviderStorageProvider implements IdentityProvid
 
     public static String cacheKeyForLogin(RealmModel realm, FetchMode fetchMode) {
         return realm.getId() + IDP_LOGIN_SUFFIX + "." + fetchMode;
+    }
+
+    public static String cacheKeyIsEnabled(RealmModel realm) {
+        return realm.getId() + IDP_ENABLED_KEY_SUFFIX;
     }
 
     @Override
@@ -165,6 +171,26 @@ public class InfinispanIdentityProviderStorageProvider implements IdentityProvid
     }
 
     @Override
+    public boolean isIdentityFederationEnabled() {
+        String cacheKey = cacheKeyIsEnabled(getRealm());
+
+        if (isInvalid(cacheKey)) {
+            return idpDelegate.isIdentityFederationEnabled();
+        }
+
+        CachedCount cached = realmCache.getCache().get(cacheKey, CachedCount.class);
+
+        if (cached == null) {
+            Long loaded = realmCache.getCache().getCurrentRevision(cacheKey);
+            long count = idpDelegate.getAllStream(Map.of(), 0, 1).count();
+            cached = new CachedCount(loaded, getRealm(), cacheKey, count);
+            realmCache.getCache().addRevisioned(cached, realmCache.getStartupRevision());
+        }
+
+        return cached.getCount() > 0;
+    }
+
+    @Override
     public Stream<IdentityProviderModel> getByOrganization(String orgId, Integer first, Integer max) {
         RealmModel realm = getRealm();
         String cacheKey = cacheKeyOrgId(realm, orgId);
@@ -191,13 +217,14 @@ public class InfinispanIdentityProviderStorageProvider implements IdentityProvid
                 // there is a cache entry, but the current search is not yet cached
                 cache.invalidateObject(cacheKey);
                 Long loaded = cache.getCurrentRevision(cacheKey);
-                cached = idpDelegate.getByOrganization(orgId, first, max).map(IdentityProviderModel::getInternalId).collect(Collectors.toSet());
+                cached = idpDelegate.getByOrganization(orgId, first, max).map(IdentityProviderModel::getInternalId)
+                        .collect(Collectors.toCollection(LinkedHashSet::new));
                 query = new IdentityProviderListQuery(loaded, cacheKey, realm, searchKey, cached, query);
                 cache.addRevisioned(query, cache.getCurrentCounter());
             }
         }
 
-        Set<IdentityProviderModel> identityProviders = new HashSet<>();
+        Set<IdentityProviderModel> identityProviders = new LinkedHashSet<>();
         for (String id : cached) {
             IdentityProviderModel idp = session.identityProviders().getById(id);
             if (idp == null) {
@@ -226,7 +253,8 @@ public class InfinispanIdentityProviderStorageProvider implements IdentityProvid
         if (query == null) {
             // not cached yet
             Long loaded = cache.getCurrentRevision(cacheKey);
-            cached = idpDelegate.getForLogin(mode, organizationId).map(IdentityProviderModel::getInternalId).collect(Collectors.toSet());
+            cached = idpDelegate.getForLogin(mode, organizationId).map(IdentityProviderModel::getInternalId)
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
             query = new IdentityProviderListQuery(loaded, cacheKey, getRealm(), searchKey, cached);
             cache.addRevisioned(query, startupRevision);
         } else {
@@ -241,7 +269,7 @@ public class InfinispanIdentityProviderStorageProvider implements IdentityProvid
             }
         }
 
-        Set<IdentityProviderModel> identityProviders = new HashSet<>();
+        Set<IdentityProviderModel> identityProviders = new LinkedHashSet<>();
         for (String id : cached) {
             IdentityProviderModel idp = session.identityProviders().getById(id);
             if (idp == null) {
@@ -369,6 +397,7 @@ public class InfinispanIdentityProviderStorageProvider implements IdentityProvid
 
     private void registerCountInvalidation() {
         realmCache.registerInvalidation(cacheKeyIdpCount(getRealm()));
+        realmCache.registerInvalidation(cacheKeyIsEnabled(getRealm()));
     }
 
     private void registerIDPMapperInvalidation(IdentityProviderMapperModel mapper) {

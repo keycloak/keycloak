@@ -203,7 +203,8 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             String modelTokenString = model.getToken();
             AccessTokenResponse tokenResponse = JsonSerialization.readValue(modelTokenString, AccessTokenResponse.class);
             Integer exp = (Integer) tokenResponse.getOtherClaims().get(ACCESS_TOKEN_EXPIRATION);
-            if (exp != null && exp < Time.currentTime()) {
+            final int currentTime = Time.currentTime();
+            if (exp != null && exp <= currentTime + getConfig().getMinValidityToken()) {
                 if (tokenResponse.getRefreshToken() == null) {
                     return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
                 }
@@ -219,7 +220,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 }
                 AccessTokenResponse newResponse = JsonSerialization.readValue(response, AccessTokenResponse.class);
                 if (newResponse.getExpiresIn() > 0) {
-                    int accessTokenExpiration = Time.currentTime() + (int) newResponse.getExpiresIn();
+                    int accessTokenExpiration = currentTime + (int) newResponse.getExpiresIn();
                     newResponse.getOtherClaims().put(ACCESS_TOKEN_EXPIRATION, accessTokenExpiration);
                 }
 
@@ -231,7 +232,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
                 String oldToken = tokenUserSession.getNote(FEDERATED_ACCESS_TOKEN);
                 if (oldToken != null && oldToken.equals(tokenResponse.getToken())) {
-                    int accessTokenExpiration = newResponse.getExpiresIn() > 0 ? Time.currentTime() + (int) newResponse.getExpiresIn() : 0;
+                    int accessTokenExpiration = newResponse.getExpiresIn() > 0 ? currentTime + (int) newResponse.getExpiresIn() : 0;
                     tokenUserSession.setNote(FEDERATED_TOKEN_EXPIRATION, Long.toString(accessTokenExpiration));
                     tokenUserSession.setNote(FEDERATED_REFRESH_TOKEN, newResponse.getRefreshToken());
                     tokenUserSession.setNote(FEDERATED_ACCESS_TOKEN, newResponse.getToken());
@@ -241,7 +242,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 model.setToken(response);
                 tokenResponse = newResponse;
             } else if (exp != null) {
-                tokenResponse.setExpiresIn(exp - Time.currentTime());
+                tokenResponse.setExpiresIn(exp - currentTime);
             }
             tokenResponse.setIdToken(null);
             tokenResponse.setRefreshToken(null);
@@ -254,6 +255,38 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    protected BrokeredIdentityContext validateExternalTokenThroughUserInfo(EventBuilder event, String subjectToken, String subjectTokenType) {
+        BrokeredIdentityContext context = super.validateExternalTokenThroughUserInfo(event, subjectToken, subjectTokenType);
+
+        if (context != null && (OAuth2Constants.ID_TOKEN_TYPE.equals(subjectTokenType) ||
+            (OAuth2Constants.ACCESS_TOKEN_TYPE.equals(subjectTokenType) && getConfig().isAccessTokenJwt()))) {
+
+            JsonWebToken parsedToken;
+            try {
+                parsedToken = validateToken(subjectToken, true);
+            } catch (IdentityBrokerException e) {
+                logger.debug("Unable to validate token for exchange", e);
+                event.detail(Details.REASON, "token validation failure");
+                event.error(Errors.INVALID_TOKEN);
+                throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token", Response.Status.BAD_REQUEST);
+            }
+
+            boolean idTokenType = OAuth2Constants.ID_TOKEN_TYPE.equals(subjectTokenType);
+
+            if (idTokenType) {
+                context.getContextData().put(VALIDATED_ID_TOKEN, parsedToken);
+            } else {
+                context.getContextData().put(KeycloakOIDCIdentityProvider.VALIDATED_ACCESS_TOKEN, parsedToken);
+            }
+            context.getContextData().put(EXCHANGE_PROVIDER, getConfig().getAlias());
+            context.setIdp(this);
+            return context;
+        }
+
+        return context;
     }
 
     protected void processAccessTokenResponse(BrokeredIdentityContext context, AccessTokenResponse response) {
@@ -275,7 +308,6 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     protected Response exchangeSessionToken(UriInfo uriInfo, EventBuilder event, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
         String refreshToken = tokenUserSession.getNote(FEDERATED_REFRESH_TOKEN);
         String accessToken = tokenUserSession.getNote(FEDERATED_ACCESS_TOKEN);
-        String idToken = tokenUserSession.getNote(FEDERATED_ID_TOKEN);
 
         if (accessToken == null) {
             event.detail(Details.REASON, "requested_issuer is not linked");
@@ -284,9 +316,10 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
         try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
             long expiration = Long.parseLong(tokenUserSession.getNote(FEDERATED_TOKEN_EXPIRATION));
-            if (expiration == 0 || expiration > Time.currentTime()) {
+            final int currentTime = Time.currentTime();
+            if (expiration == 0 || expiration > currentTime + getConfig().getMinValidityToken()) {
                 AccessTokenResponse tokenResponse = new AccessTokenResponse();
-                tokenResponse.setExpiresIn(expiration);
+                tokenResponse.setExpiresIn(expiration > 0? expiration - currentTime : 0);
                 tokenResponse.setToken(accessToken);
                 tokenResponse.setIdToken(null);
                 tokenResponse.setRefreshToken(null);
@@ -304,7 +337,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
             }
             AccessTokenResponse newResponse = JsonSerialization.readValue(response, AccessTokenResponse.class);
-            long accessTokenExpiration = newResponse.getExpiresIn() > 0 ? Time.currentTime() + newResponse.getExpiresIn() : 0;
+            long accessTokenExpiration = newResponse.getExpiresIn() > 0 ? currentTime + newResponse.getExpiresIn() : 0;
             tokenUserSession.setNote(FEDERATED_TOKEN_EXPIRATION, Long.toString(accessTokenExpiration));
             tokenUserSession.setNote(FEDERATED_REFRESH_TOKEN, newResponse.getRefreshToken());
             tokenUserSession.setNote(FEDERATED_ACCESS_TOKEN, newResponse.getToken());
@@ -863,7 +896,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
 
         try {
-            if (!isTokenTypeSupported(parsedToken)) {
+            if (!getConfig().isDisableTypeClaimCheck() && !isTokenTypeSupported(parsedToken)) {
                 throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "token type not supported", Response.Status.BAD_REQUEST);
             }
             boolean idTokenType = OAuth2Constants.ID_TOKEN_TYPE.equals(subjectTokenType);
@@ -892,7 +925,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
     }
 
-    protected static boolean isTokenTypeSupported(JsonWebToken parsedToken) {
+    protected boolean isTokenTypeSupported(JsonWebToken parsedToken) {
         return SUPPORTED_TOKEN_TYPES.contains(parsedToken.getType());
     }
 

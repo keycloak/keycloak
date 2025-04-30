@@ -30,12 +30,12 @@ import java.util.Set;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public abstract class AbstractDecisionCollector implements Decision<DefaultEvaluation> {
+public abstract class AbstractDecisionCollector implements Decision<Evaluation> {
 
     protected final Map<ResourcePermission, Result> results = new LinkedHashMap<>();
 
     @Override
-    public void onDecision(DefaultEvaluation evaluation) {
+    public void onDecision(Evaluation evaluation) {
         Policy parentPolicy = evaluation.getParentPolicy();
         ResourcePermission permission = evaluation.getPermission();
 

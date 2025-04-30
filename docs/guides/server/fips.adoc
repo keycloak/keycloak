@@ -4,7 +4,7 @@
 
 <@tmpl.guide
 title="FIPS 140-2 support"
-summary="How to configure {project_name} server for FIPS compliance"
+summary="Configure {project_name} server for FIPS compliance."
 includedOptions="">
 
 The Federal Information Processing Standard Publication 140-2, (FIPS 140-2), is a U.S. government computer security standard used to approve cryptographic modules. {project_name} supports running in FIPS 140-2 compliant mode. In this case, {project_name} will use only FIPS approved cryptography algorithms for its functionality.
@@ -31,7 +31,7 @@ fips-mode-setup --enable
 == BouncyCastle library
 
 {project_name} internally uses the BouncyCastle library for many cryptography utilities. Please note that the default version of the BouncyCastle library that shipped with {project_name} is not FIPS compliant;
-however,  BouncyCastle also provides a FIPS validated version of its library. The FIPS validated BouncyCastle library cannot be shipped with {project_name} due to license constraints and
+however,  BouncyCastle also provides a FIPS validated version of its library. The FIPS validated BouncyCastle library is not shipped with {project_name} as 
 {project_name} cannot provide official support of it. Therefore, to run in FIPS compliant mode, you need to download BouncyCastle-FIPS bits and add them to the {project_name} distribution.
 When {project_name} executes in fips mode, it will use the BCFIPS bits instead of the default BouncyCastle bits, which achieves FIPS compliance.
 

@@ -18,6 +18,8 @@
 package org.keycloak.it.cli.dist;
 
 import io.quarkus.test.junit.main.Launch;
+
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.utils.KeycloakDistribution;
@@ -34,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 @DistributionTest(keepAlive = true,
         requestPort = 9000,
         containerExposedPorts = {8080, 9000})
+@Tag(DistributionTest.SLOW)
 public class HealthDistTest {
 
     @Test

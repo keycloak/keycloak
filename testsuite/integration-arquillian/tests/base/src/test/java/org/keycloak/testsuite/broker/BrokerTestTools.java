@@ -11,9 +11,9 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
@@ -101,14 +101,7 @@ public class BrokerTestTools {
     }
 
     public static String encodeUrl(String url) {
-        String result;
-        try {
-            result = URLEncoder.encode(url, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            result = url;
-        }
-
-        return result;
+        return URLEncoder.encode(url, StandardCharsets.UTF_8);
     }
 
     /**

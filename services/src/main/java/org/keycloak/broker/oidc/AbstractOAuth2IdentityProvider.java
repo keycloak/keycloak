@@ -526,11 +526,11 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                     if (error.equals(ACCESS_DENIED)) {
                         return callback.cancelled(providerConfig);
                     } else if (error.equals(OAuthErrorException.LOGIN_REQUIRED) || error.equals(OAuthErrorException.INTERACTION_REQUIRED)) {
-                        return callback.error(error);
+                        return callback.error(providerConfig, error);
                     } else if (error.equals(OAuthErrorException.TEMPORARILY_UNAVAILABLE) && Constants.AUTHENTICATION_EXPIRED_MESSAGE.equals(errorDescription)) {
                         return callback.retryLogin(this.provider, authSession);
                     } else {
-                        return callback.error(Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+                        return callback.error(providerConfig, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
                     }
                 }
 
@@ -665,7 +665,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             logger.debug("Failed to invoke user info for external exchange", e);
         }
         if (status != 200) {
-            logger.debug("Failed to invoke user info status: " + status);
+            logger.debugf("Failed to invoke user info status: %d", status);
             event.detail(Details.REASON, "user info call failure");
             event.error(Errors.INVALID_TOKEN);
             throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token", Response.Status.BAD_REQUEST);

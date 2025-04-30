@@ -6,8 +6,7 @@
 
 <@tmpl.guide
 title="Configuring logging"
-summary="Learn how to configure Logging"
-includedOptions="log log-*">
+summary="Configure logging for {project_name}.">
 
 {project_name} uses the JBoss Logging framework.
 The following is a high-level overview for the available log handlers with the common parent log handler `root`:
@@ -69,6 +68,25 @@ This example sets the following log levels:
 * The hibernate log level in general is set to debug.
 * To keep SQL abstract syntax trees from creating verbose log output, the specific subcategory `org.hibernate.hql.internal.ast` is set to info. As a result, the SQL abstract syntax trees are omitted instead of appearing at the `debug` level.
 
+==== Configuring levels as individual options
+When configuring category-specific log levels, you can also set the log levels as individual `log-level-<category>` options instead of using the `log-level` option for that.
+This is useful when you want to set the log levels for selected categories without overwriting the previously set `log-level` option.
+
+.Example
+If you start the server as:
+
+<@kc.start parameters="--log-level=\"INFO,org.hibernate:debug\""/>
+
+you can then set an environmental variable `KC_LOG_LEVEL_ORG_KEYCLOAK=trace` to change the log level for the `org.keycloak` category.
+
+The `log-level-<category>` options take precedence over `log-level`. This allows you to override what was set in the `log-level` option.
+For instance if you set `KC_LOG_LEVEL_ORG_HIBERNATE=trace` for the CLI example above, the  `org.hibernate` category will use the `trace` level instead of `debug`.
+
+Bear in mind that when using the environmental variables, the category name must be in uppercase and the dots must be replaced with underscores.
+When using other config sources, the category name must be specified "as is", for example:
+
+<@kc.start parameters="--log-level=\"INFO,org.hibernate:debug\" --log-level-org.keycloak=trace"/>
+
 == Enabling log handlers
 To enable log handlers, enter the following command:
 
@@ -80,7 +98,7 @@ The available handlers are:
 
 The more specific handler configuration mentioned below will only take effect when the handler is added to this comma-separated list.
 
-== Specify log level for each handler
+=== Specify log level for each handler
 
 The `log-level` property specifies the global root log level and levels for selected categories.
 However, a more fine-grained approach for log levels is necessary to comply with the modern application requirements.
@@ -99,7 +117,7 @@ More information in log handlers settings below.
 Only log levels specified in <<Log levels>> section are accepted, and *must be in lowercase*.
 There is no support for specifying particular categories for log handlers yet.
 
-=== General principle
+==== General principle
 
 It is necessary to understand that setting the log levels for each particular handler *does not override the root level* specified in the `log-level` property.
 Log handlers respect the root log level, which represents the maximal verbosity for the whole logging system.
@@ -109,7 +127,7 @@ Specifically, when an arbitrary log level is defined for the handler, it does no
 In that case, the root `log-level` must also be assessed.
 Log handler levels provide the *restriction for the root log level*, and the default log level for log handlers is `all` - without any restriction.
 
-=== Examples
+==== Examples
 
 .Example: `debug` for file handler, but `info` for console handler:
 <@kc.start parameters="--log=console,file --log-level=debug --log-console-level=info"/>
@@ -126,6 +144,88 @@ The root level must be set to the most verbose required level (`debug` in this c
 <@kc.start parameters="--log=console,file,syslog --log-level=debug,org.keycloak.events:trace, --log-syslog-level=trace --log-console-level=info --log-file-level=info"/>
 
 In order to see the `org.keycloak.events:trace`, the `trace` level must be set for the Syslog handler.
+
+=== Use different JSON format for log handlers
+Every log handler provides the ability to have structured log output in JSON format.
+It can be enabled by properties in the format `log-<handler>-output=json` (where `<handler>` is a log handler).
+
+If you need a different format of the produced JSON, you can leverage the following JSON output formats:
+
+* `default` (default)
+* `ecs`
+
+The `ecs` value refers to the https://www.elastic.co/guide/en/ecs-logging/overview/current/intro.html[ECS] (Elastic Common Schema).
+
+ECS is an open-source, community-driven specification that defines a common set of fields to be used with Elastic solutions.
+The ECS specification is being converged with https://opentelemetry.io/docs/concepts/semantic-conventions/[OpenTelemetry Semantic Conventions] with the goal of creating a single standard maintained by OpenTelemetry.
+
+In order to change the JSON output format, properties in the format `log-<handler>-json-format` (where `<handler>` is a log handler) were introduced:
+
+* `log-console-json-format` - Console log handler
+* `log-file-json-format` - File log handler
+* `log-syslog-json-format` - Syslog log handler
+
+==== Example
+If you want to have JSON logs in *ECS* (Elastic Common Schema) format for the console log handler, you can enter the following command:
+
+<@kc.start parameters="--log-console-output=json --log-console-json-format=ecs"/>
+
+.Example Log Message
+[source,json]
+----
+{"@timestamp":"2025-02-03T14:53:22.539484211+01:00","event.sequence":9608,"log.logger":"io.quarkus","log.level":"INFO","message":"Keycloak 999.0.0-SNAPSHOT on JVM (powered by Quarkus 3.17.8) started in 4.615s. Listening on: http://0.0.0.0:8080","process.thread.name":"main","process.thread.id":1,"mdc":{},"ndc":"","host.hostname":"host-name","process.name":"/usr/lib/jvm/jdk-21.0.3+9/bin/java","process.pid":77561,"data_stream.type":"logs","ecs.version":"1.12.2","service.environment":"prod","service.name":"Keycloak","service.version":"999.0.0-SNAPSHOT"}
+----
+
+=== Asynchronous logging
+{project_name} supports asynchronous logging, which might be useful for deployments requiring **high throughput** and **low latency**.
+Asynchronous logging uses a separate thread to take care of processing all log records.
+The logging handlers are invoked in exactly the same way as with synchronous logging, only done in separate threads.
+You can enable asynchronous logging for all {project_name} log handlers.
+A dedicated thread will be created for every log handler with enabled asynchronous logging.
+
+The underlying mechanism for asynchronous logging uses a queue for processing log records.
+Every new log record is added to the queue and then published to the particular log handler with enabled asynchronous logging.
+Every log handler has a different queue.
+
+If the queue is already full, it blocks the main thread and waits for free space in the queue.
+
+==== When to use asynchronous logging
+
+* You need **lower latencies** for incoming requests
+* You need **higher throughput**
+* You have **small worker thread pool** and want to offload logging to separate threads
+* You want to reduce the impact of **I/O-heavy log handlers**
+* You are logging to **remote destinations** (e.g., network syslog servers) and want to avoid blocking worker threads
+
+WARNING: Be aware that enabling asynchronous logging might bring some **additional memory overhead** due to the additional separate thread and the inner queue.
+In that case, it is not recommended to use it for resource-constrained environments.
+Additionally, unexpected server shutdowns create a risk of **losing log records**.
+
+==== Enable asynchronous logging
+You can enable asynchronous logging globally for all log handlers by using `log-async` property as follows:
+
+<@kc.start parameters="--log-async=true"/>
+
+Or you can enable the asynchronous logging for every specific handler by using properties in the format `log-<handler>-async` (where `<handler>` is a log handler).
+If the property for a specific handler is not set, the value from the parent `log-async` property is used.
+
+You can use these properties as follows:
+
+<@kc.start parameters="--log-console-async=true --log-file-async=true --log-syslog-async=true"/>
+
+* `log-console-async` - Console log handler
+* `log-file-async` - File log handler
+* `log-syslog-async` - Syslog log handler
+
+==== Change queue length
+You can change the size of the queue used for the asynchronous logging.
+The default size is **512** log records in the queue.
+
+You can change the queue length as follows:
+
+<@kc.start parameters="--log-console-async-queue-length=512 --log-file-async-queue-length=512 --log-syslog-async-queue-length=512"/>
+
+These properties are available only when asynchronous logging is enabled for these specific log handlers.
 
 == Console log handler
 The console log handler is enabled by default, providing unstructured log messages for the console.
@@ -185,7 +285,7 @@ By default, the console log handler logs plain unstructured data to the console.
 .Example Log Message
 [source, json]
 ----
-{"timestamp":"2022-02-25T10:31:32.452+01:00","sequence":8442,"loggerClassName":"org.jboss.logging.Logger","loggerName":"io.quarkus","level":"INFO","message":"Keycloak 18.0.0-SNAPSHOT on JVM (powered by Quarkus 2.7.2.Final) started in 3.253s. Listening on: http://0.0.0.0:8080","threadName":"main","threadId":1,"mdc":{},"ndc":"","hostName":"host-name","processName":"QuarkusEntryPoint","processId":36946}
+{"timestamp":"2025-02-03T14:52:20.290353085+01:00","sequence":9605,"loggerClassName":"org.jboss.logging.Logger","loggerName":"io.quarkus","level":"INFO","message":"Keycloak 999.0.0-SNAPSHOT on JVM (powered by Quarkus 3.17.8) started in 4.440s. Listening on: http://0.0.0.0:8080","threadName":"main","threadId":1,"mdc":{},"ndc":"","hostName":"host-name","processName":"/usr/lib/jvm/jdk-21.0.3+9/bin/java","processId":76944}
 ----
 
 When using JSON output, colors are disabled and the format settings set by `--log-console-format` will not apply.
@@ -197,7 +297,7 @@ To use unstructured logging, enter the following command:
 .Example Log Message
 [source]
 ----
-2022-03-02 10:36:50,603 INFO  [io.quarkus] (main) Keycloak 18.0.0-SNAPSHOT on JVM (powered by Quarkus 2.7.2.Final) started in 3.615s. Listening on: http://0.0.0.0:8080
+2025-02-03 14:53:56,653 INFO  [io.quarkus] (main) Keycloak 999.0.0-SNAPSHOT on JVM (powered by Quarkus 3.17.8) started in 4.795s. Listening on: http://0.0.0.0:8080
 ----
 
 === Colors
@@ -340,7 +440,7 @@ To use structured JSON log output instead, enter the following command:
 .Example Log Message
 [source, bash]
 ----
-2024-04-05T12:32:20.616+02:00 mabartos keycloak 2788276 io.quarkus - {"timestamp":"2024-04-05T12:32:20.616208533+02:00","sequence":9948,"loggerClassName":"org.jboss.logging.Logger","loggerName":"io.quarkus","level":"INFO","message":"Profile prod activated. ","threadName":"main","threadId":1,"mdc":{},"ndc":"","hostName":"host","processName":"QuarkusEntryPoint","processId":2788276}
+2024-04-05T12:32:20.616+02:00 host keycloak 2788276 io.quarkus - {"timestamp":"2024-04-05T12:32:20.616208533+02:00","sequence":9948,"loggerClassName":"org.jboss.logging.Logger","loggerName":"io.quarkus","level":"INFO","message":"Profile prod activated. ","threadName":"main","threadId":1,"mdc":{},"ndc":"","hostName":"host","processName":"QuarkusEntryPoint","processId":2788276}
 ----
 
 When using JSON output, colors are disabled and the format settings set by `--log-syslog-format` will not apply.
@@ -352,9 +452,22 @@ To use unstructured logging, enter the following command:
 .Example Log Message
 [source, bash]
 ----
-2024-04-05T12:31:38.473+02:00 mabartos keycloak 2787568 io.quarkus - 2024-04-05 12:31:38,473 INFO  [io.quarkus] (main) Profile prod activated.
+2024-04-05T12:31:38.473+02:00 host keycloak 2787568 io.quarkus - 2024-04-05 12:31:38,473 INFO  [io.quarkus] (main) Profile prod activated.
 ----
 
 As you can see, the timestamp is present twice, so you can amend it correspondingly via the `--log-syslog-format` property.
+
+<@opts.printRelevantOptions includedOptions="log log-*" excludedOptions="log-console-* log-file log-file-* log-syslog-*">
+
+=== Console
+<@opts.includeOptions includedOptions="log-console-*"/>
+
+=== File
+<@opts.includeOptions includedOptions="log-file log-file-*"/>
+
+=== Syslog
+<@opts.includeOptions includedOptions="log-syslog-*"/>
+
+</@opts.printRelevantOptions>
 
 </@tmpl.guide>

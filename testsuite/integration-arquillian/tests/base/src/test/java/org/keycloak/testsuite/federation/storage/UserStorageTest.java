@@ -47,7 +47,6 @@ import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 import org.keycloak.testsuite.federation.UserMapStorage;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
 import org.keycloak.testsuite.federation.UserPropertyFileStorageFactory;
-import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
@@ -56,6 +55,7 @@ import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.TestCleanup;
+import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.keycloak.userprofile.DefaultAttributes;
 import org.openqa.selenium.Cookie;
 
@@ -169,7 +169,7 @@ public class UserStorageTest extends AbstractAuthTest {
         createAppClientInRealm(testRealmResource().toRepresentation().getRealm());
 
         UserProfileResource userProfileRes = testRealmResource().users().userProfile();
-        VerifyProfileTest.enableUnmanagedAttributes(userProfileRes);
+        UserProfileUtil.enableUnmanagedAttributes(userProfileRes);
     }
 
     @After
@@ -267,9 +267,11 @@ public class UserStorageTest extends AbstractAuthTest {
 
         Cookie sameSiteSessionCookie = driver.manage().getCookieNamed(CookieType.SESSION.getName());
 
+        Assert.assertNotNull(sameSiteSessionCookie);
+        Assert.assertNotNull(sameSiteSessionCookie.getValue());
         String cookieValue = sameSiteSessionCookie.getValue();
         assertThat(cookieValue.contains("spécial"), is(false));
-        assertThat(cookieValue.contains("sp%C3%A9cial"), is(true));
+        assertThat(cookieValue.contains("sp%C3%A9cial"), is(false));
 
         AccountHelper.logout(testRealmResource(), "spécial");
     }

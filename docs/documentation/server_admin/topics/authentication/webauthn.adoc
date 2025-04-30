@@ -9,6 +9,11 @@
 WebAuthn's operations success depends on the user's WebAuthn supporting authenticator, browser, and platform. Make sure your authenticator, browser, and platform support the WebAuthn specification.
 ====
 
+[NOTE]
+====
+WebAuthn's specification uses a `user.id` to map a public key credential to a specific user account in the Relying Party. This user ID handle is an opaque byte sequence with a maximum size of 64 bytes. {project_name} passes the internal database ID to the registration, which in common users is an UUID of 36 characters. But, if the user is from a external user federation provider, the internal {project_name} ID is an link:{developerguide_link}#storage-ids[storage ID] in the form `f:<provider-id>:<user-id>` that can exceed the 64 byte limitation. Please take this into account and use short IDs for the federation provider component and for the users coming from that provider when combining the Storage SPI and WebAuthn.
+====
+
 ==== Setup
 
 The setup procedure of WebAuthn support for 2FA is the following:
