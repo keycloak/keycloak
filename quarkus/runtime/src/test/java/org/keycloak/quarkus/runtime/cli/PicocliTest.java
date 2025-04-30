@@ -593,4 +593,13 @@ public class PicocliTest extends AbstractConfigurationTest {
         // second class kc form should not
         assertThat(nonRunningPicocli.getOutString(), not(containsString("kc.spi-events-listener-micrometer-user-event-metrics-enabled")));
     }
+
+    @Test
+    public void timestampChanged() {
+        assertTrue(Picocli.timestampChanged("12345", null));
+        assertTrue(Picocli.timestampChanged("12345", "12346"));
+        assertTrue(Picocli.timestampChanged("12000", "12346"));
+        // new is truncated - should not be a change
+        assertFalse(Picocli.timestampChanged("12345", "12000"));
+    }
 }
