@@ -31,6 +31,7 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.crypto.Algorithm;
@@ -69,8 +70,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static jakarta.ws.rs.core.HttpHeaders.ACCEPT;
+import static jakarta.ws.rs.core.HttpHeaders.CONTENT_TYPE;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
+import static org.keycloak.utils.MediaType.APPLICATION_JWKS;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest {
@@ -293,6 +297,17 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
 
         JSONWebKeySet jsonWebKeySet = SimpleHttpDefault.doGet(jwksUri, client).asJson(JSONWebKeySet.class);
         assertEquals(3, jsonWebKeySet.getKeys().length);
+    }
+
+    @Test
+    public void certsWithJwks() throws IOException {
+        TokenSignatureUtil.registerKeyProvider(Algorithm.ES256, adminClient, testContext);
+
+        OIDCConfigurationRepresentation representation = SimpleHttpDefault.doGet(getAuthServerRoot().toString() + "realms/test/.well-known/openid-configuration", client).asJson(OIDCConfigurationRepresentation.class);
+        String jwksUri = representation.getJwksUri();
+
+        SimpleHttp.Response response = SimpleHttpDefault.doGet(jwksUri, client).header(ACCEPT, APPLICATION_JWKS).asResponse();
+        assertEquals(APPLICATION_JWKS, response.getFirstHeader(CONTENT_TYPE));
     }
 
     @Test

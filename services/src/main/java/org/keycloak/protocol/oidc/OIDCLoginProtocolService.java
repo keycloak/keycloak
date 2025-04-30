@@ -54,6 +54,8 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 
+import static jakarta.ws.rs.core.HttpHeaders.CONTENT_TYPE;
+
 /**
  * Resource class for the oauth/openid connect token service
  *
@@ -195,7 +197,7 @@ public class OIDCLoginProtocolService {
 
     @GET
     @Path("certs")
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, org.keycloak.utils.MediaType.APPLICATION_JWKS})
     @NoCache
     public Response certs() {
         checkSsl();
@@ -203,6 +205,14 @@ public class OIDCLoginProtocolService {
         JSONWebKeySet keySet = JWKSServerUtils.getRealmJwks(session, realm);
 
         Response.ResponseBuilder responseBuilder = Response.ok(keySet).cacheControl(CacheControlUtil.getDefaultCacheControl());
+
+        boolean isJwksRequest = org.keycloak.utils.MediaType.APPLICATION_JWKS.equals(this.headers.getHeaderString(HttpHeaders.ACCEPT));
+        if (isJwksRequest) {
+            responseBuilder.header(CONTENT_TYPE, org.keycloak.utils.MediaType.APPLICATION_JWKS);
+        } else {
+            responseBuilder.header(CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        }
+
         return Cors.builder().allowedOrigins("*").auth().add(responseBuilder);
     }
 
