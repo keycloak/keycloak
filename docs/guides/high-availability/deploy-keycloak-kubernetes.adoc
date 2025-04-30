@@ -2,8 +2,8 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Deploy {project_name} for HA with the {project_name} Operator"
-summary="Building block for a {project_name} deployment"
+title="Deploying {project_name} for HA with the Operator"
+summary="Deploy {project_name} for high availability with the {project_name} Operator as a building block."
 tileVisible="false" >
 
 This guide describes advanced {project_name} configurations for Kubernetes which are load tested and will recover from single Pod failures.

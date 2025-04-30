@@ -6,7 +6,7 @@
 
 <@tmpl.guide
 title="Basic {project_name} deployment"
-summary="How to install {project_name} using the Operator">
+summary="Install {project_name} using the Operator.">
 
 == Performing a basic {project_name} deployment
 This {section} describes how to perform a basic {project_name} Deployment on

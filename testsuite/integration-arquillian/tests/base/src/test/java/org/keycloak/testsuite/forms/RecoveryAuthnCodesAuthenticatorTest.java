@@ -1,5 +1,8 @@
 package org.keycloak.testsuite.forms;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
@@ -17,6 +20,7 @@ import org.keycloak.authentication.authenticators.browser.PasswordFormFactory;
 import org.keycloak.authentication.authenticators.browser.UsernameFormFactory;
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.CredentialModel;
+import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
@@ -25,16 +29,21 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel;
+import org.keycloak.models.credential.dto.RecoveryAuthnCodesCredentialData;
 import org.keycloak.models.utils.RecoveryAuthnCodesUtils;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.representations.account.CredentialMetadataRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.services.resources.account.AccountCredentialResource;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.EnterRecoveryAuthnCodePage;
@@ -44,11 +53,14 @@ import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.pages.SelectAuthenticatorPage;
 import org.keycloak.testsuite.pages.SetupRecoveryAuthnCodesPage;
 import org.keycloak.testsuite.util.FlowUtil;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.SecondBrowser;
+import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.WebDriver;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -56,7 +68,7 @@ import java.util.stream.Collectors;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
-import static org.keycloak.common.Profile.Feature.RECOVERY_CODES;
+import static org.keycloak.authentication.requiredactions.RecoveryAuthnCodesAction.WARNING_THRESHOLD;
 
 /**
  * Backup Code Authentication test
@@ -64,7 +76,6 @@ import static org.keycloak.common.Profile.Feature.RECOVERY_CODES;
  * @author <a href="mailto:vnukala@redhat.com">Venkata Nukala</a>
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-@EnableFeature(value = RECOVERY_CODES, skipRestart = true)
 public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedUserPasswordsTest {
 
     private static final String BROWSER_FLOW_WITH_RECOVERY_AUTHN_CODES = "Browser with Recovery Authentication Codes";
@@ -415,7 +426,6 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
             setupRecoveryAuthnCodesPage.assertAccountLinkAvailability(true);
             setupRecoveryAuthnCodesPage.clickAccountLink();
             assertThat(driver.getTitle(), containsString("Account Management"));
-            testRealm().flows().removeRequiredAction(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name());
             // Revert copy of browser flow to original to keep clean slate after this test
             BrowserFlowTest.revertFlows(testRealm(), BROWSER_FLOW_WITH_RECOVERY_AUTHN_CODES);
         }
@@ -458,4 +468,78 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
             BrowserFlowTest.revertFlows(testRealm(), BROWSER_FLOW_WITH_RECOVERY_AUTHN_CODES);
         }
     }
+
+    @Test
+    public void test09recoveryAuthnCodesWithThresholdConfigured() throws Exception {
+        AuthenticationManagementResource authMgt = testRealm().flows();
+        RequiredActionProviderRepresentation requiredAction = authMgt.getRequiredActions().stream()
+                .filter(action -> UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name().equals(action.getAlias()))
+                .findAny().get();
+        Map<String, String> origReqActionConfig = new HashMap<>(requiredAction.getConfig());
+
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+            configureBrowserFlowWithRecoveryAuthnCodes(testingClient, 0);
+
+            // Configure required action with big threshold
+            requiredAction.getConfig().put(WARNING_THRESHOLD, String.valueOf(RecoveryAuthnCodesUtils.QUANTITY_OF_CODES_TO_GENERATE));
+            authMgt.updateRequiredAction(requiredAction.getAlias(), requiredAction);
+
+            // Add required action to the user
+            UserResource testUser = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+            UserRepresentation userRepresentation = testUser.toRepresentation();
+            userRepresentation.setRequiredActions(Arrays.asList(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name()));
+            testUser.update(userRepresentation);
+
+            // Login and setup recovery-codes
+            oauth.openLoginForm();
+            loginUsername(loginUsernameOnlyPage, driver);
+            passwordPage.login(getPassword("test-user@localhost"));
+            setupRecoveryAuthnCodesPage.assertCurrent();
+            List<String> recoveryCodes = setupRecoveryAuthnCodesPage.getRecoveryAuthnCodes();
+            setupRecoveryAuthnCodesPage.clickSaveRecoveryAuthnCodesButton();
+
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse response = oauth.doAccessTokenRequest(code);
+
+            // Check account REST API that warning threshold not there on recovery-codes credential as user has full count of recovery codes
+            CredentialMetadataRepresentation recoveryCodesMetadata = getRecoveryCodeCredentialFromAccountRestApi(httpClient, response.getAccessToken());
+            Assert.assertNull("Expected not warning", recoveryCodesMetadata.getWarningMessageTitle());
+            Assert.assertEquals("0/12", recoveryCodesMetadata.getInfoMessage().getParameters()[0]);
+            Assert.assertNotNull(recoveryCodesMetadata.getCredential().getCredentialData());
+            RecoveryAuthnCodesCredentialData data = JsonSerialization.readValue(
+                    recoveryCodesMetadata.getCredential().getCredentialData(), RecoveryAuthnCodesCredentialData.class);
+            Assert.assertEquals(12, data.getTotalCodes());
+            Assert.assertEquals(12, data.getRemainingCodes());
+            Assert.assertEquals(JavaAlgorithm.SHA512, data.getAlgorithm());
+            Assert.assertNull(data.getHashIterations());
+
+            // Re-authenticate with recovery codes
+            oauth.loginForm().prompt(OIDCLoginProtocol.PROMPT_VALUE_LOGIN).open();
+            tryAnotherWay(passwordPage, driver);
+            selectRecoveryAuthnCodes(selectAuthenticatorPage, driver);
+            enterRecoveryCodes(enterRecoveryAuthnCodePage, driver, 0, recoveryCodes);
+            enterRecoveryAuthnCodePage.clickSignInButton();
+
+            // Check warning is there as only 11 recovery codes remaining
+            recoveryCodesMetadata = getRecoveryCodeCredentialFromAccountRestApi(httpClient, response.getAccessToken());
+            Assert.assertEquals("recovery-codes-number-remaining", recoveryCodesMetadata.getWarningMessageTitle().getKey());
+            Assert.assertEquals("1/12", recoveryCodesMetadata.getInfoMessage().getParameters()[0]);
+        } finally {
+            // Revert
+            requiredAction.setConfig(origReqActionConfig);
+            authMgt.updateRequiredAction(requiredAction.getAlias(), requiredAction);
+
+            BrowserFlowTest.revertFlows(testRealm(), BROWSER_FLOW_WITH_RECOVERY_AUTHN_CODES);
+        }
+    }
+
+    private CredentialMetadataRepresentation getRecoveryCodeCredentialFromAccountRestApi(CloseableHttpClient httpClient, String accessToken) throws Exception {
+        List<AccountCredentialResource.CredentialContainer> credentials = SimpleHttpDefault.doGet(getAccountRootUrl()  + "/credentials", httpClient)
+                .auth(accessToken).asJson(new TypeReference<>() {});
+        AccountCredentialResource.CredentialContainer recoveryCode = credentials.stream()
+                .filter(credential -> RecoveryAuthnCodesCredentialModel.TYPE.equals(credential.getType()))
+                .findFirst().get();
+        return recoveryCode.getUserCredentialMetadatas().get(0);
+    }
+
 }

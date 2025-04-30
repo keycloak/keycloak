@@ -1,11 +1,12 @@
 package org.keycloak.models;
 
+import org.keycloak.provider.Provider;
 import org.keycloak.theme.Theme;
 
 import java.io.IOException;
 import java.util.Set;
 
-public interface ThemeManager {
+public interface ThemeManager extends Provider {
 
     /**
      * Returns the theme for the specified type. The theme is determined by the theme selector.

@@ -21,6 +21,8 @@ public class UserAttributeNameIdMapper extends AbstractSAMLProtocolMapper implem
         property.setName(ProtocolMapperUtils.USER_ATTRIBUTE);
         property.setLabel(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_LABEL);
         property.setHelpText(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_HELP_TEXT);
+        property.setType(ProviderConfigProperty.USER_PROFILE_ATTRIBUTE_LIST_TYPE);
+        property.setRequired(Boolean.TRUE);
         configProperties.add(property);
     }
 

@@ -6,7 +6,7 @@
 
 <@tmpl.guide
     title="Configuring the database"
-    summary="An overview about how to configure relational databases"
+    summary="Configure a relational database for {project_name} to store user, client, and realm data."
     includedOptions="db db-* transaction-xa-enabled">
 
 This {section} explains how to configure the {project_name} server to store data in a relational database.

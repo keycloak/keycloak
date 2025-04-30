@@ -782,7 +782,7 @@ public class UserTest extends AbstractAdminTest {
 
             addAttribute(user, "test", Collections.singletonList("test" + i));
             addAttribute(user, "test" + i, Collections.singletonList("test" + i));
-            addAttribute(user, "attr", Collections.singletonList("common"));
+            addAttribute(user, "attr", Arrays.asList("common", "common2"));
 
             ids.add(createUser(user));
         }
@@ -818,6 +818,11 @@ public class UserTest extends AbstractAdminTest {
 
         attributes = new HashMap<>();
         attributes.put("attr", "common");
+        assertThat(realm.users().count(null, null, null, null, null, null, null, mapToSearchQuery(attributes)), is(9));
+
+        attributes = new HashMap<>();
+        attributes.put("attr", "common");
+        attributes.put(UserModel.EXACT, Boolean.FALSE.toString());
         assertThat(realm.users().count(null, null, null, null, null, null, null, mapToSearchQuery(attributes)), is(9));
     }
 
@@ -1264,7 +1269,8 @@ public class UserTest extends AbstractAdminTest {
 
     @Test
     public void searchById() {
-        String expectedUserId = createUsers().get(0);
+        List<String> userIds = createUsers();
+        String expectedUserId = userIds.get(0);
         List<UserRepresentation> users = realm.users().search("id:" + expectedUserId, null, null);
 
         assertEquals(1, users.size());
@@ -1274,6 +1280,19 @@ public class UserTest extends AbstractAdminTest {
 
         assertEquals(1, users.size());
         assertEquals(expectedUserId, users.get(0).getId());
+
+        // Should allow searching for multiple users
+        String expectedUserId2 = userIds.get(1);
+        List<UserRepresentation> multipleUsers = realm.users().search(String.format("id:%s %s", expectedUserId, expectedUserId2), 0 , 10);;
+        assertThat(multipleUsers, hasSize(2));
+        assertThat(multipleUsers.get(0).getId(), is(expectedUserId));
+        assertThat(multipleUsers.get(1).getId(), is(expectedUserId2));
+
+        // Should take arbitrary amount of spaces in between ids
+        List<UserRepresentation> multipleUsers2 = realm.users().search(String.format("id:  %s   %s  ", expectedUserId, expectedUserId2), 0 , 10);;
+        assertThat(multipleUsers2, hasSize(2));
+        assertThat(multipleUsers2.get(0).getId(), is(expectedUserId));
+        assertThat(multipleUsers2.get(1).getId(), is(expectedUserId2));
     }
 
     @Test
@@ -3346,15 +3365,19 @@ public class UserTest extends AbstractAdminTest {
     public void testUpdateCredentials() {
         importTestRealms();
 
+        // both credentials have a null priority - stable ordering is not guaranteed between calls
+
         // Get user user-with-one-configured-otp and assert he has no label linked to its OTP credential
         UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "user-with-one-configured-otp");
-        CredentialRepresentation otpCred = user.credentials().get(0);
+        CredentialRepresentation otpCred = user.credentials().stream().filter(cr -> "otp".equals(cr.getType()))
+                .findFirst().orElseThrow();
         Assert.assertNull(otpCred.getUserLabel());
 
         // Set and check a new label
         String newLabel = "the label";
         user.setCredentialUserLabel(otpCred.getId(), newLabel);
-        Assert.assertEquals(newLabel, user.credentials().get(0).getUserLabel());
+        Assert.assertEquals(newLabel, user.credentials().stream().filter(cr -> cr.getId().equals(otpCred.getId()))
+                .findFirst().orElseThrow().getUserLabel());
     }
 
     @Test

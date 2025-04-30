@@ -25,6 +25,7 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticatorConfigModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -35,6 +36,8 @@ import org.keycloak.services.messages.Messages;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.Map;
+
+import static org.keycloak.authentication.actiontoken.idpverifyemail.IdpVerifyAccountLinkActionTokenHandler.runIfUserVerified;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -67,18 +70,19 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
             return;
         }
 
-        ExistingUserInfo duplication = brokerContext.getIdpConfig().isTransientUsers() ? null : checkExistingUser(context, username, serializedCtx, brokerContext);
+        IdentityProviderModel broker = brokerContext.getIdpConfig();
+        ExistingUserInfo duplication = broker.isTransientUsers() ? null : checkExistingUser(context, username, serializedCtx, brokerContext);
 
         UserModel federatedUser = null;
-        if (brokerContext.getIdpConfig().isTransientUsers()) {
+        if (broker.isTransientUsers()) {
             logger.debugf("Transient brokering requested. Recording user details for account '%s' and from identity provider '%s' .",
-                    username, brokerContext.getIdpConfig().getAlias());
+                    username, broker.getAlias());
 
             federatedUser = new LightweightUserAdapter(session, context.getAuthenticationSession().getParentSession().getId());
             federatedUser.setUsername(username);
         } else if (duplication == null) {
             logger.debugf("No duplication detected. Creating account for user '%s' and linking with identity provider '%s' .",
-                    username, brokerContext.getIdpConfig().getAlias());
+                    username, broker.getAlias());
 
             federatedUser = session.users().addUser(realm, username);
         }
@@ -103,7 +107,17 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
             context.setUser(federatedUser);
             context.getAuthenticationSession().setAuthNote(BROKER_REGISTERED_NEW_USER, "true");
             context.success();
-        } else {
+        } else if (duplication != null) {
+            UserModel user = session.users().getUserById(realm, duplication.getExistingUserId());
+
+            if (runIfUserVerified(session, user, broker,
+                    () -> {
+                        context.setUser(user);
+                        context.success();
+                    })) {
+                return;
+            }
+
             logger.debugf("Duplication detected. There is already existing user with %s '%s' .",
                     duplication.getDuplicateAttributeName(), duplication.getDuplicateAttributeValue());
 
@@ -121,9 +135,10 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
                         .removeDetail(Details.AUTH_METHOD)
                         .removeDetail(Details.AUTH_TYPE)
                         .error(Errors.FEDERATED_IDENTITY_EXISTS);
-            } else {
-                context.attempted();
+                return;
             }
+
+            context.attempted();
         }
     }
 

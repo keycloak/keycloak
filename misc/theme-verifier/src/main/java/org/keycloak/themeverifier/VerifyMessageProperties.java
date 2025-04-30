@@ -188,7 +188,7 @@ public class VerifyMessageProperties {
                     start++;
                 }
                 int end = 0;
-                while (end < sanitized.length() && end < value.length() && value.charAt(value.length() - end - 1) == sanitized.charAt(sanitized.length() - end - 1)) {
+                while (end < sanitized.length() - start && end < value.length() - start && value.charAt(value.length() - end - 1) == sanitized.charAt(sanitized.length() - end - 1)) {
                     end++;
                 }
 

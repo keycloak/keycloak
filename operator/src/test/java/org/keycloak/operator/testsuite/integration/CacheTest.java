@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.CacheSpecBuilder;
+import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
@@ -41,6 +42,7 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
 
+@DisabledIfApiServerTest
 @QuarkusTest
 public class CacheTest extends BaseOperatorTest {
 

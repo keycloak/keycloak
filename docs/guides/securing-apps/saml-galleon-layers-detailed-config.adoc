@@ -5,7 +5,7 @@
 title="{project_name} SAML Galleon feature pack detailed configuration"
 priority=70
 tileVisible="false"
-summary="Detailed list of elements for the `keycloak-saml.xml` configuration file">
+summary="Review this detailed list of elements for the `keycloak-saml.xml` configuration file.">
 
 This {section} contains the detailed list of elements for the `keycloak-saml.xml` configuration file used by the {project_name} SAML Galleon feature pack.
 

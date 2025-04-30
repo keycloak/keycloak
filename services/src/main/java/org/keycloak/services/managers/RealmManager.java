@@ -23,6 +23,7 @@ import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.Encode;
+import org.keycloak.connections.jpa.support.EntityManagers;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.models.AbstractKeycloakTransaction;
@@ -176,7 +177,7 @@ public class RealmManager {
     }
 
     protected void createDefaultClientScopes(RealmModel realm) {
-        DefaultClientScopes.createDefaultClientScopes(session, realm, true);
+        EntityManagers.runInBatch(session, () -> DefaultClientScopes.createDefaultClientScopes(session, realm, true), false);
     }
 
     protected void setupAdminConsole(RealmModel realm) {

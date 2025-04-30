@@ -245,9 +245,7 @@
                 <property name="route">node1</property>
                 <property name="remoteMode">${undertow.remote}</property>
                 <property name="keycloakConfigPropertyOverrides">{
-                    "keycloak.connectionsInfinispan.jgroupsUdpMcastAddr": "234.56.78.8",
-                    "keycloak.connectionsInfinispan.nodeName": "node1",
-                    "keycloak.connectionsInfinispan.clustered": "${keycloak.connectionsInfinispan.clustered:true}"
+                    "keycloak.cacheEmbedded.nodeName": "node1"
                     }
                 </property>
             </configuration>
@@ -264,9 +262,7 @@
                 <property name="route">node2</property>
                 <property name="remoteMode">${undertow.remote}</property>
                 <property name="keycloakConfigPropertyOverrides">{
-                    "keycloak.connectionsInfinispan.jgroupsUdpMcastAddr": "234.56.78.8",
-                    "keycloak.connectionsInfinispan.nodeName": "node2",
-                    "keycloak.connectionsInfinispan.clustered": "${keycloak.connectionsInfinispan.clustered:true}"
+                    "keycloak.cacheEmbedded.nodeName": "node2"
                     }
                 </property>
             </configuration>
@@ -327,9 +323,7 @@
                 <property name="profile">ha</property>
                 <property name="debugPort">5005</property>
                 <property name="keycloakConfigPropertyOverrides">{
-                    "keycloak.connectionsInfinispan.jgroupsUdpMcastAddr": "234.56.78.8",
-                    "keycloak.connectionsInfinispan.nodeName": "node1",
-                    "keycloak.connectionsInfinispan.clustered": "${keycloak.connectionsInfinispan.clustered:true}"
+                    "keycloak.cacheEmbedded.nodeName": "node1"
                     }
                 </property>
                 <property name="javaOpts">-Xms512m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=512m -Djava.net.preferIPv4Stack=true</property>
@@ -351,9 +345,7 @@
                 <property name="profile">ha</property>
                 <property name="debugPort">5006</property>
                 <property name="keycloakConfigPropertyOverrides">{
-                    "keycloak.connectionsInfinispan.jgroupsUdpMcastAddr": "234.56.78.8",
-                    "keycloak.connectionsInfinispan.nodeName": "node2",
-                    "keycloak.connectionsInfinispan.clustered": "${keycloak.connectionsInfinispan.clustered:true}"
+                    "keycloak.cacheEmbedded.nodeName": "node2"
                     }
                 </property>
                 <property name="javaOpts">-Xms512m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=512m -Djava.net.preferIPv4Stack=true</property>

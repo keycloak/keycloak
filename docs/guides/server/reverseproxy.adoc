@@ -4,8 +4,8 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Using a reverse proxy"
-summary="Learn how to configure {project_name} together with a reverse proxy, api gateway, or load balancer."
+title="Configuring a reverse proxy"
+summary="Configure {project_name} with a reverse proxy, API gateway, or load balancer."
 includedOptions="proxy-* hostname hostname-admin http-relative-path">
 
 Distributed environments frequently require the use of a reverse proxy. {project_name} offers several options to securely integrate with such environments.

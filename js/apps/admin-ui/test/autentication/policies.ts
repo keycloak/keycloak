@@ -15,11 +15,11 @@ export async function assertSupportedApplications(
 }
 
 export async function setPolicyType(page: Page, type: string) {
-  page.getByTestId(type).click();
+  await page.getByTestId(type).click();
 }
 
 export async function increaseInitialCounter(page: Page) {
-  page.locator("#otpPolicyInitialCounter").getByLabel("Plus").click();
+  await page.locator("#otpPolicyInitialCounter").getByLabel("Plus").click();
 }
 
 export async function goToWebauthnPage(page: Page) {

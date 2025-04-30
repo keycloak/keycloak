@@ -173,17 +173,9 @@
         }
     },
 
-    "connectionsInfinispan": {
+    "cacheEmbedded": {
         "default": {
-            "jgroupsUdpMcastAddr": "${keycloak.connectionsInfinispan.jgroupsUdpMcastAddr:234.56.78.90}",
-            "jgroupsBindAddr": "${keycloak.connectionsInfinispan.jgroupsBindAddr:127.0.0.1}",
-            "nodeName": "${keycloak.connectionsInfinispan.nodeName,jboss.node.name:}",
-            "siteName": "${keycloak.connectionsInfinispan.siteName:}",
-            "clustered": "${keycloak.connectionsInfinispan.clustered:false}",
-            "async": "${keycloak.connectionsInfinispan.async:false}",
-            "sessionsOwners": "${keycloak.connectionsInfinispan.sessionsOwners:1}",
-            "l1Lifespan": "${keycloak.connectionsInfinispan.l1Lifespan:600000}",
-            "embedded": "${keycloak.connectionsInfinispan.embedded:true}"
+            "nodeName": "${keycloak.cacheEmbedded.nodeName,jboss.node.name:}"
         }
     },
 

@@ -5,7 +5,7 @@
 
 <@tmpl.guide
 title="Monitoring user activities with event metrics"
-summary="Event metrics provide admins an aggregated view of the different user activities in a {project_name} instance."
+summary="Event metrics provide an aggregated view of user activities in a {project_name} instance."
 includedOptions="metrics-enabled event-metrics-user-*">
 
 For now, only metrics for user events are captured.

@@ -17,9 +17,7 @@
 
 package org.keycloak.connections.infinispan;
 
-import java.util.Iterator;
 import java.util.List;
-import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -27,28 +25,18 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.infinispan.client.hotrod.RemoteCacheManager;
-import org.infinispan.commons.dataconversion.MediaType;
-import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.Configuration;
-import org.infinispan.configuration.cache.ConfigurationBuilder;
-import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.eviction.EvictionStrategy;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
-import org.infinispan.transaction.LockingMode;
-import org.infinispan.transaction.TransactionMode;
-import org.infinispan.transaction.lookup.EmbeddedTransactionManagerLookup;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterProvider;
-import org.keycloak.cluster.ManagedCacheManagerProvider;
 import org.keycloak.connections.infinispan.remote.RemoteInfinispanConnectionProvider;
-import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.marshalling.KeycloakIndexSchemaUtil;
 import org.keycloak.marshalling.KeycloakModelSchema;
-import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.cache.infinispan.ClearCacheEvent;
@@ -63,35 +51,21 @@ import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.provider.InvalidationHandler.ObjectType;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderEvent;
+import org.keycloak.provider.ProviderEventListener;
+import org.keycloak.spi.infinispan.CacheEmbeddedConfigProvider;
 import org.keycloak.spi.infinispan.CacheRemoteConfigProvider;
+import org.keycloak.spi.infinispan.impl.embedded.CacheConfigurator;
 
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ACTION_TOKEN_CACHE;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_DEFAULT_MAX;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CRL_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.JGROUPS_BIND_ADDR;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.JGROUPS_UDP_MCAST_ADDR;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.JMX_DOMAIN;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.KEYS_CACHE_DEFAULT_MAX;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.KEYS_CACHE_MAX_IDLE_SECONDS;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.KEYS_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.REALM_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.REALM_REVISIONS_CACHE_DEFAULT_MAX;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.REALM_REVISIONS_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_REVISIONS_CACHE_DEFAULT_MAX;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_REVISIONS_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.WORK_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanUtil.configureTransport;
-import static org.keycloak.connections.infinispan.InfinispanUtil.createCacheConfigurationBuilder;
-import static org.keycloak.connections.infinispan.InfinispanUtil.getActionTokenCacheConfig;
 import static org.keycloak.connections.infinispan.InfinispanUtil.setTimeServiceToKeycloakTime;
 import static org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderFactory.REALM_CLEAR_CACHE_EVENTS;
 import static org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderFactory.REALM_INVALIDATION_EVENTS;
@@ -99,7 +73,7 @@ import static org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderF
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class DefaultInfinispanConnectionProviderFactory implements InfinispanConnectionProviderFactory {
+public class DefaultInfinispanConnectionProviderFactory implements InfinispanConnectionProviderFactory, ProviderEventListener {
 
     private static final ReadWriteLock READ_WRITE_LOCK = new ReentrantReadWriteLock();
     private static final Logger logger = Logger.getLogger(DefaultInfinispanConnectionProviderFactory.class);
@@ -108,20 +82,13 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
     private volatile EmbeddedCacheManager cacheManager;
 
-    protected volatile boolean containerManaged;
-
-    private volatile TopologyInfo topologyInfo;
-
     private volatile RemoteCacheManager remoteCacheManager;
+
+    private volatile InfinispanConnectionProvider connectionProvider;
 
     @Override
     public InfinispanConnectionProvider create(KeycloakSession session) {
-        lazyInit(session);
-
-        return InfinispanUtils.isRemoteInfinispan() ?
-                new RemoteInfinispanConnectionProvider(cacheManager, remoteCacheManager, topologyInfo) :
-                new DefaultInfinispanConnectionProvider(cacheManager, topologyInfo);
-
+        return lazyInit(session);
     }
 
     /*
@@ -156,6 +123,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         runWithWriteLockOnCacheManager(() -> {
             if (cacheManager != null) {
                 cacheManager.stop();
+                cacheManager = null;
             }
         });
         if (remoteCacheManager != null) {
@@ -176,53 +144,40 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        factory.register((ProviderEvent event) -> {
-            if (event instanceof PostMigrationEvent) {
-                KeycloakModelUtils.runJobInTransaction(factory, this::registerSystemWideListeners);
-            }
-        });
+        factory.register(this);
     }
 
-    protected void lazyInit(KeycloakSession keycloakSession) {
-        if (cacheManager != null) {
-            return;
+    protected InfinispanConnectionProvider lazyInit(KeycloakSession keycloakSession) {
+        if (connectionProvider != null) {
+            return connectionProvider;
         }
         synchronized (this) {
-            if (cacheManager != null) {
-                return;
-            }
-            EmbeddedCacheManager managedCacheManager = null;
-            Iterator<ManagedCacheManagerProvider> providers = ServiceLoader.load(ManagedCacheManagerProvider.class, DefaultInfinispanConnectionProvider.class.getClassLoader())
-                    .iterator();
-
-            if (providers.hasNext()) {
-                ManagedCacheManagerProvider provider = providers.next();
-
-                if (providers.hasNext()) {
-                    throw new RuntimeException("Multiple " + org.keycloak.cluster.ManagedCacheManagerProvider.class + " providers found.");
-                }
-
-                managedCacheManager = provider.getEmbeddedCacheManager(keycloakSession, config);
+            if (connectionProvider != null) {
+                return connectionProvider;
             }
 
-            // store it in a locale variable first, so it is not visible to the outside, yet
-            EmbeddedCacheManager localCacheManager;
-            if (managedCacheManager == null) {
-                if (!config.getBoolean("embedded", false)) {
-                    throw new RuntimeException("No " + ManagedCacheManagerProvider.class.getName() + " found. If running in embedded mode set the [embedded] property to this provider.");
-                }
-                localCacheManager = initEmbedded();
-            } else {
-                localCacheManager = initContainerManaged(managedCacheManager);
-            }
-
+            this.cacheManager = createEmbeddedCacheManager(keycloakSession);
+            injectKeycloakTimeService(cacheManager);
+            var topologyInfo = new TopologyInfo(cacheManager);
             logger.infof(topologyInfo.toString());
 
+            this.remoteCacheManager = createRemoteCacheManager(keycloakSession);
+            this.connectionProvider = InfinispanUtils.isRemoteInfinispan() ?
+                  new RemoteInfinispanConnectionProvider(cacheManager, remoteCacheManager, topologyInfo) :
+                  new DefaultInfinispanConnectionProvider(cacheManager, topologyInfo);
 
-            // only set the cache manager attribute at the very end to avoid passing a half-initialized entry callers
-            cacheManager = localCacheManager;
-            remoteCacheManager = createRemoteCacheManager(keycloakSession);
+            return connectionProvider;
         }
+    }
+
+    protected EmbeddedCacheManager createEmbeddedCacheManager(KeycloakSession session) {
+        var holder = session.getProvider(CacheEmbeddedConfigProvider.class).configuration();
+        var cm = new DefaultCacheManager(holder, true);
+        cm.getCache(KEYS_CACHE_NAME, true);
+        cm.getCache(CRL_CACHE_NAME, true);
+
+        logger.debugv("Using container managed Infinispan cache container, lookup={0}", cm);
+        return cm;
     }
 
     protected RemoteCacheManager createRemoteCacheManager(KeycloakSession session) {
@@ -248,173 +203,29 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         return rcm;
     }
 
+    /**
+     * @deprecated not invoked anymore. Overwrite {@link #createEmbeddedCacheManager(KeycloakSession)}.
+     */
+    @Deprecated(since = "26.0", forRemoval = true)
     protected EmbeddedCacheManager initContainerManaged(EmbeddedCacheManager cacheManager) {
-        containerManaged = true;
-
-        defineRevisionCache(cacheManager, REALM_CACHE_NAME, REALM_REVISIONS_CACHE_NAME, REALM_REVISIONS_CACHE_DEFAULT_MAX);
-        defineRevisionCache(cacheManager, USER_CACHE_NAME, USER_REVISIONS_CACHE_NAME, USER_REVISIONS_CACHE_DEFAULT_MAX);
-        defineRevisionCache(cacheManager, AUTHORIZATION_CACHE_NAME, AUTHORIZATION_REVISIONS_CACHE_NAME, AUTHORIZATION_REVISIONS_CACHE_DEFAULT_MAX);
-
-        cacheManager.getCache(KEYS_CACHE_NAME, true);
-        cacheManager.getCache(CRL_CACHE_NAME, true);
-
-        this.topologyInfo = new TopologyInfo(cacheManager, config, false, getId());
-
-        logger.debugv("Using container managed Infinispan cache container, lookup={0}", cacheManager);
-
-        return cacheManager;
+        throw new UnsupportedOperationException();
     }
 
+    /**
+     * @deprecated not used anymore. Overwrite {@link #createEmbeddedCacheManager(KeycloakSession)} if you want to
+     * create a custom {@link EmbeddedCacheManager}.
+     */
+    @Deprecated(since = "26.3", forRemoval = true)
     protected EmbeddedCacheManager initEmbedded() {
-        GlobalConfigurationBuilder gcb = new GlobalConfigurationBuilder();
-
-        boolean clustered = config.getBoolean("clustered", false);
-        boolean async = config.getBoolean("async", false);
-        boolean useKeycloakTimeService = config.getBoolean("useKeycloakTimeService", false);
-
-        this.topologyInfo = new TopologyInfo(cacheManager, config, true, getId());
-
-        if (clustered) {
-            String jgroupsUdpMcastAddr = config.get("jgroupsUdpMcastAddr", System.getProperty(JGROUPS_UDP_MCAST_ADDR));
-            String jgroupsBindAddr = config.get("jgroupsBindAddr", System.getProperty(JGROUPS_BIND_ADDR));
-            configureTransport(gcb, topologyInfo.getMyNodeName(), topologyInfo.getMySiteName(), jgroupsUdpMcastAddr, jgroupsBindAddr,
-                    "default-configs/default-keycloak-jgroups-udp.xml");
-            gcb.jmx()
-              .domain(JMX_DOMAIN + "-" + topologyInfo.getMyNodeName()).enable();
-        } else {
-            gcb.jmx().domain(JMX_DOMAIN).enable();
-        }
-
-        Marshalling.configure(gcb);
-
-        if (InfinispanUtils.isRemoteInfinispan()) {
-            // Disable JGroups, not required when the data is stored in the Remote Cache.
-            // The existing caches are local and do not require JGroups to work properly.
-            gcb.nonClusteredDefault();
-        }
-
-        EmbeddedCacheManager cacheManager = new DefaultCacheManager(gcb.build());
-        if (useKeycloakTimeService) {
-            setTimeServiceToKeycloakTime(cacheManager);
-        }
-        containerManaged = false;
-
-        logger.debug("Started embedded Infinispan cache container");
-
-        var localConfiguration = createCacheConfigurationBuilder().build();
-
-        // local caches first
-        defineLocalCache(cacheManager, REALM_CACHE_NAME, REALM_REVISIONS_CACHE_NAME, localConfiguration, REALM_REVISIONS_CACHE_DEFAULT_MAX);
-        defineLocalCache(cacheManager, AUTHORIZATION_CACHE_NAME, AUTHORIZATION_REVISIONS_CACHE_NAME, localConfiguration, AUTHORIZATION_REVISIONS_CACHE_DEFAULT_MAX);
-        defineLocalCache(cacheManager, USER_CACHE_NAME, USER_REVISIONS_CACHE_NAME, localConfiguration, USER_REVISIONS_CACHE_DEFAULT_MAX);
-
-        cacheManager.defineConfiguration(KEYS_CACHE_NAME, getKeysCacheConfig());
-        cacheManager.getCache(KEYS_CACHE_NAME, true);
-
-        cacheManager.defineConfiguration(CRL_CACHE_NAME, getCrlCacheConfig());
-        cacheManager.getCache(CRL_CACHE_NAME, true);
-
-        var builder = createCacheConfigurationBuilder();
-        if (clustered) {
-            builder.simpleCache(false);
-            String sessionsMode = config.get("sessionsMode", "distributed");
-            if (sessionsMode.equalsIgnoreCase("replicated")) {
-                builder.clustering().cacheMode(async ? CacheMode.REPL_ASYNC : CacheMode.REPL_SYNC);
-            } else if (sessionsMode.equalsIgnoreCase("distributed")) {
-                builder.clustering().cacheMode(async ? CacheMode.DIST_ASYNC : CacheMode.DIST_SYNC);
-            } else {
-                throw new RuntimeException("Invalid value for sessionsMode");
-            }
-
-            int owners = config.getInt("sessionsOwners", 2);
-            logger.debugf("Session owners: %d", owners);
-
-            int l1Lifespan = config.getInt("l1Lifespan", 600000);
-            boolean l1Enabled = l1Lifespan > 0;
-            Boolean awaitInitialTransfer = config.getBoolean("awaitInitialTransfer", true);
-            builder.clustering()
-                    .hash()
-                        .numOwners(owners)
-                        .numSegments(config.getInt("sessionsSegments", 60))
-                    .l1()
-                        .enabled(l1Enabled)
-                        .lifespan(l1Lifespan)
-                    .stateTransfer().awaitInitialTransfer(awaitInitialTransfer).timeout(30, TimeUnit.SECONDS);
-        }
-
-        if (InfinispanUtils.isEmbeddedInfinispan()) {
-            // Base configuration doesn't contain any remote stores
-            var clusteredConfiguration = builder.build();
-
-            defineClusteredCache(cacheManager, USER_SESSION_CACHE_NAME, clusteredConfiguration);
-            defineClusteredCache(cacheManager, OFFLINE_USER_SESSION_CACHE_NAME, clusteredConfiguration);
-            defineClusteredCache(cacheManager, CLIENT_SESSION_CACHE_NAME, clusteredConfiguration);
-            defineClusteredCache(cacheManager, OFFLINE_CLIENT_SESSION_CACHE_NAME, clusteredConfiguration);
-
-            defineClusteredCache(cacheManager, LOGIN_FAILURE_CACHE_NAME, clusteredConfiguration);
-            defineClusteredCache(cacheManager, AUTHENTICATION_SESSIONS_CACHE_NAME, clusteredConfiguration);
-
-            var actionTokenBuilder = getActionTokenCacheConfig();
-            if (clustered) {
-                actionTokenBuilder.simpleCache(false);
-                actionTokenBuilder.clustering().cacheMode(async ? CacheMode.REPL_ASYNC : CacheMode.REPL_SYNC);
-            }
-            defineClusteredCache(cacheManager, ACTION_TOKEN_CACHE, actionTokenBuilder.build());
-
-            var workBuilder = createCacheConfigurationBuilder()
-                    .expiration().enableReaper().wakeUpInterval(15, TimeUnit.SECONDS);
-            if (clustered) {
-                workBuilder.simpleCache(false);
-                workBuilder.clustering().cacheMode(async ? CacheMode.REPL_ASYNC : CacheMode.REPL_SYNC);
-            }
-            defineClusteredCache(cacheManager, WORK_CACHE_NAME, workBuilder.build());
-        }
-
-        return cacheManager;
+        throw new UnsupportedOperationException();
     }
 
-    private void defineLocalCache(EmbeddedCacheManager cacheManager, String cacheName, String revCacheName, Configuration configuration, long defaultMaxEntries) {
-        cacheManager.defineConfiguration(cacheName, configuration);
-        defineRevisionCache(cacheManager, cacheName, revCacheName, defaultMaxEntries);
-    }
-
-    private void defineRevisionCache(EmbeddedCacheManager cacheManager, String cacheName, String revCacheName, long defaultMaxEntries) {
-        var maxCount = cacheManager.getCache(cacheName).getCacheConfiguration().memory().maxCount();
-        maxCount = maxCount > 0 ? 2 * maxCount : defaultMaxEntries;
-        cacheManager.defineConfiguration(revCacheName, getRevisionCacheConfig(maxCount));
-        cacheManager.getCache(revCacheName);
-    }
-
-    private void defineClusteredCache(EmbeddedCacheManager cacheManager, String cacheName, Configuration baseConfiguration) {
-        // copy base configuration
-        var builder = createCacheConfigurationBuilder();
-        builder.read(baseConfiguration);
-        cacheManager.defineConfiguration(cacheName, builder.build());
-        cacheManager.getCache(cacheName);
-    }
-
-    private Configuration getRevisionCacheConfig(long maxEntries) {
-        ConfigurationBuilder cb = createCacheConfigurationBuilder();
-        cb.simpleCache(false);
-        cb.invocationBatching().enable().transaction().transactionMode(TransactionMode.TRANSACTIONAL);
-
-        // Use Embedded manager even in managed ( wildfly/eap ) environment. We don't want infinispan to participate in global transaction
-        cb.transaction().transactionManagerLookup(new EmbeddedTransactionManagerLookup());
-
-        cb.transaction().lockingMode(LockingMode.PESSIMISTIC);
-        if (cb.memory().storage().canStoreReferences()) {
-            cb.encoding().mediaType(MediaType.APPLICATION_OBJECT_TYPE);
-        }
-
-        cb.memory()
-                .whenFull(EvictionStrategy.REMOVE)
-                .maxCount(maxEntries);
-
-        return cb.build();
-    }
-
+    /**
+     * @deprecated not used anymore
+     */
+    @Deprecated(since = "26.3", forRemoval = true)
     protected Configuration getKeysCacheConfig() {
-        ConfigurationBuilder cb = createCacheConfigurationBuilder();
+        var cb = CacheConfigurator.createCacheConfigurationBuilder();
 
         cb.memory()
                 .whenFull(EvictionStrategy.REMOVE)
@@ -425,8 +236,12 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         return cb.build();
     }
 
+    /**
+     * @deprecated Use {@link CacheConfigurator#getCrlCacheConfig()}
+     */
+    @Deprecated(since = "26.3", forRemoval = true)
     protected Configuration getCrlCacheConfig() {
-        return InfinispanUtil.getCrlCacheConfig().build();
+        return CacheConfigurator.getCrlCacheConfig().build();
     }
 
     private void registerSystemWideListeners(KeycloakSession session) {
@@ -446,8 +261,21 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         });
     }
 
+    private void injectKeycloakTimeService(EmbeddedCacheManager cacheManager) {
+        if (config.getBoolean("useKeycloakTimeService", Boolean.FALSE)) {
+            setTimeServiceToKeycloakTime(cacheManager);
+        }
+    }
+
     @Override
     public Set<Class<? extends Provider>> dependsOn() {
-        return Set.of(JpaConnectionProvider.class, CacheRemoteConfigProvider.class);
+        return Set.of(CacheRemoteConfigProvider.class, CacheEmbeddedConfigProvider.class);
+    }
+
+    @Override
+    public void onEvent(ProviderEvent event) {
+        if (event instanceof PostMigrationEvent pme) {
+            KeycloakModelUtils.runJobInTransaction(pme.getFactory(), this::registerSystemWideListeners);
+        }
     }
 }
