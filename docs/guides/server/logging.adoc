@@ -6,7 +6,7 @@
 
 <@tmpl.guide
 title="Configuring logging"
-summary="Learn how to configure Logging">
+summary="Configure logging for {project_name}.">
 
 {project_name} uses the JBoss Logging framework.
 The following is a high-level overview for the available log handlers with the common parent log handler `root`:

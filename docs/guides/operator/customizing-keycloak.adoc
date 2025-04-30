@@ -5,7 +5,7 @@
 
 <@tmpl.guide
 title="Using custom {project_name} images"
-summary="How to customize and optimize the {project_name} Container">
+summary="Customize and optimize the {project_name} container.">
 
 == {project_name} custom image with the Operator
 

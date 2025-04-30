@@ -4,7 +4,7 @@
 
 <@tmpl.guide
 title="Configuring the hostname (v2)"
-summary="Learn how to configure the frontend and backchannel endpoints exposed by {project_name}."
+summary="Configure the frontend and backchannel endpoints exposed by {project_name}."
 includedOptions="hostname hostname-* proxy"
 deniedCategories="hostname_v1">
 

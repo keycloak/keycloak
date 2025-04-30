@@ -3,7 +3,7 @@
 
 <@tmpl.guide
 title="Enabling and disabling features"
-summary="Understand how to configure {project_name} to use optional features"
+summary="Configure {project_name} to use optional features."
 includedOptions="features features-*">
 
 {project_name} has packed some functionality in features, including some disabled features, such as Technology Preview and deprecated features. Other features are enabled by default, but you can disable them if they do not apply to your use of {project_name}.

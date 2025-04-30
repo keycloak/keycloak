@@ -4,7 +4,7 @@
 
 <@tmpl.guide
 title="Configuring {project_name}"
-summary="Understand how to configure and start {project_name}">
+summary="Configure and start {project_name}.">
 
 This {section} explains the configuration methods for {project_name} and how to start and apply the preferred configuration. It includes configuration guidelines for optimizing {project_name} for faster startup and low memory footprint.
 

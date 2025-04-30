@@ -3,7 +3,7 @@
 
 <@tmpl.guide
 title="Configuring trusted certificates"
-summary="How to configure the {project_name} Truststore to communicate through TLS."
+summary="Configure the {project_name} Truststore to communicate through TLS."
 includedOptions="truststore-paths tls-hostname-verifier">
 
 When {project_name} communicates with external services or has an incoming connection through TLS, it has to validate the remote certificate in order to ensure it is connecting to a trusted server. This is necessary in order to prevent man-in-the-middle attacks.

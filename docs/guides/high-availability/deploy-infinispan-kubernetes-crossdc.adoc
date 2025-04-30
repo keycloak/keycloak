@@ -3,8 +3,8 @@
 <#import "/templates/profile.adoc" as profile>
 
 <@tmpl.guide
-title="Deploy {jdgserver_name} for HA with the {jdgserver_name} Operator"
-summary="Building block for an {jdgserver_name} deployment on Kubernetes"
+title="Deploying {jdgserver_name} for HA with the {jdgserver_name} Operator"
+summary="Deploy {jdgserver_name} for high availability in multi availability zones on Kubernetes."
 tileVisible="false"
 includedOptions="cache-remote-*">
 

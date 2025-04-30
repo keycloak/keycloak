@@ -6,7 +6,7 @@
 
 <@tmpl.guide
 title="Running {project_name} in a container"
-summary="Learn how to run {project_name} from a container image"
+summary="Run {project_name} from a container image."
 includedOptions="db db-url db-username db-password features hostname https-key-store-file https-key-store-password health-enabled metrics-enabled">
 
 This {section} describes how to optimize and run the {project_name} container image to provide the best experience running a container.
