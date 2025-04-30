@@ -10,6 +10,11 @@ database is automatically migrated when you start the new installation for the f
 Before you migrate the database, shut down all {project_name} nodes running the old version of {project_name}.
 ====
 
+[NOTE]
+====
+Migration is not supported with the default H2 based `dev-file` database type.
+====
+
 === Automatic relational database migration
 
 To perform an automatic migration, start the server connected to the desired database.  If the database schema has changed for the new server version, the migration starts automatically unless the database has too many records.
