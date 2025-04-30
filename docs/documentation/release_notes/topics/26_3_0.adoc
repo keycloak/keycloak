@@ -22,6 +22,23 @@ For newly created realms, the browser flow now includes the Recovery Authenticat
 
 For more information about this 2FA method, see the link:{adminguide_link}#_recovery-codes[Recovery Codes] chapter in the {adminguide_name}.
 
+= Improvements to import / export and migration
+
+Previously it was recommended that import / export operations be performed while the server was stopped to ensure consistency due to splitting the work over multiple transactions. Import / export operations now use a single transaction, thus there is no need to stop the server to ensure consistency.
+
+The time it takes to run import / export or migrations involving a large number of realms has also been improved. There is no longer a cumulative performance degradation for each additional realm processed.
+
+= Client initiated linking of the user account to identity provider is based on AIA
+
+When using for example a one-time-password (OTP) generators as a second factor for authenticating users (2FA), a user can get locked out of their account when they, for example, lose their phone that contains the OTP generator.
+To prepare for such a case, the recovery codes feature allows users to print a set of recovery codes as an additional second factor.
+If the recovery codes are then allowed as an alternative 2FA in the login flow, they can be used instead of the OTP generated passwords.
+
+With this release, the recovery codes feature is promoted from preview to a supported feature.
+For newly created realms, the browser flow now includes the Recovery Authentication Code Form as _Disabled_, and it can be switched to _Alternative_ by admins if they want to use this feature.
+
+For more information about this 2FA method, see the link:{adminguide_link}#_recovery-codes[Recovery Codes] chapter in the {adminguide_name}.
+
 = Simplified registration for WebAuthn and Passkeys
 
 Both WebAuthn Register actions (`webauthn-register` and `webauthn-register-passwordless`) which are also used for Passkeys now support a parameter `skip_if_exists` when initiated by the application (AIA).
