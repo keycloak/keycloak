@@ -15,7 +15,7 @@ export async function assertSupportedApplications(
 }
 
 export async function setPolicyType(page: Page, type: string) {
-  page.getByTestId(type).click();
+  await page.getByTestId(type).click();
 }
 
 export async function increaseInitialCounter(page: Page) {
