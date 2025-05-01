@@ -19,5 +19,9 @@ export async function fillForm(
   },
 ) {
   await selectItem(page, page.getByTestId("alias"), data.name);
-  await selectItem(page, page.locator("#kc🍺org🍺domain"), data.domain);
+  await selectItem(
+    page,
+    page.locator("#config\\.kc🍺org🍺domain"),
+    data.domain,
+  );
 }
