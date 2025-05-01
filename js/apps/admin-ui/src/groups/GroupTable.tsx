@@ -136,6 +136,9 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
                 value={search}
                 onChange={(_, value) => {
                   setSearch(value);
+                  if (value === "") {
+                    refresh();
+                  }
                 }}
                 onSearch={refresh}
                 onClear={() => {
