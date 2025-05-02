@@ -7,7 +7,13 @@ import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload
 import { DiscoveryEndpointField } from "../component/DiscoveryEndpointField";
 import { DiscoverySettings } from "./DiscoverySettings";
 
-export const OpenIdConnectSettings = () => {
+type OpenIdConnectSettingsProps = {
+  isOIDC: boolean;
+};
+
+export const OpenIdConnectSettings = ({
+  isOIDC,
+}: OpenIdConnectSettingsProps) => {
   const { adminClient } = useAdminClient();
 
   const { t } = useTranslation();
@@ -81,7 +87,9 @@ export const OpenIdConnectSettings = () => {
           </FormGroup>
         }
       >
-        {(readonly) => <DiscoverySettings readOnly={readonly} />}
+        {(readonly) => (
+          <DiscoverySettings readOnly={readonly} isOIDC={isOIDC} />
+        )}
       </DiscoveryEndpointField>
     </>
   );
