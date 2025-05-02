@@ -128,6 +128,11 @@ To build the actual container image, run the following command from the director
 podman|docker build . -t mykeycloak
 ----
 
+[NOTE]
+====
+Podman can be used only for creating or customizing images. Podman is not supported in production environments.
+====
+
 === Starting the optimized {project_name} container image
 To start the image, run:
 
