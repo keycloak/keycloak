@@ -28,8 +28,16 @@ export async function editSAMLSettings(page: Page, samlProviderName: string) {
   await assertInvalidUrlNotification(page, "singleLogoutService");
   await setUrl(page, "singleLogoutService", "https://valid.com");
 
-  await selectItem(page, page.locator("#nameIDPolicyFormat"), "Kerberos");
-  await selectItem(page, page.locator("#principalType"), "Attribute [Name]");
+  await selectItem(
+    page,
+    page.locator("#config\\.nameIDPolicyFormat"),
+    "Kerberos",
+  );
+  await selectItem(
+    page,
+    page.locator("#config\\.principalType"),
+    "Attribute [Name]",
+  );
 
   // Toggle SAML switches
   const switches = [

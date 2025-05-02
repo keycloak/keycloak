@@ -1334,6 +1334,7 @@
                         <configuration>
                             <systemPropertyVariables>
                                 <pageload.timeout>20000</pageload.timeout>
+                                <keycloak.cacheEmbedded.configFile>cluster-test-ispn.xml</keycloak.cacheEmbedded.configFile>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>
