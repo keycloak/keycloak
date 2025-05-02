@@ -254,6 +254,7 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
             <SamlImportKeyDialog
               id={clientId}
               attr={attr}
+              onSubmit={(cert: string) => setKeyInfo([{ certificate: cert }])}
               onClose={() => setImportOpen(undefined)}
               onImported={() => setRefresh(refresh + 1)}
             />
