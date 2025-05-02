@@ -155,7 +155,9 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
             event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
             event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
             event.error(cpe.getError());
-            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+            if (!cpe.isPermissiveMode()) {
+                throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+            }
         }
 
         int expiresIn = realm.getOAuth2DeviceConfig().getLifespan(client);
