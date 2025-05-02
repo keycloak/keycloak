@@ -311,7 +311,7 @@ spec:
 As an alternative, to disable the mTLS communication, and rely on the service mesh to encrypt the traffic:
 
 * Set the option `cache-embedded-mtls-enabled` to `false`.
-* Configure your service mesh to authorize only traffic from other {project_name} nodes for the data transmission port (default: 7800).
+* Configure your service mesh to authorize only traffic from other {project_name} Pods for the data transmission port (default: 7800).
 
 === Proving your own keys and certificates
 
