@@ -285,7 +285,7 @@ Use the option `cache-embedded-mtls-rotation-interval-days` to change this.
 When using a service mesh like Istio, you might need to allow a direct mTLS communication between the {project_name} Pods to allow for the mutual authentication to work.
 Otherwise, you might see error messages like `JGRP000006: failed accepting connection from peer SSLSocket` that indicate that a wrong certificate was presented, and the cluster will not form correctly.
 
-You then have the option to allow direct mTLS communication between the {project_name} nodes, or rely on the service mesh transport security to encrypt the communication and to authenticate peers.
+You then have the option to allow direct mTLS communication between the {project_name} Pods, or rely on the service mesh transport security to encrypt the communication and to authenticate peers.
 
 To allow direct mTLS communication for {project_name} when using Istio:
 
