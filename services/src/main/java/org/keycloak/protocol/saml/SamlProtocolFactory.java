@@ -23,6 +23,7 @@ import org.keycloak.common.Profile.Feature;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.ImpersonationSessionNote;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -33,6 +34,7 @@ import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
 import org.keycloak.organization.protocol.mappers.saml.OrganizationMembershipMapper;
 import org.keycloak.protocol.saml.mappers.RoleListMapper;
 import org.keycloak.protocol.saml.mappers.UserPropertyAttributeStatementMapper;
+import org.keycloak.protocol.saml.mappers.UserSessionNoteStatementMapper;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.saml.SignatureAlgorithm;
@@ -93,6 +95,10 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
                 X500SAMLProfileConstants.SURNAME.getFriendlyName(),
                 true, "${familyName}");
         builtins.put("X500 surname", model);
+        model = UserSessionNoteStatementMapper.createUserSessionNoteMapper(ImpersonationSessionNote.IMPERSONATOR_ID);
+        builtins.put(ImpersonationSessionNote.IMPERSONATOR_ID.getDisplayName(), model);
+        model = UserSessionNoteStatementMapper.createUserSessionNoteMapper(ImpersonationSessionNote.IMPERSONATOR_USERNAME);
+        builtins.put(ImpersonationSessionNote.IMPERSONATOR_USERNAME.getDisplayName(), model);
         model = RoleListMapper.create("role list", "Role", AttributeStatementHelper.BASIC, null, false);
         builtins.put("role list", model);
         defaultBuiltins.add(model);
