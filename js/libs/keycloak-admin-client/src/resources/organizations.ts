@@ -3,6 +3,7 @@ import IdentityProviderRepresentation from "../defs/identityProviderRepresentati
 import type OrganizationRepresentation from "../defs/organizationRepresentation.js";
 import UserRepresentation from "../defs/userRepresentation.js";
 import Resource from "./resource.js";
+import type MembershipRepresentation from "../defs/membershipRepresentation.js";
 
 interface PaginatedQuery {
   first?: number; // The position of the first result to be processed (pagination offset)
@@ -98,7 +99,7 @@ export class Organizations extends Resource<{ realm?: string }> {
 
   public memberOrganizations = this.makeRequest<
     { userId: string },
-    OrganizationRepresentation[]
+    MembershipRepresentation[]
   >({
     method: "GET",
     path: "/members/{userId}/organizations",
