@@ -7,7 +7,7 @@ import {
 } from "@patternfly/react-core";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
@@ -18,6 +18,7 @@ import { toIdentityProviders } from "../routes/IdentityProviders";
 import { OIDCAuthentication } from "./OIDCAuthentication";
 import { OIDCGeneralSettings } from "./OIDCGeneralSettings";
 import { OpenIdConnectSettings } from "./OpenIdConnectSettings";
+import { UserProfileClaimsSettings } from "./OAuth2UserProfileClaimsSettings";
 
 type DiscoveryIdentity = IdentityProviderRepresentation & {
   discoveryEndpoint?: string;
@@ -28,9 +29,7 @@ export default function AddOpenIdConnect() {
 
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { pathname } = useLocation();
-  const isKeycloak = pathname.includes("keycloak-oidc");
-  const id = `${isKeycloak ? "keycloak-" : ""}oidc`;
+  const id = `oauth2`;
 
   const form = useForm<IdentityProviderRepresentation>({
     defaultValues: { alias: id },
@@ -67,11 +66,7 @@ export default function AddOpenIdConnect() {
 
   return (
     <>
-      <ViewHeader
-        titleKey={t(
-          isKeycloak ? "addKeycloakOpenIdProvider" : "addOpenIdProvider",
-        )}
-      />
+      <ViewHeader titleKey={t("addOAuth2Provider")} />
       <PageSection variant="light">
         <FormProvider {...form}>
           <FormAccess
@@ -80,8 +75,9 @@ export default function AddOpenIdConnect() {
             onSubmit={handleSubmit(onSubmit)}
           >
             <OIDCGeneralSettings />
-            <OpenIdConnectSettings isOIDC />
+            <OpenIdConnectSettings isOIDC={false} />
             <OIDCAuthentication />
+            <UserProfileClaimsSettings />
             <ActionGroup>
               <Button
                 isDisabled={!isDirty}
