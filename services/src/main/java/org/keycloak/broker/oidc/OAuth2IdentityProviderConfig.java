@@ -21,9 +21,9 @@ import static org.keycloak.common.util.UriUtils.checkUrl;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.representations.IDToken;
 
 import java.util.Arrays;
 
@@ -178,6 +178,30 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
         getConfig().put(JWT_X509_HEADERS_ENABLED, String.valueOf(enabled));
     }
 
+    public String getUserIDClaim() {
+        return getConfig().getOrDefault("userIDClaim", IDToken.SUBJECT);
+    }
+
+    public String getUserNameClaim() {
+        return getConfig().getOrDefault("userNameClaim", IDToken.PREFERRED_USERNAME);
+    }
+
+    public String getFullNameClaim() {
+        return getConfig().getOrDefault("fullNameClaim", IDToken.NAME);
+    }
+
+    public String getGivenNameClaim() {
+        return getConfig().getOrDefault("givenNameClaim", IDToken.GIVEN_NAME);
+    }
+
+    public String getFamilyNameClaim() {
+        return getConfig().getOrDefault("familyNameClaim", IDToken.FAMILY_NAME);
+    }
+
+    public String getEmailClaim() {
+        return getConfig().getOrDefault("emailClaim", IDToken.EMAIL);
+    }
+
     @Override
     public void validate(RealmModel realm) {
         SslRequired sslRequired = realm.getSslRequired();
@@ -185,7 +209,6 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
         checkUrl(sslRequired, getAuthorizationUrl(), "authorization_url");
         checkUrl(sslRequired, getTokenUrl(), "token_url");
         checkUrl(sslRequired, getUserInfoUrl(), "userinfo_url");
-
 
         if (isPkceEnabled()) {
             String pkceMethod = getPkceMethod();
