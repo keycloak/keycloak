@@ -97,8 +97,7 @@ public class TotpBean {
     }
 
     public String getManualUrl() {
-        return uriBuilder.replaceQueryParam("session_code").replaceQueryParam("mode", "manual")
-            .replaceQueryParam("execution", UserModel.RequiredAction.CONFIGURE_TOTP.name()).build().toString();
+        return uriBuilder.replaceQueryParam("session_code").replaceQueryParam("mode", "manual").build().toString();
     }
 
     public String getQrUrl() {
