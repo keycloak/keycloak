@@ -87,7 +87,7 @@
     "@patternfly/react-icons": "^5.4.2",
     "@patternfly/react-styles": "^5.4.1",
     "@patternfly/react-table": "^5.4.16",
-    "@uiw/react-textarea-code-editor": "^3.1.0",
+    "@uiw/react-textarea-code-editor": "^3.1.1",
     "admin-ui": "file:",
     "file-saver": "^2.0.5",
     "flat": "^6.0.1",
