@@ -52,6 +52,9 @@ Both system properties have been used internally within Keycloak and have not be
 Instead, use the command line option `spi-cache-embedded-default-site-name` as `jboss.site.name` replacement, and `spi-cache-embedded-default-node-name` as `jboss.node.name` replacement.
 See the https://www.keycloak.org/server/all-provider-config[All provider configuration] for more details on these options.
 
+=== Deprecation of `method RequiredActionProvider.getMaxAuthAge()`
+The method `RequiredActionProvider.getMaxAuthAge()` is deprecated. It is effectively not used now. Please use the method `RequiredActionProvider.getMaxAuthAge(KeycloakSession session)` instead. This is due to enable individual configuration for required actions.
+
 == Notable changes
 
 Notable changes where an internal behavior changed to prevent common misconfigurations, fix bugs or simplify running {project_name}.

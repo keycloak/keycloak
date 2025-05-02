@@ -539,7 +539,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
             }
             String authTime = userSession.getNote(AuthenticationManager.AUTH_TIME);
             int authTimeInt = authTime == null ? 0 : Integer.parseInt(authTime);
-            int maxAgeInt = requiredActionProvider.getMaxAuthAge();
+            int maxAgeInt = requiredActionProvider.getMaxAuthAge(session);
             return authTimeInt + maxAgeInt < Time.currentTime();
         } else {
             return false;
