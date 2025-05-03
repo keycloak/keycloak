@@ -103,6 +103,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         registerPage.register("firstName", "lastName", "email@mail.com", "setupTotp", "password", "password");
 
         String userId = events.expectRegister("setupTotp", "email@mail.com").assertEvent().getUserId();
+        getCleanup().addUserId(userId);
 
         doAIA();
 
@@ -135,6 +136,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         registerPage.register("firstName", "lastName", "email@mail.com", "setupTotp", "password", "password");
 
         String userId = events.expectRegister("setupTotp", "email@mail.com").assertEvent().getUserId();
+        getCleanup().addUserId(userId);
 
         doAIA();
 
@@ -416,6 +418,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         registerPage.register("firstName2", "lastName2", "email2@mail.com", "setupTotp2", "password2", "password2");
 
         String userId = events.expectRegister("setupTotp2", "email2@mail.com").assertEvent().getUserId();
+        getCleanup().addUserId(userId);
 
         doAIA();
 
