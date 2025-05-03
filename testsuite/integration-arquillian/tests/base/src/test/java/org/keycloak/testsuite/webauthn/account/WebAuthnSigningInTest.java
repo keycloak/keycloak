@@ -19,7 +19,6 @@ package org.keycloak.testsuite.webauthn.account;
 
 import org.hamcrest.Matchers;
 import org.junit.Test;
-import org.junit.Ignore;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
@@ -27,6 +26,7 @@ import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
+import org.keycloak.testsuite.page.AbstractPatternFlyAlert;
 import org.keycloak.testsuite.webauthn.pages.SigningInPage;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnAuthenticatorsList;
 import org.keycloak.theme.DateTimeFormatterUtil;
@@ -91,34 +91,19 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
     public void createWebAuthnSameUserLabel() {
         final String SAME_LABEL = "key123";
 
-        // Do we really allow to have several authenticators with the same user label??
-
         SigningInPage.UserCredential webAuthn = addWebAuthnCredential(SAME_LABEL, false);
         assertThat(webAuthn, notNullValue());
-        SigningInPage.UserCredential passwordless = addWebAuthnCredential(SAME_LABEL, true);
-        assertThat(passwordless, notNullValue());
 
-        assertThat(webAuthnCredentialType.getUserCredentialsCount(), is(1));
-        webAuthn = webAuthnCredentialType.getUserCredential(webAuthn.getId());
-        assertThat(webAuthn, notNullValue());
-        assertThat(webAuthn.getUserLabel(), is(SAME_LABEL));
+        SigningInPage.CredentialType credentialType = webAuthnPwdlessCredentialType;
 
-        assertThat(webAuthnPwdlessCredentialType.getUserCredentialsCount(), is(1));
-        passwordless = webAuthnPwdlessCredentialType.getUserCredential(passwordless.getId());
-        assertThat(passwordless, notNullValue());
-        assertThat(passwordless.getUserLabel(), is(SAME_LABEL));
+        AbstractPatternFlyAlert.waitUntilHidden();
 
-        SigningInPage.UserCredential webAuthn2 = addWebAuthnCredential(SAME_LABEL, false);
-        assertThat(webAuthn2, notNullValue());
-        assertThat(webAuthn2.getUserLabel(), is(SAME_LABEL));
-
-        assertThat(webAuthnCredentialType.getUserCredentialsCount(), is(2));
-
-        SigningInPage.UserCredential passwordless2 = addWebAuthnCredential(SAME_LABEL, true);
-        assertThat(passwordless2, notNullValue());
-        assertThat(passwordless2.getUserLabel(), is(SAME_LABEL));
-
-        assertThat(webAuthnPwdlessCredentialType.getUserCredentialsCount(), is(2));
+        credentialType.clickSetUpLink();
+        webAuthnRegisterPage.assertCurrent();
+        webAuthnRegisterPage.clickRegister();
+        webAuthnRegisterPage.registerWebAuthnCredential(SAME_LABEL);
+        waitForPageToLoad();
+        webAuthnRegisterPage.assertCurrent();
     }
 
     @Test
