@@ -129,6 +129,32 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
     }
 
     @Test
+    public void setupTotpRegisterDuplicateUserLabel() {
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.register("firstName", "lastName", "email@mail.com", "setupTotp", "password", "password");
+
+        String userId = events.expectRegister("setupTotp", "email@mail.com").assertEvent().getUserId();
+
+        doAIA();
+
+        totpPage.assertCurrent();
+
+        totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), "otp");
+
+        assertKcActionStatus(SUCCESS);
+
+        doAIA();
+
+        totpPage.assertCurrent();
+
+        totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), "otp");
+
+        assertEquals("Device already exists with the same name", totpPage.getInputLabelError());
+
+    }
+
+    @Test
     public void cancelSetupTotp() throws Exception {
         try {
             // Emulate former (pre KEYCLOAK-11745 change) OPTIONAL requirement by:
