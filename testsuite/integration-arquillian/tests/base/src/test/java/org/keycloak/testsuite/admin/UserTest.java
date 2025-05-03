@@ -3400,9 +3400,11 @@ public class UserTest extends AbstractAdminTest {
 
     @Test
     public void testShouldFailToSetCredentialUserLabelWhenLabelAlreadyExists() {
-        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "user-with-two-credentials");
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "user-with-two-configured-otp");
 
-        List<CredentialRepresentation> credentials = user.credentials();
+        List<CredentialRepresentation> credentials = user.credentials().stream()
+                .filter(c -> c.getType().equals(OTPCredentialModel.TYPE))
+                .toList();
         assertEquals(2, credentials.size());
 
         String firstId = credentials.get(0).getId();
@@ -3412,12 +3414,12 @@ public class UserTest extends AbstractAdminTest {
         user.setCredentialUserLabel(secondId, "Second Device");
 
         // Attempt to update second credential to use the same label as the first
-        BadRequestException ex = assertThrows(BadRequestException.class, () -> {
+        ClientErrorException ex = assertThrows(ClientErrorException.class, () -> {
             user.setCredentialUserLabel(secondId, "Device");
         });
 
         Response response = ex.getResponse();
-        assertEquals(String.valueOf(Response.Status.BAD_REQUEST.getStatusCode()), response.getStatus(), "Expected HTTP 400 Bad Request");
+        assertEquals(Response.Status.CONFLICT.getStatusCode(), response.getStatus());
 
         String body = response.readEntity(String.class);
         assertNotNull(body);
