@@ -36,7 +36,7 @@ Client initiated account link section of the link:{developerguide_link}[{develop
 
 === `KeycloakSessionTask.useExistingSession` method removed
 
-`KeycloakSessionTask.useExistingSession` was only useful to private server logic. Now that this logic has been refined, there is no need for this method. 
+`KeycloakSessionTask.useExistingSession` was only useful to private server logic. Now that this logic has been refined, there is no need for this method.
 
 === Deprecation of `spi-connections-infinispan-quarkus-site-name`
 
@@ -72,3 +72,12 @@ Consider one of the following cases and recommended migration steps:
 * With the feature `persistent-user-session` feature enabled, the remote store configuration is ignored and {project_name} will print a warning.
 ====
 
+=== Signing out from other devices will log out offline sessions
+
+When a user changes their password, they have a checkbox *Sign out from other devices* which is checked by default.
+
+In previous versions, this logged out only regular sessions.
+Starting with this release, it logs out also offline sessions as this is what users would expect to happen given the current screen's design.
+
+To revert to the old behavior, enable the deprecated feature `logout-all-sessions:v1`.
+This deprecated feature will be removed in a future version.

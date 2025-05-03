@@ -21,6 +21,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.authentication.actiontoken.ActionTokenContext;
 import org.keycloak.authentication.actiontoken.DefaultActionToken;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -201,12 +202,14 @@ public class AuthenticatorUtil {
                     backchannelLogout(session, realm, conn, req, event, s);
                 });
 
-        session.sessions().getOfflineUserSessionsStream(realm, user)
-                .filter(s -> !Objects.equals(s.getId(), authSession.getParentSession().getId()))
-                .collect(Collectors.toList()) // collect to avoid concurrent modification as backchannelLogout removes the user sessions.
-                .forEach(s -> {
-                    backchannelLogout(session, realm, conn, req, event, s);
-                });
+        if (!Profile.isFeatureEnabled(Profile.Feature.LOGOUT_ALL_SESSIONS_V1)) {
+            session.sessions().getOfflineUserSessionsStream(realm, user)
+                    .filter(s -> !Objects.equals(s.getId(), authSession.getParentSession().getId()))
+                    .collect(Collectors.toList()) // collect to avoid concurrent modification as backchannelLogout removes the user sessions.
+                    .forEach(s -> {
+                        backchannelLogout(session, realm, conn, req, event, s);
+                    });
+        }
 
     }
 

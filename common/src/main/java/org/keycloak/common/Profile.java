@@ -129,6 +129,8 @@ public class Profile {
 
         IPA_TUURA_FEDERATION("IPA-Tuura user federation provider", Type.EXPERIMENTAL),
 
+        LOGOUT_ALL_SESSIONS_V1("Logout all sessions logs out only regular sessions", Type.DEPRECATED, 1),
+
         ROLLING_UPDATES_V1("Rolling Updates", Type.DEFAULT, 1),
 
         /**
