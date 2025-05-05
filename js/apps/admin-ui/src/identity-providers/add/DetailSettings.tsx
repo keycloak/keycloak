@@ -460,7 +460,7 @@ export default function DetailSettings() {
       panel: (
         <>
           <DiscoverySettings readOnly={false} />
-          <Form isHorizontal className="pf-v5-u-py-lg">
+          <Form isHorizontal className="pf-v6-u-py-lg">
             <Divider />
             <OIDCAuthentication create={false} />
           </Form>
@@ -520,7 +520,7 @@ export default function DetailSettings() {
         )}
       />
 
-      <PageSection variant="light" className="pf-v5-u-p-0">
+      <PageSection hasBodyWrapper={false} className="pf-v6-u-p-0">
         <RoutableTabs isBox defaultLocation={toTab("settings")}>
           <Tab
             id="settings"
@@ -529,7 +529,7 @@ export default function DetailSettings() {
           >
             <ScrollForm
               label={t("jumpToSection")}
-              className="pf-v5-u-px-lg"
+              className="pf-v6-u-px-lg"
               sections={sections}
             />
           </Tab>

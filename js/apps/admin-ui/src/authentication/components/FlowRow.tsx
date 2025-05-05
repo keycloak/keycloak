@@ -1,5 +1,6 @@
 import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
-import { Button, Draggable, Tooltip } from "@patternfly/react-core";
+import { Button, Tooltip } from "@patternfly/react-core";
+import { Draggable } from "@patternfly/react-core/deprecated";
 import { TrashIcon } from "@patternfly/react-icons";
 import { Td, TreeRowWrapper } from "@patternfly/react-table";
 import { useTranslation } from "react-i18next";
@@ -121,13 +122,12 @@ export const FlowRow = ({
             {!builtIn && (
               <Tooltip content={t("delete")}>
                 <Button
+                  icon={<TrashIcon />}
                   variant="plain"
                   data-testid={`${execution.displayName}-delete`}
                   aria-label={t("delete")}
                   onClick={() => onDelete(execution)}
-                >
-                  <TrashIcon />
-                </Button>
+                />
               </Tooltip>
             )}
           </Td>

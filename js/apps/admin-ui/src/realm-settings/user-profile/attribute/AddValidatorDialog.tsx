@@ -1,6 +1,7 @@
 import ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
-import { Button, Form, Modal, ModalVariant } from "@patternfly/react-core";
+import { Button, Form } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";

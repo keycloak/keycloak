@@ -133,7 +133,7 @@ export const AssignedPolicies = ({
   return (
     <FormGroup
       label={t("policies")}
-      labelIcon={
+      labelHelp={
         <HelpItem
           helpText={t("permissionPoliciesHelp")}
           fieldLabelId="policies"
@@ -187,7 +187,7 @@ export const AssignedPolicies = ({
             </Button>
             <Button
               data-testid="select-createNewPolicy-button"
-              className="pf-v5-u-ml-md"
+              className="pf-v6-u-ml-md"
               variant="secondary"
               onClick={() => {
                 setNewPolicyOpen(true);

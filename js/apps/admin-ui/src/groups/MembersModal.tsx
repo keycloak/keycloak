@@ -1,5 +1,6 @@
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
-import { Button, Modal, ModalVariant, Label } from "@patternfly/react-core";
+import { Button, Label } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import { InfoCircleIcon } from "@patternfly/react-icons";
 import { differenceBy } from "lodash-es";
 import { useState } from "react";

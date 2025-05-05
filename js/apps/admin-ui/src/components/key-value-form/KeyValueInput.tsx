@@ -67,11 +67,11 @@ export const KeyValueInput = ({
   return fields.length > 0 ? (
     <>
       <Grid hasGutter>
-        <GridItem className="pf-v5-c-form__label" span={5}>
-          <span className="pf-v5-c-form__label-text">{t("key")}</span>
+        <GridItem className="pf-v6-c-form__label" span={5}>
+          <span className="pf-v6-c-form__label-text">{t("key")}</span>
         </GridItem>
-        <GridItem className="pf-v5-c-form__label" span={7}>
-          <span className="pf-v5-c-form__label-text">{t("value")}</span>
+        <GridItem className="pf-v6-c-form__label" span={7}>
+          <span className="pf-v6-c-form__label-text">{t("value")}</span>
         </GridItem>
         {fields.map((attribute, index) => {
           const error = (errors as any)[name]?.[index];
@@ -135,14 +135,13 @@ export const KeyValueInput = ({
               </GridItem>
               <GridItem span={2}>
                 <Button
+                  icon={<MinusCircleIcon />}
                   variant="link"
                   title={t("removeAttribute")}
                   onClick={() => remove(index)}
                   data-testid={`${name}-remove`}
                   isDisabled={isDisabled}
-                >
-                  <MinusCircleIcon />
-                </Button>
+                ></Button>
               </GridItem>
             </Fragment>
           );
@@ -152,7 +151,7 @@ export const KeyValueInput = ({
         <ActionListItem>
           <Button
             data-testid={`${name}-add-row`}
-            className="pf-v5-u-px-0 pf-v5-u-mt-sm"
+            className="pf-v6-u-px-0 pf-v6-u-mt-sm"
             variant="link"
             icon={<PlusCircleIcon />}
             onClick={appendNew}
@@ -166,7 +165,7 @@ export const KeyValueInput = ({
   ) : (
     <EmptyState
       data-testid={`${name}-empty-state`}
-      className="pf-v5-u-p-0"
+      className="pf-v6-u-p-0"
       variant="xs"
     >
       <EmptyStateBody>{t("missingAttributes", { label })}</EmptyStateBody>

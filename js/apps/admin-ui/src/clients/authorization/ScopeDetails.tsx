@@ -112,7 +112,7 @@ export default function ScopeDetails() {
             : undefined
         }
       />
-      <PageSection variant="light">
+      <PageSection hasBodyWrapper={false}>
         <FormProvider {...form}>
           <FormAccess
             isHorizontal
@@ -136,7 +136,7 @@ export default function ScopeDetails() {
               labelIcon={t("iconUriHelp")}
             />
             <ActionGroup>
-              <div className="pf-v5-u-mt-md">
+              <div className="pf-v6-u-mt-md">
                 <Button
                   variant={ButtonVariant.primary}
                   type="submit"

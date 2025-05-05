@@ -7,10 +7,10 @@ import {
   Divider,
   Form,
   FormGroup,
-  Modal,
   Radio,
   Switch,
 } from "@patternfly/react-core";
+import { Modal } from "@patternfly/react-core/deprecated";
 
 import type ResourceServerRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
 import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
@@ -61,11 +61,11 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
       {Object.keys(imported).length !== 0 && (
         <>
           <Divider />
-          <p className="pf-v5-u-my-lg">{t("importResources")}</p>
+          <p className="pf-v6-u-my-lg">{t("importResources")}</p>
           <Form isHorizontal>
             <FormGroup
               label={t("policyEnforcementMode")}
-              labelIcon={
+              labelHelp={
                 <HelpItem
                   helpText={t("policyEnforcementModeHelp")}
                   fieldLabelId="policyEnforcementMode"
@@ -82,12 +82,12 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
                 )}
                 isChecked
                 isDisabled
-                className="pf-v5-u-mb-md"
+                className="pf-v6-u-mb-md"
               />
             </FormGroup>
             <FormGroup
               label={t("decisionStrategy")}
-              labelIcon={
+              labelHelp={
                 <HelpItem
                   helpText={t("decisionStrategyHelp")}
                   fieldLabelId="decisionStrategy"
@@ -102,14 +102,14 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
                 isChecked
                 isDisabled
                 label={t(`decisionStrategies.${imported.decisionStrategy}`)}
-                className="pf-v5-u-mb-md"
+                className="pf-v6-u-mb-md"
               />
             </FormGroup>
             <FormGroup
               hasNoPaddingTop
               label={t("allowRemoteResourceManagement")}
               fieldId="allowRemoteResourceManagement"
-              labelIcon={
+              labelHelp={
                 <HelpItem
                   helpText={t("allowRemoteResourceManagement")}
                   fieldLabelId="allowRemoteResourceManagement"
@@ -119,20 +119,19 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
               <Switch
                 id="allowRemoteResourceManagement"
                 label={t("on")}
-                labelOff={t("off")}
                 isChecked={imported.allowRemoteResourceManagement}
                 isDisabled
                 aria-label={t("allowRemoteResourceManagement")}
               />
             </FormGroup>
           </Form>
-          <div className="pf-v5-u-mt-md">
+          <div className="pf-v6-u-mt-md">
             {Object.entries(imported)
               .filter(([, value]) => Array.isArray(value))
               .map(([key, value]) => (
                 <Fragment key={key}>
                   <Divider />
-                  <p className="pf-v5-u-my-sm">
+                  <p className="pf-v6-u-my-sm">
                     <strong>
                       {value.length} {t(key)}
                     </strong>
@@ -143,7 +142,7 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
           <Divider />
           <Alert
             variant="warning"
-            className="pf-v5-u-mt-lg"
+            className="pf-v6-u-mt-lg"
             isInline
             title={t("importWarning")}
           />

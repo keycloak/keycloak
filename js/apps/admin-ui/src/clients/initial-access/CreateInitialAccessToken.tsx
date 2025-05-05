@@ -60,7 +60,7 @@ export default function CreateInitialAccessToken() {
         />
       )}
       <ViewHeader titleKey="createToken" subKey="createTokenHelp" />
-      <PageSection variant="light">
+      <PageSection hasBodyWrapper={false}>
         <FormAccess
           isHorizontal
           role="create-client"

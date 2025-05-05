@@ -168,7 +168,7 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
           title={<TabTitleText>{t("eventListeners")}</TabTitleText>}
           data-testid="rs-event-listeners-tab"
         >
-          <PageSection>
+          <PageSection hasBodyWrapper={false}>
             <FormAccess
               role="manage-events"
               isHorizontal
@@ -183,7 +183,7 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
           title={<TabTitleText>{t("userEventsSettings")}</TabTitleText>}
           data-testid="rs-events-tab"
         >
-          <PageSection>
+          <PageSection hasBodyWrapper={false}>
             <FormAccess
               role="manage-events"
               isHorizontal
@@ -197,7 +197,7 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
               />
             </FormAccess>
           </PageSection>
-          <PageSection>
+          <PageSection hasBodyWrapper={false}>
             <EventsTypeTable
               key={tableKey}
               addTypes={() => setAddEventType(true)}
@@ -217,7 +217,7 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
           title={<TabTitleText>{t("adminEventsSettings")}</TabTitleText>}
           data-testid="rs-admin-events-tab"
         >
-          <PageSection>
+          <PageSection hasBodyWrapper={false}>
             <FormAccess
               role="manage-events"
               isHorizontal

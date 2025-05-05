@@ -6,11 +6,9 @@ import {
   FileUpload,
   Form,
   FormGroup,
-  Modal,
-  ModalVariant,
-  Text,
-  TextContent,
+  Content,
 } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import {
   Controller,
@@ -67,7 +65,7 @@ export const KeyForm = ({
   ];
 
   return (
-    <Form className="pf-v5-u-pt-lg">
+    <Form className="pf-v6-u-pt-lg">
       <SelectControl
         name="format"
         label={t("archiveFormat")}
@@ -81,7 +79,7 @@ export const KeyForm = ({
       {useFile && (
         <FormGroup
           label={t("importFile")}
-          labelIcon={
+          labelHelp={
             <HelpItem
               helpText={t("importFileHelp")}
               fieldLabelId="importFile"
@@ -167,9 +165,9 @@ export const GenerateKeyDialog = ({
         </Button>,
       ]}
     >
-      <TextContent>
-        <Text>{t("generateKeysDescription")}</Text>
-      </TextContent>
+      <Content>
+        <Content component="p">{t("generateKeysDescription")}</Content>
+      </Content>
       <FormProvider {...form}>
         <KeyForm />
       </FormProvider>
