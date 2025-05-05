@@ -104,7 +104,7 @@ public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFa
         }
 
         username = username.trim();
-        
+
         RealmModel realm = context.getRealm();
         UserModel user = context.getSession().users().getUserByUsername(realm, username);
         if (user == null && realm.isLoginWithEmailAllowed() && username.contains("@")) {
@@ -112,6 +112,15 @@ public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFa
         }
 
         context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
+
+        if (user != null && user.getFederationLink() != null) {
+            event.error(Errors.RESET_CREDENTIAL_DISABLED);
+            Response challenge = context.form()
+                    .addError(new FormMessage(Validation.FIELD_USERNAME, Messages.RESET_CREDENTIAL_NOT_ALLOWED_FOR_FEDERATED_USER))
+                    .createPasswordReset();
+            context.failureChallenge(AuthenticationFlowError.ACCESS_DENIED, challenge);
+            return;
+        }
 
         // we don't want people guessing usernames, so if there is a problem, just continue, but don't set the user
         // a null user will notify further executions, that this was a failure.
