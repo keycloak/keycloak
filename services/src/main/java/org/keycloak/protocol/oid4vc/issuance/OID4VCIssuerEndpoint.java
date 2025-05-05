@@ -611,9 +611,11 @@ public class OID4VCIssuerEndpoint {
             return;
         }
 
-        ProofValidator proofValidator = session.getProvider(ProofValidator.class, proof.getProofType());
+        String proofType = proof.getProofType();
+
+        ProofValidator proofValidator = session.getProvider(ProofValidator.class, proofType);
         if (proofValidator == null) {
-            throw new BadRequestException(String.format("Unable to validate proofs of type %s", proof.getProofType()));
+            throw new BadRequestException(String.format("Unable to validate proofs of type %s", proofType));
         }
 
         // Validate proof and bind public key to credential
