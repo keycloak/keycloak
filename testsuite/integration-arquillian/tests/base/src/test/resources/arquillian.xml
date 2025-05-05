@@ -634,7 +634,7 @@
             </property>
             <property name="bindHttpPortOffset">${auth.server.port.offset}</property>
             <property name="javaOpts">-Xms512m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=512m
-                -Djava.net.preferIPv4Stack=true -Dauth.server.db.host=some
+                -Dauth.server.db.host=some
             </property>
             <property name="enabledFeatures">${auth.server.feature}</property>
             <property name="disabledFeatures">${auth.server.feature.disable}</property>
@@ -674,7 +674,7 @@
                     "keycloak.connectionsInfinispan.clustered": "${keycloak.connectionsInfinispan.clustered:true}"
                     }
                 </property>
-                <property name="javaOpts">-Xms512m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=512m -Djava.net.preferIPv4Stack=true</property>
+                <property name="javaOpts">-Xms512m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=512m</property>
                 <property name="outputToConsole">true</property>
             </configuration>
         </container>
@@ -698,7 +698,7 @@
                     "keycloak.connectionsInfinispan.clustered": "${keycloak.connectionsInfinispan.clustered:true}"
                     }
                 </property>
-                <property name="javaOpts">-Xms512m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=512m -Djava.net.preferIPv4Stack=true</property>
+                <property name="javaOpts">-Xms512m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=512m</property>
                 <property name="outputToConsole">true</property>
             </configuration>
         </container>
@@ -718,7 +718,6 @@
                 -Xmx512m
                 -XX:MetaspaceSize=96M
                 -XX:MaxMetaspaceSize=512m
-                -Djava.net.preferIPv4Stack=true
                 ${auth.server.memory.settings}
                 -Dauth.server.db.host=${auth.server.db.host}
             </property>
