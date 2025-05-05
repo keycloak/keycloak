@@ -72,9 +72,8 @@ export const GroupSelect = ({
         control={control}
         defaultValue={defaultValue}
         rules={{
-          validate: (value?: string[]) => {
-            return isRequired && value && value.length > 0;
-          },
+          validate: (value?: string[]) =>
+            !isRequired || (value && value.length > 0),
         }}
         render={({ field }) => (
           <>
