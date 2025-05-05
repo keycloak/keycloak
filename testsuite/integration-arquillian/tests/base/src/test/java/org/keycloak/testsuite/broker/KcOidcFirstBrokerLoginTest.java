@@ -448,6 +448,44 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         final var socialButton = this.loginPage.findSocialButton(bc.getIDPAlias());
     }
 
+    @Test
+    public void shouldOfferAllOidcOptionOnLoginPageUserTriesToResetTheirPasswordAndGoesBack() {
+        final var realmRepresentation = adminClient.realm(bc.consumerRealmName()).toRepresentation();
+        realmRepresentation.setResetPasswordAllowed(true);
+        adminClient.realm(bc.consumerRealmName()).update(realmRepresentation);
+
+        createUser(bc.consumerRealmName(), "user-without-idp", "password", "Vilmos", "Szabó-Nagy", "spam@vnagy.eu");
+
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+        loginPage.assertCurrent(bc.consumerRealmName());
+
+        System.out.println(driver.getCurrentUrl());
+
+        // loginPage.clickResetLogin(); does not work somehow?
+        driver.findElement(By.linkText("Forgot Password?")).click();
+        loginPasswordResetPage.assertCurrent();
+
+        loginPasswordResetPage.backToLogin();
+
+        String urlWhenBackFromRegistrationPage = driver.getCurrentUrl();
+        log.debug("Social button should be visible");
+        final var socialButton = this.loginPage.findSocialButton(bc.getIDPAlias());
+
+        // loginPage.clickResetLogin(); does not work somehow?
+        driver.findElement(By.linkText("Forgot Password?")).click();
+        loginPasswordResetPage.assertCurrent();
+
+        loginPasswordResetPage.changePassword("user-without-idp");
+        driver.navigate().back();
+        driver.navigate().back();
+        String urlWhenWentBackFromResetPassword = driver.getCurrentUrl();
+        assertEquals(urlWhenBackFromRegistrationPage, urlWhenWentBackFromResetPassword);
+
+        log.debug("Should not fail here... We're still not logged in, so the IDP should be shown on the login page.");
+        assertTrue("We should be on the login page.", driver.getPageSource().contains("Sign in to your account"));
+        final var socialButtonAfterPasswordReset = this.loginPage.findSocialButton(bc.getIDPAlias());
+    }
 
     @Test
     public void testDisplayName() {
