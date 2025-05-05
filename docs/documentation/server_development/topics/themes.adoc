@@ -256,7 +256,7 @@ An example for a custom `footer.ftl` may look like this:
         <li><a href="#about">About</a></li>
         <li><a href="#contact">Contact</a></li>
     </ul>
-<div>
+</div>
 </#macro>
 ```
 
