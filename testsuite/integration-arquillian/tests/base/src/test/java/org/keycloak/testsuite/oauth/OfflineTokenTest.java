@@ -101,7 +101,6 @@ import static org.keycloak.testsuite.util.oauth.OAuthClient.APP_ROOT;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -975,6 +974,22 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         }, Integer.class);
     }
 
+    private void removeClientSessionStartedAtNote(final String userSessionId, final String clientId, final String clientSessionId) {
+        testingClient.server().run(session -> {
+            RealmModel realmModel = session.realms().getRealmByName("test");
+            session.getContext().setRealm(realmModel);
+            ClientModel clientModel = realmModel.getClientByClientId(clientId);
+            UserSessionModel userSession = session.sessions().getOfflineUserSession(realmModel, userSessionId);
+            if (userSession != null) {
+                AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(clientModel.getId());
+                if (clientSession != null) {
+                    clientSession.removeNote(AuthenticatedClientSessionModel.STARTED_AT_NOTE);
+                    clientSession.removeNote(AuthenticatedClientSessionModel.USER_SESSION_STARTED_AT_NOTE);
+                }
+            }
+        });
+    }
+
     private void testOfflineSessionExpiration(int idleTime, int maxLifespan, int offsetHalf, int offset) {
         int prev[] = null;
         getTestingClient().testing().setTestingInfinispanTimeService();
@@ -1510,4 +1525,40 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         }
     }
 
+    @Test
+    public void offlineRefreshWhenNoStartedAtClientNote() throws Exception {
+        int prevOfflineSession[] = null;
+        try {
+            prevOfflineSession = changeOfflineSessionSettings(true, 3600, 3600, 0, 0);
+
+            // login to obtain a refresh token
+            oauth.scope("openid " + OAuth2Constants.OFFLINE_ACCESS);
+            oauth.client("offline-client", "secret1");
+            oauth.redirectUri(offlineClientAppUri);
+            oauth.doLogin("test-user@localhost", "password");
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse response = oauth.doAccessTokenRequest(code);
+
+            EventRepresentation loginEvent = events.expectLogin()
+                    .client("offline-client")
+                    .detail(Details.REDIRECT_URI, offlineClientAppUri)
+                    .assertEvent();
+
+            // remove the started notes that can be missed in previous versions
+            String clientSessionId = getOfflineClientSessionUuid(loginEvent.getSessionId(), loginEvent.getClientId());
+            removeClientSessionStartedAtNote(loginEvent.getSessionId(), loginEvent.getClientId(), clientSessionId);
+
+            // check refresh is successful
+            response = oauth.doRefreshTokenRequest(response.getRefreshToken());
+            assertEquals(200, response.getStatusCode());
+            assertTrue("Invalid ExpiresIn", 0 < response.getRefreshExpiresIn() && response.getRefreshExpiresIn() <= 3600);
+
+            // check refresh a second time
+            response = oauth.doRefreshTokenRequest(response.getRefreshToken());
+            assertEquals(200, response.getStatusCode());
+            assertTrue("Invalid ExpiresIn", 0 < response.getRefreshExpiresIn() && response.getRefreshExpiresIn() <= 3600);
+        } finally {
+            changeOfflineSessionSettings(false, prevOfflineSession[0], prevOfflineSession[1], prevOfflineSession[2], prevOfflineSession[3]);
+        }
+    }
 }
