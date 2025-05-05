@@ -1,11 +1,6 @@
 import { FormErrorText, HelpItem } from "@keycloak/keycloak-ui-shared";
-import {
-  Label,
-  FormGroup,
-  Split,
-  SplitItem,
-} from "@patternfly/react-core";
-
+import { FormGroup, Label, Split, SplitItem } from "@patternfly/react-core";
+import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import useToggle from "../../utils/useToggle";
