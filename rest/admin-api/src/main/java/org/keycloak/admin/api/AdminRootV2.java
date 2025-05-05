@@ -14,6 +14,12 @@ public class AdminRootV2 {
     @Context
     protected KeycloakSession session;
 
+    @Path("")
+    public AdminApi latestAdminApi() {
+        // we could return the latest Admin API if no version is specified
+        return new DefaultAdminApi(session);
+    }
+
     @Path("v2")
     public AdminApi adminApi() {
         return new DefaultAdminApi(session);
