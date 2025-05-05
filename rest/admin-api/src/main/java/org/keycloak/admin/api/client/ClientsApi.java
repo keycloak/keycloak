@@ -30,7 +30,7 @@ public interface ClientsApi extends Provider {
     @Produces(MediaType.APPLICATION_JSON)
     ClientRepresentation createClient(ClientRepresentation client);
 
-    @Path("{name}")
-    ClientApi client(@PathParam("name") String name);
+    @Path("{id}")
+    ClientApi client(@PathParam("id") String id);
 }
 
