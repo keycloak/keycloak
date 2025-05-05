@@ -50,7 +50,7 @@
     "cross-env": "^7.0.3",
     "lightningcss": "^1.29.3",
     "vite": "^6.3.0",
-    "vite-plugin-checker": "^0.9.1",
+    "vite-plugin-checker": "^0.9.2",
     "vite-plugin-dts": "^4.5.3"
   },
   "wireit": {
