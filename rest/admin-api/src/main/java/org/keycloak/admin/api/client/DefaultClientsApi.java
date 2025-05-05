@@ -64,10 +64,10 @@ public class DefaultClientsApi implements ClientsApi {
         }
     }
 
-    @Path("{name}")
+    @Path("{id}")
     @Override
-    public ClientApi client(@PathParam("name") String name) {
-        return new DefaultClientApi(session, name);
+    public ClientApi client(@PathParam("id") String clientId) {
+        return new DefaultClientApi(session, clientId);
     }
 
     @Override
