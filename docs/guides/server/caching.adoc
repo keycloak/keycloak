@@ -259,7 +259,7 @@ Instead, when you have a distributed cache setup running on AWS EC2 instances, y
 |===
 
 Cloud vendor specific stacks have additional dependencies for {project_name}.
-For more information and links to repositories with these dependencies, see the https://infinispan.org/docs/dev/titles/embedding/embedding.html#jgroups-cloud-discovery-protocols_cluster-transport[Infinispan documentation].
+For more information and links to repositories with these dependencies, see the https://infinispan.org/docs/stable/titles/embedding/embedding.html#jgroups-cloud-discovery-protocols_cluster-transport[Infinispan documentation].
 
 To provide the dependencies to {project_name}, put the respective JAR in the `providers` directory and build {project_name} by entering this command:
 
