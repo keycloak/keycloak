@@ -106,3 +106,4 @@ org.keycloak.organization.OrganizationSpi
 org.keycloak.securityprofile.SecurityProfileSpi
 org.keycloak.services.KeycloakServicesSpi
 org.keycloak.services.client.ClientServiceSpi
+org.keycloak.models.mapper.ModelMapperSpi
