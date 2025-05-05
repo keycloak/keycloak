@@ -8,13 +8,13 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.resources.admin.AdminCorsPreflightService;
 
 @jakarta.ws.rs.ext.Provider
-@Path("v2")
+@Path("admin/api")
 public class AdminRootV2 {
 
     @Context
     protected KeycloakSession session;
 
-    @Path("admin")
+    @Path("v2")
     public AdminApi adminApi() {
         return new DefaultAdminApi(session);
     }
