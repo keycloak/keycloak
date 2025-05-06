@@ -333,26 +333,6 @@
                     <artifactId>maven-resources-plugin</artifactId>
                     <executions>
                         <execution>
-                            <id>copy-admin-user-json-file</id>
-                            <phase>generate-resources</phase>
-                            <goals>
-                                <goal>copy-resources</goal>
-                            </goals>
-                            <configuration>
-                                <skip>${skip.add.user.json}</skip>
-                                <outputDirectory>${auth.server.config.dir}</outputDirectory>
-                                <resources>
-                                    <resource>
-                                        <directory>src/test/resources</directory>
-                                        <includes>
-                                            <include>keycloak-add-user.json</include>
-                                        </includes>
-                                        <filtering>true</filtering>
-                                    </resource>
-                                </resources>
-                            </configuration>
-                        </execution>
-                        <execution>
                             <id>copy-truststore</id>
                             <phase>generate-resources</phase>
                             <goals>
@@ -803,7 +783,6 @@
                 <auth.server.crossdc11.home>${containers.home}/auth-server-${auth.server}-crossdc11</auth.server.crossdc11.home>
                 <auth.server.crossdc12.home>${containers.home}/auth-server-${auth.server}-crossdc12</auth.server.crossdc12.home>
 
-                <!-- property specifies keycloak-add-user.json file destination -->
                 <auth.server.config.dir>${auth.server.crossdc01.home}/standalone/configuration</auth.server.config.dir>
 
                 <cache.server.crossdc1.jvm.debug.port>6001</cache.server.crossdc1.jvm.debug.port>
