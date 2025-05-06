@@ -1,23 +1,19 @@
 import type KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
-import { HelpItem, SelectControl } from "@keycloak/keycloak-ui-shared";
+import {
+  HelpItem,
+  SelectControl,
+  FileUploadControl,
+} from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   ButtonVariant,
-  FileUpload,
   Form,
-  FormGroup,
   Modal,
   ModalVariant,
   Text,
   TextContent,
 } from "@patternfly/react-core";
-import { useState } from "react";
-import {
-  Controller,
-  FormProvider,
-  useForm,
-  useFormContext,
-} from "react-hook-form";
+import { FormProvider, useForm, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { StoreSettings } from "./StoreSettings";
@@ -55,9 +51,7 @@ export const KeyForm = ({
 }: KeyFormProps) => {
   const { t } = useTranslation();
 
-  const [filename, setFilename] = useState<string>();
-
-  const { control, watch } = useFormContext<FormFields>();
+  const { watch } = useFormContext<FormFields>();
   const format = watch("format");
 
   const { cryptoInfo } = useServerInfo();
@@ -79,7 +73,7 @@ export const KeyForm = ({
         options={supportedKeystoreTypes}
       />
       {useFile && (
-        <FormGroup
+        <FileUploadControl
           label={t("importFile")}
           labelIcon={
             <HelpItem
@@ -87,28 +81,12 @@ export const KeyForm = ({
               fieldLabelId="importFile"
             />
           }
-          fieldId="importFile"
-        >
-          <Controller
-            name="file"
-            defaultValue=""
-            control={control}
-            render={({ field }) => (
-              <FileUpload
-                id="importFile"
-                type="text"
-                value={field.value}
-                hideDefaultPreview
-                filename={filename}
-                browseButtonText={t("browse")}
-                onDataChange={(_, value) => {
-                  field.onChange(value);
-                }}
-                onFileInputChange={(_, file) => setFilename(file.name)}
-              />
-            )}
-          />
-        </FormGroup>
+          rules={{
+            required: t("required"),
+          }}
+          name="file"
+          id="importFile"
+        />
       )}
       {format !== CERT_PEM && (
         <StoreSettings hidePassword={useFile} isSaml={isSaml} />

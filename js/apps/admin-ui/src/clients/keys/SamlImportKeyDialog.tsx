@@ -23,7 +23,10 @@ export const SamlImportKeyDialog = ({
 
   const { t } = useTranslation();
   const form = useForm<SamlKeysDialogForm>();
-  const { handleSubmit } = form;
+  const {
+    handleSubmit,
+    formState: { isValid },
+  } = form;
 
   const { addAlert, addError } = useAlerts();
 
@@ -43,9 +46,9 @@ export const SamlImportKeyDialog = ({
       toggleDialog={onClose}
       continueButtonLabel="import"
       titleKey="importKey"
+      confirmButtonDisabled={!isValid}
       onConfirm={() => {
         handleSubmit(submit)();
-        onClose();
       }}
     >
       <FormProvider {...form}>
