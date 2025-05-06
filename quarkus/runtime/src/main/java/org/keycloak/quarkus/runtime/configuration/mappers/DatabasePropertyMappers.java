@@ -88,7 +88,7 @@ final class DatabasePropertyMappers {
                         .to("quarkus.datasource.jdbc.max-size")
                         .paramLabel("size")
                         .build(),
-                fromOption(DatabaseOptions.DB_ENABLED_DATASOURCE)
+                fromOption(DatabaseOptions.DB_ACTIVE_DATASOURCE)
                         .to("quarkus.datasource.\"<datasource>\".active")
                         .build(),
                 fromOption(DB_URL_PATH)

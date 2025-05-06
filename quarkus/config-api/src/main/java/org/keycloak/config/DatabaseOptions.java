@@ -88,10 +88,10 @@ public class DatabaseOptions {
             .description("The maximum size of the connection pool.")
             .build();
 
-    public static final Option<Boolean> DB_ENABLED_DATASOURCE = new OptionBuilder<>("db-enabled-<datasource>", Boolean.class)
+    public static final Option<Boolean> DB_ACTIVE_DATASOURCE = new OptionBuilder<>("db-active-<datasource>", Boolean.class)
             .category(OptionCategory.DATABASE_DATASOURCES)
             .defaultValue(true)
-            .description("Enable/disable specific named datasource <datasource>.")
+            .description("Deactivate specific named datasource <datasource>.")
             .build();
 
     /**
