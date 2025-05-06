@@ -93,7 +93,7 @@ public abstract class AbstractHttpResponse {
         }
 
         ObjectNode json = asJson(ObjectNode.class);
-        error = json.get(OAuth2Constants.ERROR).asText();
+        error = json.has(OAuth2Constants.ERROR) ? json.get(OAuth2Constants.ERROR).asText() : null;
         errorDescription = json.has(OAuth2Constants.ERROR_DESCRIPTION) ? json.get(OAuth2Constants.ERROR_DESCRIPTION).asText() : null;
     }
 

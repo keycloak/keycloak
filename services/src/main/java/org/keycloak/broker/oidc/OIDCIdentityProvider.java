@@ -18,6 +18,7 @@ package org.keycloak.broker.oidc;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import jakarta.ws.rs.WebApplicationException;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -56,6 +57,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -305,6 +307,48 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     }
 
     @Override
+    public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity) {
+        try {
+            AccessTokenResponse previousResponse = JsonSerialization.readValue(identity.getToken(), AccessTokenResponse.class);
+            Integer exp = (Integer) previousResponse.getOtherClaims().get(ACCESS_TOKEN_EXPIRATION);
+            if ((exp == null || exp < Time.currentTime()) && previousResponse.getRefreshToken() != null) {
+                try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
+                    SimpleHttp refreshTokenRequest = getRefreshTokenRequest(session, previousResponse.getRefreshToken(), getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret()));
+                    try (SimpleHttp.Response refreshTokenResponse = refreshTokenRequest.asResponse()) {
+                        if (refreshTokenResponse.getStatus() < 200 || refreshTokenResponse.getStatus() > 299) {
+                            ErrorRepresentation error = new ErrorRepresentation();
+                            error.setErrorMessage("Unable to refresh token");
+                            throw new WebApplicationException("Received and response code " + refreshTokenResponse.getStatus() +
+                                                              " with a response '" + refreshTokenResponse.asString() +"'",
+                                    Response.status(Response.Status.BAD_GATEWAY).entity(error).type(MediaType.APPLICATION_JSON).build());
+                        }
+                        AccessTokenResponse newResponse = refreshTokenResponse.asJson(AccessTokenResponse.class);
+
+                        if (newResponse.getRefreshToken() == null && previousResponse.getRefreshToken() != null) {
+                            newResponse.setRefreshToken(previousResponse.getRefreshToken());
+                            newResponse.setRefreshExpiresIn(previousResponse.getRefreshExpiresIn());
+                        }
+                        if (newResponse.getIdToken() == null && previousResponse.getIdToken() != null) {
+                            newResponse.setIdToken(previousResponse.getIdToken());
+                        }
+                        if (newResponse.getExpiresIn() > 0) {
+                            int accessTokenExpiration = Time.currentTime() + (int) newResponse.getExpiresIn();
+                            newResponse.getOtherClaims().put(ACCESS_TOKEN_EXPIRATION, accessTokenExpiration);
+                        }
+                        identity.setToken(JsonSerialization.writeValueAsString(newResponse));
+                    }
+                }
+            }
+        } catch (IOException e) {
+            ErrorRepresentation error = new ErrorRepresentation();
+            error.setErrorMessage("Unable to refresh token");
+            throw new WebApplicationException("Unable to refresh token", e,
+                    Response.status(Response.Status.BAD_GATEWAY).entity(error).type(MediaType.APPLICATION_JSON).build());
+        }
+        return super.retrieveToken(session, identity);
+    }
+
+    @Override
     protected Response exchangeSessionToken(UriInfo uriInfo, EventBuilder event, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
         String refreshToken = tokenUserSession.getNote(FEDERATED_REFRESH_TOKEN);
         String accessToken = tokenUserSession.getNote(FEDERATED_ACCESS_TOKEN);
@@ -427,7 +471,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
         try {
             BrokeredIdentityContext identity = extractIdentity(tokenResponse, accessToken, idToken);
-            
+
             if (!identity.getId().equals(idToken.getSubject())) {
                 throw new IdentityBrokerException("Mismatch between the subject in the id_token and the subject from the user_info endpoint");
             }
@@ -461,7 +505,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             if (!getConfig().isDisableNonce()) {
                 identity.getContextData().put(BROKER_NONCE_PARAM, idToken.getOtherClaims().get(OIDCLoginProtocol.NONCE_PARAM));
             }
-            
+
             if (getConfig().isStoreToken()) {
                 if (tokenResponse.getExpiresIn() > 0) {
                     long accessTokenExpiration = Time.currentTime() + tokenResponse.getExpiresIn();
@@ -579,7 +623,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
         if (tokenResponse != null) identity.getContextData().put(FEDERATED_ACCESS_TOKEN_RESPONSE, tokenResponse);
         if (tokenResponse != null) processAccessTokenResponse(identity, tokenResponse);
-        
+
         return identity;
     }
 
@@ -740,7 +784,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         if (!ignoreAudience && !token.hasAudience(getConfig().getClientId())) {
             throw new IdentityBrokerException("Wrong audience from token.");
         }
-        
+
         if (!ignoreAudience && (token.getIssuedFor() != null && !getConfig().getClientId().equals(token.getIssuedFor()))) {
             throw new IdentityBrokerException("Token issued for does not match client id");
         }
@@ -784,7 +828,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         String requestedIssuer = params == null ? null : params.getFirst(OAuth2Constants.SUBJECT_ISSUER);
         if (requestedIssuer == null) requestedIssuer = issuer;
         if (requestedIssuer.equals(getConfig().getAlias())) return true;
-        
+
         String trustedIssuers = getConfig().getIssuer();
 
         if (trustedIssuers != null && trustedIssuers.length() > 0) {
@@ -796,7 +840,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 }
             }
         }
-        
+
         return false;
     }
 
@@ -835,19 +879,19 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         AbstractJsonUserAttributeMapper.storeUserProfileForMapper(identity, userInfo, getConfig().getAlias());
 
         identity.setId(id);
-        
+
         if (givenName != null) {
             identity.setFirstName(givenName);
         }
-        
+
         if (familyName != null) {
             identity.setLastName(familyName);
         }
-        
+
         if (givenName == null && familyName == null) {
             identity.setName(name);
         }
-        
+
         identity.setEmail(email);
 
         identity.setBrokerUserId(getConfig().getAlias() + "." + id);
@@ -976,7 +1020,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     @Override
     public void preprocessFederatedIdentity(KeycloakSession session, RealmModel realm, BrokeredIdentityContext context) {
         AuthenticationSessionModel authenticationSession = session.getContext().getAuthenticationSession();
-        
+
         if (authenticationSession == null || getConfig().isDisableNonce()) {
             // no interacting with the brokered OP, likely doing token exchanges or no nonce
             return;

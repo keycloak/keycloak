@@ -1,5 +1,9 @@
 package org.keycloak.testsuite.util.oauth;
 
+import jakarta.ws.rs.core.UriBuilder;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
@@ -8,9 +12,14 @@ import org.keycloak.representations.AuthorizationResponseToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.testsuite.util.oauth.ciba.CibaClient;
 import org.keycloak.testsuite.util.oauth.device.DeviceClient;
+import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.WebDriver;
+
+import java.io.IOException;
+import java.util.Map;
 
 public abstract class AbstractOAuthClient<T> {
 
@@ -207,6 +216,39 @@ public abstract class AbstractOAuthClient<T> {
 
     public AccessTokenResponse doTokenExchange(String subjectToken) {
         return tokenExchangeRequest(subjectToken).send();
+    }
+
+    public AccessTokenResponse doFetchExternalIdpToken(String providerAlias, String accessToken) {
+        HttpGet get = prepareFetchExternalIdpToken(providerAlias, accessToken);
+
+        try (CloseableHttpResponse response = httpClient().get().execute(get)) {
+            return new AccessTokenResponse(response);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to retrieve external IDP token", e);
+        }
+    }
+
+    public ErrorRepresentation doFetchExternalIdpTokenError(String providerAlias, String accessToken) {
+        HttpGet get = prepareFetchExternalIdpToken(providerAlias, accessToken);
+
+        try (CloseableHttpResponse response = httpClient().get().execute(get)) {
+            if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                throw new RuntimeException("received status code " + response.getStatusLine().getStatusCode());
+            }
+            return JsonSerialization.readValue(response.getEntity().getContent(), ErrorRepresentation.class);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to retrieve external IDP token", e);
+        }
+    }
+
+    private HttpGet prepareFetchExternalIdpToken(String providerAlias, String accessToken) {
+        HttpGet get = new HttpGet(UriBuilder.fromUri(baseUrl).path("/realms/{realm-name}/broker/{provider_alias}/token").buildFromMap(Map.of("realm-name", config.getRealm(), "provider_alias", providerAlias)));
+
+        if (config.getOrigin() != null) {
+            get.addHeader("Origin", config.getOrigin());
+        }
+        get.addHeader("Authorization", "Bearer " + accessToken);
+        return get;
     }
 
     public CibaClient ciba() {
