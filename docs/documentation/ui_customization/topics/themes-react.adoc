@@ -1,13 +1,14 @@
 [[_theme_react]]
-== Themes based on React
+== Using the UI npm packages in your own React application
 
-The Admin Console and Account Console are based on React.
-To fully customize these consoles, you can use the React based npm packages.
+A final approach to customization is to just take pices of the Admin Console or Account Console and use it in your own React application.
+
+To fully customize these consoles, you can use the aformentioned React based npm packages.
 Two packages exist:
 
 * `@keycloak/keycloak-admin-ui`: This is the base theme for the Admin Console.
 * `@keycloak/keycloak-account-ui`: This is the base theme for the Account Console.
-Both packages are available on npm.
+Both packages are available in the public npm repository.
 
 === Installing the packages
 
@@ -59,12 +60,4 @@ backend: {
 
 === Using the pages
 
-All "pages" are React components that can be used in your application.
-To see what components are available, see the [source](https://github.com/keycloak/keycloak/blob/main/js/apps/account-ui/src/index.ts).
-Instead, you can consider the (quick start)(https://github.com/keycloak/keycloak-quickstarts/tree/main/extension/extend-account-console-node) to see how to use them.
-
-=== Using the pages again
-
-All "pages" are React components that can be used in your application.
-To see what components are available, see the [source](https://github.com/keycloak/keycloak/blob/main/js/apps/account-ui/src/index.ts).
-Instead, you can consider the (quick start)(https://github.com/keycloak/keycloak-quickstarts/tree/main/extension/extend-account-console-node) to see how to use them.
+To see how to further integrate the pages, we recommend that you take a look at the output of the tool in the <<_creating_your_own_console,Creating your own Console>> chapter.

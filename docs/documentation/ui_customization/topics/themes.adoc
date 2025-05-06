@@ -106,7 +106,7 @@ You have now created a theme with support for the login type.
 . For *Login Theme* select *mytheme* and click *Save*.
 . Open the login page for the realm.
 +
-You can do this either by logging in through your application or by opening the Account Console (`/realms/{realm name}/account`).
+You can do this either by logging in through your application or by opening the Account Console (`/realms/{realm-name}/account`).
 
 . To see the effect of changing the parent theme, set `parent=keycloak` in `theme.properties` and refresh the login page.
 
@@ -257,7 +257,7 @@ An example for a custom `footer.ftl` may look like this:
         <li><a href="#about">About</a></li>
         <li><a href="#contact">Contact</a></li>
     </ul>
-<div>
+</div>
 </#macro>
 ```
 

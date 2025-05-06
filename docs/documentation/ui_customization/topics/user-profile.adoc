@@ -1,6 +1,0 @@
-[[_user_profile]]
-== Customizing User Details
-
-blah blah
-
-=== Foo Bar
