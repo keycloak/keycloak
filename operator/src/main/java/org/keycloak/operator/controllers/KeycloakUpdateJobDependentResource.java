@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.ContextUtils;
 import org.keycloak.operator.Utils;
@@ -57,6 +58,10 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
     // Annotations
     public static final String KEYCLOAK_CR_HASH_ANNOTATION = "operator.keycloak.org/keycloak-hash";
 
+    // Label
+    private static final String APP_LABEL_VALUE = "keycloak-update-job";
+    private static final String LABEL_SELECTOR = "app=keycloak-update-job,app.kubernetes.io/managed-by=keycloak-operator";
+
     // container configuration
     private static final String INIT_CONTAINER_NAME = "actual";
     private static final String CONTAINER_NAME = "desired";
@@ -73,7 +78,7 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
         super(Job.class);
         this.configureWith(new KubernetesDependentResourceConfigBuilder<Job>()
                 .withKubernetesDependentInformerConfig(InformerConfiguration.builder(resourceType())
-                        .withLabelSelector(Constants.DEFAULT_LABELS_AS_STRING)
+                        .withLabelSelector(LABEL_SELECTOR)
                         .build())
                 .build());
     }
@@ -110,7 +115,7 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
         var builder = new ObjectMetaBuilder();
         builder.withName(name)
                 .withNamespace(keycloak.getMetadata().getNamespace())
-                .withLabels(Utils.allInstanceLabels(keycloak))
+                .withLabels(getLabels(keycloak))
                 .withAnnotations(Map.of(KEYCLOAK_CR_HASH_ANNOTATION, keycloakHash(keycloak)));
         return builder.build();
     }
@@ -209,4 +214,9 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
         return Utils.hash(List.of(keycloak.getSpec()));
     }
 
+    private static Map<String, String> getLabels(HasMetadata keycloak) {
+        var labels = Utils.allInstanceLabels(keycloak);
+        labels.put(Constants.APP_LABEL, APP_LABEL_VALUE);
+        return labels;
+    }
 }

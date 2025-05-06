@@ -24,15 +24,17 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.client.dsl.Gettable;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobStatus;
 import io.quarkus.test.junit.QuarkusTest;
-
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.keycloak.operator.Utils;
 import org.keycloak.operator.controllers.KeycloakUpdateJobDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
@@ -42,7 +44,9 @@ import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.update.UpdateStrategy;
 import org.keycloak.operator.update.impl.AutoUpdateLogic;
 
+import io.fabric8.kubernetes.api.model.ObjectMeta;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -212,6 +216,20 @@ public class UpdateTest extends BaseOperatorTest {
         var finished = maybeStatus.map(JobStatus::getSucceeded).orElse(0) +
                 maybeStatus.map(JobStatus::getFailed).orElse(0);
         assertEquals(1, finished);
+
+        // check label selector
+        var jobPodName = AutoUpdateLogic.findPodForJob(k8sclient, job)
+                .map(Pod::getMetadata)
+                .map(ObjectMeta::getName)
+                .orElseThrow();
+        var servicePods = k8sclient.pods().inNamespace(namespaceOf(keycloak))
+                .withLabels(Utils.allInstanceLabels(keycloak))
+                .resources()
+                .map(Gettable::get)
+                .map(Pod::getMetadata)
+                .map(ObjectMeta::getName)
+                .toList();
+        assertFalse(servicePods.contains(jobPodName), "pods: " + servicePods + " / job pod: " + jobPodName);
         return job;
     }
 
