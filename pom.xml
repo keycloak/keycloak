@@ -183,8 +183,8 @@
         <jmeter.version>2.10</jmeter.version>
         <junit.version>4.13.2</junit.version>
         <picketlink.version>2.7.0.Final</picketlink.version>
-        <!-- Needs to be aligned with Quarkus, see e.g. https://github.com/quarkusio/quarkus-quickstarts/blob/2.13.5.Final/getting-started-async/pom.xml#L14 -->
-        <surefire-plugin.version>3.0.0-M7</surefire-plugin.version>
+        <!-- Needs to be aligned with Quarkus, see e.g. https://github.com/quarkusio/quarkus/blob/3.20/independent-projects/parent/pom.xml#L41 -->
+        <surefire-plugin.version>3.5.2</surefire-plugin.version>
         <xml-apis.version>1.4.01</xml-apis.version>
         <subethasmtp.version>3.1.7</subethasmtp.version>
         <assertj-core.version>3.22.0</assertj-core.version>
