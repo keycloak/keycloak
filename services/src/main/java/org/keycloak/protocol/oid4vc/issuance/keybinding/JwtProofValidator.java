@@ -23,6 +23,7 @@ import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
@@ -39,6 +40,8 @@ import org.keycloak.util.JsonSerialization;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -108,7 +111,7 @@ public class JwtProofValidator extends AbstractProofValidator {
             throw new VCIssuerException("No verifier configured for " + jwsHeader.getAlgorithm());
         }
         if (!signatureVerifierContext.verify(jwsInput.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8), jwsInput.getSignature())) {
-            throw new VCIssuerException("Could not verify provided proof");
+            throw new VCIssuerException("Could not verify signature of provided proof");
         }
 
         return jwk;
@@ -206,21 +209,11 @@ public class JwtProofValidator extends AbstractProofValidator {
         Optional.ofNullable(proofPayload.getIat())
                 .orElseThrow(() -> new VCIssuerException("Missing proof issuing time. iat claim must be provided."));
 
-        // Check cNonce matches.
-        // If the token endpoint provides a c_nonce, we would like this:
-        // - stored in the access token
-        // - having the same validity as the access token.
-        Optional.ofNullable(vcIssuanceContext.getAuthResult().getToken().getNonce())
-                .ifPresent(
-                        cNonce -> {
-                            Optional.ofNullable(proofPayload.getNonce())
-                                    .filter(nonce -> Objects.equals(cNonce, nonce))
-                                    .orElseThrow(() -> new VCIssuerException("Missing or wrong nonce value. Please provide nonce returned by the issuer if any."));
-
-                            // We expect the expiration to be identical to the token expiration. We assume token expiration has been checked by AuthManager,
-                            // So no_op
-                        }
-                );
-
+        KeycloakContext keycloakContext = keycloakSession.getContext();
+        CNonceHandler cNonceHandler = keycloakSession.getProvider(CNonceHandler.class);
+        cNonceHandler.verifyCNonce(proofPayload.getNonce(),
+                                   List.of(OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(keycloakContext)),
+                                   Map.of("source_endpoint",
+                                          OID4VCIssuerWellKnownProvider.getNonceEndpoint(keycloakContext)));
     }
 }
