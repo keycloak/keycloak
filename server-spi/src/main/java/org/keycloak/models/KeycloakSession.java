@@ -20,6 +20,7 @@ package org.keycloak.models;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.provider.InvalidationHandler.InvalidableObjectType;
 import org.keycloak.provider.Provider;
+import org.keycloak.services.KeycloakServices;
 import org.keycloak.services.clientpolicy.ClientPolicyManager;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.vault.VaultTranscriber;
@@ -210,6 +211,8 @@ public interface KeycloakSession extends AutoCloseable {
      * @return the default IDP provider.
      */
     IdentityProviderStorageProvider identityProviders();
+
+    KeycloakServices services();
 
     @Override
     void close();
