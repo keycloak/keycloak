@@ -2,22 +2,34 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import io.quarkus.datasource.common.runtime.DatabaseKind;
 import io.smallrye.config.ConfigSourceInterceptorContext;
-
+import org.jboss.logging.Logger;
 import org.keycloak.config.DatabaseOptions;
+import org.keycloak.config.Option;
+import org.keycloak.config.OptionBuilder;
 import org.keycloak.config.TransactionOptions;
 import org.keycloak.config.database.Database;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.utils.StringUtil;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+
+import static org.keycloak.config.DatabaseOptions.OPTIONS_DATASOURCES;
+import static org.keycloak.config.DatabaseOptions.getDatasourceOption;
+import static org.keycloak.config.DatabaseOptions.getKeyForDatasource;
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
-import java.util.Optional;
-
 final class DatabasePropertyMappers {
+    private static final Logger log = Logger.getLogger(DatabasePropertyMappers.class);
 
-    private DatabasePropertyMappers(){}
+    private DatabasePropertyMappers() {
+    }
 
     public static PropertyMapper<?>[] getDatabasePropertyMappers() {
-        return new PropertyMapper[] {
+        var mappers = new PropertyMapper<?>[]{
                 fromOption(DatabaseOptions.DB_DIALECT)
                         .mapFrom(DatabaseOptions.DB, DatabasePropertyMappers::transformDialect)
                         .build(),
@@ -37,29 +49,25 @@ final class DatabasePropertyMappers {
                         .paramLabel("jdbc-url")
                         .build(),
                 fromOption(DatabaseOptions.DB_URL_HOST)
-                        .to("kc.db-url-host")
                         .paramLabel("hostname")
                         .build(),
                 fromOption(DatabaseOptions.DB_URL_DATABASE)
-                        .to("kc.db-url-database")
                         .paramLabel("dbname")
                         .build(),
                 fromOption(DatabaseOptions.DB_URL_PORT)
-                        .to("kc.db-url-port")
                         .paramLabel("port")
                         .build(),
                 fromOption(DatabaseOptions.DB_URL_PROPERTIES)
-                        .to("kc.db-url-properties")
                         .paramLabel("properties")
                         .build(),
                 fromOption(DatabaseOptions.DB_USERNAME)
+                        .mapFrom(DatabaseOptions.DB, DatabasePropertyMappers::resolveUsername)
                         .to("quarkus.datasource.username")
-                        .transformer(DatabasePropertyMappers::resolveUsername)
                         .paramLabel("username")
                         .build(),
                 fromOption(DatabaseOptions.DB_PASSWORD)
+                        .mapFrom(DatabaseOptions.DB, DatabasePropertyMappers::resolvePassword)
                         .to("quarkus.datasource.password")
-                        .transformer(DatabasePropertyMappers::resolvePassword)
                         .paramLabel("password")
                         .isMasked(true)
                         .build(),
@@ -71,25 +79,40 @@ final class DatabasePropertyMappers {
                         .paramLabel("size")
                         .build(),
                 fromOption(DatabaseOptions.DB_POOL_MIN_SIZE)
+                        .mapFrom(DatabaseOptions.DB, DatabasePropertyMappers::transformMinPoolSize)
                         .to("quarkus.datasource.jdbc.min-size")
-                        .transformer(DatabasePropertyMappers::transformMinPoolSize)
                         .paramLabel("size")
                         .build(),
                 fromOption(DatabaseOptions.DB_POOL_MAX_SIZE)
                         .to("quarkus.datasource.jdbc.max-size")
                         .paramLabel("size")
+                        .build(),
+                fromOption(DatabaseOptions.DB_ENABLED_DATASOURCE)
+                        .to("quarkus.datasource.\"<datasource>\".active")
+                        .build(),
+                fromOption(DB_URL_PATH)
                         .build()
         };
+
+        return appendDatasourceMappers(mappers, Map.of(
+                // Inherit options from the DB mappers
+                DatabaseOptions.DB_POOL_INITIAL_SIZE, mapper -> mapper.mapFrom(DatabaseOptions.DB_POOL_INITIAL_SIZE),
+                DatabaseOptions.DB_POOL_MAX_SIZE, mapper -> mapper.mapFrom(DatabaseOptions.DB_POOL_MAX_SIZE)
+        ));
     }
 
-    private static String getDatabaseUrl(String value, ConfigSourceInterceptorContext c) {
-        return Database.getDefaultUrl(value).orElse(null);
+    private static final Option<String> DB_URL_PATH = new OptionBuilder<>("db-url-path", String.class)
+            .hidden()
+            .description("Used for internal purposes of H2 database.")
+            .build();
+
+    private static String getDatabaseUrl(String name, String value, ConfigSourceInterceptorContext c) {
+        return Database.getDefaultUrl(name, value).orElse(null);
     }
 
-    private static String getXaOrNonXaDriver(String value, ConfigSourceInterceptorContext context) {
-        Optional<String> xaEnabledConfigValue = Configuration.getOptionalKcValue(TransactionOptions.TRANSACTION_XA_ENABLED);
-        boolean isXaEnabled = xaEnabledConfigValue.map(Boolean::parseBoolean).orElse(false);
-
+    private static String getXaOrNonXaDriver(String name, String value, ConfigSourceInterceptorContext context) {
+        var key = StringUtil.isNotBlank(name) ? TransactionOptions.getNamedTxXADatasource(name) : TransactionOptions.TRANSACTION_XA_ENABLED.getKey();
+        boolean isXaEnabled = Configuration.isTrue(NS_KEYCLOAK_PREFIX + key);
         return Database.getDriver(value, isXaEnabled).orElse(null);
     }
 
@@ -97,25 +120,16 @@ final class DatabasePropertyMappers {
         return Database.getDatabaseKind(db).orElse(null);
     }
 
-    private static String resolveUsername(String value, ConfigSourceInterceptorContext context) {
-        if (isDevModeDatabase(context)) {
-            return "sa";
-        }
-
-        return value;
+    private static String resolveUsername(String database, ConfigSourceInterceptorContext context) {
+        return isDevModeDatabase(database) ? "sa" : null;
     }
 
-    private static String resolvePassword(String value, ConfigSourceInterceptorContext context) {
-        if (isDevModeDatabase(context)) {
-            return "password";
-        }
-
-        return value;
+    private static String resolvePassword(String database, ConfigSourceInterceptorContext context) {
+        return isDevModeDatabase(database) ? "password" : null;
     }
 
-    private static boolean isDevModeDatabase(ConfigSourceInterceptorContext context) {
-        String db = Configuration.getConfig().getConfigValue("kc.db").getValue();
-        return Database.getDatabaseKind(db).filter(DatabaseKind.H2::equals).isPresent();
+    private static boolean isDevModeDatabase(String database) {
+        return Database.getDatabaseKind(database).filter(DatabaseKind.H2::equals).isPresent();
     }
 
     private static String transformDialect(String db, ConfigSourceInterceptorContext context) {
@@ -126,7 +140,71 @@ final class DatabasePropertyMappers {
      * For H2 databases we must ensure that the min-pool size is at least one so that the DB is not shutdown until the
      * Agroal connection pool is closed on Keycloak shutdown.
      */
-    private static String transformMinPoolSize(String min, ConfigSourceInterceptorContext context) {
-        return isDevModeDatabase(context) && (min == null || "0".equals(min)) ? "1" : min;
+    private static String transformMinPoolSize(String database, ConfigSourceInterceptorContext context) {
+        return isDevModeDatabase(database) ? "1" : null;
+    }
+
+    // Datasources
+
+    /**
+     * Automatically create mappers for datasource options
+     */
+    private static PropertyMapper<?>[] appendDatasourceMappers(PropertyMapper<?>[] mappers, Map<Option<?>, Consumer<PropertyMapper.Builder<?>>> transformDatasourceMappers) {
+        List<PropertyMapper<?>> datasourceMappers = new ArrayList<>(OPTIONS_DATASOURCES.size() + mappers.length);
+
+        for (var parent : mappers) {
+            var parentOption = parent.getOption();
+
+            var datasourceOption = getDatasourceOption(parentOption);
+            if (datasourceOption.isEmpty()) {
+                log.debugf("No datasource option found for '%s'", parentOption.getKey());
+                continue;
+            }
+
+            var created = fromOption(datasourceOption.get())
+                    .isMasked(parent.isMask())
+                    .transformer(parent.getMapper());
+
+            if (parent.getMapFrom() != null) {
+                var wildcardMapFromOption = getKeyForDatasource(parent.getMapFrom())
+                        .orElseThrow(() -> new IllegalArgumentException("Option '%s' in mapFrom() method for mapper '%s' does not have any associated wildcard option".formatted(parent.getMapFrom(), datasourceOption.get().getKey())));
+                created.wildcardMapFrom(wildcardMapFromOption, parent.getParentMapper() != null ? (name, value, context) -> parent.getParentMapper().map(name, value, context) : null);
+            }
+
+            if (parent.getParamLabel() != null) {
+                created.paramLabel(parent.getParamLabel());
+            }
+
+            var transformedTo = transformDatasourceTo(parent.getTo());
+            if (transformedTo != null) {
+                created.to(transformedTo);
+            }
+
+            var customTransformer = transformDatasourceMappers.get(parent.getOption());
+            if (customTransformer != null) {
+                customTransformer.accept(created);
+            }
+
+            datasourceMappers.add(created.build());
+        }
+
+        datasourceMappers.addAll(List.of(mappers));
+
+        return datasourceMappers.toArray(new PropertyMapper[0]);
+    }
+
+    private static String transformDatasourceTo(String to) {
+        if (StringUtil.isBlank(to)) {
+            return null;
+        }
+
+        if (to.startsWith("quarkus.datasource.")) {
+            return to.replaceFirst("quarkus\\.datasource\\.", "quarkus.datasource.\"<datasource>\".");
+        } else if (to.startsWith("kc.db-")) {
+            return to.concat("-<datasource>");
+        } else {
+            log.warnf("Cannot determine how to map datasource option to '%s'", to);
+        }
+        return to;
     }
 }
