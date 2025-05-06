@@ -142,7 +142,7 @@ public class DebugHostnameSettingsResource {
             HttpHeaders requestHeaders = keycloakSession.getContext().getRequestHeaders();
             boolean proxied = requestHeaders.getHeaderString("Forwarded") != null || requestHeaders.getHeaderString("X-Forwarded-For") != null;
 
-            if (!originMatches) { // might fail CORs checks
+            if (!originMatches) { // might fail CORS checks
                 try {
                     new URL(Configuration.getKcConfigValue(HostnameV2Options.HOSTNAME.getKey()).getValue());
                     // a full url is ok
