@@ -29,16 +29,17 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
+import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.SdJwtCredentialBuilder;
+import org.keycloak.protocol.oid4vc.issuance.keybinding.CNonceHandler;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCGeneratedIdMapper;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
@@ -52,7 +53,6 @@ import org.keycloak.protocol.oid4vc.model.ProofType;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.sdjwt.vp.SdJwtVP;
@@ -62,7 +62,6 @@ import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.time.temporal.ChronoUnit;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -92,32 +91,122 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
 
     @Test
     public void testRequestTestCredentialWithKeybinding() {
+        String cNonce = getCNonce();
         String token = getBearerToken(oauth);
-        testingClient
-                .server(TEST_REALM_NAME)
-                .run((session -> {
-                    JwtProof proof = new JwtProof()
-                            .setJwt(generateJwtProof(getCredentialIssuer(session), null));
+        testingClient.server(TEST_REALM_NAME)
+                     .run((session -> {
+                         JwtProof proof = new JwtProof()
+                                .setJwt(generateJwtProof(getCredentialIssuer(session), cNonce));
 
-                    SdJwtVP sdJwtVP = testRequestTestCredential(session, token, proof);
-                    assertNotNull("A cnf claim must be attached to the credential", sdJwtVP.getCnfClaim());
-                }));
+                         SdJwtVP sdJwtVP = testRequestTestCredential(session, token, proof);
+                         assertNotNull("A cnf claim must be attached to the credential", sdJwtVP.getCnfClaim());
+                     }));
     }
 
-    @Test(expected = BadRequestException.class)
+    @Test
     public void testRequestTestCredentialWithInvalidKeybinding() throws Throwable {
-        String token = getBearerToken(oauth);
-        withCausePropagation(() ->
-                testingClient
-                        .server(TEST_REALM_NAME)
-                        .run((session -> {
-                                    JwtProof proof = new JwtProof()
-                                            .setJwt(generateInvalidJwtProof(getCredentialIssuer(session), null));
+        try {
+            String cNonce = getCNonce();
+            String token = getBearerToken(oauth);
+            withCausePropagation(() -> testingClient
+                    .server(TEST_REALM_NAME)
+                    .run((session -> {
+                        JwtProof proof = new JwtProof()
+                                                 .setJwt(generateInvalidJwtProof(getCredentialIssuer(session), cNonce));
 
-                                    testRequestTestCredential(session, token, proof);
-                                })
-                        )
-        );
+                       testRequestTestCredential(session, token, proof);
+                    })));
+            Assert.fail("Should have thrown an exception");
+        } catch (BadRequestException ex) {
+            Assert.assertEquals("Could not validate provided proof", ex.getMessage());
+            Assert.assertEquals("Could not verify signature of provided proof", ex.getCause().getMessage());
+        }
+    }
+
+    @Test
+    public void testProofOfPossessionWithMissingAudience() throws Throwable {
+        try {
+            String token = getBearerToken(oauth);
+            withCausePropagation(() -> testingClient
+                    .server(TEST_REALM_NAME)
+                    .run((session -> {
+                        CNonceHandler cNonceHandler = session.getProvider(CNonceHandler.class);
+                        final String nonceEndpoint = OID4VCIssuerWellKnownProvider.getNonceEndpoint(session.getContext());
+                        // creates a cNonce with missing data
+                        String cNonce = cNonceHandler.buildCNonce(null, Map.of("source_endpoint", nonceEndpoint));
+                        Proof proof = new Proof().setProofType(ProofType.JWT)
+                                                 .setJwt(generateJwtProof(getCredentialIssuer(session), cNonce));
+
+                       testRequestTestCredential(session, token, proof);
+                    })));
+            Assert.fail("Should have thrown an exception");
+        } catch (BadRequestException ex) {
+            Assert.assertEquals("""
+                                        c_nonce: expected 'aud' to be equal to \
+                                        '[https://localhost:8543/auth/realms/test/protocol/oid4vc/credential]' but \
+                                        actual value was '[]'""",
+                                ex.getCause().getMessage());
+        }
+    }
+
+    @Test
+    public void testProofOfPossessionWithIllegalSourceEndpoint() throws Throwable {
+        try {
+            String token = getBearerToken(oauth);
+            withCausePropagation(() -> testingClient
+                    .server(TEST_REALM_NAME)
+                    .run((session -> {
+                        CNonceHandler cNonceHandler = session.getProvider(CNonceHandler.class);
+                        final String credentialsEndpoint = //
+                                OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(session.getContext());
+                        // creates a cNonce with missing data
+                        String cNonce = cNonceHandler.buildCNonce(List.of(credentialsEndpoint), null);
+                        Proof proof = new Proof().setProofType(ProofType.JWT)
+                                                 .setJwt(generateJwtProof(getCredentialIssuer(session), cNonce));
+
+                       testRequestTestCredential(session, token, proof);
+                    })));
+            Assert.fail("Should have thrown an exception");
+        } catch (BadRequestException ex) {
+            Assert.assertEquals("""
+                                        c_nonce: expected 'source_endpoint' to be equal to \
+                                        'https://localhost:8543/auth/realms/test/protocol/oid4vc/nonce' but \
+                                        actual value was 'null'""",
+                                ex.getCause().getMessage());
+        }
+    }
+
+    @Test
+    public void testProofOfPossessionWithExpiredState() throws Throwable {
+        try {
+            String token = getBearerToken(oauth);
+            withCausePropagation(() -> testingClient
+                    .server(TEST_REALM_NAME)
+                    .run((session -> {
+                        CNonceHandler cNonceHandler = session.getProvider(CNonceHandler.class);
+                        final String credentialsEndpoint = //
+                                OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(session.getContext());
+                        final String nonceEndpoint = OID4VCIssuerWellKnownProvider.getNonceEndpoint(session.getContext());
+                        try {
+                            // make the exp-value negative to set the exp-time in the past
+                            session.getContext().getRealm().setAttribute("oid4vc.nonce-lifetime-seconds", -1);
+                            String cNonce = cNonceHandler.buildCNonce(List.of(credentialsEndpoint),
+                                                                      Map.of("source_endpoint", nonceEndpoint));
+                            Proof proof = new Proof().setProofType(ProofType.JWT)
+                                                     .setJwt(generateJwtProof(getCredentialIssuer(session), cNonce));
+
+                           testRequestTestCredential(session, token, proof);
+                        } finally {
+                            // make sure other tests are not affected by the changed realm-attribute
+                            session.getContext().getRealm().removeAttribute("oid4vc.nonce-lifetime-seconds");
+                        }
+                    })));
+            Assert.fail("Should have thrown an exception");
+        } catch (BadRequestException ex) {
+            String message = ex.getCause().getMessage();
+            Assert.assertTrue(String.format("Message '%s' should match regular expression", message),
+                              message.matches("c_nonce not valid: \\d+\\(exp\\) < \\d+\\(now\\)"));
+        }
     }
 
     private static String getCredentialIssuer(KeycloakSession session) {
@@ -229,6 +318,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
     public void getConfig() {
         String expectedIssuer = suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/" + TEST_REALM_NAME;
         String expectedCredentialsEndpoint = expectedIssuer + "/protocol/oid4vc/credential";
+        String expectedNonceEndpoint = expectedIssuer + "/protocol/oid4vc/" + OID4VCIssuerEndpoint.NONCE_PATH;
         final String expectedAuthorizationServer = expectedIssuer;
         testingClient
                 .server(TEST_REALM_NAME)
@@ -239,6 +329,9 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                     CredentialIssuer credentialIssuer = (CredentialIssuer) issuerConfig;
                     assertEquals("The correct issuer should be included.", expectedIssuer, credentialIssuer.getCredentialIssuer());
                     assertEquals("The correct credentials endpoint should be included.", expectedCredentialsEndpoint, credentialIssuer.getCredentialEndpoint());
+                    assertEquals("The correct nonce endpoint should be included.",
+                                 expectedNonceEndpoint,
+                                 credentialIssuer.getNonceEndpoint());
                     assertEquals("Since the authorization server is equal to the issuer, just 1 should be returned.", 1, credentialIssuer.getAuthorizationServers().size());
                     assertEquals("The expected server should have been returned.", expectedAuthorizationServer, credentialIssuer.getAuthorizationServers().get(0));
                     assertTrue("The test-credential should be supported.", credentialIssuer.getCredentialsSupported().containsKey("test-credential"));
