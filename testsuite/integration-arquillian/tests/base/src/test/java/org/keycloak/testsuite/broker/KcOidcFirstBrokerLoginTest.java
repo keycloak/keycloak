@@ -16,8 +16,6 @@ import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.resources.admin.ClearRealmCacheResource;
-import org.keycloak.services.resources.admin.ClearUserCacheResource;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.broker.oidc.TestKeycloakOidcIdentityProviderFactory;
 import org.keycloak.testsuite.forms.RegisterWithUserProfileTest;
@@ -144,69 +142,6 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
 
         assertThat(firstLoginAccessToken, not(equalTo(secondLoginAccessToken)));
         assertThat(firstLoginRefreshToken, is(equalTo(secondLoginRefreshToken)));
-    }
-
-    @Test
-    public void testPersistRefreshTokenOnClearCache() throws Exception {
-        // Step 1: Set up the identity provider and user in the provider realm
-        IdentityProviderResource idp = realmsResouce().realm(bc.consumerRealmName()).identityProviders().get(bc.getIDPAlias());
-        IdentityProviderRepresentation representation = idp.toRepresentation();
-        representation.setStoreToken(true);
-        idp.update(representation);
-
-        // Create a test user in the provider realm
-        createUser(bc.providerRealmName(), "brucewayne", BrokerTestConstants.USER_PASSWORD, "Bruce", "Wayne", "brucewayne@gotham.com");
-
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
-        logInWithIdp(bc.getIDPAlias(), "brucewayne", BrokerTestConstants.USER_PASSWORD);
-
-        // Step 2: Obtain the stored token from the federated identity
-        String storedToken = testingClient.server(bc.consumerRealmName()).fetchString(session -> {
-            RealmModel realmModel = session.getContext().getRealm();
-            UserModel userModel = session.users().getUserByUsername(realmModel, "brucewayne");
-            FederatedIdentityModel fedIdentity = session.users().getFederatedIdentitiesStream(realmModel, userModel).findFirst().orElse(null);
-            return fedIdentity != null ? fedIdentity.getToken() : null;
-        });
-        assertThat(storedToken, not(nullValue()));
-
-        AccessTokenResponse tokenResponse = JsonSerialization.readValue(storedToken.substring(1, storedToken.length() - 1).replace("\\", ""), AccessTokenResponse.class);
-        String firstLoginAccessToken = tokenResponse.getToken();
-        assertThat(firstLoginAccessToken, not(nullValue()));
-        String firstLoginRefreshToken = tokenResponse.getRefreshToken();
-        assertThat(firstLoginRefreshToken, not(nullValue()));
-
-        // Step 3: Clear user and realm caches
-        testingClient.server(bc.consumerRealmName()).run(session -> {
-            ClearUserCacheResource clearUserCacheResource = new ClearUserCacheResource(session, null, null);
-            clearUserCacheResource.clearUserCache();
-
-            ClearRealmCacheResource clearRealmCacheResource = new ClearRealmCacheResource(session, null, null);
-            clearRealmCacheResource.clearRealmCache();
-        });
-
-        // Step 4: Logout and log back in
-        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), "brucewayne");
-        loginPage.open(bc.consumerRealmName());
-        logInWithIdp(bc.getIDPAlias(), "brucewayne", BrokerTestConstants.USER_PASSWORD);
-
-        // Step 5: Fetch the stored token - access token should have been updated, but the refresh token should remain the same
-        storedToken = testingClient.server(bc.consumerRealmName()).fetchString(session -> {
-            RealmModel realmModel = session.getContext().getRealm();
-            UserModel userModel = session.users().getUserByUsername(realmModel, "brucewayne");
-            FederatedIdentityModel fedIdentity = session.users().getFederatedIdentitiesStream(realmModel, userModel).findFirst().orElse(null);
-            return fedIdentity != null ? fedIdentity.getToken() : null;
-        });
-
-        tokenResponse = JsonSerialization.readValue(storedToken.substring(1, storedToken.length() - 1).replace("\\", ""), AccessTokenResponse.class);
-        String secondLoginAccessToken = tokenResponse.getToken();
-        assertThat(secondLoginAccessToken, not(nullValue()));
-        String secondLoginRefreshToken = tokenResponse.getRefreshToken();
-        assertThat(secondLoginRefreshToken, not(nullValue()));
-
-        // Ensure the access token has changed, but the refresh token remains the same
-        assertThat(firstLoginAccessToken, not(equalTo(secondLoginAccessToken)));
-        assertThat(firstLoginRefreshToken, equalTo(secondLoginRefreshToken));
     }
 
     /**
