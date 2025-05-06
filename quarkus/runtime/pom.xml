@@ -135,6 +135,11 @@
             <artifactId>rdf-urdna</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+        </dependency>
+
         <!-- SmallRye -->
         <dependency>
             <groupId>io.smallrye.config</groupId>
@@ -386,6 +391,17 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-rest-admin-ui-ext</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-api</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
