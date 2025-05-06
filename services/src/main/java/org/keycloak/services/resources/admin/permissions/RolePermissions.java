@@ -28,7 +28,6 @@ import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
@@ -150,7 +149,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         return root.resourceServer(client);
     }
 
-    boolean checkAdminRoles(RoleModel role) {
+    private boolean checkAdminRoles(RoleModel role) {
         if (AdminRoles.ALL_ROLES.contains(role.getName())) {
             if (root.admin().hasRole(role)) return true;
 
@@ -244,7 +243,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
                     } else {
                         return true;
                     }
-                } else if (role.getName().equals(ImpersonationConstants.IMPERSONATION_ROLE)) {
+                } else if (role.getName().equals(AdminRoles.IMPERSONATION)) {
                     if (!root.users().canImpersonate()) {
                         return adminConflictMessage(role);
                     } else {

@@ -38,6 +38,7 @@ public class MediaType {
     public static final jakarta.ws.rs.core.MediaType APPLICATION_FORM_URLENCODED_TYPE = jakarta.ws.rs.core.MediaType.APPLICATION_FORM_URLENCODED_TYPE;
 
     public static final String APPLICATION_JWT = "application/jwt";
+    public static final String APPLICATION_JWKS = "application/jwk-set+json";
     public static final jakarta.ws.rs.core.MediaType APPLICATION_JWT_TYPE = new jakarta.ws.rs.core.MediaType("application", "jwt");
 
     public static final String APPLICATION_XML = jakarta.ws.rs.core.MediaType.APPLICATION_XML;

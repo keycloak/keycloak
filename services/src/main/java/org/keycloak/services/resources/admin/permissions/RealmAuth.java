@@ -19,7 +19,6 @@ package org.keycloak.services.resources.admin.permissions;
 
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.services.resources.admin.AdminAuth;
 
 import jakarta.ws.rs.ForbiddenException;
@@ -111,7 +110,7 @@ class RealmAuth {
             case IDENTITY_PROVIDER:
                 return AdminRoles.MANAGE_IDENTITY_PROVIDERS;
             case IMPERSONATION:
-                return ImpersonationConstants.IMPERSONATION_ROLE;
+                return AdminRoles.IMPERSONATION;
             case AUTHORIZATION:
                 return AdminRoles.MANAGE_AUTHORIZATION;
             default:
