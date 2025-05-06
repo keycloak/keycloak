@@ -18,6 +18,7 @@ package org.keycloak.broker.oidc;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import jakarta.ws.rs.WebApplicationException;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -57,6 +58,7 @@ import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -306,6 +308,48 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 .param(OAUTH2_GRANT_TYPE_REFRESH_TOKEN, refreshToken)
                 .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_REFRESH_TOKEN);
         return authenticateTokenRequest(refreshTokenRequest);
+    }
+
+    @Override
+    public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity) {
+        try {
+            AccessTokenResponse previousResponse = JsonSerialization.readValue(identity.getToken(), AccessTokenResponse.class);
+            Integer exp = (Integer) previousResponse.getOtherClaims().get(ACCESS_TOKEN_EXPIRATION);
+            if ((exp == null || exp < Time.currentTime()) && previousResponse.getRefreshToken() != null) {
+                try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
+                    SimpleHttp refreshTokenRequest = getRefreshTokenRequest(session, previousResponse.getRefreshToken(), getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret()));
+                    try (SimpleHttp.Response refreshTokenResponse = refreshTokenRequest.asResponse()) {
+                        if (refreshTokenResponse.getStatus() < 200 || refreshTokenResponse.getStatus() > 299) {
+                            ErrorRepresentation error = new ErrorRepresentation();
+                            error.setErrorMessage("Unable to refresh token");
+                            throw new WebApplicationException("Received and response code " + refreshTokenResponse.getStatus() +
+                                                              " with a response '" + refreshTokenResponse.asString() +"'",
+                                    Response.status(Response.Status.BAD_GATEWAY).entity(error).type(MediaType.APPLICATION_JSON).build());
+                        }
+                        AccessTokenResponse newResponse = refreshTokenResponse.asJson(AccessTokenResponse.class);
+
+                        if (newResponse.getRefreshToken() == null && previousResponse.getRefreshToken() != null) {
+                            newResponse.setRefreshToken(previousResponse.getRefreshToken());
+                            newResponse.setRefreshExpiresIn(previousResponse.getRefreshExpiresIn());
+                        }
+                        if (newResponse.getIdToken() == null && previousResponse.getIdToken() != null) {
+                            newResponse.setIdToken(previousResponse.getIdToken());
+                        }
+                        if (newResponse.getExpiresIn() > 0) {
+                            int accessTokenExpiration = Time.currentTime() + (int) newResponse.getExpiresIn();
+                            newResponse.getOtherClaims().put(ACCESS_TOKEN_EXPIRATION, accessTokenExpiration);
+                        }
+                        identity.setToken(JsonSerialization.writeValueAsString(newResponse));
+                    }
+                }
+            }
+        } catch (IOException e) {
+            ErrorRepresentation error = new ErrorRepresentation();
+            error.setErrorMessage("Unable to refresh token");
+            throw new WebApplicationException("Unable to refresh token", e,
+                    Response.status(Response.Status.BAD_GATEWAY).entity(error).type(MediaType.APPLICATION_JSON).build());
+        }
+        return super.retrieveToken(session, identity);
     }
 
     @Override
