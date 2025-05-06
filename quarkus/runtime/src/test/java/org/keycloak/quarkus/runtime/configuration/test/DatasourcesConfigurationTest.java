@@ -139,13 +139,13 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
     public void datasourceEnabled() {
         ConfigArgsConfigSource.setCliArgs("");
         initConfig();
-        assertConfig("db-enabled-store", "true");
+        assertConfig("db-active-store", "true");
         assertExternalConfig("quarkus.datasource.\"store\".active", "true");
         onAfter();
 
-        ConfigArgsConfigSource.setCliArgs("--db-enabled-store=false");
+        ConfigArgsConfigSource.setCliArgs("--db-active-store=false");
         initConfig();
-        assertConfig("db-enabled-store", "false");
+        assertConfig("db-active-store", "false");
         assertExternalConfig("quarkus.datasource.\"store\".active", "false");
     }
 
