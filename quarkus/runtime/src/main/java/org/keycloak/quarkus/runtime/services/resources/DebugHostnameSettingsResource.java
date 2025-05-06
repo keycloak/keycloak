@@ -147,7 +147,7 @@ public class DebugHostnameSettingsResource {
                     new URL(Configuration.getKcConfigValue(HostnameV2Options.HOSTNAME.getKey()).getValue());
                     // a full url is ok
                 } catch (MalformedURLException e) {
-                    text = "Default origin check failing. Please check you proxy settings.";
+                    text = "Default origin check failing, request hostname does not match frontend hostname. Please check you proxy settings.";
                     if (!keycloakSession.getContext().getHttpRequest().isProxyTrusted()) {
                         text += " Note the proxy is not trusted.";
                     }
