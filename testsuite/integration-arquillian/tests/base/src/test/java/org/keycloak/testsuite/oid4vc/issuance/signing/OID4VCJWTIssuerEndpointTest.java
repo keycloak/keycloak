@@ -69,7 +69,6 @@ import static org.junit.Assert.fail;
  * Test from org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCIssuerEndpointTest
  */
 public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
-
     // ----- getCredentialOfferUri
 
     @Test(expected = BadRequestException.class)

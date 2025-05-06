@@ -38,6 +38,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -129,6 +130,9 @@ public class OID4VCIssuerEndpoint {
     // lifespan of the preAuthorizedCodes in seconds
     private final int preAuthorizedCodeLifeSpan;
 
+    // constant for the OID4VCI enabled attribute key
+    private static final String OID4VCI_ENABLED_ATTRIBUTE_KEY = "oid4vci.enabled";
+
     /**
      * Credential builders are responsible for initiating the production of
      * credentials in a specific format. Their output is an appropriate credential
@@ -199,6 +203,34 @@ public class OID4VCIssuerEndpoint {
     }
 
     /**
+     * Validates whether the authenticated client is enabled for OID4VCI features.
+     * <p>
+     * If the client is not enabled, this method logs the status and throws a
+     * {@link CorsErrorResponseException} with an appropriate error message.
+     * </p>
+     *
+     * @throws CorsErrorResponseException if the client is not enabled for OID4VCI.
+     */
+    private void checkClientEnabled() {
+        AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession();
+        ClientModel client = clientSession.getClient();
+
+        boolean oid4vciEnabled = Boolean.parseBoolean(client.getAttributes().get(OID4VCI_ENABLED_ATTRIBUTE_KEY));
+
+        if (!oid4vciEnabled) {
+            LOGGER.debugf("Client '%s' is not enabled for OID4VCI features.", client.getClientId());
+            throw new CorsErrorResponseException(
+                    cors,
+                    Errors.INVALID_CLIENT,
+                    "Client not enabled for OID4VCI",
+                    Response.Status.FORBIDDEN
+            );
+        }
+
+        LOGGER.debugf("Client '%s' is enabled for OID4VCI features.", client.getClientId());
+    }
+
+    /**
      * Provides the URI to the OID4VCI compliant credentials offer
      */
     @GET
@@ -207,6 +239,15 @@ public class OID4VCIssuerEndpoint {
     public Response getCredentialOfferURI(@QueryParam("credential_configuration_id") String vcId, @QueryParam("type") @DefaultValue("uri") OfferUriType type, @QueryParam("width") @DefaultValue("200") int width, @QueryParam("height") @DefaultValue("200") int height) {
 
         AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession();
+
+        // Initialize CORS configuration and validate if the client is enabled for OID4VCI
+        cors = Cors.builder()
+                .auth()
+                .allowedMethods("GET")
+                .auth()
+                .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
+
+        checkClientEnabled();
 
         Map<String, SupportedCredentialConfiguration> credentialsMap = OID4VCIssuerWellKnownProvider.getSupportedCredentials(session);
         LOGGER.debugf("Get an offer for %s", vcId);
@@ -324,6 +365,9 @@ public class OID4VCIssuerEndpoint {
 
         // do first to fail fast on auth
         AuthenticationManager.AuthResult authResult = getAuthResult();
+
+        // checkClientEnabled call after authentication
+        checkClientEnabled();
 
         if (!isIgnoreScopeCheck) {
             checkScope(credentialRequestVO);
