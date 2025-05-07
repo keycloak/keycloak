@@ -51,7 +51,6 @@ export const KeyValueInput = ({
   } = useFormContext();
 
   const { fields, append, remove } = useFieldArray({
-    shouldUnregister: true,
     control,
     name,
   });
