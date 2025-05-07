@@ -1,6 +1,8 @@
 package org.keycloak.services.client;
 
 import jakarta.ws.rs.core.Response;
+
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.mapper.ClientModelMapper;
@@ -22,24 +24,15 @@ public class DefaultClientService implements ClientService {
     }
 
     @Override
-    public Optional<ClientRepresentation> getClient(RealmModel realm, String clientId) {
+    public Optional<ClientRepresentation> getClient(RealmModel realm, String clientId,
+            ClientProjectionOptions projectionOptions) {
         return Optional.ofNullable(realm.getClientByClientId(clientId)).map(mapper::fromModel);
     }
 
     @Override
-    public Optional<ClientRepresentation> getClient(RealmModel realm, String clientId, Boolean fullRepresentation) {
-        // TODO reduced client rep
-        return fullRepresentation != null && fullRepresentation ? getClient(realm, clientId) : Optional.of(getTestReducedClientRep(clientId));
-    }
-
-    @Override
-    public Stream<ClientRepresentation> getClients(RealmModel realm) {
+    public Stream<ClientRepresentation> getClients(RealmModel realm, ClientProjectionOptions projectionOptions,
+            ClientSearchOptions searchOptions, ClientSortAndSliceOptions sortAndSliceOptions) {
         return realm.getClientsStream().map(mapper::fromModel);
-    }
-
-    @Override
-    public ClientRepresentation createOrUpdateClient(RealmModel realm, ClientRepresentation client) throws ServiceException {
-        return null; // TODO
     }
 
     @Override
@@ -49,6 +42,30 @@ public class DefaultClientService implements ClientService {
         }
 
         var model = realm.addClient(client.getClientId());
+        // TODO: overlay model
+        return mapper.fromModel(model);
+    }
+
+    @Override
+    public ClientRepresentation deleteClient(RealmModel realm, String clientId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Stream<ClientRepresentation> deleteClients(RealmModel realm, ClientSearchOptions searchOptions) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public ClientRepresentation updateClient(RealmModel realm, ClientRepresentation client) throws ServiceException {
+        ClientModel model = realm.getClientByClientId(client.getClientId());
+        if (model == null) {
+            throw new ServiceException("Client does not exist", Response.Status.NOT_FOUND);
+        }
+
+        // TODO: overlay model
         return mapper.fromModel(model);
     }
 
@@ -57,8 +74,4 @@ public class DefaultClientService implements ClientService {
 
     }
 
-    // TODO tested reduced client representation
-    private static ClientRepresentation getTestReducedClientRep(String clientId) {
-        return new ClientRepresentation(clientId);
-    }
 }
