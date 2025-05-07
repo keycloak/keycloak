@@ -64,6 +64,9 @@ public final class JGroupsConfigurator {
     private static final String TLS_PROTOCOL_VERSION = "TLSv1.3";
     private static final String TLS_PROTOCOL = "TLS";
 
+    private static final String KUBERNETES_STACK = "kubernetes";
+    private static final String KUBERNETES_PATCHED_STACK = "kubernetes-patched";
+
     private JGroupsConfigurator() {
     }
 
@@ -88,6 +91,25 @@ public final class JGroupsConfigurator {
         configureDiscovery(holder, session);
         configureTls(holder, session);
         warnDeprecatedStack(holder);
+        patchKubernetesStack(holder);
+    }
+
+    /**
+     * Patch for <a href="https://github.com/keycloak/keycloak/issues/39023">GHI#39023</a> and <a
+     * href="https://github.com/keycloak/keycloak/issues/39454">GHI#39454</a>
+     */
+    private static void patchKubernetesStack(ConfigurationBuilderHolder holder) {
+        var stackXmlAttribute = transportStackOf(holder);
+        if (!Objects.equals(KUBERNETES_STACK, stackXmlAttribute.get())) {
+            // not the kubernetes stack
+            return;
+        }
+        logger.info("[PATCH] Patching kubernetes stack.");
+        // patch port range
+        var attributes = Map.of("port_range", "0");
+        var patch = List.of(new ProtocolConfiguration("TCP", attributes));
+        holder.addJGroupsStack(new EmbeddedJGroupsChannelConfigurator(KUBERNETES_PATCHED_STACK, patch, null), KUBERNETES_STACK);
+        transportOf(holder).stack(KUBERNETES_PATCHED_STACK);
     }
 
     /**
