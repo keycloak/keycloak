@@ -17,18 +17,17 @@
 package org.keycloak.quarkus.runtime.services.resources;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
+import java.util.stream.Stream;
 
 import org.keycloak.common.util.UriUtils;
-import org.keycloak.config.HostnameV2Options;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.quarkus.runtime.Environment;
@@ -40,6 +39,7 @@ import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
+import org.keycloak.utils.SecureContextResolver;
 
 import io.quarkus.resteasy.reactive.server.EndpointDisabled;
 import jakarta.ws.rs.DefaultValue;
@@ -140,20 +140,17 @@ public class DebugHostnameSettingsResource {
         if (frontEnd) {
             boolean originMatches = requestOrigin.equals(UriUtils.getOrigin(frontendUri));
             HttpHeaders requestHeaders = keycloakSession.getContext().getRequestHeaders();
-            boolean proxied = requestHeaders.getHeaderString("Forwarded") != null || requestHeaders.getHeaderString("X-Forwarded-For") != null;
+            boolean fowarded = requestHeaders.getHeaderString(ConstantsDebugHostname.FORWARDED_PROXY_HEADER) != null;
+            boolean xfowarded = Stream.of(ConstantsDebugHostname.X_FORWARDED_PROXY_HEADERS)
+                    .map(requestHeaders::getHeaderString).anyMatch(Objects::nonNull);
 
             if (!originMatches) { // might fail CORS checks
-                try {
-                    new URL(Configuration.getKcConfigValue(HostnameV2Options.HOSTNAME.getKey()).getValue());
-                    // a full url is ok
-                } catch (MalformedURLException e) {
-                    text = "Default origin check failing, request hostname does not match frontend hostname. Please check you proxy settings.";
-                    if (!keycloakSession.getContext().getHttpRequest().isProxyTrusted()) {
-                        text += " Note the proxy is not trusted.";
-                    }
-                    if (!proxied) {
-                        text += " No proxy headers are set on the request.";
-                    }
+                text = "Default origin check failing, request hostname does not match frontend hostname. Please check you proxy settings.";
+                if (!keycloakSession.getContext().getHttpRequest().isProxyTrusted()) {
+                    text += " Note the proxy is not trusted.";
+                }
+                if (!fowarded && !xfowarded) {
+                    text += " No proxy headers are set on the request.";
                 }
             }
 
@@ -164,6 +161,8 @@ public class DebugHostnameSettingsResource {
 
                 // TODO: not sure if there is great way to do this. Would likely need to check that a connection to the frontend uses the same
                 // cert as what is coming in on this request
+            } else if (!SecureContextResolver.isSecureContext(keycloakSession)) {
+                text += " Non-secure context detected - Keycloak will not function properly when accessed over http at a non-localhost host.";
             }
         }
 
@@ -179,7 +178,6 @@ public class DebugHostnameSettingsResource {
             this.allConfigPropertiesMap.put(key, rawValue);
         }
     }
-
 
     private Map<String, String> getHeaders() {
         Map<String, String> headers = new TreeMap<>();
