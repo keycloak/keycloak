@@ -8,7 +8,8 @@
       <ul class="${properties.kcFormSocialAccountListClass!} <#if social.providers?size gt 3>${properties.kcFormSocialAccountListGridClass!}</#if>">
           <#list social.providers as p>
               <li class="${properties.kcFormSocialAccountListItemClass!}">
-                  <a id="social-${p.alias}" class="${properties.kcFormSocialAccountListButtonClass!} <#if social.providers?size gt 3>${properties.kcFormSocialAccountGridItem!}</#if>" aria-label="${p.displayName}"
+                  <a data-once-link id="social-${p.alias}" data-disabled-class="${properties.kcFormSocialAccountListButtonDisabledClass!}"
+                          class="${properties.kcFormSocialAccountListButtonClass!} <#if social.providers?size gt 3>${properties.kcFormSocialAccountGridItem!}</#if>" aria-label="${p.displayName}"
                           type="button" href="${p.loginUrl}">
                       <#if p.iconClasses?has_content>
                           <#switch p.alias>
