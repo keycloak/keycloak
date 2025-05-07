@@ -55,14 +55,14 @@ public final class HostnameV2PropertyMappers {
         boolean isProd = Environment.PROD_PROFILE_VALUE.equals(org.keycloak.common.util.Environment.getProfile());
         boolean httpsEnabled = HttpPropertyMappers.isHttpsEnabled();
         String host = Configuration.getConfigValue(HostnameV2Options.HOSTNAME).getValue();
-        if (host != null && validateFullHostname(httpsEnabled, isProd, host, warn)) {
+        String proxyHeaders = Configuration.getConfigValue(ProxyOptions.PROXY_HEADERS).getValue();
+        if (host != null && validateFullHostname(httpsEnabled, isProd, host, proxyHeaders, warn)) {
             return;
         }
         if (httpsEnabled) {
             return; // must be re-encrypt or passthrough. if passthrough, proxy headers must not be set
         }
         // should be edge
-        String proxyHeaders = Configuration.getConfigValue(ProxyOptions.PROXY_HEADERS).getValue();
         if (proxyHeaders != null) {
             return;
         }
@@ -76,20 +76,28 @@ public final class HostnameV2PropertyMappers {
         }
     }
 
-    static boolean validateFullHostname(boolean httpsEnabled, boolean isProd, String host, Consumer<String> warn) {
+    static boolean validateFullHostname(boolean httpsEnabled, boolean isProd, String host, String proxyHeaders, Consumer<String> warn) {
         try {
             URL url = new URL(host);
 
-            if (!url.getProtocol().toUpperCase().equals("HTTPS") && isProd) {
-                if (!SecureContextResolver.isLocal(url.getHost())) {
-                    warn.accept("Likely misconfiguration detected. `hostname` is configured to use HTTP instead of HTTPS, " + CONTEXT_WARNING);
+            if (!url.getProtocol().toUpperCase().equals("HTTPS")) {
+                if (isProd) {
+                    if (!SecureContextResolver.isLocal(url.getHost())) {
+                        warn.accept("Likely misconfiguration detected. `hostname` is configured to use HTTP instead of HTTPS, " + CONTEXT_WARNING);
 
-                    // TODO: any hostname-admin specific validation?
+                        // TODO: any hostname-admin specific validation?
 
-                } // else warn on prod?
-                if (httpsEnabled) {
-                    warn.accept("Likely misconfiguration detected. HTTPS is enabled on the server, but `hostname` specifies HTTP.");
+                    } // else warn on prod?
+                    if (httpsEnabled) {
+                        warn.accept("Likely misconfiguration detected. HTTPS is enabled on the server, but `hostname` specifies HTTP.");
+                    }
                 }
+            } else if (proxyHeaders == null) {
+                if (!httpsEnabled) {
+                    // edge case
+                    warn.accept("Likely misconfiguration detected. When using an edge proxy, you must use `proxy-headers`.");
+                }
+                // else might be allowable if HOST is overwritten
             }
 
             return true;
