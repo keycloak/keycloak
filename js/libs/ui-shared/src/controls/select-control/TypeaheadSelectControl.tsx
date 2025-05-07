@@ -24,6 +24,7 @@ import {
 import { getRuleValue } from "../../utils/getRuleValue";
 import { FormLabel } from "../FormLabel";
 import {
+  OptionType,
   SelectControlOption,
   SelectControlProps,
   SelectVariant,
@@ -65,22 +66,19 @@ export const TypeaheadSelectControl = <
   const required = getRuleValue(controller.rules?.required) === true;
   const isTypeaheadMulti = variant === SelectVariant.typeaheadMulti;
 
-  const filteredOptions = options.filter((option) =>
-    getValue(option).toLowerCase().startsWith(filterValue.toLowerCase()),
+  const combinedOptions = useMemo(
+    () =>
+      [
+        ...options.filter(
+          (o) => !selectedOptions.map((o) => getValue(o)).includes(getValue(o)),
+        ),
+        ...selectedOptions,
+      ] as OptionType,
+    [selectedOptions, options],
   );
 
-  const convert = useMemo(
-    () =>
-      filteredOptions.map((option, index) => (
-        <SelectOption
-          key={key(option)}
-          value={key(option)}
-          isFocused={focusedItemIndex === index}
-        >
-          {getValue(option)}
-        </SelectOption>
-      )),
-    [focusedItemIndex, filteredOptions],
+  const filteredOptions = combinedOptions.filter((option) =>
+    getValue(option).toLowerCase().startsWith(filterValue.toLowerCase()),
   );
 
   const updateValue = (
@@ -96,10 +94,10 @@ export const TypeaheadSelectControl = <
       }
     } else {
       field.onChange([...field.value, option]);
-      if (isSelectBasedOptions(options)) {
+      if (isSelectBasedOptions(combinedOptions)) {
         setSelectedOptions([
           ...selectedOptionsState,
-          options.find((o) => o.key === option)!,
+          combinedOptions.find((o) => o.key === option)!,
         ]);
       }
     }
@@ -187,8 +185,8 @@ export const TypeaheadSelectControl = <
             {...rest}
             onOpenChange={() => setOpen(false)}
             selected={
-              isSelectBasedOptions(options)
-                ? options
+              isSelectBasedOptions(combinedOptions)
+                ? combinedOptions
                     .filter((o) =>
                       Array.isArray(field.value)
                         ? field.value.includes(o.key)
@@ -216,8 +214,8 @@ export const TypeaheadSelectControl = <
                     placeholder={placeholderText}
                     value={
                       variant === SelectVariant.typeahead && field.value
-                        ? isSelectBasedOptions(options)
-                          ? options.find(
+                        ? isSelectBasedOptions(combinedOptions)
+                          ? combinedOptions.find(
                               (o) =>
                                 o.key ===
                                 (Array.isArray(field.value)
@@ -255,11 +253,10 @@ export const TypeaheadSelectControl = <
                                   );
                                 }}
                               >
-                                {isSelectBasedOptions(options)
+                                {isSelectBasedOptions(combinedOptions)
                                   ? [
-                                      ...options,
+                                      ...combinedOptions,
                                       ...selectedOptionsState,
-                                      ...selectedOptions,
                                     ].find((o) => selection === o.key)?.value
                                   : getValue(selection)}
                               </Chip>
@@ -299,7 +296,18 @@ export const TypeaheadSelectControl = <
             }}
             isOpen={open}
           >
-            <SelectList>{convert}</SelectList>
+            <SelectList>
+              {filteredOptions.map((option, index) => (
+                <SelectOption
+                  key={key(option)}
+                  value={key(option)}
+                  isFocused={focusedItemIndex === index}
+                  isActive={field.value.includes(getValue(option))}
+                >
+                  {getValue(option)}
+                </SelectOption>
+              ))}
+            </SelectList>
           </Select>
         )}
       />
