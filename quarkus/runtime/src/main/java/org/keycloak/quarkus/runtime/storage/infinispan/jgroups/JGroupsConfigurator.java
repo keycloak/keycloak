@@ -19,6 +19,7 @@ package org.keycloak.quarkus.runtime.storage.infinispan.jgroups;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.keycloak.config.CachingOptions;
@@ -29,6 +30,9 @@ import org.keycloak.quarkus.runtime.storage.infinispan.CacheManagerFactory;
 import org.keycloak.quarkus.runtime.storage.infinispan.jgroups.impl.FileJGroupsTlsConfigurator;
 import org.keycloak.quarkus.runtime.storage.infinispan.jgroups.impl.JGroupsJdbcPingStackConfigurator;
 import org.keycloak.quarkus.runtime.storage.infinispan.jgroups.impl.JpaJGroupsTlsConfigurator;
+import org.keycloak.quarkus.runtime.storage.infinispan.jgroups.impl.KubernetesPatchConfigurator;
+
+import static org.keycloak.quarkus.runtime.storage.infinispan.jgroups.JGroupsUtil.transportStackOf;
 
 /**
  * Configures the JGroups stacks before starting Infinispan.
@@ -76,6 +80,19 @@ public class JGroupsConfigurator {
         configurator.add(FileJGroupsTlsConfigurator.INSTANCE);
     }
 
+    /**
+     * Patch for <a href="https://github.com/keycloak/keycloak/issues/39023">GHI#39023</a> and <a
+     * href="https://github.com/keycloak/keycloak/issues/39454">GHI#39454</a>
+     */
+    private static void createKubernetesPatchConfigurator(ConfigurationBuilderHolder holder, List<JGroupsStackConfigurator> configurator) {
+        var stackXmlAttribute = transportStackOf(holder);
+        if (!Objects.equals(KubernetesPatchConfigurator.KUBERNETES_STACK, stackXmlAttribute.get())) {
+            // not the kubernetes stack
+            return;
+        }
+        configurator.add(KubernetesPatchConfigurator.INSTANCE);
+    }
+
     private static boolean isLocal(ConfigurationBuilderHolder holder) {
         return JGroupsUtil.transportOf(holder) == null;
     }
@@ -87,9 +104,10 @@ public class JGroupsConfigurator {
         }
         // Configure stack from CLI options to Global Configuration
         Configuration.getOptionalKcValue(CachingOptions.CACHE_STACK).ifPresent(JGroupsUtil.transportOf(holder)::stack);
-        var configurator = new ArrayList<JGroupsStackConfigurator>(2);
+        var configurator = new ArrayList<JGroupsStackConfigurator>(3);
         createJdbcPingConfigurator(holder, configurator);
         createTlsConfigurator(configurator);
+        createKubernetesPatchConfigurator(holder, configurator);
         return new JGroupsConfigurator(holder, List.copyOf(configurator));
     }
 
