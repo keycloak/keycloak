@@ -10,13 +10,26 @@ import java.util.stream.Stream;
 
 public interface ClientService extends Service {
 
-    Optional<ClientRepresentation> getClient(RealmModel realm, String clientId);
+    public static class ClientSearchOptions {
+        // TODO
+    }
 
-    Optional<ClientRepresentation> getClient(RealmModel realm, String clientId, Boolean fullRepresentation);
+    public static class ClientProjectionOptions {
+        Boolean fullRepresentation;
 
-    Stream<ClientRepresentation> getClients(RealmModel realm);
+        // TODO
+    }
 
-    ClientRepresentation createOrUpdateClient(RealmModel realm, ClientRepresentation client) throws ServiceException;
+    Optional<ClientRepresentation> getClient(RealmModel realm, String clientId, ClientProjectionOptions projectionOptions);
+
+    Stream<ClientRepresentation> getClients(RealmModel realm, ClientProjectionOptions projectionOptions, ClientSearchOptions searchOptions);
+
+    ClientRepresentation deleteClient(RealmModel realm, String clientId);
+
+    Stream<ClientRepresentation> deleteClients(RealmModel realm, ClientSearchOptions searchOptions);
+
+    ClientRepresentation createOrUpdateClient(RealmModel realm, String clientId, ClientRepresentation client) throws ServiceException;
 
     ClientRepresentation createClient(RealmModel realm, ClientRepresentation client) throws ServiceException;
+
 }
