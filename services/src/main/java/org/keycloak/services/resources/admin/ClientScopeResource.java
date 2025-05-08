@@ -37,6 +37,9 @@ import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.saml.common.util.StringUtil;
 import org.keycloak.services.ErrorResponse;
@@ -54,6 +57,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
@@ -230,8 +234,12 @@ public class ClientScopeResource {
         }
     }
 
-    public static void validateClientScopeProtocol(String protocol)throws ErrorResponseException{
-        if(protocol==null || (!protocol.equals("openid-connect") && !protocol.equals("saml"))) throw ErrorResponse.error("Unexpected protocol",Response.Status.BAD_REQUEST);
+    public static void validateClientScopeProtocol(String protocol) throws ErrorResponseException {
+        if (protocol == null || !List.of(OIDCLoginProtocol.LOGIN_PROTOCOL, /* openid-connect */
+                                         SamlProtocol.LOGIN_PROTOCOL, /* saml */
+                                         OID4VCLoginProtocolFactory.PROTOCOL_ID /* oid4vc */).contains(protocol)) {
+            throw ErrorResponse.error("Unexpected protocol", Response.Status.BAD_REQUEST);
+        }
     }
     /**
      * Makes sure that an update that makes a Client Scope Dynamic is rejected if the Client Scope is assigned to a client

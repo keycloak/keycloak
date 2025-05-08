@@ -48,6 +48,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
 import java.util.stream.Stream;
 
 /**
@@ -119,7 +120,7 @@ public class ClientScopesResource {
         ClientScopeResource.validateClientScopeProtocol(rep.getProtocol());
         ClientScopeResource.validateDynamicClientScope(rep);
         try {
-            ClientScopeModel clientModel = RepresentationToModel.createClientScope(session, realm, rep);
+            ClientScopeModel clientModel = RepresentationToModel.createClientScope(realm, rep);
 
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), clientModel.getId()).representation(rep).success();
 
