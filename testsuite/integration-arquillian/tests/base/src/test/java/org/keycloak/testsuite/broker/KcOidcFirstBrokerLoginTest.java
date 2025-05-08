@@ -181,7 +181,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
             return session.getProvider(UserProvider.class, JpaRealmProviderFactory.PROVIDER_ID).getFederatedIdentity(realm, user, idpAlias).getToken();
         }, String.class);
 
-        setTimeOffset(externalTokens.getExpiresIn() + 10);
+        setTimeOffset(externalTokens.getExpiresIn() - IdentityProviderModel.DEFAULT_MIN_VALIDITY_TOKEN + 1);
 
         internalTokens = oauth
                 .doRefreshTokenRequest(internalTokens.getRefreshToken());
@@ -233,8 +233,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         representation.getConfig().put("clientSecret", "wrongpassword");
         idp.update(representation);
 
-        internalTokens = oauth
-                .doRefreshTokenRequest(internalTokens.getRefreshToken());
+        internalTokens = oauth.doRefreshTokenRequest(internalTokens.getRefreshToken());
         assertEquals(200, internalTokens.getStatusCode());
         org.keycloak.testsuite.util.oauth.AccessTokenResponse error = oauth.doFetchExternalIdpToken(bc.getIDPAlias(), internalTokens.getAccessToken());
         assertEquals(502, error.getStatusCode());
