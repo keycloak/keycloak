@@ -315,33 +315,13 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         try {
             AccessTokenResponse previousResponse = JsonSerialization.readValue(identity.getToken(), AccessTokenResponse.class);
             Integer exp = (Integer) previousResponse.getOtherClaims().get(ACCESS_TOKEN_EXPIRATION);
-            if ((exp == null || exp < Time.currentTime()) && previousResponse.getRefreshToken() != null) {
-                try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
-                    SimpleHttp refreshTokenRequest = getRefreshTokenRequest(session, previousResponse.getRefreshToken(), getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret()));
-                    try (SimpleHttp.Response refreshTokenResponse = refreshTokenRequest.asResponse()) {
-                        if (refreshTokenResponse.getStatus() < 200 || refreshTokenResponse.getStatus() > 299) {
-                            ErrorRepresentation error = new ErrorRepresentation();
-                            error.setErrorMessage("Unable to refresh token");
-                            throw new WebApplicationException("Received and response code " + refreshTokenResponse.getStatus() +
-                                                              " with a response '" + refreshTokenResponse.asString() +"'",
-                                    Response.status(Response.Status.BAD_GATEWAY).entity(error).type(MediaType.APPLICATION_JSON).build());
-                        }
-                        AccessTokenResponse newResponse = refreshTokenResponse.asJson(AccessTokenResponse.class);
-
-                        if (newResponse.getRefreshToken() == null && previousResponse.getRefreshToken() != null) {
-                            newResponse.setRefreshToken(previousResponse.getRefreshToken());
-                            newResponse.setRefreshExpiresIn(previousResponse.getRefreshExpiresIn());
-                        }
-                        if (newResponse.getIdToken() == null && previousResponse.getIdToken() != null) {
-                            newResponse.setIdToken(previousResponse.getIdToken());
-                        }
-                        if (newResponse.getExpiresIn() > 0) {
-                            int accessTokenExpiration = Time.currentTime() + (int) newResponse.getExpiresIn();
-                            newResponse.getOtherClaims().put(ACCESS_TOKEN_EXPIRATION, accessTokenExpiration);
-                        }
-                        identity.setToken(JsonSerialization.writeValueAsString(newResponse));
-                    }
+            if (needsRefresh(exp) && previousResponse.getRefreshToken() != null) {
+                AccessTokenResponse newResponse = refreshToken(previousResponse, session);
+                if (newResponse.getExpiresIn() > 0) {
+                    int accessTokenExpiration = Time.currentTime() + (int) newResponse.getExpiresIn();
+                    newResponse.getOtherClaims().put(ACCESS_TOKEN_EXPIRATION, accessTokenExpiration);
                 }
+                identity.setToken(JsonSerialization.writeValueAsString(newResponse));
             }
         } catch (IOException e) {
             ErrorRepresentation error = new ErrorRepresentation();
@@ -350,6 +330,36 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                     Response.status(Response.Status.BAD_GATEWAY).entity(error).type(MediaType.APPLICATION_JSON).build());
         }
         return super.retrieveToken(session, identity);
+    }
+
+    private boolean needsRefresh(Integer exp) {
+        return exp != null && exp != 0 && exp < Time.currentTime() + getConfig().getMinValidityToken();
+    }
+
+    private AccessTokenResponse refreshToken(AccessTokenResponse previousResponse, KeycloakSession session) throws IOException {
+        try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
+            SimpleHttp refreshTokenRequest = getRefreshTokenRequest(session, previousResponse.getRefreshToken(), getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret()));
+            try (SimpleHttp.Response refreshTokenResponse = refreshTokenRequest.asResponse()) {
+                String response = refreshTokenRequest.asString();
+                if (response.contains("error")) {
+                    ErrorRepresentation error = new ErrorRepresentation();
+                    error.setErrorMessage("Unable to refresh token");
+                    throw new WebApplicationException("Received and response code " + refreshTokenResponse.getStatus() +
+                                                      " with a response '" + refreshTokenResponse.asString() + "'",
+                            Response.status(Response.Status.BAD_GATEWAY).entity(error).type(MediaType.APPLICATION_JSON).build());
+                }
+                AccessTokenResponse newResponse = JsonSerialization.readValue(response, AccessTokenResponse.class);
+
+                if (newResponse.getRefreshToken() == null && previousResponse.getRefreshToken() != null) {
+                    newResponse.setRefreshToken(previousResponse.getRefreshToken());
+                    newResponse.setRefreshExpiresIn(previousResponse.getRefreshExpiresIn());
+                }
+                if (newResponse.getIdToken() == null && previousResponse.getIdToken() != null) {
+                    newResponse.setIdToken(previousResponse.getIdToken());
+                }
+                return newResponse;
+            }
+        }
     }
 
     @Override
