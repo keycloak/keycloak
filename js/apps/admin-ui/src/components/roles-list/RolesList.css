@@ -5,28 +5,28 @@
 .pf-v6-c-button.pf-m-link.kc-groups-link {
   font-size: var(--pf-v6-global--FontSize--sm);
   padding-left: 0px;
-  padding-right: var(--pf-v6-global--spacer--xs);
+  padding-right: var(--pf-t--global--spacer--xs);
   padding-top: 0px;
 }
 
 .pf-v6-c-button.pf-m-link.kc-users-link {
   font-size: var(--pf-v6-global--FontSize--sm);
-  padding-left: var(--pf-v6-global--spacer--xs);
-  padding-right: var(--pf-v6-global--spacer--xs);
+  padding-left: var(--pf-t--global--spacer--xs);
+  padding-right: var(--pf-t--global--spacer--xs);
   padding-top: 0px;
 }
 
 .pf-v6-c-button.pf-m-link.kc-groups-link-empty-state {
-  padding-left: var(--pf-v6-global--spacer--xs);
-  padding-right: var(--pf-v6-global--spacer--xs);
+  padding-left: var(--pf-t--global--spacer--xs);
+  padding-right: var(--pf-t--global--spacer--xs);
 }
 
 .pf-v6-c-button.pf-m-link.kc-users-link-empty-state {
-  padding-left: var(--pf-v6-global--spacer--xs);
-  padding-right: var(--pf-v6-global--spacer--xs);
+  padding-left: var(--pf-t--global--spacer--xs);
+  padding-right: var(--pf-t--global--spacer--xs);
 }
 
 .pf-v6-c-chip-group.kc-filter-chip-group__table {
-  margin-left: var(--pf-v6-global--spacer--md);
-  margin-bottom: var(--pf-v6-global--spacer--md);
+  margin-left: var(--pf-t--global--spacer--md);
+  margin-bottom: var(--pf-t--global--spacer--md);
 }

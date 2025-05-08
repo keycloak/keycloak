@@ -152,7 +152,7 @@ For the Admin UI, we modify the PatternFly convention to namespace the classes a
 
 ```css
 // Modify the height of the brand image
---keycloak-admin--brand--Height: var(--pf-v6-global--spacer--xl);
+--keycloak-admin--brand--Height: var(--pf-t--global--spacer--xl);
 ```
 
 **Example**
@@ -167,7 +167,7 @@ For the Admin UI, we modify the PatternFly convention to namespace the classes a
 // Do use a new class
 // Do use a PatternFly global spacer variable
 .keycloak-admin--manage-columns__dropdown {
-  margin-bottom: var(--pf-v6-global--spacer--xl);
+  margin-bottom: var(--pf-t--global--spacer--xl);
 }
 ```
 
@@ -175,7 +175,7 @@ For the Admin UI, we modify the PatternFly convention to namespace the classes a
 
 Utility classes can be used to add specific styling to a component, such as margin-bottom or padding. However, their use should be limited to one-off styling needs.
 
-For example, instead of using the utility class for margin-right multiple times, we should define a new Admin UI class that adds this _margin-right: var(--pf-v6-global--spacer--sm);_ and in this example, the new class can set the color appropriately as well.
+For example, instead of using the utility class for margin-right multiple times, we should define a new Admin UI class that adds this _margin-right: var(--pf-t--global--spacer--sm);_ and in this example, the new class can set the color appropriately as well.
 
 **Using a utility class **
 

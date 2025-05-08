@@ -1,7 +1,12 @@
 import FeatureRepresentation, {
   FeatureType,
 } from "@keycloak/keycloak-admin-client/lib/defs/featureRepresentation";
-import { HelpItem, label, useEnvironment } from "@keycloak/keycloak-ui-shared";
+import {
+  HelpItem,
+  KeycloakSpinner,
+  label,
+  useEnvironment,
+} from "@keycloak/keycloak-ui-shared";
 import {
   ActionList,
   ActionListItem,
@@ -10,12 +15,15 @@ import {
   Card,
   CardBody,
   CardTitle,
+  Content,
+  ContentVariants,
   DescriptionList,
   DescriptionListDescription,
   DescriptionListGroup,
   DescriptionListTerm,
   EmptyState,
   EmptyStateBody,
+  Flex,
   Grid,
   GridItem,
   Label,
@@ -25,13 +33,10 @@ import {
   PageSection,
   Tab,
   TabTitleText,
-  Content,
-  ContentVariants,
   Title,
 } from "@patternfly/react-core";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import {
   RoutableTabs,
   useRoutableTab,
@@ -41,7 +46,7 @@ import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import helpUrls from "../help-urls";
 import useLocaleSort, { mapByKey } from "../utils/useLocaleSort";
 import { ProviderInfo } from "./ProviderInfo";
-import { DashboardTab, toDashboard } from "./routes/Dashboard";
+import { toDashboard } from "./routes/Dashboard";
 
 import "./dashboard.css";
 
@@ -110,19 +115,11 @@ const Dashboard = () => {
     [serverInfo.features],
   );
 
-  const useTab = (tab: DashboardTab) =>
-    useRoutableTab(
-      toDashboard({
-        realm,
-        tab,
-      }),
-    );
-
   const realmDisplayInfo = label(t, realmInfo?.displayName, realm);
 
-  const welcomeTab = useTab("welcome");
-  const infoTab = useTab("info");
-  const providersTab = useTab("providers");
+  const welcomeTab = useRoutableTab(toDashboard({ realm, tab: "welcome" }));
+  const infoTab = useRoutableTab(toDashboard({ realm, tab: "info" }));
+  const providersTab = useRoutableTab(toDashboard({ realm, tab: "providers" }));
 
   if (Object.keys(serverInfo).length === 0) {
     return <KeycloakSpinner />;
@@ -154,66 +151,57 @@ const Dashboard = () => {
             {...welcomeTab}
           >
             <PageSection hasBodyWrapper={false}>
-              <div className="pf-v6-l-grid pf-v6-u-ml-lg">
-                <div className="pf-v6-l-grid__item pf-m-12-col">
-                  <Title
-                    data-testid="welcomeTitle"
-                    className="pf-v6-u-font-weight-bold"
-                    headingLevel="h2"
-                    size="3xl"
-                  >
-                    {t("welcomeTo", { realmDisplayInfo })}
-                  </Title>
-                </div>
-                <div className="pf-v6-l-grid__item keycloak__dashboard_welcome_tab">
-                  <Content component={ContentVariants.h3}>
-                    {t("welcomeText")}
-                  </Content>
-                </div>
-                <div className="pf-v6-l-grid__item pf-m-10-col pf-v6-u-mt-md">
+              <Title data-testid="welcomeTitle" headingLevel="h2" size="3xl">
+                {t("welcomeTo", { realmDisplayInfo })}
+              </Title>
+              <Content
+                component={ContentVariants.p}
+                className="keycloak__dashboard_welcome_tab"
+              >
+                {t("welcomeText")}
+              </Content>
+              <Flex columnGap={{ default: "columnGapNone" }}>
+                <Button
+                  component="a"
+                  href={helpUrls.documentation}
+                  target="_blank"
+                  variant="primary"
+                >
+                  {t("viewDocumentation")}
+                </Button>
+              </Flex>
+              <ActionList className="pf-v6-u-mt-sm">
+                <ActionListItem>
                   <Button
-                    className="pf-v6-u-px-lg pf-v6-u-py-sm"
                     component="a"
-                    href={helpUrls.documentation}
+                    href={helpUrls.guides}
                     target="_blank"
-                    variant="primary"
+                    variant="tertiary"
                   >
-                    {t("viewDocumentation")}
+                    {t("viewGuides")}
                   </Button>
-                </div>
-                <ActionList className="pf-v6-u-mt-sm">
-                  <ActionListItem>
-                    <Button
-                      component="a"
-                      href={helpUrls.guides}
-                      target="_blank"
-                      variant="tertiary"
-                    >
-                      {t("viewGuides")}
-                    </Button>
-                  </ActionListItem>
-                  <ActionListItem>
-                    <Button
-                      component="a"
-                      href={helpUrls.community}
-                      target="_blank"
-                      variant="tertiary"
-                    >
-                      {t("joinCommunity")}
-                    </Button>
-                  </ActionListItem>
-                  <ActionListItem>
-                    <Button
-                      component="a"
-                      href={helpUrls.blog}
-                      target="_blank"
-                      variant="tertiary"
-                    >
-                      {t("readBlog")}
-                    </Button>
-                  </ActionListItem>
-                </ActionList>
-              </div>
+                </ActionListItem>
+                <ActionListItem>
+                  <Button
+                    component="a"
+                    href={helpUrls.community}
+                    target="_blank"
+                    variant="tertiary"
+                  >
+                    {t("joinCommunity")}
+                  </Button>
+                </ActionListItem>
+                <ActionListItem>
+                  <Button
+                    component="a"
+                    href={helpUrls.blog}
+                    target="_blank"
+                    variant="tertiary"
+                  >
+                    {t("readBlog")}
+                  </Button>
+                </ActionListItem>
+              </ActionList>
             </PageSection>
           </Tab>
           <Tab
