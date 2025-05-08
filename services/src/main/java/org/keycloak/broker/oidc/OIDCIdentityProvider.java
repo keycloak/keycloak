@@ -18,7 +18,6 @@ package org.keycloak.broker.oidc;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import jakarta.ws.rs.WebApplicationException;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -58,7 +57,6 @@ import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -100,7 +98,6 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     public static final String USER_INFO = "UserInfo";
     public static final String FEDERATED_ACCESS_TOKEN_RESPONSE = "FEDERATED_ACCESS_TOKEN_RESPONSE";
     public static final String VALIDATED_ID_TOKEN = "VALIDATED_ID_TOKEN";
-    public static final String ACCESS_TOKEN_EXPIRATION = "accessTokenExpiration";
     public static final String EXCHANGE_PROVIDER = "EXCHANGE_PROVIDER";
     public static final String VALIDATED_ACCESS_TOKEN = "VALIDATED_ACCESS_TOKEN";
     private static final String BROKER_NONCE_PARAM = "BROKER_NONCE";
@@ -300,65 +297,6 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         if (getConfig().isAccessTokenJwt()) {
             JsonWebToken access = validateToken(response.getToken(), true);
             context.getContextData().put(VALIDATED_ACCESS_TOKEN, access);
-        }
-    }
-
-    protected SimpleHttp getRefreshTokenRequest(KeycloakSession session, String refreshToken, String clientId, String clientSecret) {
-        SimpleHttp refreshTokenRequest = SimpleHttp.doPost(getConfig().getTokenUrl(), session)
-                .param(OAUTH2_GRANT_TYPE_REFRESH_TOKEN, refreshToken)
-                .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_REFRESH_TOKEN);
-        return authenticateTokenRequest(refreshTokenRequest);
-    }
-
-    @Override
-    public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity) {
-        try {
-            AccessTokenResponse previousResponse = JsonSerialization.readValue(identity.getToken(), AccessTokenResponse.class);
-            Integer exp = (Integer) previousResponse.getOtherClaims().get(ACCESS_TOKEN_EXPIRATION);
-            if (needsRefresh(exp) && previousResponse.getRefreshToken() != null) {
-                AccessTokenResponse newResponse = refreshToken(previousResponse, session);
-                if (newResponse.getExpiresIn() > 0) {
-                    int accessTokenExpiration = Time.currentTime() + (int) newResponse.getExpiresIn();
-                    newResponse.getOtherClaims().put(ACCESS_TOKEN_EXPIRATION, accessTokenExpiration);
-                }
-                identity.setToken(JsonSerialization.writeValueAsString(newResponse));
-            }
-        } catch (IOException e) {
-            ErrorRepresentation error = new ErrorRepresentation();
-            error.setErrorMessage("Unable to refresh token");
-            throw new WebApplicationException("Unable to refresh token", e,
-                    Response.status(Response.Status.BAD_GATEWAY).entity(error).type(MediaType.APPLICATION_JSON).build());
-        }
-        return super.retrieveToken(session, identity);
-    }
-
-    private boolean needsRefresh(Integer exp) {
-        return exp != null && exp != 0 && exp < Time.currentTime() + getConfig().getMinValidityToken();
-    }
-
-    private AccessTokenResponse refreshToken(AccessTokenResponse previousResponse, KeycloakSession session) throws IOException {
-        try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
-            SimpleHttp refreshTokenRequest = getRefreshTokenRequest(session, previousResponse.getRefreshToken(), getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret()));
-            try (SimpleHttp.Response refreshTokenResponse = refreshTokenRequest.asResponse()) {
-                String response = refreshTokenRequest.asString();
-                if (response.contains("error")) {
-                    ErrorRepresentation error = new ErrorRepresentation();
-                    error.setErrorMessage("Unable to refresh token");
-                    throw new WebApplicationException("Received and response code " + refreshTokenResponse.getStatus() +
-                                                      " with a response '" + refreshTokenResponse.asString() + "'",
-                            Response.status(Response.Status.BAD_GATEWAY).entity(error).type(MediaType.APPLICATION_JSON).build());
-                }
-                AccessTokenResponse newResponse = JsonSerialization.readValue(response, AccessTokenResponse.class);
-
-                if (newResponse.getRefreshToken() == null && previousResponse.getRefreshToken() != null) {
-                    newResponse.setRefreshToken(previousResponse.getRefreshToken());
-                    newResponse.setRefreshExpiresIn(previousResponse.getRefreshExpiresIn());
-                }
-                if (newResponse.getIdToken() == null && previousResponse.getIdToken() != null) {
-                    newResponse.setIdToken(previousResponse.getIdToken());
-                }
-                return newResponse;
-            }
         }
     }
 
