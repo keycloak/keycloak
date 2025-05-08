@@ -34,6 +34,7 @@ public class GroupRepresentation {
     // to identify a group and operate on it in a basic way
     protected String id;
     protected String name;
+    protected String description;
     protected String path;
     protected String parentId;
     protected Long subGroupCount;
@@ -60,6 +61,14 @@ public class GroupRepresentation {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getPath() {

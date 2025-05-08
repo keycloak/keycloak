@@ -269,6 +269,8 @@ public class GroupResource {
                 model.removeAttribute(attr);
             }
         }
+
+        model.setDescription(rep.getDescription());
     }
 
     @Path("role-mappings")

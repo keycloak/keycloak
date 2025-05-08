@@ -3,6 +3,7 @@ import { Page } from "@playwright/test";
 export async function createGroup(
   page: Page,
   name: string,
+  description: string,
   fromEmptyState = false,
 ) {
   if (fromEmptyState) {
@@ -11,6 +12,7 @@ export async function createGroup(
     await page.getByTestId("openCreateGroupModal").click();
   }
   await page.getByTestId("name").fill(name);
+  await page.getByTestId("description").fill(description);
   await page.getByTestId("createGroup").click();
 }
 
