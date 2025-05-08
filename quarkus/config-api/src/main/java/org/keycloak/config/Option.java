@@ -82,19 +82,24 @@ public class Option<T> {
     }
 
     public Option<T> withRuntimeSpecificDefault(T defaultValue) {
-        return new Option<T>(
-            this.type,
-            this.key,
-            this.category,
-            this.hidden,
-            this.buildTime,
-            this.description,
-            Optional.ofNullable(defaultValue),
-            this.expectedValues,
-            this.strictExpectedValues,
-            this.caseInsensitiveExpectedValues,
-            this.deprecatedMetadata
-        );
+        return toBuilder().defaultValue(defaultValue).build();
+    }
+
+    public OptionBuilder<T> toBuilder() {
+        var builder = new OptionBuilder<>(key, type)
+                .category(category)
+                .buildTime(buildTime)
+                .description(description)
+                .defaultValue(defaultValue)
+                .expectedValues(expectedValues)
+                .strictExpectedValues(strictExpectedValues)
+                .caseInsensitiveExpectedValues(caseInsensitiveExpectedValues)
+                .deprecatedMetadata(deprecatedMetadata);
+
+        if (hidden) {
+            builder.hidden();
+        }
+        return builder;
     }
 
     private static String getDescriptionByCategorySupportLevel(String description, OptionCategory category) {
