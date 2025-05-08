@@ -25,6 +25,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.logging.Logger;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
@@ -33,6 +34,7 @@ import org.junit.runners.MethodSorters;
 import org.junit.runners.model.TestTimedOutException;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RealmsResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
@@ -43,6 +45,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -65,6 +68,7 @@ import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.TestCleanup;
 import org.keycloak.testsuite.util.TestEventsLogger;
 import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.WebDriver;
 
 import jakarta.ws.rs.NotFoundException;
@@ -796,5 +800,22 @@ public abstract class AbstractKeycloakTest {
 
     protected String getAccountRootUrl() {
         return suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/test/account";
+    }
+
+    /**
+     * creates the given clientScope and returns the id of the created clientScope.
+     *
+     * @param realmName   the name of the realm in which the clientScope should be created
+     * @param clientScope the clientScope to be created
+     * @return the id of the clientScope
+     */
+    public String createClientScope(String realmName, ClientScopeRepresentation clientScope) {
+        final RealmResource testRealm = adminClient.realm(realmName);
+        try (Response response = testRealm.clientScopes().create(clientScope)) {
+            Assert.assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            String location = (String) response.getHeaders().get("Location").get(0);
+            String[] locationParts = location.split("/");
+            return locationParts[locationParts.length - 1];
+        }
     }
 }
