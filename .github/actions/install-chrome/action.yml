@@ -5,7 +5,7 @@ inputs:
   version:
     description: The version of Chrome and Chromedriver to install. By default none is installed.
     required: false
-    default: "135.0.7049.114" # E.g. 135.0.7049.84 (fixed version), default (chrome provided by GHA box)
+    default: default # E.g. 135.0.7049.84 (fixed version), default (chrome provided by GHA box)
 
 runs:
   using: composite
