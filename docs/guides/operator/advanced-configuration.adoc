@@ -180,7 +180,7 @@ spec:
             periodSeconds: 1
 ----
 
-Note that the usage of a relative HTTP path, or an alternative management port, require changes to the probe configuration.
+Note that the usage of a relative HTTP path, or an alternative management port, requires changes to the probe configuration.
 
 === Disabling required options
 
@@ -345,9 +345,9 @@ This includes `/var/run/secrets/kubernetes.io/serviceaccount/ca.crt` and the `/v
 
 === Admin Bootstrapping
 
-When you create a new instance the Keycloak CR spec.bootstrapAdmin stanza may be used to configure the bootstrap user and/or service account. If you do not specify anything for the spec.bootstrapAdmin, the operator will create a Secret named "metadata.name"-initial-admin with a username temp-admin and a generated password. If you specify a Secret name for bootstrap admin user, then the Secret will need to contain `username` and `password` key value pairs. If you specify a Secret name for bootstrap admin service account, then the Secret will need to contain `client-id` and `client-secret` key value pairs.
+When you create a new instance the Keycloak CR spec.bootstrapAdmin stanza may be used to configure the bootstrap user and/or service account. If you do not specify anything for the spec.bootstrapAdmin, the operator will create a Secret named "metadata.name"-initial-admin with a username temp-admin and a generated password. If you specify a Secret name for the bootstrap admin user, then the Secret will need to contain `username` and `password` key value pairs. If you specify a Secret name for bootstrap admin service account, then the Secret will need to contain `client-id` and `client-secret` key value pairs.
 
-If a master realm has already been created for you cluster, then the spec.boostrapAdmin is effectively ignored. If you need to create a recovery admin account, then you'll need to run the CLI command against a Pod directly.
+If a master realm has already been created for your cluster, then the spec.boostrapAdmin is effectively ignored. If you need to create a recovery admin account, then you'll need to run the CLI command against a Pod directly.
 
 For more information on how to bootstrap a temporary admin user or service account and recover lost admin access, refer to the <@links.server id="bootstrap-admin-recovery"/> guide.
 
@@ -438,8 +438,8 @@ For a concrete example, let's imagine we have a {project_name} deployment runnin
 Users have to access {project_name} to login, so {project_name} must be accessible from the Internet.
 
 To make this example more interesting, let's assume the {project_name} is monitored too.
-The monitoring is enabled as described in the OpenShift documentation page:
-https://docs.openshift.com/container-platform/4.12/observability/monitoring/enabling-monitoring-for-user-defined-projects.html[enabling Monitoring for user defined projects].
+The monitoring is enabled as described in this OpenShift documentation page:
+https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html/monitoring/configuring-user-workload-monitoring#enabling-monitoring-for-user-defined-projects_preparing-to-configure-the-monitoring-stack-uwm[enabling Monitoring for user defined projects].
 
 Based on those requirements, the Keycloak CR would be like this (most parts are omitted, like DB connection and security):
 
