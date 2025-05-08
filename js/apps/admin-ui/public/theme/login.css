@@ -83,8 +83,8 @@ div.kc-logo-text span {
 }
 
 hr {
-  margin-top: var(--pf-v6-global--spacer--sm);
-  margin-bottom: var(--pf-v6-global--spacer--md);
+  margin-top: var(--pf-t--global--spacer--sm);
+  margin-bottom: var(--pf-t--global--spacer--md);
 }
 
 @media (min-width: 768px) {

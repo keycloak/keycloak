@@ -1,4 +1,4 @@
 .pf-v6-c-tab-content.kc-attributes-tab {
-    padding-left: var(--pf-v6-global--spacer--xl);
-    padding-top: var(--pf-v6-global--spacer--lg);
+    padding-left: var(--pf-t--global--spacer--xl);
+    padding-top: var(--pf-t--global--spacer--lg);
 }

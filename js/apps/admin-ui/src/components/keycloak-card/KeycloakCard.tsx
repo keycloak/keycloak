@@ -42,7 +42,7 @@ export const KeycloakCard = ({
   };
 
   return (
-    <Card isSelectable isClickable>
+    <Card>
       <CardHeader
         actions={{
           actions: dropdownItems ? (
