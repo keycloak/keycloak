@@ -516,13 +516,14 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                     }
 
                     String oldToken = identity.getToken();
-
                     try {
-                        return corsResponse(identityProvider.retrieveToken(session, identity), clientModel);
+                        Response response = corsResponse(identityProvider.retrieveToken(session, identity), clientModel);
+                        this.event.success();
+                        return response;
                     } catch (WebApplicationException e) {
                         this.event.detail(Details.REASON, e.getMessage());
                         this.event.error(Errors.IDENTITY_PROVIDER_ERROR);
-                        return e.getResponse();
+                        return corsResponse(e.getResponse(), clientModel);
                     } finally {
                         if (!Objects.equals(oldToken, identity.getToken())) {
                             // The API of the IdentityProvider doesn't allow use to pass down the realm and the user, so we check if the token has changed,
@@ -536,6 +537,10 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             }
 
             return badRequest("Invalid token.");
+        } catch (WebApplicationException e) {
+            this.event.detail(Details.REASON, e.getMessage());
+            this.event.error(Errors.IDENTITY_PROVIDER_ERROR);
+            return e.getResponse();
         } catch (IdentityBrokerException e) {
             return redirectToErrorPage(Response.Status.BAD_GATEWAY, Messages.COULD_NOT_OBTAIN_TOKEN, e, providerAlias);
         }  catch (Exception e) {
