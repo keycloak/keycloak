@@ -6,6 +6,6 @@
   width: max-content;
   --pf-v6-c-form--m-horizontal__group-label--md--GridColumnWidth: 5rem;
   --pf-v6-c-form--m-horizontal__group-control--md--GridColumnWidth: 24rem;
-  margin: var(--pf-v6-global--spacer--lg) var(--pf-v6-global--spacer--lg)
-    var(--pf-v6-global--spacer--lg);
+  margin: var(--pf-t--global--spacer--lg) var(--pf-t--global--spacer--lg)
+    var(--pf-t--global--spacer--lg);
 }

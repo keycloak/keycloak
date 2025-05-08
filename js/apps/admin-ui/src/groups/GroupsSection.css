@@ -6,5 +6,5 @@
 .keycloak-admin--groups__member-count svg {
   color: var(--pf-v6-global--Color--200);
   font-size: var(--pf-v6-global--FontSize--md);
-  margin-right: var(--pf-v6-global--spacer--sm);
+  margin-right: var(--pf-t--global--spacer--sm);
 }

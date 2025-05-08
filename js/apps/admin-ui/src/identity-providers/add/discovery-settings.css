@@ -8,5 +8,5 @@ input#kc-role {
 }
 
 h1.kc-add-mapper-title {
-  margin-left: calc(-1 * var(--pf-v6-global--spacer--md));
+  margin-left: calc(-1 * var(--pf-t--global--spacer--md));
 }

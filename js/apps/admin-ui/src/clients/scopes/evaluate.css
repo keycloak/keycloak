@@ -3,7 +3,7 @@
 }
 
 .keycloak__scopes_evaluate__tabs {
-  padding-top: var(--pf-v6-global--spacer--2xl);
+  padding-top: var(--pf-t--global--spacer--2xl);
 }
 
 #tabs .pf-v6-c-tabs__list {

@@ -2,10 +2,10 @@
   position: fixed;
   bottom: 0px;
   background-color: var(--pf-v6-c-page__main-section--m-light--BackgroundColor);
-  padding-top: var(--pf-v6-global--spacer--md);
-  padding-bottom: var(--pf-v6-global--spacer--sm);
-  padding-left: var(--pf-v6-global--spacer--md);
+  padding-top: var(--pf-t--global--spacer--md);
+  padding-bottom: var(--pf-t--global--spacer--sm);
+  padding-left: var(--pf-t--global--spacer--md);
   width: 100%;
   border-top: 1px solid var(--pf-v6-global--BorderColor--100);
-  margin-left: calc(-1 * var(--pf-v6-global--spacer--lg));
+  margin-left: calc(-1 * var(--pf-t--global--spacer--lg));
 }
