@@ -390,7 +390,6 @@ public class LogoutEndpoint {
                 return session.getProvider(LoginFormsProvider.class).setSuccess(Messages.SUCCESS_LOGOUT).createInfoPage();
             }
         }
-
         LocaleUtil.processLocaleParam(session, realm, logoutSession);
 
         LoginFormsProvider loginForm = session.getProvider(LoginFormsProvider.class)

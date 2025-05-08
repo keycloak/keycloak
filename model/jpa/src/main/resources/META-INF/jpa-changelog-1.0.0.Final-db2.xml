@@ -123,6 +123,7 @@
             <column name="TIME" type="BIGINT"/>
             <column name="TYPE" type="VARCHAR(255)"/>
             <column name="USER_ID" type="VARCHAR(255)"/>
+            <column name="USER_NAME" type="VARCHAR(255)"/>
         </createTable>
         <createTable tableName="FED_PROVIDERS">
             <column name="REALM_ID" type="VARCHAR(36)">

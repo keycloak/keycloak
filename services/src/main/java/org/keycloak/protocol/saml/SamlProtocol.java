@@ -793,7 +793,7 @@ public class SamlProtocol implements LoginProtocol {
                 .client(session.getContext().getClient())
                 .user(userSession.getUser())
                 .session(userSession)
-                .detail(Details.USERNAME, userSession.getLoginUsername())
+//                .detail(Details.USERNAME, userSession.getLoginUsername())
                 .detail(Details.RESPONSE_MODE, postBinding ? SamlProtocol.SAML_POST_BINDING : SamlProtocol.SAML_REDIRECT_BINDING)
                 .detail(SamlProtocol.SAML_LOGOUT_REQUEST_ID, userSession.getNote(SAML_LOGOUT_REQUEST_ID))
                 .success();

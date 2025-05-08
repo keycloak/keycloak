@@ -248,7 +248,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         cookieResult.getSession();
         event.session(cookieResult.getSession());
         event.user(cookieResult.getUser());
-        event.detail(Details.USERNAME, cookieResult.getUser().getUsername());
+//        event.detail(Details.USERNAME, cookieResult.getUser().getUsername());
 
         AuthenticatedClientSessionModel clientSession = null;
         for (AuthenticatedClientSessionModel cs : cookieResult.getSession().getAuthenticatedClientSessions().values()) {
@@ -708,7 +708,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             }
 
             event.user(federatedUser);
-            event.detail(Details.USERNAME, federatedUser.getUsername());
+//            event.detail(Details.USERNAME, federatedUser.getUsername());
 
             if (context.getIdpConfig().isAddReadTokenRoleOnCreate()) {
                 ClientModel brokerClient = realmModel.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID);
@@ -1038,7 +1038,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             TokenManager.attachAuthenticationSession(session, userSession, authSession);
 
             this.event.user(authenticatedUser)
-                    .detail(Details.USERNAME, authenticatedUser.getUsername())
+//                    .detail(Details.USERNAME, authenticatedUser.getUsername())
                     .detail(Details.IDENTITY_PROVIDER, newModel.getIdentityProvider())
                     .detail(Details.IDENTITY_PROVIDER_USERNAME, newModel.getUserName())
                     .success();
