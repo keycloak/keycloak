@@ -14,7 +14,6 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.jpa.JpaRealmProviderFactory;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -237,8 +236,9 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         internalTokens = oauth
                 .doRefreshTokenRequest(internalTokens.getRefreshToken());
         assertEquals(200, internalTokens.getStatusCode());
-        ErrorRepresentation error = oauth.doFetchExternalIdpTokenError(bc.getIDPAlias(), internalTokens.getAccessToken());
-        assertEquals("Unable to refresh token", error.getErrorMessage());
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse error = oauth.doFetchExternalIdpToken(bc.getIDPAlias(), internalTokens.getAccessToken());
+        assertEquals(502, error.getStatusCode());
+        assertEquals("Unable to refresh token", error.getError());
 
     }
 
