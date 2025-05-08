@@ -165,6 +165,9 @@ public interface ClientResource {
     @Path("/roles")
     RolesResource roles();
 
+    @Path("/evaluate-scopes")
+    ClientScopeEvaluateResource clientScopesEvaluate();
+
     /**
      * Get default client scopes.  Only name and ids are returned.
      *
