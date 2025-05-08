@@ -248,8 +248,7 @@ public class UserInfoEndpoint {
             throw error.invalidToken("User not found");
         }
 
-        event.user(userModel)
-                .detail(Details.USERNAME, userModel.getUsername());
+        event.user(userModel);
 
         if (!userModel.isEnabled()) {
             event.error(Errors.USER_DISABLED);

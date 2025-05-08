@@ -93,22 +93,19 @@ const UserDetailLink = (event: EventRepresentation) => {
   const { t } = useTranslation();
   const { realm } = useRealm();
 
-  return (
-    <>
-      {event.userId && (
-        <Link
-          key={`link-${event.time}-${event.type}`}
-          to={toUser({
-            realm,
-            id: event.userId,
-            tab: "settings",
-          })}
-        >
-          {event.userId}
-        </Link>
-      )}
-      {!event.userId && t("noUserDetails")}
-    </>
+  return event.userId && event.userName ? (
+    <Link
+      key={`link-${event.time}-${event.type}`}
+      to={toUser({
+        realm,
+        id: event.userId,
+        tab: "settings",
+      })}
+    >
+      {event.userName}
+    </Link>
+  ) : (
+    <>{t("noUserDetails")}</>
   );
 };
 
@@ -465,7 +462,8 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
           ...(!user
             ? [
                 {
-                  name: "userId",
+                  name: "userName",
+                  displayKey: "User Name",
                   cellRenderer: UserDetailLink,
                 },
               ]
