@@ -127,6 +127,11 @@ public class EventBuilder {
 
     public EventBuilder user(UserModel user) {
         event.setUserId(user == null ? null : user.getId());
+        if(user!=null && user.getUsername()!=null) {
+            event.setUserName(user.getUsername());
+        } else{
+            event.setUserName(null);
+        }
         return this;
     }
 
@@ -287,6 +292,7 @@ public class EventBuilder {
             ab.put(TracingAttributes.REALM_NAME, event.getRealmName());
             ab.put(TracingAttributes.CLIENT_ID, event.getClientId());
             ab.put(TracingAttributes.USER_ID, event.getUserId());
+            ab.put(TracingAttributes.USER_NAME, event.getUserName());
             ab.put(TracingAttributes.SESSION_ID, event.getSessionId());
             ab.put("ipAddress", event.getIpAddress());
             ab.put(TracingAttributes.EVENT_ERROR, event.getError());

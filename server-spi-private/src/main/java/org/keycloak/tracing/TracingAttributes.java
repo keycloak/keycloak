@@ -30,6 +30,7 @@ public interface TracingAttributes {
     AttributeKey<String> REALM_NAME = AttributeKey.stringKey(KC_PREFIX + "realmName");
     AttributeKey<String> CLIENT_ID = AttributeKey.stringKey(KC_PREFIX + "clientId");
     AttributeKey<String> USER_ID = AttributeKey.stringKey(KC_PREFIX + "userId");
+    AttributeKey<String> USER_NAME = AttributeKey.stringKey(KC_PREFIX + "userName");
     AttributeKey<String> AUTH_SESSION_ID = AttributeKey.stringKey(KC_PREFIX + "authenticationSessionId");
     AttributeKey<String> AUTH_TAB_ID = AttributeKey.stringKey(KC_PREFIX + "authenticationTabId");
     AttributeKey<String> SESSION_ID = AttributeKey.stringKey(KC_PREFIX + "sessionId");
