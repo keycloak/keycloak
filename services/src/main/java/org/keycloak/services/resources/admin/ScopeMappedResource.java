@@ -99,7 +99,11 @@ public class ScopeMappedResource {
     @NoCache
     @Deprecated
     @Tag(name= KeycloakOpenAPI.Admin.Tags.SCOPE_MAPPINGS)
-    @Operation(summary = "Get all scope mappings for the client", deprecated = true)
+    @Operation(
+            summary = "Get all scope mappings for the client",
+            operationId = "getScopeMappings",
+            deprecated = true
+    )
     public MappingsRepresentation getScopeMappings() {
         viewPermission.require();
 
@@ -137,7 +141,10 @@ public class ScopeMappedResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.SCOPE_MAPPINGS)
-    @Operation(summary = "Get realm-level roles associated with the client's scope")
+    @Operation(
+            summary = "Get realm-level roles associated with the client's scope",
+            operationId = "getRealmScopeMappings"
+    )
     public Stream<RoleRepresentation> getRealmScopeMappings() {
         viewPermission.require();
 
@@ -159,7 +166,10 @@ public class ScopeMappedResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.SCOPE_MAPPINGS)
-    @Operation(summary = "Get realm-level roles that are available to attach to this client's scope")
+    @Operation(
+            summary = "Get realm-level roles that are available to attach to this client's scope",
+            operationId = "getAvailableRealmScopeMappings"
+    )
     public Stream<RoleRepresentation> getAvailableRealmScopeMappings() {
         viewPermission.require();
 
@@ -189,8 +199,11 @@ public class ScopeMappedResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.SCOPE_MAPPINGS)
-    @Operation(summary = "Get effective realm-level roles associated with the client’s scope What this does is recurse any composite roles associated with the client’s scope and adds the roles to this lists.",
-        description = "The method is really to show a comprehensive total view of realm-level roles associated with the client.")
+    @Operation(
+            summary = "Get effective realm-level roles associated with the client’s scope What this does is recurse any composite roles associated with the client’s scope and adds the roles to this lists.",
+            description = "The method is really to show a comprehensive total view of realm-level roles associated with the client.",
+            operationId = "getCompositeRealmScopeMappings"
+    )
     public Stream<RoleRepresentation> getCompositeRealmScopeMappings(@Parameter(description = "if false, return roles with their attributes") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         viewPermission.require();
 
@@ -214,7 +227,10 @@ public class ScopeMappedResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.SCOPE_MAPPINGS)
-    @Operation(summary = "Add a set of realm-level roles to the client's scope")
+    @Operation(
+            summary = "Add a set of realm-level roles to the client's scope",
+            operationId = "addRealmScopeMappings"
+    )
     @APIResponse(responseCode = "204", description = "No Content")
     public void addRealmScopeMappings(List<RoleRepresentation> roles) {
         managePermission.require();
@@ -243,7 +259,10 @@ public class ScopeMappedResource {
     @DELETE
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.SCOPE_MAPPINGS)
-    @Operation(summary = "Remove a set of realm-level roles from the client's scope")
+    @Operation(
+            summary = "Remove a set of realm-level roles from the client's scope",
+            operationId = "deleteRealmScopeMappings"
+    )
     public void deleteRealmScopeMappings(List<RoleRepresentation> roles) {
         managePermission.require();
 
