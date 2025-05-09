@@ -305,8 +305,8 @@ spec:
     "7800": # <2>
       mode: PERMISSIVE
 ----
-<.> Update the labels to match your {project_name} deployment.
-<.> Port 7800 is the default. Adjust it if you change the data transmission port.
+<1> Update the labels to match your {project_name} deployment.
+<2> Port 7800 is the default. Adjust it if you change the data transmission port.
 
 As an alternative, to disable the mTLS communication, and rely on the service mesh to encrypt the traffic:
 
