@@ -35,6 +35,7 @@ import org.keycloak.quarkus.runtime.configuration.mappers.WildcardPropertyMapper
 public class KcEnvConfigSource extends PropertiesConfigSource {
 
     public static final String NAME = "KcEnvVarConfigSource";
+    public static final String KCENV_PREFIX = "KCENV_";
 
     public KcEnvConfigSource() {
         super(buildProperties(), NAME, 500);
@@ -47,6 +48,20 @@ public class KcEnvConfigSource extends PropertiesConfigSource {
         for (Map.Entry<String, String> entry : System.getenv().entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
+            String wildcard = null;
+
+            if (key.startsWith(KCENV_PREFIX)) {
+                key = kcPrefix + key.substring(KCENV_PREFIX.length());
+                int index = value.indexOf(",");
+                if (index == -1) {
+                    continue; // warn?
+                }
+                wildcard = value.substring(0, index);
+                value = value.substring(index + 1);
+                if (!WildcardPropertyMapper.isValidWildcardValue(wildcard)) {
+                    continue; // warn?
+                }
+            }
 
             if (key.startsWith(kcPrefix)) {
                 String transformedKey = NS_KEYCLOAK_PREFIX + key.substring(kcPrefix.length()).toLowerCase().replace("_", "-");
@@ -55,11 +70,19 @@ public class KcEnvConfigSource extends PropertiesConfigSource {
 
                 if (mapper != null && mapper.hasWildcard()) {
                     // special case - wildcards don't follow the default conversion rule
-                    transformedKey = ((WildcardPropertyMapper<?>) mapper).getKcKeyForEnvKey(key, transformedKey)
-                            .orElseThrow();
+                    WildcardPropertyMapper<?> wildcardPropertyMapper = (WildcardPropertyMapper<?>) mapper;
+
+                    if (wildcard != null) {
+                        transformedKey = wildcardPropertyMapper.getFrom(wildcard);
+                    } else {
+                        transformedKey = wildcardPropertyMapper.getKcKeyForEnvKey(key, transformedKey)
+                                .orElseThrow();
+                    }
                 }
 
-                properties.put(transformedKey, value);
+                if (properties.put(transformedKey, value) != null) {
+                    // warn?
+                }
             }
         }
 
