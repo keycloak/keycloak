@@ -11,12 +11,14 @@ import { SamlKeysDialogForm, submitForm } from "./SamlKeysDialog";
 type SamlImportKeyDialogProps = {
   id: string;
   attr: KeyTypes;
+  onSubmit: (cert: string) => void;
   onClose: () => void;
 };
 
 export const SamlImportKeyDialog = ({
   id,
   attr,
+  onSubmit,
   onClose,
 }: SamlImportKeyDialogProps) => {
   const { adminClient } = useAdminClient();
@@ -28,11 +30,14 @@ export const SamlImportKeyDialog = ({
   const { addAlert, addError } = useAlerts();
 
   const submit = (form: SamlKeysDialogForm) => {
-    submitForm(adminClient, form, id, attr, (error) => {
+    submitForm(adminClient, form, id, attr, (certificate, error) => {
       if (error) {
         addError("importError", error);
       } else {
         addAlert(t("importSuccess"), AlertVariant.success);
+        if (certificate) {
+          onSubmit(certificate);
+        }
       }
     });
   };

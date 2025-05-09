@@ -45,7 +45,7 @@ export const submitForm = async (
   form: SamlKeysDialogForm,
   id: string,
   attr: KeyTypes,
-  callback: (error?: unknown) => void,
+  callback: (certificate?: string, error?: unknown) => void,
 ) => {
   try {
     const formData = new FormData();
@@ -58,10 +58,10 @@ export const submitForm = async (
     );
     formData.append("file", file);
 
-    await adminClient.clients.uploadKey({ id, attr }, formData);
-    callback();
+    const result = await adminClient.clients.uploadKey({ id, attr }, formData);
+    callback(result.certificate);
   } catch (error) {
-    callback(error);
+    callback(undefined, error);
   }
 };
 
