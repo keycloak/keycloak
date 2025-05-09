@@ -17,14 +17,42 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Interface for proof types in OID4VCI Credential Request (Section 8.2.1.1).
+ * LDP-VP Proof for Credential Request in OID4VCI (Section 8.2.1.1).
+ * Represents a JSON-LD Verifiable Presentation for holder binding.
  *
  * @see <a href="https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-request">OID4VCI Credential Request</a>
  */
-public interface Proof {
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class LdpVpProof implements Proof {
+
     @JsonProperty("proof_type")
-    String getProofType();
+    private final String proofType = ProofType.LD_PROOF;
+
+    @JsonProperty("ldp_vp")
+    private Object ldpVp;
+
+    public LdpVpProof() {
+    }
+
+    public LdpVpProof(Object ldpVp) {
+        this.ldpVp = ldpVp;
+    }
+
+    @Override
+    public String getProofType() {
+        return proofType;
+    }
+
+    public Object getLdpVp() {
+        return ldpVp;
+    }
+
+    public LdpVpProof setLdpVp(Object ldpVp) {
+        this.ldpVp = ldpVp;
+        return this;
+    }
 }

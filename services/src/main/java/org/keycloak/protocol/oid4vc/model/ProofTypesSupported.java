@@ -32,8 +32,6 @@ import java.util.Objects;
 public class ProofTypesSupported {
     @JsonProperty("jwt")
     private ProofTypeJWT jwt;
-    @JsonProperty("cwt")
-    private ProofTypeCWT cwt;
 
     @JsonProperty("ldp_vp")
     private ProofTypeLdpVp ldpVp;
@@ -44,15 +42,6 @@ public class ProofTypesSupported {
 
     public ProofTypesSupported setJwt(ProofTypeJWT jwt) {
         this.jwt = jwt;
-        return this;
-    }
-
-    public ProofTypeCWT getCwt() {
-        return cwt;
-    }
-
-    public ProofTypesSupported setCwt(ProofTypeCWT cwt) {
-        this.cwt = cwt;
         return this;
     }
 
@@ -86,11 +75,11 @@ public class ProofTypesSupported {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ProofTypesSupported that = (ProofTypesSupported) o;
-        return Objects.equals(jwt, that.jwt) && Objects.equals(cwt, that.cwt) && Objects.equals(ldpVp, that.ldpVp);
+        return Objects.equals(jwt, that.jwt) && Objects.equals(ldpVp, that.ldpVp);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(jwt, cwt, ldpVp);
+        return Objects.hash(jwt, ldpVp);
     }
 }
