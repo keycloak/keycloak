@@ -20,6 +20,8 @@ package org.keycloak.quarkus.runtime.storage.infinispan;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -42,6 +44,7 @@ import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.cache.HashConfiguration;
 import org.infinispan.configuration.cache.PersistenceConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfiguration;
+import org.infinispan.configuration.global.TransportConfiguration;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.infinispan.configuration.parsing.ParserRegistry;
 import org.infinispan.manager.DefaultCacheManager;
@@ -50,8 +53,10 @@ import org.infinispan.persistence.remote.configuration.ExhaustedAction;
 import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
 import org.infinispan.protostream.descriptors.FileDescriptor;
 import org.infinispan.query.remote.client.ProtobufMetadataManagerConstants;
+import org.infinispan.remoting.transport.jgroups.EmbeddedJGroupsChannelConfigurator;
 import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.jboss.logging.Logger;
+import org.jgroups.conf.ProtocolConfiguration;
 import org.jgroups.protocols.TCP_NIO2;
 import org.jgroups.protocols.UDP;
 import org.jgroups.util.TLS;
@@ -93,6 +98,8 @@ import static org.wildfly.security.sasl.util.SaslMechanismInformation.Names.SCRA
 public class CacheManagerFactory {
 
     private static final Logger logger = Logger.getLogger(CacheManagerFactory.class);
+    private static final String KUBERNETES_STACK = "kubernetes";
+    private static final String KUBERNETES_PATCHED_STACK = "kubernetes-patched";
 
     private final CompletableFuture<DefaultCacheManager> cacheManagerFuture;
     private final CompletableFuture<RemoteCacheManager> remoteCacheManagerFuture;
@@ -311,6 +318,7 @@ public class CacheManagerFactory {
             if (builder.getNamedConfigurationBuilders().entrySet().stream().anyMatch(c -> c.getValue().clustering().cacheMode().isClustered())) {
                 configureTransportStack(builder);
                 configureRemoteStores(builder);
+                patchKubernetesStack(builder);
             }
             configureCacheMaxCount(builder, CachingOptions.CLUSTERED_MAX_COUNT_CACHES);
             configureSessionsCaches(builder);
@@ -378,6 +386,21 @@ public class CacheManagerFactory {
             transportConfig.addProperty(JGroupsTransport.SOCKET_FACTORY, tls.createSocketFactory());
             Logger.getLogger(CacheManagerFactory.class).info("MTLS enabled for communications for embedded caches");
         }
+    }
+
+    private static void patchKubernetesStack(ConfigurationBuilderHolder holder) {
+        var transport = holder.getGlobalConfigurationBuilder().transport();
+        var stack = transport.attributes().attribute(TransportConfiguration.STACK).get();
+        if (!Objects.equals(stack, KUBERNETES_STACK)) {
+            // not kubernetes stack
+            return;
+        }
+        logger.info("[PATCH] Patching kubernetes stack.");
+        // patch port range
+        var attributes = Map.of("port_range", "0");
+        var patch = List.of(new ProtocolConfiguration("TCP", attributes));
+        holder.addJGroupsStack(new EmbeddedJGroupsChannelConfigurator(KUBERNETES_PATCHED_STACK, patch, null), KUBERNETES_STACK);
+        transport.stack(KUBERNETES_PATCHED_STACK);
     }
 
     private static void validateTlsAvailable(GlobalConfiguration config) {
