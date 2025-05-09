@@ -240,7 +240,7 @@ public class RealmsResource {
 
         if (wellKnown != null) {
             ResponseBuilder responseBuilder = Response.ok(wellKnown.getConfig()).cacheControl(CacheControlUtil.noCache());
-            return Cors.builder().allowedOrigins("*").auth().add(responseBuilder);
+            return Cors.builder().allowAllOrigins().auth().add(responseBuilder);
         }
 
         throw new NotFoundException();
