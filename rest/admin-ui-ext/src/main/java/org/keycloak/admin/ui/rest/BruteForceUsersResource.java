@@ -28,6 +28,9 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.UserPermissionEvaluator;
+import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.utils.SearchQueryUtils;
 
 public class BruteForceUsersResource {
@@ -165,10 +168,14 @@ public class BruteForceUsersResource {
             usersEvaluator.grantIfNoPermission(session.getAttribute(UserModel.GROUPS) != null);
         }
 
+        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
+
         return userModels.map(user -> {
+            UserProfile profile = provider.create(UserProfileContext.USER_API, user);
+            UserRepresentation rep = profile.toRepresentation();
             UserRepresentation userRep = briefRepresentationB ?
-                    ModelToRepresentation.toBriefRepresentation(user) :
-                    ModelToRepresentation.toRepresentation(session, realm, user);
+                    ModelToRepresentation.toBriefRepresentation(user, rep, false) :
+                    ModelToRepresentation.toRepresentation(session, realm, user, rep, false);
             userRep.setAccess(usersEvaluator.getAccessForListing(user));
             return userRep;
         }).map(this::getBruteForceStatus);
