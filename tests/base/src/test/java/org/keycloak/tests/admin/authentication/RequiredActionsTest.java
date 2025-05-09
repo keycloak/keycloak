@@ -189,7 +189,7 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
         RequiredActionConfigInfoRepresentation requiredActionConfigDescription = authMgmtResource.getRequiredActionConfigDescription(providerId);
         Assertions.assertNotNull(requiredActionConfigDescription);
         Assertions.assertNotNull(requiredActionConfigDescription.getProperties());
-        Assertions.assertTrue(requiredActionConfigDescription.getProperties().size() == 2);
+        Assertions.assertEquals(3, requiredActionConfigDescription.getProperties().size());
     }
 
     @Test
