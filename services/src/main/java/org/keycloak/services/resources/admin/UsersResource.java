@@ -50,6 +50,7 @@ import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.UserPermissionEvaluator;
@@ -103,6 +104,8 @@ public class UsersResource {
     private final AdminPermissionEvaluator auth;
 
     private final AdminEventBuilder adminEvent;
+    
+    private final BruteForceProtector bruteForceProtector;
 
     protected final ClientConnection clientConnection;
 
@@ -117,6 +120,7 @@ public class UsersResource {
         this.realm = session.getContext().getRealm();
         this.adminEvent = adminEvent.resource(ResourceType.USER);
         this.headers = session.getContext().getRequestHeaders();
+        this.bruteForceProtector = session.getProvider(BruteForceProtector.class);
     }
 
     /**
@@ -504,6 +508,9 @@ public class UsersResource {
                             ? ModelToRepresentation.toBriefRepresentation(user)
                             : ModelToRepresentation.toRepresentation(session, realm, user);
                     userRep.setAccess(usersEvaluator.getAccessForListing(user));
+                    if (bruteForceProtector.isTemporarilyDisabled(session, realm, user)) {
+                        userRep.setEnabled(false);
+                    }
                     return userRep;
                 });
     }

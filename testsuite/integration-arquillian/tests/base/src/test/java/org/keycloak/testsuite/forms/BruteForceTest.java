@@ -16,6 +16,8 @@
  */
 package org.keycloak.testsuite.forms;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.hamcrest.MatcherAssert;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
@@ -23,6 +25,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
@@ -38,6 +41,7 @@ import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AssertEvents.ExpectedEvent;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -538,6 +542,18 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         loginInvalidPassword("user2");
         expectTemporarilyDisabled("user2", userId);
         clearAllUserFailures();
+    }
+    
+    @Test
+    public void testUserDisabledTemporaryLockout() throws Exception {
+        String userId = adminClient.realm("test").users().search("test-user@localhost", null, null, null, 0, 1).get(0).getId();
+
+        loginInvalidPassword();
+        loginInvalidPassword();
+        expectTemporarilyDisabled();
+
+        assertFalse(testRealm().users().get(userId).toRepresentation().isEnabled());
+        assertFalse(testRealm().users().search("test-user@localhost", true).get(0).isEnabled());
     }
 
     @Test
