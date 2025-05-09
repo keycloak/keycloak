@@ -82,4 +82,16 @@ public class DatabaseOptions {
             .defaultValue(100)
             .description("The maximum size of the connection pool.")
             .build();
+
+    public static final Option<Boolean> DB_SQL_JPA_DEBUG = new OptionBuilder<>("db-debug-jpql", Boolean.class)
+            .category(OptionCategory.DATABASE)
+            .defaultValue(false)
+            .description("Add JPQL information as comments to SQL statements to debug JPA SQL statement generation.")
+            .build();
+
+    public static final Option<Integer> DB_SQL_LOG_SLOW_QUERIES = new OptionBuilder<>("db-log-slow-queries-threshold", Integer.class)
+            .category(OptionCategory.DATABASE)
+            .description("Log SQL statements slower than the configured threshold with logger org.hibernate.SQL_SLOW and log-level info.")
+            .defaultValue(10000)
+            .build();
 }

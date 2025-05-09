@@ -78,6 +78,13 @@ final class DatabasePropertyMappers {
                 fromOption(DatabaseOptions.DB_POOL_MAX_SIZE)
                         .to("quarkus.datasource.jdbc.max-size")
                         .paramLabel("size")
+                        .build(),
+                fromOption(DatabaseOptions.DB_SQL_JPA_DEBUG)
+                        .to("kc." + DatabaseOptions.DB_SQL_JPA_DEBUG.getKey())
+                        .build(),
+                fromOption(DatabaseOptions.DB_SQL_LOG_SLOW_QUERIES)
+                        .to("kc." + DatabaseOptions.DB_SQL_LOG_SLOW_QUERIES.getKey())
+                        .paramLabel("milliseconds")
                         .build()
         };
     }
