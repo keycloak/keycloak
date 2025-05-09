@@ -245,6 +245,12 @@ public final class DefaultUserProfile implements UserProfile {
             }
         }
 
+        List<String> disabledReason = user.getAttributes().get(UserModel.DISABLED_REASON);
+
+        if (disabledReason != null) {
+            attributesRep.put(UserModel.DISABLED_REASON, disabledReason);
+        }
+
         rep.setId(user.getId());
         rep.setAttributes(attributesRep.isEmpty() ? null : attributesRep);
         rep.setUserProfileMetadata(createUserProfileMetadata(session, this));

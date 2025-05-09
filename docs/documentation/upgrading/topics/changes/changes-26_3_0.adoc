@@ -52,6 +52,14 @@ Both system properties have been used internally within Keycloak and have not be
 Instead, use the command line option `spi-cache-embedded-default-site-name` as `jboss.site.name` replacement, and `spi-cache-embedded-default-node-name` as `jboss.node.name` replacement.
 See the https://www.keycloak.org/server/all-provider-config[All provider configuration] for more details on these options.
 
+=== User searches through the User API are now respecting the user profile settings
+
+When querying users through the User API, the user representation and their attributes are now taking into account the
+user profile settings defined for the realm.
+
+It might happen that attributes in user representations are no longer available depending on the
+user profile configuration.
+
 == Notable changes
 
 Notable changes where an internal behavior changed to prevent common misconfigurations, fix bugs or simplify running {project_name}.
