@@ -80,7 +80,6 @@ import static org.junit.Assert.fail;
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
 public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
-
     @Test
     public void testRequestTestCredential() {
         String token = getBearerToken(oauth);
