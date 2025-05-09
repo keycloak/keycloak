@@ -99,6 +99,12 @@ Config:
 
 Database:
 
+--db-debug-jpql <true|false>
+                     Add JPQL information as comments to SQL statements to debug JPA SQL statement
+                       generation. Default: false.
+--db-log-slow-queries-threshold <milliseconds>
+                     Log SQL statements slower than the configured threshold with logger org.
+                       hibernate.SQL_SLOW and log-level info. Default: 10000.
 --db-password <password>
                      The password of the database user.
 --db-pool-initial-size <size>
