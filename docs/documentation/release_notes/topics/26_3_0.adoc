@@ -29,3 +29,7 @@ details, see link:{upgradingguide_link}[{upgradingguide_name}].
 = Recovery Codes supported
 
 In this release, the *Recovery Codes* two-factor authentication is promoted from preview to supported feature. For more information about the 2FA method, see the link:{adminguide_link}#_recovery-codes[Recovery Codes] chapter in the {adminguide_name}.
+
+= Brokering a OAuth v2 compliant authorization server
+
+In this release, a new broker is available to integrate with any OAuth2 compliant Authorization Server. For more information, see the link:{adminguide_link}#_identity_broker_oauth[OAuth v2 identity providers] chapter in the {adminguide_name}.
