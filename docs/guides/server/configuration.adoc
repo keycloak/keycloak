@@ -59,6 +59,18 @@ options_ heading, which defines the applicable configuration
 formats. For all configuration options, see <@links.server
 id="all-config"/>. Choose the configuration source and format that applies to your use case.
 
+=== Environment variables keys with special characters
+
+Non-alphanumeric characters in your configuration key must be converted to _ in your environment variable key. For some configuration keys, such as those for logging, they may contain characters such as `_ ` or `$` - e.g. `kc.log-level-package.class_name`.
+
+The automatic handling of the environment variable key may not preserve the intended key. For example `KC_LOG_LEVEL_PACKAGE_CLASS_NAME` will become `kc.log-level-package.class.name` because logging properties default to replacing _ in the "wildcard"
+part of the key with `.` as that is what is most commonly needed in a class / package name. However this does not match the intent of `kc.log-level-package.class_name`.
+
+You have a couple of options in this case:
+
+- create an entry in your `keycloak.conf` file that references an environment variable of your choosing. e.g. `kc.log-level-package.class_name=${r"${CLASS_NAME_LEVEL}"}`. See more on referencing environment variables in <<Formats for environment variables>>.
+- or in situations where modifying the `keycloak.conf` may not be easy, you can use a pair of environment variables `KC_UNIQUEIFIER=value` and `KCKEY_UNIQUEIFIER=key`, e.g. `KC_MYKEY=debug` and `KCKEY_MYKEY=log-level-package.class_name`.
+
 === Example - Alternative formats based on configuration source
 The following example shows the configuration format for `db-url-host` for three configuration sources:
 

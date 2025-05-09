@@ -498,6 +498,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
     private List<EnvVar> getDefaultAndAdditionalEnvVars(Keycloak keycloakCR) {
         // default config values
         List<ValueOrSecret> serverConfigsList = new ArrayList<>(Constants.DEFAULT_DIST_CONFIG_LIST);
+        Set<String> defaultKeys = serverConfigsList.stream().map(ValueOrSecret::getName).collect(Collectors.toSet());
 
         // merge with the CR; the values in CR take precedence
         if (keycloakCR.getSpec().getAdditionalOptions() != null) {
@@ -508,7 +509,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         // set env vars
         List<EnvVar> envVars = serverConfigsList.stream()
-                .map(v -> {
+                .flatMap(v -> {
                     var envBuilder = new EnvVarBuilder().withName(getKeycloakOptionEnvVarName(v.getName()));
                     var secret = v.getSecret();
                     if (secret != null) {
@@ -517,7 +518,12 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                     } else {
                         envBuilder.withValue(v.getValue());
                     }
-                    return envBuilder.build();
+                    EnvVar mainVar = envBuilder.build();
+                    if (!defaultKeys.contains(v.getName())) {
+                        EnvVar keyVar = new EnvVarBuilder().withName("KCKEY_" + mainVar.getName().substring(3)).withValue(v.getName()).build();
+                        return Stream.of(mainVar, keyVar);
+                    }
+                    return Stream.of(mainVar);
                 })
                 .collect(Collectors.toCollection(ArrayList::new));
 
