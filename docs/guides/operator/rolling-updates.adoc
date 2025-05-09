@@ -37,8 +37,9 @@ spec:
     strategy: RecreateOnImageChange|Auto|Explicit # <1>
     revision: "abc" # <2>
 ----
-<.> Set the desired update strategy here.
-<.> Revision value for `Explicit` strategy.
+<1> Set the desired update strategy here.
+
+<2> Revision value for `Explicit` strategy.
 Ignored by the other strategies.
 
 [%autowidth]
