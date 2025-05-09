@@ -364,7 +364,7 @@ public class DescriptionConverter {
             if (clientAuth.supportsSecret()) {
                 response.setClientSecret(client.getSecret());
                 response.setClientSecretExpiresAt(
-                    OIDCClientSecretConfigWrapper.fromClientRepresentation(client).getClientSecretExpirationTime());
+                    OIDCClientSecretConfigWrapper.fromClientRepresentation(client, session).getClientSecretExpirationTime());
             }
         }
 

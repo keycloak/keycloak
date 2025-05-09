@@ -94,7 +94,7 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
         }
 
         //
-        OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientModel(client);
+        OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientModel(client, context.getSession());
         if (wrapper.isClientSecretExpired()) {
             context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, null);
             return false;

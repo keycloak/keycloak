@@ -10,6 +10,7 @@ import java.util.Objects;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSecretConstants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.delegate.ClientModelLazyDelegate;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.utils.StringUtil;
@@ -30,16 +31,19 @@ import static org.keycloak.models.ClientSecretConstants.CLIENT_SECRET_REMAINING_
  */
 public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
 
-    private OIDCClientSecretConfigWrapper(ClientModel client, ClientRepresentation clientRep) {
+    private final KeycloakSession session;
+
+    private OIDCClientSecretConfigWrapper(ClientModel client, ClientRepresentation clientRep, KeycloakSession session) {
         super(client, clientRep);
+        this.session = session;
     }
 
-    public static OIDCClientSecretConfigWrapper fromClientModel(ClientModel client) {
-        return new OIDCClientSecretConfigWrapper(client, null);
+    public static OIDCClientSecretConfigWrapper fromClientModel(ClientModel client, KeycloakSession session) {
+        return new OIDCClientSecretConfigWrapper(client, null, session);
     }
 
-    public static OIDCClientSecretConfigWrapper fromClientRepresentation(ClientRepresentation clientRep) {
-        return new OIDCClientSecretConfigWrapper(null, clientRep);
+    public static OIDCClientSecretConfigWrapper fromClientRepresentation(ClientRepresentation clientRep, KeycloakSession session) {
+        return new OIDCClientSecretConfigWrapper(null, clientRep, session);
     }
 
     public String getSecret() {
@@ -102,7 +106,8 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
     }
 
     public String getClientRotatedSecret() {
-        return getAttribute(CLIENT_ROTATED_SECRET);
+        String secret = getAttribute(CLIENT_ROTATED_SECRET);
+        return session == null ? getAttribute(CLIENT_ROTATED_SECRET) : session.vault().getStringSecret(secret).get().orElse(secret);
     }
 
     public void setClientRotatedSecret(String secret) {
@@ -178,6 +183,19 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
             return getClientRotatedSecretExpirationTime() < Time.currentTime();
         }
         return true;
+    }
+
+    public String getClientPrimarySecret() {
+        String secret = clientModel.getSecret();
+        return session == null ? secret : session.vault().getStringSecret(secret).get().orElse(secret);
+    }
+
+    public boolean validatePrimarySecret(String secret) {
+        if (isClientSecretExpired()) {
+            return false;
+        }
+
+        return MessageDigest.isEqual(secret.getBytes(), getClientPrimarySecret().getBytes());
     }
 
     //validates the rotated secret (value and expiration)

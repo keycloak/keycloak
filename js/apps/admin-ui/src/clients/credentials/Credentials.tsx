@@ -15,7 +15,6 @@ import {
   Card,
   CardBody,
   ClipboardCopy,
-  Divider,
   Form,
   FormGroup,
   PageSection,
@@ -212,24 +211,19 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
                 />
               </Form>
             )}
+            {selectedProvider?.supportsSecret && (
+              <ClientSecret
+                client={client}
+                secret={secret}
+                toggle={toggleClientSecretConfirm}
+              />
+            )}
             <ActionGroup>
               <Button variant="primary" type="submit" isDisabled={!isDirty}>
                 {t("save")}
               </Button>
             </ActionGroup>
           </CardBody>
-          {selectedProvider?.supportsSecret && (
-            <>
-              <Divider />
-              <CardBody>
-                <ClientSecret
-                  client={client}
-                  secret={secret}
-                  toggle={toggleClientSecretConfirm}
-                />
-              </CardBody>
-            </>
-          )}
         </Card>
         <Card isFlat>
           <CardBody>

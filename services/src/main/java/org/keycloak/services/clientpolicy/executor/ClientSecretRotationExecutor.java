@@ -89,7 +89,7 @@ public class ClientSecretRotationExecutor implements
     private void executeOnAuthRequest() {
         ClientModel client = session.getContext().getClient();
         OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientModel(
-                client);
+                client, session);
 
         if (!wrapper.hasClientSecretExpirationTime()) {
             //first login with policy
@@ -100,7 +100,7 @@ public class ClientSecretRotationExecutor implements
 
     private void executeOnClientCreateOrUpdate(ClientCRUDContext adminContext) {
         OIDCClientSecretConfigWrapper clientConfigWrapper = OIDCClientSecretConfigWrapper.fromClientModel(
-                adminContext.getTargetClient());
+                adminContext.getTargetClient(), session);
         logger.debugv("Executing policy {0} for client {1}-{2} with configuration [ expirationPeriod: {3}, rotatedExpirationPeriod: {4}, remainExpirationPeriod: {5} ]", getName(), clientConfigWrapper.getId(), clientConfigWrapper.getName(), configuration.getExpirationPeriod(), configuration.getRotatedExpirationPeriod(), configuration.getRemainExpirationPeriod());
         if (adminContext instanceof ClientSecretRotationContext
                 || clientConfigWrapper.isClientSecretExpired()

@@ -22,6 +22,7 @@ import java.util.Set;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ConfiguredPerClientProvider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -53,6 +54,16 @@ public interface ClientAuthenticatorFactory extends ProviderFactory<ClientAuthen
      * @return
      */
     Map<String, Object> getAdapterConfiguration(ClientModel client);
+
+    /**
+     * Get configuration, which needs to be used for adapter ( keycloak.json ) of particular client. Some implementations
+     * may return just template and user needs to edit the values according to his environment (For example fill the location of keystore file)
+     *
+     * @return
+     */
+    default Map<String, Object> getAdapterConfiguration(KeycloakSession session, ClientModel client) {
+        return getAdapterConfiguration(client);
+    }
 
     /**
      * Get authentication methods for the specified protocol
