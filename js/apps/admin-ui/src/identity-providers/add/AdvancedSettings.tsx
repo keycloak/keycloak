@@ -95,6 +95,7 @@ const LoginFlow = ({
 };
 
 const SYNC_MODES = ["IMPORT", "LEGACY", "FORCE"];
+const SHOW_IN_ACCOUNT_CONSOLE_VALUES = ["ALWAYS", "WHEN_LINKED", "NEVER"];
 type AdvancedSettingsProps = { isOIDC: boolean; isSAML: boolean };
 
 export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
@@ -154,6 +155,20 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
         field="hideOnLogin"
         label="hideOnLoginPage"
         fieldType="boolean"
+      />
+      <SelectControl
+        name="config.showInAccountConsole"
+        label={t("showInAccountConsole")}
+        options={SHOW_IN_ACCOUNT_CONSOLE_VALUES.map((showInAccountConsole) => ({
+          key: showInAccountConsole,
+          value: t(
+            `showInAccountConsole.${showInAccountConsole.toLocaleLowerCase()}`,
+          ),
+        }))}
+        controller={{
+          defaultValue: SHOW_IN_ACCOUNT_CONSOLE_VALUES[0],
+          rules: { required: t("required") },
+        }}
       />
 
       {(!isSAML || isOIDC) && (
