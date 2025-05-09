@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -29,7 +30,11 @@ import org.jboss.logging.Logger;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.SubjectCredentialManager;
+import org.keycloak.models.UserModel;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 /**
  * Resolves set of AuthenticationSelectionOptions
@@ -64,49 +69,47 @@ class AuthenticationSelectionResolver {
         List<AuthenticationSelectionOption> authenticationSelectionList = new ArrayList<>();
         List<AuthenticationSelectionOption> userlessCredBasedAuthenticationSelectionList = new ArrayList<>();
 
-        if (processor.getAuthenticationSession() != null) {
-            Map<String, AuthenticationExecutionModel> typeAuthExecMap = new HashMap<>();
-            List<AuthenticationExecutionModel> nonCredentialExecutions = new ArrayList<>();
+        AuthenticationSessionModel authSession = processor.getAuthenticationSession();
+        if (authSession != null) {
+
+            List<AuthenticationExecutionModel> executionCandidates = new ArrayList<>();
 
             String topFlowId = getFlowIdOfTheHighestUsefulFlow(processor, model);
 
             if (topFlowId == null) {
-                addSimpleAuthenticationExecution(processor, model, typeAuthExecMap, nonCredentialExecutions);
+                addSimpleAuthenticationExecution(processor, model, executionCandidates);
             } else {
-                addAllExecutionsFromSubflow(processor, topFlowId, typeAuthExecMap, nonCredentialExecutions);
+                addAllExecutionsFromSubflow(processor, topFlowId, executionCandidates);
             }
 
-            //add credential authenticators in order
-            if (processor.getAuthenticationSession().getAuthenticatedUser() != null) {
-                authenticationSelectionList =
-                        Stream.concat(
-                            processor.getAuthenticationSession().getAuthenticatedUser().credentialManager().getStoredCredentialsStream()
-                                .map(CredentialModel::getType),
-                            processor.getAuthenticationSession().getAuthenticatedUser().credentialManager()
-                                .getConfiguredUserStorageCredentialTypesStream())
-                        .distinct()
-                        .filter(typeAuthExecMap::containsKey)
-                        .map(credentialType -> new AuthenticationSelectionOption(processor.getSession(), typeAuthExecMap.get(credentialType)))
-                        .collect(Collectors.toList());
-            }
-            else {
-                // No user associated with session. Check if this flow contains executions linked to authenticators that don't require a user
-                typeAuthExecMap.forEach((key, value) -> {
-                    AuthenticatorFactory credbasedAuthenticatorFactory = (AuthenticatorFactory) processor.getSession().getKeycloakSessionFactory().getProviderFactory(Authenticator.class, value.getAuthenticator());
-                    Authenticator credbasedAuthenticator = credbasedAuthenticatorFactory.create(processor.getSession());
-                    if (!credbasedAuthenticator.requiresUser()) {
-                        userlessCredBasedAuthenticationSelectionList.add(new AuthenticationSelectionOption(processor.getSession(), value));
+            KeycloakSession session = processor.getSession();
+            UserModel authenticatedUser = authSession.getAuthenticatedUser();
+            if (authenticatedUser != null) {
+                // Add credential authenticators in order
+                SubjectCredentialManager scm = authenticatedUser.credentialManager();
+                Stream<String> storedCredentialTypes = scm.getStoredCredentialsStream().map(CredentialModel::getType);
+                Stream<String> configuredCredentialTypes = scm.getConfiguredUserStorageCredentialTypesStream();
+                Set<String> allowedCredentialTypes = Stream.concat(storedCredentialTypes, configuredCredentialTypes).collect(Collectors.toSet());
+
+                executionCandidates.removeIf(execution -> {
+                    Authenticator authenticator = session.getProvider(Authenticator.class, execution.getAuthenticator());
+                    if (authenticator instanceof CredentialValidator) {
+                        CredentialValidator<?> cv = (CredentialValidator<?>)authenticator;
+                        return !allowedCredentialTypes.contains(cv.getType(session));
                     }
+                    return false;
+                });
+            } else {
+                // No user associated with session. Check if this flow contains executions linked to authenticators that don't require a user
+                executionCandidates.removeIf(execution -> {
+                    Authenticator authenticator = session.getProvider(Authenticator.class, execution.getAuthenticator());
+                    return authenticator.requiresUser();
                 });
             }
 
-            //add all other authenticators
-            for (AuthenticationExecutionModel exec : nonCredentialExecutions) {
-                authenticationSelectionList.add(new AuthenticationSelectionOption(processor.getSession(), exec));
-            }
-
-            // Add options for userless credential based authenticators AFTER regular authenticators options
-            authenticationSelectionList.addAll(userlessCredBasedAuthenticationSelectionList);
+            authenticationSelectionList = executionCandidates.stream()
+                    .map(exec -> new AuthenticationSelectionOption(session, exec))
+                    .collect(Collectors.toList());
         }
 
         logger.debugf("Selections when trying execution '%s' : %s", model.getAuthenticator(), authenticationSelectionList);
@@ -167,19 +170,18 @@ class AuthenticationSelectionResolver {
 
     // Process single authenticaion execution, which does NOT point to authentication flow.
     // Fill the typeAuthExecMap and nonCredentialExecutions accordingly
-    private static void addSimpleAuthenticationExecution(AuthenticationProcessor processor, AuthenticationExecutionModel execution, Map<String, AuthenticationExecutionModel> typeAuthExecMap, List<AuthenticationExecutionModel> nonCredentialExecutions) {
+    private static void addSimpleAuthenticationExecution(AuthenticationProcessor processor, AuthenticationExecutionModel execution, List<AuthenticationExecutionModel> executionCandidates) {
         // Don't add already processed executions
         if (DefaultAuthenticationFlow.isProcessed(processor, execution)) {
             return;
         }
 
-        Authenticator localAuthenticator = processor.getSession().getProvider(Authenticator.class, execution.getAuthenticator());
-        if (!(localAuthenticator instanceof CredentialValidator)) {
-            nonCredentialExecutions.add(execution);
-        } else {
-            CredentialValidator<?> cv = (CredentialValidator<?>) localAuthenticator;
-            typeAuthExecMap.put(cv.getType(processor.getSession()), execution);
+        // Skip non executable sub-flows as execution candidates
+        if (execution.isAuthenticatorFlow()) {
+            return;
         }
+
+        executionCandidates.add(execution);
     }
 
 
@@ -189,7 +191,7 @@ class AuthenticationSelectionResolver {
      *
      * Return true if at least something was added to any of the list
      */
-    private static boolean addAllExecutionsFromSubflow(AuthenticationProcessor processor, String flowId, Map<String, AuthenticationExecutionModel> typeAuthExecMap, List<AuthenticationExecutionModel> nonCredentialExecutions) {
+    private static boolean addAllExecutionsFromSubflow(AuthenticationProcessor processor, String flowId, List<AuthenticationExecutionModel> executionCandidates) {
         AuthenticationFlowModel flowModel = processor.getRealm().getAuthenticationFlowById(flowId);
         if (flowModel == null) {
             throw new AuthenticationFlowException("Flow not found", AuthenticationFlowError.INTERNAL_ERROR);
@@ -227,9 +229,9 @@ class AuthenticationSelectionResolver {
 
             // Recursively add credentials from required execution
             if (requiredExecution.isAuthenticatorFlow() && factory == null) {
-                return addAllExecutionsFromSubflow(processor, requiredExecution.getFlowId(), typeAuthExecMap, nonCredentialExecutions);
+                return addAllExecutionsFromSubflow(processor, requiredExecution.getFlowId(), executionCandidates);
             } else {
-                addSimpleAuthenticationExecution(processor, requiredExecution, typeAuthExecMap, nonCredentialExecutions);
+                addSimpleAuthenticationExecution(processor, requiredExecution, executionCandidates);
                 return true;
             }
         } else {
@@ -243,10 +245,10 @@ class AuthenticationSelectionResolver {
                 }
 
                 if (!execution.isAuthenticatorFlow()) {
-                    addSimpleAuthenticationExecution(processor, execution, typeAuthExecMap, nonCredentialExecutions);
+                    addSimpleAuthenticationExecution(processor, execution, executionCandidates);
                     anyAdded = true;
                 } else {
-                    anyAdded |= addAllExecutionsFromSubflow(processor, execution.getFlowId(), typeAuthExecMap, nonCredentialExecutions);
+                    anyAdded |= addAllExecutionsFromSubflow(processor, execution.getFlowId(), executionCandidates);
                 }
             }
 
