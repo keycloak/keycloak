@@ -157,15 +157,17 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     @Override
     public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity) {
         try {
-            AccessTokenResponse previousResponse = JsonSerialization.readValue(identity.getToken(), AccessTokenResponse.class);
-            Integer exp = (Integer) previousResponse.getOtherClaims().get(ACCESS_TOKEN_EXPIRATION);
-            if (needsRefresh(exp) && previousResponse.getRefreshToken() != null) {
-                AccessTokenResponse newResponse = refreshToken(previousResponse, session);
-                if (newResponse.getExpiresIn() > 0) {
-                    int accessTokenExpiration = Time.currentTime() + (int) newResponse.getExpiresIn();
-                    newResponse.getOtherClaims().put(ACCESS_TOKEN_EXPIRATION, accessTokenExpiration);
+            if (identity.getToken().startsWith("{")) {
+                AccessTokenResponse previousResponse = JsonSerialization.readValue(identity.getToken(), AccessTokenResponse.class);
+                Integer exp = (Integer) previousResponse.getOtherClaims().get(ACCESS_TOKEN_EXPIRATION);
+                if (needsRefresh(exp) && previousResponse.getRefreshToken() != null) {
+                    AccessTokenResponse newResponse = refreshToken(previousResponse, session);
+                    if (newResponse.getExpiresIn() > 0) {
+                        int accessTokenExpiration = Time.currentTime() + (int) newResponse.getExpiresIn();
+                        newResponse.getOtherClaims().put(ACCESS_TOKEN_EXPIRATION, accessTokenExpiration);
+                    }
+                    identity.setToken(JsonSerialization.writeValueAsString(newResponse));
                 }
-                identity.setToken(JsonSerialization.writeValueAsString(newResponse));
             }
         } catch (IOException e) {
             ErrorRepresentation error = new ErrorRepresentation();
@@ -191,7 +193,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
             SimpleHttp refreshTokenRequest = getRefreshTokenRequest(session, previousResponse.getRefreshToken(), getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret()));
             try (SimpleHttp.Response refreshTokenResponse = refreshTokenRequest.asResponse()) {
-                String response = refreshTokenRequest.asString();
+                String response = refreshTokenResponse.asString();
                 if (response.contains("error")) {
                     ErrorRepresentation error = new ErrorRepresentation();
                     error.setErrorMessage("Unable to refresh token");
@@ -377,6 +379,21 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         }
 
         BrokeredIdentityContext context = doGetFederatedIdentity(accessToken);
+
+        if (getConfig().isStoreToken() && response.startsWith("{")) {
+            try {
+                AccessTokenResponse tokenResponse = JsonSerialization.readValue(response, AccessTokenResponse.class);
+                if (tokenResponse.getExpiresIn() > 0) {
+                    long accessTokenExpiration = Time.currentTime() + tokenResponse.getExpiresIn();
+                    tokenResponse.getOtherClaims().put(ACCESS_TOKEN_EXPIRATION, accessTokenExpiration);
+                    response = JsonSerialization.writeValueAsString(tokenResponse);
+                }
+                context.setToken(response);
+            } catch (IOException e) {
+                logger.debugf("Can't store expiration date in JSON token", e);
+            }
+        }
+
         context.getContextData().put(FEDERATED_ACCESS_TOKEN, accessToken);
         return context;
     }
