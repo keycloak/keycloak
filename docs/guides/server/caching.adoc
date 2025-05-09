@@ -304,6 +304,7 @@ If you are defining a custom stack, make sure the `cache-stack` option is not us
 To ensure a healthy {project_name} clustering, two network ports need to be open.
 
 {project_name} uses `jgroups.bind.port` for the data transport in UDP- and TCP-based stacks.
+
 * For the TCP-based stacks like `tcp`, `ec2`, `google` and `kubernetes` it picks `7800` by default.
 * For the UDP-based stack `udp` it picks a random port by default.
 +
