@@ -35,6 +35,7 @@ import org.keycloak.quarkus.runtime.configuration.mappers.WildcardPropertyMapper
 public class KcEnvConfigSource extends PropertiesConfigSource {
 
     public static final String NAME = "KcEnvVarConfigSource";
+    public static final String KCKEY_PREFIX = "KCKEY_";
 
     public KcEnvConfigSource() {
         super(buildProperties(), NAME, 500);
@@ -47,20 +48,32 @@ public class KcEnvConfigSource extends PropertiesConfigSource {
         for (Map.Entry<String, String> entry : System.getenv().entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
+            String transformedKey = null;
 
             if (key.startsWith(kcPrefix)) {
-                String transformedKey = NS_KEYCLOAK_PREFIX + key.substring(kcPrefix.length()).toLowerCase().replace("_", "-");
+                String baseKey = key.substring(kcPrefix.length());
 
-                PropertyMapper<?> mapper = PropertyMappers.getMapper(transformedKey);
+                String actualKey = System.getenv(KCKEY_PREFIX + baseKey);
+                if (actualKey != null) {
+                    transformedKey = NS_KEYCLOAK_PREFIX + actualKey;
+                } else {
+                    transformedKey = NS_KEYCLOAK_PREFIX + baseKey.toLowerCase().replace("_", "-");
 
-                if (mapper != null && mapper.hasWildcard()) {
-                    // special case - wildcards don't follow the default conversion rule
-                    transformedKey = ((WildcardPropertyMapper<?>) mapper).getKcKeyForEnvKey(key, transformedKey)
-                            .orElseThrow();
+                    PropertyMapper<?> mapper = PropertyMappers.getMapper(transformedKey);
+
+                    if (mapper != null && mapper.hasWildcard()) {
+                        // special case - wildcards don't follow the default conversion rule
+                        WildcardPropertyMapper<?> wildcardPropertyMapper = (WildcardPropertyMapper<?>) mapper;
+
+                        transformedKey = wildcardPropertyMapper.getKcKeyForEnvKey(key, transformedKey)
+                                .orElseThrow();
+                    }
                 }
-
-                properties.put(transformedKey, value);
+            } else {
+                continue;
             }
+
+            properties.put(transformedKey, value);
         }
 
         return properties;
