@@ -35,11 +35,13 @@ import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.util.BasicAuthHelper;
+
 
 /**
  * Validates client based on "client_id" and "client_secret" sent either in request parameters or in "Authorization: Basic" header .
@@ -133,9 +135,9 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
             return;
         }
 
-        OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientModel(client);
+        OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientModel(client, context.getSession());
 
-        if (!client.validateSecret(clientSecret)) {
+        if (!wrapper.validatePrimarySecret(clientSecret)) {
             if (!wrapper.validateRotatedSecret(clientSecret)){
                 reportFailedAuth(context);
                 return;
@@ -182,10 +184,16 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
     }
 
     @Override
-    public Map<String, Object> getAdapterConfiguration(ClientModel client) {
+    public Map<String, Object> getAdapterConfiguration(KeycloakSession session, ClientModel client) {
         Map<String, Object> result = new HashMap<>();
-        result.put(CredentialRepresentation.SECRET, client.getSecret());
+        String secret = client.getSecret();
+        result.put(CredentialRepresentation.SECRET, session.vault().getStringSecret(secret).get().orElse(secret));
         return result;
+    }
+
+    @Override
+    public Map<String, Object> getAdapterConfiguration(ClientModel client) {
+        throw new UnsupportedOperationException("Not implemented");
     }
 
     @Override
