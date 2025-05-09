@@ -727,6 +727,54 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
        }
     }
 
+    @Test
+    public void testRedirectToCorrectUrlAfterAuthSessionExpiration() {
+
+        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
+
+            String redirectUri1 = String.format("%s/auth/realms/master/app/auth/suffix1", getAuthServerContextRoot());
+            String redirectUri2 = String.format("%s/auth/realms/master/app/auth/suffix2", getAuthServerContextRoot());
+
+            //open tab 1 with redirect uri 1
+            assertThat(tabUtil.getCountOfTabs(), Matchers.is(1));
+            oauth.redirectUri(redirectUri1);
+            oauth.openLoginForm();
+            loginPage.assertCurrent();
+            getLogger().info("URL in tab1: " + driver.getCurrentUrl());
+
+            //open tab 2 with redirect uri 2
+            oauth.redirectUri(redirectUri2);
+            tabUtil.newTab(oauth.loginForm().build());
+            assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
+            loginPage.assertCurrent();
+            getLogger().info("URL in tab2: " + driver.getCurrentUrl());
+
+            // Wait until authentication session expires
+            setTimeOffset(7200000);
+
+            //triggers the postponed function in authChecker.js to check if the auth session cookie has changed
+            WaitUtils.pause(2000);
+
+            // Go back to tab1
+            tabUtil.closeTab(1);
+            assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(1));
+
+            getLogger().info("URL in tab1 after close: " + driver.getCurrentUrl());
+
+            // Try to login in tab2. After fill login form, the login will be restarted (due KC_RESTART cookie). User can continue login
+            loginPage.login("login-test", getPassword("login-test"));
+            loginPage.assertCurrent();
+            Assert.assertEquals(loginPage.getError(), "Your login attempt timed out. Login will start from the beginning.");
+            events.clear();
+            loginSuccessAndDoRequiredActions();
+
+            getLogger().info("URL in after: " + driver.getCurrentUrl());
+
+            //redirected url should be the redirect uri 1
+            Assert.assertTrue(driver.getCurrentUrl().startsWith(redirectUri1));
+        }
+    }
+
     private void waitForAppPage(Runnable htmlUnitAction) {
         if (driver instanceof HtmlUnitDriver) {
             // authChecker.js javascript does not work with HtmlUnitDriver. So need to "refresh" the current browser tab by running the last action in order to simulate "already_logged_in"
