@@ -27,11 +27,8 @@ import org.keycloak.WebAuthnConstants;
 import org.keycloak.authentication.authenticators.browser.PasskeysConditionalUIAuthenticatorFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
-import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
-import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
-import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
@@ -42,7 +39,6 @@ import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions;
 import org.keycloak.testsuite.webauthn.utils.PropertyRequirement;
-import org.keycloak.testsuite.webauthn.utils.WebAuthnRealmData;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
 /**
@@ -58,7 +54,7 @@ public class PasskeysConditionalUITest extends AbstractWebAuthnVirtualTest {
         RealmRepresentation realmRepresentation = AbstractAdminTest.loadJson(getClass().getResourceAsStream("/webauthn/testrealm-webauthn.json"), RealmRepresentation.class);
 
         makePasswordlessRequiredActionDefault(realmRepresentation);
-        switchExecutionInBrowserFormToPasskeysConditionalUI(realmRepresentation);
+        switchExecutionInBrowserFormToProvider(realmRepresentation, PasskeysConditionalUIAuthenticatorFactory.PROVIDER_ID);
 
         testRealms.add(realmRepresentation);
         configureTestRealm(realmRepresentation);
@@ -67,36 +63,6 @@ public class PasskeysConditionalUITest extends AbstractWebAuthnVirtualTest {
     @Override
     public boolean isPasswordless() {
         return true;
-    }
-
-    /**
-     * Creates the webauthn flow with the passkeys conditional UI authenticator.
-     * @param realm The realm representation
-     */
-    protected void switchExecutionInBrowserFormToPasskeysConditionalUI(RealmRepresentation realm) {
-        List<AuthenticationFlowRepresentation> flows = realm.getAuthenticationFlows();
-        MatcherAssert.assertThat(flows, Matchers.notNullValue());
-
-        AuthenticationFlowRepresentation browserForm = flows.stream()
-                .filter(f -> f.getAlias().equals("browser-webauthn-forms"))
-                .findFirst()
-                .orElse(null);
-        MatcherAssert.assertThat("Cannot find 'browser-webauthn-forms' flow", browserForm, Matchers.notNullValue());
-
-        flows.removeIf(f -> f.getAlias().equals(browserForm.getAlias()));
-
-        // set just one authenticator with the passkeys conditional UI
-        AuthenticationExecutionExportRepresentation passkeysConditionalUI = new AuthenticationExecutionExportRepresentation();
-        passkeysConditionalUI.setAuthenticator(PasskeysConditionalUIAuthenticatorFactory.PROVIDER_ID);
-        passkeysConditionalUI.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED.name());
-        passkeysConditionalUI.setPriority(10);
-        passkeysConditionalUI.setAuthenticatorFlow(false);
-        passkeysConditionalUI.setUserSetupAllowed(false);
-
-        browserForm.setAuthenticationExecutions(List.of(passkeysConditionalUI));
-        flows.add(browserForm);
-
-        realm.setAuthenticationFlows(flows);
     }
 
     @Test
@@ -110,11 +76,7 @@ public class PasskeysConditionalUITest extends AbstractWebAuthnVirtualTest {
                 .setWebAuthnPolicyUserVerificationRequirement(WebAuthnConstants.OPTION_REQUIRED)
                 .update()) {
 
-            WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
-            MatcherAssert.assertThat(realmData, Matchers.notNullValue());
-            MatcherAssert.assertThat(realmData.getRpEntityName(), Matchers.is("localhost"));
-            MatcherAssert.assertThat(realmData.getRequireResidentKey(), Matchers.is(PropertyRequirement.YES.getValue()));
-            MatcherAssert.assertThat(realmData.getUserVerificationRequirement(), Matchers.is(WebAuthnConstants.OPTION_REQUIRED));
+            checkWebAuthnConfiguration(PropertyRequirement.YES.getValue(), WebAuthnConstants.OPTION_REQUIRED);
 
             registerDefaultUser();
 
@@ -149,11 +111,7 @@ public class PasskeysConditionalUITest extends AbstractWebAuthnVirtualTest {
                 .setWebAuthnPolicyUserVerificationRequirement(WebAuthnConstants.OPTION_NOT_SPECIFIED)
                 .update()) {
 
-            WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
-            MatcherAssert.assertThat(realmData, Matchers.notNullValue());
-            MatcherAssert.assertThat(realmData.getRpEntityName(), Matchers.is("localhost"));
-            MatcherAssert.assertThat(realmData.getRequireResidentKey(), Matchers.is(Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED));
-            MatcherAssert.assertThat(realmData.getUserVerificationRequirement(), Matchers.is(Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED));
+            checkWebAuthnConfiguration(Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED, Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED);
 
             registerDefaultUser();
 
