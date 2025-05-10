@@ -145,6 +145,7 @@ metadata:
 spec:
   instances: 1
   db:
+    database: keycloak
     vendor: postgres
     host: postgres-db
     usernameSecret:
