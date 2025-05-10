@@ -213,7 +213,7 @@ public class OIDCLoginProtocolService {
             responseBuilder.header(CONTENT_TYPE, MediaType.APPLICATION_JSON);
         }
 
-        return Cors.builder().allowedOrigins("*").auth().add(responseBuilder);
+        return Cors.builder().allowAllOrigins().auth().add(responseBuilder);
     }
 
     @Path("userinfo")
