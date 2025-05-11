@@ -249,7 +249,6 @@ public class UserInfoEndpoint {
         }
 
         event.user(userModel);
-//                .detail(Details.USERNAME, userModel.getUsername());
 
         if (!userModel.isEnabled()) {
             event.error(Errors.USER_DISABLED);

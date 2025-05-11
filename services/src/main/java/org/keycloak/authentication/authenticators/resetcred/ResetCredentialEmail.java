@@ -93,7 +93,6 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
         // we don't want people guessing usernames, so if there is a problem, just continuously challenge
         if (user.getEmail() == null || user.getEmail().trim().length() == 0) {
             event.user(user)
-//                    .detail(Details.USERNAME, username)
                     .error(Errors.INVALID_EMAIL);
 
             context.forkWithSuccessMessage(new FormMessage(Messages.EMAIL_SENT));

@@ -129,7 +129,6 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         AccessToken token = authResult.getToken();
 
         event.user(tokenUser);
-//        event.detail(Details.USERNAME, tokenUser.getUsername());
         if (tokenSession.getPersistenceState() != UserSessionModel.SessionPersistenceState.TRANSIENT) {
             event.session(tokenSession);
         }
