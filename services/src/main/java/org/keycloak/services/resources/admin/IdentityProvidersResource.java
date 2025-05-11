@@ -242,7 +242,13 @@ public class IdentityProvidersResource {
 
             throw ErrorResponse.error(message, BAD_REQUEST);
         } catch (ModelDuplicateException e) {
-            throw ErrorResponse.exists("An Identity Provider with the same alias or display name already exists.");
+            String message = e.getMessage();
+            if (message != null && message.contains("Display name")) {
+                throw ErrorResponse.exists(message);
+            }
+            else {
+                throw ErrorResponse.exists("Identity Provider " + representation.getAlias() + " already exists");
+            }
         }
     }
 
