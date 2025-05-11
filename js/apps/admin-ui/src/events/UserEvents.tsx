@@ -471,6 +471,13 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
               ]
             : []),
           {
+              name: "userName",
+              displayKey: "userName",
+              cellRenderer: (event: EventRepresentation) => {
+                  return event.userName || t("noUserDetails");
+                },
+          },
+          {
             name: "type",
             displayKey: "eventType",
             cellRenderer: StatusRow,

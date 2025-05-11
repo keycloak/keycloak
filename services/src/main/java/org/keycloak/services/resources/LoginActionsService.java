@@ -239,7 +239,6 @@ public class LoginActionsService {
         }
 
         event.user(authSession.getAuthenticatedUser());
-       // event.detail(Details.USERNAME, authSession.getAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME));
         event.detail(Details.AUTH_METHOD, authSession.getProtocol());
 
         String flowPath = authSession.getClientNote(AuthorizationEndpointBase.APP_INITIATED_FLOW);
@@ -1080,7 +1079,6 @@ public class LoginActionsService {
         UserModel authenticatedUser = authSession.getAuthenticatedUser();
         if (authenticatedUser != null) {
             event.user(authenticatedUser);
-//                    .detail(Details.USERNAME, authenticatedUser.getUsername());
         }
 
         String attemptedUsername = authSession.getAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);

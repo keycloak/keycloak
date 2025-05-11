@@ -1173,7 +1173,6 @@ public class AuthenticationProcessor {
         }
 
         event.user(userSession.getUser())
-//                .detail(Details.USERNAME, username)
                 .session(userSession);
 
         return clientSessionCtx;

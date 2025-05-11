@@ -279,6 +279,7 @@ public class LogoutEndpoint {
             UserModel user = userSession.getUser();
             logoutSession.setAuthenticatedUser(user);
             loginForm.setUser(user);
+            event.user(userSession.getUser());
         }
 
         // Logout confirmation screen will be displayed to the user in this case
@@ -413,6 +414,7 @@ public class LogoutEndpoint {
                     event.event(EventType.LOGOUT);
                     event.error(Errors.SESSION_EXPIRED);
                 } else {
+                    event.user(userSession.getUser());
                     Integer idTokenIssuedAt = Integer.parseInt(idTokenIssuedAtStr);
                     checkTokenIssuedAt(idTokenIssuedAt, userSession);
                 }

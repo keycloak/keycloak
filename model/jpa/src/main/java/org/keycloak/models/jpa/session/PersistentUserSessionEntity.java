@@ -17,7 +17,6 @@
 
 package org.keycloak.models.jpa.session;
 
-import jakarta.persistence.Lob;
 import jakarta.persistence.Version;
 import org.hibernate.annotations.DynamicUpdate;
 import org.keycloak.storage.jpa.KeyUtils;
@@ -96,7 +95,7 @@ public class PersistentUserSessionEntity {
     @Column(name = "OFFLINE_FLAG")
     protected String offline;
 
-    @Column(name="DATA", length = 4000)
+    @Column(name = "DATA")
     protected String data;
 
     public String getUserSessionId() {
