@@ -6,7 +6,7 @@ title="Visualizing activities in dashboards"
 summary="Install the {project_name} Grafana dashboards to visualize the metrics that capture the status and activities of your deployment.">
 
 {project_name} provides metrics to observe what is happening inside the deployment.
-To understand how metrics evolve over time, it is helpful to collect them and visualize in graphs.
+To understand how metrics evolve over time, it is helpful to collect and visualize them in graphs.
 
 This guide provides instructions on how to visualize collected {project_name} metrics in a running Grafana instance.
 
