@@ -565,6 +565,17 @@ public interface RealmModel extends RoleContainerModel {
      */
     ComponentModel importComponentModel(ComponentModel model);
 
+
+    /**
+     * Validates that no other component with the same name and provider type exists.
+     *
+     * @param model the component to validate
+     * @throws ModelDuplicateException if a duplicate is found
+     */
+    default void validateDuplicateComponentName(ComponentModel model) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
     /**
      * Updates component model. Will call onUpdate() method of ComponentFactory
      * @param component to be updated

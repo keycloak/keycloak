@@ -30,6 +30,7 @@ import org.keycloak.component.SubComponentFactory;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
@@ -137,12 +138,17 @@ public class ComponentResource {
         try {
             ComponentModel model = RepresentationToModel.toModel(session, rep);
             if (model.getParentId() == null) model.setParentId(realm.getId());
+            realm.validateDuplicateComponentName(model);
 
             model = realm.addComponentModel(model);
 
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), model.getId()).representation(rep).success();
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(model.getId()).build()).build();
-        } catch (ComponentValidationException e) {
+        }
+        catch (ModelDuplicateException e) {
+            throw ErrorResponse.exists("A component with the same name already exists for provider type");
+        }
+        catch (ComponentValidationException e) {
             return localizedErrorResponse(e);
         } catch (IllegalArgumentException e) {
             throw new BadRequestException("Invalid provider type or no such provider", e);
@@ -179,9 +185,14 @@ public class ComponentResource {
             }
             RepresentationToModel.updateComponent(session, rep, model, false);
             adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
+            realm.validateDuplicateComponentName(model);
             realm.updateComponent(model);
             return Response.noContent().build();
-        } catch (ComponentValidationException e) {
+        }
+        catch (ModelDuplicateException e) {
+            throw ErrorResponse.exists("A component with the same name already exists for provider type:");
+        }
+        catch (ComponentValidationException e) {
             return localizedErrorResponse(e);
         } catch (IllegalArgumentException e) {
             throw new BadRequestException("Invalid provider type or no such provider", e);

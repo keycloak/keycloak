@@ -17,6 +17,7 @@
 
 package org.keycloak.models;
 
+import org.keycloak.component.ComponentModel;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.client.ClientStorageProvider;
@@ -68,6 +69,29 @@ public interface StorageProviderRealmModel extends RealmModel {
         return getComponentsStream(getId(), RoleStorageProvider.class.getName())
                 .map(RoleStorageProviderModel::new)
                 .sorted(RoleStorageProviderModel.comparator);
+    }
+
+    /**
+     * Checks for duplicate component names under the same parent and provider type.
+     *
+     * @param model the component to check
+     * @throws ModelDuplicateException if a different component with the same name exists
+     */
+    default void validateDuplicateComponentName(ComponentModel model) {
+        String parentId = model.getParentId() != null ? model.getParentId() : getId();
+        String providerType = model.getProviderType();
+        String nameToCheck = model.getName();
+
+        boolean exists = getComponentsStream(parentId, providerType)
+                .anyMatch(existingModel ->
+                        existingModel.getName() != null &&
+                                existingModel.getName().equalsIgnoreCase(nameToCheck) &&
+                                (model.getId() == null || !model.getId().equals(existingModel.getId())) // allow self during update
+                );
+
+        if (exists) {
+            throw new ModelDuplicateException("Component with the same name already exists for providerType: " + providerType);
+        }
     }
 
     /**
