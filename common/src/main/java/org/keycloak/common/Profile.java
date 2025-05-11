@@ -93,7 +93,7 @@ public class Profile {
         // Check if kerberos is available in underlying JVM and auto-detect if feature should be enabled or disabled by default based on that
         KERBEROS("Kerberos", Type.DEFAULT, 1, () -> KerberosJdkProvider.getProvider().isKerberosAvailable()),
 
-        RECOVERY_CODES("Recovery codes", Type.PREVIEW),
+        RECOVERY_CODES("Recovery codes", Type.DEFAULT),
 
         UPDATE_EMAIL("Update Email Action", Type.PREVIEW),
 
@@ -128,6 +128,8 @@ public class Profile {
         USER_EVENT_METRICS("Collect metrics based on user events", Type.DEFAULT),
 
         IPA_TUURA_FEDERATION("IPA-Tuura user federation provider", Type.EXPERIMENTAL),
+
+        LOGOUT_ALL_SESSIONS_V1("Logout all sessions logs out only regular sessions", Type.DEPRECATED, 1),
 
         ROLLING_UPDATES_V1("Rolling Updates", Type.DEFAULT, 1),
 

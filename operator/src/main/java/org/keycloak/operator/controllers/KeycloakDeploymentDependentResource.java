@@ -287,6 +287,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                         .editOrNewSpec().withImagePullSecrets(keycloakCR.getSpec().getImagePullSecrets()).endSpec()
                     .endTemplate()
                     .withReplicas(keycloakCR.getSpec().getInstances())
+                    .withServiceName(KeycloakDiscoveryServiceDependentResource.getName(keycloakCR))
                 .endSpec();
 
         var specBuilder = baseDeploymentBuilder.editSpec().editTemplate().editOrNewSpec();

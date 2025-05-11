@@ -123,16 +123,10 @@
         }
     },
 
-    "connectionsInfinispan": {
+    "cacheEmbedded": {
         "default": {
-            "jgroupsUdpMcastAddr": "${keycloak.connectionsInfinispan.jgroupsUdpMcastAddr:234.56.78.90}",
-            "nodeName": "${keycloak.connectionsInfinispan.nodeName,jboss.node.name:}",
-            "siteName": "${keycloak.connectionsInfinispan.siteName:}",
-            "clustered": "${keycloak.connectionsInfinispan.clustered:}",
-            "async": "${keycloak.connectionsInfinispan.async:}",
-            "sessionsOwners": "${keycloak.connectionsInfinispan.sessionsOwners:}",
-            "l1Lifespan": "${keycloak.connectionsInfinispan.l1Lifespan:}",
-            "embedded": "${keycloak.connectionsInfinispan.embedded:true}"
+            "nodeName": "${keycloak.cacheEmbedded.nodeName,jboss.node.name:}",
+            "configFile": "${keycloak.cacheEmbedded.configFile:local-test-ispn.xml}"
         }
     },
 

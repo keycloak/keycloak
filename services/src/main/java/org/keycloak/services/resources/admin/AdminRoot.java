@@ -19,7 +19,6 @@ package org.keycloak.services.resources.admin;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.jboss.logging.Logger;
 import org.keycloak.http.HttpRequest;
-import org.keycloak.http.HttpResponse;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.NotAuthorizedException;
 import org.keycloak.common.Profile;
@@ -35,6 +34,7 @@ import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.resources.WelcomeResource;
 import org.keycloak.services.resources.admin.info.ServerInfoAdminResource;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.theme.Theme;
@@ -94,19 +94,31 @@ public class AdminRoot {
     @GET
     @Operation(hidden = true)
     public Response masterRealmAdminConsoleRedirect() {
-        String requestUrl = session.getContext().getUri().getRequestUri().toString();
         KeycloakUriInfo adminUriInfo = session.getContext().getUri(UrlType.ADMIN);
-        String adminUrl = adminUriInfo.getBaseUri().toString();
-        String localAdminUrl = session.getContext().getUri(UrlType.LOCAL_ADMIN).getBaseUri().toString();
-
-        if (!isAdminConsoleEnabled() || (!requestUrl.startsWith(adminUrl) && !requestUrl.startsWith(localAdminUrl))) {
-            return Response.status(Response.Status.NOT_FOUND).build();
+        if (shouldRedirect(adminUriInfo)) {
+            RealmModel master = new RealmManager(session).getKeycloakAdminstrationRealm();
+            return Response.status(302).location(
+                    adminUriInfo.getBaseUriBuilder().path(AdminRoot.class).path(AdminRoot.class, "getAdminConsole").path("/").build(master.getName())
+            ).build();
         }
+        return Response.status(Response.Status.NOT_FOUND).build();
+    }
 
-        RealmModel master = new RealmManager(session).getKeycloakAdminstrationRealm();
-        return Response.status(302).location(
-                adminUriInfo.getBaseUriBuilder().path(AdminRoot.class).path(AdminRoot.class, "getAdminConsole").path("/").build(master.getName())
-        ).build();
+    boolean shouldRedirect(KeycloakUriInfo adminUriInfo) {
+        if (!isAdminConsoleEnabled()) {
+            return false;
+        }
+        KeycloakUriInfo frontEndUriInfo = session.getContext().getUri();
+        String frontEndUrl = frontEndUriInfo.getBaseUri().toString();
+        String adminUrl = adminUriInfo.getBaseUri().toString();
+
+        if (adminUrl.equals(frontEndUrl)) {
+            return true; // admin is the same as front-end, we're not leaking information
+        }
+        String requestUrl = frontEndUriInfo.getRequestUri().toString();
+
+        // if we're using the admin url or are local, it's also safe to redirect
+        return requestUrl.startsWith(adminUrl) || WelcomeResource.isLocal(session);
     }
 
     /**
@@ -280,10 +292,6 @@ public class AdminRoot {
         Cors.builder().allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().add();
 
         return new ServerInfoAdminResource(session);
-    }
-
-    private HttpResponse getHttpResponse() {
-        return session.getContext().getHttpResponse();
     }
 
     private HttpRequest getHttpRequest() {

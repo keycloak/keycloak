@@ -205,10 +205,9 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         String expectedUsername = URLEncoder.encode(member.getEmail(), StandardCharsets.UTF_8);
         oauth.realm(bc.consumerRealmName());
         oauth.loginForm().loginHint(expectedUsername).open();
-        assertThat(loginPage.getUsername(), Matchers.equalTo(URLDecoder.decode(expectedUsername, StandardCharsets.UTF_8)));
+        assertThat(loginPage.getAttemptedUsername(), Matchers.equalTo(URLDecoder.decode(expectedUsername, StandardCharsets.UTF_8)));
 
         // continue authenticating without setting the username
-        loginPage.clickSignIn();
         loginPage.login(memberPassword);
         appPage.assertCurrent();
     }

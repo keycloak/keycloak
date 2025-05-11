@@ -38,6 +38,7 @@ import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.authorization.jpa.entities.ResourceEntity;
 import org.keycloak.authorization.policy.provider.PartialEvaluationContext;
 import org.keycloak.authorization.policy.provider.PartialEvaluationStorageProvider;
+import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -55,7 +56,7 @@ public interface JpaUserPartialEvaluationProvider extends PartialEvaluationStora
     default List<Predicate> getFilters(PartialEvaluationContext context) {
         KeycloakSession session = getSession();
 
-        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(session.getContext().getRealm())) {
+        if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
             // support for FGAP v1, remove once v1 is removed
             Set<String> userGroups = (Set<String>) session.getAttribute(UserModel.GROUPS);
 

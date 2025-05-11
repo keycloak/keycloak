@@ -245,9 +245,7 @@
                 <property name="route">node1</property>
                 <property name="remoteMode">${undertow.remote}</property>
                 <property name="keycloakConfigPropertyOverrides">{
-                    "keycloak.connectionsInfinispan.jgroupsUdpMcastAddr": "234.56.78.8",
-                    "keycloak.connectionsInfinispan.nodeName": "node1",
-                    "keycloak.connectionsInfinispan.clustered": "${keycloak.connectionsInfinispan.clustered:true}"
+                    "keycloak.cacheEmbedded.nodeName": "node1"
                     }
                 </property>
             </configuration>
@@ -264,9 +262,7 @@
                 <property name="route">node2</property>
                 <property name="remoteMode">${undertow.remote}</property>
                 <property name="keycloakConfigPropertyOverrides">{
-                    "keycloak.connectionsInfinispan.jgroupsUdpMcastAddr": "234.56.78.8",
-                    "keycloak.connectionsInfinispan.nodeName": "node2",
-                    "keycloak.connectionsInfinispan.clustered": "${keycloak.connectionsInfinispan.clustered:true}"
+                    "keycloak.cacheEmbedded.nodeName": "node2"
                     }
                 </property>
             </configuration>
@@ -292,7 +288,7 @@
             </property>
             <property name="bindHttpPortOffset">${auth.server.port.offset}</property>
             <property name="javaOpts">-Xms512m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=512m
-                -Djava.net.preferIPv4Stack=true -Dauth.server.db.host=some
+                -Dauth.server.db.host=some
             </property>
             <property name="enabledFeatures">${auth.server.feature}</property>
             <property name="disabledFeatures">${auth.server.feature.disable}</property>
@@ -327,12 +323,10 @@
                 <property name="profile">ha</property>
                 <property name="debugPort">5005</property>
                 <property name="keycloakConfigPropertyOverrides">{
-                    "keycloak.connectionsInfinispan.jgroupsUdpMcastAddr": "234.56.78.8",
-                    "keycloak.connectionsInfinispan.nodeName": "node1",
-                    "keycloak.connectionsInfinispan.clustered": "${keycloak.connectionsInfinispan.clustered:true}"
+                    "keycloak.cacheEmbedded.nodeName": "node1"
                     }
                 </property>
-                <property name="javaOpts">-Xms512m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=512m -Djava.net.preferIPv4Stack=true</property>
+                <property name="javaOpts">-Xms512m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=512m</property>
                 <property name="outputToConsole">true</property>
             </configuration>
         </container>
@@ -351,12 +345,10 @@
                 <property name="profile">ha</property>
                 <property name="debugPort">5006</property>
                 <property name="keycloakConfigPropertyOverrides">{
-                    "keycloak.connectionsInfinispan.jgroupsUdpMcastAddr": "234.56.78.8",
-                    "keycloak.connectionsInfinispan.nodeName": "node2",
-                    "keycloak.connectionsInfinispan.clustered": "${keycloak.connectionsInfinispan.clustered:true}"
+                    "keycloak.cacheEmbedded.nodeName": "node2"
                     }
                 </property>
-                <property name="javaOpts">-Xms512m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=512m -Djava.net.preferIPv4Stack=true</property>
+                <property name="javaOpts">-Xms512m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=512m</property>
                 <property name="outputToConsole">true</property>
             </configuration>
         </container>
@@ -376,7 +368,6 @@
                 -Xmx512m
                 -XX:MetaspaceSize=96M
                 -XX:MaxMetaspaceSize=512m
-                -Djava.net.preferIPv4Stack=true
                 ${auth.server.memory.settings}
                 -Dauth.server.db.host=${auth.server.db.host}
             </property>

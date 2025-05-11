@@ -18,150 +18,179 @@
 package org.keycloak.services.resources.admin.permissions;
 
 import static org.keycloak.authorization.AdminPermissionsSchema.ROLES_RESOURCE_TYPE;
+import static org.keycloak.models.utils.KeycloakModelUtils.getMasterRealmAdminManagementClientId;
+import static org.keycloak.services.managers.RealmManager.isAdministrationRealm;
 
+import java.util.Map;
+import java.util.Set;
+import org.jboss.logging.Logger;
+import org.keycloak.Config;
 import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.authorization.model.ResourceWrapper;
-import org.keycloak.authorization.permission.ResourcePermission;
-import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.representations.idm.authorization.Permission;
+import org.keycloak.services.resources.admin.permissions.ModelRecord.RoleModelRecord;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Stream;
+class RolePermissionsV2 extends RolePermissions {
 
-public class RolePermissionsV2 extends RolePermissions {
+    private static final Logger logger = Logger.getLogger(RolePermissionsV2.class);
+    private final FineGrainedAdminPermissionEvaluator eval;
 
     RolePermissionsV2(KeycloakSession session, RealmModel realm, AuthorizationProvider authz, MgmtPermissions root) {
         super(session, realm, authz, root);
-    }
-
-    @Override
-    public boolean canMapClientScope(RoleModel role) {
-        if (root.clients().canManageClientsDefault()) return true;
-
-        if (role.getContainer() instanceof ClientModel clientModel) {
-            if (root.clients().canMapClientScopeRoles(clientModel)) return true;
-        }
-
-        return hasPermission(role, MAP_ROLE_CLIENT_SCOPE_SCOPE);
-    }
-
-    @Override
-    public boolean canMapComposite(RoleModel role) {
-        if (canManageDefault(role)) return checkAdminRoles(role);
-
-        if (role.getContainer() instanceof ClientModel clientModel) {
-            if (root.clients().canMapCompositeRoles(clientModel)) return true;
-        }
-
-        return hasPermission(role, MAP_ROLE_COMPOSITE_SCOPE) && checkAdminRoles(role);
+        this.eval = new FineGrainedAdminPermissionEvaluator(session, root, resourceStore, policyStore);
     }
 
     @Override
     public boolean canMapRole(RoleModel role) {
-        if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS)) return checkAdminRoles(role);
+        if (!canMapAdminRole(role)) return false;
 
-        if (role.getContainer() instanceof ClientModel clientModel) {
-            if (root.clients().canMapRoles(clientModel)) return true;
+        if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS)) {
+            return true;
         }
 
-        return hasPermission(role, MAP_ROLE_SCOPE) && checkAdminRoles(role);
+        if (role.getContainer() instanceof ClientModel clientModel) {
+            if (root.clients().canMapRoles(clientModel)) {
+                return true;
+            }
+        }
+
+        return eval.hasPermission(new RoleModelRecord(role), null, AdminPermissionsSchema.MAP_ROLE);
+    }
+
+    @Override
+    public boolean canMapComposite(RoleModel role) {
+        if (!canMapAdminRole(role)) return false;
+
+        if (role.getContainer() instanceof ClientModel clientModel) {
+            if (root.hasOneAdminRole(AdminRoles.MANAGE_CLIENTS)) {
+                return true;
+            }
+            if (root.clients().canMapCompositeRoles(clientModel)) {
+                return true;
+            }
+        } else {
+            if (root.hasOneAdminRole(AdminRoles.MANAGE_REALM)) {
+                return true;
+            }
+        }
+
+        return eval.hasPermission(new RoleModelRecord(role), null, AdminPermissionsSchema.MAP_ROLE_COMPOSITE);
+    }
+
+    @Override
+    public boolean canMapClientScope(RoleModel role) {
+        if (role.getContainer() instanceof ClientModel clientModel) {
+            if (root.hasOneAdminRole(AdminRoles.MANAGE_CLIENTS)) {
+                return true;
+            }
+            if (root.clients().canMapClientScopeRoles(clientModel)) {
+                return true;
+            }
+        } else {
+            if (root.hasOneAdminRole(AdminRoles.MANAGE_REALM)) {
+                return true;
+            }
+        }
+
+        return eval.hasPermission(new RoleModelRecord(role), null, AdminPermissionsSchema.MAP_ROLE_CLIENT_SCOPE);
     }
 
     @Override
     public Set<String> getRoleIdsByScope(String scope) {
-        if (!root.isAdminSameRealm()) {
-            return Collections.emptySet();
-        }
-
-        ResourceServer server = root.realmResourceServer();
-
-        if (server == null) {
-            return Collections.emptySet();
-        }
-
-        Set<String> granted = new HashSet<>();
-
-        policyStore.findByResourceType(server, ROLES_RESOURCE_TYPE).stream()
-                .flatMap((Function<Policy, Stream<Resource>>) policy -> policy.getResources().stream())
-                .forEach(gr -> {
-                    if (hasGrantedPermission(server, gr, scope)) {
-                        granted.add(gr.getName());
-                    }
-                });
-
-        return granted;
+        return eval.getIdsByScope(ROLES_RESOURCE_TYPE, scope);
     }
 
-    private boolean hasPermission(RoleModel role, String... scopes) {
-        return hasPermission(role, null, scopes);
-    }
-
-    private boolean hasPermission(RoleModel role, EvaluationContext context, String... scopes) {
-        if (!root.isAdminSameRealm()) {
-            return false;
+    boolean canMapAdminRole(RoleModel role) {
+        if (!AdminRoles.ALL_ROLES.contains(role.getName())) {
+            return true;
         }
 
-        ResourceServer server = root.realmResourceServer();
+        if (root.admin().hasRole(role)) return true;
 
-        if (server == null) {
-            return false;
-        }
+        if (!role.isClientRole()) { //realm role
+            // if realm name is master realm, than we know this is a admin role ("admin" or "create-realm") in master realm.
+            return isAdministrationRealm((RealmModel) role.getContainer()) ? adminConflictMessage(role) : true;
+        } else {
+            // management client in master realm
+            ClientModel client = (ClientModel)role.getContainer();
+            if (isAdministrationRealm(client.getRealm()) && client.getClientId().equals(getMasterRealmAdminManagementClientId(client.getRealm().getName()))) {
+                return adminConflictMessage(role);
+            }
 
-        String resourceType = ROLES_RESOURCE_TYPE;
-        Resource resourceTypeResource = AdminPermissionsSchema.SCHEMA.getResourceTypeResource(session, server, resourceType);
-        Resource resource = role == null ? resourceTypeResource : resourceStore.findByName(server, role.getId());
-
-        if (role != null && resource == null) {
-            resource = new ResourceWrapper(role.getId(), role.getId(), new HashSet<>(resourceTypeResource.getScopes()), server);
-        }
-
-        Collection<Permission> permissions = (context == null) ?
-                root.evaluatePermission(new ResourcePermission(resourceType, resource, resource.getScopes(), server), server) :
-                root.evaluatePermission(new ResourcePermission(resourceType, resource, resource.getScopes(), server), server, context);
-
-        List<String> expectedScopes = List.of(scopes);
-
-        for (Permission permission : permissions) {
-            if (permission.getResourceId().equals(resource.getId())) {
-                for (String scope : permission.getScopes()) {
-                    if (expectedScopes.contains(scope)) {
-                        return true;
+            switch (role.getName()) {
+                case AdminRoles.REALM_ADMIN:
+                    // check to see if we have masterRealm.admin role.  Otherwise abort
+                    if (root.adminsRealm() == null || !root.adminsRealm().getName().equals(Config.getAdminRealm())) {
+                        return adminConflictMessage(role);
                     }
-                }
+
+                    RealmModel masterRealm = root.adminsRealm();
+                    RoleModel adminRole = masterRealm.getRole(AdminRoles.ADMIN);
+                    return root.admin().hasRole(adminRole) ? true : adminConflictMessage(role);
+
+                case AdminRoles.QUERY_CLIENTS:
+                case AdminRoles.QUERY_GROUPS:
+                case AdminRoles.QUERY_REALMS:
+                case AdminRoles.QUERY_USERS:
+                    return true;
+
+                case AdminRoles.MANAGE_CLIENTS:
+                case AdminRoles.CREATE_CLIENT:
+                    return root.clients().canManage() ? true : adminConflictMessage(role);
+                case AdminRoles.VIEW_CLIENTS:
+                    return root.clients().canView() ? true : adminConflictMessage(role);
+
+                case AdminRoles.MANAGE_USERS:
+                    return root.users().canManage() ? true : adminConflictMessage(role);
+                case AdminRoles.VIEW_USERS:
+                    return root.users().canView() ? true : adminConflictMessage(role);
+                case AdminRoles.IMPERSONATION:
+                    return root.users().canImpersonate() ? true : adminConflictMessage(role);
+
+                case AdminRoles.MANAGE_REALM:
+                    return root.realm().canManageRealm() ? true : adminConflictMessage(role);
+                case AdminRoles.VIEW_REALM:
+                    return root.realm().canViewRealm() ? true : adminConflictMessage(role);
+                case AdminRoles.MANAGE_AUTHORIZATION:
+                    return root.realm().canManageAuthorization(getResourceServer(role)) ? true : adminConflictMessage(role);
+                case AdminRoles.VIEW_AUTHORIZATION:
+                    return root.realm().canViewAuthorization(getResourceServer(role)) ? true : adminConflictMessage(role);
+                case AdminRoles.MANAGE_EVENTS:
+                    return root.realm().canManageEvents() ? true : adminConflictMessage(role);
+                case AdminRoles.VIEW_EVENTS:
+                    return root.realm().canViewEvents() ? true : adminConflictMessage(role);
+                case AdminRoles.MANAGE_IDENTITY_PROVIDERS:
+                    return root.realm().canManageIdentityProviders() ? true : adminConflictMessage(role);
+                case AdminRoles.VIEW_IDENTITY_PROVIDERS:
+                    return root.realm().canViewIdentityProviders() ? true : adminConflictMessage(role);
+
+                default:
+                    return adminConflictMessage(role);
             }
         }
+    }
 
+    private boolean adminConflictMessage(RoleModel role) {
+        logger.debugf("Trying to assign admin privileges of role: %s but admin doesn't have same privilege", role.getName());
         return false;
     }
 
-    private boolean hasGrantedPermission(ResourceServer server, Resource resource, String scope) {
-        Collection<Permission> permissions = root.evaluatePermission(new ResourcePermission(resource, resource.getScopes(), server), server);
-        for (Permission permission : permissions) {
-            if (permission.getResourceId().equals(resource.getId())) {
-                for (String s : permission.getScopes()) {
-                    if (scope.equals(s)) {
-                        return true;
-                    }
-                }
-            }
+    private ResourceServer getResourceServer(RoleModel role) {
+        ResourceServer resourceServer = null;
+        if (role.isClientRole()) {
+            RoleContainerModel container = role.getContainer();
+            resourceServer = session.getProvider(AuthorizationProvider.class).getStoreFactory().getResourceServerStore().findById(container.getId());
         }
-
-        return false;
+        return resourceServer;
     }
 
     @Override

@@ -23,6 +23,7 @@ import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.Encode;
+import org.keycloak.connections.jpa.support.EntityManagers;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.models.AbstractKeycloakTransaction;
@@ -176,7 +177,7 @@ public class RealmManager {
     }
 
     protected void createDefaultClientScopes(RealmModel realm) {
-        DefaultClientScopes.createDefaultClientScopes(session, realm, true);
+        EntityManagers.runInBatch(session, () -> DefaultClientScopes.createDefaultClientScopes(session, realm, true), false);
     }
 
     protected void setupAdminConsole(RealmModel realm) {
@@ -329,7 +330,7 @@ public class RealmManager {
         // Need to refresh masterApp for current realm
         String adminRealmName = Config.getAdminRealm();
         RealmModel adminRealm = model.getRealmByName(adminRealmName);
-        ClientModel masterApp = adminRealm.getClientByClientId(KeycloakModelUtils.getMasterRealmAdminApplicationClientId(realm.getName()));
+        ClientModel masterApp = adminRealm.getClientByClientId(KeycloakModelUtils.getMasterRealmAdminManagementClientId(realm.getName()));
         if (masterApp == null) {
             createMasterAdminManagement(realm);
             return;
@@ -355,7 +356,7 @@ public class RealmManager {
         }
         adminRole.setDescription("${role_"+AdminRoles.ADMIN+"}");
 
-        ClientModel realmAdminApp = KeycloakModelUtils.createManagementClient(adminRealm, KeycloakModelUtils.getMasterRealmAdminApplicationClientId(realm.getName()));
+        ClientModel realmAdminApp = KeycloakModelUtils.createManagementClient(adminRealm, KeycloakModelUtils.getMasterRealmAdminManagementClientId(realm.getName()));
         // No localized name for now
         realmAdminApp.setName(realm.getName() + " Realm");
         realm.setMasterAdminClient(realmAdminApp);
@@ -526,14 +527,24 @@ public class RealmManager {
     }
 
     public RealmModel importRealm(RealmRepresentation rep) {
-        return importRealm(rep, false);
+        return importRealm(rep, () -> {});
     }
 
 
     /**
      * if "skipUserDependent" is true, then import of any models, which needs users already imported in DB, will be skipped. For example authorization
+     * @deprecated use {@link #importRealm(RealmRepresentation, Runnable)}
      */
+    @Deprecated
     public RealmModel importRealm(RealmRepresentation rep, boolean skipUserDependent) {
+        return importRealm(rep, skipUserDependent ? null : () -> {});
+    }
+
+    /**
+     * @param userImport if null, then import of any models, which needs users already imported in DB, will be skipped. For example authorization
+     */
+    public RealmModel importRealm(RealmRepresentation rep, Runnable userImport) {
+        boolean skipUserDependent = userImport == null;
         String id = rep.getId();
         if (id == null || id.trim().isEmpty()) {
             id = KeycloakModelUtils.generateId();
@@ -611,7 +622,7 @@ public class RealmManager {
                 createDefaultClientScopes(realm);
             }
 
-            RepresentationToModel.importRealm(session, rep, realm, skipUserDependent);
+            RepresentationToModel.importRealm(session, rep, realm, userImport);
 
             setupClientServiceAccountsAndAuthorizationOnImport(rep, skipUserDependent);
 
@@ -699,7 +710,7 @@ public class RealmManager {
     }
 
     private boolean hasRealmAdminManagementClient(RealmRepresentation rep) {
-        String realmAdminClientId =  Config.getAdminRealm().equals(rep.getRealm()) ?  KeycloakModelUtils.getMasterRealmAdminApplicationClientId(rep.getRealm()) : getRealmAdminClientId(rep);
+        String realmAdminClientId =  Config.getAdminRealm().equals(rep.getRealm()) ?  KeycloakModelUtils.getMasterRealmAdminManagementClientId(rep.getRealm()) : getRealmAdminClientId(rep);
         return hasClient(rep, realmAdminClientId);
     }
 

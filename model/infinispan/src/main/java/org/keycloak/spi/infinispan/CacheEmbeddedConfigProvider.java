@@ -15,22 +15,27 @@
  * limitations under the License.
  */
 
-package org.keycloak.jgroups;
+package org.keycloak.spi.infinispan;
 
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
-import org.keycloak.models.KeycloakSession;
+import org.infinispan.manager.EmbeddedCacheManager;
+import org.keycloak.provider.Provider;
 
 /**
- * Interface to configure a JGroups Stack before Keycloak starts the embedded Infinispan.
+ * A provider to create the {@link ConfigurationBuilderHolder} to configure the {@link EmbeddedCacheManager}.
  */
-public interface JGroupsStackConfigurator {
+public interface CacheEmbeddedConfigProvider extends Provider {
 
     /**
-     * Configures the stack in {@code holder}.
+     * The {@link ConfigurationBuilderHolder} whit the {@link EmbeddedCacheManager} configuration. It must not be
+     * {@code null}.
      *
-     * @param holder  The Infinispan {@link ConfigurationBuilderHolder}.
-     * @param session The current {@link KeycloakSession}. It may be {@code null};
+     * @return The {@link ConfigurationBuilderHolder} whit the {@link EmbeddedCacheManager} configuration.
      */
-    void configure(ConfigurationBuilderHolder holder, KeycloakSession session);
+    ConfigurationBuilderHolder configuration();
 
+    @Override
+    default void close() {
+        //no-op
+    }
 }

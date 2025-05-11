@@ -51,7 +51,6 @@ import java.util.function.Consumer;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
@@ -233,10 +232,19 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             return;
         }
 
+        List<ProcessHandle> descendants = parent.descendants().toList();
+        if (descendants.isEmpty()) {
+            return;
+        }
+        
+        LOG.debugf("Found %d descendant processes to terminate", descendants.size());
         CompletableFuture<?> allProcesses = CompletableFuture.completedFuture(null);
 
-        for (ProcessHandle process : parent.descendants().toList()) {
+        // Terminate all processes
+        for (ProcessHandle process : descendants) {
             if (force) {
+                LOG.warn("Using forcible termination of descendant processes after normal termination failed");
+                LOG.debugf("Forcibly terminating process %s", process.pid());
                 process.destroyForcibly();
             } else {
                 process.destroy();
@@ -245,19 +253,18 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             allProcesses = CompletableFuture.allOf(allProcesses, process.onExit());
         }
 
+        // Wait for all processes to exit according to Java
         try {
             allProcesses.get(DEFAULT_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            LOG.debugf("All descendant processes terminated according to Java");
         } catch (Exception cause) {
             throw new RuntimeException("Failed to terminate descendants processes", cause);
         }
 
         try {
-            // TODO: remove this. do not ask why, but on Windows we are here even though the process was previously terminated
-            // without this pause, tests re-installing dist before tests should fail
-            // looks like pausing the current thread let windows to cleanup processes?
-            // more likely it is env dependent
-            Thread.sleep(500);
+            Thread.sleep(2000);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 

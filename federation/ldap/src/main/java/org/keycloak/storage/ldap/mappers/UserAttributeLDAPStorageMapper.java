@@ -164,6 +164,12 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
             email = KeycloakModelUtils.toLowerCaseSafe(email);
 
             UserModel that = UserStoragePrivateUtil.userLocalStorage(session).getUserByEmail(realm, email);
+
+            if (that != null) {
+                // delete and invalidate the cache for any existing account no longer available from LDAP
+                that = session.users().getUserByEmail(realm, that.getEmail());
+            }
+
             if (that != null && !that.getId().equals(user.getId())) {
                 session.getTransactionManager().setRollbackOnly();
                 String exceptionMessage = String.format("Can't import user '%s' from LDAP because email '%s' already exists in Keycloak. Existing user with this email is '%s'", user.getUsername(), email, that.getUsername());

@@ -85,12 +85,6 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.common.Profile;
-import org.keycloak.representations.idm.authorization.ResourceRepresentation;
-import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
-import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
 import static org.keycloak.utils.StreamsUtil.closing;
 
@@ -340,7 +334,7 @@ public final class KeycloakModelUtils {
         runJobInTransactionWithResult(factory, context, session -> {
             task.run(session);
             return null;
-        }, task.useExistingSession(), task.getTaskName());
+        }, task.getTaskName());
     }
 
     /**
@@ -430,7 +424,7 @@ public final class KeycloakModelUtils {
      * @return The return value from the callable
      */
     public static <V> V runJobInTransactionWithResult(KeycloakSessionFactory factory, final KeycloakSessionTaskWithResult<V> callable) {
-        return runJobInTransactionWithResult(factory, null, callable, false, "Non-HTTP task");
+        return runJobInTransactionWithResult(factory, null, callable, "Non-HTTP task");
     }
 
     /**
@@ -439,18 +433,13 @@ public final class KeycloakModelUtils {
      * @param factory The session factory
      * @param context The context from the previous session to use
      * @param callable The callable to execute
-     * @param useExistingSession if the existing session should be used
      * @param taskName Name of the task. Can be useful for logging purposes
      * @return The return value from the callable
      */
     public static <V> V runJobInTransactionWithResult(KeycloakSessionFactory factory, KeycloakContext context, final KeycloakSessionTaskWithResult<V> callable,
-                                                      boolean useExistingSession, String taskName) {
+                                                      String taskName) {
         V result;
         KeycloakSession existing = KeycloakSessionUtil.getKeycloakSession();
-        if (useExistingSession && existing != null && existing.getTransactionManager().isActive()) {
-            return callable.run(existing);
-        }
-
         try (KeycloakSession session = factory.create()) {
             RequestContextHelper.getContext(session).setContextMessage(taskName);
             session.getTransactionManager().begin();
@@ -594,7 +583,7 @@ public final class KeycloakModelUtils {
         }
     }
 
-    public static String getMasterRealmAdminApplicationClientId(String realmName) {
+    public static String getMasterRealmAdminManagementClientId(String realmName) {
         return realmName + "-realm";
     }
 

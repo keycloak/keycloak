@@ -65,7 +65,6 @@ import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.DisabledMappersInterceptor;
 import org.keycloak.quarkus.runtime.configuration.KcUnmatchedArgumentException;
-import org.keycloak.quarkus.runtime.configuration.KeycloakPropertiesConfigSource;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.configuration.PropertyMappingInterceptor;
 import org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource;
@@ -354,9 +353,13 @@ public class Picocli {
             // we have to ignore things like the profile properties because the commands set them at runtime
             checkChangesInBuildOptions((key, oldValue, newValue) -> {
                 if (key.startsWith(KC_PROVIDER_FILE_PREFIX)) {
-                    throw new PropertyException("A provider JAR was updated since the last build, please rebuild for this to be fully utilized.");
+                    if (timestampChanged(oldValue, newValue)) {
+                        throw new PropertyException("A provider JAR was updated since the last build, please rebuild for this to be fully utilized.");
+                    }
                 } else if (newValue != null && !isIgnoredPersistedOption(key)
-                        && isUserModifiable(Configuration.getConfigValue(key))) {
+                        && isUserModifiable(Configuration.getConfigValue(key))
+                        // let quarkus handle this - it's unsupported for direct usage in keycloak
+                        && !key.startsWith(MicroProfileConfigProvider.NS_QUARKUS_PREFIX)) {
                     ignoredBuildTime.add(key);
                 }
             });
@@ -459,6 +462,16 @@ public class Picocli {
             DisabledMappersInterceptor.enable(disabledMappersInterceptorEnabled);
             PropertyMappingInterceptor.enable();
         }
+    }
+
+    static boolean timestampChanged(String oldValue, String newValue) {
+        if (newValue != null && oldValue != null) {
+            long longNewValue = Long.valueOf(newValue);
+            long longOldValue = Long.valueOf(oldValue);
+            // docker commonly truncates to the second at runtime, so we'll allow that special case
+            return ((longNewValue / 1000) * 1000) != longNewValue || ((longOldValue / 1000) * 1000) != longNewValue;
+        }
+        return true;
     }
 
     private void validateProperty(AbstractCommand abstractCommand, IncludeOptions options,

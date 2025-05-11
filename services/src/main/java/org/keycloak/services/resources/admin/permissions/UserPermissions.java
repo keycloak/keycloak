@@ -32,7 +32,6 @@ import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
-import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.authorization.Permission;
@@ -409,7 +408,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
 
     @Override
     public boolean canImpersonate() {
-        if (root.hasOneAdminRole(ImpersonationConstants.IMPERSONATION_ROLE)) return true;
+        if (root.hasOneAdminRole(AdminRoles.IMPERSONATION)) return true;
 
         Identity identity = root.identity;
 

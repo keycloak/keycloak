@@ -63,6 +63,14 @@ public class Config {
         return "mysecret";
     }
 
+    public static String getAdminUsername() {
+        return "admin";
+    }
+
+    public static String getAdminPassword() {
+        return "admin";
+    }
+
     public static SmallRyeConfig initConfig() {
         SmallRyeConfigBuilder configBuilder = new SmallRyeConfigBuilder()
                 .addDefaultSources()

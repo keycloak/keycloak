@@ -11,7 +11,6 @@ import org.keycloak.vault.VaultStringSecret;
 import javax.naming.AuthenticationException;
 import javax.naming.Context;
 import javax.naming.NamingException;
-import javax.naming.ldap.InitialLdapContext;
 import javax.naming.ldap.LdapContext;
 import javax.naming.ldap.StartTlsRequest;
 import javax.naming.ldap.StartTlsResponse;
@@ -78,7 +77,7 @@ public final class LDAPContextManager implements AutoCloseable {
                 connProp.put(LDAPConstants.CONNECTION_TRACE_BER, System.err);
             }
 
-            ldapContext = new InitialLdapContext(connProp, null);
+            ldapContext = new SessionBoundInitialLdapContext(session, connProp, null);
             if (ldapConfig.isStartTls()) {
                 SSLSocketFactory sslSocketFactory = null;
                 if (LDAPUtil.shouldUseTruststoreSpi(ldapConfig)) {

@@ -50,6 +50,7 @@ import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.UriUtils;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationMembershipMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
@@ -906,6 +907,33 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
     @Test
     public void testClaimNotMappedIfUserNotMemberWhenScopeOrgRequested() {
         assertClaimNotMapped("organization", createOrganization("orga", true), true);
+    }
+
+    @Test
+    public void testOrganizationsClaimMappedIfScopeInTokenDisabled() throws Exception {
+        OrganizationRepresentation orgA = createOrganization("orga", true);
+        MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
+        OrganizationRepresentation orgB = createOrganization("orgb", true);
+        testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
+
+        ClientRepresentation clientRep = testRealm().clients().findByClientId("broker-app").get(0);
+        ClientResource client = testRealm().clients().get(clientRep.getId());
+        ClientScopeRepresentation orgScopeRep = client.getOptionalClientScopes().stream().filter(scope -> "organization".equals(scope.getName())).findAny().orElse(null);
+        orgScopeRep.setAttributes(Map.of(ClientScopeModel.INCLUDE_IN_TOKEN_SCOPE, "false"));
+        getCleanup().addCleanup(() -> {
+            orgScopeRep.setAttributes(Map.of(ClientScopeModel.INCLUDE_IN_TOKEN_SCOPE, "true"));
+            testRealm().clientScopes().get(orgScopeRep.getId()).update(orgScopeRep);
+        });
+        testRealm().clientScopes().get(orgScopeRep.getId()).update(orgScopeRep);
+
+        oauth.client("direct-grant", "password");
+        oauth.scope("openid organization:*");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(member.getEmail(), memberPassword);
+        assertThat(response.getScope(), not(containsString("organization")));
+        AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        List<String> organization = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(organization, containsInAnyOrder("orga", "orgb"));
     }
 
     private AccessTokenResponse assertSuccessfulCodeGrant() {

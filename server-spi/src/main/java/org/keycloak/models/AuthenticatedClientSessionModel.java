@@ -39,8 +39,12 @@ public interface AuthenticatedClientSessionModel extends CommonClientSessionMode
 
     default int getStarted() {
         String started = getNote(STARTED_AT_NOTE);
-        // Fallback to 0 if "started" note is not available. This can happen for the offline sessions migrated from old version where "startedAt" note was not yet available
-        return started == null ? 0 : Integer.parseInt(started);
+        if (started == null) {
+            // Note can be null for offline sessions migrated from old version where "startedAt" note was not yet available
+            // Fallback to user session started for offline or 0
+            return getUserSession().isOffline() ? getUserSessionStarted() : 0;
+        }
+        return Integer.parseInt(started);
     }
 
     default int getUserSessionStarted() {
