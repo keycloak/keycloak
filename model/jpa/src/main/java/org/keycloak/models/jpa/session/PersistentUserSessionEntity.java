@@ -95,7 +95,7 @@ public class PersistentUserSessionEntity {
     @Column(name = "OFFLINE_FLAG")
     protected String offline;
 
-    @Column(name = "DATA")
+    @Column(name="DATA")
     protected String data;
 
     public String getUserSessionId() {
