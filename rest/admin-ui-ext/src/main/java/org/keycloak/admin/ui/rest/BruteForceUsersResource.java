@@ -169,7 +169,7 @@ public class BruteForceUsersResource {
             UserRepresentation userRep = briefRepresentationB ?
                     ModelToRepresentation.toBriefRepresentation(user) :
                     ModelToRepresentation.toRepresentation(session, realm, user);
-            userRep.setAccess(usersEvaluator.getAccess(user));
+            userRep.setAccess(usersEvaluator.getAccessForListing(user));
             return userRep;
         }).map(this::getBruteForceStatus);
     }
