@@ -290,16 +290,16 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
         configureDefaultProfileAndPolicy();
 
         String firstSecret = clientResource.generateNewSecret().getValue(); //clientResource.getSecret().getValue();
-        assertThat(firstSecret.length(),is(secretLength));
+        assertThat(firstSecret.length(), is(SecretGenerator.equivalentEntropySize(secretLength, SecretGenerator.ALPHANUM.length)));
 
         //generate new secret, rotate the secret
         String newSecret = clientResource.generateNewSecret().getValue();
         assertThat(firstSecret, not(equalTo(newSecret)));
-        assertThat(newSecret.length(),is(secretLength));
+        assertThat(newSecret.length(), is(SecretGenerator.equivalentEntropySize(secretLength, SecretGenerator.ALPHANUM.length)));
 
         oauth.clientId("jwt-client");
         oauth.doLogin("test-user@localhost", "password");
-        EventRepresentation loginEvent = events.expectLogin().client("jwt-client").assertEvent();
+        events.expectLogin().client("jwt-client").assertEvent();
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = doAccessTokenRequest(code, getClientSignedJWT(firstSecret, 20, algorithm));
         assertThat(response.getStatusCode(), is(HttpStatus.SC_OK));
