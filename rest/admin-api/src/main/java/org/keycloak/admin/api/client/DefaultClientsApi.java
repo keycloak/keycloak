@@ -38,7 +38,7 @@ public class DefaultClientsApi implements ClientsApi {
     @Produces(MediaType.APPLICATION_JSON)
     @Override
     public Stream<ClientRepresentation> getClients(@QueryParam("runtime") @DefaultValue("false") boolean runtime) {
-        ClientService.ClientSearchOptions searchOptions = ClientService.ClientSearchOptions.DEFAULT;
+        ClientService.ClientSearchOptions searchOptions = ClientService.ClientSearchOptions.any();
         ClientService.ClientProjectionOptions projectionOptions = ClientService.ClientProjectionOptions.DEFAULT;
 
         if (runtime) {

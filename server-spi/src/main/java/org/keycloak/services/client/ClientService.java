@@ -6,12 +6,32 @@ import org.keycloak.services.Service;
 import org.keycloak.services.ServiceException;
 
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 public interface ClientService extends Service {
 
-    enum ClientSearchOptions {
-        DEFAULT
+    abstract class ClientSearchOptions {
+
+        public static ClientSearchOptions any() {
+            return new ClientSearchOptions() {
+                @Override
+                public Predicate<ClientRepresentation> filter() {
+                    return client -> true;
+                }
+            };
+        }
+
+        public static ClientSearchOptions byClientId(String clientId) {
+            return new ClientSearchOptions(){
+                @Override
+                public Predicate<ClientRepresentation> filter() {
+                    return client -> client.getClientId().equals(clientId);
+                }
+            };
+        }
+
+        public abstract Predicate<ClientRepresentation> filter();
     }
 
     enum ClientProjectionOptions {
@@ -25,7 +45,7 @@ public interface ClientService extends Service {
         }
     }
 
-    Optional<ClientRepresentation> getClient(RealmModel realm, String clientId, ClientProjectionOptions projectionOptions);
+    Optional<ClientRepresentation> getClient(RealmModel realm, ClientProjectionOptions projectionOptions, ClientSearchOptions searchOptions);
 
     Stream<ClientRepresentation> getClients(RealmModel realm, ClientProjectionOptions projectionOptions, ClientSearchOptions searchOptions);
 

@@ -43,4 +43,7 @@ public interface MapStructClientModelMapper extends ClientModelMapper {
                 .map(RoleModel::getName)
                 .collect(Collectors.toSet());
     }
+
+    @Override
+    ClientModel toModel(ClientRepresentation representation);
 }
