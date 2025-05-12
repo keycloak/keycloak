@@ -20,6 +20,7 @@ package org.keycloak.spi.infinispan.impl.embedded;
 import java.lang.invoke.MethodHandles;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -44,6 +45,7 @@ import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.jgroups.protocol.KEYCLOAK_JDBC_PING2;
+import org.keycloak.jgroups.protocol.OPEN_TELEMETRY;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.spi.infinispan.JGroupsCertificateProvider;
 
@@ -88,7 +90,8 @@ public final class JGroupsConfigurator {
         if (stack != null) {
             transportOf(holder).stack(stack);
         }
-        configureDiscovery(holder, session);
+        boolean tracingEnabled = config.getBoolean(DefaultCacheEmbeddedConfigProviderFactory.TRACING, false);
+        configureDiscoveryAndTransport(holder, session, tracingEnabled);
         configureTls(holder, session);
         warnDeprecatedStack(holder);
         patchKubernetesStack(holder);
@@ -176,7 +179,7 @@ public final class JGroupsConfigurator {
         return socketFactory;
     }
 
-    private static void configureDiscovery(ConfigurationBuilderHolder holder, KeycloakSession session) {
+    private static void configureDiscoveryAndTransport(ConfigurationBuilderHolder holder, KeycloakSession session, boolean tracingEnabled) {
         var stackXmlAttribute = transportStackOf(holder);
         if (stackXmlAttribute.isModified() && !isJdbcPingStack(stackXmlAttribute.get())) {
             logger.debugf("Custom stack configured (%s). JDBC_PING discovery disabled.", stackXmlAttribute.get());
@@ -193,7 +196,7 @@ public final class JGroupsConfigurator {
         var stackName = transportStackOf(holder).get();
         var isUdp = stackName.endsWith("udp");
         var tableName = JpaUtils.getTableNameForNativeQuery("JGROUPS_PING", em);
-        var stack = getProtocolConfigurations(tableName, isUdp ? "PING" : "MPING");
+        var stack = getProtocolConfigurations(tableName, isUdp ? "PING" : "MPING", isUdp ? "UDP" : "TCP", tracingEnabled);
         var connectionFactory = (JpaConnectionProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(JpaConnectionProvider.class);
         holder.addJGroupsStack(new JpaFactoryAwareJGroupsChannelConfigurator(stackName, stack, connectionFactory, isUdp), null);
 
@@ -201,7 +204,7 @@ public final class JGroupsConfigurator {
         JGroupsConfigurator.logger.info("JGroups JDBC_PING discovery enabled.");
     }
 
-    private static List<ProtocolConfiguration> getProtocolConfigurations(String tableName, String discoveryProtocol) {
+    private static List<ProtocolConfiguration> getProtocolConfigurations(String tableName, String discoveryProtocol, String transportProtocol, boolean tracingEnabled) {
         var attributes = Map.of(
                 // Leave initialize_sql blank as table is already created by Keycloak
                 "initialize_sql", "",
@@ -216,7 +219,15 @@ public final class JGroupsConfigurator {
                 "stack.combine", "REPLACE",
                 "stack.position", discoveryProtocol
         );
-        return List.of(new ProtocolConfiguration(KEYCLOAK_JDBC_PING2.class.getName(), attributes));
+        List<ProtocolConfiguration> protocolConfigurations = new ArrayList<>();
+        protocolConfigurations.add(new ProtocolConfiguration(KEYCLOAK_JDBC_PING2.class.getName(), attributes));
+        if (tracingEnabled) {
+            protocolConfigurations.add(new ProtocolConfiguration(OPEN_TELEMETRY.class.getName(), Map.of(
+                    "stack.combine", "INSERT_ABOVE",
+                    "stack.position", transportProtocol
+            )));
+        }
+        return protocolConfigurations;
     }
 
     private static void warnDeprecatedStack(ConfigurationBuilderHolder holder) {
