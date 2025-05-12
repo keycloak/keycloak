@@ -283,6 +283,11 @@ public class JWTClientValidator {
         String tokenIntrospectUrl = OIDCLoginProtocolService.tokenIntrospectionUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
         String parEndpointUrl = ParEndpoint.parUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
         List<String> expectedAudiences = new ArrayList<>(Arrays.asList(issuerUrl, tokenUrl, tokenIntrospectUrl, parEndpointUrl));
+
+        String additionalAudiencesString = java.util.Objects.requireNonNullElse(realm.getAttribute("jwt_auth_additional_audiences"), "");
+        String[] additionalAudiences = additionalAudiencesString.split("\\s*,\\s*");
+        expectedAudiences.addAll(Arrays.asList(additionalAudiences));
+
         String backchannelAuthenticationUrl = CibaGrantType.authorizationUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
         expectedAudiences.add(backchannelAuthenticationUrl);
 
