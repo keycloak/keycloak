@@ -8,5 +8,9 @@
     }, {
         "name" : "keycloak.v2",
         "types": [ "login" ]
-    }]
+    }, {
+        "name" : "nativeops",
+        "types": [ "login" ]
+    }
+    ]
 }
