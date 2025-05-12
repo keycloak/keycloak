@@ -32,6 +32,7 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.spi.infinispan.JGroupsCertificateProvider;
 import org.keycloak.spi.infinispan.JGroupsCertificateProviderFactory;
 import org.keycloak.storage.configuration.ServerConfigStorageProvider;
+import org.keycloak.tracing.TracingProvider;
 
 /**
  * The default implementation for {@link JGroupsCertificateProvider}.
@@ -88,7 +89,7 @@ public class DefaultJGroupsCertificateProviderFactory implements JGroupsCertific
 
     @Override
     public Set<Class<? extends Provider>> dependsOn() {
-        return Set.of(ServerConfigStorageProvider.class);
+        return Set.of(ServerConfigStorageProvider.class, TracingProvider.class);
     }
 
     @Override
