@@ -181,6 +181,10 @@ public class InfinispanClusterProvider implements ClusterProvider {
         notify(taskKey, Collections.singleton(event), ignoreSender, dcNotify);
     }
 
+    public void notify(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender) {
+        notify(taskKey, events, ignoreSender, DCNotify.ALL_DCS);
+    }
+
     @Override
     public void notify(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender, DCNotify dcNotify) {
         if (events == null || events.isEmpty()) {
