@@ -1,5 +1,6 @@
 package org.keycloak.admin.api.client;
 
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Produces;
@@ -26,8 +27,14 @@ public class DefaultClientApi implements ClientApi {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Override
-    public ClientRepresentation getClient(@QueryParam("runtime") Boolean isRuntime) {
-        return clientService.getClient(realm, clientId, isRuntime)
+    public ClientRepresentation getClient(@QueryParam("runtime") @DefaultValue("false") boolean runtime) {
+        ClientService.ClientSearchOptions searchOptions = ClientService.ClientSearchOptions.byClientId(clientId);
+        ClientService.ClientProjectionOptions projectionOptions = ClientService.ClientProjectionOptions.DEFAULT;
+        if (runtime) {
+            projectionOptions = ClientService.ClientProjectionOptions.FULL_REPRESENTATION;
+        }
+
+        return clientService.getClient(realm, projectionOptions, searchOptions)
                 .orElseThrow(() -> new NotFoundException("Cannot find the specified client"));
     }
 }
