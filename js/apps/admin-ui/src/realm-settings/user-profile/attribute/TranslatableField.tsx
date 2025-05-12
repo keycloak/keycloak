@@ -67,6 +67,7 @@ type TranslatableFieldProps = {
   attributeName: string;
   prefix: string;
   fieldName: string;
+  isUserProfile?: boolean;
 };
 
 function hasTranslation(value: string, t: TFunction) {
@@ -85,27 +86,34 @@ export const TranslatableField = ({
   attributeName,
   prefix,
   fieldName,
+  isUserProfile = false,
 }: TranslatableFieldProps) => {
   const { t } = useTranslation();
   const { realmRepresentation: realm } = useRealm();
   const { register, control, getFieldState, setValue } = useFormContext();
   const [open, toggle] = useToggle();
 
-  const value = useWatch({ control, name: attributeName });
+  const value = useWatch({ control, name: attributeName, defaultValue: "" });
 
   const key = `${prefix}.${value}`;
+  const translationKey = `\${${prefix}.${value}}`;
   const translationPrefix = `translation.${beerify(key)}`;
   const requiredTranslationName = `${translationPrefix}.0.value`;
 
+  const keyValue = useWatch({
+    control,
+    name: fieldName,
+  });
+
   useEffect(() => {
-    if (isTranslationRequired(value, t, realm)) {
-      setValue(fieldName, `\${${prefix}.${value}}`);
+    if (isTranslationRequired(value, t, realm) || keyValue === "") {
+      setValue(fieldName, translationKey);
     }
   }, [value]);
 
   return (
     <>
-      {isTranslationRequired(value, t, realm) && (
+      {isTranslationRequired(value, t, realm) && isUserProfile && (
         <input
           type="hidden"
           data-testid="requiredTranslationName"
@@ -115,7 +123,7 @@ export const TranslatableField = ({
       {open && (
         <AddTranslationsDialog
           orgKey={value}
-          translationKey={`${prefix}.${value}`}
+          translationKey={key}
           fieldName={fieldName}
           toggleDialog={toggle}
         />
@@ -144,20 +152,36 @@ export const TranslatableField = ({
       </InputGroup>
       {realm?.internationalizationEnabled && (
         <FormHelperText>
-          <Alert
-            variant="info"
-            isInline
-            isPlain
-            title={
-              <Trans
-                i18nKey="addTranslationsModalSubTitle"
-                values={{ fieldName: t(fieldName) }}
-              >
-                You are able to translate the fieldName based on your locale or
-                <strong>location</strong>
-              </Trans>
-            }
-          />
+          {/* Translation will come from the active them when the keyValue is set but not equal to the realm override key */}
+          {keyValue && keyValue !== translationKey && !isUserProfile && (
+            <Alert variant="info" isInline isPlain title={t("activeTheme")} />
+          )}
+          {/* Translation will come from the realm overrides if it is the same as the realm override key */}
+          {keyValue === translationKey && !isUserProfile && (
+            <Alert
+              variant="info"
+              isInline
+              isPlain
+              title={t("themeOverrides")}
+            />
+          )}
+
+          {isUserProfile && (
+            <Alert
+              variant="info"
+              isInline
+              isPlain
+              title={
+                <Trans
+                  i18nKey="addTranslationsModalSubTitle"
+                  values={{ fieldName: t(fieldName) }}
+                >
+                  You are able to translate the fieldName based on your locale
+                  <strong>location</strong>
+                </Trans>
+              }
+            />
+          )}
           {getFieldState(requiredTranslationName).error && (
             <FormErrorText message={t("required")} />
           )}

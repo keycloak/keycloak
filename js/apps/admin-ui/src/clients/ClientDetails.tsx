@@ -76,6 +76,10 @@ import { getProtocolName, isRealmClient } from "./utils";
 import { UserEvents } from "../events/UserEvents";
 import { useIsAdminPermissionsClient } from "../utils/useIsAdminPermissionsClient";
 import { AdminEvents } from "../events/AdminEvents";
+import {
+  saveTranslations,
+  Translations,
+} from "../realm-settings/user-profile/attribute/TranslatableField";
 
 type ClientDetailHeaderProps = {
   onChange: (value: boolean) => void;
@@ -184,17 +188,15 @@ export type SaveOptions = {
   messageKey?: string;
 };
 
-export type FormFields = Omit<
-  ClientRepresentation,
-  "authorizationSettings" | "resources"
->;
+export type FormFields = Translations &
+  Omit<ClientRepresentation, "authorizationSettings" | "resources">;
 
 export default function ClientDetails() {
   const { adminClient } = useAdminClient();
 
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
-  const { realm } = useRealm();
+  const { realm, realmRepresentation } = useRealm();
   const { hasAccess } = useAccess();
   const isFeatureEnabled = useIsFeatureEnabled();
 
@@ -356,7 +358,9 @@ export default function ClientDetails() {
       return;
     }
 
-    const values = convertFormValuesToObject(form.getValues());
+    const { translation, ...values } = convertFormValuesToObject(
+      form.getValues(),
+    );
 
     const submittedClient =
       convertFormValuesToObject<ClientRepresentation>(values);
@@ -383,6 +387,18 @@ export default function ClientDetails() {
       setupForm(newClient);
       setClient(newClient);
       addAlert(t(messageKey), AlertVariant.success);
+
+      if (realmRepresentation?.internationalizationEnabled && translation) {
+        try {
+          await saveTranslations({
+            adminClient,
+            realmName: realm,
+            translationsData: { translation },
+          });
+        } catch (error) {
+          addError(t("errorSavingTranslations"), error);
+        }
+      }
     } catch (error) {
       addError("clientSaveError", error);
     }

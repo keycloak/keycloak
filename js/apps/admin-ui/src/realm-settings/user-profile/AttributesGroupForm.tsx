@@ -152,6 +152,7 @@ export default function AttributesGroupForm() {
               fieldName="displayHeader"
               attributeName="name"
               prefix="profile.attribute-group"
+              isUserProfile
             />
           </FormGroup>
           <FormGroup
@@ -168,6 +169,7 @@ export default function AttributesGroupForm() {
               fieldName="displayDescription"
               attributeName="name"
               prefix="profile.attribute-group-description"
+              isUserProfile
             />
           </FormGroup>
           <TextContent>

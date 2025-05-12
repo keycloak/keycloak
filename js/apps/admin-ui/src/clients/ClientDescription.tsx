@@ -1,8 +1,13 @@
+import {
+  HelpItem,
+  TextAreaControl,
+  TextControl,
+} from "@keycloak/keycloak-ui-shared";
+import { FormGroup } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { TextControl, TextAreaControl } from "@keycloak/keycloak-ui-shared";
-
 import { FormAccess } from "../components/form/FormAccess";
 import { DefaultSwitchControl } from "../components/SwitchControl";
+import { TranslatableField } from "../realm-settings/user-profile/attribute/TranslatableField";
 
 type ClientDescriptionProps = {
   protocol?: string;
@@ -21,11 +26,19 @@ export const ClientDescription = ({
         labelIcon={t("clientIdHelp")}
         rules={{ required: t("required") }}
       />
-      <TextControl
-        name="name"
+      <FormGroup
         label={t("name")}
-        labelIcon={t("clientNameHelp")}
-      />
+        labelIcon={
+          <HelpItem helpText={t("clientNameHelp")} fieldLabelId="name" />
+        }
+        fieldId="kc-attribute-name"
+      >
+        <TranslatableField
+          fieldName="name"
+          attributeName="clientId"
+          prefix="client.name"
+        />
+      </FormGroup>
       <TextAreaControl
         name="description"
         label={t("description")}
