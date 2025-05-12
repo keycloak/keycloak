@@ -63,6 +63,7 @@ import javax.xml.crypto.dsig.XMLSignature;
 
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.IdentityProviderManagementPermissionsResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.common.enums.SslRequired;
@@ -87,6 +88,7 @@ import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
@@ -1081,6 +1083,32 @@ public class IdentityProviderTest extends AbstractAdminTest {
 
         response = realm.identityProviders().getIdentityProviders("nonexistent");
         Assert.assertEquals("Status", 400, response.getStatus());
+    }
+
+    public void testManagementPermissions() {
+        IdentityProviderRepresentation newIdentityProvider = createRep("new-identity-provider", "oidc");
+        create(newIdentityProvider);
+
+        IdentityProviderResource identityProviderResource = realm.identityProviders().get("new-identity-provider");
+
+        assertNotNull(identityProviderResource);
+
+        var managementPermissionsResource = identityProviderResource.management().permissions();
+
+        assertNotNull(managementPermissionsResource);
+
+        var managementPermissionsReference = managementPermissionsResource.toReference();
+
+        assertNotNull(managementPermissionsReference);
+        assertFalse(managementPermissionsReference.isEnabled());
+
+        managementPermissionsReference.setEnabled(true);
+        managementPermissionsResource.update(managementPermissionsReference);
+
+        var enabledManagementPermissionsReference = managementPermissionsResource.toReference();
+
+        assertTrue(enabledManagementPermissionsReference.isEnabled());
+        assertNotNull(enabledManagementPermissionsReference.getResource());
     }
 
     private void assertEqual(IdentityProviderRepresentation expected, IdentityProviderRepresentation actual) {
