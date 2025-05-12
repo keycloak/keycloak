@@ -60,6 +60,8 @@ import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.jgroups.protocol.KEYCLOAK_JDBC_PING2;
+import org.keycloak.jgroups.protocol.OPEN_TELEMETRY;
+import org.keycloak.jgroups.header.TracerHeader;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
@@ -82,6 +84,8 @@ public final class JGroupsConfigurator {
         // Use custom Keycloak JDBC_PING implementation that workarounds issue https://issues.redhat.com/browse/JGRP-2870
         // The id 1025 follows this instruction: https://github.com/belaban/JGroups/blob/38219e9ec1c629fa2f7929e3b53d1417d8e60b61/conf/jg-protocol-ids.xml#L85
         ClassConfigurator.addProtocol((short) 1025, KEYCLOAK_JDBC_PING2.class);
+        ClassConfigurator.addProtocol((short) 1026, OPEN_TELEMETRY.class);
+        ClassConfigurator.add(TracerHeader.ID, TracerHeader.class);
     }
 
     /**
@@ -97,7 +101,8 @@ public final class JGroupsConfigurator {
             transportOf(holder).stack(stack);
         }
         configureTransport(config);
-        configureDiscovery(holder, session);
+        boolean tracingEnabled = config.getBoolean(DefaultCacheEmbeddedConfigProviderFactory.TRACING, false);
+        configureDiscovery(holder, session, tracingEnabled);
         configureTls(holder, session);
         warnDeprecatedStack(holder);
     }
@@ -177,7 +182,7 @@ public final class JGroupsConfigurator {
         return socketFactory;
     }
 
-    private static void configureDiscovery(ConfigurationBuilderHolder holder, KeycloakSession session) {
+    private static void configureDiscovery(ConfigurationBuilderHolder holder, KeycloakSession session, boolean tracingEnabled) {
         var stackXmlAttribute = transportStackOf(holder);
         if (stackXmlAttribute.isModified() && !isJdbcPingStack(stackXmlAttribute.get())) {
             logger.debugf("Custom stack configured (%s). JDBC_PING discovery disabled.", stackXmlAttribute.get());
@@ -194,7 +199,7 @@ public final class JGroupsConfigurator {
         var stackName = transportStackOf(holder).get();
         var isUdp = stackName.endsWith("udp");
         var tableName = JpaUtils.getTableNameForNativeQuery("JGROUPS_PING", em);
-        var stack = getProtocolConfigurations(tableName, isUdp);
+        var stack = getProtocolConfigurations(tableName, isUdp, tracingEnabled);
         var connectionFactory = (JpaConnectionProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(JpaConnectionProvider.class);
         holder.addJGroupsStack(new JpaFactoryAwareJGroupsChannelConfigurator(stackName, stack, connectionFactory, isUdp), null);
 
@@ -202,7 +207,7 @@ public final class JGroupsConfigurator {
         JGroupsConfigurator.logger.info("JGroups JDBC_PING discovery enabled.");
     }
 
-    private static List<ProtocolConfiguration> getProtocolConfigurations(String tableName, boolean udp) {
+    private static List<ProtocolConfiguration> getProtocolConfigurations(String tableName, boolean udp, boolean tracingEnabled) {
         var list = new ArrayList<ProtocolConfiguration>(udp ? 1 : 2);
         list.add(new ProtocolConfiguration(KEYCLOAK_JDBC_PING2.class.getName(),
               Map.of(
@@ -224,6 +229,12 @@ public final class JGroupsConfigurator {
         if (!udp && InfinispanUtils.isVirtualThreadsEnabled())
             list.add(new ProtocolConfiguration(TCP.class.getSimpleName(), Map.of("bundler_type", "per-destination")));
 
+        if (tracingEnabled) {
+            list.add(new ProtocolConfiguration(OPEN_TELEMETRY.class.getName(), Map.of(
+                    "stack.combine", "INSERT_ABOVE",
+                    "stack.position", udp ? "UDP" : "TCP"
+            )));
+        }
         return list;
     }
 
