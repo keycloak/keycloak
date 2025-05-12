@@ -7,5 +7,5 @@ public interface ClientModelMapper {
 
     ClientRepresentation fromModel(ClientModel model);
 
-    // ClientModel toModel(ClientModel baseModel, ClientRepresentation representation);
+    ClientModel toModel(ClientRepresentation representation);
 }

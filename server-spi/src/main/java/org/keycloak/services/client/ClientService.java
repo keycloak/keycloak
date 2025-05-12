@@ -10,14 +10,19 @@ import java.util.stream.Stream;
 
 public interface ClientService extends Service {
 
-    public static class ClientSearchOptions {
-        // TODO
+    enum ClientSearchOptions {
+        DEFAULT
     }
 
-    public static class ClientProjectionOptions {
+    enum ClientProjectionOptions {
+        DEFAULT(false),
+        FULL_REPRESENTATION (true);
+
         Boolean fullRepresentation;
 
-        // TODO
+        ClientProjectionOptions(Boolean fullRepresentation) {
+            this.fullRepresentation = fullRepresentation;
+        }
     }
 
     Optional<ClientRepresentation> getClient(RealmModel realm, String clientId, ClientProjectionOptions projectionOptions);
@@ -28,7 +33,7 @@ public interface ClientService extends Service {
 
     Stream<ClientRepresentation> deleteClients(RealmModel realm, ClientSearchOptions searchOptions);
 
-    ClientRepresentation createOrUpdateClient(RealmModel realm, String clientId, ClientRepresentation client) throws ServiceException;
+    ClientRepresentation createOrUpdateClient(RealmModel realm, ClientRepresentation client) throws ServiceException;
 
     ClientRepresentation createClient(RealmModel realm, ClientRepresentation client) throws ServiceException;
 

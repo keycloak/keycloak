@@ -1,12 +1,14 @@
 package org.keycloak.admin.api.client;
 
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -35,8 +37,15 @@ public class DefaultClientsApi implements ClientsApi {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Override
-    public Stream<ClientRepresentation> getClients() {
-        return clientService.getClients(realm);
+    public Stream<ClientRepresentation> getClients(@QueryParam("runtime") @DefaultValue("false") boolean runtime) {
+        ClientService.ClientSearchOptions searchOptions = ClientService.ClientSearchOptions.DEFAULT;
+        ClientService.ClientProjectionOptions projectionOptions = ClientService.ClientProjectionOptions.DEFAULT;
+
+        if (runtime) {
+            projectionOptions = ClientService.ClientProjectionOptions.FULL_REPRESENTATION;
+        }
+
+        return clientService.getClients(realm, projectionOptions, searchOptions);
     }
 
     @PUT
