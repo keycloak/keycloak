@@ -29,7 +29,10 @@ export const i18n: i18nType = createInstance({
       `resources/{{ns}}/admin/{{lng}}`,
     ),
     parse: (data: string) => {
-      if (process.env.NODE_ENV === "development") {
+      if (
+        process.env.NODE_ENV === "development" &&
+        import.meta.env.VITE_REALM_OVERRIDES === undefined
+      ) {
         return code;
       }
       const messages: KeyValue[] = JSON.parse(data);
