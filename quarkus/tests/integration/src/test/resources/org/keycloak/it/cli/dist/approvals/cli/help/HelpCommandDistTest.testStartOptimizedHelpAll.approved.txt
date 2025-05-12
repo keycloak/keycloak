@@ -531,6 +531,9 @@ Tracing:
 --tracing-endpoint <url>
                      OpenTelemetry endpoint to connect to. Default: http://localhost:4317.
                        Available only when Tracing is enabled.
+--tracing-infinispan-enabled <true|false>
+                     Enables the OpenTelemetry tracing for embedded Infinispan. Default: true.
+                       Available only when tracing and embedded Infinispan is enabled.
 --tracing-protocol <protocol>
                      OpenTelemetry protocol used for the telemetry data. Possible values are: grpc,
                        http/protobuf. Default: grpc. Available only when Tracing is enabled.

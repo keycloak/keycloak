@@ -55,6 +55,13 @@ The feature is enabled for a realm, if `Update Email` required action is enabled
 The feature slightly changes behaviour from previous versions when updating the profile during the authentication flow (e.g. when running the `UPDATE_PROFILE` required action).
 If an existing user does have an email set when updating the profile during the authentication flow, the email attribute will not be available.
 
+=== Tracing extended for embedded Infinispan caches
+
+When tracing is enabled, now also calls to other nodes of a {project_name} cluster will create spans in the traces.
+
+To disable this kind of tracing, set the option `tracing-infinispan-enabled` to `false`.
+
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
