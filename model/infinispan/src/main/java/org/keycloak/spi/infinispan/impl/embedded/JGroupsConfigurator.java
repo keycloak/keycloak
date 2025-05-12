@@ -47,6 +47,7 @@ import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.jgroups.protocol.KEYCLOAK_JDBC_PING2;
+import org.keycloak.jgroups.protocol.OPEN_TELEMETRY;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.spi.infinispan.JGroupsCertificateProvider;
 
@@ -88,7 +89,8 @@ public final class JGroupsConfigurator {
         if (stack != null) {
             transportOf(holder).stack(stack);
         }
-        configureDiscovery(holder, session);
+        boolean tracingEnabled = config.getBoolean(DefaultCacheEmbeddedConfigProviderFactory.TRACING, false);
+        configureDiscoveryAndTransport(holder, session, tracingEnabled);
         configureTls(holder, session);
         warnDeprecatedStack(holder);
     }
@@ -157,7 +159,7 @@ public final class JGroupsConfigurator {
         return socketFactory;
     }
 
-    private static void configureDiscovery(ConfigurationBuilderHolder holder, KeycloakSession session) {
+    private static void configureDiscoveryAndTransport(ConfigurationBuilderHolder holder, KeycloakSession session, boolean tracingEnabled) {
         var stackXmlAttribute = transportStackOf(holder);
         if (stackXmlAttribute.isModified() && !isJdbcPingStack(stackXmlAttribute.get())) {
             logger.debugf("Custom stack configured (%s). JDBC_PING discovery disabled.", stackXmlAttribute.get());
@@ -205,6 +207,15 @@ public final class JGroupsConfigurator {
             list.add(new ProtocolConfiguration(TCP.class.getSimpleName(), Map.of("bundler_type", "per-destination")));
 
         return list;
+        List<ProtocolConfiguration> protocolConfigurations = new ArrayList<>();
+        protocolConfigurations.add(new ProtocolConfiguration(KEYCLOAK_JDBC_PING2.class.getName(), attributes));
+        if (tracingEnabled) {
+            protocolConfigurations.add(new ProtocolConfiguration(OPEN_TELEMETRY.class.getName(), Map.of(
+                    "stack.combine", "INSERT_ABOVE",
+                    "stack.position", transportProtocol
+            )));
+        }
+        return protocolConfigurations;
     }
 
     private static void warnDeprecatedStack(ConfigurationBuilderHolder holder) {

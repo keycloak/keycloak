@@ -18,6 +18,7 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import org.keycloak.common.Profile;
+import org.keycloak.config.TracingOptions;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.utils.StringUtil;
@@ -91,6 +92,11 @@ public class TracingPropertyMappers {
                         .mapFrom(TRACING_ENABLED)
                         .isEnabled(TracingPropertyMappers::isTracingEnabled, TRACING_ENABLED_MSG)
                         .to("quarkus.datasource.jdbc.telemetry")
+                        .build(),
+                fromOption(TracingOptions.INFINISPAN_TRACING_ENABLED)
+                        .mapFrom(TracingOptions.TRACING_ENABLED)
+                        .to("kc.spi-cache-embedded-default-tracing-enabled")
+                        .isEnabled(TracingPropertyMappers::isTracingEnabled, "tracing is enabled")
                         .build()
         };
     }
