@@ -1525,7 +1525,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
             OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
-            assertTrue("Invalid ExpiresIn", 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 7200);
+            assertEquals(200, tokenResponse.getStatusCode());
+            assertTrue("Invalid ExpiresIn: " + tokenResponse.getRefreshExpiresIn(), 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 7200);
             String clientSessionId = getClientSessionUuid(sessionId, loginEvent.getClientId());
             assertEquals(2, checkIfUserAndClientSessionExist(sessionId, loginEvent.getClientId(), clientSessionId));
 
@@ -1549,7 +1550,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             sessionId = loginEvent.getSessionId();
             code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
             tokenResponse = oauth.doAccessTokenRequest(code, "password");
-            assertTrue("Invalid ExpiresIn", 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 3000);
+            assertEquals(200, tokenResponse.getStatusCode());
+            assertTrue("Invalid ExpiresIn: " + tokenResponse.getRefreshExpiresIn(), 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 3000);
             events.expectCodeToToken(loginEvent.getDetails().get(Details.CODE_ID), sessionId).assertEvent();
 
             clientSessionId = getClientSessionUuid(sessionId, loginEvent.getClientId());
