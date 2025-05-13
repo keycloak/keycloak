@@ -354,9 +354,6 @@ public class UserResource {
             rep.setFederatedIdentities(reps);
         }
 
-        if (session.getProvider(BruteForceProtector.class).isTemporarilyDisabled(session, realm, user)) {
-            rep.setEnabled(false);
-        }
         rep.setAccess(auth.users().getAccess(user));
 
         if (!userProfileMetadata) {
