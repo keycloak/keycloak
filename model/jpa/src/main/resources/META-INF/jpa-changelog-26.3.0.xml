@@ -20,6 +20,11 @@
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
     <changeSet author="keycloak" id="26.3.0-12345">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="EVENT_ENTITY" columnName="USER_NAME" />
+            </not>
+        </preConditions>
         <addColumn tableName="EVENT_ENTITY">
             <column name="USER_NAME" type="VARCHAR(255)"/>
         </addColumn>
