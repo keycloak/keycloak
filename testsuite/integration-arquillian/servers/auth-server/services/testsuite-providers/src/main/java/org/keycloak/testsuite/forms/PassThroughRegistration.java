@@ -44,8 +44,7 @@ public class PassThroughRegistration implements Authenticator, AuthenticatorFact
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
-        context.getEvent().detail(Details.USERNAME, username)
-                .detail(Details.REGISTER_METHOD, "form")
+        context.getEvent().detail(Details.REGISTER_METHOD, "form")
                 .detail(Details.EMAIL, email)
         ;
         UserModel user = context.getSession().users().addUser(context.getRealm(), username);

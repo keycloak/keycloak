@@ -223,7 +223,6 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
                 .session(accessToken.getSessionState())
                 .detail(Details.TOKEN_ID, accessToken.getId())
                 .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
-                .detail(Details.USERNAME, userName)
                 .detail(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
                 .assertEvent();
 
@@ -307,7 +306,6 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
                 .user(userIdClRefreshOn)
                 .session(accessToken.getSessionState())
                 .detail(Details.TOKEN_ID, accessToken.getId())
-                .detail(Details.USERNAME, ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "updated-client")
                 .assertEvent();
 
 
@@ -425,7 +423,6 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
                 .user(userIdCl)
                 .session(is(emptyOrNullString()))
                 .detail(Details.TOKEN_ID, accessToken.getId())
-                .detail(Details.USERNAME, ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "service-account-cl")
                 .assertEvent();
 
         // new clients which use client-credentials grant should NOT create a refresh-token or session, see KEYCLOAK-9551.
@@ -488,7 +485,6 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
                 .session(accessToken.getSessionState())
                 .detail(Details.TOKEN_ID, accessToken.getId())
                 .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
-                .detail(Details.USERNAME, userName)
                 .assertEvent();
 
         assertEquals(accessToken.getSessionState(), refreshToken.getSessionState());

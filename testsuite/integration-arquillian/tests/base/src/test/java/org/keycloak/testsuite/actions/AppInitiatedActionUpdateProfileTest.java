@@ -175,14 +175,13 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
                 .detail(Details.UPDATED_FIRST_NAME, "New first")
                 .detail(Details.PREVIOUS_LAST_NAME, "Doh")
                 .detail(Details.UPDATED_LAST_NAME, "New last")
-                .detail(Details.USERNAME, "john-doh@localhost")
                 .user(userId).session(Matchers.nullValue(String.class))
                 .removeDetail(Details.CONSENT)
                 .assertEvent();
 
         assertKcActionStatus(SUCCESS);
 
-        events.expectLogin().detail(Details.USERNAME, "john-doh@localhost").user(userId).assertEvent();
+        events.expectLogin().user(userId).assertEvent();
 
         // assert user is really updated in persistent store
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "new");

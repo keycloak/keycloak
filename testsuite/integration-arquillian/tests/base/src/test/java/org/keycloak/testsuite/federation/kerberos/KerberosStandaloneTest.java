@@ -272,9 +272,9 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
         driver.navigate().to(changePasswordUrl.trim());
         loginPasswordUpdatePage.assertCurrent();
         loginPasswordUpdatePage.changePassword("resetPassword", "resetPassword");
-        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).client(oauth.getClientId()).detail(Details.USERNAME, "test-user@localhost");
+        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).client(oauth.getClientId());
         events.poll();
-        events.expectRequiredAction(EventType.UPDATE_PASSWORD).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).client(oauth.getClientId()).detail(Details.USERNAME, "test-user@localhost");
+        events.expectRequiredAction(EventType.UPDATE_PASSWORD).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).client(oauth.getClientId());
         infoPage.assertCurrent();
         Assert.assertEquals("Your account has been updated.", infoPage.getInfo());
     }

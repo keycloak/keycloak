@@ -339,7 +339,7 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
             // Login
             passwordPage.login(getPassword("user-with-one-configured-otp"));
             events.expectLogin().user(user.getId())
-                    .detail(Details.USERNAME, "otp1@redhat.com").assertEvent();
+                    .assertEvent();
         } finally {
             BrowserFlowTest.revertFlows(testRealm(), "browser - alternative");
         }

@@ -203,7 +203,6 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
         events.expectLogin()
                 .client(clientId)
                 .user(userId)
-                .detail(Details.USERNAME, expectedUsername)
                 .assertEvent();
 
         String codeUrl = spnegoResponse.getLocation().toString();

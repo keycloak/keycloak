@@ -217,7 +217,6 @@ public class KerberosLdapTest extends AbstractKerberosSingleRealmTest {
         events.expectLogin()
                 .client("kerberos-app")
                 .user(userId)
-                .detail(Details.USERNAME, "jduke")
                 .assertEvent();
 
         String codeUrl = spnegoResponse.getLocation().toString();

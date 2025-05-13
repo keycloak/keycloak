@@ -54,7 +54,6 @@ public final class KcOidcBrokerEventTest extends AbstractBrokerTest {
                 .user(providerUserId)
                 .client(bc.getIDPClientIdInProviderRealm())
                 .session(Matchers.any(String.class))
-                .detail(Details.USERNAME, bc.getUserLogin())
                 .assertEvent();
 
         events.expect(EventType.CODE_TO_TOKEN)
@@ -92,7 +91,6 @@ public final class KcOidcBrokerEventTest extends AbstractBrokerTest {
                 .client("broker-app")
                 .user(consumerUserId == null? Matchers.any(String.class) : Matchers.is(consumerUserId))
                 .session((String) null)
-                .detail(Details.USERNAME, bc.getUserLogin())
                 .detail(Details.IDENTITY_PROVIDER_USERNAME, bc.getUserLogin())
                 .detail(Details.IDENTITY_PROVIDER, bc.getIDPAlias())
                 .assertEvent();
@@ -102,7 +100,6 @@ public final class KcOidcBrokerEventTest extends AbstractBrokerTest {
                 .client("broker-app")
                 .user(consumerUserId == null? Matchers.any(String.class) : Matchers.is(consumerUserId))
                 .session(Matchers.any(String.class))
-                .detail(Details.USERNAME, bc.getUserLogin())
                 .detail(Details.IDENTITY_PROVIDER_USERNAME, bc.getUserLogin())
                 .detail(Details.IDENTITY_PROVIDER, bc.getIDPAlias())
                 .assertEvent();
@@ -116,7 +113,6 @@ public final class KcOidcBrokerEventTest extends AbstractBrokerTest {
                 .user(providerUserId)
                 .client(bc.getIDPClientIdInProviderRealm())
                 .session(Matchers.any(String.class))
-                .detail(Details.USERNAME, bc.getUserLogin())
                 .assertEvent();
 
         events.expect(EventType.CODE_TO_TOKEN)
@@ -138,7 +134,6 @@ public final class KcOidcBrokerEventTest extends AbstractBrokerTest {
                 .client("broker-app")
                 .user(consumerUserId == null? Matchers.any(String.class) : Matchers.is(consumerUserId))
                 .session(Matchers.any(String.class))
-                .detail(Details.USERNAME, bc.getUserLogin())
                 .detail(Details.IDENTITY_PROVIDER_USERNAME, bc.getUserLogin())
                 .detail(Details.IDENTITY_PROVIDER, bc.getIDPAlias())
                 .assertEvent();
@@ -161,7 +156,6 @@ public final class KcOidcBrokerEventTest extends AbstractBrokerTest {
                 .user((String) null)
                 .client("broker-app")
                 .session((String) null)
-                .detail(Details.USERNAME, "wrong-user")
                 .error("user_not_found")
                 .assertEvent();
 

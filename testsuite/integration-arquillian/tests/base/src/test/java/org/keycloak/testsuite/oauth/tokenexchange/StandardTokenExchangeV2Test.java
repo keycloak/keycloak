@@ -134,7 +134,6 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
                 .client(clientId)
                 .user(token.getSubject())
                 .session(token.getSessionId())
-                .detail(Details.USERNAME, username)
                 .assertEvent();
         return response;
     }
@@ -152,7 +151,6 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
                 .client(clientId)
                 .user(user.getId())
                 .session(token.getSessionId())
-                .detail(Details.USERNAME, user.getUsername())
                 .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
                 .assertEvent();
         final String codeId = loginEvent.getDetails().get(Details.CODE_ID);
@@ -318,7 +316,6 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
                     .client(exchangedToken.getIssuedFor())
                     .user(john.getId())
                     .session(exchangedToken.getSessionId())
-                    .detail(Details.USERNAME, john.getUsername())
                     .assertEvent();
         }
         {
@@ -555,7 +552,6 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
                 .client("subject-client")
                 .user(user.getId())
                 .session(token.getSessionId())
-                .detail(Details.USERNAME, user.getUsername())
                 .detail(Details.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS)
                 .assertEvent();
 
@@ -1202,7 +1198,6 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
                 .session(token.getSessionId())
                 .detail(Details.AUDIENCE, CollectionUtil.join(expectedAudiences, " "))
                 .detail(Details.SCOPE, CollectionUtil.join(expectedScopes, " "))
-                .detail(Details.USERNAME, user.getUsername())
                 .detail(Details.REQUESTED_TOKEN_TYPE, expectedTokenType)
                 .detail(Details.SUBJECT_TOKEN_CLIENT_ID, expectedSubjectTokenClientId)
                 .assertEvent();

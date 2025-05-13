@@ -175,7 +175,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         String authSessionId1 = events.expectRequiredAction(EventType.UPDATE_TOTP)
                 .user(userId)
                 .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
-                .detail(Details.USERNAME, "setuptotp").assertEvent()
+                .assertEvent()
                 .getDetails().get(Details.CODE_ID);
 
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
@@ -183,12 +183,12 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
                 .user(userId)
                 .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
-                .detail(Details.USERNAME, "setuptotp").assertEvent()
+                .assertEvent()
                 .getDetails().get(Details.CODE_ID);
 
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().user(userId).session(authSessionId1).detail(Details.USERNAME, "setuptotp").assertEvent();
+        events.expectLogin().user(userId).session(authSessionId1).assertEvent();
     }
 
     @Test
@@ -468,13 +468,13 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         events.expectRequiredAction(EventType.UPDATE_TOTP)
                 .user(userId)
                 .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
-                .detail(Details.USERNAME, "setuptotp2").assertEvent();
+               .assertEvent();
         events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
                 .user(userId)
                 .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
-                .detail(Details.USERNAME, "setuptotp2").assertEvent();
+                .assertEvent();
 
-        EventRepresentation loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "setuptotp2").assertEvent();
+        EventRepresentation loginEvent = events.expectLogin().user(userId).assertEvent();
 
         // Logout
         AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
@@ -496,7 +496,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         // Login with one-time password
         loginTotpPage.login(totp.generateTOTP(totpCode));
 
-        loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent();
+        loginEvent = events.expectLogin().user(userId).assertEvent();
 
         // Remove google authenticator
         Assert.assertTrue(AccountHelper.deleteTotpAuthentication(testRealm(),"setupTotp2"));
@@ -515,18 +515,18 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         String sessionId1 = events.expectRequiredAction(EventType.UPDATE_TOTP)
                 .user(userId)
                 .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
-                .detail(Details.USERNAME, "setupTotp2").assertEvent()
+                .assertEvent()
                 .getDetails().get(Details.CODE_ID);
         String sessionId2 = events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
                 .user(userId)
                 .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
-                .detail(Details.USERNAME, "setupTotp2").assertEvent()
+                .assertEvent()
                 .getDetails().get(Details.CODE_ID);
 
         assertEquals(sessionId1, sessionId2);
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().user(userId).session(sessionId1).detail(Details.USERNAME, "setupTotp2").assertEvent();
+        events.expectLogin().user(userId).session(sessionId1).assertEvent();
     }
 
     @Test
@@ -723,12 +723,12 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         events.expectRequiredAction(EventType.UPDATE_TOTP)
                 .user(event1.getUserId())
                 .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
-                .detail(Details.USERNAME, "test-user@localhost").assertEvent();
+                .assertEvent();
         EventRepresentation event2 = events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
                 .user(event1.getUserId())
                 .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
-                .detail(Details.USERNAME, "test-user@localhost").assertEvent();
-        event2 = events.expectLogin().user(event2.getUserId()).session(event2.getDetails().get(Details.CODE_ID)).detail(Details.USERNAME, "test-user@localhost").assertEvent();
+                .assertEvent();
+        event2 = events.expectLogin().user(event2.getUserId()).session(event2.getDetails().get(Details.CODE_ID)).assertEvent();
 
         // assert old session is gone or is maintained
         List<UserSessionRepresentation> sessions = testUser.getUserSessions();
