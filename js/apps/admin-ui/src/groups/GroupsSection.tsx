@@ -169,7 +169,7 @@ export default function GroupsSection() {
                           key="renameGroup"
                           onClick={() => setRename(currentGroup())}
                         >
-                          {t("renameGroup")}
+                          {t("edit")}
                         </DropdownItem>,
                         <DropdownItem
                           data-testid="deleteGroup"

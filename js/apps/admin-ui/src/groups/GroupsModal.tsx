@@ -266,7 +266,7 @@ export const GroupsModal = ({
       variant={ModalVariant.small}
       title={
         rename
-          ? t("renameAGroup")
+          ? t("editGroup")
           : duplicateId
             ? t("duplicateAGroup")
             : t("createAGroup")
