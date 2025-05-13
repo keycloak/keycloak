@@ -85,6 +85,7 @@ import org.keycloak.models.sessions.infinispan.stream.UserSessionPredicate;
 import org.keycloak.models.sessions.infinispan.util.FuturesHelper;
 import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
+import org.keycloak.utils.StreamsUtil;
 
 import static org.keycloak.models.Constants.SESSION_NOTE_LIGHTWEIGHT_USER;
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
@@ -476,8 +477,10 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
 
         UserSessionPredicate predicate = UserSessionPredicate.create(realm.getId()).client(client.getId());
 
-        return paginatedStream(getUserSessionsStream(realm, predicate, offline)
-                .sorted(Comparator.comparing(UserSessionModel::getLastSessionRefresh)), firstResult, maxResults);
+        // If the sorted stream is used within a flatMap (like in SessionsResource), it will not terminate early unless wrapped with
+        // StreamsUtil.prepareSortedStreamToWorkInsideOfFlatMapWithTerminalOperations causing unnecessary operations.
+        return paginatedStream(StreamsUtil.prepareSortedStreamToWorkInsideOfFlatMapWithTerminalOperations(getUserSessionsStream(realm, predicate, offline)
+                .sorted(Comparator.comparing(UserSessionModel::getLastSessionRefresh))), firstResult, maxResults);
     }
 
     @Override
