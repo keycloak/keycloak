@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.jgroups.protocol;
+package org.keycloak.jgroups.header;
 
 import org.jgroups.Header;
 import org.jgroups.util.Util;
@@ -34,7 +34,7 @@ import java.util.function.Supplier;
  * @since  1.0.0
  */
 public class TracerHeader extends Header {
-    protected static final short       ID=1050;
+    public static final short       ID=1050;
     protected final Map<String,String> ctx=new HashMap<>();
 
     public TracerHeader() {

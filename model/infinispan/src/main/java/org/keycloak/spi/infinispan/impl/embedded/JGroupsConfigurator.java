@@ -46,6 +46,7 @@ import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.jgroups.protocol.KEYCLOAK_JDBC_PING2;
 import org.keycloak.jgroups.protocol.OPEN_TELEMETRY;
+import org.keycloak.jgroups.header.TracerHeader;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.spi.infinispan.JGroupsCertificateProvider;
 
@@ -76,6 +77,8 @@ public final class JGroupsConfigurator {
         // Use custom Keycloak JDBC_PING implementation that workarounds issue https://issues.redhat.com/browse/JGRP-2870
         // The id 1025 follows this instruction: https://github.com/belaban/JGroups/blob/38219e9ec1c629fa2f7929e3b53d1417d8e60b61/conf/jg-protocol-ids.xml#L85
         ClassConfigurator.addProtocol((short) 1025, KEYCLOAK_JDBC_PING2.class);
+        ClassConfigurator.addProtocol((short) 1026, OPEN_TELEMETRY.class);
+        ClassConfigurator.add(TracerHeader.ID, TracerHeader.class);
     }
 
     /**
