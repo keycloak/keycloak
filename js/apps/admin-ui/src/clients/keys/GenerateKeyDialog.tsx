@@ -73,7 +73,7 @@ export const KeyForm = ({
       {useFile && (
         <FileUploadControl
           label={t("importFile")}
-          labelHelp={
+          labelIcon={
             <HelpItem
               helpText={t("importFileHelp")}
               fieldLabelId="importFile"

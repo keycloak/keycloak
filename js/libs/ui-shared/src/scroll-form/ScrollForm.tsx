@@ -81,16 +81,8 @@ export const ScrollForm = ({
 
               return (
                 <JumpLinksItem
+                  href={scrollId}
                   key={title}
-                  onClick={() => {
-                    const element = document.getElementById(scrollId);
-                    if (element) {
-                      element.scrollIntoView({
-                        behavior: "smooth",
-                        block: "start",
-                      });
-                    }
-                  }}
                   data-testid={`jump-link-${scrollId}`}
                 >
                   {title}
