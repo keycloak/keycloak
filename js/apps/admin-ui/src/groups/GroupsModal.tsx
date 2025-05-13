@@ -54,7 +54,10 @@ export const GroupsModal = ({
     useState<GroupRepresentation | null>(null);
 
   const form = useForm({
-    defaultValues: { name: "" },
+    defaultValues: {
+      name: rename?.name || "",
+      description: rename?.description || "",
+    },
   });
   const { handleSubmit, formState } = form;
 
@@ -235,7 +238,7 @@ export const GroupsModal = ({
       } else if (rename) {
         await adminClient.groups.update(
           { id },
-          { ...rename, name: group.name },
+          { ...rename, name: group.name, description: group.description },
         );
       } else {
         await adminClient.groups.updateChildGroup({ id }, group);
