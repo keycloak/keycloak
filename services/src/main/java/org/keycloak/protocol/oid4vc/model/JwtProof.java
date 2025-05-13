@@ -21,35 +21,39 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Represents a CredentialResponse according to the OID4VCI Spec
- * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-response}
+ * JWT Proof for Credential Request in OID4VCI (Section 8.2.1.1).
+ * Represents a signed JWT for holder binding.
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
+ * @see <a href="https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-request">OID4VCI Credential Request</a>
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class CredentialResponse {
+public class JwtProof implements Proof {
 
-    // concrete type depends on the format
-    private Object credential;
+    @JsonProperty("proof_type")
+    private final String proofType = ProofType.JWT;
 
-    @JsonProperty("notification_id")
-    private String notificationId;
+    @JsonProperty("jwt")
+    private String jwt;
 
-    public Object getCredential() {
-        return credential;
+    public JwtProof() {
     }
 
-    public CredentialResponse setCredential(Object credential) {
-        this.credential = credential;
-        return this;
+    public JwtProof(String jwt) {
+        this.jwt = jwt;
     }
 
-    public String getNotificationId() {
-        return notificationId;
+    @Override
+    public String getProofType() {
+        return proofType;
     }
 
-    public CredentialResponse setNotificationId(String notificationId) {
-        this.notificationId = notificationId;
+    public String getJwt() {
+        return jwt;
+    }
+
+    public JwtProof setJwt(String jwt) {
+        this.jwt = jwt;
         return this;
     }
 }
