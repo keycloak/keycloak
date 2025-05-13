@@ -23,6 +23,7 @@ import {
   Controller,
   ControllerRenderProps,
   useFormContext,
+  useWatch,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
@@ -101,8 +102,15 @@ export const ResourcesPolicySelect = ({
   const [onUnsavedChangesConfirm, setOnUnsavedChangesConfirm] =
     useState<() => void>();
   const isAdminPermissionsClient = useIsAdminPermissionsClient(clientId);
+  const [selected, setSelected] = useState<Policies[]>([]);
 
   const functions = typeMapping[name];
+
+  const value = useWatch({
+    control,
+    name: name!,
+    defaultValue: preSelected ? [preSelected] : [],
+  });
 
   const convert = (
     p: PolicyRepresentation | ResourceRepresentation,
@@ -156,6 +164,28 @@ export const ResourcesPolicySelect = ({
     [search],
   );
 
+  useFetch(
+    async () => {
+      if (name === "resources")
+        return await Promise.all(
+          (value || []).map((id) =>
+            adminClient.clients.getResource({ id: clientId, resourceId: id }),
+          ),
+        );
+      return await Promise.all(
+        (value || []).map(async (id) =>
+          adminClient.clients.findOnePolicy({
+            id: clientId,
+            type: "",
+            policyId: id,
+          }),
+        ),
+      );
+    },
+    (result: any[]) => setSelected(result.map((r) => convert(r))),
+    [value],
+  );
+
   const [toggleUnsavedChangesDialog, UnsavedChangesConfirm] = useConfirmDialog({
     titleKey: t("unsavedChangesTitle"),
     messageKey: t("unsavedChangesConfirm"),
@@ -190,36 +220,32 @@ export const ResourcesPolicySelect = ({
   ) => {
     return (
       <ChipGroup>
-        {field.value?.map((permissionId) => {
-          const item = items.find(
-            (permission) => permission.id === permissionId,
-          );
-
-          if (!item) return;
-
-          const route = to(item);
-          return (
-            <Chip
-              key={item.id}
-              onClick={() => {
-                field.onChange(field.value?.filter((id) => id !== item.id));
-              }}
-            >
+        {selected?.map((item) => (
+          <Chip
+            key={item.id}
+            onClick={() => {
+              field.onChange(field.value?.filter((id) => id !== item.id) || []);
+              setSelected(selected?.filter((p) => p.id !== item.id) || []);
+            }}
+          >
+            {!isAdminPermissionsClient ? (
               <Link
-                to={route}
+                to={to(item)}
                 onClick={(event) => {
                   if (isDirty) {
                     event.preventDefault();
-                    setOnUnsavedChangesConfirm(() => () => navigate(route));
+                    setOnUnsavedChangesConfirm(() => () => navigate(to(item)));
                     toggleUnsavedChangesDialog();
                   }
                 }}
               >
                 {item.name}
               </Link>
-            </Chip>
-          );
-        })}
+            ) : (
+              item.name
+            )}
+          </Chip>
+        ))}
       </ChipGroup>
     );
   };
