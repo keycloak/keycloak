@@ -936,7 +936,6 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         ExpectedEvent event = events.expectLogin()
                 .session((String) null)
                 .error(Errors.USER_TEMPORARILY_DISABLED)
-                .detail(Details.USERNAME, username)
                 .removeDetail(Details.CONSENT);
         if (userId != null) {
             event.user(userId);
@@ -957,7 +956,6 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         ExpectedEvent event = events.expectLogin()
             .session((String) null)
             .error(Errors.USER_DISABLED)
-            .detail(Details.USERNAME, username)
             .removeDetail(Details.CONSENT);
         event.assertEvent();
     }

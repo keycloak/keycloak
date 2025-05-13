@@ -715,7 +715,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
             loginTotpPage.login(getOtpCode(USER_WITH_ONE_OTP_OTP_SECRET));
             Assert.assertFalse(loginTotpPage.isCurrent());
             events.expectLogin().user(testRealm().users().search("user-with-one-configured-otp").get(0).getId())
-                    .detail(Details.USERNAME, "user-with-one-configured-otp").assertEvent();
+                    .assertEvent();
 
         } finally {
             revertFlows("browser - copy 1");
@@ -769,7 +769,6 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
             provideUsernamePassword("user-with-two-configured-otp");
             events.expectLogin().user(userId).session((String) null)
                     .error("invalid_user_credentials")
-                    .detail(Details.USERNAME, "user-with-two-configured-otp")
                     .removeDetail(Details.CONSENT)
                     .assertEvent();
 
@@ -780,7 +779,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
 
             loginTotpPage.login(getOtpCode(USER_WITH_TWO_OTPS_OTP1_SECRET));
             Assert.assertFalse(loginTotpPage.isCurrent());
-            events.expectLogin().user(userId).detail(Details.USERNAME, "user-with-two-configured-otp").assertEvent();
+            events.expectLogin().user(userId).assertEvent();
         } finally {
             revertFlows("browser - copy 1");
         }

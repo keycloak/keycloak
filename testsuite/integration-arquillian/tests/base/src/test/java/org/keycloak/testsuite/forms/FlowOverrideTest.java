@@ -214,7 +214,7 @@ public class FlowOverrideTest extends AbstractFlowTest {
         oauth.fillLoginForm("test-user@localhost", getPassword("test-user@localhost"));
         appPage.assertCurrent();
 
-        events.expectLogin().client("test-app-flow").detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        events.expectLogin().client("test-app-flow").assertEvent();
     }
 
     @Test
@@ -246,7 +246,7 @@ public class FlowOverrideTest extends AbstractFlowTest {
         oauth.fillLoginForm("test-user@localhost", getPassword("test-user@localhost"));
         appPage.assertCurrent();
 
-        events.expectLogin().client(clientId).detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        events.expectLogin().client(clientId).assertEvent();
     }
 
     @Test

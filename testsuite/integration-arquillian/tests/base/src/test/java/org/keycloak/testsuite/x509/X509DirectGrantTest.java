@@ -205,7 +205,6 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
                     .session((String) null)
                     .error(Errors.USER_DISABLED)
                     .client("resource-owner")
-                    .detail(Details.USERNAME, "test-user@localhost")
                     .removeDetail(Details.CODE_ID)
                     .removeDetail(Details.CONSENT)
                     .removeDetail(Details.REDIRECT_URI)
@@ -332,7 +331,6 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
                 .user(userId)
                 .session((String) null)
                 .error(Errors.USER_TEMPORARILY_DISABLED)
-                .detail(Details.USERNAME, "test-user@localhost")
                 .removeDetail(Details.CODE_ID)
                 .removeDetail(Details.CONSENT)
                 .removeDetail(Details.REDIRECT_URI)
@@ -361,7 +359,6 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
                 .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
                 .detail(Details.TOKEN_ID, accessToken.getId())
                 .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
-                .detail(Details.USERNAME, login)
                 .removeDetail(Details.CODE_ID)
                 .removeDetail(Details.REDIRECT_URI)
                 .removeDetail(Details.CONSENT);

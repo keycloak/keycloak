@@ -165,7 +165,7 @@ public class AuthenticatorSubflowsTest2 extends AbstractChangeImportedUserPasswo
         oauth.fillLoginForm("test-user@localhost", getPassword("test-user@localhost"));
         appPage.assertCurrent();
 
-        events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        events.expectLogin().assertEvent();
     }
 
 
@@ -184,7 +184,7 @@ public class AuthenticatorSubflowsTest2 extends AbstractChangeImportedUserPasswo
         driver.findElement(By.name("submit1")).click();
         appPage.assertCurrent();
 
-        events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        events.expectLogin().assertEvent();
     }
 
 }

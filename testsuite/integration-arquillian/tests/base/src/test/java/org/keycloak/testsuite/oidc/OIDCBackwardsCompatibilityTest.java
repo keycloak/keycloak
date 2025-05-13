@@ -103,7 +103,7 @@ public class OIDCBackwardsCompatibilityTest extends AbstractTestRealmKeycloakTes
         // Open login again and assert session_state not present
         oauth.openLoginForm();
         org.keycloak.testsuite.Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        events.expectLogin().assertEvent();
 
         authzResponse = oauth.parseLoginResponse();
         Assert.assertNull(authzResponse.getSessionState());
@@ -131,7 +131,7 @@ public class OIDCBackwardsCompatibilityTest extends AbstractTestRealmKeycloakTes
         // Open login again and assert iss parameter is not present
         oauth.openLoginForm();
         org.keycloak.testsuite.Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        events.expectLogin().assertEvent();
 
         authzResponse = oauth.parseLoginResponse();
         Assert.assertNull(authzResponse.getIssuer());

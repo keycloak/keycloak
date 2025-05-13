@@ -118,7 +118,6 @@ public class ConditionalUserAttributeAuthenticatorTest extends AbstractTestRealm
 
             events.expectLogin()
                     .user(testUserId)
-                    .detail(Details.USERNAME, user)
                     .removeDetail(Details.CONSENT)
                     .assertEvent();
 
@@ -149,7 +148,6 @@ public class ConditionalUserAttributeAuthenticatorTest extends AbstractTestRealm
                     .user((String) null)
                     .session((String) null)
                     .error(Errors.ACCESS_DENIED)
-                    .detail(Details.USERNAME, user)
                     .removeDetail(Details.CONSENT)
                     .assertEvent();
         } finally {

@@ -255,7 +255,6 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         Assert.assertNull(loginPage.getPasswordInputError());
 
         events.expectLogin().user(user2Id).session((String) null).error("invalid_user_credentials")
-                .detail(Details.USERNAME, "login-test2")
                 .removeDetail(Details.CONSENT)
                 .assertEvent();
 
@@ -264,7 +263,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.parseLoginResponse().getCode());
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+        events.expectLogin().user(userId).assertEvent();
     }
 
     @Test
@@ -282,7 +281,6 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         Assert.assertNull(loginPage.getPasswordInputError());
 
         events.expectLogin().user(userId).session((String) null).error("invalid_user_credentials")
-                .detail(Details.USERNAME, "login-test")
                 .removeDetail(Details.CONSENT)
                 .assertEvent();
     }
@@ -302,7 +300,6 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         Assert.assertNull(loginPage.getPasswordInputError());
 
         events.expectLogin().user(userId).session((String) null).error("invalid_user_credentials")
-                .detail(Details.USERNAME, "login-test")
                 .removeDetail(Details.CONSENT)
                 .assertEvent();
     }
@@ -331,7 +328,6 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
 
             events.expectLogin().user(userId).session((String) null).error("invalid_user_credentials")
-                    .detail(Details.USERNAME, "login-test")
                     .removeDetail(Details.CONSENT)
                     .assertEvent();
         } finally {
@@ -357,7 +353,6 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             Assert.assertEquals("Account is disabled, contact your administrator.", loginPage.getError());
 
             events.expectLogin().user(userId).session((String) null).error("user_disabled")
-                    .detail(Details.USERNAME, "login-test")
                     .removeDetail(Details.CONSENT)
                     .assertEvent();
         } finally {
@@ -404,7 +399,6 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
 
         events.expectLogin().user((String) null).session((String) null).error("user_not_found")
-                .detail(Details.USERNAME, "invalid")
                 .removeDetail(Details.CONSENT)
                 .assertEvent();
 
@@ -413,7 +407,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.parseLoginResponse().getCode());
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+        events.expectLogin().user(userId).assertEvent();
     }
 
     @Test
@@ -439,7 +433,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.parseLoginResponse().getCode());
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, "login@test.com").assertEvent();
+        events.expectLogin().user(userId).assertEvent();
     }
 
     @Test
@@ -450,7 +444,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.parseLoginResponse().getCode());
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+        events.expectLogin().user(userId).assertEvent();
     }
 
     @Test
@@ -463,7 +457,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.parseLoginResponse().getCode());
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+        events.expectLogin().user(userId).assertEvent();
 
         driver.navigate().to(getAuthServerContextRoot() + "/auth/realms/test/");
         String keycloakIdentity = driver.manage().getCookieNamed("KEYCLOAK_IDENTITY").getValue();
@@ -501,7 +495,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.parseLoginResponse().getCode());
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+        events.expectLogin().user(userId).assertEvent();
     }
 
     @Test

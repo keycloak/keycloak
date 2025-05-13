@@ -99,7 +99,6 @@ public class AllowDenyAuthenticatorTest extends AbstractChangeImportedUserPasswo
                     .user((String) null)
                     .session((String) null)
                     .error(Errors.ACCESS_DENIED)
-                    .detail(Details.USERNAME, userWithoutAttribute)
                     .removeDetail(Details.CONSENT)
                     .assertEvent();
         } finally {
@@ -138,7 +137,6 @@ public class AllowDenyAuthenticatorTest extends AbstractChangeImportedUserPasswo
                     .user((String) null)
                     .session((String) null)
                     .error(Errors.ACCESS_DENIED)
-                    .detail(Details.USERNAME, userWithoutAttribute)
                     .removeDetail(Details.CONSENT)
                     .assertEvent();
         } finally {
@@ -174,7 +172,6 @@ public class AllowDenyAuthenticatorTest extends AbstractChangeImportedUserPasswo
                     .user((String) null)
                     .session((String) null)
                     .error(Errors.ACCESS_DENIED)
-                    .detail(Details.USERNAME, userWithoutAttribute)
                     .removeDetail(Details.CONSENT)
                     .assertEvent();
         } finally {
@@ -242,7 +239,6 @@ public class AllowDenyAuthenticatorTest extends AbstractChangeImportedUserPasswo
                     .user((String) null)
                     .session((String) null)
                     .error(Errors.ACCESS_DENIED)
-                    .detail(Details.USERNAME, userCondMatch)
                     .removeDetail(Details.CONSENT)
                     .assertEvent();
 
@@ -256,7 +252,6 @@ public class AllowDenyAuthenticatorTest extends AbstractChangeImportedUserPasswo
             passwordPage.login(getPassword(userCondNotMatch));
 
             events.expectLogin().user(userCondNotMatchId)
-                    .detail(Details.USERNAME, userCondNotMatch)
                     .removeDetail(Details.CONSENT)
                     .assertEvent();
         } finally {
@@ -290,7 +285,6 @@ public class AllowDenyAuthenticatorTest extends AbstractChangeImportedUserPasswo
 
             events.expectLogin()
                     .user(testUserWithoutRoleId)
-                    .detail(Details.USERNAME, userWithoutRole)
                     .removeDetail(Details.CONSENT)
                     .assertEvent();
         } finally {
@@ -321,7 +315,6 @@ public class AllowDenyAuthenticatorTest extends AbstractChangeImportedUserPasswo
 
             events.expectLogin()
                     .user(testUserWithRoleId)
-                    .detail(Details.USERNAME, userWithRole)
                     .removeDetail(Details.CONSENT)
                     .assertEvent();
         } finally {

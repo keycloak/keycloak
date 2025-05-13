@@ -185,11 +185,10 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
 
         EventRepresentation event2 = events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
                 .user(event1.getUserId())
-                .detail(Details.USERNAME, "test-user@localhost")
                 .detail(Details.CREDENTIAL_TYPE, RecoveryAuthnCodesCredentialModel.TYPE)
                 .assertEvent();
         event2 = events.expectLogin().user(event2.getUserId()).session(event2.getDetails().get(Details.CODE_ID))
-                .detail(Details.USERNAME, "test-user@localhost").assertEvent();
+                .assertEvent();
 
         // assert old session is gone or is maintained
         List<UserSessionRepresentation> sessions = testUser.getUserSessions();
@@ -237,11 +236,9 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
         assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         EventRepresentation event = events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
                 .user(userRepresentation.getId())
-                .detail(Details.USERNAME, "test-user@localhost")
                 .detail(Details.CREDENTIAL_TYPE, RecoveryAuthnCodesCredentialModel.TYPE)
                 .assertEvent();
         events.expectLogin().user(event.getUserId()).session(event.getDetails().get(Details.CODE_ID))
-                .detail(Details.USERNAME, "test-user@localhost")
                 .assertEvent();
     }
 
@@ -269,11 +266,9 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
         assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         EventRepresentation event = events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
                 .user(userRepresentation.getId())
-                .detail(Details.USERNAME, "test-user@localhost")
                 .detail(Details.CREDENTIAL_TYPE, RecoveryAuthnCodesCredentialModel.TYPE)
                 .assertEvent();
         events.expectLogin().user(event.getUserId()).session(event.getDetails().get(Details.CODE_ID))
-                .detail(Details.USERNAME, "test-user@localhost")
                 .assertEvent();
     }
 
@@ -364,7 +359,7 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
             enterRecoveryCodes(enterRecoveryAuthnCodePage, driver, 0, generatedRecoveryAuthnCodes);
             enterRecoveryAuthnCodePage.clickSignInButton();
             enterRecoveryAuthnCodePage.assertAccountLinkAvailability(true);
-            events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+            events.expectLogin().assertEvent();
         } finally {
             // Revert copy of browser flow to original to keep clean slate after this test
             BrowserFlowTest.revertFlows(testRealm(), BROWSER_FLOW_WITH_RECOVERY_AUTHN_CODES);
@@ -396,7 +391,7 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
 
             // one event should be a login and the other a login error
             List<EventRepresentation> actualEvents = Arrays.asList(events.poll(5), events.poll(5));
-            assertIsContained(events.expectLogin().detail(Details.USERNAME, "test-user@localhost"), actualEvents);
+            assertIsContained(events.expectLogin(), actualEvents);
             assertIsContained(events.expect(EventType.LOGIN_ERROR).error(Errors.INVALID_USER_CREDENTIALS), actualEvents);
         } finally {
             // Revert copy of browser flow to original to keep clean slate after this test

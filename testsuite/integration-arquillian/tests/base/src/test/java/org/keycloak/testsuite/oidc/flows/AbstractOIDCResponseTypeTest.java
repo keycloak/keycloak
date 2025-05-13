@@ -186,7 +186,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
         loginPage.login("test-user@localhost", "password");
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        return events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        return events.expectLogin().assertEvent();
     }
 
     protected EventRepresentation loginUserWithRedirect(String nonce, String redirectUri) {
@@ -200,7 +200,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
         loginPage.login("test-user@localhost", "password");
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        return events.expectLogin().detail(Details.REDIRECT_URI, redirectUri).detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        return events.expectLogin().detail(Details.REDIRECT_URI, redirectUri).assertEvent();
     }
 
     protected abstract boolean isFragment();

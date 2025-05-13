@@ -579,7 +579,6 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
 
         AssertEvents.ExpectedEvent expectedEvent = events.expectLogin()
                 .user(userId)
-                .detail(Details.USERNAME, attemptedUsername)
                 .removeDetail(Details.REDIRECT_URI);
 
         addX509CertificateDetails(expectedEvent)

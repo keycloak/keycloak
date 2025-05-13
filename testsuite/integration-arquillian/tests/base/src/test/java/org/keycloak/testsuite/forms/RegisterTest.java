@@ -284,7 +284,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
             String userId = events.expectRegister("registerPasswordPolicy", "registerPasswordPolicy@email").assertEvent().getUserId();
 
-            events.expectLogin().user(userId).detail(Details.USERNAME, "registerpasswordpolicy").assertEvent();
+            events.expectLogin().user(userId).assertEvent();
         }
     }
 

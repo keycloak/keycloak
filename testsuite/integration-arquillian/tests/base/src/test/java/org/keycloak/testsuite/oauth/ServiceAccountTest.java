@@ -185,7 +185,6 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
                 .session(accessToken.getSessionState())
                 .detail(Details.TOKEN_ID, accessToken.getId())
                 .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
-                .detail(Details.USERNAME, userName)
                 .assertEvent();
 
         assertEquals(accessToken.getSessionState(), refreshToken.getSessionState());

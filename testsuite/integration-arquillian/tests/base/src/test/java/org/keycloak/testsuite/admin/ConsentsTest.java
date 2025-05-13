@@ -444,7 +444,7 @@ public class ConsentsTest extends AbstractKeycloakTest {
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.parseLoginResponse().getCode());
 
-        EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        EventRepresentation loginEvent = events.expectLogin().assertEvent();
         String sessionId = loginEvent.getSessionId();
 
         ClientRepresentation clientRepresentation = adminClient.realm(TEST_REALM_NAME).clients().findByClientId("test-app").get(0);

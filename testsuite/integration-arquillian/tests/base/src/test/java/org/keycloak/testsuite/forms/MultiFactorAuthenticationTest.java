@@ -238,7 +238,7 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
             Assert.assertFalse(passwordPage.isCurrent());
             Assert.assertFalse(loginPage.isCurrent());
             events.expectLogin().user(testRealm().users().search("user-with-one-configured-otp").get(0).getId())
-                    .detail(Details.USERNAME, "user-with-one-configured-otp").assertEvent();
+                    .assertEvent();
         } finally {
             BrowserFlowTest.revertFlows(testRealm(),"browser - alternative mechanisms");
         }
@@ -284,7 +284,7 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
             loginTotpPage.login(new TimeBasedOTP().generateTOTP("DJmQfC73VGFhw7D4QJ8A"));
             Assert.assertFalse(loginTotpPage.isCurrent());
             events.expectLogin().user(testRealm().users().search("user-with-one-configured-otp").get(0).getId())
-                    .detail(Details.USERNAME, "user-with-one-configured-otp").assertEvent();
+                    .assertEvent();
         } finally {
             BrowserFlowTest.revertFlows(testRealm(),"browser - alternative mechanisms");
         }
@@ -321,7 +321,6 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
             events.expect(EventType.RESTART_AUTHENTICATION)
                     .client(oauth.getClientId())
                     .user(user.getId())
-                    .detail(Details.USERNAME, "user-with-one-configured-otp")
                     .detail(Details.AUTH_METHOD, OIDCLoginProtocol.LOGIN_PROTOCOL)
                     .assertEvent();
 

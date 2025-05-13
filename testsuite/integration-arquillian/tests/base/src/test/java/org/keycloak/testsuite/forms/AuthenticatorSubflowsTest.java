@@ -268,7 +268,7 @@ public class AuthenticatorSubflowsTest extends AbstractChangeImportedUserPasswor
         oauth.fillLoginForm("test-user@localhost", getPassword("test-user@localhost"));
         appPage.assertCurrent();
 
-        events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        events.expectLogin().assertEvent();
     }
 
 
@@ -289,7 +289,7 @@ public class AuthenticatorSubflowsTest extends AbstractChangeImportedUserPasswor
         oauth.fillLoginForm("test-user@localhost", getPassword("test-user@localhost"));
         appPage.assertCurrent();
 
-        events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        events.expectLogin().assertEvent();
     }
 
 

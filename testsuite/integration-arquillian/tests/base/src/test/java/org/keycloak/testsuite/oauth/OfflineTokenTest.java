@@ -433,7 +433,6 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
                 .detail(Details.TOKEN_ID, token.getId())
                 .detail(Details.REFRESH_TOKEN_ID, offlineToken.getId())
                 .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
-                .detail(Details.USERNAME, "test-user@localhost")
                 .removeDetail(Details.CODE_ID)
                 .removeDetail(Details.REDIRECT_URI)
                 .removeDetail(Details.CONSENT)

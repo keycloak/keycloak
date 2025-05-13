@@ -153,7 +153,7 @@ public class ConditionalSubFlowExecutedAuthenticatorTest extends AbstractTestRea
         Assert.assertNull(res.getError());
         Assert.assertNotNull(res.getAccessToken());
 
-        events.expectLogin().user(AssertEvents.isUUID()).detail(Details.USERNAME, username).assertEvent();
+        events.expectLogin().user(AssertEvents.isUUID()).assertEvent();
     }
 
     private void configureConditionalSubFlowExecutedAuthenticatorInFlow(String flowName, String check) {
