@@ -244,7 +244,7 @@ export const GroupsModal = ({
         await adminClient.groups.updateChildGroup({ id }, group);
       }
 
-      refresh(rename ? { ...rename, name: group.name } : undefined);
+      refresh(rename ? { ...rename, ...group } : undefined);
       handleModalToggle();
       addAlert(
         t(
@@ -271,7 +271,7 @@ export const GroupsModal = ({
             ? t("duplicateAGroup")
             : t("createAGroup")
       }
-      isOpen={true}
+      isOpen
       onClose={handleModalToggle}
       actions={[
         <FormSubmitButton
@@ -282,7 +282,7 @@ export const GroupsModal = ({
           allowInvalid
           allowNonDirty
         >
-          {t(rename ? "rename" : duplicateId ? "duplicate" : "create")}
+          {t(rename ? "edit" : duplicateId ? "duplicate" : "create")}
         </FormSubmitButton>,
         <Button
           id="modal-cancel"
