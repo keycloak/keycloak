@@ -32,9 +32,9 @@ import org.jgroups.Message;
 import org.jgroups.Version;
 import org.jgroups.annotations.MBean;
 import org.jgroups.annotations.Property;
-import org.jgroups.conf.ClassConfigurator;
 import org.jgroups.stack.Protocol;
 import org.jgroups.util.MessageBatch;
+import org.keycloak.jgroups.header.TracerHeader;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,7 +42,7 @@ import java.util.List;
 /**
  * Provides Open Telemetry (https://opentelemetry.io/) tracing for JGroups. It should be placed just above the
  * transport.<br/>
- * When a message is sent, a {@link org.keycloak.jgroups.protocol.TracerHeader} is added with the (optional) parent span.
+ * When a message is sent, a {@link TracerHeader} is added with the (optional) parent span.
  * When received a new span is started (as a child span, if the parent span in the header is non-null), and ended when
  * the the thread returns.
  * @author Bela Ban
@@ -50,7 +50,7 @@ import java.util.List;
  */
 @MBean(description="Records OpenTelemetry traces of sent and received messages")
 public class OPEN_TELEMETRY extends Protocol {
-    public static final short OPEN_TELEMETRY_ID=550; // as defined in jg-protocols.xml
+    public static final short OPEN_TELEMETRY_ID=1026;
     protected OpenTelemetry   otel;
     protected Tracer          tracer;
 
@@ -58,11 +58,6 @@ public class OPEN_TELEMETRY extends Protocol {
     protected boolean         active=true;
 
     static {
-        ClassConfigurator.addProtocol(OPEN_TELEMETRY_ID, OPEN_TELEMETRY.class);
-        // Register the TracerHeader here as otherwise as when we would register it in a static block in TracerHeader
-        // we could receive a message from another node with that header. Then it would not be registered yet
-        // and we would see a class not found exception.
-        ClassConfigurator.add(TracerHeader.ID, TracerHeader.class);
     }
 
     public boolean        active()          {return active;}
