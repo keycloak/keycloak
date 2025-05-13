@@ -223,7 +223,7 @@ export const ResourcesPolicySelect = ({
       <LabelGroup>
         {selected?.map((item) => (
           <Label
-              variant="outline"
+            variant="outline"
             key={item.id}
             onClose={() => {
               field.onChange(field.value?.filter((id) => id !== item.id) || []);
