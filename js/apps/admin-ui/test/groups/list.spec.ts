@@ -18,7 +18,7 @@ import {
   clickTableToolbarItem,
   searchItem,
 } from "../utils/table";
-import { createGroup, renameGroup, searchGroup } from "./list";
+import { createGroup, editGroup, searchGroup } from "./list";
 import { goToGroupDetails } from "./util";
 
 test.describe("Group test", () => {
@@ -134,10 +134,11 @@ test.describe("Search group under current group", () => {
     await assertRowExists(page, predefinedGroups[2], false);
   });
 
-  test("Rename group", async ({ page }) => {
+  test("Edit group", async ({ page }) => {
     const newGroupName = "new_group_name";
-    await clickRowKebabItem(page, predefinedGroups[3], "Rename");
-    await renameGroup(page, newGroupName);
+    const description = "new description";
+    await clickRowKebabItem(page, predefinedGroups[3], "Edit");
+    await editGroup(page, newGroupName, description);
     await assertNotificationMessage(page, "Group updated");
     await assertRowExists(page, newGroupName);
     await assertRowExists(page, predefinedGroups[3], false);

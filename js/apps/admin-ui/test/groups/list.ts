@@ -24,7 +24,8 @@ export async function searchGroup(page: Page, name: string) {
     .click();
 }
 
-export async function renameGroup(page: Page, name: string) {
+export async function editGroup(page: Page, name: string, description: string) {
   await page.getByTestId("name").fill(name);
+  await page.getByTestId("description").fill(description);
   await page.getByTestId("renameGroup").click();
 }
