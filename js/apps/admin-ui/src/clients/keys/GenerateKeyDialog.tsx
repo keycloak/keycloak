@@ -1,17 +1,12 @@
 import type KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
 import {
+  FileUploadControl,
   HelpItem,
   SelectControl,
-  FileUploadControl,
 } from "@keycloak/keycloak-ui-shared";
-import {
-  Button,
-  ButtonVariant,
-  Form,
-  Content,
-} from "@patternfly/react-core";
-import { FormProvider, useForm, useFormContext } from "react-hook-form";
+import { Button, ButtonVariant, Content, Form } from "@patternfly/react-core";
 import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
+import { FormProvider, useForm, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { StoreSettings } from "./StoreSettings";
@@ -73,7 +68,7 @@ export const KeyForm = ({
       {useFile && (
         <FileUploadControl
           label={t("importFile")}
-          labelHelp={
+          labelIcon={
             <HelpItem
               helpText={t("importFileHelp")}
               fieldLabelId="importFile"
