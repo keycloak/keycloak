@@ -154,7 +154,7 @@ public class ThemeResource {
                     new KeySource((String) e.getKey(), (String) e.getValue())).collect(toList());
         }
 
-        return Cors.builder().allowedOrigins("*").auth().add(Response.ok(result));
+        return Cors.builder().allowAllOrigins().auth().add(Response.ok(result));
     }
 
     private static Optional<Theme.Type> getThemeType(String themeType) {

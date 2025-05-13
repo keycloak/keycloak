@@ -17,63 +17,14 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Proof to be used in the Credential Request(to allow holder binding) according to OID4VCI
- * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-request}
+ * Interface for proof types in OID4VCI Credential Request (Section 8.2.1.1).
  *
- * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
+ * @see <a href="https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-request">OID4VCI Credential Request</a>
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public class Proof {
-
+public interface Proof {
     @JsonProperty("proof_type")
-    private String proofType;
-
-    @JsonProperty("jwt")
-    private String jwt;
-
-    @JsonProperty("cwt")
-    private String cwt;
-
-    @JsonProperty("ldp_vp")
-    private Object ldpVp;
-
-    public String getProofType() {
-        return proofType;
-    }
-
-    public Proof setProofType(String proofType) {
-        this.proofType = proofType;
-        return this;
-    }
-
-    public String getJwt() {
-        return jwt;
-    }
-
-    public Proof setJwt(String jwt) {
-        this.jwt = jwt;
-        return this;
-    }
-
-    public String getCwt() {
-        return cwt;
-    }
-
-    public Proof setCwt(String cwt) {
-        this.cwt = cwt;
-        return this;
-    }
-
-    public Object getLdpVp() {
-        return ldpVp;
-    }
-
-    public Proof setLdpVp(Object ldpVp) {
-        this.ldpVp = ldpVp;
-        return this;
-    }
+    String getProofType();
 }

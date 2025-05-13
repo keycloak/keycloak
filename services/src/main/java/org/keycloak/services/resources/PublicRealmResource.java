@@ -80,7 +80,7 @@ public class PublicRealmResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public PublishedRealmRepresentation getRealm() {
-        Cors.builder().allowedOrigins(Cors.ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD).auth().add();
+        Cors.builder().allowAllOrigins().auth().add();
         return realmRep(session, realm, session.getContext().getUri());
     }
 

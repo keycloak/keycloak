@@ -16,19 +16,25 @@
  */
 package org.keycloak.quarkus.runtime.services.resources;
 
+import java.util.stream.Stream;
+
 import org.keycloak.config.HostnameV2Options;
 import org.keycloak.config.HttpOptions;
 import org.keycloak.config.ProxyOptions;
 
 public class ConstantsDebugHostname {
-    public static final String[] RELEVANT_HEADERS = new String[] {
-            "Host",
-            "Forwarded",
+    public static final String[] X_FORWARDED_PROXY_HEADERS = new String[] {
             "X-Forwarded-Host",
             "X-Forwarded-Proto",
             "X-Forwarded-Port",
             "X-Forwarded-For"
     };
+
+    public static final String FORWARDED_PROXY_HEADER = "Forwarded";
+
+    public static final String[] RELEVANT_HEADERS = Stream
+            .concat(Stream.of("Host", FORWARDED_PROXY_HEADER), Stream.of(X_FORWARDED_PROXY_HEADERS))
+            .toArray(String[]::new);
 
     public static final String[] RELEVANT_OPTIONS_V2 = {
             HostnameV2Options.HOSTNAME.getKey(),

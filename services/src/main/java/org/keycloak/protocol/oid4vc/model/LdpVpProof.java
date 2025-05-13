@@ -21,35 +21,38 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Represents a CredentialResponse according to the OID4VCI Spec
- * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-response}
+ * LDP-VP Proof for Credential Request in OID4VCI (Section 8.2.1.1).
+ * Represents a JSON-LD Verifiable Presentation for holder binding.
  *
- * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
+ * @see <a href="https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-request">OID4VCI Credential Request</a>
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class CredentialResponse {
+public class LdpVpProof implements Proof {
 
-    // concrete type depends on the format
-    private Object credential;
+    @JsonProperty("proof_type")
+    private final String proofType = ProofType.LD_PROOF;
 
-    @JsonProperty("notification_id")
-    private String notificationId;
+    @JsonProperty("ldp_vp")
+    private Object ldpVp;
 
-    public Object getCredential() {
-        return credential;
+    public LdpVpProof() {
     }
 
-    public CredentialResponse setCredential(Object credential) {
-        this.credential = credential;
-        return this;
+    public LdpVpProof(Object ldpVp) {
+        this.ldpVp = ldpVp;
     }
 
-    public String getNotificationId() {
-        return notificationId;
+    @Override
+    public String getProofType() {
+        return proofType;
     }
 
-    public CredentialResponse setNotificationId(String notificationId) {
-        this.notificationId = notificationId;
+    public Object getLdpVp() {
+        return ldpVp;
+    }
+
+    public LdpVpProof setLdpVp(Object ldpVp) {
+        this.ldpVp = ldpVp;
         return this;
     }
 }
