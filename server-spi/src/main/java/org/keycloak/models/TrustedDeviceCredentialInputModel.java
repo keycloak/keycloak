@@ -21,7 +21,7 @@ import org.keycloak.credential.CredentialInput;
 import org.keycloak.models.credential.TrustedDeviceCredentialModel;
 
 /**
- * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @author Norbert Kelemen
  * @version $Revision: 1 $
  */
 public class TrustedDeviceCredentialInputModel implements CredentialInput {
