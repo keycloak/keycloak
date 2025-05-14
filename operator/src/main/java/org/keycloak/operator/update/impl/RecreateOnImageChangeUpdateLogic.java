@@ -53,7 +53,7 @@ public class RecreateOnImageChangeUpdateLogic extends BaseUpdateLogic {
         return Optional.empty();
     }
 
-    private static String extractImage(StatefulSet statefulSet) {
+    public static String extractImage(StatefulSet statefulSet) {
         return CRDUtils.firstContainerOf(statefulSet)
                 .map(Container::getImage)
                 .orElseThrow(BaseUpdateLogic::containerNotFound);
