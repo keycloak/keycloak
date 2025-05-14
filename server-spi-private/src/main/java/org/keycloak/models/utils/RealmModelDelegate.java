@@ -42,6 +42,7 @@ import org.keycloak.models.RequiredActionConfigModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.TrustedDevicePolicy;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.provider.Provider;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -526,6 +527,14 @@ public class RealmModelDelegate implements RealmModel {
 
     public void setWebAuthnPolicyPasswordless(WebAuthnPolicy policy) {
         delegate.setWebAuthnPolicyPasswordless(policy);
+    }
+
+    public TrustedDevicePolicy getTrustedDevicePolicy() {
+        return delegate.getTrustedDevicePolicy();
+    }
+
+    public void setTrustedDevicePolicy(TrustedDevicePolicy policy) {
+        delegate.setTrustedDevicePolicy(policy);
     }
 
     public RoleModel getRoleById(String id) {

@@ -48,6 +48,7 @@ import org.keycloak.models.RequiredActionConfigModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.TrustedDevicePolicy;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.WebAuthnPolicy;
@@ -767,6 +768,16 @@ public class SamlProtocolTest {
 
         @Override
         public void setWebAuthnPolicyPasswordless(WebAuthnPolicy policy) {
+
+        }
+
+        @Override
+        public TrustedDevicePolicy getTrustedDevicePolicy() {
+            return null;
+        }
+
+        @Override
+        public void setTrustedDevicePolicy(TrustedDevicePolicy policy) {
 
         }
 

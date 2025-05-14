@@ -74,6 +74,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.ScopeContainerModel;
+import org.keycloak.models.TrustedDevicePolicy;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.WebAuthnPolicy;
@@ -356,6 +357,8 @@ public class DefaultExportImportManager implements ExportImportManager {
         updateCibaSettings(rep, newRealm);
 
         updateParSettings(rep, newRealm);
+
+        updateTrustedDeviceSettings(rep, newRealm);
 
         Map<String, String> mappedFlows = importAuthenticationFlows(session, newRealm, rep);
         if (rep.getRequiredActions() != null) {
@@ -912,6 +915,7 @@ public class DefaultExportImportManager implements ExportImportManager {
 
         updateCibaSettings(rep, realm);
         updateParSettings(rep, realm);
+        updateTrustedDeviceSettings(rep, realm);
         validateClientAndRealmTimeouts(realm);
         session.clientPolicy().updateRealmModelFromRepresentation(realm, rep);
 
@@ -1613,6 +1617,19 @@ public class DefaultExportImportManager implements ExportImportManager {
         ParConfig parPolicy = realm.getParPolicy();
 
         parPolicy.setRequestUriLifespan(newAttributes.get(ParConfig.PAR_REQUEST_URI_LIFESPAN));
+    }
+
+    private static void updateTrustedDeviceSettings(RealmRepresentation rep, RealmModel realm) {
+        if(rep.isTrustedDeviceEnabled() == null)
+            return;
+
+        TrustedDevicePolicy policy = realm.getTrustedDevicePolicy();
+
+        policy.setEnabled(rep.isTrustedDeviceEnabled());
+
+        if(rep.getTrustedDeviceExpiration() != null) policy.setTrustExpiration(rep.getTrustedDeviceExpiration());
+
+        realm.setTrustedDevicePolicy(policy);
     }
 
     public static OTPPolicy toPolicy(RealmRepresentation rep) {

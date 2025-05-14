@@ -27,6 +27,7 @@ import org.keycloak.models.RequiredActionConfigModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.TrustedDevicePolicy;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.representations.idm.RealmRepresentation;
 
@@ -1116,6 +1117,16 @@ public class IdentityBrokerStateTestHelpers {
 
         @Override
         public void setWebAuthnPolicyPasswordless(WebAuthnPolicy policy) {
+
+        }
+
+        @Override
+        public TrustedDevicePolicy getTrustedDevicePolicy() {
+            return null;
+        }
+
+        @Override
+        public void setTrustedDevicePolicy(TrustedDevicePolicy policy) {
 
         }
 
