@@ -81,3 +81,9 @@ Starting with this release, it logs out also offline sessions as this is what us
 
 To revert to the old behavior, enable the deprecated feature `logout-all-sessions:v1`.
 This deprecated feature will be removed in a future version.
+
+=== Updates to the `user-profile-commons.ftl` theme template
+
+The `user-profile-commons.ftl` changed to improve support for localization. See https://github.com/keycloak/keycloak/issues/38029.
+As a result, and if you are extending this template, pages might start displaying a `locale` field. To avoid that, update
+the theme template with the changes aforementioned.
