@@ -23,6 +23,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.UriBuilder;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.MimeTypeUtil;
 import org.keycloak.encoding.ResourceEncodingHelper;
@@ -78,8 +79,16 @@ public class ThemeResource {
     @Path("/{version}/{themeType}/{themeName}/{path:.*}")
     public Response getResource(@PathParam("version") String version, @PathParam("themeType") String themeType, @PathParam("themeName") String themeName, @PathParam("path") String path) {
         final Optional<Theme.Type> type = getThemeType(themeType);
-        if (!version.equals(Version.RESOURCES_VERSION) || type.isEmpty()) {
+        if (type.isEmpty()) {
             return Response.status(Response.Status.NOT_FOUND).build();
+        } else if (!version.equals(Version.RESOURCES_VERSION)) {
+            // TODO: Wrap in feature toggle?
+            return Response.temporaryRedirect(
+                    UriBuilder.fromResource(ThemeResource.class)
+                            .path("/{version}/{themeType}/{themeName}/{path}")
+                            // The 'path' can contain slashes, so encoding of slashes is set to false
+                            .build(new Object[]{Version.RESOURCES_VERSION, themeType, themeName, path}, false)
+            ).build();
         }
 
         try {
