@@ -51,6 +51,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.TrustedDevicePolicy;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
@@ -280,6 +281,7 @@ public class RealmManager {
         realm.setMaxSecondaryAuthFailures(0);
         realm.setSslRequired(SslRequired.EXTERNAL);
         realm.setOTPPolicy(OTPPolicy.DEFAULT_POLICY);
+        realm.setTrustedDevicePolicy(TrustedDevicePolicy.DEFAULT_POLICY);
         realm.setLoginWithEmailAllowed(true);
 
         if (Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI)) {
