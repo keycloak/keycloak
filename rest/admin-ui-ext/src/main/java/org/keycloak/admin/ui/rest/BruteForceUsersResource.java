@@ -17,7 +17,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jboss.logging.Logger;
 import org.keycloak.admin.ui.rest.model.BruteUser;
-import org.keycloak.authorization.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;

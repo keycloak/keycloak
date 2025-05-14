@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-package org.keycloak.authorization;
+package org.keycloak.authorization.fgap.evaluation.partial;
 
-import static org.keycloak.authorization.AdminPermissionsSchema.isSkipEvaluation;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.isSkipEvaluation;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,10 +31,8 @@ import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import org.keycloak.Config;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.model.Policy;
-import org.keycloak.authorization.policy.provider.PartialEvaluationContext;
-import org.keycloak.authorization.policy.provider.PartialEvaluationPolicyProvider;
-import org.keycloak.authorization.policy.provider.PartialEvaluationStorageProvider;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.common.Profile;
 import org.keycloak.models.AdminRoles;
@@ -47,7 +45,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ResourceType;
 
-public class PartialEvaluator {
+public final class PartialEvaluator {
 
     private static final String NO_ID = "none";
     private static final String ID_FIELD = "id";

@@ -16,11 +16,12 @@
  * limitations under the License.
  */
 
-package org.keycloak.authorization.policy.provider;
+package org.keycloak.authorization.fgap.evaluation.partial;
 
 import java.util.stream.Stream;
 
 import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.authorization.ResourceType;

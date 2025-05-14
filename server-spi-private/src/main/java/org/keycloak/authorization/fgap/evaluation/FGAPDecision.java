@@ -15,23 +15,24 @@
  * limitations under the License.
  */
 
-package org.keycloak.authorization;
+package org.keycloak.authorization.fgap.evaluation;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.keycloak.authorization.Decision;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
 
-public class FGAPDecision implements Decision<Evaluation> {
+class FGAPDecision implements Decision<Evaluation> {
 
     private final Decision<Evaluation> decision;
     private final Map<Scope, Set<Resource>> scopesGrantedByResource = new HashMap<>();
 
-    public FGAPDecision(Decision<Evaluation> decision) {
+    FGAPDecision(Decision<Evaluation> decision) {
         this.decision = decision;
     }
 

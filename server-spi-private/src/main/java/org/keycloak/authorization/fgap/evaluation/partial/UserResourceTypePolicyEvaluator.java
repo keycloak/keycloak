@@ -16,15 +16,17 @@
  * limitations under the License.
  */
 
-package org.keycloak.authorization;
+package org.keycloak.authorization.fgap.evaluation.partial;
 
-import static org.keycloak.authorization.AdminPermissionsSchema.GROUPS_RESOURCE_TYPE;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.GROUPS_RESOURCE_TYPE;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
@@ -37,7 +39,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
-public class UserResourceTypePolicyEvaluator implements ResourceTypePolicyEvaluator {
+public final class UserResourceTypePolicyEvaluator implements ResourceTypePolicyEvaluator {
 
     @Override
     public void evaluate(ResourcePermission permission, AuthorizationProvider authorization, Consumer<Policy> policyConsumer) {

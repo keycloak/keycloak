@@ -16,14 +16,18 @@
  * limitations under the License.
  */
 
-package org.keycloak.authorization;
+package org.keycloak.authorization.fgap.evaluation;
 
-import static org.keycloak.authorization.AdminPermissionsSchema.USERS_RESOURCE_TYPE;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.USERS_RESOURCE_TYPE;
 
 import java.util.Map;
 import java.util.function.Consumer;
 
+import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.Decision;
 import org.keycloak.authorization.Decision.Effect;
+import org.keycloak.authorization.fgap.evaluation.partial.ResourceTypePolicyEvaluator;
+import org.keycloak.authorization.fgap.evaluation.partial.UserResourceTypePolicyEvaluator;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
@@ -38,7 +42,7 @@ import org.keycloak.authorization.store.StoreFactory;
 /**
  * A {@link PolicyEvaluator} specific for evaluating permisions in the context of the {@link org.keycloak.common.Profile.Feature#ADMIN_FINE_GRAINED_AUTHZ_V2} feature.
  */
-public class FGAPPolicyEvaluator extends DefaultPolicyEvaluator {
+public final class FGAPPolicyEvaluator extends DefaultPolicyEvaluator {
 
     private final Map<String, ? extends ResourceTypePolicyEvaluator> resourceTypePolicyEvaluators = Map.of(USERS_RESOURCE_TYPE, new UserResourceTypePolicyEvaluator());
 

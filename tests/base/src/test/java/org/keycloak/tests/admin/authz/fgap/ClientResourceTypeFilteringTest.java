@@ -20,8 +20,8 @@ package org.keycloak.tests.admin.authz.fgap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.keycloak.authorization.AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE;
-import static org.keycloak.authorization.AdminPermissionsSchema.VIEW;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
 
 import java.util.List;
 import java.util.Map;
