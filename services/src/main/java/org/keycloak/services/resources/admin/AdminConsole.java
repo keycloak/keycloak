@@ -67,7 +67,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.keycloak.models.Constants.IS_TEMP_ADMIN_ATTR_NAME;
+import static org.keycloak.models.UserModel.IS_TEMP_ADMIN_ATTR_NAME;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
