@@ -72,6 +72,7 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
 
     private PasswordPolicy passwordPolicy;
     private OTPPolicy otpPolicy;
+    private TrustedDevicePolicy trustedDevicePolicy;
 
     public RealmAdapter(KeycloakSession session, EntityManager em, RealmEntity realm) {
         this.session = session;
@@ -1063,6 +1064,24 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
         } else {
             removeAttribute(RealmAttributes.WEBAUTHN_POLICY_EXTRA_ORIGINS + attributePrefix);
         }
+    }
+
+    // Trusted device
+    @Override
+    public TrustedDevicePolicy getTrustedDevicePolicy() {
+        if (trustedDevicePolicy == null) {
+            trustedDevicePolicy = new TrustedDevicePolicy();
+            trustedDevicePolicy.setEnabled(getAttribute(TrustedDevicePolicy.REALM_IS_ENABLED_ATTRIBUTE, TrustedDevicePolicy.DEFAULT_IS_ENABLED));
+            trustedDevicePolicy.setTrustExpiration(getAttribute(TrustedDevicePolicy.REALM_EXPIRATION_ATTRIBUTE, TrustedDevicePolicy.DEFAULT_EXPIRATION));
+        }
+        return trustedDevicePolicy;
+    }
+
+    @Override
+    public void setTrustedDevicePolicy(TrustedDevicePolicy policy) {
+        setAttribute(TrustedDevicePolicy.REALM_IS_ENABLED_ATTRIBUTE, policy.isEnabled());
+        setAttribute(TrustedDevicePolicy.REALM_EXPIRATION_ATTRIBUTE, policy.getTrustExpiration());
+        em.flush();
     }
 
     @Override

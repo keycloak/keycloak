@@ -27,6 +27,8 @@ import org.keycloak.authentication.requiredactions.UpdateTotp;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.OTPCredentialProvider;
 import org.keycloak.credential.OTPCredentialProviderFactory;
+import org.keycloak.credential.TrustedDeviceCredentialProvider;
+import org.keycloak.credential.TrustedDeviceCredentialProviderFactory;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.forms.login.LoginFormsProvider;
@@ -116,6 +118,12 @@ public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator impl
             context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);
             return;
         }
+
+        if("on".equals(inputData.getFirst("trustDevice")) && context.getRealm().getTrustedDevicePolicy().isEnabled()) {
+            var tdcProvider = (TrustedDeviceCredentialProvider) context.getSession().getProvider(CredentialProvider.class, TrustedDeviceCredentialProviderFactory.PROVIDER_ID);
+            tdcProvider.createTrustedDeviceCredential(context.getRealm(), context.getUser());
+        }
+
         context.success();
     }
 

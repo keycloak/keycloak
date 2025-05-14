@@ -193,6 +193,16 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
         return this;
     }
 
+    public RealmAttributeUpdater setTrustedDeviceEnabled(Boolean isEnabled) {
+        rep.setTrustedDeviceEnabled(isEnabled);
+        return this;
+    }
+
+    public RealmAttributeUpdater setTrustedDeviceExpiration(Integer expiration) {
+        rep.setTrustedDeviceExpiration(expiration);
+        return this;
+    }
+
     public RealmAttributeUpdater setSmtpServer(String name, String value) {
         rep.getSmtpServer().put(name, value);
         return this;

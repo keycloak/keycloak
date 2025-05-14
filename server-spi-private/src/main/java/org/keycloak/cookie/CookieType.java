@@ -1,6 +1,11 @@
 package org.keycloak.cookie;
 
 import jakarta.annotation.Nullable;
+import org.apache.commons.codec.binary.Hex;
+
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 public final class CookieType {
 
@@ -51,6 +56,21 @@ public final class CookieType {
             .requestPath()
             .defaultMaxAge(300)
             .build();
+
+    public static CookieType getTrustedDeviceCookie(String postfix) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-1");
+            md.update(postfix.getBytes(StandardCharsets.UTF_8));
+            String digest = Hex.encodeHexString(md.digest());
+
+            return CookieType.create("KEYCLOAK_TRUSTED_DEVICE_" + digest)
+                    .scope(CookieScope.FEDERATION)
+                    .defaultMaxAge(CookieMaxAge.WEEK)
+                    .build();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("JVM does not support required cryptography algorithms: SHA-1/SHA1PRNG.", e);
+        }
+    }
 
     private final String name;
     private final CookiePath path;

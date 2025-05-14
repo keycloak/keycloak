@@ -8,4 +8,5 @@ public interface CookieMaxAge {
 
     int YEAR = 365 * 24 * 60 * 60;
 
+    int WEEK = 7 * 24 * 60 * 60;
 }
