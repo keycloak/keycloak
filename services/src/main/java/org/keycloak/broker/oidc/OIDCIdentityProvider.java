@@ -239,6 +239,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
                 }
                 model.setToken(response);
+                session.users().updateFederatedIdentity(authorizedClient.getRealm(), tokenSubject, model);
                 tokenResponse = newResponse;
             } else if (exp != null) {
                 tokenResponse.setExpiresIn(exp - Time.currentTime());
@@ -394,7 +395,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
         try {
             BrokeredIdentityContext identity = extractIdentity(tokenResponse, accessToken, idToken);
-            
+
             if (!identity.getId().equals(idToken.getSubject())) {
                 throw new IdentityBrokerException("Mismatch between the subject in the id_token and the subject from the user_info endpoint");
             }
@@ -428,7 +429,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             if (!getConfig().isDisableNonce()) {
                 identity.getContextData().put(BROKER_NONCE_PARAM, idToken.getOtherClaims().get(OIDCLoginProtocol.NONCE_PARAM));
             }
-            
+
             if (getConfig().isStoreToken()) {
                 if (tokenResponse.getExpiresIn() > 0) {
                     long accessTokenExpiration = Time.currentTime() + tokenResponse.getExpiresIn();
@@ -546,7 +547,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
         if (tokenResponse != null) identity.getContextData().put(FEDERATED_ACCESS_TOKEN_RESPONSE, tokenResponse);
         if (tokenResponse != null) processAccessTokenResponse(identity, tokenResponse);
-        
+
         return identity;
     }
 
@@ -707,7 +708,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         if (!ignoreAudience && !token.hasAudience(getConfig().getClientId())) {
             throw new IdentityBrokerException("Wrong audience from token.");
         }
-        
+
         if (!ignoreAudience && (token.getIssuedFor() != null && !getConfig().getClientId().equals(token.getIssuedFor()))) {
             throw new IdentityBrokerException("Token issued for does not match client id");
         }
@@ -751,7 +752,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         String requestedIssuer = params == null ? null : params.getFirst(OAuth2Constants.SUBJECT_ISSUER);
         if (requestedIssuer == null) requestedIssuer = issuer;
         if (requestedIssuer.equals(getConfig().getAlias())) return true;
-        
+
         String trustedIssuers = getConfig().getIssuer();
 
         if (trustedIssuers != null && trustedIssuers.length() > 0) {
@@ -763,7 +764,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 }
             }
         }
-        
+
         return false;
     }
 
@@ -802,19 +803,19 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         AbstractJsonUserAttributeMapper.storeUserProfileForMapper(identity, userInfo, getConfig().getAlias());
 
         identity.setId(id);
-        
+
         if (givenName != null) {
             identity.setFirstName(givenName);
         }
-        
+
         if (familyName != null) {
             identity.setLastName(familyName);
         }
-        
+
         if (givenName == null && familyName == null) {
             identity.setName(name);
         }
-        
+
         identity.setEmail(email);
 
         identity.setBrokerUserId(getConfig().getAlias() + "." + id);
@@ -943,7 +944,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     @Override
     public void preprocessFederatedIdentity(KeycloakSession session, RealmModel realm, BrokeredIdentityContext context) {
         AuthenticationSessionModel authenticationSession = session.getContext().getAuthenticationSession();
-        
+
         if (authenticationSession == null || getConfig().isDisableNonce()) {
             // no interacting with the brokered OP, likely doing token exchanges or no nonce
             return;
