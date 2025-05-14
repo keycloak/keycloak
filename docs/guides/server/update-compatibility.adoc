@@ -149,12 +149,26 @@ The feature `rolling-updates` is disabled.
 
 WARNING: This behavior is currently in an experimental mode, and it is not recommended for use in production.
 
-It is possible to configure the {project_name} compatibility command to allow rolling updates when updating from a version to a same patch version from the same `major.minor` release stream.
+It is possible to configure the {project_name} compatibility command to allow rolling updates when updating from a version to a different patch version from the same `major.minor` release stream.
 
 To enable this behavior for compatibility check command enable feature `rolling-updates:v2` as shown in the following example.
 <@kc.updatecompatibility parameters="check --file=/path/to/file.json --features=rolling-updates:v2"/>
 
 Note there is no change needed when generating metadata using `metadata` command.
+
+Recommended supportive measures:
+
+* Enable sticky sessions in your loadbalancer to avoid users bouncing between different versions of {project_name} as this could result in users needing to refresh their Account Console and Admin UI multiple times while the upgrade is progressing.
+
+Supported functionality during rolling updates:
+
+* Users can log in and log out for OpenID Connect clients.
+
+* OpenID Connect clients can perform all operations like, for example, refreshing tokens and querying the user info endpoint.
+
+Known limitations during or after rolling updates:
+
+* If there have been changes to the Account Console or Admin UI in the patch release, and the user opened the Account Console or Admin UI before or during the upgrade, the user might see an error message and be asked to reload the application while navigating in browser during or after the upgrade.
 
 == Further reading
 

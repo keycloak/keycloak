@@ -143,7 +143,7 @@ public class DefaultSecurityHeadersProvider implements SecurityHeadersProvider {
             }
             int status = responseContext.getStatus();
             if (status == 201 || status == 204 ||
-                status == 301 || status == 302 || status == 303 || status == 307 || status == 308 ||
+                status == 301 || status == 302 || status == 303 || status == 304 || status == 307 || status == 308 ||
                 status == 400 || status == 401 || status == 403 || status == 404) {
                 return true;
             }
