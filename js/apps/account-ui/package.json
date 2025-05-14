@@ -48,7 +48,7 @@
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react-swc": "^3.9.0",
     "cross-env": "^7.0.3",
-    "lightningcss": "^1.29.3",
+    "lightningcss": "^1.30.0",
     "vite": "^6.3.0",
     "vite-plugin-checker": "^0.9.1",
     "vite-plugin-dts": "^4.5.3"
