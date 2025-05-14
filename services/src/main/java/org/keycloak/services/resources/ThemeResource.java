@@ -17,11 +17,14 @@
 package org.keycloak.services.resources;
 
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.OPTIONS;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.CacheControl;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.UriBuilder;
 import org.keycloak.common.Version;
@@ -47,6 +50,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
@@ -77,23 +81,33 @@ public class ThemeResource {
      */
     @GET
     @Path("/{version}/{themeType}/{themeName}/{path:.*}")
-    public Response getResource(@PathParam("version") String version, @PathParam("themeType") String themeType, @PathParam("themeName") String themeName, @PathParam("path") String path) {
+    public Response getResource(@PathParam("version") String version, @PathParam("themeType") String themeType, @PathParam("themeName") String themeName, @PathParam("path") String path, @HeaderParam(HttpHeaders.IF_NONE_MATCH) String etag) {
         final Optional<Theme.Type> type = getThemeType(themeType);
         if (type.isEmpty()) {
             return Response.status(Response.Status.NOT_FOUND).build();
-        } else if (!version.equals(Version.RESOURCES_VERSION)) {
-            // TODO: Wrap in feature toggle?
-            return Response.temporaryRedirect(
-                    UriBuilder.fromResource(ThemeResource.class)
-                            .path("/{version}/{themeType}/{themeName}/{path}")
-                            // The 'path' can contain slashes, so encoding of slashes is set to false
-                            .build(new Object[]{Version.RESOURCES_VERSION, themeType, themeName, path}, false)
-            ).build();
         }
 
         try {
             String contentType = MimeTypeUtil.getContentType(path);
             Theme theme = session.theme().getTheme(themeName, type.get());
+
+            boolean hasContentHash = theme.hasContentHash(path);
+            if (!version.equals(Version.RESOURCES_VERSION) && !hasContentHash) {
+                // If it is not the right version, and it does not have a content hash, redirect.
+                // If it is not the right version, and it has a content hash, continue to see if it exists.
+                return Response.temporaryRedirect(
+                        UriBuilder.fromResource(ThemeResource.class)
+                                .path("/{version}/{themeType}/{themeName}/{path}")
+                                // The 'path' can contain slashes, so encoding of slashes is set to false
+                                .build(new Object[]{Version.RESOURCES_VERSION, themeType, themeName, path}, false)
+                ).build();
+            }
+
+            if (hasContentHash && Objects.equals(etag, Version.RESOURCES_VERSION)) {
+                // We delivered this resource earlier, and it etag matches the resource version, so it has not changed
+                return Response.notModified().build();
+            }
+
             ResourceEncodingProvider encodingProvider = session.theme().isCacheEnabled() ? ResourceEncodingHelper.getResourceEncodingProvider(session, contentType) : null;
 
             InputStream resource;
@@ -104,7 +118,22 @@ public class ThemeResource {
             }
 
             if (resource != null) {
-                Response.ResponseBuilder rb = Response.ok(resource).type(contentType).cacheControl(CacheControlUtil.getDefaultCacheControl());
+                CacheControl defaultCacheControl = CacheControlUtil.getDefaultCacheControl();
+                if (!hasContentHash && !defaultCacheControl.isNoCache() && defaultCacheControl.getMaxAge() > 300) {
+                    // The resource does not have a content hash, so reduce the cache time to 5 minutes.
+                    // Otherwise the user will most likely complain that their newly updated theme is not shown.
+                    defaultCacheControl.setMaxAge(300);
+                }
+                if (hasContentHash && defaultCacheControl.isNoCache()) {
+                    // If there is a content hash, and no-cache is set, we are good to allow caching with zero seconds.
+                    // Together with a etag we can at least avoid serving it again when we reply "not modified".
+                    defaultCacheControl.setNoCache(false);
+                    defaultCacheControl.setMaxAge(0);
+                }
+                Response.ResponseBuilder rb = Response.ok(resource).type(contentType).cacheControl(defaultCacheControl);
+                if (hasContentHash) {
+                    rb.header(HttpHeaders.ETAG, Version.RESOURCES_VERSION);
+                }
                 if (encodingProvider != null) {
                     rb.encoding(encodingProvider.getEncoding());
                 }
