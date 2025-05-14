@@ -1,4 +1,4 @@
-import { test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient";
 import { login } from "../utils/login";
@@ -14,10 +14,11 @@ import {
   assertRowExists,
   clickRowKebabItem,
   clickSelectRow,
+  clickTableRowItem,
   clickTableToolbarItem,
   searchItem,
 } from "../utils/table";
-import { createGroup, renameGroup, searchGroup } from "./list";
+import { createGroup, editGroup, searchGroup } from "./list";
 import { goToGroupDetails } from "./util";
 
 test.describe("Group test", () => {
@@ -48,15 +49,18 @@ test.describe("Group test", () => {
   });
 
   test("Create group test", async ({ page }) => {
-    await createGroup(page, groupName, true);
+    await createGroup(page, groupName, "", true);
     await assertNotificationMessage(page, "Group created");
     await searchGroup(page, groupName);
     await assertRowExists(page, groupName, true);
 
     // create group from search bar
     const secondGroupName = `group-second-${uuid()}`;
-    await createGroup(page, secondGroupName, false);
+    await createGroup(page, secondGroupName, "some sort of description", false);
     await assertNotificationMessage(page, "Group created");
+    await clickTableRowItem(page, secondGroupName);
+    await expect(page.getByText("some sort of description")).toBeVisible();
+    await page.goBack();
 
     await searchGroup(page, secondGroupName);
     await assertRowExists(page, secondGroupName, true);
@@ -64,7 +68,7 @@ test.describe("Group test", () => {
   });
 
   test("Fail to create group with empty name", async ({ page }) => {
-    await createGroup(page, " ", true);
+    await createGroup(page, " ", "", true);
     await assertNotificationMessage(
       page,
       "Could not create group Group name is missing",
@@ -72,8 +76,8 @@ test.describe("Group test", () => {
   });
 
   test("Fail to create group with duplicated name", async ({ page }) => {
-    await createGroup(page, groupName, true);
-    await createGroup(page, groupName, false);
+    await createGroup(page, groupName, "", true);
+    await createGroup(page, groupName, "", false);
     await assertNotificationMessage(
       page,
       `Could not create group Top level group named '${groupName}' already exists.`,
@@ -130,10 +134,11 @@ test.describe("Search group under current group", () => {
     await assertRowExists(page, predefinedGroups[2], false);
   });
 
-  test("Rename group", async ({ page }) => {
+  test("Edit group", async ({ page }) => {
     const newGroupName = "new_group_name";
-    await clickRowKebabItem(page, predefinedGroups[3], "Rename");
-    await renameGroup(page, newGroupName);
+    const description = "new description";
+    await clickRowKebabItem(page, predefinedGroups[3], "Edit");
+    await editGroup(page, newGroupName, description);
     await assertNotificationMessage(page, "Group updated");
     await assertRowExists(page, newGroupName);
     await assertRowExists(page, predefinedGroups[3], false);

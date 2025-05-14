@@ -18,7 +18,13 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
+    <changeSet author="keycloak" id="26.3.0-groups-description">
+        <addColumn tableName="KEYCLOAK_GROUP">
+            <column name="DESCRIPTION" type="NVARCHAR(255)" />
+        </addColumn>
+    </changeSet>
     <changeSet author="keycloak" id="26.3.0-12345">
         <preConditions onFail="MARK_RAN">
             <not>
