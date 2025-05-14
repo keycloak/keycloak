@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.authorization.policy.provider;
+package org.keycloak.authorization.fgap.evaluation.partial;
 
 import java.util.List;
 

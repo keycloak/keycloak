@@ -15,10 +15,11 @@
  * limitations under the License.
  */
 
-package org.keycloak.authorization;
+package org.keycloak.authorization.fgap.evaluation.partial;
 
 import java.util.function.Consumer;
 
+import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.permission.ResourcePermission;
 

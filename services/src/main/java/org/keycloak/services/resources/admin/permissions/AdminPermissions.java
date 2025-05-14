@@ -16,7 +16,7 @@
  */
 package org.keycloak.services.resources.admin.permissions;
 
-import org.keycloak.authorization.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
