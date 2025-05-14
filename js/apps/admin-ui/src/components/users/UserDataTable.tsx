@@ -65,14 +65,15 @@ const UserDetailLink = (user: BruteUser) => {
         {user.username}
         <StatusRow user={user} />
       </Link>
-      {user.attributes?.["is_temporary_admin"][0] === "true" && (
-        <Tooltip content={t("temporaryAdmin")}>
-          <WarningTriangleIcon
-            className="pf-v5-u-ml-sm"
-            id="temporary-admin-label"
-          />
-        </Tooltip>
-      )}
+      {user.attributes?.["is_temporary_admin"] &&
+        user.attributes?.["is_temporary_admin"][0] === "true" && (
+          <Tooltip content={t("temporaryAdmin")}>
+            <WarningTriangleIcon
+              className="pf-v5-u-ml-sm"
+              id="temporary-admin-label"
+            />
+          </Tooltip>
+        )}
     </>
   );
 };
