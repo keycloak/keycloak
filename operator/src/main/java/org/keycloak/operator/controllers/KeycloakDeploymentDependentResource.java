@@ -53,6 +53,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.Truststore;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TruststoreSource;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpdateSpec;
+import org.keycloak.operator.update.impl.RecreateOnImageChangeUpdateLogic;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -175,7 +176,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         return switch (updateType.get()) {
             case ROLLING -> handleRollingUpdate(baseDeployment, context, primary);
-            case RECREATE -> handleRecreateUpdate(existingDeployment, baseDeployment, context);
+            case RECREATE -> handleRecreateUpdate(existingDeployment, baseDeployment, kcContainer, context);
         };
     }
 
@@ -565,7 +566,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         return desired;
     }
 
-    private static StatefulSet handleRecreateUpdate(StatefulSet actual, StatefulSet desired,
+    private static StatefulSet handleRecreateUpdate(StatefulSet actual, StatefulSet desired, Container kcContainer,
             Context<Keycloak> context) {
         desired.getMetadata().getAnnotations().put(Constants.KEYCLOAK_RECREATE_UPDATE_ANNOTATION, Boolean.TRUE.toString());
 
@@ -576,10 +577,12 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         } else {
             Log.debug("Performing a recreate update - scaling down the stateful set");
 
-            // keep the old revision, mark as migrating, and scale down
+            // keep the old revision and image, mark as migrating, and scale down
             CRDUtils.getRevision(actual).ifPresent(rev -> addUpdateRevisionAnnotation(rev, desired));
             desired.getMetadata().getAnnotations().put(Constants.KEYCLOAK_MIGRATING_ANNOTATION, Boolean.TRUE.toString());
             desired.getSpec().setReplicas(0);
+            var currentImage = RecreateOnImageChangeUpdateLogic.extractImage(actual);
+            kcContainer.setImage(currentImage);
         }
         return desired;
     }

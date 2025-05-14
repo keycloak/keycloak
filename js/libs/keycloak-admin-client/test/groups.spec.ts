@@ -70,7 +70,7 @@ describe("Groups", () => {
     const groupId = currentGroup.id;
     await kcAdminClient.groups.update(
       { id: groupId! },
-      { name: "another-group-name" },
+      { name: "another-group-name", description: "another-group-description" },
     );
 
     const group = await kcAdminClient.groups.findOne({

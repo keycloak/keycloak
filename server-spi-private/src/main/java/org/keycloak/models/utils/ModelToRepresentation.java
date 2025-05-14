@@ -18,6 +18,7 @@
 package org.keycloak.models.utils;
 
 import static java.util.Optional.ofNullable;
+import static org.keycloak.models.UserModel.IS_TEMP_ADMIN_ATTR_NAME;
 import static org.keycloak.models.utils.StripSecretsUtils.stripSecrets;
 
 import org.jboss.logging.Logger;
@@ -70,7 +71,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import static org.keycloak.models.light.LightweightUserAdapter.isLightweightUser;
-import static org.keycloak.models.Constants.IS_TEMP_ADMIN_ATTR_NAME;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -150,6 +150,7 @@ public class ModelToRepresentation {
         GroupRepresentation rep = new GroupRepresentation();
         rep.setId(group.getId());
         rep.setName(group.getName());
+        rep.setDescription(group.getDescription());
         rep.setPath(buildGroupPath(group));
         rep.setParentId(group.getParentId());
         if (!full) return rep;
@@ -221,15 +222,25 @@ public class ModelToRepresentation {
         return group.getSubGroupsStream().findAny().isPresent();
     }
 
-
     public static UserRepresentation toRepresentation(KeycloakSession session, RealmModel realm, UserModel user) {
-        UserRepresentation rep = new UserRepresentation();
+        return toRepresentation(session, realm, user, new UserRepresentation(), true);
+    }
+
+    public static UserRepresentation toRepresentation(KeycloakSession session, RealmModel realm, UserModel user, UserRepresentation rep, boolean setUserAttributes) {
         rep.setId(user.getId());
-        rep.setUsername(user.getUsername());
+        if (setUserAttributes) {
+            rep.setUsername(user.getUsername());
+        }
         rep.setCreatedTimestamp(user.getCreatedTimestamp());
-        rep.setLastName(user.getLastName());
-        rep.setFirstName(user.getFirstName());
-        rep.setEmail(user.getEmail());
+        if (setUserAttributes) {
+            rep.setLastName(user.getLastName());
+        }
+        if (setUserAttributes) {
+            rep.setFirstName(user.getFirstName());
+        }
+        if (setUserAttributes) {
+            rep.setEmail(user.getEmail());
+        }
         rep.setEnabled(user.isEnabled());
         rep.setEmailVerified(user.isEmailVerified());
         rep.setTotp(user.credentialManager().isConfiguredFor(OTPCredentialModel.TYPE));
@@ -239,37 +250,49 @@ public class ModelToRepresentation {
         rep.setNotBefore(isLightweightUser(user) ? ((LightweightUserAdapter) user).getCreatedTimestamp().intValue() : session.users().getNotBeforeOfUser(realm, user));
         rep.setRequiredActions(user.getRequiredActionsStream().collect(Collectors.toList()));
 
-        Map<String, List<String>> attributes = user.getAttributes();
-        Map<String, List<String>> copy = null;
+        if (setUserAttributes) {
+            Map<String, List<String>> attributes = user.getAttributes();
+            Map<String, List<String>> copy = null;
 
-        if (attributes != null) {
-            copy = new HashMap<>(attributes);
-            copy.remove(UserModel.LAST_NAME);
-            copy.remove(UserModel.FIRST_NAME);
-            copy.remove(UserModel.EMAIL);
-            copy.remove(UserModel.USERNAME);
-        }
-        if (attributes != null && !copy.isEmpty()) {
-            Map<String, List<String>> attrs = new HashMap<>(copy);
-            rep.setAttributes(attrs);
+            if (attributes != null) {
+                copy = new HashMap<>(attributes);
+                copy.remove(UserModel.LAST_NAME);
+                copy.remove(UserModel.FIRST_NAME);
+                copy.remove(UserModel.EMAIL);
+                copy.remove(UserModel.USERNAME);
+            }
+            if (attributes != null && !copy.isEmpty()) {
+                Map<String, List<String>> attrs = new HashMap<>(copy);
+                rep.setAttributes(attrs);
+            }
         }
 
         return rep;
     }
 
     public static UserRepresentation toBriefRepresentation(UserModel user) {
-        UserRepresentation rep = new UserRepresentation();
+        return toBriefRepresentation(user, new UserRepresentation(), true);
+    }
+
+    public static UserRepresentation toBriefRepresentation(UserModel user, UserRepresentation rep, boolean setUserAttributes) {
         rep.setId(user.getId());
-        rep.setUsername(user.getUsername());
+        if (setUserAttributes) {
+            rep.setUsername(user.getUsername());
+        }
         rep.setCreatedTimestamp(user.getCreatedTimestamp());
-        rep.setLastName(user.getLastName());
-        rep.setFirstName(user.getFirstName());
-        rep.setEmail(user.getEmail());
+        if (setUserAttributes) {
+            rep.setLastName(user.getLastName());
+        }
+        if (setUserAttributes) {
+            rep.setFirstName(user.getFirstName());
+        }
+        if (setUserAttributes) {
+            rep.setEmail(user.getEmail());
+        }
         rep.setEnabled(user.isEnabled());
         rep.setEmailVerified(user.isEmailVerified());
         rep.setFederationLink(user.getFederationLink());
         addAttributeToBriefRep(user, rep, IS_TEMP_ADMIN_ATTR_NAME);
-
         return rep;
     }
 

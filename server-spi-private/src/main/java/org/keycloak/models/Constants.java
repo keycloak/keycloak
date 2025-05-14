@@ -188,9 +188,6 @@ public final class Constants {
     //attribute name used to mark a client as realm client
     public static final String REALM_CLIENT = "realm_client";
 
-    //attribute name used to mark a temporary admin user/service account as temporary
-    public static final String IS_TEMP_ADMIN_ATTR_NAME = "is_temporary_admin";
-
     public static final String ADMIN_PERMISSIONS_CLIENT_ID = "admin-permissions";
 
     // Note used to store the authentication flow requested
