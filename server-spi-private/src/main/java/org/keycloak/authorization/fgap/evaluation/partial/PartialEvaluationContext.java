@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.authorization.policy.provider;
+package org.keycloak.authorization.fgap.evaluation.partial;
 
 import static java.util.function.Predicate.not;
 
@@ -31,7 +31,7 @@ import org.keycloak.representations.idm.authorization.ResourceType;
  * An {@link PartialEvaluationContext} instance provides access to contextual information when building a query for realm
  * resources of a given {@link ResourceType}.
  */
-public class PartialEvaluationContext {
+public final class PartialEvaluationContext {
 
     private final ResourceType resourceType;
     private CriteriaQuery<?> criteriaQuery;
