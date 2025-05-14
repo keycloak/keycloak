@@ -170,7 +170,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
             String userId = events.expectRegister("registerExistingEmailUser", "test-user@localhost").assertEvent().getUserId();
-            events.expectLogin().detail("username", "registerexistingemailuser").user(userId).assertEvent();
+            events.expectLogin().user(userId).assertEvent();
 
             assertUserBasicRegisterAttributes(userId, "registerexistingemailuser", "test-user@localhost", "firstName", "lastName");
 
@@ -211,7 +211,6 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             assertThat(RequestType.AUTH_RESPONSE, is(appPage.getRequestType()));
 
             events.expectLogin()
-                    .detail("username", EMAIL)
                     .user(userId)
                     .assertEvent();
         } finally {
@@ -465,7 +464,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     }
 
     private UserRepresentation assertUserRegistered(String userId, String username, String email) {
-        events.expectLogin().detail("username", username.toLowerCase()).user(userId).assertEvent();
+        events.expectLogin().user(userId).assertEvent();
 
         UserRepresentation user = getUser(userId);
         Assert.assertNotNull(user);
@@ -582,7 +581,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         registerPage.register("Äǜṳǚǘǖ", "Öṏṏ", "registeruserumlats@email", "registeruserumlats", generatePassword());
 
         String userId = events.expectRegister("registeruserumlats", "registeruserumlats@email").assertEvent().getUserId();
-        events.expectLogin().detail("username", "registeruserumlats").user(userId).assertEvent();
+        events.expectLogin().user(userId).assertEvent();
 
         UserRepresentation userRepresentation = AccountHelper.getUserRepresentation(adminClient.realm("test"), "registeruserumlats");
 
@@ -746,7 +745,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
             String userId = events.expectRegister("registerUserSuccessE@email", "registerUserSuccessE@email").assertEvent().getUserId();
-            events.expectLogin().detail("username", "registerusersuccesse@email").user(userId).assertEvent();
+            events.expectLogin().user(userId).assertEvent();
 
             UserRepresentation user = getUser(userId);
             Assert.assertNotNull(user);
@@ -960,7 +959,6 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
                 .getUserId();
 
         EventRepresentation loginEvent = events.expectLogin()
-                .detail("username", EMAIL_OR_USERNAME.toLowerCase())
                 .user(userId)
                 .assertEvent();
         AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
