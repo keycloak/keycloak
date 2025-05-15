@@ -125,7 +125,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         assertKcActionStatus(SUCCESS);
 
         assertEquals(authSessionId1, authSessionId2);
-        events.expectLogin().user(userId).session(authSessionId2).assertEvent();
+        events.expectLogin().user(userId).session(authSessionId2).detail(Details.USERNAME, "setuptotp").assertEvent();
     }
 
     @Test
