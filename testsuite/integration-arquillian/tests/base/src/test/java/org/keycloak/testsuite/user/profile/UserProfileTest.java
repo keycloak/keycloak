@@ -2396,6 +2396,48 @@ public class UserProfileTest extends AbstractUserProfileTest {
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testMultivalued);
     }
 
+    @Test
+    public void testDefaultValue() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testInvalidConfigDefaultValue);
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testDefaultValue);
+    }
+
+    private static void testInvalidConfigDefaultValue(KeycloakSession session) {
+        UserProfileProvider provider = getUserProfileProvider(session);
+        UPConfig upConfig = UPConfigUtils.parseSystemDefaultConfig();
+        provider.setConfiguration(upConfig);
+
+        UPAttribute foo = new UPAttribute("foo", new UPAttributePermissions(Set.of(), Set.of(UserProfileConstants.ROLE_ADMIN)));
+        foo.setDefaultValue("def");
+        foo.setValidations(Map.of("length", Map.of("min", "5", "max", "15")));
+        upConfig.addOrReplaceAttribute(foo);
+
+        try {
+            provider.setConfiguration(upConfig);
+            fail("Should fail because default value is not reach min length");
+        } catch (ComponentValidationException cve) {
+            //ignore
+        }
+    }
+
+    private static void testDefaultValue(KeycloakSession session) {
+        UserProfileProvider provider = getUserProfileProvider(session);
+        UPConfig upConfig = UPConfigUtils.parseSystemDefaultConfig();
+        UPAttribute foo = new UPAttribute("foo", new UPAttributePermissions(Set.of(), Set.of(UserProfileConstants.ROLE_ADMIN)));
+        foo.setDefaultValue("def");
+        upConfig.addOrReplaceAttribute(foo);
+        provider.setConfiguration(upConfig);
+
+        String userName = org.keycloak.models.utils.KeycloakModelUtils.generateId();
+        Map<String, List<String>> attributes = new HashMap<>();
+        attributes.put(UserModel.USERNAME, List.of(userName));
+        UserProfile profile = provider.create(UserProfileContext.USER_API, attributes);
+        UserModel user = profile.create();
+        List<String> actualValue = user.getAttributes().get("foo");
+        List<String> expectedValue = List.of("def");
+        assertThat(actualValue, Matchers.equalTo(expectedValue));
+    }
+
     private static void testMultivalued(KeycloakSession session) {
         UserProfileProvider provider = getUserProfileProvider(session);
         UPConfig upConfig = UPConfigUtils.parseSystemDefaultConfig();

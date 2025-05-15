@@ -66,7 +66,7 @@ export const SelectComponent = (props: UserProfileFieldProps) => {
     <UserProfileGroup {...props}>
       <Controller
         name={fieldName(attribute.name)}
-        defaultValue=""
+        defaultValue={attribute.defaultValue}
         control={form.control}
         render={({ field }) => (
           <KeycloakSelect
