@@ -9,7 +9,7 @@ import { useRealm } from "../../context/realm-context/RealmContext";
 import { CibaPolicy } from "./CibaPolicy";
 import { OtpPolicy } from "./OtpPolicy";
 import { PasswordPolicy } from "./PasswordPolicy";
-import { TrustedDevicePolicy } from './TrustedDevicePolicy';
+import { TrustedDevicePolicy } from "./TrustedDevicePolicy";
 import { WebauthnPolicy } from "./WebauthnPolicy";
 
 export const Policies = () => {
@@ -85,10 +85,10 @@ export const Policies = () => {
         <CibaPolicy realm={realm} realmUpdated={setRealm} />
       </Tab>
       <Tab
-          id="trustedDevicePolicy"
-          data-testid="trustedDevicePolicy"
-          eventKey={6}
-          title={<TabTitleText>{t("trustedDevicePolicy")}</TabTitleText>}
+        id="trustedDevicePolicy"
+        data-testid="trustedDevicePolicy"
+        eventKey={6}
+        title={<TabTitleText>{t("trustedDevicePolicy")}</TabTitleText>}
       >
         <TrustedDevicePolicy realm={realm} realmUpdated={setRealm} />
       </Tab>

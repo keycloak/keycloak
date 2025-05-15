@@ -1,8 +1,5 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import {
-  SwitchControl,
-  useAlerts,
-} from "@keycloak/keycloak-ui-shared";
+import { SwitchControl, useAlerts } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
   AlertVariant,
@@ -23,11 +20,14 @@ type TrustedDevicePolicyProps = {
 };
 
 type FormFields = Omit<
-    RealmRepresentation,
+  RealmRepresentation,
   "clients" | "components" | "groups" | "users" | "federatedUsers"
 >;
 
-export const TrustedDevicePolicy = ({ realm, realmUpdated }: TrustedDevicePolicyProps) => {
+export const TrustedDevicePolicy = ({
+  realm,
+  realmUpdated,
+}: TrustedDevicePolicyProps) => {
   const { adminClient } = useAdminClient();
 
   const { t } = useTranslation();
@@ -35,9 +35,9 @@ export const TrustedDevicePolicy = ({ realm, realmUpdated }: TrustedDevicePolicy
     mode: "onChange",
     defaultValues: {
       trustedDeviceExpiration: realm.trustedDeviceExpiration ?? 604800,
-      trustedDeviceEnabled: realm.trustedDeviceEnabled ?? false
-    }
-    });
+      trustedDeviceEnabled: realm.trustedDeviceEnabled ?? false,
+    },
+  });
   const {
     reset,
     handleSubmit,
@@ -71,30 +71,29 @@ export const TrustedDevicePolicy = ({ realm, realmUpdated }: TrustedDevicePolicy
         className="keycloak__trusted_device_policies_authentication__form"
       >
         <FormProvider {...form}>
-
-            <TimeSelectorControl
-              name="trustedDeviceExpiration"
-              label={t("trustedDeviceExpiration")}
-              labelIcon={t("trustedDeviceExpirationHelp")}
-              units={["hour", "day"]}
-              controller={{
-                defaultValue: 604800, // 1 week
-                rules: {
-                  min: 86400, // 1 day
-                  max: {
-                    value: 7776000, // 90 days
-                    message: t("maxLength", { length: "90 " + t("days") }),
-                  },
+          <TimeSelectorControl
+            name="trustedDeviceExpiration"
+            label={t("trustedDeviceExpiration")}
+            labelIcon={t("trustedDeviceExpirationHelp")}
+            units={["hour", "day"]}
+            controller={{
+              defaultValue: 604800, // 1 week
+              rules: {
+                min: 86400, // 1 day
+                max: {
+                  value: 7776000, // 90 days
+                  message: t("maxLength", { length: "90 " + t("days") }),
                 },
-              }}
-            />
-            <SwitchControl
-              name="trustedDeviceEnabled"
-              label={t("trustedDeviceEnabled")}
-              labelIcon={t("trustedDeviceEnabledHelp")}
-              labelOn={t("on")}
-              labelOff={t("off")}
-            />
+              },
+            }}
+          />
+          <SwitchControl
+            name="trustedDeviceEnabled"
+            label={t("trustedDeviceEnabled")}
+            labelIcon={t("trustedDeviceEnabledHelp")}
+            labelOn={t("on")}
+            labelOff={t("off")}
+          />
 
           <ActionGroup>
             <Button
