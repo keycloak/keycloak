@@ -61,9 +61,9 @@ public final class CookieType {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-1");
             md.update(postfix.getBytes(StandardCharsets.UTF_8));
-            String digest = Hex.encodeHexString(md.digest());
+            String postFixDigest = Hex.encodeHexString(md.digest()).toUpperCase();
 
-            return CookieType.create("KEYCLOAK_TRUSTED_DEVICE_" + digest)
+            return CookieType.create("KEYCLOAK_TRUSTED_DEVICE_" + postFixDigest)
                     .scope(CookieScope.FEDERATION)
                     .defaultMaxAge(CookieMaxAge.WEEK)
                     .build();

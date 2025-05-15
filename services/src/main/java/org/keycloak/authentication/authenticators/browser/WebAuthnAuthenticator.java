@@ -97,7 +97,6 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
             }
             isUserIdentified = true;
             form.setAttribute(WebAuthnConstants.ALLOWED_AUTHENTICATORS, authenticators);
-            form.setAttribute("trustedDevicePolicy", context.getRealm().getTrustedDevicePolicy());
         } else {
             // in ID-less & Password-less Scenario
             // NOP
