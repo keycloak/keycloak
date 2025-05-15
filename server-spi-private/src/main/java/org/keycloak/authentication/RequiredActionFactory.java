@@ -17,11 +17,16 @@
 
 package org.keycloak.authentication;
 
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionConfigModel;
+import org.keycloak.policy.MaxAuthAgePasswordPolicyProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.userprofile.ValidationException;
+import org.keycloak.validate.ValidationError;
 
 import java.util.List;
 
@@ -32,6 +37,18 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public interface RequiredActionFactory extends ProviderFactory<RequiredActionProvider> {
+
+    List<ProviderConfigProperty> MAX_AUTH_AGE_CONFIG_PROPERTIES = ProviderConfigurationBuilder.create()
+            .property()
+            .name(Constants.MAX_AUTH_AGE_KEY)
+            .label("Maximum Age of Authentication")
+            .helpText("Configures the duration in seconds this action can be used after the last authentication before the user is required to re-authenticate. " +
+                    "This parameter is used just in the context of AIA when the kc_action parameter is available in the request, which is for instance when user " +
+                    "himself updates his password in the account console.")
+            .type(ProviderConfigProperty.STRING_TYPE)
+            .defaultValue(MaxAuthAgePasswordPolicyProviderFactory.DEFAULT_MAX_AUTH_AGE)
+            .add()
+            .build();
 
     /**
      * Display text used in admin console to reference this required action
@@ -58,13 +75,37 @@ public interface RequiredActionFactory extends ProviderFactory<RequiredActionPro
         return configMetadata != null && !configMetadata.isEmpty();
     }
 
+    @Override
+    default List<ProviderConfigProperty> getConfigMetadata() {
+        return List.copyOf(MAX_AUTH_AGE_CONFIG_PROPERTIES);
+    }
+
     /**
      * Allows users to validate the provided configuration for this required action. Users can throw a {@link org.keycloak.models.ModelValidationException} to indicate that the configuration is invalid.
+     * Defaults validating max_auth_age value.
      *
      * @param session
      * @param realm
      * @param model
      */
     default void validateConfig(KeycloakSession session, RealmModel realm, RequiredActionConfigModel model) {
+        if (model.getConfigValue(Constants.MAX_AUTH_AGE_KEY) == null) {
+            return;
+        }
+
+        int parsedMaxAuthAge;
+        try {
+            parsedMaxAuthAge = parseMaxAuthAge(model);
+        } catch (NumberFormatException ex) {
+            throw new ValidationException(new ValidationError(getId(), Constants.MAX_AUTH_AGE_KEY, "error-invalid-value"));
+        }
+
+        if (parsedMaxAuthAge < 0) {
+            throw new ValidationException(new ValidationError(getId(), Constants.MAX_AUTH_AGE_KEY, "error-number-out-of-range-too-small", 0));
+        }
+    }
+
+    static int parseMaxAuthAge(RequiredActionConfigModel model) throws NumberFormatException {
+        return Integer.parseInt(model.getConfigValue(Constants.MAX_AUTH_AGE_KEY));
     }
 }

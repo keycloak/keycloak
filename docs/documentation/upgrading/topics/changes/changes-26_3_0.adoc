@@ -22,6 +22,10 @@ It has been a while since discussions started about any activity around the Inst
 and any objection from the community about deprecating it for removal. For more details, see
 https://github.com/keycloak/keycloak/issues/37967[Deprecate for removal the Instagram social broker].
 
+=== Inconsistent user endpoints harmonized
+
+In previous releases there was an inconsistency in the REST endpoint result of getting a user (`GET /admin/realms/{realm}/users/{user-id}`) and searching for a user (`GET /admin/realms/{realm}/users`). When BruteForce is enabled and a user was temporarily locked out the former endpoint would return enabled=false while the latter would return enabled=true. If the user was updated and enabled was false due to temporary lockout then the user would be disabled permanently. Both endpoints now return enabled=true when a user is temporarily locked out. To check whether a user is temporarily locked out the BruteForceUserResource endpoint should be utilised (`GET /admin/realms/{realm}/attack-detection/brute-force/users/{userId}`).
+
 === Deprecated password policy Recovery Codes Warning Threshold
 
 In relation to supported Recovery codes, we deprecated the password policy `Recovery Codes Warning Threshold`. This password policy might be removed in the future major version of {project_name}.
@@ -51,6 +55,10 @@ Both system properties have been used internally within Keycloak and have not be
 
 Instead, use the command line option `spi-cache-embedded-default-site-name` as `jboss.site.name` replacement, and `spi-cache-embedded-default-node-name` as `jboss.node.name` replacement.
 See the https://www.keycloak.org/server/all-provider-config[All provider configuration] for more details on these options.
+
+
+=== Deprecation of `method RequiredActionProvider.getMaxAuthAge()`
+The method `RequiredActionProvider.getMaxAuthAge()` is deprecated. It is effectively not used now. Please use the method `RequiredActionProvider.getMaxAuthAge(KeycloakSession session)` instead. This is due to enable individual configuration for required actions.
 
 === User searches through the User API are now respecting the user profile settings
 
