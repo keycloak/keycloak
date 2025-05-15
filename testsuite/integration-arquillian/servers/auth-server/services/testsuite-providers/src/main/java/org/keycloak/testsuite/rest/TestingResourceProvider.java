@@ -420,7 +420,6 @@ public class TestingResourceProvider implements RealmResourceProvider {
         event.setTime(rep.getTime());
         event.setType(EventType.valueOf(rep.getType()));
         event.setUserId(rep.getUserId());
-        event.setUserName(rep.getUserName());
         return event;
     }
 

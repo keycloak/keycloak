@@ -38,8 +38,6 @@ public class Event {
 
     private String userId;
 
-    private String userName;
-
     private String sessionId;
 
     private String ipAddress;
@@ -104,12 +102,6 @@ public class Event {
         this.userId = maxLength(userId, 255);
     }
 
-    public String getUserName() { return userName; }
-
-    public void setUserName(String userName) {
-        this.userName = maxLength(userName, 255);
-    }
-
     public String getSessionId() {
         return sessionId;
     }
@@ -157,7 +149,6 @@ public class Event {
         clone.realmName = realmName;
         clone.clientId = clientId;
         clone.userId = userId;
-        clone.userName = userName;
         clone.sessionId = sessionId;
         clone.ipAddress = ipAddress;
         clone.error = error;

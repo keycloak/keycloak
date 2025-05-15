@@ -74,7 +74,9 @@ const StatusRow = (event: EventRepresentation) =>
 const DetailCell = (event: EventRepresentation) => (
   <DescriptionList isHorizontal className="keycloak_eventsection_details">
     {event.details &&
-      Object.entries(event.details).map(([key, value]) => (
+      Object.entries(event.details)
+      .filter(([key]) => key !== "username")
+      .map(([key, value]) => (
         <DescriptionListGroup key={key}>
           <DescriptionListTerm>{key}</DescriptionListTerm>
           <DescriptionListDescription>{value}</DescriptionListDescription>
@@ -92,18 +94,26 @@ const DetailCell = (event: EventRepresentation) => (
 const UserDetailLink = (event: EventRepresentation) => {
   const { t } = useTranslation();
   const { realm } = useRealm();
+  // Extract the username from event.details, if it available
+  const userName = event.details ? event.details["username"] : null;
+  const userId = event.userId;
 
-  return event.userId && event.userName ? (
-    <Link
-      key={`link-${event.time}-${event.type}`}
-      to={toUser({
-        realm,
-        id: event.userId,
-        tab: "settings",
-      })}
-    >
-      {event.userName}
-    </Link>
+  return userId && userName ? (
+    <div>
+      <Link
+        key={`link-${event.time}-${event.type}`}
+        to={toUser({
+          realm,
+          id: userId,
+          tab: "settings",
+        })}
+      >
+        {userName}
+      </Link>
+      <span style={{ fontSize: '0.9rem', color: '#888', marginLeft: '5px' }}>
+              (ID: {userId}) {/* Show userId also but in a subtle way */}
+      </span>
+    </div>
   ) : (
     <>{t("noUserDetails")}</>
   );
@@ -463,7 +473,7 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
             ? [
                 {
                   name: "userName",
-                  displayKey: "User Name",
+                  displayKey: "User",
                   cellRenderer: UserDetailLink,
                 },
               ]

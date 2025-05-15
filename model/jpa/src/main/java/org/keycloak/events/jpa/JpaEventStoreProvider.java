@@ -142,7 +142,6 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         eventEntity.setRealmId(event.getRealmId());
         eventEntity.setClientId(event.getClientId());
         eventEntity.setUserId(event.getUserId());
-        eventEntity.setUserName(event.getUserName());
         eventEntity.setSessionId(event.getSessionId());
         eventEntity.setIpAddress(event.getIpAddress());
         eventEntity.setError(event.getError());
@@ -158,7 +157,6 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         event.setRealmId(eventEntity.getRealmId());
         event.setClientId(eventEntity.getClientId());
         event.setUserId(eventEntity.getUserId());
-        event.setUserName(eventEntity.getUserName());
         event.setSessionId(eventEntity.getSessionId());
         event.setIpAddress(eventEntity.getIpAddress());
         event.setError(eventEntity.getError());

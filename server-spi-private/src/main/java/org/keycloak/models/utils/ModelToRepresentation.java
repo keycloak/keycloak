@@ -314,7 +314,6 @@ public class ModelToRepresentation {
         rep.setRealmId(event.getRealmId());
         rep.setClientId(event.getClientId());
         rep.setUserId(event.getUserId());
-        rep.setUserName(event.getUserName());
         rep.setSessionId(event.getSessionId());
         rep.setIpAddress(event.getIpAddress());
         rep.setError(event.getError());

@@ -99,8 +99,6 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
             sanitize(sb, event.getClientId());
             sb.append(", userId=");
             sanitize(sb, event.getUserId());
-            sb.append(", userName=");
-            sanitize(sb, event.getUserName());
             if (event.getSessionId() != null) {
                 sb.append(", sessionId=");
                 sanitize(sb, event.getSessionId());

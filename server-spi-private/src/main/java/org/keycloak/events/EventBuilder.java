@@ -23,6 +23,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -127,10 +128,11 @@ public class EventBuilder {
 
     public EventBuilder user(UserModel user) {
         event.setUserId(user == null ? null : user.getId());
+        if (event.getDetails() == null) {
+            event.setDetails(new HashMap<>());
+        }
         if (user != null && user.getUsername() != null) {
-            event.setUserName(user.getUsername());
-        } else {
-            event.setUserName(null);
+            event.getDetails().put(Details.USERNAME, user.getUsername()); //capture username in details only if available
         }
         return this;
     }
@@ -292,7 +294,6 @@ public class EventBuilder {
             ab.put(TracingAttributes.REALM_NAME, event.getRealmName());
             ab.put(TracingAttributes.CLIENT_ID, event.getClientId());
             ab.put(TracingAttributes.USER_ID, event.getUserId());
-            ab.put(TracingAttributes.USER_NAME, event.getUserName());
             ab.put(TracingAttributes.SESSION_ID, event.getSessionId());
             ab.put("ipAddress", event.getIpAddress());
             ab.put(TracingAttributes.EVENT_ERROR, event.getError());
