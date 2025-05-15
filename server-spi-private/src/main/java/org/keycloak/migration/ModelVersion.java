@@ -38,7 +38,8 @@ public class ModelVersion {
     }
 
     public ModelVersion(String version) {
-        version = version.split("-")[0];
+        String[] versionSplit = version.split("-");
+        version = versionSplit[0];
 
         String[] split = version.split("\\.");
         try {
@@ -53,6 +54,12 @@ public class ModelVersion {
             }
             if (split.length > 3) {
                 qualifier = split[3];
+
+                if (qualifier.startsWith("redhat")) {
+                    qualifier = null;
+                }
+            } else if (versionSplit.length > 1) {
+                qualifier = versionSplit[1];
 
                 if (qualifier.startsWith("redhat")) {
                     qualifier = null;
