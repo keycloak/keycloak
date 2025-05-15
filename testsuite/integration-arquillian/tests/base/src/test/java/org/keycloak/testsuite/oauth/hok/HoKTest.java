@@ -547,6 +547,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         events.expect(EventType.USER_INFO_REQUEST)
                 .session(Matchers.notNullValue(String.class))
                 .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
+                .detail(Details.USERNAME, "test-user@localhost")
                 .detail(Details.SIGNATURE_REQUIRED, "false")
                 .assertEvent();
         UserInfoClientUtil.testSuccessfulUserInfoResponse(response, "test-user@localhost", "test-user@localhost");

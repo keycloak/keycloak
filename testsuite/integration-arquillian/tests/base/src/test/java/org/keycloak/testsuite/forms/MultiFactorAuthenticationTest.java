@@ -238,7 +238,7 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
             Assert.assertFalse(passwordPage.isCurrent());
             Assert.assertFalse(loginPage.isCurrent());
             events.expectLogin().user(testRealm().users().search("user-with-one-configured-otp").get(0).getId())
-                    .assertEvent();
+                    .detail(Details.USERNAME, "user-with-one-configured-otp").assertEvent();
         } finally {
             BrowserFlowTest.revertFlows(testRealm(),"browser - alternative mechanisms");
         }
@@ -284,7 +284,7 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
             loginTotpPage.login(new TimeBasedOTP().generateTOTP("DJmQfC73VGFhw7D4QJ8A"));
             Assert.assertFalse(loginTotpPage.isCurrent());
             events.expectLogin().user(testRealm().users().search("user-with-one-configured-otp").get(0).getId())
-                    .assertEvent();
+                    .detail(Details.USERNAME, "user-with-one-configured-otp").assertEvent();
         } finally {
             BrowserFlowTest.revertFlows(testRealm(),"browser - alternative mechanisms");
         }
@@ -321,6 +321,7 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
             events.expect(EventType.RESTART_AUTHENTICATION)
                     .client(oauth.getClientId())
                     .user(user.getId())
+                    .detail(Details.USERNAME, "user-with-one-configured-otp")
                     .detail(Details.AUTH_METHOD, OIDCLoginProtocol.LOGIN_PROTOCOL)
                     .assertEvent();
 
@@ -339,7 +340,7 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
             // Login
             passwordPage.login(getPassword("user-with-one-configured-otp"));
             events.expectLogin().user(user.getId())
-                    .assertEvent();
+                    .detail(Details.USERNAME, "otp1@redhat.com").assertEvent();
         } finally {
             BrowserFlowTest.revertFlows(testRealm(), "browser - alternative");
         }

@@ -133,6 +133,7 @@ public class AssertEvents implements TestRule {
     public ExpectedEvent expectSocialLogin() {
         return expect(EventType.LOGIN)
                 .detail(Details.CODE_ID, isCodeId())
+                .detail(Details.USERNAME, DEFAULT_USERNAME)
                 .detail(Details.AUTH_METHOD, "form")
                 .detail(Details.REDIRECT_URI, Matchers.equalTo(DEFAULT_REDIRECT_URI))
                 .session(isUUID());
@@ -208,6 +209,7 @@ public class AssertEvents implements TestRule {
         return expect(EventType.REGISTER)
                 .user(user != null ? user.getId() : null)
                 .client(clientId)
+                .detail(Details.USERNAME, username)
                 .detail(Details.EMAIL, email)
                 .detail(Details.REGISTER_METHOD, "form")
                 .detail(Details.REDIRECT_URI, Matchers.equalTo(DEFAULT_REDIRECT_URI));
@@ -226,6 +228,7 @@ public class AssertEvents implements TestRule {
         UserRepresentation user = username != null ? getUser(username) : null;
         return expect(EventType.REGISTER_ERROR)
                 .user(user != null ? user.getId() : null)
+                .detail(Details.USERNAME, username)
                 .detail(Details.EMAIL, email)
                 .detail(Details.REGISTER_METHOD, "form")
                 .detail(Details.REDIRECT_URI, Matchers.equalTo(DEFAULT_REDIRECT_URI));

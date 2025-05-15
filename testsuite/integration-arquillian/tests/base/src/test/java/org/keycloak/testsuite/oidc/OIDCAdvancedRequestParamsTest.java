@@ -290,7 +290,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         loginPage.login("test-user@localhost", "password");
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
         IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
         long authTime = idToken.getAuth_time();
 
@@ -333,6 +333,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             grantPage.accept();
 
             events.expectLogin()
+                    .detail(Details.USERNAME, "test-user@localhost")
                     .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
                     .assertEvent();
 
@@ -345,6 +346,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             Assert.assertNull(resp.getError());
 
             events.expectLogin()
+                    .detail(Details.USERNAME, "test-user@localhost")
                     .detail(Details.CONSENT, Details.CONSENT_VALUE_PERSISTED_CONSENT)
                     .assertEvent();
 
@@ -367,7 +369,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         loginPage.login("test-user@localhost", "password");
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
         IDToken oldIdToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Set time offset
@@ -376,7 +378,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         // SSO login first WITHOUT prompt=login ( Tests KEYCLOAK-5248 )
         oauth.openLoginForm();
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        loginEvent = events.expectLogin().assertEvent();
+        loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
         IDToken newIdToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Assert that authTime wasn't updated
@@ -392,7 +394,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         loginPage.login("password");
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        loginEvent = events.expectLogin().assertEvent();
+        loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
         newIdToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Assert that authTime was updated
@@ -451,6 +453,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
             events.expectLogin()
+                    .detail(Details.USERNAME, "test-user@localhost")
                     .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
                     .assertEvent();
 
@@ -459,6 +462,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             oauth.openLoginForm();
             Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
             events.expectLogin()
+                    .detail(Details.USERNAME, "test-user@localhost")
                     .detail(Details.CONSENT, Details.CONSENT_VALUE_PERSISTED_CONSENT)
                     .assertEvent();
 
@@ -475,6 +479,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
             events.expectLogin()
+                    .detail(Details.USERNAME, "test-user@localhost")
                     .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
                     .assertEvent();
 
@@ -497,7 +502,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         loginPage.login("test-user@localhost", "password");
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
         IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         Assert.assertNotNull(idToken);
@@ -1145,7 +1150,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         loginPage.login("password");
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().assertEvent();
+        events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
     }
     
     // CLAIMS
@@ -1167,7 +1172,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         loginPage.login("test-user@localhost", "password");
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
         String sessionId = loginEvent.getSessionId();
         String clientId = loginEvent.getClientId();
         
@@ -1206,7 +1211,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         loginPage.login("test-user@localhost", "password");
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
         String sessionId = loginEvent.getSessionId();
         String clientId = loginEvent.getClientId();
         

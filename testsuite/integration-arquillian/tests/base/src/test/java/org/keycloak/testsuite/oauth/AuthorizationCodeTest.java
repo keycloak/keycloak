@@ -289,6 +289,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
             events.expect(EventType.LOGIN)
                     .user(AssertEvents.isUUID())
                     .session(AssertEvents.isUUID())
+                    .detail(Details.USERNAME, "test-user@localhost")
                     .detail(OIDCLoginProtocol.RESPONSE_MODE_PARAM, OIDCResponseMode.FORM_POST.name().toLowerCase())
                     .detail(OAuth2Constants.REDIRECT_URI, redirectUri)
                     .assertEvent();
@@ -322,6 +323,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
             events.expect(EventType.LOGIN)
                     .user(AssertEvents.isUUID())
                     .session((String) responseToken.getOtherClaims().get("session_state"))
+                    .detail(Details.USERNAME, "test-user@localhost")
                     .detail(OIDCLoginProtocol.RESPONSE_MODE_PARAM, OIDCResponseMode.FORM_POST_JWT.name().toLowerCase())
                     .detail(OAuth2Constants.REDIRECT_URI, redirectUri)
                     .assertEvent();

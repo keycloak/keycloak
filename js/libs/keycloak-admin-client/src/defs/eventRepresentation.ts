@@ -13,5 +13,4 @@ export default interface EventRepresentation {
   time?: number;
   type?: EventType;
   userId?: string;
-  userName?: string;
 }

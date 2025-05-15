@@ -98,7 +98,7 @@ public class CustomRegistrationFlowTest extends AbstractFlowTest {
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         String userId = events.expectRegister(PassThroughRegistration.username, PassThroughRegistration.email).assertEvent().getUserId();
-        events.expectLogin().user(userId).assertEvent();
+        events.expectLogin().detail("username", PassThroughRegistration.username).user(userId).assertEvent();
     }
 
 

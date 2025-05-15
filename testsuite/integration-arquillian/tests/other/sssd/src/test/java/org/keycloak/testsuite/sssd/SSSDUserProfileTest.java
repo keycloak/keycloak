@@ -118,6 +118,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         EventRepresentation loginEvent = events.expectLogin()
                 .user(Matchers.any(String.class))
+                .detail(Details.USERNAME, username)
                 .assertEvent();
 
         // logout
@@ -160,6 +161,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         EventRepresentation loginEvent = events.expectLogin()
                 .user(Matchers.any(String.class))
+                .detail(Details.USERNAME, "test-user@localhost")
                 .assertEvent();
 
         // logout
@@ -209,6 +211,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
             Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
             EventRepresentation loginEvent = events.expectLogin()
                     .user(Matchers.any(String.class))
+                    .detail(Details.USERNAME, username)
                     .assertEvent();
 
             // logout
@@ -259,6 +262,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
             Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
             EventRepresentation loginEvent = events.expectLogin()
                     .user(Matchers.any(String.class))
+                    .detail(Details.USERNAME, "test-user@localhost")
                     .assertEvent();
 
             // logout

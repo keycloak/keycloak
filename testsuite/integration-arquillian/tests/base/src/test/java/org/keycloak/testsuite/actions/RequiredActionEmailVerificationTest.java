@@ -199,6 +199,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         events.expectRequiredAction(EventType.VERIFY_EMAIL)
           .user(testUserId)
+          .detail(Details.USERNAME, "test-user@localhost")
           .detail(Details.EMAIL, "test-user@localhost")
           .detail(Details.CODE_ID, mailCodeId)
           .assertEvent();
@@ -206,7 +207,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         appPage.assertCurrent();
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().user(testUserId).session(mailCodeId).assertEvent();
+        events.expectLogin().user(testUserId).session(mailCodeId).detail(Details.USERNAME, "test-user@localhost").assertEvent();
     }
 
     @Test
@@ -223,7 +224,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         MimeMessage message = greenMail.getReceivedMessages()[0];
 
-        EventRepresentation sendEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL).user(userId).detail("email", "email@mail.com").assertEvent();
+        EventRepresentation sendEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL).user(userId).detail(Details.USERNAME, "verifyemail").detail("email", "email@mail.com").assertEvent();
         String mailCodeId = sendEvent.getDetails().get(Details.CODE_ID);
 
         String verificationUrl = getEmailLink(message);
@@ -234,11 +235,12 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         events.expectRequiredAction(EventType.VERIFY_EMAIL)
           .user(userId)
+          .detail(Details.USERNAME, "verifyemail")
           .detail(Details.EMAIL, "email@mail.com")
           .detail(Details.CODE_ID, mailCodeId)
           .assertEvent();
 
-        events.expectLogin().user(userId).session(mailCodeId).assertEvent();
+        events.expectLogin().user(userId).session(mailCodeId).detail(Details.USERNAME, "verifyemail").assertEvent();
     }
 
     @Test
@@ -349,11 +351,12 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         events.expectRequiredAction(EventType.VERIFY_EMAIL)
           .user(testUserId)
+          .detail(Details.USERNAME, "test-user@localhost")
           .detail(Details.EMAIL, "test-user@localhost")
           .detail(Details.CODE_ID, mailCodeId)
           .assertEvent();
 
-        events.expectLogin().user(testUserId).session(mailCodeId).assertEvent();
+        events.expectLogin().user(testUserId).session(mailCodeId).detail(Details.USERNAME, "test-user@localhost").assertEvent();
     }
 
     @Test
@@ -392,11 +395,12 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         events.expectRequiredAction(EventType.VERIFY_EMAIL)
           .user(testUserId)
+          .detail(Details.USERNAME, "test-user@localhost")
           .detail(Details.EMAIL, "test-user@localhost")
           .detail(Details.CODE_ID, mailCodeId)
           .assertEvent();
 
-        events.expectLogin().user(testUserId).session(mailCodeId).assertEvent();
+        events.expectLogin().user(testUserId).session(mailCodeId).detail(Details.USERNAME, "test-user@localhost").assertEvent();
     }
 
     @Test

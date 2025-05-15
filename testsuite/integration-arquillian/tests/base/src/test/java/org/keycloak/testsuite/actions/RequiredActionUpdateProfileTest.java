@@ -156,11 +156,12 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
         events.expectLogin().event(EventType.UPDATE_PROFILE).detail(Details.UPDATED_FIRST_NAME, "New first").user(userId).session(Matchers.nullValue(String.class)).removeDetail(Details.CONSENT)
                 .detail(Details.UPDATED_LAST_NAME, "New last").user(userId).session(Matchers.nullValue(String.class)).removeDetail(Details.CONSENT)
+                .detail(Details.USERNAME, "john-doh@localhost")
                 .assertEvent();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().user(userId).assertEvent();
+        events.expectLogin().detail(Details.USERNAME, "john-doh@localhost").user(userId).assertEvent();
 
         // assert user is really updated in persistent store
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "new");

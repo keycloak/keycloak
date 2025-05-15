@@ -30,7 +30,6 @@ public class EventRepresentation {
     private String realmId;
     private String clientId;
     private String userId;
-    private String userName;
     private String sessionId;
     private String ipAddress;
     private String error;
@@ -133,7 +132,6 @@ public class EventRepresentation {
         if (realmId != null ? !realmId.equals(that.realmId) : that.realmId != null) return false;
         if (clientId != null ? !clientId.equals(that.clientId) : that.clientId != null) return false;
         if (userId != null ? !userId.equals(that.userId) : that.userId != null) return false;
-        if (userName != null ? !userName.equals(that.userName) : that.userName != null) return false;
         if (sessionId != null ? !sessionId.equals(that.sessionId) : that.sessionId != null) return false;
         if (ipAddress != null ? !ipAddress.equals(that.ipAddress) : that.ipAddress != null) return false;
         if (error != null ? !error.equals(that.error) : that.error != null) return false;
@@ -149,7 +147,6 @@ public class EventRepresentation {
         result = 31 * result + (realmId != null ? realmId.hashCode() : 0);
         result = 31 * result + (clientId != null ? clientId.hashCode() : 0);
         result = 31 * result + (userId != null ? userId.hashCode() : 0);
-        result = 31 * result + (userName != null ? userName.hashCode() : 0);
         result = 31 * result + (sessionId != null ? sessionId.hashCode() : 0);
         result = 31 * result + (ipAddress != null ? ipAddress.hashCode() : 0);
         result = 31 * result + (error != null ? error.hashCode() : 0);
@@ -157,11 +154,4 @@ public class EventRepresentation {
         return result;
     }
 
-    public String getUserName() {
-        return userName;
-    }
-
-    public void setUserName(String userName) {
-        this.userName = userName;
-    }
 }

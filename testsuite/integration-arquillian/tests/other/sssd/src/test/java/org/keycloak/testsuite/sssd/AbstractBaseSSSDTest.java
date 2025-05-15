@@ -84,7 +84,7 @@ public abstract class AbstractBaseSSSDTest extends AbstractTestRealmKeycloakTest
         oauth.doLogin(username, getPassword(username));
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         EventRepresentation loginEvent = events.expectLogin().user(Matchers.any(String.class))
-                .assertEvent();
+                .detail(Details.USERNAME, username).assertEvent();
         AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         appPage.logout(tokenResponse.getIdToken());
         events.expectLogout(loginEvent.getSessionId()).user(loginEvent.getUserId()).assertEvent();

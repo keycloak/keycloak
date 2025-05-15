@@ -325,6 +325,7 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
 
         events.expectLogin()
                 .user(userId)
+                .detail(Details.USERNAME, "test-user@localhost")
                 .removeDetail(Details.REDIRECT_URI)
                 .assertEvent();
     }

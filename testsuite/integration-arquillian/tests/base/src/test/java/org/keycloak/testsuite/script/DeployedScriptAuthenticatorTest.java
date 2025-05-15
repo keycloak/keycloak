@@ -186,7 +186,7 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
 
         loginPage.login("user", "password");
 
-        events.expectLogin().user(okayUser()).assertEvent();
+        events.expectLogin().user(okayUser()).detail(Details.USERNAME, "user").assertEvent();
     }
 
     // Issue 20005

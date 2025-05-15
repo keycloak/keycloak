@@ -310,6 +310,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
                     .user(loginEvent.getUserId())
                     .detail(Details.REDIRECT_URI,  oauth.AUTH_SERVER_ROOT + "/realms/test/account/")
                     .client("account")
+                    .detail(Details.USERNAME, "test-user@localhost")
                     .detail(Details.EMAIL, "test-user@localhost")
                     .session((String)null)
                     .assertEvent();
@@ -352,6 +353,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
                     .user(loginEvent.getUserId())
                     .detail(Details.REDIRECT_URI,  oauth.AUTH_SERVER_ROOT + "/realms/test/account/")
                     .client("account")
+                    .detail(Details.USERNAME, "test-user@localhost")
                     .detail(Details.EMAIL, "test-user@localhost")
                     .session((String)null)
                     .assertEvent();
@@ -395,6 +397,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
                     .user(loginEvent.getUserId())
                     .detail(Details.REDIRECT_URI,  oauth.AUTH_SERVER_ROOT + "/realms/test/account/")
                     .client("account")
+                    .detail(Details.USERNAME, "test-user@localhost")
                     .detail(Details.EMAIL, "test-user@localhost")
                     .session((String)null)
                     .assertEvent();
@@ -437,6 +440,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
                     .user(loginEvent.getUserId())
                     .detail(Details.REDIRECT_URI,  oauth.AUTH_SERVER_ROOT + "/realms/test/account/")
                     .client("account")
+                    .detail(Details.USERNAME, "test-user@localhost")
                     .detail(Details.EMAIL, "test-user@localhost")
                     .session((String)null)
                     .assertEvent();

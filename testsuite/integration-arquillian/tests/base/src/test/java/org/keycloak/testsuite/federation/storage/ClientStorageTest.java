@@ -250,7 +250,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
         AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
         appPage.assertCurrent();
 
-        events.expectLogin().client(clientId).assertEvent();
+        events.expectLogin().client(clientId).detail(Details.USERNAME, "test-user@localhost").assertEvent();
 
         AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(response.getCode());
         Assert.assertNotNull(tokenResponse.getAccessToken());
@@ -461,6 +461,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
                 .detail(Details.TOKEN_ID, token.getId())
                 .detail(Details.REFRESH_TOKEN_ID, offlineToken.getId())
                 .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
+                .detail(Details.USERNAME, "test-user@localhost")
                 .removeDetail(Details.CODE_ID)
                 .removeDetail(Details.REDIRECT_URI)
                 .removeDetail(Details.CONSENT)

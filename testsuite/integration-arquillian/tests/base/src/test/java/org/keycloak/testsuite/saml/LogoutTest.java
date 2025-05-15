@@ -475,7 +475,7 @@ public class LogoutTest extends AbstractSamlTest {
         EventRepresentation logoutEvent = logoutEvents.get(0);
 
         assertEquals("http://url", logoutEvent.getDetails().get(Details.REDIRECT_URI));
-        assertEquals(bburkeUser.getUsername(), logoutEvent.getUserName());
+        assertEquals(bburkeUser.getUsername(), logoutEvent.getDetails().get(Details.USERNAME));
         assertEquals(SamlProtocol.SAML_POST_BINDING, logoutEvent.getDetails().get(Details.RESPONSE_MODE));
         assertEquals("saml", logoutEvent.getDetails().get(Details.AUTH_METHOD));
         assertNotNull(logoutEvent.getDetails().get(SamlProtocol.SAML_LOGOUT_REQUEST_ID));
@@ -490,7 +490,7 @@ public class LogoutTest extends AbstractSamlTest {
 
         EventRepresentation logoutEvent = logoutEvents.get(0);
 
-        assertEquals(bburkeUser.getUsername(), logoutEvent.getUserName());
+        assertEquals(bburkeUser.getUsername(), logoutEvent.getDetails().get(Details.USERNAME));
         assertEquals(SamlProtocol.SAML_SOAP_BINDING, logoutEvent.getDetails().get(Details.RESPONSE_MODE));
         assertEquals("saml", logoutEvent.getDetails().get(Details.AUTH_METHOD));
     }

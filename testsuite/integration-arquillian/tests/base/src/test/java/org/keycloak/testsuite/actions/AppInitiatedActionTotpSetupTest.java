@@ -114,12 +114,12 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         String authSessionId1 = events.expectRequiredAction(EventType.UPDATE_TOTP)
                 .user(userId)
                 .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
-                .assertEvent()
+                .detail(Details.USERNAME, "setuptotp").assertEvent()
                 .getDetails().get(Details.CODE_ID);
         String authSessionId2 = events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
                 .user(userId)
                 .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
-                .assertEvent()
+                .detail(Details.USERNAME, "setuptotp").assertEvent()
                 .getDetails().get(Details.CODE_ID);
 
         assertKcActionStatus(SUCCESS);
@@ -406,13 +406,13 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         events.expectRequiredAction(EventType.UPDATE_TOTP)
                 .user(userId)
                 .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
-                .assertEvent();
+                .detail(Details.USERNAME, "setuptotp2").assertEvent();
         events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
                 .user(userId)
                 .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
-                .assertEvent();
+                .detail(Details.USERNAME, "setuptotp2").assertEvent();
 
-        EventRepresentation loginEvent = events.expectLogin().user(userId).assertEvent();
+        EventRepresentation loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "setuptotp2").assertEvent();
 
         // Logout
         AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
@@ -433,7 +433,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
         // Login with one-time password
         loginTotpPage.login(totp.generateTOTP(totpCode));
-        events.expectLogin().user(userId).assertEvent();
+        events.expectLogin().user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent();
 
         // Remove google authenticator
         Assert.assertTrue(AccountHelper.deleteTotpAuthentication(testRealm(),"setupTotp2"));

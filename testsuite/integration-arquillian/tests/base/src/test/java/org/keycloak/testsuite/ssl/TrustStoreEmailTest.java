@@ -111,6 +111,7 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
         EventRepresentation sendEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL)
                 .user(user.getId())
                 .client("test-app")
+                .detail(Details.USERNAME, "test-user@localhost")
                 .detail(Details.EMAIL, "test-user@localhost")
                 .removeDetail(Details.REDIRECT_URI)
                 .assertEvent();
@@ -129,6 +130,7 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
         events.expectRequiredAction(EventType.VERIFY_EMAIL)
                 .user(user.getId())
                 .client("test-app")
+                .detail(Details.USERNAME, "test-user@localhost")
                 .detail(Details.EMAIL, "test-user@localhost")
                 .detail(Details.CODE_ID, mailCodeId)
                 .removeDetail(Details.REDIRECT_URI)
@@ -138,6 +140,7 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
                 .client("test-app")
                 .user(user.getId())
                 .session(mailCodeId)
+                .detail(Details.USERNAME, "test-user@localhost")
                 .removeDetail(Details.REDIRECT_URI)
                 .assertEvent();
 
@@ -160,6 +163,7 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
                 .error(Errors.EMAIL_SEND_FAILED)
                 .user(user.getId())
                 .client("test-app")
+                .detail(Details.USERNAME, "test-user@localhost")
                 .detail(Details.EMAIL, "test-user@localhost")
                 .removeDetail(Details.REDIRECT_URI)
                 .assertEvent();
@@ -197,6 +201,7 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
                     .error(Errors.EMAIL_SEND_FAILED)
                     .user(user.getId())
                     .client("test-app")
+                    .detail(Details.USERNAME, "test-user@localhost")
                     .detail(Details.EMAIL, "test-user@localhost")
                     .removeDetail(Details.REDIRECT_URI)
                     .assertEvent();

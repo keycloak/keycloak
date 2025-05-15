@@ -164,7 +164,7 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
 
         loginPage.login("user", getPassword("user"));
 
-        events.expectLogin().user(userId).assertEvent();
+        events.expectLogin().user(userId).detail(Details.USERNAME, "user").assertEvent();
     }
 
     /**
@@ -199,7 +199,7 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
 
         loginPage.login("user", getPassword("user"));
 
-        events.expectLogin().user(userId).assertEvent();
+        events.expectLogin().user(userId).detail(Details.USERNAME, "user").assertEvent();
     }
 }
 

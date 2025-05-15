@@ -361,6 +361,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
                     .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
                     .detail(Details.TOKEN_ID, accessToken.getId())
                     .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
+                    .detail(Details.USERNAME, "test-user@localhost")
                     .detail(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
                     .removeDetail(Details.CODE_ID)
                     .removeDetail(Details.REDIRECT_URI)

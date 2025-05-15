@@ -242,6 +242,7 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
         assertNotNull(oauth.parseLoginResponse().getCode());
 
         return events.expectLogin()
+                .detail(Details.USERNAME, DEFAULT_USERNAME)
                 .assertEvent();
     }
 }

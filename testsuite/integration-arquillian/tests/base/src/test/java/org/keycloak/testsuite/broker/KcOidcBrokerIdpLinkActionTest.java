@@ -197,6 +197,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
                     .client("broker-app")
                     .user(consumerUserId)
                     .detail(Details.CUSTOM_REQUIRED_ACTION, IdpLinkAction.PROVIDER_ID)
+                    .detail(Details.USERNAME, consumerUsername)
                     .error(Errors.REJECTED_BY_USER)
                     .assertEvent();
 
@@ -205,6 +206,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
                     .client("broker-app")
                     .user(consumerUserId)
                     .session(Matchers.any(String.class))
+                    .detail(Details.USERNAME, consumerUsername)
                     .assertEvent();
 
             events.assertEmpty();
@@ -239,6 +241,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
                     .user(providerUserId)
                     .client(bc.getIDPClientIdInProviderRealm())
                     .session((String)null)
+                    .detail(Details.USERNAME, bc.getUserLogin())
                     .error(Errors.REJECTED_BY_USER)
                     .assertEvent();
 
@@ -347,6 +350,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
                     .user(providerUserId)
                     .client(bc.getIDPClientIdInProviderRealm())
                     .session((String)null)
+                    .detail(Details.USERNAME, bc.getUserLogin())
                     .error(Errors.REJECTED_BY_USER)
                     .assertEvent();
 
@@ -414,6 +418,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
                 .user(providerUserId)
                 .client(bc.getIDPClientIdInProviderRealm())
                 .session(Matchers.any(String.class))
+                .detail(Details.USERNAME, bc.getUserLogin())
                 .assertEvent();
 
         events.expect(EventType.CODE_TO_TOKEN)
@@ -436,6 +441,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
                 .realm(consumerRealmId)
                 .client("broker-app")
                 .user(consumerUserId)
+                .detail(Details.USERNAME, username)
                 .detail(Details.IDENTITY_PROVIDER, IDP_OIDC_ALIAS)
                 .detail(Details.IDENTITY_PROVIDER_USERNAME, bc.getUserLogin())
                 .detail(Details.IDENTITY_PROVIDER_BROKER_SESSION_ID,  Matchers.startsWith(bc.getIDPAlias()))
@@ -446,6 +452,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
                 .client("broker-app")
                 .user(consumerUserId)
                 .session(Matchers.any(String.class))
+                .detail(Details.USERNAME, username)
                 .assertEvent();
 
         events.assertEmpty();
@@ -456,6 +463,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
                 .realm(consumerRealmId)
                 .client("broker-app")
                 .user(consumerUserId)
+                .detail(Details.USERNAME, consumerUsername)
                 .detail(Details.IDENTITY_PROVIDER, IDP_OIDC_ALIAS)
                 .error(expectedError)
                 .assertEvent();
@@ -466,6 +474,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
                     .client("broker-app")
                     .user(consumerUserId)
                     .session(Matchers.any(String.class))
+                    .detail(Details.USERNAME, consumerUsername)
                     .assertEvent();
         }
 

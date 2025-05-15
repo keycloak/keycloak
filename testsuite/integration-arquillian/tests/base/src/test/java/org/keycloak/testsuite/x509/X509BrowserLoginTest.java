@@ -159,6 +159,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
          events.expectLogin()
                  .user(userId)
+                 .detail(Details.USERNAME, "test-user@localhost")
                  .removeDetail(Details.REDIRECT_URI)
                  .assertEvent();
     }
@@ -298,6 +299,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
         events.expectLogin()
                 .user(userId)
+                .detail(Details.USERNAME, "test-user@localhost")
                 .removeDetail(Details.REDIRECT_URI)
                 .assertEvent();
     }
@@ -316,6 +318,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
         Assert.assertNotNull(oauth.parseLoginResponse().getCode());
         events.expectLogin()
                 .user(userId)
+                .detail(Details.USERNAME, "test-user@localhost")
                 .removeDetail(Details.REDIRECT_URI)
                 .assertEvent();
     }
@@ -344,6 +347,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
                 .user((String) null)
                 .session((String) null)
                 .error("user_not_found")
+                .detail(Details.USERNAME, "Red Hat")
                 .removeDetail(Details.CONSENT)
                 .removeDetail(Details.REDIRECT_URI)
                 .assertEvent();
@@ -355,6 +359,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
         Assert.assertNotNull(oauth.parseLoginResponse().getCode());
         events.expectLogin()
                 .user(userId)
+                .detail(Details.USERNAME, "test-user@localhost")
                 .removeDetail(Details.REDIRECT_URI)
                 .assertEvent();
     }
@@ -420,6 +425,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
                 .user((String) null)
                 .session((String) null)
                 .error("user_not_found")
+                .detail(Details.USERNAME, "test-user@localhost")
                 .removeDetail(Details.CONSENT)
                 .removeDetail(Details.REDIRECT_URI);
 
@@ -456,6 +462,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
                     .user(userId)
                     .session((String) null)
                     .error("user_disabled")
+                    .detail(Details.USERNAME, "test-user@localhost")
                     .removeDetail(Details.CONSENT)
                     .removeDetail(Details.REDIRECT_URI)
                     .assertEvent();
@@ -474,6 +481,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
                     .user(userId)
                     .session((String) null)
                     .error("user_disabled")
+                    .detail(Details.USERNAME, "test-user@localhost")
                     .removeDetail(Details.CONSENT)
                     .removeDetail(Details.REDIRECT_URI)
                     .assertEvent();
@@ -503,6 +511,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
         AssertEvents.ExpectedEvent expectedEvent = events.expectLogin()
                 .user(userId)
+                .detail(Details.USERNAME, "test-user@localhost")
                 .removeDetail(Details.REDIRECT_URI);
 
         addX509CertificateDetails(expectedEvent)
