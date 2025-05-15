@@ -20,7 +20,7 @@
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
     <changeSet author="keycloak" id="26.3.0-groups-description">
         <addColumn tableName="KEYCLOAK_GROUP">
-            <column name="DESCRIPTION" type="NVARCHAR(255)" />
+            <column name="DESCRIPTION" type="NVARCHAR(255)"/>
         </addColumn>
     </changeSet>
 </databaseChangeLog>

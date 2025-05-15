@@ -75,13 +75,14 @@ const DetailCell = (event: EventRepresentation) => (
   <DescriptionList isHorizontal className="keycloak_eventsection_details">
     {event.details &&
       Object.entries(event.details)
-      .filter(([key]) => key !== "username")
-      .map(([key, value]) => (
-        <DescriptionListGroup key={key}>
-          <DescriptionListTerm>{key}</DescriptionListTerm>
-          <DescriptionListDescription>{value}</DescriptionListDescription>
-        </DescriptionListGroup>
-      ))}
+        .filter(([key]) => key !== "username")
+        .map(([key, value]) => (
+          <DescriptionListGroup key={key}>
+            <DescriptionListTerm>{key}</DescriptionListTerm>
+            <DescriptionListDescription>{value}</DescriptionListDescription>
+          </DescriptionListGroup>
+        ))}
+
     {event.error && (
       <DescriptionListGroup key="error">
         <DescriptionListTerm>error</DescriptionListTerm>
