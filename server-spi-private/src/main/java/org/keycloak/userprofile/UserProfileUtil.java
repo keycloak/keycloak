@@ -164,7 +164,8 @@ public class UserProfileUtil {
                 group,
                 attributes.getAnnotations(am.getName()),
                 toValidatorMetadata(am, session),
-                am.isMultivalued());
+                am.isMultivalued(),
+                am.getDefaultValue());
     }
 
     private static Map<String, Map<String, Object>> toValidatorMetadata(AttributeMetadata am, KeycloakSession session){
