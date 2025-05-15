@@ -23,10 +23,12 @@ import static org.keycloak.testsuite.AssertEvents.DEFAULT_REDIRECT_URI;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 
+import jakarta.ws.rs.core.UriBuilder;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
@@ -41,6 +43,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.ClientData;
 import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
@@ -764,7 +767,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             // Try to login in tab2. After fill login form, the login will be restarted (due KC_RESTART cookie). User can continue login
             loginPage.login("login-test", getPassword("login-test"));
             loginPage.assertCurrent();
-            Assert.assertEquals(loginPage.getError(), "Your login attempt timed out. Login will start from the beginning.");
+            Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
             events.clear();
             loginSuccessAndDoRequiredActions();
 
@@ -772,6 +775,108 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
 
             //redirected url should be the redirect uri 1
             Assert.assertTrue(driver.getCurrentUrl().startsWith(redirectUri1));
+        }
+    }
+
+    @Test
+    public void testRestartFailureWithDifferentClientAfterAuthSessionExpiration() {
+
+        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
+
+            String redirectUri1 = String.format("%s/auth/realms/master/app/auth/suffix1", getAuthServerContextRoot());
+            String redirectUri2 = String.format("%s/foo/bar/baz", getAuthServerContextRoot());
+
+            //open tab 1 with redirect uri 1
+            assertThat(tabUtil.getCountOfTabs(), Matchers.is(1));
+            oauth.redirectUri(redirectUri1);
+            oauth.openLoginForm();
+            loginPage.assertCurrent();
+            getLogger().info("URL in tab1: " + driver.getCurrentUrl());
+
+            //open tab 2 with redirect uri 2 and different client
+            oauth.client("root-url-client");
+            oauth.redirectUri(redirectUri2);
+            tabUtil.newTab(oauth.loginForm().build());
+            assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
+            loginPage.assertCurrent();
+            getLogger().info("URL in tab2: " + driver.getCurrentUrl());
+            // Wait until authentication session expires
+            setTimeOffset(7200000);
+
+            //triggers the postponed function in authChecker.js to check if the auth session cookie has changed
+            WaitUtils.pause(2000);
+
+            // Go back to tab1
+            tabUtil.closeTab(1);
+            assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(1));
+
+            // Try to login in tab1.
+            loginPage.login("login-test", getPassword("login-test"));
+
+            //assert cookie not found
+            events.expect(EventType.LOGIN_ERROR)
+                    .user(new UserRepresentation())
+                    .error(Errors.COOKIE_NOT_FOUND)
+                    .assertEvent();
+        }
+    }
+
+    @Test
+    public void testInjectRedirectUriInClientDataAfterAuthSessionExpiration() throws IOException {
+
+        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
+
+            String redirectUri1 = String.format("%s/auth/realms/master/app/auth/suffix1", getAuthServerContextRoot());
+            String redirectUri2 = String.format("%s/auth/realms/master/app/auth/suffix2", getAuthServerContextRoot());
+            String redirectUriInject = String.format("%s/auth/realms/master/app/authFake/suffix1", getAuthServerContextRoot());
+
+            //open tab 1 with redirect uri 1
+            assertThat(tabUtil.getCountOfTabs(), Matchers.is(1));
+            oauth.redirectUri(redirectUri1);
+            oauth.openLoginForm();
+            loginPage.assertCurrent();
+            getLogger().info("URL in tab1: " + driver.getCurrentUrl());
+
+            //login with wrong credentials to move to authenticate page with clientData param
+            loginPage.login("wrong", "wrong");
+
+            //open tab 2
+            oauth.redirectUri(redirectUri2);
+            tabUtil.newTab(oauth.loginForm().build());
+            assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
+            loginPage.assertCurrent();
+            getLogger().info("URL in tab2: " + driver.getCurrentUrl());
+
+            // Wait until authentication session expires
+            setTimeOffset(7200000);
+
+            //triggers the postponed function in authChecker.js to check if the auth session cookie has changed
+            WaitUtils.pause(2000);
+
+            // Go back to tab1
+            tabUtil.closeTab(1);
+            assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(1));
+
+            //replace clientData param injecting a different redirect uri
+            String currentClientDataString = ActionURIUtils.parseQueryParamsFromActionURI(oauth.getDriver().getCurrentUrl()).get(CLIENT_DATA);
+            ClientData clientData = ClientData.decodeClientDataFromParameter(currentClientDataString);
+            clientData.setRedirectUri(redirectUriInject);
+
+            String injectedUrl = UriBuilder.fromUri(oauth.getDriver().getCurrentUrl())
+                    .replaceQueryParam(CLIENT_DATA, clientData.encode())
+                    .build().toString();
+
+            oauth.getDriver().navigate().to(injectedUrl);
+
+            loginPage.assertCurrent();
+            Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
+            events.clear();
+
+            loginPage.assertCurrent();
+            loginSuccessAndDoRequiredActions();
+
+            //injected redirected url should be ignored
+            Assert.assertTrue(driver.getCurrentUrl().startsWith(redirectUri2));
         }
     }
 
