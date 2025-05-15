@@ -31,11 +31,13 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.events.email.EmailEventListenerProviderFactory;
+import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.services.managers.AuthenticationSessionManager;
@@ -47,16 +49,18 @@ import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
+import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
-import org.keycloak.testsuite.util.SecondBrowser;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.WebDriver;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.hamcrest.Matchers.contains;
 import static org.junit.Assert.assertEquals;
@@ -96,6 +100,22 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
     @After
     public void after() {
         ApiUtil.resetUserPassword(testRealm().users().get(findUser("test-user@localhost").getId()), "password", false);
+
+        // reset password required action max auth age back to default
+        Optional<RequiredActionProviderRepresentation> passwordRequiredAction = testRealm().flows().getRequiredActions()
+                .stream()
+                .filter(requiredAction -> requiredAction.getProviderId().equals(UserModel.RequiredAction.UPDATE_PASSWORD.name()))
+                .findFirst();
+        if (passwordRequiredAction.isPresent()) {
+            passwordRequiredAction.get().getConfig().remove(Constants.MAX_AUTH_AGE_KEY);
+            testRealm().flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.name(), passwordRequiredAction.get());
+        }
+
+        // remove all required action from the user
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        UserRepresentation userRepresentation = user.toRepresentation();
+        userRepresentation.setRequiredActions(Collections.emptyList());
+        user.update(userRepresentation);
     }
 
     @Test
@@ -188,6 +208,79 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
         assertKcActionStatus(SUCCESS);
     }
+
+    @Test
+    public void resetPasswordRequiresReAuthWithIndividualMaxAuthAgeConfig() throws Exception {
+        // retrieve the password required action
+        RequiredActionProviderRepresentation passwordRequiredAction = testRealm().flows().getRequiredActions()
+                .stream()
+                .filter(requiredAction -> requiredAction.getProviderId().equals(UserModel.RequiredAction.UPDATE_PASSWORD.name()))
+                .findFirst()
+                .orElseThrow(() -> new Exception("Required action not found"));
+
+        // override default max auth age to 500 seconds for the password required action
+        passwordRequiredAction.getConfig().put(Constants.MAX_AUTH_AGE_KEY, "500");
+        testRealm().flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.name(), passwordRequiredAction);
+
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        events.expectLogin().assertEvent();
+
+        setTimeOffset(550);
+
+        // Should prompt for re-authentication
+        doAIA();
+
+        loginPage.assertCurrent();
+        Assert.assertEquals("test-user@localhost", loginPage.getAttemptedUsername());
+        loginPage.login("password");
+
+
+        changePasswordPage.assertCurrent();
+        assertTrue(changePasswordPage.isCancelDisplayed());
+
+        changePasswordPage.changePassword("new-password", "new-password");
+
+        events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
+        assertKcActionStatus(SUCCESS);
+    }
+
+    @Test
+    public void resetPasswordRequiresNoReAuthWithIndividualMaxAuthAgeConfig() throws Exception {
+        // retrieve the password required action
+        RequiredActionProviderRepresentation passwordRequiredAction = testRealm().flows().getRequiredActions()
+                .stream()
+                .filter(requiredAction -> requiredAction.getProviderId().equals(UserModel.RequiredAction.UPDATE_PASSWORD.name()))
+                .findFirst()
+                .orElseThrow(() -> new Exception("Required action not found"));
+
+        // override default max auth age to 500 seconds for the password required action
+        passwordRequiredAction.getConfig().put(Constants.MAX_AUTH_AGE_KEY, "500");
+        testRealm().flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.name(), passwordRequiredAction);
+
+
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        events.expectLogin().assertEvent();
+
+        setTimeOffset(350);
+
+        // Should not prompt for re-authentication
+        doAIA();
+
+        changePasswordPage.assertCurrent();
+        assertTrue(changePasswordPage.isCancelDisplayed());
+
+        changePasswordPage.changePassword("new-password", "new-password");
+
+        events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
+        assertKcActionStatus(SUCCESS);
+    }
+
 
     /**
      * See GH-12943
