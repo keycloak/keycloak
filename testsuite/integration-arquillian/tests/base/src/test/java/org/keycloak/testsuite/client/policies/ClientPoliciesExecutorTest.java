@@ -102,6 +102,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
+import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.pages.OAuth2DeviceVerificationPage;
@@ -134,6 +135,9 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
 
     @Page
     protected OAuthGrantPage grantPage;
+
+    @Page
+    protected AppPage appPage;
 
     @Page
     protected ErrorPage errorPage;
@@ -915,6 +919,33 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         failLoginWithoutSecureSessionParameter(clientBetaId, ERR_MSG_MISSING_STATE);
 
         successfulLoginAndLogout(clientBetaId, clientBetaSecret, "somenonce", "somestate");
+    }
+
+    // GH issue 37447
+    @Test
+    public void testSecureSessionEnforceExecutorWithAccountConsole() throws Exception {
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
+                        .addExecutor(SecureSessionEnforceExecutorFactory.PROVIDER_ID, null)
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Den Forste Politikken", Boolean.TRUE)
+                        .addCondition(AnyClientConditionFactory.PROVIDER_ID,
+                                createAnyClientConditionConfig())
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        // Test account-console is loaded successfully when "secure-session-enforce" executor is present
+        appPage.open();
+        appPage.openAccount();
+        loginPage.assertCurrent();
     }
 
     @Test
