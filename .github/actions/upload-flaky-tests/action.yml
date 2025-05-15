@@ -14,38 +14,29 @@ runs:
       shell: bash
       # language=bash
       run: |
-        FLAKES=""
         SEP=""
-        for dir in $(find -type d -name 'surefire-reports*'); do
-          for i in $(grep -l -E '<flakyFailure|<flakyError' $dir/TEST-*.xml); do
-            FLAKES="$FLAKES$SEP$i"
-            SEP=$'\n'
-          done
-        done
-        
-        if [ "$FLAKES" != "" ]; then
-          PR="${{ github.event.number }}"
-          JOB_NAME="${{ inputs.job-name }}"
-        
-          MATRIX="${{ join(matrix.*, ' - ') }}"
-          if [ "$MATRIX" != "" ]; then
-            JOB_NAME="$JOB_NAME ($MATRIX)"
-          fi
-        
-          JOB_URL=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs --paginate --jq ".jobs | map(select(.name == \"$JOB_NAME\")) | .[].html_url")
-        
-          echo "job_name=$JOB_NAME" >> job-summary.properties
-          echo "job_url=$JOB_URL" >> job-summary.properties
-          if [ "$PR" != "" ]; then
-            echo "pr=$PR" >> job-summary.properties
-            echo "pr_url=https://github.com/${{ github.repository }}/pull/$PR" >> job-summary.properties
-          fi
-        
-          echo "flakes<<EOF" >> $GITHUB_OUTPUT
-          echo "job-summary.properties" >> $GITHUB_OUTPUT
-          echo "$FLAKES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+
+        PR="${{ github.event.number }}"
+        JOB_NAME="${{ inputs.job-name }}"
+      
+        MATRIX="${{ join(matrix.*, ' - ') }}"
+        if [ "$MATRIX" != "" ]; then
+          JOB_NAME="$JOB_NAME ($MATRIX)"
         fi
+      
+        JOB_URL=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs --paginate --jq ".jobs | map(select(.name == \"$JOB_NAME\")) | .[].html_url")
+      
+        echo "job_name=$JOB_NAME" >> job-summary.properties
+        echo "job_url=$JOB_URL" >> job-summary.properties
+        if [ "$PR" != "" ]; then
+          echo "pr=$PR" >> job-summary.properties
+          echo "pr_url=https://github.com/${{ github.repository }}/pull/$PR" >> job-summary.properties
+        fi
+      
+        echo "flakes<<EOF" >> $GITHUB_OUTPUT
+        echo "job-summary.properties" >> $GITHUB_OUTPUT
+        echo "$FLAKES" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
 
     - uses: actions/upload-artifact@v4
       if: ${{ steps.flaky-tests.outputs.flakes }}
