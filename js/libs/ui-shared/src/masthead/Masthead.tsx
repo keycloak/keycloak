@@ -4,8 +4,10 @@ import {
   DropdownItem,
   Masthead,
   MastheadBrand,
-  MastheadBrandProps,
   MastheadContent,
+  MastheadLogo,
+  MastheadLogoProps,
+  MastheadMain,
   MastheadMainProps,
   MastheadToggle,
   PageToggleButton,
@@ -40,7 +42,7 @@ function loggedInUserName(
   return givenName || familyName || preferredUsername || t("unknownUser");
 }
 
-type BrandLogo = MastheadBrandProps;
+type BrandLogo = MastheadLogoProps;
 
 type KeycloakMastheadProps = MastheadMainProps & {
   keycloak: Keycloak;
@@ -95,20 +97,24 @@ const KeycloakMasthead = ({
   const picture = keycloak.idTokenParsed?.picture;
   return (
     <Masthead {...rest}>
-      <MastheadToggle>
-        <PageToggleButton variant="plain" aria-label={t("navigation")}>
-          <BarsIcon />
-        </PageToggleButton>
-      </MastheadToggle>
-      <MastheadBrand {...brandProps}>
-        <img src={src} alt={alt} className={className} />
-      </MastheadBrand>
+      <MastheadMain>
+        <MastheadToggle>
+          <PageToggleButton variant="plain" aria-label={t("navigation")}>
+            <BarsIcon />
+          </PageToggleButton>
+        </MastheadToggle>
+        <MastheadBrand>
+          <MastheadLogo {...brandProps}>
+            <img src={src} alt={alt} className={className} />
+          </MastheadLogo>
+        </MastheadBrand>
+      </MastheadMain>
       <MastheadContent>
         {toolbar}
         <Toolbar>
           <ToolbarContent>
             {toolbarItems?.map((item, index) => (
-              <ToolbarItem key={index} align={{ default: "alignRight" }}>
+              <ToolbarItem key={index} align={{ default: "alignEnd" }}>
                 {item}
               </ToolbarItem>
             ))}
@@ -129,7 +135,7 @@ const KeycloakMasthead = ({
               />
             </ToolbarItem>
             <ToolbarItem
-              align={{ default: "alignLeft" }}
+              align={{ default: "alignEnd" }}
               visibility={{
                 md: "hidden",
               }}
@@ -143,11 +149,7 @@ const KeycloakMasthead = ({
                 ]}
               />
             </ToolbarItem>
-            <ToolbarItem
-              variant="overflow-menu"
-              align={{ default: "alignRight" }}
-              className="pf-v5-u-m-0-on-lg"
-            >
+            <ToolbarItem>
               {picture || avatar?.src ? (
                 <Avatar {...{ src: picture, alt: t("avatar"), ...avatar }} />
               ) : (

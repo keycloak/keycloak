@@ -1,11 +1,5 @@
-import {
-  Button,
-  ButtonVariant,
-  Form,
-  Modal,
-  ModalVariant,
-  Tooltip,
-} from "@patternfly/react-core";
+import { Button, ButtonVariant, Form, Tooltip } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import { PencilAltIcon } from "@patternfly/react-icons";
 import { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
@@ -40,13 +34,12 @@ export const EditFlow = ({ execution, onRowChange }: EditFlowProps) => {
     <>
       <Tooltip content={t("edit")}>
         <Button
+          icon={<PencilAltIcon />}
           variant="plain"
           data-testid={`${execution.id}-edit`}
           aria-label={t("edit")}
           onClick={toggle}
-        >
-          <PencilAltIcon />
-        </Button>
+        />
       </Tooltip>
       {show && (
         <Modal

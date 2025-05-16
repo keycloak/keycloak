@@ -8,9 +8,8 @@ import {
   Button,
   ButtonVariant,
   Form,
-  Modal,
-  ModalVariant,
 } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import { TrashIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
@@ -120,7 +119,8 @@ export const RequiredActionConfigModal = ({
             {t("cancel")}
           </Button>
           <Button
-            className="pf-v5-u-ml-3xl"
+            icon={<TrashIcon />}
+            className="pf-v6-u-ml-3xl"
             data-testid="clear"
             variant={ButtonVariant.link}
             onClick={async () => {
@@ -133,7 +133,7 @@ export const RequiredActionConfigModal = ({
               onClose();
             }}
           >
-            {t("clear")} <TrashIcon />
+            {t("clear")}
           </Button>
         </ActionGroup>
       </Form>

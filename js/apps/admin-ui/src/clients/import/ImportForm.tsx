@@ -100,7 +100,7 @@ export default function ImportForm() {
   return (
     <>
       <ViewHeader titleKey="importClient" subKey="clientsExplain" />
-      <PageSection variant="light">
+      <PageSection hasBodyWrapper={false}>
         <FormAccess
           isHorizontal
           onSubmit={handleSubmit(save)}

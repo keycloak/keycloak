@@ -110,19 +110,19 @@ export const MultiLineInput = ({
             </InputGroupItem>
             <InputGroupItem>
               <Button
+                icon={<MinusCircleIcon />}
                 data-testid={"remove" + index}
                 variant={ButtonVariant.link}
                 onClick={() => remove(index)}
                 tabIndex={-1}
                 aria-label={t("remove")}
                 isDisabled={fields.length === 1 || isDisabled}
-              >
-                <MinusCircleIcon />
-              </Button>
+              ></Button>
             </InputGroupItem>
           </InputGroup>
           {index === fields.length - 1 && (
             <Button
+              icon={<PlusCircleIcon />}
               variant={ButtonVariant.link}
               onClick={append}
               tabIndex={-1}
@@ -130,7 +130,7 @@ export const MultiLineInput = ({
               data-testid={`${name}-addValue`}
               isDisabled={!value || isDisabled}
             >
-              <PlusCircleIcon /> {t(addButtonLabel || "add")}
+              {t(addButtonLabel || "add")}
             </Button>
           )}
         </Fragment>

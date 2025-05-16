@@ -8,12 +8,10 @@ import {
   Button,
   ButtonVariant,
   Form,
-  Modal,
-  ModalVariant,
-  Text,
-  TextContent,
+  Content,
 } from "@patternfly/react-core";
 import { FormProvider, useForm, useFormContext } from "react-hook-form";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import { useTranslation } from "react-i18next";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { StoreSettings } from "./StoreSettings";
@@ -61,7 +59,7 @@ export const KeyForm = ({
   ];
 
   return (
-    <Form className="pf-v5-u-pt-lg">
+    <Form className="pf-v6-u-pt-lg">
       <SelectControl
         name="format"
         label={t("archiveFormat")}
@@ -145,9 +143,9 @@ export const GenerateKeyDialog = ({
         </Button>,
       ]}
     >
-      <TextContent>
-        <Text>{t("generateKeysDescription")}</Text>
-      </TextContent>
+      <Content>
+        <Content component="p">{t("generateKeysDescription")}</Content>
+      </Content>
       <FormProvider {...form}>
         <KeyForm />
       </FormProvider>

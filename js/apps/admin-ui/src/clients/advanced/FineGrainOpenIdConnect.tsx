@@ -69,7 +69,7 @@ export const FineGrainOpenIdConnect = ({
         label={t("useRfc9068AccessTokenType")}
         fieldId="useRfc9068AccessTokenType"
         hasNoPaddingTop
-        labelIcon={
+        labelHelp={
           <HelpItem
             helpText={t("useRfc9068AccessTokenTypeHelp")}
             fieldLabelId="useRfc9068AccessTokenType"
@@ -86,7 +86,6 @@ export const FineGrainOpenIdConnect = ({
             <Switch
               id="useRfc9068AccessTokenType"
               label={t("on")}
-              labelOff={t("off")}
               isChecked={field.value === "true"}
               onChange={(_event, value) => field.onChange(value.toString())}
               aria-label={t("useRfc9068AccessTokenType")}
@@ -220,7 +219,7 @@ export const FineGrainOpenIdConnect = ({
       <FormGroup
         label={t("validRequestURIs")}
         fieldId="validRequestURIs"
-        labelIcon={
+        labelHelp={
           <HelpItem
             helpText={t("validRequestURIsHelp")}
             fieldLabelId="validRequestURIs"

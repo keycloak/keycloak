@@ -57,7 +57,7 @@ export default function CreateFlow() {
   return (
     <>
       <ViewHeader titleKey="createFlow" subKey="authenticationCreateFlowHelp" />
-      <PageSection variant="light">
+      <PageSection hasBodyWrapper={false}>
         <FormProvider {...form}>
           <FormAccess
             isHorizontal

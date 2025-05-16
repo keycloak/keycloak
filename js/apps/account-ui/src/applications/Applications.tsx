@@ -96,21 +96,21 @@ export const Applications = () => {
                 <DataListCell
                   key="applications-list-client-id-header"
                   width={2}
-                  className="pf-v5-u-pt-md"
+                  className="pf-v6-u-pt-md"
                 >
                   <strong>{t("name")}</strong>
                 </DataListCell>,
                 <DataListCell
                   key="applications-list-app-type-header"
                   width={2}
-                  className="pf-v5-u-pt-md"
+                  className="pf-v6-u-pt-md"
                 >
                   <strong>{t("applicationType")}</strong>
                 </DataListCell>,
                 <DataListCell
                   key="applications-list-status"
                   width={2}
-                  className="pf-v5-u-pt-md"
+                  className="pf-v6-u-pt-md"
                 >
                   <strong>{t("status")}</strong>
                 </DataListCell>,
@@ -125,7 +125,7 @@ export const Applications = () => {
             data-testid="applications-list-item"
             isExpanded={application.open}
           >
-            <DataListItemRow className="pf-v5-u-align-items-center">
+            <DataListItemRow className="pf-v6-u-align-items-center">
               <DataListToggle
                 onClick={() => toggleOpen(application.clientId)}
                 isExpanded={application.open}
@@ -133,12 +133,13 @@ export const Applications = () => {
                 aria-controls={`content-${application.clientId}`}
               />
               <DataListItemCells
-                className="pf-v5-u-align-items-center"
+                className="pf-v6-u-align-items-center"
                 dataListCells={[
                   <DataListCell width={2} key={`client${application.clientId}`}>
                     {application.effectiveUrl && (
                       <Button
-                        className="pf-v5-u-pl-0 title-case"
+                        icon={<ExternalLinkAltIcon />}
+                        className="pf-v6-u-pl-0 title-case"
                         component="a"
                         variant="link"
                         onClick={() => window.open(application.effectiveUrl)}
@@ -147,7 +148,6 @@ export const Applications = () => {
                           t,
                           application.clientName || application.clientId,
                         )}{" "}
-                        <ExternalLinkAltIcon />
                       </Button>
                     )}
                     {!application.effectiveUrl && (
@@ -177,7 +177,7 @@ export const Applications = () => {
 
             <DataListContent
               id={`content-${application.clientId}`}
-              className="pf-v5-u-pl-4xl"
+              className="pf-v6-u-pl-4xl"
               aria-label={t("applicationDetails", {
                 clientId: application.clientId,
               })}

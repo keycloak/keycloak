@@ -189,7 +189,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
   }
 
   return (
-    <PageSection>
+    <PageSection hasBodyWrapper={false}>
       <FormProvider {...form}>
         <Panel>
           <PanelHeader>
@@ -237,7 +237,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
               <FormGroup
                 label={t("applyToResourceType")}
                 fieldId="applyToResourceType"
-                labelIcon={
+                labelHelp={
                   <HelpItem
                     helpText={t("applyToResourceTypeHelp")}
                     fieldLabelId="applyToResourceType"
@@ -247,7 +247,6 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                 <Switch
                   id="applyToResource-switch"
                   label={t("on")}
-                  labelOff={t("off")}
                   isChecked={applyToResourceType}
                   onChange={(_event, val) => setApplyToResourceType(val)}
                   aria-label={t("applyToResourceType")}
@@ -257,7 +256,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                 <FormGroup
                   label={t("resourcesAndScopes")}
                   id="resourcesAndScopes"
-                  labelIcon={
+                  labelHelp={
                     <HelpItem
                       helpText={t("contextualAttributesHelp")}
                       fieldLabelId={`resourcesAndScopes`}
@@ -302,7 +301,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                 <FormGroup
                   label={t("contextualAttributes")}
                   id="contextualAttributes"
-                  labelIcon={
+                  labelHelp={
                     <HelpItem
                       helpText={t("contextualAttributesHelp")}
                       fieldLabelId={`contextualAttributes`}
@@ -323,7 +322,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
           <Button
             data-testid="authorization-eval"
             id="authorization-eval"
-            className="pf-v5-u-mr-md"
+            className="pf-v6-u-mr-md"
             isDisabled={!isValid}
             onClick={() => evaluate()}
           >
@@ -332,7 +331,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
           <Button
             data-testid="authorization-revert"
             id="authorization-revert"
-            className="pf-v5-u-mr-md"
+            className="pf-v6-u-mr-md"
             variant="link"
             onClick={() => reset()}
           >
