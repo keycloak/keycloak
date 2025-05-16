@@ -183,7 +183,15 @@ public class GroupResource {
         }
 
         return paginatedStream(stream, first, max)
-            .map(g -> GroupUtils.populateSubGroupCount(g, GroupUtils.toRepresentation(auth.groups(), g, !briefRepresentation)));
+            .map(g -> {
+                GroupRepresentation rep = GroupUtils.toRepresentation(auth.groups(), g, !briefRepresentation);
+
+                if (briefRepresentation) {
+                    return rep;
+                }
+
+                return GroupUtils.populateSubGroupCount(g, rep);
+            });
     }
 
     /**
