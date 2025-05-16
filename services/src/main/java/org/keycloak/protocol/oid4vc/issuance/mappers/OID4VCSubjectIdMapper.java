@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oid4vc.issuance.mappers;
 
+import org.apache.commons.collections4.ListUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
@@ -39,13 +40,12 @@ import java.util.UUID;
 public class OID4VCSubjectIdMapper extends OID4VCMapper {
 
     public static final String MAPPER_ID = "oid4vc-subject-id-mapper";
-    public static final String ID_KEY = "subjectIdProperty";
 
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = new ArrayList<>();
 
     static {
         ProviderConfigProperty idPropertyNameConfig = new ProviderConfigProperty();
-        idPropertyNameConfig.setName(ID_KEY);
+        idPropertyNameConfig.setName(CLAIM_NAME);
         idPropertyNameConfig.setLabel("ID Property Name");
         idPropertyNameConfig.setHelpText("Name of the property to contain the id.");
         idPropertyNameConfig.setDefaultValue("id");
@@ -58,12 +58,16 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
         return CONFIG_PROPERTIES;
     }
 
+    @Override
+    public List<String> getMetadataAttributePath() {
+        return ListUtils.union(getAttributePrefix(), List.of("id"));
+    }
+
     public static ProtocolMapperModel create(String name, String subjectId) {
         var mapperModel = new ProtocolMapperModel();
         mapperModel.setName(name);
         Map<String, String> configMap = new HashMap<>();
-        configMap.put(ID_KEY, subjectId);
-        configMap.put(SUPPORTED_CREDENTIALS_KEY, "VerifiableCredential");
+        configMap.put(CLAIM_NAME, subjectId);
         mapperModel.setConfig(configMap);
         mapperModel.setProtocol(OID4VCLoginProtocolFactory.PROTOCOL_ID);
         mapperModel.setProtocolMapper(MAPPER_ID);
@@ -77,7 +81,11 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
 
     @Override
     public void setClaimsForSubject(Map<String, Object> claims, UserSessionModel userSessionModel) {
-        claims.put("id", mapperModel.getConfig().getOrDefault(ID_KEY, String.format("urn:uuid:%s", UUID.randomUUID())));
+        List<String> attributePath = getMetadataAttributePath();
+        String propertyName = attributePath.get(attributePath.size() - 1);
+        claims.put(propertyName,
+                   mapperModel.getConfig().getOrDefault(OID4VCMapper.CLAIM_NAME,
+                                                        String.format("urn:uuid:%s", UUID.randomUUID())));
     }
 
     @Override
