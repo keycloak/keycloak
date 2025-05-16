@@ -128,13 +128,18 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         String cNonce = getCNonce();
         String token = getBearerToken(oauth, client, sdJwtTypeCredentialClientScope.getName());
 
+        final String clientScopeString = toJsonString(sdJwtTypeCredentialClientScope);
+
         try {
             withCausePropagation(() -> {
                 testingClient.server(TEST_REALM_NAME).run((session -> {
                     JwtProof proof = new JwtProof()
                             .setJwt(generateInvalidJwtProof(getCredentialIssuer(session), cNonce));
 
-                    testRequestTestCredential(session, sdJwtTypeCredentialClientScope, token, proof);
+                    ClientScopeRepresentation clientScope = fromJsonString(clientScopeString,
+                                                                           ClientScopeRepresentation.class);
+
+                    testRequestTestCredential(session, clientScope, token, proof);
                 }));
             });
             Assert.fail("Should have thrown an exception");
@@ -254,7 +259,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         CredentialResponse credentialResponseVO = JsonSerialization.mapper.convertValue(credentialResponse.getEntity(),
                                                                                         CredentialResponse.class);
         new TestCredentialResponseHandler(sdJwtCredentialVct).handleCredentialResponse(credentialResponseVO,
-                                                                                       sdJwtTypeCredentialClientScope);
+                                                                                       clientScope);
 
         // Get the credential from the credentials array
         return SdJwtVP.of(credentialResponseVO.getCredentials().get(0).getCredential().toString());
