@@ -34,6 +34,8 @@ import java.util.stream.Stream;
  */
 public interface RealmModel extends RoleContainerModel {
 
+    public static final String C_NONE_LIFETIME_IN_SECONDS = "vc.c-nonce-lifetime-seconds";
+
     Comparator<RealmModel> COMPARE_BY_NAME = Comparator.comparing(RealmModel::getName);
 
     interface RealmCreationEvent extends ProviderEvent {

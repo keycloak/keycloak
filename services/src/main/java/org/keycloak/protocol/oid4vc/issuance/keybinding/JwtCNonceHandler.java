@@ -19,7 +19,6 @@
 package org.keycloak.protocol.oid4vc.issuance.keybinding;
 
 import jakarta.annotation.Nullable;
-import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.UriInfo;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
@@ -59,25 +58,29 @@ import java.util.Random;
  */
 public class JwtCNonceHandler implements CNonceHandler {
 
+    public static final String SOURCE_ENDPOINT = "source_endpoint";
+
     public static final int NONCE_DEFAULT_LENGTH = 50;
 
     public static final int NONCE_LENGTH_RANDOM_OFFSET = 15;
 
     private static final Logger logger = LoggerFactory.getLogger(JwtCNonceHandler.class);
 
-    private KeycloakSession keycloakSession;
+    private final KeycloakSession keycloakSession;
+
+    private final KeyWrapper signingKey;
 
     public JwtCNonceHandler(KeycloakSession keycloakSession) {
         this.keycloakSession = keycloakSession;
+        this.signingKey = selectSigningKey(keycloakSession.getContext().getRealm());
     }
 
     @Override
     public String buildCNonce(List<String> audiences, Map<String, Object> additionalDetails) {
-        UriInfo frontendUriInfo = keycloakSession.getContext().getUri(UrlType.FRONTEND);
         RealmModel realm = keycloakSession.getContext().getRealm();
-        final String issuer = Urls.realmIssuer(frontendUriInfo.getBaseUri(), realm.getName());
+        final String issuer = OID4VCIssuerWellKnownProvider.getIssuer(keycloakSession.getContext());
         // TODO discussion about the attribute name to use
-        final Integer nonceLifetimeMillis = realm.getAttribute("oid4vc.nonce-lifetime-seconds", 60);
+        final Integer nonceLifetimeMillis = realm.getAttribute(RealmModel.C_NONE_LIFETIME_IN_SECONDS, 60);
         audiences = Optional.ofNullable(audiences).orElseGet(Collections::emptyList);
         final Instant now = Instant.now();
         final long expiresAt = now.plus(nonceLifetimeMillis, ChronoUnit.SECONDS).getEpochSecond();
@@ -95,7 +98,6 @@ public class JwtCNonceHandler implements CNonceHandler {
             });
         });
 
-        KeyWrapper signingKey = selectSigningKey(realm);
         SignatureProvider signatureProvider = keycloakSession.getProvider(SignatureProvider.class,
                                                                           signingKey.getAlgorithm());
         SignatureSignerContext signatureSignerContext = signatureProvider.signer(signingKey);
@@ -103,34 +105,41 @@ public class JwtCNonceHandler implements CNonceHandler {
     }
 
     @Override
-    public void verifyCNonce(String cNonce, List<String> audiences, @Nullable Map<String, Object> additionalDetails) {
+    public void verifyCNonce(String cNonce, List<String> audiences, @Nullable Map<String, Object> additionalDetails)
+            throws VerificationException {
         if (cNonce == null) {
-            throw new BadRequestException("c_nonce is required if proof of possession is present");
+            throw new VerificationException("c_nonce is required");
         }
-        RealmModel realm = keycloakSession.getContext().getRealm();
-        KeyWrapper signingKey = keycloakSession.keys().getActiveKey(realm, KeyUse.SIG, Algorithm.ES256);
         TokenVerifier<JsonWebToken> verifier = TokenVerifier.create(cNonce, JsonWebToken.class);
         KeycloakContext keycloakContext = keycloakSession.getContext();
         List<TokenVerifier.Predicate<JsonWebToken>> verifiers = //
                 new ArrayList<>(List.of(jwt -> {
                                             String expectedIssuer = OID4VCIssuerWellKnownProvider.getIssuer(keycloakContext);
-                                            return expectedIssuer.equals(jwt.getIssuer());
+                                            if (!expectedIssuer.equals(jwt.getIssuer())) {
+                                                String message = String.format(
+                                                    "c_nonce issuer did not match: %s(expected) != %s(actual)",
+                                                    expectedIssuer, jwt.getIssuer());
+                                                throw new VerificationException(message);
+                                            }
+                                            return true;
                                         }, jwt -> {
                                             List<String> actualValue = Optional.ofNullable(jwt.getAudience())
                                                                                .map(Arrays::asList)
                                                                                .orElse(List.of());
                                             return checkAttributeEquality("aud", audiences, actualValue);
-                                        }, jwt -> {
-                                            List<String> actualValue = Optional.ofNullable(jwt.getAudience())
-                                                                               .map(Arrays::asList)
-                                                                               .orElse(List.of());
-                                            return checkAttributeEquality("aud", audiences, actualValue);
-                                        }, jwt -> {
-                                            String nonce = Optional.ofNullable(jwt.getOtherClaims())
-                                                                   .map(m -> String.valueOf(m.get("nonce")))
+                                        },jwt -> {
+                                            String salt = Optional.ofNullable(jwt.getOtherClaims())
+                                                                   .map(m -> String.valueOf(m.get("salt")))
                                                                    .orElse(null);
-                                            return Optional.ofNullable(nonce).map(String::length).orElse(0)
-                                                    >= NONCE_DEFAULT_LENGTH;
+                                            final int saltLength = Optional.ofNullable(salt).map(String::length)
+                                                                            .orElse(0);
+                                            if (saltLength < NONCE_DEFAULT_LENGTH){
+                                                String message = String.format(
+                                                    "c_nonce-salt is not of expected length: %s(actual) < %s(expected)",
+                                                    saltLength, NONCE_DEFAULT_LENGTH);
+                                                throw new VerificationException(message);
+                                            }
+                                            return true;
                                         },
                                         jwt -> {
                                             Long exp = jwt.getExp();
@@ -158,18 +167,14 @@ public class JwtCNonceHandler implements CNonceHandler {
             });
         });
         verifier.withChecks(verifiers.toArray(new TokenVerifier.Predicate[0]));
-        try {
-            SignatureVerifierContext signatureVerifier = keycloakSession.getProvider(SignatureProvider.class,
-                                                                                     signingKey.getAlgorithm())
-                                                                        .verifier(signingKey);
-            verifier.verifierContext(signatureVerifier);
-            verifier.verify();
-        } catch (VerificationException e) {
-            throw new BadRequestException(e);
-        }
+        SignatureVerifierContext signatureVerifier = keycloakSession.getProvider(SignatureProvider.class,
+                                                                                 signingKey.getAlgorithm())
+                                                                    .verifier(signingKey);
+        verifier.verify(); // throws a VerificationException on failure
+        verifier.verifierContext(signatureVerifier);
     }
 
-    private boolean checkAttributeEquality(String key, Object object, Object actualValue) throws VerificationException {
+    protected boolean checkAttributeEquality(String key, Object object, Object actualValue) throws VerificationException {
         boolean isEqual = Objects.equals(object, actualValue);
         if (!isEqual) {
             String message = String.format(
