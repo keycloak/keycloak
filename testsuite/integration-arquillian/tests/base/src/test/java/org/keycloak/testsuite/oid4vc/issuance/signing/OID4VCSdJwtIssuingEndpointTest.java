@@ -22,6 +22,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.collections4.map.HashedMap;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -36,10 +37,12 @@ import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.SdJwtCredentialBuilder;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.CNonceHandler;
+import org.keycloak.protocol.oid4vc.issuance.keybinding.JwtCNonceHandler;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCGeneratedIdMapper;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
@@ -49,7 +52,6 @@ import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.JwtProof;
 import org.keycloak.protocol.oid4vc.model.Proof;
-import org.keycloak.protocol.oid4vc.model.ProofType;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.JsonWebToken;
@@ -133,9 +135,10 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                         CNonceHandler cNonceHandler = session.getProvider(CNonceHandler.class);
                         final String nonceEndpoint = OID4VCIssuerWellKnownProvider.getNonceEndpoint(session.getContext());
                         // creates a cNonce with missing data
-                        String cNonce = cNonceHandler.buildCNonce(null, Map.of("source_endpoint", nonceEndpoint));
-                        Proof proof = new Proof().setProofType(ProofType.JWT)
-                                                 .setJwt(generateJwtProof(getCredentialIssuer(session), cNonce));
+                        String cNonce = cNonceHandler.buildCNonce(null,
+                                                                  Map.of(JwtCNonceHandler.SOURCE_ENDPOINT,
+                                                                         nonceEndpoint));
+                        Proof proof = new JwtProof().setJwt(generateJwtProof(getCredentialIssuer(session), cNonce));
 
                        testRequestTestCredential(session, token, proof);
                     })));
@@ -145,7 +148,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                                         c_nonce: expected 'aud' to be equal to \
                                         '[https://localhost:8543/auth/realms/test/protocol/oid4vc/credential]' but \
                                         actual value was '[]'""",
-                                ex.getCause().getMessage());
+                                ExceptionUtils.getRootCause(ex).getMessage());
         }
     }
 
@@ -161,8 +164,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                                 OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(session.getContext());
                         // creates a cNonce with missing data
                         String cNonce = cNonceHandler.buildCNonce(List.of(credentialsEndpoint), null);
-                        Proof proof = new Proof().setProofType(ProofType.JWT)
-                                                 .setJwt(generateJwtProof(getCredentialIssuer(session), cNonce));
+                        Proof proof = new JwtProof().setJwt(generateJwtProof(getCredentialIssuer(session), cNonce));
 
                        testRequestTestCredential(session, token, proof);
                     })));
@@ -172,7 +174,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                                         c_nonce: expected 'source_endpoint' to be equal to \
                                         'https://localhost:8543/auth/realms/test/protocol/oid4vc/nonce' but \
                                         actual value was 'null'""",
-                                ex.getCause().getMessage());
+                                ExceptionUtils.getRootCause(ex).getMessage());
         }
     }
 
@@ -189,21 +191,20 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                         final String nonceEndpoint = OID4VCIssuerWellKnownProvider.getNonceEndpoint(session.getContext());
                         try {
                             // make the exp-value negative to set the exp-time in the past
-                            session.getContext().getRealm().setAttribute("oid4vc.nonce-lifetime-seconds", -1);
+                            session.getContext().getRealm().setAttribute(RealmModel.C_NONE_LIFETIME_IN_SECONDS, -1);
                             String cNonce = cNonceHandler.buildCNonce(List.of(credentialsEndpoint),
-                                                                      Map.of("source_endpoint", nonceEndpoint));
-                            Proof proof = new Proof().setProofType(ProofType.JWT)
-                                                     .setJwt(generateJwtProof(getCredentialIssuer(session), cNonce));
+                                                                      Map.of(JwtCNonceHandler.SOURCE_ENDPOINT, nonceEndpoint));
+                            Proof proof = new JwtProof().setJwt(generateJwtProof(getCredentialIssuer(session), cNonce));
 
                            testRequestTestCredential(session, token, proof);
                         } finally {
                             // make sure other tests are not affected by the changed realm-attribute
-                            session.getContext().getRealm().removeAttribute("oid4vc.nonce-lifetime-seconds");
+                            session.getContext().getRealm().removeAttribute(RealmModel.C_NONE_LIFETIME_IN_SECONDS);
                         }
                     })));
             Assert.fail("Should have thrown an exception");
         } catch (BadRequestException ex) {
-            String message = ex.getCause().getMessage();
+            String message = ExceptionUtils.getRootCause(ex).getMessage();
             Assert.assertTrue(String.format("Message '%s' should match regular expression", message),
                               message.matches("c_nonce not valid: \\d+\\(exp\\) < \\d+\\(now\\)"));
         }

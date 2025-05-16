@@ -29,6 +29,7 @@ import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.CNonceHandler;
+import org.keycloak.protocol.oid4vc.issuance.keybinding.JwtCNonceHandler;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
@@ -55,7 +56,7 @@ public class NonceEndpointTest extends OID4VCIssuerEndpointTest {
         UriBuilder builder = UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT);
         oid4vcUri = RealmsResource.protocolUrl(builder).build(AbstractTestRealmKeycloakTest.TEST_REALM_NAME,
                                                               OID4VCLoginProtocolFactory.PROTOCOL_ID);
-        String nonceUrl = String.format("%s/%s", oid4vcUri.toString(), OID4VCIssuerEndpoint.NONCE_PATH);
+        String nonceUrl = String.format("%s/%s", oid4vcUri, OID4VCIssuerEndpoint.NONCE_PATH);
 
         Assert.assertNotNull(cNonce);
         // verify nonce content
@@ -67,11 +68,11 @@ public class NonceEndpointTest extends OID4VCIssuerEndpointTest {
             Assert.assertNotNull(jwsHeader.getKeyId());
 
             JsonWebToken nonce = verifier.getToken();
-            String credentialsUrl = String.format("%s/%s", oid4vcUri.toString(), OID4VCIssuerEndpoint.CREDENTIAL_PATH);
+            String credentialsUrl = String.format("%s/%s", oid4vcUri, OID4VCIssuerEndpoint.CREDENTIAL_PATH);
             Assert.assertEquals(List.of(credentialsUrl), Arrays.asList(nonce.getAudience()));
             Assert.assertEquals(baseUri.toString(), nonce.getIssuer());
-            Assert.assertEquals(nonceUrl, nonce.getOtherClaims().get("source_endpoint"));
-            Assert.assertNotNull(nonce.getOtherClaims().get("nonce"));
+            Assert.assertEquals(nonceUrl, nonce.getOtherClaims().get(JwtCNonceHandler.SOURCE_ENDPOINT));
+            Assert.assertNotNull(nonce.getOtherClaims().get("salt"));
         }
 
         // do internal nonce verification by using cNonceHandler
@@ -81,10 +82,9 @@ public class NonceEndpointTest extends OID4VCIssuerEndpointTest {
             cNonceHandler.verifyCNonce(cNonce,
                                        List.of(OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(
                                                keycloakContext)),
-                                       Map.of("source_endpoint",
+                                       Map.of(JwtCNonceHandler.SOURCE_ENDPOINT,
                                               OID4VCIssuerWellKnownProvider.getNonceEndpoint(keycloakContext)));
         });
-
     }
 
 }

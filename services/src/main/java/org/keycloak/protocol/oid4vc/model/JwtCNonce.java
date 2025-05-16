@@ -47,10 +47,10 @@ public class JwtCNonce {
     private Long expiresAt;
 
     /**
-     * cryptographically strong random string that serves as salt for the predictable c_nonce values
+     * cryptographically strong random string that serves as salt for the otherwise predictable c_nonce values
      */
-    @JsonProperty("nonce")
-    private String nonce;
+    @JsonProperty("salt")
+    private String salt;
 
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<>();
@@ -107,12 +107,12 @@ public class JwtCNonce {
         return this;
     }
 
-    public String getNonce() {
-        return nonce;
+    public String getSalt() {
+        return salt;
     }
 
     public JwtCNonce nonce(String nonce) {
-        this.nonce = nonce;
+        this.salt = nonce;
         return this;
     }
 }

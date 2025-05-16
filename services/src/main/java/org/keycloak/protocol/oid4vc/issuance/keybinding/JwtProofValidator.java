@@ -186,7 +186,8 @@ public class JwtProofValidator extends AbstractProofValidator {
                 });
     }
 
-    private void validateProofPayload(VCIssuanceContext vcIssuanceContext, AccessToken proofPayload) throws VCIssuerException {
+    private void validateProofPayload(VCIssuanceContext vcIssuanceContext, AccessToken proofPayload)
+            throws VCIssuerException, VerificationException {
         // azp is the id of the client, as mentioned in the access token used to request the credential.
         // Token provided from user is obtained with a clientId that support the oidc login protocol.
         // oid4vci client doesn't. But it is the client needed at the credential endpoint.
@@ -213,7 +214,7 @@ public class JwtProofValidator extends AbstractProofValidator {
         CNonceHandler cNonceHandler = keycloakSession.getProvider(CNonceHandler.class);
         cNonceHandler.verifyCNonce(proofPayload.getNonce(),
                                    List.of(OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(keycloakContext)),
-                                   Map.of("source_endpoint",
+                                   Map.of(JwtCNonceHandler.SOURCE_ENDPOINT,
                                           OID4VCIssuerWellKnownProvider.getNonceEndpoint(keycloakContext)));
     }
 }

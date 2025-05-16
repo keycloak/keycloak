@@ -19,6 +19,7 @@
 package org.keycloak.protocol.oid4vc.issuance.keybinding;
 
 import jakarta.annotation.Nullable;
+import org.keycloak.common.VerificationException;
 import org.keycloak.provider.Provider;
 
 import java.util.List;
@@ -29,10 +30,26 @@ import java.util.Map;
  */
 public interface CNonceHandler extends Provider {
 
-
+    /**
+     * used to build a cNonce in any style. For jwt-based cNonces we will additionally require the audience-values that
+     * should be added into the cNonce
+     *
+     * @param audiences         the audiences for jwt-based cNonces
+     * @param additionalDetails additional attributes that might be required to build the cNonce and that are handler
+     *                          specific
+     * @return the cNonce in string representation
+     */
     public String buildCNonce(List<String> audiences, @Nullable Map<String, Object> additionalDetails);
 
-    public void verifyCNonce(String cNonce, List<String> audiences, @Nullable Map<String, Object> additionalDetails);
+    /**
+     * must verify the validity of a cNonce value that has been issued by the {@link #buildCNonce(List, Map)} method.
+     *
+     * @param cNonce            the cNonce to validate
+     * @param audiences         the expected audiences for jwt-based cNonces
+     * @param additionalDetails additional attributes that might be required to build the cNonce and that are handler
+     *                          specific
+     */
+    public void verifyCNonce(String cNonce, List<String> audiences, @Nullable Map<String, Object> additionalDetails) throws VerificationException;
 
     @Override
     default void close() {
