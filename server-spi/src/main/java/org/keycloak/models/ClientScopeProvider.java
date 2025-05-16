@@ -86,6 +86,7 @@ public interface ClientScopeProvider extends Provider, ClientScopeLookupProvider
      *
      * @param realm     Realm.
      * @param searchMap a key-value map that holds the attribute names and values to search for.
+     * @param useOr     If the search-params should be combined with or-expressions or and-expressions
      */
-    Stream<ClientScopeModel> getClientScopesByAttributes(RealmModel realm, Map<String, String> searchMap);
+    Stream<ClientScopeModel> getClientScopesByAttributes(RealmModel realm, Map<String, String> searchMap, boolean useOr);
 }

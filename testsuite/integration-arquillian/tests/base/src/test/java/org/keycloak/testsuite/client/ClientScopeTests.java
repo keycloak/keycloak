@@ -26,6 +26,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.models.CredentialScopeModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -153,7 +154,7 @@ public class ClientScopeTests extends AbstractKeycloakTest {
         ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
         clientScope.setName("test-client-scope");
         clientScope.setDescription("test-client-scope-description");
-        clientScope.setProtocol("oid4vc");
+        clientScope.setProtocol(CredentialScopeModel.OID4VC_PROTOCOL);
         clientScope.setAttributes(Map.of("test-attribute", "test-value"));
 
         final RealmResource testRealm = adminClient.realm(realmName);

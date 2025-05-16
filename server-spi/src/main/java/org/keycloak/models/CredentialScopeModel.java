@@ -33,6 +33,15 @@ import java.util.stream.Stream;
  */
 public class CredentialScopeModel implements ClientScopeModel {
 
+    public static final String OID4VC_PROTOCOL = "oid4vc";
+
+    public static final String SD_JWT_VISIBLE_CLAIMS_DEFAULT = "id,iat,nbf,exp,jti";
+    public static final int SD_JWT_DECOYS_DEFAULT = 10;
+    public static final String FORMAT_DEFAULT = "vc+sd-jwt";
+    public static final String HASH_ALGORITHM_DEFAULT = "SHA-256";
+    public static final String TOKEN_TYPE_DEFAULT = "JWS";
+    public static final int EXPIRY_IN_SECONDS_DEFAULT = 31536000;
+
     /**
      * the credential configuration id as provided in the metadata endpoint
      */
@@ -63,7 +72,7 @@ public class CredentialScopeModel implements ClientScopeModel {
      * if the credential is only meant for specific cryptographic binding algorithms the global default list can be
      * overridden here. The global default list is retrieved from the available keys in the realm.
      */
-    public static final String CRYPTO_ALG_VALUES_SUPPORTED = "vc.cryptographic_binding_methods_supported";
+    public static final String CRYPTOGRAPHIC_BINDING_METHODS = "vc.cryptographic_binding_methods_supported";
 
     /**
      * an optional configuration that can be used to select a specific key for signing the credential
@@ -102,7 +111,7 @@ public class CredentialScopeModel implements ClientScopeModel {
 
     public CredentialScopeModel(ClientScopeModel clientScope) {
         this.clientScope = clientScope;
-        assert "oid4vc".equals(clientScope.getProtocol());
+        assert OID4VC_PROTOCOL.equals(clientScope.getProtocol());
     }
 
     public String getIssuerDid() {
@@ -118,63 +127,65 @@ public class CredentialScopeModel implements ClientScopeModel {
     }
 
     public String getCredentialConfigurationId() {
-        return clientScope.getAttribute(CONFIGURATION_ID);
+        return Optional.ofNullable(clientScope.getAttribute(CONFIGURATION_ID)).orElse(getName());
     }
 
     public void setCredentialConfigurationId(String credentialConfigurationId) {
-        clientScope.setAttribute(CONFIGURATION_ID, credentialConfigurationId);
+        clientScope.setAttribute(CONFIGURATION_ID, Optional.ofNullable(credentialConfigurationId).orElse(getName()));
     }
 
     public String getCredentialIdentifier() {
-        return clientScope.getAttribute(CREDENTIAL_IDENTIFIER);
+        return Optional.ofNullable(clientScope.getAttribute(CREDENTIAL_IDENTIFIER)).orElse(getName());
     }
 
     public void setCredentialIdentifier(String credentialIdentifier) {
-        clientScope.setAttribute(CREDENTIAL_IDENTIFIER, credentialIdentifier);
+        clientScope.setAttribute(CREDENTIAL_IDENTIFIER, Optional.ofNullable(credentialIdentifier).orElse(getName()));
     }
 
     public String getFormat() {
-        return Optional.ofNullable(clientScope.getAttribute(FORMAT)).orElse("vc+sd-jwt");
+        return Optional.ofNullable(clientScope.getAttribute(FORMAT)).orElse(FORMAT_DEFAULT);
     }
 
     public void setFormat(String credentialFormat) {
-        clientScope.setAttribute(FORMAT, credentialFormat);
+        clientScope.setAttribute(FORMAT, Optional.ofNullable(credentialFormat).orElse(FORMAT_DEFAULT));
     }
 
     public Integer getExpiryInSeconds() {
-        return Optional.ofNullable(clientScope.getAttribute(EXPIRY_IN_SECONDS)).map(Integer::parseInt).orElse(null);
+        return Optional.ofNullable(clientScope.getAttribute(EXPIRY_IN_SECONDS)).map(Integer::parseInt)
+                       .orElse(EXPIRY_IN_SECONDS_DEFAULT);
     }
 
     public void setExpiryInSeconds(Integer expiryInSeconds) {
         clientScope.setAttribute(EXPIRY_IN_SECONDS,
-                                 Optional.ofNullable(expiryInSeconds).map(String::valueOf).orElse(null));
+                                 Optional.ofNullable(expiryInSeconds).map(String::valueOf)
+                                         .orElse(String.valueOf(EXPIRY_IN_SECONDS_DEFAULT)));
     }
 
     public int getSdJwtNumberOfDecoys() {
-        final int defaultValueForDecoys = 10;
         return Optional.ofNullable(clientScope.getAttribute(SD_JWT_NUMBER_OF_DECOYS)).map(Integer::parseInt)
-                       .orElse(defaultValueForDecoys);
+                       .orElse(SD_JWT_DECOYS_DEFAULT);
     }
 
     public void setSdJwtNumberOfDecoys(Integer sdJwtNumberOfDecoys) {
         clientScope.setAttribute(SD_JWT_NUMBER_OF_DECOYS,
-                                 Optional.ofNullable(sdJwtNumberOfDecoys).map(String::valueOf).orElse(null));
+                                 Optional.ofNullable(sdJwtNumberOfDecoys).map(String::valueOf)
+                                         .orElse(String.valueOf(SD_JWT_DECOYS_DEFAULT)));
     }
 
     public String getVct() {
-        return clientScope.getAttribute(VCT);
+        return Optional.ofNullable(clientScope.getAttribute(VCT)).orElse(getName());
     }
 
     public void setVct(String vct) {
-        clientScope.setAttribute(VCT, vct);
+        clientScope.setAttribute(VCT, Optional.ofNullable(vct).orElse(getName()));
     }
 
     public String getTokenJwsType() {
-        return Optional.ofNullable(clientScope.getAttribute(TOKEN_JWS_TYPE)).orElse("JWS");
+        return Optional.ofNullable(clientScope.getAttribute(TOKEN_JWS_TYPE)).orElse(TOKEN_TYPE_DEFAULT);
     }
 
     public void setTokenJwsType(String tokenJwsType) {
-        clientScope.setAttribute(TOKEN_JWS_TYPE, tokenJwsType);
+        clientScope.setAttribute(TOKEN_JWS_TYPE, Optional.ofNullable(tokenJwsType).orElse(TOKEN_TYPE_DEFAULT));
     }
 
     public String getSigningKeyId() {
@@ -186,8 +197,7 @@ public class CredentialScopeModel implements ClientScopeModel {
     }
 
     public String getHashAlgorithm() {
-        final String defaultHashAlgorithm = "SHA-256";
-        return Optional.ofNullable(clientScope.getAttribute(HASH_ALGORITHM)).orElse(defaultHashAlgorithm);
+        return Optional.ofNullable(clientScope.getAttribute(HASH_ALGORITHM)).orElse(HASH_ALGORITHM_DEFAULT);
     }
 
     public void setHashAlgorithm(String hashAlgorithm) {
@@ -198,11 +208,11 @@ public class CredentialScopeModel implements ClientScopeModel {
         return Optional.ofNullable(clientScope.getAttribute(TYPES))
                        .map(s -> s.split(","))
                        .map(Arrays::asList)
-                       .orElse(Collections.emptyList());
+                       .orElse(Collections.singletonList(getName()));
     }
 
     public void setSupportedCredentialTypes(String supportedCredentialTypes) {
-        clientScope.setAttribute(TYPES, supportedCredentialTypes);
+        clientScope.setAttribute(TYPES, Optional.ofNullable(supportedCredentialTypes).orElse(getName()));
     }
 
     public void setSupportedCredentialTypes(List<String> supportedCredentialTypes) {
@@ -213,11 +223,11 @@ public class CredentialScopeModel implements ClientScopeModel {
         return Optional.ofNullable(clientScope.getAttribute(CONTEXTS))
                        .map(s -> s.split(","))
                        .map(Arrays::asList)
-                       .orElse(Collections.emptyList());
+                       .orElse(Collections.singletonList(getName()));
     }
 
     public void setVcContexts(String vcContexts) {
-        clientScope.setAttribute(CONTEXTS, vcContexts);
+        clientScope.setAttribute(CONTEXTS, Optional.ofNullable(vcContexts).orElse(getName()));
     }
 
     public void setVcContexts(List<String> vcContexts) {
@@ -240,31 +250,32 @@ public class CredentialScopeModel implements ClientScopeModel {
                                  String.join(",", signingAlgsSupported));
     }
 
-    public List<String> getCryptoBindingAlgsSupported() {
-        return Optional.ofNullable(clientScope.getAttribute(CRYPTO_ALG_VALUES_SUPPORTED))
+    public List<String> getCryptographicBindingMethods() {
+        return Optional.ofNullable(clientScope.getAttribute(CRYPTOGRAPHIC_BINDING_METHODS))
                        .map(s -> s.split(","))
                        .map(Arrays::asList)
                        .orElse(Collections.emptyList());
     }
 
-    public void setCryptoBindingAlgsSupported(String cryptoBindingAlgsSupported) {
-        clientScope.setAttribute(CRYPTO_ALG_VALUES_SUPPORTED, cryptoBindingAlgsSupported);
+    public void setCryptographicBindingMethods(String cryptographicBindingMethods) {
+        clientScope.setAttribute(CRYPTOGRAPHIC_BINDING_METHODS, cryptographicBindingMethods);
     }
 
-    public void setCryptoBindingAlgsSupported(List<String> cryptoBindingAlgsSupported) {
-        clientScope.setAttribute(CRYPTO_ALG_VALUES_SUPPORTED,
-                                 String.join(",", cryptoBindingAlgsSupported));
+    public void setCryptographicBindingMethods(List<String> cryptographicBindingMethods) {
+        clientScope.setAttribute(CRYPTOGRAPHIC_BINDING_METHODS,
+                                 String.join(",", cryptographicBindingMethods));
     }
 
     public List<String> getSdJwtVisibleClaims() {
         return Optional.ofNullable(clientScope.getAttribute(SD_JWT_VISIBLE_CLAIMS))
                        .map(s -> s.split(","))
                        .map(Arrays::asList)
-                       .orElse(List.of("id", "iat", "nbf", "exp", "jti"));
+                       .orElse(List.of(SD_JWT_VISIBLE_CLAIMS_DEFAULT.split(",")));
     }
 
     public void setSdJwtVisibleClaims(String sdJwtVisibleClaims) {
-        clientScope.setAttribute(SD_JWT_VISIBLE_CLAIMS, sdJwtVisibleClaims);
+        clientScope.setAttribute(SD_JWT_VISIBLE_CLAIMS, Optional.ofNullable(sdJwtVisibleClaims)
+                                                                .orElse(SD_JWT_VISIBLE_CLAIMS_DEFAULT));
     }
 
     public void setSdJwtVisibleClaims(List<String> sdJwtVisibleClaims) {
@@ -397,7 +408,7 @@ public class CredentialScopeModel implements ClientScopeModel {
 
     public Stream<Oid4vcProtocolMapperModel> getOid4vcProtocolMappersStream() {
         return clientScope.getProtocolMappersStream().filter(pm -> {
-            return "oid4vc".equals(pm.getProtocol());
+            return CredentialScopeModel.OID4VC_PROTOCOL.equals(pm.getProtocol());
         }).map(Oid4vcProtocolMapperModel::new);
     }
 
