@@ -396,11 +396,19 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
             EntityDescriptorType o = (EntityDescriptorType) parser.parse(new StringInputStream(spDescriptorString));
             SPSSODescriptorType spDescriptor = o.getChoiceType().get(0).getDescriptors().get(0).getSpDescriptor();
 
+            assertThat(spDescriptor.getSingleLogoutService().size(), is(2));
             assertThat(spDescriptor.getSingleLogoutService().get(0).getBinding().toString(),
                     is(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get()));
+            assertThat(spDescriptor.getSingleLogoutService().get(1).getBinding().toString(),
+                    is(JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get()));
+
+            assertThat(spDescriptor.getAssertionConsumerService().size(), is(3));
             assertThat(spDescriptor.getAssertionConsumerService().get(0).getBinding().toString(),
                     is(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get()));
-
+            assertThat(spDescriptor.getAssertionConsumerService().get(1).getBinding().toString(),
+                    is(JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get()));
+            assertThat(spDescriptor.getAssertionConsumerService().get(2).getBinding().toString(),
+                    is(JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.get()));
         }
     }
 
@@ -419,11 +427,19 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
             EntityDescriptorType o = (EntityDescriptorType) parser.parse(new StringInputStream(spDescriptorString));
             SPSSODescriptorType spDescriptor = o.getChoiceType().get(0).getDescriptors().get(0).getSpDescriptor();
 
+            assertThat(spDescriptor.getSingleLogoutService().size(), is(2));
             assertThat(spDescriptor.getSingleLogoutService().get(0).getBinding().toString(),
                     is(JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get()));
+            assertThat(spDescriptor.getSingleLogoutService().get(1).getBinding().toString(),
+                    is(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get()));
+
+            assertThat(spDescriptor.getAssertionConsumerService().size(), is(3));
             assertThat(spDescriptor.getAssertionConsumerService().get(0).getBinding().toString(),
                     is(JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get()));
-
+            assertThat(spDescriptor.getAssertionConsumerService().get(1).getBinding().toString(),
+                    is(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get()));
+            assertThat(spDescriptor.getAssertionConsumerService().get(2).getBinding().toString(),
+                    is(JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.get()));
         }
     }
 
@@ -437,6 +453,8 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
             EntityDescriptorType o = (EntityDescriptorType) parser.parse(new StringInputStream(spDescriptorString));
             SPSSODescriptorType spDescriptor = o.getChoiceType().get(0).getDescriptors().get(0).getSpDescriptor();
 
+            assertThat(spDescriptor.getSingleLogoutService().size(), is(2));
+            assertThat(spDescriptor.getAssertionConsumerService().size(), is(3));
             assertThat(spDescriptor.getSingleLogoutService().get(0).getBinding().toString(),
                     is(spDescriptor.getAssertionConsumerService().get(0).getBinding().toString()));
 
