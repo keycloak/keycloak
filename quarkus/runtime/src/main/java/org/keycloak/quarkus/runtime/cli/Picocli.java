@@ -360,7 +360,9 @@ public class Picocli {
                         throw new PropertyException("A provider JAR was updated since the last build, please rebuild for this to be fully utilized.");
                     }
                 } else if (newValue != null && !isIgnoredPersistedOption(key)
-                        && isUserModifiable(Configuration.getConfigValue(key))) {
+                        && isUserModifiable(Configuration.getConfigValue(key))
+                        // let quarkus handle this - it's unsupported for direct usage in keycloak
+                        && !key.startsWith(MicroProfileConfigProvider.NS_QUARKUS_PREFIX)) {
                     ignoredBuildTime.add(key);
                 }
             });

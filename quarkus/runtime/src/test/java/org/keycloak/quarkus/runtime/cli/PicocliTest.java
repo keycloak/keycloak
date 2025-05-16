@@ -26,13 +26,18 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Stream;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.quarkus.runtime.Environment;
@@ -601,5 +606,22 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertTrue(Picocli.timestampChanged("12000", "12346"));
         // new is truncated - should not be a change
         assertFalse(Picocli.timestampChanged("12345", "12000"));
+    }
+
+    @Test
+    public void quarkusRuntimeChangeNoError() throws IOException {
+        Path conf = Paths.get("src/test/resources/");
+        Path tmp = Paths.get("target/home-tmp");
+        FileUtils.copyDirectory(conf.toFile(), tmp.toFile());
+        Files.delete(tmp.resolve("conf/quarkus.properties"));
+        Environment.setHomeDir(tmp);
+        try {
+            build("build", "--db=dev-file");
+        } finally {
+            Environment.setHomeDir(conf);
+        }
+
+        var nonRunningPicocli = pseudoLaunch("start", "--optimized", "--http-enabled=true", "--hostname=foo");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
     }
 }
