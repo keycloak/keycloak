@@ -179,6 +179,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Selects a user from his username.");
         addProviderInfo(result, "auth-password-form", "Password Form",
                 "Validates a password from login form.");
+        addProviderInfo(result, "auth-trusted-device", "Trusted Device", "Checks whether the current device is already trusted by user");
         addProviderInfo(result, "conditional-user-role", "Condition - user role",
                 "Flow is executed only if user has the given role.");
         addProviderInfo(result, "conditional-user-configured", "Condition - user configured",
