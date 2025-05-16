@@ -49,6 +49,8 @@ import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.sdjwt.SdJwt;
+import org.keycloak.sdjwt.vp.SdJwtVP;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
@@ -114,7 +116,11 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
 
     @Test
     public void testGetCredentialOfferURI() {
-        String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
+        final String scopeName = jwtTypeCredentialClientScope.getName();
+        final String credentialConfigurationId = jwtTypeCredentialClientScope.getAttributes()
+                                                                             .get(CredentialScopeModel.CONFIGURATION_ID);
+        String token = getBearerToken(oauth, client, scopeName);
+
         testingClient.server(TEST_REALM_NAME).run((session) -> {
             try {
                 AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(
@@ -122,8 +128,6 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 authenticator.setTokenString(token);
                 OID4VCIssuerEndpoint oid4VCIssuerEndpoint = prepareIssuerEndpoint(session, authenticator);
 
-                String credentialConfigurationId = jwtTypeCredentialClientScope.getAttributes()
-                                                                               .get(CredentialScopeModel.CONFIGURATION_ID);
                 Response response = oid4VCIssuerEndpoint.getCredentialOfferURI(credentialConfigurationId,
                                                                                OfferUriType.URI,
                                                                                0,
@@ -266,7 +270,10 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
 
     @Test
     public void testRequestCredentialNoMatchingCredentialBuilder() throws Throwable {
-        String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
+        final String credentialConfigurationId = jwtTypeCredentialClientScope.getAttributes()
+                                                                             .get(CredentialScopeModel.CONFIGURATION_ID);
+        final String scopeName = jwtTypeCredentialClientScope.getName();
+        String token = getBearerToken(oauth, client, scopeName);
 
         try {
             withCausePropagation(() -> {
@@ -278,8 +285,9 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                     // Prepare the issue endpoint with no credential builders.
                     OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator, Map.of());
 
-                    issuerEndpoint.requestCredential(new CredentialRequest()
-                                                             .setCredentialIdentifier(jwtTypeCredentialClientScope.getName()));
+                    CredentialRequest credentialRequest = //
+                            new CredentialRequest().setCredentialConfigurationId(credentialConfigurationId);
+                    issuerEndpoint.requestCredential(credentialRequest);
                 }));
             });
             Assert.fail("Should have thrown an exception");
@@ -307,7 +315,8 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
 
     @Test
     public void testRequestCredential() {
-        String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
+        final String scopeName = jwtTypeCredentialClientScope.getName();
+        String token = getBearerToken(oauth, client, scopeName);
         testingClient
                 .server(TEST_REALM_NAME)
                 .run((session -> {
@@ -315,7 +324,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                     authenticator.setTokenString(token);
                     OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
                     CredentialRequest credentialRequest = new CredentialRequest()
-                            .setCredentialIdentifier(jwtTypeCredentialClientScope.getName());
+                            .setCredentialIdentifier(scopeName);
                     Response credentialResponse = issuerEndpoint.requestCredential(credentialRequest);
                     assertEquals("The credential request should be answered successfully.",
                                  HttpStatus.SC_OK,
@@ -335,9 +344,34 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                                                                   VerifiableCredential.class);
                     assertTrue("The static claim should be set.",
                                credential.getCredentialSubject().getClaims()
-                                         .containsKey(jwtTypeCredentialClientScope.getName()));
+                                         .containsKey(scopeName));
                     assertFalse("Only mappers supported for the requested type should have been evaluated.",
                                 credential.getCredentialSubject().getClaims().containsKey("AnotherCredentialType"));
+                }));
+    }
+
+    @Test
+    public void testRequestCredentialWithConfigurationIdNotSet() {
+        final String scopeName = minimalJwtTypeCredentialClientScope.getName();
+        String token = getBearerToken(oauth, client, scopeName);
+        testingClient
+                .server(TEST_REALM_NAME)
+                .run((session -> {
+                    AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+                    authenticator.setTokenString(token);
+                    OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
+                    CredentialRequest credentialRequest = new CredentialRequest()
+                            .setCredentialIdentifier(scopeName);
+                    Response credentialResponse = issuerEndpoint.requestCredential(credentialRequest);
+                    assertEquals("The credential request should be answered successfully.",
+                                 HttpStatus.SC_OK,
+                                 credentialResponse.getStatus());
+                    assertNotNull("A credential should be responded.", credentialResponse.getEntity());
+                    CredentialResponse credentialResponseVO = JsonSerialization.mapper
+                                                                               .convertValue(credentialResponse.getEntity(),
+                                                                                             CredentialResponse.class);
+                    SdJwtVP sdJwtVP = SdJwtVP.of(credentialResponseVO.getCredential().toString());
+                    assertNotNull("A valid credential string should have been responded", sdJwtVP);
                 }));
     }
 
