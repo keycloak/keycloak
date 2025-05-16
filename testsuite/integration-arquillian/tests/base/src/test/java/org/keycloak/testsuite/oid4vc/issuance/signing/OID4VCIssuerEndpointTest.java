@@ -247,7 +247,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         // Create a new ClientScope if not found
         ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
         clientScope.setName(scopeName);
-        clientScope.setProtocol("oid4vc");
+        clientScope.setProtocol(CredentialScopeModel.OID4VC_PROTOCOL);
         Map<String, String> attributes =
                 new HashMap<>(Map.of(ClientScopeModel.INCLUDE_IN_TOKEN_SCOPE, "true",
                                      CredentialScopeModel.EXPIRY_IN_SECONDS, "15"));

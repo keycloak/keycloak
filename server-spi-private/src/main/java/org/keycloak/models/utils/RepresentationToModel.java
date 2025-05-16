@@ -77,6 +77,7 @@ import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.CredentialScopeModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
@@ -724,11 +725,14 @@ public class RepresentationToModel {
             MigrationUtils.updateProtocolMappers(clientScope);
         }
 
+        addOid4vcClientScopeDefaultAttributes(resourceRep);
+
         if (resourceRep.getAttributes() != null) {
             for (Map.Entry<String, String> entry : resourceRep.getAttributes().entrySet()) {
                 clientScope.setAttribute(entry.getKey(), entry.getValue());
             }
         }
+
 
         return clientScope;
     }
@@ -740,12 +744,33 @@ public class RepresentationToModel {
 
         if (rep.getProtocol() != null) resource.setProtocol(rep.getProtocol());
 
+        addOid4vcClientScopeDefaultAttributes(rep);
+
         if (rep.getAttributes() != null) {
             for (Map.Entry<String, String> entry : rep.getAttributes().entrySet()) {
                 resource.setAttribute(entry.getKey(), entry.getValue());
             }
         }
 
+    }
+
+    private static void addOid4vcClientScopeDefaultAttributes(ClientScopeRepresentation rep) {
+        boolean isOid4VcScope = CredentialScopeModel.OID4VC_PROTOCOL.equals(rep.getProtocol());
+        if (!isOid4VcScope) {
+            return;
+        }
+        rep.getAttributes().computeIfAbsent(CredentialScopeModel.CONFIGURATION_ID, k -> rep.getName());
+        rep.getAttributes().computeIfAbsent(CredentialScopeModel.CREDENTIAL_IDENTIFIER, k -> rep.getName());
+        rep.getAttributes().computeIfAbsent(CredentialScopeModel.TYPES, k -> rep.getName());
+        rep.getAttributes().computeIfAbsent(CredentialScopeModel.CONTEXTS, k -> rep.getName());
+        rep.getAttributes().computeIfAbsent(CredentialScopeModel.VCT, k -> rep.getName());
+        rep.getAttributes().computeIfAbsent(CredentialScopeModel.FORMAT, k -> "vc+sd-jwt");
+        rep.getAttributes().computeIfAbsent(CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS, k -> "jwk");
+        rep.getAttributes().computeIfAbsent(CredentialScopeModel.SD_JWT_NUMBER_OF_DECOYS, k -> "10");
+        rep.getAttributes().computeIfAbsent(CredentialScopeModel.SD_JWT_VISIBLE_CLAIMS, k -> "id,iat,nbf,exp,jti");
+        rep.getAttributes().computeIfAbsent(CredentialScopeModel.HASH_ALGORITHM, k -> "SHA-256");
+        rep.getAttributes().computeIfAbsent(CredentialScopeModel.TOKEN_JWS_TYPE, k -> "JWS");
+        rep.getAttributes().computeIfAbsent(CredentialScopeModel.EXPIRY_IN_SECONDS, k -> "31536000");
     }
 
     // Scope mappings

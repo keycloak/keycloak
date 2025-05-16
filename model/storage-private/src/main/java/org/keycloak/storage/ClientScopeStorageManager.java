@@ -82,8 +82,9 @@ public class ClientScopeStorageManager extends AbstractStorageManager<ClientScop
     }
 
     @Override
-    public Stream<ClientScopeModel> getClientScopesByAttributes(RealmModel realm, Map<String, String> searchMap) {
-        return localStorage().getClientScopesByAttributes(realm, searchMap);
+    public Stream<ClientScopeModel> getClientScopesByAttributes(RealmModel realm, Map<String, String> searchMap,
+                                                                boolean useOr) {
+        return localStorage().getClientScopesByAttributes(realm, searchMap, useOr);
     }
 
     @Override
