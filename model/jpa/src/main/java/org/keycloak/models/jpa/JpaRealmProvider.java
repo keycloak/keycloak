@@ -85,6 +85,7 @@ import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.jpa.entities.RealmLocalizationTextsEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 
 
 /**
@@ -1316,8 +1317,14 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         existingClientScopes.putAll(getClientScopes(realm, client, false));
 
         clientScopes.stream()
-            .filter(clientScope -> ! existingClientScopes.containsKey(clientScope.getName()))
-            .filter(clientScope -> acceptedClientProtocols.contains(clientScope.getProtocol()))
+            .filter(clientScope -> !existingClientScopes.containsKey(clientScope.getName()))
+            .filter(clientScope -> {
+                if (clientScope.getProtocol() == null) {
+                    // set default protocol if not set. Otherwise, we will get a NullPointer
+                    clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+                }
+                return acceptedClientProtocols.contains(clientScope.getProtocol());
+            })
             .forEach(clientScope -> {
                 ClientScopeClientMappingEntity entity = new ClientScopeClientMappingEntity();
                 entity.setClientScopeId(clientScope.getId());
