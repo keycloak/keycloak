@@ -81,6 +81,7 @@ public class UpdateCommandDistTest {
         var info = JsonSerialization.mapper.readValue(jsonFile, UpdateCompatibilityCheck.METADATA_TYPE_REF);
         assertEquals(Version.VERSION, info.get(KeycloakCompatibilityMetadataProvider.ID).get("version"));
         assertEquals(org.infinispan.commons.util.Version.getVersion(), info.get(CachingCompatibilityMetadataProvider.ID).get("version"));
+        assertEquals(org.jgroups.Version.printVersion(), info.get(CachingCompatibilityMetadataProvider.ID).get("jgroupsVersion"));
 
         result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath());
         result.assertExitCode(CompatibilityResult.ExitCode.ROLLING.value());
@@ -98,7 +99,8 @@ public class UpdateCommandDistTest {
         info.put(CachingCompatibilityMetadataProvider.ID, Map.of(
                 "version", org.infinispan.commons.util.Version.getVersion(),
                 "persistence", "true",
-                "mode", "embedded"
+                "mode", "embedded",
+                "jgroupsVersion", org.jgroups.Version.printVersion()
         ));
         JsonSerialization.mapper.writeValue(jsonFile, info);
 
@@ -111,13 +113,28 @@ public class UpdateCommandDistTest {
         info.put(CachingCompatibilityMetadataProvider.ID, Map.of(
                 "version", "0.0.0.Final",
                 "persistence", "true",
-                "mode", "embedded"
+                "mode", "embedded",
+                "jgroupsVersion", org.jgroups.Version.printVersion()
+        ));
+        JsonSerialization.mapper.writeValue(jsonFile, info);
+
+        // incompatible jgroups version
+        result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath());
+        result.assertExitCode(CompatibilityResult.ExitCode.RECREATE.value());
+        result.assertError("[%s] Rolling Update is not available. '%s.version' is incompatible: 0.0.0.Final -> %s.".formatted(CachingCompatibilityMetadataProvider.ID, CachingCompatibilityMetadataProvider.ID, org.infinispan.commons.util.Version.getVersion())); // incompatible infinispan version
+
+        info.put(KeycloakCompatibilityMetadataProvider.ID, Map.of("version", Version.VERSION));
+        info.put(CachingCompatibilityMetadataProvider.ID, Map.of(
+                "version", org.infinispan.commons.util.Version.getVersion(),
+                "persistence", "true",
+                "mode", "embedded",
+                "jgroupsVersion", "0.0.0.Final"
         ));
         JsonSerialization.mapper.writeValue(jsonFile, info);
 
         result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath());
-        assertEquals(3, result.exitCode());
-        result.assertError("[%s] Rolling Update is not available. '%s.version' is incompatible: 0.0.0.Final -> %s.".formatted(CachingCompatibilityMetadataProvider.ID, CachingCompatibilityMetadataProvider.ID, org.infinispan.commons.util.Version.getVersion()));
+        result.assertExitCode(CompatibilityResult.ExitCode.RECREATE.value());
+        result.assertError("[%s] Rolling Update is not available. '%s.jgroupsVersion' is incompatible: 0.0.0.Final -> %s.".formatted(CachingCompatibilityMetadataProvider.ID, CachingCompatibilityMetadataProvider.ID, org.jgroups.Version.printVersion()));
     }
 
     @Test
@@ -129,11 +146,12 @@ public class UpdateCommandDistTest {
 
         // Test previous micro release
         ModelVersion modelVersion = new ModelVersion(Version.VERSION);
+        String qualifier = Version.VERSION.split("-", 2)[1];
         // We are not able to test the following unless we are in a micro version larger than 0
         //  This is tested in unit test class KeycloakCompatibilityMetadataProvider
         assumeTrue(modelVersion.getMicro() != 0);
 
-        testCompatibleV2KeycloakVersion(distribution, jsonFile, String.format("%d.%d.%d-%s", modelVersion.getMajor(), modelVersion.getMinor(), modelVersion.getMicro() - 1, modelVersion.getQualifier()));
+        testCompatibleV2KeycloakVersion(distribution, jsonFile, String.format("%d.%d.%d-%s", modelVersion.getMajor(), modelVersion.getMinor(), modelVersion.getMicro() - 1, qualifier));
 
         // Test qualifier ignored
         testCompatibleV2KeycloakVersion(distribution, jsonFile, String.format("%d.%d.%d-%s", modelVersion.getMajor(), modelVersion.getMinor(), modelVersion.getMicro() - 1, "SNAPSHOT1"));
@@ -143,26 +161,27 @@ public class UpdateCommandDistTest {
     public void testIncompatibleForV2Feature(KeycloakDistribution distribution) throws IOException {
         var jsonFile = createTempFile("test-patch-releases-incompatible");
         ModelVersion modelVersion = new ModelVersion(Version.VERSION);
+        String qualifier = Version.VERSION.split("-", 2)[1];
 
         // Some of the following tests are ignored if we are in a version where we can't subtract from major/minor/micro version value
         //  This is tested in the unit test class KeycloakCompatibilityMetadataProvider
 
         // test skipping patch release
         if (modelVersion.getMicro() > 1) {
-            testIncompatibleV2KeycloakVersion(distribution, jsonFile, String.format("%d.%d.%d-%s", modelVersion.getMajor(), modelVersion.getMinor(), modelVersion.getMicro() - 2, modelVersion.getQualifier()));
+            testIncompatibleV2KeycloakVersion(distribution, jsonFile, String.format("%d.%d.%d-%s", modelVersion.getMajor(), modelVersion.getMinor(), modelVersion.getMicro() - 2, qualifier));
         }
 
         // test rollback to the previous version
-        testIncompatibleV2KeycloakVersion(distribution, jsonFile, String.format("%d.%d.%d-%s", modelVersion.getMajor(), modelVersion.getMinor(), modelVersion.getMicro() + 1, modelVersion.getQualifier()));
+        testIncompatibleV2KeycloakVersion(distribution, jsonFile, String.format("%d.%d.%d-%s", modelVersion.getMajor(), modelVersion.getMinor(), modelVersion.getMicro() + 1, qualifier));
 
         // test a different minor version
         if (modelVersion.getMicro() != 0 && modelVersion.getMinor() != 0) {
-            testIncompatibleV2KeycloakVersion(distribution, jsonFile, String.format("%d.%d.%d-%s", modelVersion.getMajor(), modelVersion.getMinor() - 1, modelVersion.getMicro() - 1, modelVersion.getQualifier()));
+            testIncompatibleV2KeycloakVersion(distribution, jsonFile, String.format("%d.%d.%d-%s", modelVersion.getMajor(), modelVersion.getMinor() - 1, modelVersion.getMicro() - 1, qualifier));
         }
 
         // test a different major version
         if (modelVersion.getMicro() != 0 && modelVersion.getMajor() != 0) {
-            testIncompatibleV2KeycloakVersion(distribution, jsonFile, String.format("%d.%d.%d-%s", modelVersion.getMajor() - 1, modelVersion.getMinor(), modelVersion.getMicro() - 1, modelVersion.getQualifier()));
+            testIncompatibleV2KeycloakVersion(distribution, jsonFile, String.format("%d.%d.%d-%s", modelVersion.getMajor() - 1, modelVersion.getMinor(), modelVersion.getMicro() - 1, qualifier));
         }
     }
 
@@ -172,7 +191,8 @@ public class UpdateCommandDistTest {
         info.put(CachingCompatibilityMetadataProvider.ID, Map.of(
                 "version", org.infinispan.commons.util.Version.getVersion(),
                 "persistence", "true",
-                "mode", "embedded"
+                "mode", "embedded",
+                "jgroupsVersion", org.jgroups.Version.printVersion()
         ));
         JsonSerialization.mapper.writeValue(jsonFile, info);
 
@@ -187,7 +207,8 @@ public class UpdateCommandDistTest {
         info.put(CachingCompatibilityMetadataProvider.ID, Map.of(
                 "version", org.infinispan.commons.util.Version.getVersion(),
                 "persistence", "true",
-                "mode", "embedded"
+                "mode", "embedded",
+                "jgroupsVersion", org.jgroups.Version.printVersion()
         ));
         JsonSerialization.mapper.writeValue(jsonFile, info);
 
