@@ -35,6 +35,7 @@ import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType;
 import org.keycloak.dom.saml.v2.metadata.AttributeConsumingServiceType;
+import org.keycloak.dom.saml.v2.metadata.EndpointType;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.KeyDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.KeyTypes;
@@ -357,23 +358,26 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
     public Response export(UriInfo uriInfo, RealmModel realm, String format) {
         try
         {
-            URI authnResponseBinding = JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.getUri();
-
-            if (getConfig().isPostBindingAuthnRequest()) {
-                authnResponseBinding = JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.getUri();
-            }
-
-            URI logoutBinding = JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.getUri();
-
-            if (getConfig().isPostBindingLogout()) {
-                logoutBinding = JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.getUri();
-            }
             URI endpoint = uriInfo.getBaseUriBuilder()
                     .path("realms").path(realm.getName())
                     .path("broker")
                     .path(getConfig().getAlias())
                     .path("endpoint")
                     .build();
+
+            List<EndpointType> assertionConsumerServices = getConfig().isPostBindingAuthnRequest()
+                    ? List.of(new EndpointType(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.getUri(), endpoint),
+                            new EndpointType(JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.getUri(), endpoint),
+                            new EndpointType(JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.getUri(), endpoint))
+                    : List.of(new EndpointType(JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.getUri(), endpoint),
+                            new EndpointType(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.getUri(), endpoint),
+                            new EndpointType(JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.getUri(), endpoint));
+
+            List<EndpointType> singleLogoutServices = getConfig().isPostBindingLogout()
+                    ? List.of(new EndpointType(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.getUri(), endpoint),
+                            new EndpointType(JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.getUri(), endpoint))
+                    : List.of(new EndpointType(JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.getUri(), endpoint),
+                            new EndpointType(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.getUri(), endpoint));
 
             boolean wantAuthnRequestsSigned = getConfig().isWantAuthnRequestsSigned();
             boolean wantAssertionsSigned = getConfig().isWantAssertionsSigned();
@@ -419,7 +423,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                     .collect(Collectors.toList());
 
             EntityDescriptorType entityDescriptor = SPMetadataDescriptor.buildSPDescriptor(
-                authnResponseBinding, logoutBinding, endpoint, endpoint,
+                assertionConsumerServices, singleLogoutServices,
                 wantAuthnRequestsSigned, wantAssertionsSigned, wantAssertionsEncrypted,
                 entityId, nameIDPolicyFormat, signingKeys, encryptionKeys);
 
