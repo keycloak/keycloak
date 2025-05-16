@@ -25,7 +25,7 @@ import org.keycloak.models.KeycloakSession;
  */
 public class JwtCNonceHandlerFactory implements CNonceHandlerFactory {
 
-    public static final String PROVIDER_ID = "oid4vci-c-nonce-builder";
+    public static final String PROVIDER_ID = "oid4vci-jwt-c-nonce-builder";
 
     @Override
     public CNonceHandler create(KeycloakSession session) {

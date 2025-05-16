@@ -55,6 +55,7 @@ import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBody;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.CNonceHandler;
+import org.keycloak.protocol.oid4vc.issuance.keybinding.JwtCNonceHandler;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.ProofValidator;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
 import org.keycloak.protocol.oid4vc.issuance.signing.CredentialSigner;
@@ -210,14 +211,14 @@ public class OID4VCIssuerEndpoint {
      * @see https://datatracker.ietf.org/doc/html/draft-demarco-nonce-endpoint#name-nonce-response
      */
     @POST
-    @Produces({MediaType.APPLICATION_JSON, RESPONSE_TYPE_IMG_PNG})
+    @Produces({MediaType.APPLICATION_JSON})
     @Path(NONCE_PATH)
     public Response getCNonce() {
         CNonceHandler cNonceHandler = session.getProvider(CNonceHandler.class);
         NonceResponse nonceResponse = new NonceResponse();
-        String sourceEndpoint = session.getContext().getUri().getRequestUri().toString();
+        String sourceEndpoint = OID4VCIssuerWellKnownProvider.getNonceEndpoint(session.getContext());
         String audience = OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(session.getContext());
-        String nonce = cNonceHandler.buildCNonce(List.of(audience), Map.of("source_endpoint", sourceEndpoint));
+        String nonce = cNonceHandler.buildCNonce(List.of(audience), Map.of(JwtCNonceHandler.SOURCE_ENDPOINT, sourceEndpoint));
         nonceResponse.setNonce(nonce);
         return Response.ok().header(HttpHeaders.CACHE_CONTROL, "no-store").entity(nonceResponse).build();
     }
