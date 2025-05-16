@@ -57,6 +57,11 @@ public class OID4VCTypeMapper extends OID4VCMapper {
         return CONFIG_PROPERTIES;
     }
 
+    @Override
+    public List<String> getMetadataAttributePath() {
+        return List.of("type");
+    }
+
     public void setClaimsForCredential(VerifiableCredential verifiableCredential,
                                        UserSessionModel userSessionModel) {
         // remove duplicates

@@ -16,9 +16,11 @@
  */
 package org.keycloak.storage;
 
+import java.util.Map;
 import java.util.stream.Stream;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientScopeProvider;
+import org.keycloak.models.CredentialScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.storage.clientscope.ClientScopeLookupProvider;
@@ -72,6 +74,16 @@ public class ClientScopeStorageManager extends AbstractStorageManager<ClientScop
     @Override
     public void removeClientScopes(RealmModel realm) {
         localStorage().removeClientScopes(realm);
+    }
+
+    @Override
+    public Stream<CredentialScopeModel> getOid4VcClientScopes(RealmModel realm) {
+        return localStorage().getOid4VcClientScopes(realm);
+    }
+
+    @Override
+    public Stream<ClientScopeModel> getClientScopesByAttributes(RealmModel realm, Map<String, String> searchMap) {
+        return localStorage().getClientScopesByAttributes(realm, searchMap);
     }
 
     @Override

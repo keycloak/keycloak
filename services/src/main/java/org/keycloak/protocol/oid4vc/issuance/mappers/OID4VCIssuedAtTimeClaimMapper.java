@@ -22,6 +22,8 @@ import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -47,9 +49,6 @@ public class OID4VCIssuedAtTimeClaimMapper extends OID4VCMapper {
 
     public static final String MAPPER_ID = "oid4vc-issued-at-time-claim-mapper";
 
-    // Omit value if defaults to "iat"
-    public static final String SUBJECT_PROPERTY_CONFIG_KEY = "subjectProperty";
-
     // We will use the java.time.temporal.ChronoUnit enum values to help flatten down the time.
     // Omit property if no truncation.
     public static final String TRUNCATE_TO_TIME_UNIT_KEY = "truncateToTimeUnit";
@@ -59,10 +58,11 @@ public class OID4VCIssuedAtTimeClaimMapper extends OID4VCMapper {
     public static final String VALUE_SOURCE = "valueSource";
 
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = new ArrayList<>();
+    private static final Logger log = LoggerFactory.getLogger(OID4VCIssuedAtTimeClaimMapper.class);
 
     static {
         ProviderConfigProperty subjectPropertyNameConfig = new ProviderConfigProperty();
-        subjectPropertyNameConfig.setName(SUBJECT_PROPERTY_CONFIG_KEY);
+        subjectPropertyNameConfig.setName(CLAIM_NAME);
         subjectPropertyNameConfig.setLabel("Time Claim Name");
         subjectPropertyNameConfig.setHelpText("Name of this time claim. Default is iat");
         subjectPropertyNameConfig.setType(ProviderConfigProperty.STRING_TYPE);
@@ -94,6 +94,17 @@ public class OID4VCIssuedAtTimeClaimMapper extends OID4VCMapper {
 
     public void setClaimsForCredential(VerifiableCredential verifiableCredential,
                                        UserSessionModel userSessionModel) {
+        // Set the value
+        List<String> attributePath = getMetadataAttributePath();
+        String propertyName = attributePath.get(attributePath.size() - 1);
+        if (propertyName == null) {
+            log.error("Invalid configuration: missing config-property '{}' for mapper '{}' of type '{}'. Mapper is ignored.",
+                      CLAIM_NAME,
+                      mapperModel.getName(),
+                      MAPPER_ID);
+            return;
+        }
+
         Instant iat = Optional.ofNullable(mapperModel.getConfig())
                 .flatMap(config -> Optional.ofNullable(config.get(VALUE_SOURCE)))
                 .filter(valueSource -> Objects.equals(valueSource, "COMPUTE"))
@@ -104,15 +115,11 @@ public class OID4VCIssuedAtTimeClaimMapper extends OID4VCMapper {
         // truncate is possible. Return iat if not.
         Instant iatTrunc = Optional.ofNullable(mapperModel.getConfig())
                 .flatMap(config -> Optional.ofNullable(config.get(TRUNCATE_TO_TIME_UNIT_KEY)))
-                .filter(i -> i.isEmpty())
+                .filter(String::isEmpty)
                 .map(ChronoUnit::valueOf)
                 .map(iat::truncatedTo)
                 .orElse(iat);
 
-        // Set the value
-        String propertyName = Optional.ofNullable(mapperModel.getConfig())
-                .map(config -> config.get(SUBJECT_PROPERTY_CONFIG_KEY))
-                .orElse("iat");
         CredentialSubject credentialSubject = verifiableCredential.getCredentialSubject();
         credentialSubject.setClaims(propertyName, iatTrunc.getEpochSecond());
     }

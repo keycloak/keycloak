@@ -22,6 +22,8 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import org.keycloak.util.JsonSerialization;
 
 /**
  * Represents a CredentialResponse according to the OID4VCI Spec
@@ -74,6 +76,15 @@ public class CredentialResponse {
     public CredentialResponse setNotificationId(String notificationId) {
         this.notificationId = notificationId;
         return this;
+    }
+
+    @Override
+    public String toString() {
+        try {
+            return JsonSerialization.mapper.writeValueAsString(this);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**

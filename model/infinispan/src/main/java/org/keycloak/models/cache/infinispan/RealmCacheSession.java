@@ -36,6 +36,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientProvider;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientScopeProvider;
+import org.keycloak.models.CredentialScopeModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.GroupProvider;
@@ -1440,6 +1441,16 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     @Override
+    public Stream<CredentialScopeModel> getOid4VcClientScopes(RealmModel realm) {
+        return getClientScopeDelegate().getOid4VcClientScopes(realm);
+    }
+
+    @Override
+    public Stream<ClientScopeModel> getClientScopesByAttributes(RealmModel realm, Map<String, String> searchMap) {
+        return getClientScopeDelegate().getClientScopesByAttributes(realm, searchMap);
+    }
+
+    @Override
     public void addClientScopes(RealmModel realm, ClientModel client, Set<ClientScopeModel> clientScopes, boolean defaultScope) {
         getClientDelegate().addClientScopes(realm, client, clientScopes, defaultScope);
         registerClientInvalidation(client.getId(), client.getId(), realm.getId());
@@ -1471,13 +1482,16 @@ public class RealmCacheSession implements CacheRealmProvider {
             return model;
         }
         Map<String, ClientScopeModel> assignedScopes = new HashMap<>();
+
+        List<String> acceptedClientProtocols = getAcceptedClientProtocols(client);
         for (String id : query.getClientScopes()) {
             ClientScopeModel clientScope = session.clientScopes().getClientScopeById(realm, id);
             if (clientScope == null) {
                 invalidations.add(cacheKey);
                 return getClientDelegate().getClientScopes(realm, client, defaultScopes);
             }
-            if (clientScope.getProtocol().equals((client.getProtocol() == null) ? "openid-connect" : client.getProtocol())) {
+
+            if (acceptedClientProtocols.contains(clientScope.getProtocol())) {
                 assignedScopes.put(clientScope.getName(), clientScope);
             }
         }

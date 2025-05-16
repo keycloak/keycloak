@@ -28,23 +28,15 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
-import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.VC_KEY;
 import org.keycloak.protocol.oid4vc.model.OID4VCClient;
-import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientregistration.AbstractClientRegistrationProvider;
 import org.keycloak.services.clientregistration.DefaultClientRegistrationContext;
 
 import java.net.URI;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 
 /**
@@ -124,46 +116,8 @@ public class OID4VCClientRegistrationProvider extends AbstractClientRegistration
         Optional.ofNullable(oid4VCClient.getDescription()).ifPresent(clientRepresentation::setDescription);
         Optional.ofNullable(oid4VCClient.getName()).ifPresent(clientRepresentation::setName);
 
-
-        Map<String, String> clientAttributes = oid4VCClient.getSupportedVCTypes()
-                .stream()
-                .map(SupportedCredentialConfiguration::toDotNotation)
-                .flatMap(dotNotated -> dotNotated.entrySet().stream())
-                .collect(Collectors.toMap(entry -> VC_KEY + "." + entry.getKey(), Map.Entry::getValue, (e1, e2) -> e1));
-
-        if (!clientAttributes.isEmpty()) {
-            clientRepresentation.setAttributes(clientAttributes);
-        }
-
-
         LOGGER.debugf("Generated client representation {}.", clientRepresentation);
         return clientRepresentation;
     }
 
-    public static OID4VCClient fromClientAttributes(String clientId, Map<String, String> clientAttributes) {
-
-        OID4VCClient oid4VCClient = new OID4VCClient()
-                .setClientDid(clientId);
-
-        Set<String> supportedCredentialIds = new HashSet<>();
-        Map<String, String> attributes = new HashMap<>();
-        clientAttributes
-                .entrySet()
-                .forEach(entry -> {
-                    if (!entry.getKey().startsWith(VC_KEY)) {
-                        return;
-                    }
-                    String key = entry.getKey().substring((VC_KEY + ".").length());
-                    supportedCredentialIds.add(key.split("\\.")[0]);
-                    attributes.put(key, entry.getValue());
-                });
-
-
-        List<SupportedCredentialConfiguration> supportedCredentialConfigurations = supportedCredentialIds
-                .stream()
-                .map(id -> SupportedCredentialConfiguration.fromDotNotation(id, attributes))
-                .toList();
-
-        return oid4VCClient.setSupportedVCTypes(supportedCredentialConfigurations);
-    }
 }
