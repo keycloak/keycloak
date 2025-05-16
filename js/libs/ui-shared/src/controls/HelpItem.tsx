@@ -22,6 +22,7 @@ export const HelpItem = ({
       <>
         {!unWrap && (
           <button
+            tabIndex={-1}
             data-testid={`help-label-${fieldLabelId}`}
             aria-label={fieldLabelId}
             onClick={(e) => e.preventDefault()}

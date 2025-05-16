@@ -20,7 +20,7 @@ export const FormTitle = ({
     size={size}
     className={style.title}
     id={id}
-    tabIndex={0} // so that jumpLink sends focus to the section for a11y
+    tabIndex={-1} // so that jumpLink sends focus to the section for a11y
     {...rest}
   >
     {title}

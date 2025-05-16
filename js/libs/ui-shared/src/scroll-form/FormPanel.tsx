@@ -19,7 +19,7 @@ export const FormPanel = ({
   return (
     <Card id={id} className={className} isFlat>
       <CardHeader className="kc-form-panel__header">
-        <CardTitle tabIndex={0}>
+        <CardTitle tabIndex={-1}>
           <FormTitle id={scrollId} title={title} />
         </CardTitle>
       </CardHeader>
