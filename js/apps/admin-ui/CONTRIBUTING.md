@@ -35,7 +35,7 @@ Once the process of optimization is done your browser will automatically open yo
 You can now start making changes to the source code, and they will be reflected in your browser.
 
 In this mode the messages for translation will come directly from the messages.properties and the realm overrides will be ignored, this makes testing adding messages easier.
-But when you want to see the realm overrides you can add `VITE_REALM_OVERRIDES=true` to disable this behavior.
+But when you want to see the realm overrides instead, you can add the environment variable `VITE_REALM_OVERRIDES=true` to disable this behavior.
 
 ## Building as a Keycloak theme
 
