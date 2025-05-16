@@ -31,10 +31,7 @@ import java.net.URI;
  */
 public class LDCredentialBuilder implements CredentialBuilder {
 
-    private final String credentialIssuer;
-
-    public LDCredentialBuilder(String credentialIssuer) {
-        this.credentialIssuer = credentialIssuer;
+    public LDCredentialBuilder() {
     }
 
     @Override
@@ -49,7 +46,7 @@ public class LDCredentialBuilder implements CredentialBuilder {
     ) throws CredentialBuilderException {
         // The default credential format is basically this format,
         // so not much is to be done.
-        verifiableCredential.setIssuer(URI.create(credentialIssuer));
+        verifiableCredential.setIssuer(credentialBuildConfig.getCredentialIssuer());
         return new LDCredentialBody(verifiableCredential);
     }
 }

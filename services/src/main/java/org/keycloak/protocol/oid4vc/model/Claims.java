@@ -16,15 +16,29 @@
  */
 package org.keycloak.protocol.oid4vc.model;
 
+import org.keycloak.models.CredentialScopeModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
-public class Claims extends HashMap<String, Claim> {
+public class Claims extends ArrayList<Claim> {
+
+    public static Claims parse(KeycloakSession keycloakSession, CredentialScopeModel credentialScope) {
+        Claims claims = new Claims();
+        credentialScope.getOid4vcProtocolMappersStream().forEach(protocolMapper -> {
+            Claim claim = Claim.parse(keycloakSession, credentialScope.getFormat(), protocolMapper);
+            if (claim != null) {
+                claims.add(claim);
+            }
+        });
+        return claims;
+    }
 
     public String toJsonString(){
         try {

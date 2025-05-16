@@ -90,14 +90,15 @@ public class SdJwtCredentialBuilderTest extends CredentialBuilderTest {
             throws VerificationException {
         String issuerDid = TEST_DID.toString();
         CredentialBuildConfig credentialBuildConfig = new CredentialBuildConfig()
+                .setCredentialIssuer(issuerDid)
                 .setCredentialType("https://credentials.example.com/test-credential")
                 .setTokenJwsType("example+sd-jwt")
                 .setHashAlgorithm("sha-256")
                 .setNumberOfDecoys(decoys)
-                .setVisibleClaims(visibleClaims);
+                .setSdJwtVisibleClaims(visibleClaims);
 
         VerifiableCredential testCredential = getTestCredential(claims);
-        SdJwtCredentialBody sdJwtCredentialBody = new SdJwtCredentialBuilder(issuerDid)
+        SdJwtCredentialBody sdJwtCredentialBody = new SdJwtCredentialBuilder()
                 .buildCredentialBody(testCredential, credentialBuildConfig);
 
         String sdJwtString = sdJwtCredentialBody.sign(exampleSigner());

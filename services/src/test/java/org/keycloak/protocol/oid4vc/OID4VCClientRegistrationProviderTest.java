@@ -23,8 +23,8 @@ import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.OID4VCClient;
-import org.keycloak.protocol.oid4vc.model.ProofTypeJWT;
 import org.keycloak.protocol.oid4vc.model.ProofTypesSupported;
+import org.keycloak.protocol.oid4vc.model.ProofTypesSupported.SupportedProofTypeData;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 
 import java.util.Arrays;
@@ -97,10 +97,16 @@ public class OID4VCClientRegistrationProviderTest {
                                         new SupportedCredentialConfiguration()
                                                 .setId("second-id")
                                                 .setFormat(Format.SD_JWT_VC)
-                                                .setDisplay(Arrays.asList(new DisplayObject().setLocale("de").setName("Second Credential")))
+                                                .setDisplay(Arrays.asList(new DisplayObject().setLocale("de").setName(
+                                                        "Second Credential")))
                                                 .setScope("MyType")
-                                                .setProofTypesSupported(new ProofTypesSupported().setJwt(new ProofTypeJWT().setProofSigningAlgValuesSupported(Arrays.asList("ES256"))))),
-                                null, null)
+                                                .setProofTypesSupported(
+                                                        new ProofTypesSupported()
+                                                                .setSupportedProofTypes("jwt",
+                                                                                        new SupportedProofTypeData(
+                                                                                                Arrays.asList("ES256"),
+                                                                                                null)))),
+                                         null, null)
                 },
                 {
                         "Single Supported Credential with credential build config.",
@@ -138,13 +144,6 @@ public class OID4VCClientRegistrationProviderTest {
         assertEquals("The client should have been translated into the correct clientRepresentation.", clientAttributes.entrySet().size(), translatedAttributes.size());
         clientAttributes.forEach((key, value) ->
                 assertEquals("The client should have been translated into the correct clientRepresentation.", clientAttributes.get(key), translatedAttributes.get(key)));
-    }
-
-    @Test
-    public void testFromClientAttributes() {
-        assertEquals("The client should have been correctly build from the client representation",
-                oid4VCClient,
-                OID4VCClientRegistrationProvider.fromClientAttributes("did:web:test.org", clientAttributes));
     }
 
 }
