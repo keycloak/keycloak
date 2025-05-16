@@ -42,9 +42,6 @@ public class CredentialIssuer {
     @JsonProperty("authorization_servers")
     private List<String> authorizationServers;
 
-    @JsonProperty("batch_credential_endpoint")
-    private String batchCredentialEndpoint;
-
     @JsonProperty("notification_endpoint")
     private String notificationEndpoint;
 
@@ -68,15 +65,6 @@ public class CredentialIssuer {
 
     public CredentialIssuer setCredentialEndpoint(String credentialEndpoint) {
         this.credentialEndpoint = credentialEndpoint;
-        return this;
-    }
-
-    public String getBatchCredentialEndpoint() {
-        return batchCredentialEndpoint;
-    }
-
-    public CredentialIssuer setBatchCredentialEndpoint(String batchCredentialEndpoint) {
-        this.batchCredentialEndpoint = batchCredentialEndpoint;
         return this;
     }
 

@@ -25,6 +25,7 @@ import org.keycloak.Config;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.CredentialScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
@@ -47,7 +48,7 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 
     private static final Logger LOGGER = Logger.getLogger(OID4VCLoginProtocolFactory.class);
 
-    public static final String PROTOCOL_ID = "oid4vc";
+    public static final String PROTOCOL_ID = CredentialScopeModel.OID4VC_PROTOCOL;
 
     private static final String CLIENT_ROLES_MAPPER = "client-roles";
     private static final String USERNAME_MAPPER = "username";
@@ -60,7 +61,7 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 
     @Override
     public void init(Config.Scope config) {
-        builtins.put(CLIENT_ROLES_MAPPER, OID4VCTargetRoleMapper.create("id", "client roles"));
+        builtins.put(CLIENT_ROLES_MAPPER, OID4VCTargetRoleMapper.create("client roles"));
         builtins.put(SUBJECT_ID_MAPPER, OID4VCSubjectIdMapper.create("subject id", "id"));
         builtins.put(USERNAME_MAPPER, OID4VCUserAttributeMapper.create(USERNAME_MAPPER, "username", "username", false));
         builtins.put(EMAIL_MAPPER, OID4VCUserAttributeMapper.create(EMAIL_MAPPER, "email", "email", false));
