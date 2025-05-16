@@ -138,7 +138,7 @@ public class OidcClaimToUserSessionNoteMapperTest extends AbstractIdentityProvid
     private AccessToken login() {
         oauth.realm(bc.consumerRealmName())
                 .client("broker-app", consumerClientRep.getSecret())
-                .redirectUri(getAuthServerRoot() + "realms/" + bc.consumerRealmName() + "/account");
+                .redirectUri(getAuthServerRoot() + "realms/" + bc.consumerRealmName() + "/app");
         AuthorizationEndpointResponse authzResponse = doLoginSocial(oauth, bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword());
 
         String code = authzResponse.getCode();

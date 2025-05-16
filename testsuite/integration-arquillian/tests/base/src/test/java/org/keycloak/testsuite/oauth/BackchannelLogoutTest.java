@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.oauth;
 
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -11,7 +10,6 @@ import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.junit.Before;
 import org.junit.Rule;
@@ -38,7 +36,6 @@ import org.keycloak.testsuite.broker.NestedBrokerConfiguration;
 import org.keycloak.testsuite.broker.OidcBackchannelLogoutBrokerConfiguration;
 import org.keycloak.testsuite.util.CredentialBuilder;
 import org.keycloak.testsuite.util.LogoutTokenUtil;
-import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.BackchannelLogoutResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
@@ -249,7 +246,7 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
         OAuthClient oauth2 = oauth.newConfig().driver(driver2);
         oauth2.realm(nbc.consumerRealmName())
                 .clientId(OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID)
-                .redirectUri(getAuthServerRoot() + "realms/" + nbc.consumerRealmName() + "/account");
+                .redirectUri(getAuthServerRoot() + "realms/" + nbc.consumerRealmName() + "/app");
 
         doLoginSocial(oauth2, nbc.getIDPAlias(), nbc.getUserLogin(), nbc.getUserPassword());
 
@@ -634,6 +631,7 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
 
         Optional<EventRepresentation> loginEventOptional = eventList.stream()
                 .filter(event -> userId.equals(event.getUserId()))
+                .filter(event -> clientId.equals(event.getClientId()))
                 .filter(event -> event.getType().equals(EventType.LOGIN.name()))
                 .findAny();
 
@@ -825,7 +823,7 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
         OAuthClient oauth2 = oauth.newConfig().driver(driver2);
         oauth2.realm(nbc.consumerRealmName())
                 .clientId(OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID)
-                .redirectUri(getAuthServerRoot() + "realms/" + nbc.consumerRealmName() + "/account");
+                .redirectUri(getAuthServerRoot() + "realms/" + nbc.consumerRealmName() + "/app");
         doLoginSocial(oauth2, identityProviderDisplayName, nbc.getUserLogin(), nbc.getUserPassword());
         return oauth2;
     }
