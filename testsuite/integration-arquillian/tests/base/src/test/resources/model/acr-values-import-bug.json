@@ -1310,8 +1310,7 @@
           "protocolMapper": "oid4vc-subject-id-mapper",
           "consentRequired": false,
           "config": {
-            "supportedCredentialTypes": "VerifiableCredential",
-            "subjectIdProperty": "id"
+            "claim.name": "id"
           }
         },
         {
@@ -1321,7 +1320,7 @@
           "protocolMapper": "oid4vc-user-attribute-mapper",
           "consentRequired": false,
           "config": {
-            "subjectProperty": "email",
+            "claim.name": "email",
             "userAttribute": "email",
             "aggregateAttributes": "false"
           }
@@ -1333,7 +1332,7 @@
           "protocolMapper": "oid4vc-user-attribute-mapper",
           "consentRequired": false,
           "config": {
-            "subjectProperty": "familyName",
+            "claim.name": "familyName",
             "userAttribute": "lastName",
             "aggregateAttributes": "false"
           }
@@ -1345,7 +1344,7 @@
           "protocolMapper": "oid4vc-target-role-mapper",
           "consentRequired": false,
           "config": {
-            "subjectProperty": "roles",
+            "claim.name": "roles",
             "clientId": "id"
           }
         },
@@ -1356,7 +1355,7 @@
           "protocolMapper": "oid4vc-user-attribute-mapper",
           "consentRequired": false,
           "config": {
-            "subjectProperty": "firstName",
+            "claim.name": "firstName",
             "userAttribute": "firstName",
             "aggregateAttributes": "false"
           }
