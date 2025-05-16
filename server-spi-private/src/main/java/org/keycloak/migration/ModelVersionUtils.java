@@ -3,7 +3,7 @@ package org.keycloak.migration;
 public class ModelVersionUtils {
 
     /**
-     * Return true if {@code firstVersion} and {@code secondVersion} versions are consecutive in given order.
+     * Return true if {@code v1} and {@code v2} versions are consecutive in given order.
      * <p/>
      * Example of consecutive versions:
      *   areConsecutiveOrSameMicroVersions(26.2.2, 26.2.3) = true
@@ -13,15 +13,15 @@ public class ModelVersionUtils {
      * <p/>
      * Note: this method is not taking version qualifier into account
      *
-     * @param firstVersion First version
-     * @param secondVersion Second version
+     * @param v1 First version
+     * @param v2 Second version
      * @return true if versions are consecutive
      */
-    public static boolean areConsecutiveOrSameMicroVersions(ModelVersion firstVersion, ModelVersion secondVersion) {
-        if (firstVersion.major != secondVersion.major || firstVersion.minor != secondVersion.minor) {
+    public static boolean areConsecutiveOrSameMicroVersions(ModelVersion v1, ModelVersion v2) {
+        if (v1.major != v2.major || v1.minor != v2.minor) {
             return false;
         }
 
-        return firstVersion.micro == secondVersion.micro || firstVersion.micro == secondVersion.micro - 1;
+        return v1.micro == v2.micro || v1.micro == v2.micro - 1;
     }
 }

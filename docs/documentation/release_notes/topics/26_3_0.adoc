@@ -36,7 +36,7 @@ Both WebAuthn Register actions (`webauthn-register` and `webauthn-register-passw
 
 = Experimental support for rolling updates for patch releases
 
-In the previous release, we added support into Keycloak Operator to perform rolling update of the Keycloak image if both images contain the same version.
+In the previous release, the Keycloak Operator was enhanced to support performing rolling updates of the Keycloak image if both images contain the same version.
 This is useful, for example, when switching to an optimized image, changing a theme or a provider source code.
 
 In this release, we extended this to perform rolling update when the new image contains the next patch release following the one that is currently deployed.
