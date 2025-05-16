@@ -6,6 +6,8 @@ export const StringComponent = ({
   name,
   label,
   helpText,
+  readOnly,
+  isDisabled = readOnly ?? false,
   convertToName,
   ...props
 }: ComponentProps) => {
@@ -18,6 +20,7 @@ export const StringComponent = ({
       labelIcon={t(helpText!)}
       data-testid={name}
       {...props}
+      isDisabled={isDisabled}
     />
   );
 };
