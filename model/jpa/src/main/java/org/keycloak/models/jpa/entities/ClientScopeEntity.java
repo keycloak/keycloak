@@ -38,6 +38,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
 import org.hibernate.annotations.Nationalized;
+import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -46,7 +47,10 @@ import org.hibernate.annotations.Nationalized;
 @Entity
 @Table(name="CLIENT_SCOPE", uniqueConstraints = {@UniqueConstraint(columnNames = {"REALM_ID", "NAME"})})
 @NamedQueries({
-        @NamedQuery(name="getClientScopeIds", query="select scope.id from ClientScopeEntity scope where scope.realmId = :realm")
+        @NamedQuery(name="getClientScopeIds", query="select scope.id from ClientScopeEntity scope where scope.realmId = :realm"),
+        @NamedQuery(name = "getOid4VcClientScopes",
+                    query = "select S from ClientScopeEntity S " +
+                            "where S.realmId = :realm and S.protocol = '" + OID4VCLoginProtocolFactory.PROTOCOL_ID + "'")
 })
 public class ClientScopeEntity {
 
