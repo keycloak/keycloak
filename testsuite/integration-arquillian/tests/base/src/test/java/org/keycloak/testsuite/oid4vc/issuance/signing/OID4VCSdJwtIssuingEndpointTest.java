@@ -86,22 +86,34 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
     @Test
     public void testRequestTestCredential() {
         String token = getBearerToken(oauth, client, sdJwtTypeCredentialClientScope.getName());
+
+        final String clientScopeString = toJsonString(sdJwtTypeCredentialClientScope);
+
         testingClient
                 .server(TEST_REALM_NAME)
-                .run(session -> testRequestTestCredential(session, sdJwtTypeCredentialClientScope,
-                                                          token, null));
+                .run(session -> {
+                    ClientScopeRepresentation clientScope = fromJsonString(clientScopeString,
+                                                                           ClientScopeRepresentation.class);
+                    testRequestTestCredential(session, clientScope, token, null);
+                });
     }
 
     @Test
     public void testRequestTestCredentialWithKeybinding() {
         String token = getBearerToken(oauth, client, sdJwtTypeCredentialClientScope.getName());
+
+        final String clientScopeString = toJsonString(sdJwtTypeCredentialClientScope);
+
         testingClient
                 .server(TEST_REALM_NAME)
                 .run((session -> {
                     JwtProof proof = new JwtProof()
                             .setJwt(generateJwtProof(getCredentialIssuer(session), null));
 
-                    SdJwtVP sdJwtVP = testRequestTestCredential(session, sdJwtTypeCredentialClientScope, token, proof);
+                    ClientScopeRepresentation clientScope = fromJsonString(clientScopeString,
+                                                                           ClientScopeRepresentation.class);
+
+                    SdJwtVP sdJwtVP = testRequestTestCredential(session, clientScope, token, proof);
                     assertNotNull("A cnf claim must be attached to the credential", sdJwtVP.getCnfClaim());
                 }));
     }
@@ -245,6 +257,11 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
      */
     @Test
     public void getConfig() {
+        final String scopeName = jwtTypeCredentialClientScope.getName();
+        final String credentialConfigurationId = jwtTypeCredentialClientScope.getAttributes()
+                                                                             .get(CredentialScopeModel.CONFIGURATION_ID);
+        final String verifiableCredentialType = jwtTypeCredentialClientScope.getAttributes()
+                                                                            .get(CredentialScopeModel.VCT);
         String expectedIssuer = suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/" + TEST_REALM_NAME;
         String expectedCredentialsEndpoint = expectedIssuer + "/protocol/oid4vc/credential";
         final String expectedAuthorizationServer = expectedIssuer;
@@ -260,13 +277,11 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                     assertEquals("Since the authorization server is equal to the issuer, just 1 should be returned.", 1, credentialIssuer.getAuthorizationServers().size());
                     assertEquals("The expected server should have been returned.", expectedAuthorizationServer, credentialIssuer.getAuthorizationServers().get(0));
 
-                    final String credentialConfigurationId = //
-                            jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
                     assertTrue("The jwt-credential should be supported.",
                                credentialIssuer.getCredentialsSupported()
                                                .containsKey(credentialConfigurationId));
                     assertEquals("The jwt-credential should offer type test-credential",
-                                 jwtTypeCredentialClientScope.getName(),
+                                 scopeName,
                                  credentialIssuer.getCredentialsSupported().get(credentialConfigurationId)
                                                  .getScope());
                     assertEquals("The jwt-credential should be offered in the jwt_vc format.",
@@ -294,9 +309,8 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                                                  // index 2 is locale en-EN
                                                  .get(2).getName());
 
-                    final String vct = jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.VCT);
                     assertEquals("The jwt-credential should offer vct",
-                                 vct,
+                                 verifiableCredentialType,
                                  credentialIssuer.getCredentialsSupported().get(credentialConfigurationId).getVct());
 
                     // We are offering key binding only for identity credential
@@ -342,7 +356,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
     public static ProtocolMapperRepresentation getJtiGeneratedIdMapper() {
         ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
         protocolMapperRepresentation.setName("generated-id-mapper");
-        protocolMapperRepresentation.setProtocol("oid4vc");
+        protocolMapperRepresentation.setProtocol(CredentialScopeModel.OID4VC_PROTOCOL);
         protocolMapperRepresentation.setId(UUID.randomUUID().toString());
         protocolMapperRepresentation.setProtocolMapper("oid4vc-generated-id-mapper");
         protocolMapperRepresentation.setConfig(Map.of(
@@ -357,7 +371,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                                                   .addClientScope(realmModel, jwtTypeCredentialScopeName);
         credentialScope.setAttribute(CredentialScopeModel.CREDENTIAL_IDENTIFIER,
                                      jwtTypeCredentialScopeName);
-        credentialScope.setProtocol("oid4vc");
+        credentialScope.setProtocol(CredentialScopeModel.OID4VC_PROTOCOL);
         return credentialScope;
     }
 

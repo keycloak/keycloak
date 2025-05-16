@@ -151,7 +151,7 @@ public interface ClientProvider extends ClientLookupProvider, Provider {
     default List<String> getAcceptedClientProtocols(ClientModel client) {
         List<String> acceptedClientProtocols;
         if (client.getProtocol() == null || "openid-connect".equals(client.getProtocol())) {
-            acceptedClientProtocols = List.of("openid-connect", "oid4vc");
+            acceptedClientProtocols = List.of("openid-connect", CredentialScopeModel.OID4VC_PROTOCOL);
         }else {
             acceptedClientProtocols = List.of(client.getProtocol());
         }

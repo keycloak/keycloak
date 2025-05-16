@@ -1261,10 +1261,12 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
      *
      * @param realm     Realm.
      * @param searchMap a key-value map that holds the attribute names and values to search for.
+     * @param useOr     If the search-params should be combined with or-expressions or and-expressions
      * @return a stream of clientScopes matching the given criteria
      */
     @Override
-    public Stream<ClientScopeModel> getClientScopesByAttributes(RealmModel realm, Map<String, String> searchMap) {
+    public Stream<ClientScopeModel> getClientScopesByAttributes(RealmModel realm, Map<String, String> searchMap,
+                                                                boolean useOr) {
         // we build this specific query dynamically, but we enter the parameters as keys to avoid SQL injections.
         StringBuilder jpql = new StringBuilder("SELECT distinct C FROM ClientScopeEntity C");
         List<String> keys = new ArrayList<>(searchMap.keySet());
@@ -1288,7 +1290,13 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
                                 inner join ClientScopeAttributeEntity CA%1$s on C.id = CA%1$s.clientScope.id
                                                                              and CA%1$s.name = :%2$s
                                 """.stripIndent().strip().formatted(i, dynamicParameterName));
-            whereClauseExtension.append('\n').append("and CA%1$s.value = :%2$s".formatted(i, dynamicParameterValue));
+            whereClauseExtension.append('\n');
+            if (useOr) {
+                whereClauseExtension.append("or");
+            }else {
+                whereClauseExtension.append("and");
+            }
+            whereClauseExtension.append(" CA%1$s.value = :%2$s".formatted(i, dynamicParameterValue));
         }
 
         jpql.append('\n').append(" WHERE C.realmId = :realmId").append(whereClauseExtension);
