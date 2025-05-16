@@ -55,9 +55,9 @@ public class PropertyMapper<T> {
     private final String to;
     private BooleanSupplier enabled;
     private String enabledWhen;
-    private final BiFunction<String, ConfigSourceInterceptorContext, String> mapper;
+    private final ValueMapper mapper;
     private final String mapFrom;
-    private final BiFunction<String, ConfigSourceInterceptorContext, String> parentMapper;
+    private final ValueMapper parentMapper;
     private final boolean mask;
     private final String paramLabel;
     private final String envVarFormat;
@@ -68,17 +68,18 @@ public class PropertyMapper<T> {
     private final String requiredWhen;
     private final String from;
 
-    PropertyMapper(PropertyMapper<T> mapper, String from, String to, BiFunction<String, ConfigSourceInterceptorContext, String> parentMapper) {
-        this(mapper.option, to, mapper.enabled, mapper.enabledWhen, mapper.mapper, mapper.mapFrom, parentMapper,
+    private final String namedProperty;
+
+    PropertyMapper(PropertyMapper<T> mapper, String from, String to, String mapFrom, String namedProperty, ValueMapper parentMapper) {
+        this(mapper.option, to, mapper.enabled, mapper.enabledWhen, mapper.mapper, mapFrom, parentMapper,
                 mapper.paramLabel, mapper.mask, mapper.validator, mapper.description, mapper.required,
-                mapper.requiredWhen, from);
+                mapper.requiredWhen, from, namedProperty);
     }
 
     PropertyMapper(Option<T> option, String to, BooleanSupplier enabled, String enabledWhen,
-                   BiFunction<String, ConfigSourceInterceptorContext, String> mapper,
-                   String mapFrom, BiFunction<String, ConfigSourceInterceptorContext, String> parentMapper,
+                   ValueMapper mapper, String mapFrom, ValueMapper parentMapper,
                    String paramLabel, boolean mask, BiConsumer<PropertyMapper<T>, ConfigValue> validator,
-                   String description, BooleanSupplier required, String requiredWhen, String from) {
+                   String description, BooleanSupplier required, String requiredWhen, String from, String namedProperty) {
         this.option = option;
         this.from = from == null ? NS_KEYCLOAK_PREFIX + this.option.getKey() : from;
         this.to = to == null ? getFrom() : to;
@@ -95,6 +96,7 @@ public class PropertyMapper<T> {
         this.validator = validator;
         this.description = description;
         this.parentMapper = parentMapper;
+        this.namedProperty = namedProperty;
     }
 
     ConfigValue getConfigValue(String name, ConfigSourceInterceptorContext context) {
@@ -227,6 +229,14 @@ public class PropertyMapper<T> {
         return mask;
     }
 
+    ValueMapper getParentMapper() {
+        return parentMapper;
+    }
+
+    ValueMapper getMapper() {
+        return mapper;
+    }
+
     public Optional<DeprecatedMetadata> getDeprecatedMetadata() {
         return option.getDeprecatedMetadata();
     }
@@ -239,6 +249,10 @@ public class PropertyMapper<T> {
         return false;
     }
 
+    public Optional<String> getNamedProperty() {
+        return Optional.ofNullable(namedProperty);
+    }
+
     private ConfigValue transformValue(String name, ConfigValue configValue, ConfigSourceInterceptorContext context, boolean parentValue) {
         String value = configValue.getValue();
         String mappedValue = value;
@@ -246,7 +260,7 @@ public class PropertyMapper<T> {
         boolean mapped = false;
         var theMapper = parentValue ? this.parentMapper : this.mapper;
         if (theMapper != null && (!name.equals(getFrom()) || parentValue)) {
-            mappedValue = theMapper.apply(value, context);
+            mappedValue = theMapper.map(getNamedProperty().orElse(null), value, context);
             mapped = true;
         }
 
@@ -314,9 +328,9 @@ public class PropertyMapper<T> {
 
         private final Option<T> option;
         private String to;
-        private BiFunction<String, ConfigSourceInterceptorContext, String> mapper;
+        private ValueMapper mapper;
         private String mapFrom = null;
-        private BiFunction<String, ConfigSourceInterceptorContext, String> parentMapper;
+        private ValueMapper parentMapper;
         private boolean isMasked = false;
         private BooleanSupplier isEnabled = () -> true;
         private String enabledWhen = "";
@@ -346,6 +360,10 @@ public class PropertyMapper<T> {
          * The value passed into the transformer may be null if the property has no value set, and no default
          */
         public Builder<T> transformer(BiFunction<String, ConfigSourceInterceptorContext, String> mapper) {
+            return transformer((name, value, context) -> mapper.apply(value, context));
+        }
+
+        public Builder<T> transformer(ValueMapper mapper) {
             this.mapper = mapper;
             return this;
         }
@@ -361,6 +379,10 @@ public class PropertyMapper<T> {
         }
 
         public Builder<T> mapFrom(Option<?> mapFrom, BiFunction<String, ConfigSourceInterceptorContext, String> parentMapper) {
+            return mapFrom(mapFrom, (name, value, context) -> parentMapper.apply(value, context));
+        }
+
+        public Builder<T> mapFrom(Option<?> mapFrom, ValueMapper parentMapper) {
             this.mapFrom = mapFrom.getKey();
             this.parentMapper = parentMapper;
             return this;
@@ -457,7 +479,12 @@ public class PropertyMapper<T> {
         }
 
         public Builder<T> wildcardMapFrom(Option<?> mapFrom, ValueMapper function) {
-            this.mapFrom = mapFrom.getKey();
+            wildcardMapFrom(mapFrom.getKey(), function);
+            return this;
+        }
+
+        public Builder<T> wildcardMapFrom(String mapFrom, ValueMapper function) {
+            this.mapFrom = mapFrom;
             this.wildcardMapFrom = function;
             return this;
         }
@@ -472,7 +499,7 @@ public class PropertyMapper<T> {
             if (wildcardKeysTransformer != null || wildcardMapFrom != null) {
                 throw new AssertionError("Wildcard operations not expected with non-wildcard mapper");
             }
-            return new PropertyMapper<>(option, to, isEnabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, isMasked, validator, description, isRequired, requiredWhen, null);
+            return new PropertyMapper<>(option, to, isEnabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, isMasked, validator, description, isRequired, requiredWhen, null, null);
         }
     }
 
