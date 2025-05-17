@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import jakarta.ws.rs.ForbiddenException;
-import org.keycloak.authorization.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.common.DefaultEvaluationContext;
 import org.keycloak.authorization.identity.UserModelIdentity;

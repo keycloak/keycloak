@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin.permissions;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -40,7 +41,7 @@ public interface ClientPermissionEvaluator {
     /**
      * Returns {@code true} if the caller has {@link org.keycloak.models.AdminRoles#MANAGE_CLIENTS} role.
      * <p/>
-     * For V2 only: Also if it has permission to {@link org.keycloak.authorization.AdminPermissionsSchema#MANAGE}.
+     * For V2 only: Also if it has permission to {@link AdminPermissionsSchema#MANAGE}.
      */
     boolean canManage();
 
@@ -52,7 +53,7 @@ public interface ClientPermissionEvaluator {
     /**
      * Returns {@code true} if the caller has {@link org.keycloak.models.AdminRoles#MANAGE_CLIENTS} role.
      * <p/>
-     * For V2 only: Also if it has permission to {@link org.keycloak.authorization.AdminPermissionsSchema#MANAGE}.
+     * For V2 only: Also if it has permission to {@link AdminPermissionsSchema#MANAGE}.
      */
     boolean canManageClientScopes();
 
@@ -64,7 +65,7 @@ public interface ClientPermissionEvaluator {
     /**
      * Returns {@code true} if the caller has at least one of the {@link org.keycloak.models.AdminRoles#MANAGE_CLIENTS} or {@link org.keycloak.models.AdminRoles#VIEW_CLIENTS} roles.
      * <p/>
-     * For V2 only: Also if it has permission to {@link org.keycloak.authorization.AdminPermissionsSchema#VIEW}.
+     * For V2 only: Also if it has permission to {@link AdminPermissionsSchema#VIEW}.
      */
     boolean canView();
 
@@ -109,7 +110,7 @@ public interface ClientPermissionEvaluator {
      * <p/>
      * Or if the caller has a permission to {@link AdminPermissionManagement#MANAGE_SCOPE} the client.
      * <p/>
-     * For V2 only: Also if the caller has a permission to {@link org.keycloak.authorization.AdminPermissionsSchema#MANAGE} all clients.
+     * For V2 only: Also if the caller has a permission to {@link AdminPermissionsSchema#MANAGE} all clients.
      */
     boolean canManage(ClientModel client);
 
@@ -139,7 +140,7 @@ public interface ClientPermissionEvaluator {
      * <p/>
      * Or if the caller has a permission to {@link AdminPermissionManagement#VIEW_SCOPE} the client.
      * <p/>
-     * For V2 only: Also if the caller has a permission to {@link org.keycloak.authorization.AdminPermissionsSchema#VIEW} all clients.
+     * For V2 only: Also if the caller has a permission to {@link AdminPermissionsSchema#VIEW} all clients.
      */
     boolean canView(ClientModel client);
 
@@ -151,7 +152,7 @@ public interface ClientPermissionEvaluator {
     /**
      * Returns {@code true} if the caller has {@link org.keycloak.models.AdminRoles#MANAGE_CLIENTS} role.
      * <p/>
-     * For V2 only: Also if it has permission to {@link org.keycloak.authorization.AdminPermissionsSchema#MANAGE}.
+     * For V2 only: Also if it has permission to {@link AdminPermissionsSchema#MANAGE}.
      */
     boolean canManage(ClientScopeModel clientScope);
 
@@ -163,7 +164,7 @@ public interface ClientPermissionEvaluator {
     /**
      * Returns {@code true} if the caller has at least one of the {@link org.keycloak.models.AdminRoles#VIEW_CLIENTS} or {@link org.keycloak.models.AdminRoles#MANAGE_CLIENTS} roles.
      * <p/>
-     * For V2 only: Also if it has permission to {@link org.keycloak.authorization.AdminPermissionsSchema#VIEW}.
+     * For V2 only: Also if it has permission to {@link AdminPermissionsSchema#VIEW}.
      */
     boolean canView(ClientScopeModel clientScope);
 
@@ -175,21 +176,21 @@ public interface ClientPermissionEvaluator {
     /**
      * Returns {@code true} if the caller has a permission to {@link ClientPermissionManagement#MAP_ROLES_SCOPE} for the client.
      * <p/>
-     * For V2 only: Also if the caller has a permission to {@link org.keycloak.authorization.AdminPermissionsSchema#MAP_ROLES} for all clients.
+     * For V2 only: Also if the caller has a permission to {@link AdminPermissionsSchema#MAP_ROLES} for all clients.
      */
     boolean canMapRoles(ClientModel client);
 
     /**
      * Returns {@code true} if the caller has a permission to {@link ClientPermissionManagement#MAP_ROLES_COMPOSITE_SCOPE} for the client.
      * <p/>
-     * For V2 only: Also if the caller has a permission to {@link org.keycloak.authorization.AdminPermissionsSchema#MAP_ROLES_COMPOSITE} for all clients.
+     * For V2 only: Also if the caller has a permission to {@link AdminPermissionsSchema#MAP_ROLES_COMPOSITE} for all clients.
      */
     boolean canMapCompositeRoles(ClientModel client);
 
     /**
      * Returns {@code true} if the caller has a permission to {@link ClientPermissionManagement#MAP_ROLES_CLIENT_SCOPE} for the client.
      * <p/>
-     * For V2 only: Also if the caller has a permission to {@link org.keycloak.authorization.AdminPermissionsSchema#MAP_ROLES_CLIENT_SCOPE} for all clients.
+     * For V2 only: Also if the caller has a permission to {@link AdminPermissionsSchema#MAP_ROLES_CLIENT_SCOPE} for all clients.
      */
     boolean canMapClientScopeRoles(ClientModel client);
 

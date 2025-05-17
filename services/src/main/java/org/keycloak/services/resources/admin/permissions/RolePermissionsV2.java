@@ -17,7 +17,7 @@
 
 package org.keycloak.services.resources.admin.permissions;
 
-import static org.keycloak.authorization.AdminPermissionsSchema.ROLES_RESOURCE_TYPE;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.ROLES_RESOURCE_TYPE;
 import static org.keycloak.models.utils.KeycloakModelUtils.getMasterRealmAdminManagementClientId;
 import static org.keycloak.services.managers.RealmManager.isAdministrationRealm;
 
@@ -25,14 +25,13 @@ import java.util.Map;
 import java.util.Set;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.authorization.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;

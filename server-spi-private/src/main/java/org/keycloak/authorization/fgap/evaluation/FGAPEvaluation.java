@@ -15,14 +15,15 @@
  * limitations under the License.
  */
 
-package org.keycloak.authorization;
+package org.keycloak.authorization.fgap.evaluation;
 
-import static org.keycloak.authorization.AdminPermissionsSchema.SCHEMA;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.SCHEMA;
 
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.Decision.Effect;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
@@ -32,12 +33,12 @@ import org.keycloak.authorization.policy.evaluation.Evaluation;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.authorization.policy.evaluation.Realm;
 
-public class FGAPEvaluation implements Evaluation {
+class FGAPEvaluation implements Evaluation {
 
     private final Evaluation evaluation;
     private final Map<Scope, Set<Resource>> scopesGrantedByResource;
 
-    public FGAPEvaluation(Evaluation evaluation, Map<Scope, Set<Resource>> scopesGrantedByResource) {
+    FGAPEvaluation(Evaluation evaluation, Map<Scope, Set<Resource>> scopesGrantedByResource) {
         this.evaluation = evaluation;
         this.scopesGrantedByResource = scopesGrantedByResource;
     }
