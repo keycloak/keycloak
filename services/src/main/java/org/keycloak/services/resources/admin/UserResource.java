@@ -883,6 +883,12 @@ public class UserResource {
             if (auth.users().canQuery()) throw new NotFoundException("Credential not found");
             else throw new ForbiddenException();
         }
+
+        if (userLabel == null || userLabel.trim().isEmpty()) {
+            throw new ErrorResponseException("missingCredentialLabel", "Credential label must not be empty", Status.BAD_REQUEST);
+
+        }
+
         user.credentialManager().updateCredentialLabel(credentialId, userLabel);
     }
 
