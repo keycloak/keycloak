@@ -19,11 +19,12 @@ package com.acme.provider.legacy.jpa.user;
 
 import jakarta.persistence.EntityManager;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.jpa.JpaUserCredentialStore;
 import org.keycloak.models.jpa.JpaUserProvider;
 
 public class MyUserProvider extends JpaUserProvider {
 
     public MyUserProvider(KeycloakSession session, EntityManager em) {
-        super(session, em);
+        super(session, em, new JpaUserCredentialStore(session, em));
     }
 }

@@ -18,6 +18,7 @@ package org.keycloak.storage.federated;
 
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
 
 import java.util.stream.Stream;
@@ -52,6 +53,16 @@ public interface UserFederatedUserCredentialStore extends Provider {
     Stream<CredentialModel> getStoredCredentialsByTypeStream(RealmModel realm, String userId, String type);
 
     CredentialModel getStoredCredentialByNameAndType(RealmModel realm, String userId, String name, String type);
+
+    boolean moveCredentialTo(RealmModel realm, String userId, String credentialId, String newPreviousCredentialId);
+
+    @Deprecated
+    default boolean moveCredentialTo(RealmModel realm, UserModel user, String id, String newPreviousCredentialId) {
+        /* Default implementation added for backwards compatibility. Existing implementations should provide an implementation
+        as the default implementation will be removed in Keycloak 26+.
+         */
+        throw new UnsupportedOperationException();
+    }
 
     /**
      * @deprecated This interface is no longer necessary; collection-based methods were removed from the parent interface
