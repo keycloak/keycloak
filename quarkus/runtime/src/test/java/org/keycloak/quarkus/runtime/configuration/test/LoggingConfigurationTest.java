@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.hamcrest.CoreMatchers;
-import org.jboss.logmanager.handlers.AsyncHandler;
 import org.junit.Test;
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.quarkus.runtime.Environment;
@@ -301,6 +300,15 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
     @Test
     public void testLogLevelWithUnderscore() {
         ConfigArgsConfigSource.setCliArgs("--log-level=error,reproducer.not_ok:debug");
+        SmallRyeConfig config = createConfig();
+        assertEquals("DEBUG", config.getConfigValue("quarkus.log.category.\"reproducer.not_ok\".level").getValue());
+        Set<String> keys = StreamSupport.stream(config.getPropertyNames().spliterator(), false).collect(Collectors.toSet());
+        assertTrue(keys.contains("quarkus.log.category.\"reproducer.not_ok\".level"));
+    }
+
+    @Test
+    public void testLogLevelWithUnderscoreEnv() {
+        putEnvVar("KCENV_LOG_LEVEL_REPRODUCER_NOT_OK", "reproducer.not_ok,debug");
         SmallRyeConfig config = createConfig();
         assertEquals("DEBUG", config.getConfigValue("quarkus.log.category.\"reproducer.not_ok\".level").getValue());
         Set<String> keys = StreamSupport.stream(config.getPropertyNames().spliterator(), false).collect(Collectors.toSet());
