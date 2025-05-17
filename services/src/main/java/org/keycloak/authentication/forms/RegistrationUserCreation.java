@@ -18,6 +18,7 @@
 package org.keycloak.authentication.forms;
 
 import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.Response;
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowException;
@@ -42,6 +43,7 @@ import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.utils.Organizations;
@@ -106,10 +108,14 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
         try {
             profile.validate();
         } catch (ValidationException pve) {
-            List<FormMessage> errors = Validation.getFormErrorsFromValidation(pve.getErrors());
+            boolean hideUserAlreadyRegisteredError = context.getRealm().hideUserAlreadyRegisteredError();
+            boolean verifyEmail = context.getRealm().isVerifyEmail();
+            boolean userExistsError = pve.hasError(Messages.EMAIL_EXISTS, Messages.USERNAME_EXISTS);
 
-            if (pve.hasError(Messages.EMAIL_EXISTS, Messages.INVALID_EMAIL)) {
-                context.getEvent().detail(Details.EMAIL, attributes.getFirst(UserModel.EMAIL));
+            if (verifyEmail && hideUserAlreadyRegisteredError && userExistsError) {
+                context.getEvent().detail(Messages.USER_ALREADY_EXISTS, attributes.getFirst(UserModel.EMAIL));
+                context.success(); // TODO - too dangerous?
+                return;
             }
 
             if (pve.hasError(Messages.EMAIL_EXISTS)) {
@@ -120,7 +126,12 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
                 context.error(Errors.INVALID_REGISTRATION);
             }
 
-            context.validationError(formData, errors);
+            if (pve.hasError(Messages.EMAIL_EXISTS, Messages.INVALID_EMAIL)) {
+                context.getEvent().detail(Details.EMAIL, attributes.getFirst(UserModel.EMAIL));
+            }
+
+            context.validationError(formData, Validation.getFormErrorsFromValidation(pve.getErrors()));
+
             return;
         }
         context.success();
@@ -148,23 +159,34 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
                 .detail(Details.REGISTER_METHOD, "form")
                 .detail(Details.EMAIL, email);
 
-        UserProfile profile = getOrCreateUserProfile(context, formData);
-        UserModel user = profile.create();
+        boolean userAlreadyExists = context.getEvent().getEvent().getDetails().containsKey(Messages.USER_ALREADY_EXISTS);
+        UserModel user = null;
 
-        addOrganizationMember(context, user);
+        if (userAlreadyExists) {
+            KeycloakSession session = context.getSession();
+            RealmModel realm = session.getContext().getRealm();
+            UserProvider userProvider = session.getProvider(UserProvider.class);
+            user = userProvider.getUserByEmail(realm, email);
+        } else {
+            UserProfile profile = getOrCreateUserProfile(context, formData);
+            user = profile.create();
 
-        user.setEnabled(true);
+            addOrganizationMember(context, user);
 
-        if ("on".equals(formData.getFirst(RegistrationTermsAndConditions.FIELD))) {
-            // if accepted terms and conditions checkbox, remove action and add the attribute if enabled
-            RequiredActionProviderModel tacModel = context.getRealm().getRequiredActionProviderByAlias(
-                    UserModel.RequiredAction.TERMS_AND_CONDITIONS.name());
-            if (tacModel != null && tacModel.isEnabled()) {
-                user.setSingleAttribute(TermsAndConditions.USER_ATTRIBUTE, Integer.toString(Time.currentTime()));
-                context.getAuthenticationSession().removeRequiredAction(UserModel.RequiredAction.TERMS_AND_CONDITIONS);
-                user.removeRequiredAction(UserModel.RequiredAction.TERMS_AND_CONDITIONS);
+            user.setEnabled(true);
+
+            if ("on".equals(formData.getFirst(RegistrationTermsAndConditions.FIELD))) {
+                // if accepted terms and conditions checkbox, remove action and add the attribute if enabled
+                RequiredActionProviderModel tacModel = context.getRealm().getRequiredActionProviderByAlias(
+                        UserModel.RequiredAction.TERMS_AND_CONDITIONS.name());
+                if (tacModel != null && tacModel.isEnabled()) {
+                    user.setSingleAttribute(TermsAndConditions.USER_ATTRIBUTE, Integer.toString(Time.currentTime()));
+                    context.getAuthenticationSession().removeRequiredAction(UserModel.RequiredAction.TERMS_AND_CONDITIONS);
+                    user.removeRequiredAction(UserModel.RequiredAction.TERMS_AND_CONDITIONS);
+                }
             }
         }
+
 
         context.setUser(user);
 
