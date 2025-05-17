@@ -143,11 +143,11 @@ public interface UsersResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    List<UserRepresentation> searchByFirstName(@QueryParam("firstName") String email, @QueryParam("exact") Boolean exact);
+    List<UserRepresentation> searchByFirstName(@QueryParam("firstName") String firstName, @QueryParam("exact") Boolean exact);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    List<UserRepresentation> searchByLastName(@QueryParam("lastName") String email, @QueryParam("exact") Boolean exact);
+    List<UserRepresentation> searchByLastName(@QueryParam("lastName") String lastName, @QueryParam("exact") Boolean exact);
 
     /**
      * Search for users based on the given filters.
