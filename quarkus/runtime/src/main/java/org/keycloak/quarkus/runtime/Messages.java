@@ -60,5 +60,8 @@ public final class Messages {
     public static String invalidLogCategoryFormat(String category) {
         return "Invalid log category format: " + category + ". The format is 'category:level' such as 'org.keycloak:debug'.";
     }
+    public static String invalidOrMissingPropertyDB(){
+      return "Try to set env 'KC_DB' or set flag --db to mention database system. default (h2) is not allowed in production.";
+    }
 
 }
