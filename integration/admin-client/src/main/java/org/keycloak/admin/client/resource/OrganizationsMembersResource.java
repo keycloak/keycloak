@@ -24,12 +24,12 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
-import org.keycloak.representations.idm.OrganizationRepresentation;
+import org.keycloak.representations.idm.MembershipRepresentation;
 
 public interface OrganizationsMembersResource {
 
     @Path("{id}/organizations")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    List<OrganizationRepresentation> getOrganizations(@PathParam("id") String id);
+    List<MembershipRepresentation> getOrganizations(@PathParam("id") String id);
 }
