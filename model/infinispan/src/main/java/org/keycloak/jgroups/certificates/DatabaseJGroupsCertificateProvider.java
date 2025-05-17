@@ -36,6 +36,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.spi.infinispan.JGroupsCertificateProvider;
 import org.keycloak.storage.configuration.ServerConfigStorageProvider;
+import org.keycloak.tracing.TracingProvider;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManager;
@@ -81,9 +82,11 @@ public class DatabaseJGroupsCertificateProvider implements JGroupsCertificatePro
 
     private void init() {
         logger.debug("Initializing JGroups mTLS certificate.");
-        var cert = Retry.call(ignored -> KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory, this::loadOrCreateCertificate), STARTUP_RETRIES, STARTUP_RETRY_SLEEP_MILLIS);
-        useCertificate(cert);
-        trustManager.setExceptionHandler(this::onTrustManagerException);
+        sessionFactory.getProviderFactory(TracingProvider.class).create(null).trace(this.getClass(), "init", span -> {
+            var cert = Retry.call(ignored -> KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory, this::loadOrCreateCertificate), STARTUP_RETRIES, STARTUP_RETRY_SLEEP_MILLIS);
+            useCertificate(cert);
+            trustManager.setExceptionHandler(this::onTrustManagerException);
+        });
     }
 
     @Override
@@ -161,12 +164,12 @@ public class DatabaseJGroupsCertificateProvider implements JGroupsCertificatePro
     }
 
     private static Optional<String> loadCertificateFromDatabase(KeycloakSession session) {
-        return session.getProvider(ServerConfigStorageProvider.class).find(CERTIFICATE_ID);
+            return session.getProvider(ServerConfigStorageProvider.class).find(CERTIFICATE_ID);
     }
 
     private void replaceCertificateFromDatabase(KeycloakSession session) {
-        var storage = session.getProvider(ServerConfigStorageProvider.class);
-        storage.replace(CERTIFICATE_ID, currentCertificate::isSameAlias, this::generateSelfSignedCertificate);
+            var storage = session.getProvider(ServerConfigStorageProvider.class);
+            storage.replace(CERTIFICATE_ID, currentCertificate::isSameAlias, this::generateSelfSignedCertificate);
     }
 
     private void useCertificate(JGroupsCertificate certificate) {
@@ -188,8 +191,8 @@ public class DatabaseJGroupsCertificateProvider implements JGroupsCertificatePro
     }
 
     private JGroupsCertificate loadOrCreateCertificate(KeycloakSession session) {
-        var storage = session.getProvider(ServerConfigStorageProvider.class);
-        return fromJson(storage.loadOrCreate(CERTIFICATE_ID, this::generateSelfSignedCertificate));
+            var storage = session.getProvider(ServerConfigStorageProvider.class);
+            return fromJson(storage.loadOrCreate(CERTIFICATE_ID, this::generateSelfSignedCertificate));
     }
 
     private String generateSelfSignedCertificate() {

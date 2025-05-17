@@ -45,6 +45,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.spi.infinispan.JGroupsCertificateProvider;
+import org.keycloak.tracing.TracingProvider;
 
 /**
  * Class to handle JGroups certificate reloading for encryption (mTLS).
@@ -121,35 +122,41 @@ public class CertificateReloadManager implements Lifecycle {
      * Creates and reload a new certificate.
      */
     public void rotateCertificate() {
-        logger.info("Rotating JGroups certificate");
-        lock.lock();
-        try (lock) {
-            KeycloakModelUtils.runJobInTransaction(sessionFactory, CertificateReloadManager::replaceCertificateInTransaction);
-            sendReloadNotification();
-        } catch (RuntimeException e) {
-            logger.warn("Failed to rotate JGroups certificate", e);
-            retry(this::rotateCertificate, "retry-rotate");
-        }
+        sessionFactory.getProviderFactory(TracingProvider.class).create(null).trace(this.getClass(), "rotateCertificate", span -> {
+            logger.info("Rotating JGroups certificate");
+            lock.lock();
+            try (lock) {
+                KeycloakModelUtils.runJobInTransaction(sessionFactory, CertificateReloadManager::replaceCertificateInTransaction);
+                sendReloadNotification();
+            } catch (RuntimeException e) {
+                logger.warn("Failed to rotate JGroups certificate", e);
+                span.recordException(e);
+                retry(this::rotateCertificate, "retry-rotate");
+            }
+        });
     }
 
     /**
      * Reloads the certificate from storage.
      */
     public void reloadCertificate() {
-        logger.info("Reloading JGroups Certificate");
-        lock.lock();
-        try (lock) {
-            if (bootFuture != null) {
-                bootFuture.cancel(true);
-                bootFuture = null;
+        sessionFactory.getProviderFactory(TracingProvider.class).create(null).trace(this.getClass(), "reloadCertificate", span -> {
+            logger.info("Reloading JGroups Certificate");
+            lock.lock();
+            try (lock) {
+                if (bootFuture != null) {
+                    bootFuture.cancel(true);
+                    bootFuture = null;
+                }
+                KeycloakModelUtils.runJobInTransaction(sessionFactory, CertificateReloadManager::loadCertificateInTransaction);
+            } catch (RuntimeException e) {
+                logger.warn("Failed to reload JGroups certificate", e);
+                span.recordException(e);
+                retry(this::reloadCertificate, "retry-reload");
+            } finally {
+                scheduleNextRotation();
             }
-            KeycloakModelUtils.runJobInTransaction(sessionFactory, CertificateReloadManager::loadCertificateInTransaction);
-        } catch (RuntimeException e) {
-            logger.warn("Failed to reload JGroups certificate", e);
-            retry(this::reloadCertificate, "retry-reload");
-        } finally {
-            scheduleNextRotation();
-        }
+        });
     }
 
     @ViewChanged
