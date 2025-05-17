@@ -89,9 +89,9 @@ public class AdminEventBuilder {
      */
     public AdminEventBuilder clone(KeycloakSession session) {
         RealmModel newEventRealm = session.realms().getRealm(realm.getId());
-        RealmModel newAuthRealm = session.realms().getRealm(this.auth.getRealm().getId());
-        UserModel newAuthUser = session.users().getUserById(newAuthRealm, this.auth.getUser().getId());
-        ClientModel newAuthClient = session.clients().getClientById(newAuthRealm, this.auth.getClient().getId());
+        RealmModel newAuthRealm = this.auth.getRealm() == null ? null : session.realms().getRealm(this.auth.getRealm().getId());
+        UserModel newAuthUser = this.auth.getUser() == null ? null : session.users().getUserById(newAuthRealm, this.auth.getUser().getId());
+        ClientModel newAuthClient = this.auth.getClient() == null ? null : session.clients().getClientById(newAuthRealm, this.auth.getClient().getId());
 
         return new AdminEventBuilder(
                 newEventRealm,
@@ -166,8 +166,8 @@ public class AdminEventBuilder {
         AuthDetails authDetails = adminEvent.getAuthDetails();
         if(authDetails == null) {
             authDetails =  new AuthDetails();
-            authDetails.setRealmId(realm.getId());
-        } else {
+        } 
+        if (realm != null) {
             authDetails.setRealmId(realm.getId());
         }
         authDetails.setRealmName(realm.getName());
@@ -179,8 +179,8 @@ public class AdminEventBuilder {
         AuthDetails authDetails = adminEvent.getAuthDetails();
         if(authDetails == null) {
             authDetails =  new AuthDetails();
-            authDetails.setClientId(client.getId());
-        } else {
+        } 
+        if (client != null) {
             authDetails.setClientId(client.getId());
         }
         adminEvent.setAuthDetails(authDetails);
@@ -191,8 +191,8 @@ public class AdminEventBuilder {
         AuthDetails authDetails = adminEvent.getAuthDetails();
         if(authDetails == null) {
             authDetails =  new AuthDetails();
-            authDetails.setUserId(user.getId());
-        } else {
+        } 
+        if (user != null) {
             authDetails.setUserId(user.getId());
         }
         adminEvent.setAuthDetails(authDetails);
