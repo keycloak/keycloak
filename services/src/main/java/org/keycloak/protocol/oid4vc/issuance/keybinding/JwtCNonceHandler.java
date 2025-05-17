@@ -170,8 +170,8 @@ public class JwtCNonceHandler implements CNonceHandler {
         SignatureVerifierContext signatureVerifier = keycloakSession.getProvider(SignatureProvider.class,
                                                                                  signingKey.getAlgorithm())
                                                                     .verifier(signingKey);
-        verifier.verify(); // throws a VerificationException on failure
         verifier.verifierContext(signatureVerifier);
+        verifier.verify(); // throws a VerificationException on failure
     }
 
     protected boolean checkAttributeEquality(String key, Object object, Object actualValue) throws VerificationException {
