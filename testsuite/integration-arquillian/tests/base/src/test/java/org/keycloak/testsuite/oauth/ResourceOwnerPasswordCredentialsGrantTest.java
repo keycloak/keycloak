@@ -319,7 +319,6 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
         RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
-
         events.expectLogin()
                 .client(clientId)
                 .user(userId)
@@ -327,7 +326,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
                 .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
                 .detail(Details.TOKEN_ID, accessToken.getId())
                 .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
-                .detail(Details.USERNAME, login)
+                .detail(Details.USERNAME, accessToken.getPreferredUsername())
                 .removeDetail(Details.CODE_ID)
                 .removeDetail(Details.REDIRECT_URI)
                 .removeDetail(Details.CONSENT)

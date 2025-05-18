@@ -216,7 +216,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         loginPage.clickRegister();
         registerPage.register("firstName", "lastName", "email@mail.com", "verifyEmail", "password", "password");
 
-        String userId = events.expectRegister("verifyEmail", "email@mail.com").assertEvent().getUserId();
+        String userId = events.expectRegister("verifyemail", "email@mail.com").assertEvent().getUserId();
 
         verifyEmailPage.assertCurrent();
 
