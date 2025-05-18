@@ -984,10 +984,79 @@ public class SamlService extends AuthorizationEndpointBase {
             event.error(Errors.INVALID_CLIENT);
             return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, "Wrong client protocol.");
         }
-
         session.getContext().setClient(client);
-
-        AuthenticationSessionModel authSession = getOrCreateLoginSessionForIdpInitiatedSso(this.session, this.realm, client, relayState);
+        String samlRequest = session.getContext()
+                                    .getUri()
+                                    .getQueryParameters()
+                                    .getFirst(GeneralConstants.SAML_REQUEST_KEY);
+     
+        if (samlRequest == null || samlRequest.isEmpty()) {
+            // No actual SP AuthnRequest, so we do normal IdP-initiated logic
+            return doIdpInitiatedFallback(client, relayState);
+        }
+    
+        SAMLDocumentHolder docHolder;
+        AuthnRequestType authnRequest;
+        try {
+            docHolder = SAMLRequestParser.parseRequestRedirectBinding(samlRequest);
+            if (!(docHolder.getSamlObject() instanceof AuthnRequestType)) {
+                logger.warn("SAMLRequest isn't an AuthnRequestType in idpInitiatedSSO path");
+                event.error(Errors.INVALID_REQUEST);
+                return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
+            }
+            authnRequest = (AuthnRequestType) docHolder.getSamlObject();
+        } catch (Exception e) {
+            logger.warn("Failed parsing SAMLRequest in idpInitiatedSSO method", e);
+            event.error(Errors.INVALID_REQUEST);
+            return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
+        }
+    
+        URI requestedAcs = authnRequest.getAssertionConsumerServiceURL();
+    
+        // Validate the ACS URL or fallback
+        String finalAcsUrl = null;
+        if (requestedAcs != null) {
+            // Use built-in "verifyRedirectUri" to ensure it's an allowed "Valid Redirect URI"
+            String verified = RedirectUtils.verifyRedirectUri(session, requestedAcs.toString(), client);
+            if (verified == null) {
+                logger.warnf("Requested ACS %s is not in the client's valid redirect URIs. Failing or fallback.", requestedAcs);
+                event.error(Errors.INVALID_REDIRECT_URI);
+                return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REDIRECT_URI);
+            }
+            finalAcsUrl = verified;
+        }
+    
+        if (finalAcsUrl == null) {
+            // fallback to original IdP-initiated logic
+            logger.debug("No valid ACS in the SAMLRequest => fallback to default IdP-initiated approach.");
+            return doIdpInitiatedFallback(client, relayState);
+        }
+    
+        // Create the authentication session
+        AuthenticationSessionModel authSession = createAuthenticationSession(client, null);
+        authSession.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
+        authSession.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
+        authSession.setClientNote(SamlProtocol.SAML_IDP_INITIATED_LOGIN, "true");
+        authSession.setRedirectUri(finalAcsUrl);
+    
+        if (relayState != null && !relayState.trim().isEmpty()) {
+            authSession.setClientNote(GeneralConstants.RELAY_STATE, relayState);
+        }
+    
+        authSession.setClientNote(SamlProtocol.SAML_REQUEST_ID, authnRequest.getID());
+    
+        if (Boolean.TRUE.equals(authnRequest.isForceAuthn())) {
+            authSession.setAuthNote(SamlProtocol.SAML_LOGIN_REQUEST_FORCEAUTHN, SamlProtocol.SAML_FORCEAUTHN_REQUIREMENT);
+        }
+    
+        return newBrowserAuthentication(authSession, false, false);
+    }
+    
+    /** 
+     * Original fallback for "pure" IdP-initiated SSO
+     */
+    private Response doIdpInitiatedFallback(ClientModel client, String relayState) {
+        AuthenticationSessionModel authSession = getOrCreateLoginSessionForIdpInitiatedSso(session, realm, client, relayState);
         if (authSession == null) {
             logger.error("SAML assertion consumer url not set up");
             event.error(Errors.INVALID_REDIRECT_URI);
@@ -1035,20 +1104,37 @@ public class SamlService extends AuthorizationEndpointBase {
      * @return The auth session model or null if there is no SAML url is found
      */
     public AuthenticationSessionModel getOrCreateLoginSessionForIdpInitiatedSso(KeycloakSession session, RealmModel realm, ClientModel client, String relayState) {
+        String requestedAcsUrl = session.getContext().getUri().getQueryParameters().getFirst("requested_acs");
         String[] bindingProperties = getUrlAndBindingForIdpInitiatedSso(client);
         if (bindingProperties == null) {
             return null;
         }
-        String redirect = bindingProperties[0];
+        String defaultRedirect = bindingProperties[0];
         String bindingType = bindingProperties[1];
 
-        AuthenticationSessionModel authSession = createAuthenticationSession(client, null);
+        String finalRedirect = defaultRedirect; // fallback if no ACS or invalid
+        if (requestedAcsUrl != null && !requestedAcsUrl.isBlank()) {
 
+            // Compare the requested ACS URL with the client’s allowed redirects:
+            String verifiedAcs = RedirectUtils.verifyRedirectUri(session, requestedAcsUrl, client);
+
+            if (verifiedAcs == null) {
+                // The requested ACS was NOT valid
+                logger.warnf("Requested ACS URL [%s] is NOT in the client's valid redirect URIs. Using fallback: %s",
+                        requestedAcsUrl, defaultRedirect);
+                return null;
+            } else {
+                logger.debugf("Using requested ACS URL as redirect: %s", verifiedAcs);
+                finalRedirect = verifiedAcs;
+            }
+        }
+
+        AuthenticationSessionModel authSession = createAuthenticationSession(client, null);
         authSession.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
         authSession.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
         authSession.setClientNote(SamlProtocol.SAML_BINDING, bindingType);
         authSession.setClientNote(SamlProtocol.SAML_IDP_INITIATED_LOGIN, "true");
-        authSession.setRedirectUri(redirect);
+        authSession.setRedirectUri(finalRedirect);
 
         if (relayState == null) {
             relayState = client.getAttribute(SamlProtocol.SAML_IDP_INITIATED_SSO_RELAY_STATE);
