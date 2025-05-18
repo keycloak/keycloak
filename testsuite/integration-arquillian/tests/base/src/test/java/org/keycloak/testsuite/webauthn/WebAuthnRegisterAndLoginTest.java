@@ -122,7 +122,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
             appPage.openAccount();
 
             // confirm that registration is successfully completed
-            userId = events.expectRegister(username, email).assertEvent().getUserId();
+            userId = events.expectRegister(username.toLowerCase(), email).assertEvent().getUserId();
             // confirm registration event
             EventRepresentation eventRep1 = events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION)
                     .user(userId)
