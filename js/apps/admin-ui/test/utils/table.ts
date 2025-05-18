@@ -42,7 +42,7 @@ export async function assertRowExists(
   if (exist) {
     await expect(page.getByRole("row", { name: itemName })).toBeVisible();
   } else {
-    await expect(page.getByRole("row", { name: itemName })).not.toBeVisible();
+    await expect(page.getByRole("row", { name: itemName })).toBeHidden();
   }
 }
 
@@ -67,7 +67,9 @@ export async function clickTableToolbarItem(
 }
 
 export async function getTableData(page: Page, name: string) {
-  const table = page.getByLabel(name, { exact: true });
+  const table = page
+    .getByRole("grid")
+    .and(page.getByLabel(name, { exact: true }));
   await table.locator("tbody").waitFor();
   const rows = await table.locator("tbody tr").elementHandles();
 

@@ -12,12 +12,14 @@ type SamlImportKeyDialogProps = {
   id: string;
   attr: KeyTypes;
   onClose: () => void;
+  onImported: () => void;
 };
 
 export const SamlImportKeyDialog = ({
   id,
   attr,
   onClose,
+  onImported,
 }: SamlImportKeyDialogProps) => {
   const { adminClient } = useAdminClient();
 
@@ -36,6 +38,7 @@ export const SamlImportKeyDialog = ({
         addError("importError", error);
       } else {
         addAlert(t("importSuccess"), AlertVariant.success);
+        onImported();
       }
     });
   };

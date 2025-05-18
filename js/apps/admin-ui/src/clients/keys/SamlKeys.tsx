@@ -255,6 +255,7 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
               id={clientId}
               attr={attr}
               onClose={() => setImportOpen(undefined)}
+              onImported={() => setRefresh(refresh + 1)}
             />
           )}
           <KeySection
