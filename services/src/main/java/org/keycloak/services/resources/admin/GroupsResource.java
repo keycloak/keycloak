@@ -52,8 +52,8 @@ import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
-import org.keycloak.services.resources.admin.permissions.GroupPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.GroupPermissionEvaluator;
 import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.SearchQueryUtils;
 
