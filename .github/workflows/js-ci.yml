@@ -262,7 +262,7 @@ jobs:
         working-directory: js
 
       - name: Merge Playwright reports
-        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} exec playwright merge-reports -c ./output-config.ts ./blob-reports
+        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} exec playwright merge-reports -c ./output-config.ts ./blob-report
         working-directory: js
 
       - name: Upload Playwright report
