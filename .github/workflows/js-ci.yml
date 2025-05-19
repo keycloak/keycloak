@@ -261,17 +261,13 @@ jobs:
         run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test:integration --project=${{ matrix.browser }} --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
         working-directory: js
 
-      - name: Merge Playwright reports
-        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} exec playwright merge-reports -c ./output-config.ts ./blob-report
-        working-directory: js
-
-      - name: Upload Playwright report
+      - name: Upload blob report to GitHub Actions Artifacts
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
-        if: always()
         with:
-          name: admin-ui-playwright-report-${{ matrix.browser }}${{ matrix.shardIndex }}
-          path: js/apps/admin-ui/playwright-report
-          retention-days: 30
+          name: blob-report-${{ matrix.shardIndex }}
+          path: ./js/apps/admin-ui/blob-report
+          retention-days: 1
 
       - name: Upload server logs
         if: always()
@@ -279,6 +275,30 @@ jobs:
         with:
           name: admin-ui-server-log-${{ matrix.browser }}-${{ matrix.shardIndex }}
           path: ~/server.log
+
+  merge-reports:
+    name: Merge Playwright reports
+    if: ${{ !cancelled() }}
+    needs: [admin-ui-e2e]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download blob reports from GitHub Actions Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ~/all-blob-reports
+          pattern: blob-report-*
+          merge-multiple: true
+
+      - name: Merge Playwright reports
+        run: pnpm --fail-if-no-match --filter keycloak-admin-ui exec playwright merge-reports -c ./output-config.ts ~/all-blob-reports
+        working-directory: js
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: admin-ui-playwright-report
+          path: js/apps/admin-ui/playwright-report
 
   check:
     name: Status Check - Keycloak JavaScript CI
