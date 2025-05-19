@@ -103,3 +103,20 @@ This deprecated feature will be removed in a future version.
 The `user-profile-commons.ftl` changed to improve support for localization. See https://github.com/keycloak/keycloak/issues/38029.
 As a result, and if you are extending this template, pages might start displaying a `locale` field. To avoid that, update
 the theme template with the changes aforementioned.
+
+=== Subgroup counts are no longer cached
+
+When returning subgroups of a group, the count of subgroups of each subgroup of a group is no longer cached. With the
+introduction of Fine-Grained Admin Permissions, the result set is filtered at the database level based on any permissions
+defined to a realm so that the count will change accordingly to these permissions.
+
+Instead of caching the count, a query will be executed every time to obtain the expected number of groups an administrator can access.
+
+Most of the time, this change will not impact clients querying the API to fetch the subgroups of a group. However, if not the case,
+a new parameter `subGroupsCount` was introduced to the following endpoints:
+
+* `/realms/{realm}/groups/{id}/children`
+* `/realms/{realm}/groups`
+
+With this parameter, clients can decide whether the count should be returned to each individual group returned. To not break existing deployments,
+this parameter defaults to `true` so that the count is returned if the parameter is not set.
