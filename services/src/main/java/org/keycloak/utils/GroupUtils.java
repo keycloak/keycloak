@@ -11,7 +11,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
-import org.keycloak.services.resources.admin.permissions.GroupPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.GroupPermissionEvaluator;
 
 
 
