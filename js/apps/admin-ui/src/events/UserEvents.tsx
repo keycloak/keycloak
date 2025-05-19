@@ -178,7 +178,7 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
       setUserEventsEnabled(events?.eventsEnabled!);
       setEvents(localeSort(events?.enabledEventTypes || [], (e) => e));
     },
-    []
+    [],
   );
 
   function loader(first?: number, max?: number) {
@@ -213,7 +213,7 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
 
   function removeFilterValue(
     key: keyof UserEventSearchForm,
-    valueToRemove: EventType
+    valueToRemove: EventType,
   ) {
     const formValues = getValues();
     const fieldValue = formValues[key];
@@ -228,7 +228,7 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
   function commitFilters() {
     const newFilters: Partial<UserEventSearchForm> = pickBy(
       getValues(),
-      (value) => value !== "" || (Array.isArray(value) && value.length > 0)
+      (value) => value !== "" || (Array.isArray(value) && value.length > 0),
     );
 
     if (user) {
@@ -313,7 +313,7 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   field.onChange(
-                                    field.value.filter((val) => val !== chip)
+                                    field.value.filter((val) => val !== chip),
                                   );
                                 }}
                               >
@@ -406,7 +406,7 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
                 {Object.entries(activeFilters).map((filter) => {
                   const [key, value] = filter as [
                     keyof UserEventSearchForm,
-                    string | EventType[]
+                    string | EventType[],
                   ];
 
                   if (
