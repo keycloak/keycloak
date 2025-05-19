@@ -21,7 +21,6 @@ import static org.keycloak.common.util.UriUtils.checkUrl;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 
@@ -34,6 +33,7 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
 
     public static final String PKCE_ENABLED = "pkceEnabled";
     public static final String PKCE_METHOD = "pkceMethod";
+    public static final String FORWARD_ACR_VALUES = "forwardAcrValues";
 
     public static final String JWT_X509_HEADERS_ENABLED = "jwtX509HeadersEnabled";
 
@@ -131,6 +131,14 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
 
     public void setForwardParameters(String forwardParameters) {
        getConfig().put("forwardParameters", forwardParameters);
+    }
+
+    public boolean isForwardAcrValues() {
+        return Boolean.parseBoolean(getConfig().getOrDefault(FORWARD_ACR_VALUES, "false"));
+    }
+
+    public void setForwardAcrValues(boolean forwardAcrValues) {
+        getConfig().put(FORWARD_ACR_VALUES, String.valueOf(forwardAcrValues));
     }
 
     public boolean isPkceEnabled() {
