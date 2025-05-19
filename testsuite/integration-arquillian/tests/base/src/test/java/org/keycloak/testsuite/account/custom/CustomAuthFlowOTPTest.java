@@ -33,7 +33,7 @@ import org.keycloak.testsuite.admin.Users;
 import org.keycloak.testsuite.auth.page.login.OneTimeCode;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
-import org.keycloak.testsuite.pages.PageUtils;
+import org.keycloak.testsuite.util.webdriver.PageUtils;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 
 import jakarta.ws.rs.NotFoundException;

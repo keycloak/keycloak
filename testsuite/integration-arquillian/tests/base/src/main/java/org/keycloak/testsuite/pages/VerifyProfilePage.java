@@ -20,6 +20,7 @@ package org.keycloak.testsuite.pages;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.auth.page.AccountFields;
 import org.keycloak.testsuite.util.UIUtils;
+import org.keycloak.testsuite.util.webdriver.PageUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;

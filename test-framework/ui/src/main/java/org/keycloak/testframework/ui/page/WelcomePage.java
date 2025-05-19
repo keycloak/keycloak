@@ -1,5 +1,6 @@
 package org.keycloak.testframework.ui.page;
 
+import org.keycloak.testframework.ui.util.PageUtils;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -67,5 +68,10 @@ public class WelcomePage extends AbstractPage {
     @Override
     public String getExpectedPageId() {
         return "welcome";
+    }
+
+    @Override
+    public boolean isCurrent() {
+        return PageUtils.getPageTitle(driver).equals("Welcome page");
     }
 }
