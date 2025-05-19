@@ -1,5 +1,6 @@
 package org.keycloak.testframework.ui.page;
 
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -34,8 +35,11 @@ public abstract class AbstractPage {
         }
     }
 
-    public boolean isActivePage() {
+    private boolean isActivePage() {
         return getExpectedPageId().equals(getCurrentPageId());
     }
 
+    public void assertCurrent() {
+        Assertions.assertEquals(getExpectedPageId(), getCurrentPageId(), "Not on the expected page");
+    }
 }
