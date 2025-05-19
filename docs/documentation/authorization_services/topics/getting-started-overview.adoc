@@ -4,7 +4,7 @@
 For certain applications, you can look at the following resources to quickly
 get started with {project_name} Authorization Services:
 
-* {quickstartRepo_link}/tree/latest/jakarta/servlet-authz-client[Securing a JakartaEE Application in Wildfly]
-* {quickstartRepo_link}/tree/latest/spring/rest-authz-resource-server[Securing a Spring Boot Application]
+* {quickstartRepo_link}/tree/main/jakarta/servlet-authz-client[Securing a JakartaEE Application in Wildfly]
+* {quickstartRepo_link}/tree/main/spring/rest-authz-resource-server[Securing a Spring Boot Application]
 * link:https://quarkus.io/guides/security-keycloak-authorization[Securing Quarkus Applications]
 * *Keycloak Node.js adapter* in the link:{securing_apps_link}[securing apps] section
