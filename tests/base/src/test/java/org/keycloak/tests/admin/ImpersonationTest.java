@@ -215,7 +215,7 @@ public class ImpersonationTest {
     public void testImpersonationWorksWhenAuthenticationSessionExists() throws Exception {
         // Open the URL for the client (will redirect to Keycloak server AuthorizationEndpoint and create authenticationSession)
         oauth.openLoginForm();
-        Assertions.assertTrue(loginPage.isActivePage());
+        loginPage.assertCurrent();
 
         // Impersonate and get SSO cookie. Setup that cookie for webDriver
         for (Cookie cookie : testSuccessfulImpersonation("realm-admin", managedRealm.getName())) {

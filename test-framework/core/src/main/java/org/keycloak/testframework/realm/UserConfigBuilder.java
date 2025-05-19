@@ -1,6 +1,10 @@
 package org.keycloak.testframework.realm;
 
+import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.models.utils.HmacOTP;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import java.util.Arrays;
@@ -85,6 +89,23 @@ public class UserConfigBuilder {
 
     public UserConfigBuilder attribute(String key, String... value) {
         rep.setAttributes(Collections.combine(rep.getAttributes(), key, value));
+        return this;
+    }
+
+    public UserConfigBuilder federatedLink(String identityProvider, String federatedUserId, String federatedUsername) {
+        FederatedIdentityRepresentation federatedIdentity = new FederatedIdentityRepresentation();
+        federatedIdentity.setUserId(federatedUserId);
+        federatedIdentity.setUserName(federatedUsername);
+        federatedIdentity.setIdentityProvider(identityProvider);
+
+        rep.setFederatedIdentities(Collections.combine(rep.getFederatedIdentities(), federatedIdentity));
+        return this;
+    }
+
+    public UserConfigBuilder totpSecret(String totpSecret) {
+        rep.setCredentials(Collections.combine(rep.getCredentials(), ModelToRepresentation.toRepresentation(
+                OTPCredentialModel.createTOTP(totpSecret, 6, 30, HmacOTP.HMAC_SHA1))));
+        rep.setTotp(true);
         return this;
     }
 
