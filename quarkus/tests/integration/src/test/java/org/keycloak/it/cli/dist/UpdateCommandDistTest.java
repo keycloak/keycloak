@@ -147,6 +147,7 @@ public class UpdateCommandDistTest {
         // Test previous micro release
         ModelVersion modelVersion = new ModelVersion(Version.VERSION);
         String qualifier = Version.VERSION.split("-", 2)[1];
+
         // We are not able to test the following unless we are in a micro version larger than 0
         //  This is tested in unit test class KeycloakCompatibilityMetadataProvider
         assumeTrue(modelVersion.getMicro() != 0);
@@ -155,6 +156,11 @@ public class UpdateCommandDistTest {
 
         // Test qualifier ignored
         testCompatibleV2KeycloakVersion(distribution, jsonFile, String.format("%d.%d.%d-%s", modelVersion.getMajor(), modelVersion.getMinor(), modelVersion.getMicro() - 1, "SNAPSHOT1"));
+
+        // Test skipping patch releases
+        if (modelVersion.getMicro() > 1) {
+            testCompatibleV2KeycloakVersion(distribution, jsonFile, String.format("%d.%d.%d-%s", modelVersion.getMajor(), modelVersion.getMinor(), modelVersion.getMicro() - 2, qualifier));
+        }
     }
 
     @Test
@@ -165,11 +171,6 @@ public class UpdateCommandDistTest {
 
         // Some of the following tests are ignored if we are in a version where we can't subtract from major/minor/micro version value
         //  This is tested in the unit test class KeycloakCompatibilityMetadataProvider
-
-        // test skipping patch release
-        if (modelVersion.getMicro() > 1) {
-            testIncompatibleV2KeycloakVersion(distribution, jsonFile, String.format("%d.%d.%d-%s", modelVersion.getMajor(), modelVersion.getMinor(), modelVersion.getMicro() - 2, qualifier));
-        }
 
         // test rollback to the previous version
         testIncompatibleV2KeycloakVersion(distribution, jsonFile, String.format("%d.%d.%d-%s", modelVersion.getMajor(), modelVersion.getMinor(), modelVersion.getMicro() + 1, qualifier));

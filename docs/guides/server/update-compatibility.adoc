@@ -149,7 +149,7 @@ The feature `rolling-updates` is disabled.
 
 WARNING: This behavior is currently in an experimental mode, and it is not recommended for use in production.
 
-It is possible to configure the {project_name} compatibility command to allow rolling updates when updating from a version to the following patch version, while staying on the same major and minor version.
+It is possible to configure the {project_name} compatibility command to allow rolling updates when updating from a version to a same patch version from the same `major.minor` release stream.
 
 To enable this behavior for compatibility check command enable feature `rolling-updates:v2` as shown in the following example.
 <@kc.updatecompatibility parameters="check --file=/path/to/file.json --features=rolling-updates:v2"/>

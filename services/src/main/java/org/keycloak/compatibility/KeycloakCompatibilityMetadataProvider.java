@@ -35,9 +35,20 @@ public class KeycloakCompatibilityMetadataProvider implements CompatibilityMetad
 
             ModelVersion otherModelVersion = new ModelVersion(otherVersion);
             ModelVersion currentModelVersion = new ModelVersion(metadata().get(VERSION_KEY));
-            if (ModelVersionUtils.areConsecutiveOrSameMicroVersions(otherModelVersion, currentModelVersion)) {
-                return CompatibilityResult.providerCompatible(ID);
+            if (!ModelVersionUtils.areSameMajorMinorVersions(otherModelVersion, currentModelVersion)) {
+                return equalComparison;
             }
+
+            // We are in the same major.minor release stream
+            int otherMicro = otherModelVersion.getMicro();
+            int currentMicro = currentModelVersion.getMicro();
+
+            // Do not allow rolling rollback
+            if (currentMicro < otherMicro) {
+                return equalComparison;
+            }
+
+            return CompatibilityResult.providerCompatible(ID);
         }
 
         return equalComparison;
