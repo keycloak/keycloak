@@ -191,7 +191,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                         final String nonceEndpoint = OID4VCIssuerWellKnownProvider.getNonceEndpoint(session.getContext());
                         try {
                             // make the exp-value negative to set the exp-time in the past
-                            session.getContext().getRealm().setAttribute(RealmModel.C_NONE_LIFETIME_IN_SECONDS, -1);
+                            session.getContext().getRealm().setAttribute(RealmModel.C_NONCE_LIFETIME_IN_SECONDS, -1);
                             String cNonce = cNonceHandler.buildCNonce(List.of(credentialsEndpoint),
                                                                       Map.of(JwtCNonceHandler.SOURCE_ENDPOINT, nonceEndpoint));
                             Proof proof = new JwtProof().setJwt(generateJwtProof(getCredentialIssuer(session), cNonce));
@@ -199,7 +199,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                            testRequestTestCredential(session, token, proof);
                         } finally {
                             // make sure other tests are not affected by the changed realm-attribute
-                            session.getContext().getRealm().removeAttribute(RealmModel.C_NONE_LIFETIME_IN_SECONDS);
+                            session.getContext().getRealm().removeAttribute(RealmModel.C_NONCE_LIFETIME_IN_SECONDS);
                         }
                     })));
             Assert.fail("Should have thrown an exception");

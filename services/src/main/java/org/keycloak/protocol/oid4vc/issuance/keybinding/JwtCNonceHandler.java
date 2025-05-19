@@ -19,7 +19,6 @@
 package org.keycloak.protocol.oid4vc.issuance.keybinding;
 
 import jakarta.annotation.Nullable;
-import jakarta.ws.rs.core.UriInfo;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64;
@@ -37,8 +36,6 @@ import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.model.JwtCNonce;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.saml.RandomSecret;
-import org.keycloak.services.Urls;
-import org.keycloak.urls.UrlType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,22 +77,20 @@ public class JwtCNonceHandler implements CNonceHandler {
         RealmModel realm = keycloakSession.getContext().getRealm();
         final String issuer = OID4VCIssuerWellKnownProvider.getIssuer(keycloakSession.getContext());
         // TODO discussion about the attribute name to use
-        final Integer nonceLifetimeMillis = realm.getAttribute(RealmModel.C_NONE_LIFETIME_IN_SECONDS, 60);
+        final Integer nonceLifetimeMillis = realm.getAttribute(RealmModel.C_NONCE_LIFETIME_IN_SECONDS, 60);
         audiences = Optional.ofNullable(audiences).orElseGet(Collections::emptyList);
         final Instant now = Instant.now();
         final long expiresAt = now.plus(nonceLifetimeMillis, ChronoUnit.SECONDS).getEpochSecond();
         final int nonceLength = NONCE_DEFAULT_LENGTH + new Random().nextInt(NONCE_LENGTH_RANDOM_OFFSET);
         // this generated value itself is basically just a salt-value for the generated token, which itself is the nonce.
-        final String strongNonce = Base64.encodeBytes(RandomSecret.createRandomSecret(nonceLength));
+        final String strongSalt = Base64.encodeBytes(RandomSecret.createRandomSecret(nonceLength));
 
-        JwtCNonce jwtCNonce = new JwtCNonce().issuer(issuer)
-                                             .audience(audiences)
-                                             .expiresAt(expiresAt)
-                                             .nonce(strongNonce);
+        JsonWebToken jwtCNonce = new JwtCNonce().salt(strongSalt)
+                                                .issuer(issuer)
+                                                .audience(audiences.toArray(String[]::new))
+                                                .exp(expiresAt);
         Optional.ofNullable(additionalDetails).ifPresent(map -> {
-            map.forEach((key, object) -> {
-                jwtCNonce.setAdditionalProperties(key, object);
-            });
+            map.forEach(jwtCNonce::setOtherClaims);
         });
 
         SignatureProvider signatureProvider = keycloakSession.getProvider(SignatureProvider.class,
