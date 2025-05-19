@@ -16,8 +16,8 @@
  */
 package org.keycloak.tests.utils.admin;
 
+import jakarta.ws.rs.WebApplicationException;
 import org.jboss.logging.Logger;
-import org.junit.jupiter.api.Assertions;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
@@ -36,6 +36,8 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import jakarta.ws.rs.core.Response;
+
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -51,11 +53,19 @@ public class ApiUtil {
     private static final Logger log = Logger.getLogger(ApiUtil.class);
 
     public static String getCreatedId(Response response) {
-        Assertions.assertEquals(201, response.getStatus());
-        String path = response.getLocation().getPath();
-        String createdId = path.substring(path.lastIndexOf('/') + 1);
-        response.close();
-        return createdId;
+        URI location = response.getLocation();
+        if (!response.getStatusInfo().equals(Response.Status.CREATED)) {
+            Response.StatusType statusInfo = response.getStatusInfo();
+            response.bufferEntity();
+            String body = response.readEntity(String.class);
+            throw new WebApplicationException("Create method returned status "
+                    + statusInfo.getReasonPhrase() + " (Code: " + statusInfo.getStatusCode() + "); expected status: Created (201). Response body: " + body, response);
+        }
+        if (location == null) {
+            return null;
+        }
+        String path = location.getPath();
+        return path.substring(path.lastIndexOf('/') + 1);
     }
 
     public static ClientResource findClientResourceById(RealmResource realm, String id) {

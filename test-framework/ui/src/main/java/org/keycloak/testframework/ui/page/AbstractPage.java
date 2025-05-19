@@ -1,5 +1,6 @@
 package org.keycloak.testframework.ui.page;
 
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -12,6 +13,9 @@ public abstract class AbstractPage {
 
     @FindBy(xpath = "//body")
     private WebElement body;
+
+    @FindBy(id = "kc-page-title")
+    private WebElement title;
 
     protected final WebDriver driver;
 
@@ -26,6 +30,10 @@ public abstract class AbstractPage {
         return body.getAttribute("data-page-id");
     }
 
+    public String getPageTitle() {
+        return title.getText();
+    }
+
     public void waitForPage() {
         try {
             new WebDriverWait(driver, Duration.ofSeconds(10)).until(d -> isActivePage());
@@ -38,4 +46,8 @@ public abstract class AbstractPage {
         return getExpectedPageId().equals(getCurrentPageId());
     }
 
+    public void assertCurrent() {
+        String name = getClass().getSimpleName();
+        Assertions.assertTrue(isActivePage(), "Expected " + name + " but was " + driver.getTitle() + " (" + driver.getCurrentUrl() + ")");
+    }
 }

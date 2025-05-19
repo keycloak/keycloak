@@ -18,7 +18,6 @@ package org.keycloak.testsuite.pages;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 
 import org.junit.Assert;
