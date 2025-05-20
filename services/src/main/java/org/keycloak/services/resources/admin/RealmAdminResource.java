@@ -27,6 +27,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -1011,22 +1012,31 @@ public class RealmAdminResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation()
     public Response testSMTPConnection(Map<String, String> settings) throws Exception {
+        auth.realm().requireManageRealm();
         try {
             UserModel user = auth.adminAuth().getUser();
             if (user.getEmail() == null) {
                 throw ErrorResponse.error("Logged in user does not have an e-mail.", Response.Status.INTERNAL_SERVER_ERROR);
             }
-            if (ComponentRepresentation.SECRET_VALUE.equals(settings.get("password"))) {
+            if (ComponentRepresentation.SECRET_VALUE.equals(settings.get("password"))
+                    && reuseConfiguredAuthenticationForSmtp(settings)) {
                 settings.put("password", realm.getSmtpConfig().get("password"));
             }
             session.getProvider(EmailTemplateProvider.class).sendSmtpTestEmail(settings, user);
         } catch (Exception e) {
-            e.printStackTrace();
-            logger.errorf("Failed to send email \n %s", e.getCause());
+            logger.errorf(e, "Failed to send email \n %s", e.getCause());
             throw ErrorResponse.error("Failed to send email", Response.Status.INTERNAL_SERVER_ERROR);
         }
 
         return Response.noContent().build();
+    }
+
+    private boolean reuseConfiguredAuthenticationForSmtp(Map<String, String> settings) {
+        // just reuse the configured authentication if the same authenticator, host, port and user are passed
+        return Boolean.parseBoolean(settings.get("auth")) && Boolean.parseBoolean(realm.getSmtpConfig().get("auth"))
+                && Objects.equals(settings.getOrDefault("host", ""), realm.getSmtpConfig().getOrDefault("host", ""))
+                && Objects.equals(settings.getOrDefault("port", "25"), realm.getSmtpConfig().getOrDefault("port", "25"))
+                && Objects.equals(settings.getOrDefault("user", ""), realm.getSmtpConfig().getOrDefault("user", ""));
     }
 
     @Path("identity-provider")
