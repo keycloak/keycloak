@@ -121,8 +121,21 @@ Example:
     
 ### Updating Expectations
 
-Changing to the help output will cause HelpCommandDistTest to fail. You may use:
+Changing the help output will cause HelpCommandDistTest to fail. This test uses [ApprovalTests](https://github.com/approvals/ApprovalTests.Java) which creates `.received.txt` files containing the actual output when tests fail. To update the expected output (see [Approving The Result](https://github.com/approvals/ApprovalTests.Java/blob/master/approvaltests/docs/tutorials/GettingStarted.md#approving-the-result)):
 
-    KEYCLOAK_REPLACE_EXPECTED=true ../mvnw clean install -Dtest=HelpCommandDistTest 
+1. Run the failing test:
+   ```
+   ../mvnw clean install -Dtest=HelpCommandDistTest
+   ```
 
-to replace the expected output, then use a diff to ensure the changes look good.
+2. Review the generated `.received.txt` files in the test directory and compare them with the `.approved.txt` files.
+
+3. If the changes look correct, rename the `.received.txt` files to `.approved.txt` to approve the new output:
+   ```
+   # Example for a specific test
+   mv HelpCommandDistTest.testHelp.received.txt HelpCommandDistTest.testHelp.approved.txt
+   ```
+
+Note: If the files match, the received file will be deleted automatically. You must include the `.approved.` files in source control.
+
+Alternatively, you can configure an [approval reporter](https://github.com/approvals/ApprovalTests.Java/blob/master/approvaltests/docs/reference/Reporters.md) to use a diff tool for easier comparison.

@@ -45,6 +45,8 @@ import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.cli.command.AbstractNonServerCommand;
 import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.cli.command.Main;
+import org.keycloak.quarkus.runtime.cli.command.Tools;
+import org.keycloak.quarkus.runtime.cli.command.WindowsService;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.DisabledMappersInterceptor;
@@ -627,7 +629,25 @@ public class Picocli {
         cmd.getHelpSectionMap().put(SECTION_KEY_COMMAND_LIST, new SubCommandListRenderer());
         cmd.setErr(getErrWriter());
         cmd.setOut(getOutWriter());
+
+        removePlatformSpecificCommands(cmd);
+
         return cmd;
+    }
+
+    /**
+     * Removes platform-specific commands on non-applicable platforms
+     */
+    private void removePlatformSpecificCommands(CommandLine cmd) {
+        if (!Environment.isWindows()) {
+            CommandLine toolsCmd = cmd.getSubcommands().get(Tools.NAME);
+            if (toolsCmd != null) {
+                CommandLine windowsServiceCmd = toolsCmd.getSubcommands().get(WindowsService.NAME);
+                if (windowsServiceCmd != null) {
+                    toolsCmd.getCommandSpec().removeSubcommand(WindowsService.NAME);
+                }
+            }
+        }
     }
 
     public PrintWriter getErrWriter() {
