@@ -26,3 +26,133 @@ on Windows:
 After the server boots, open http://localhost:8080 in your web browser. The welcome page will indicate that the server is running.
 
 To get started, check out the [configuration guides](https://www.keycloak.org/guides#server).
+
+## Keycloak as a Windows Service
+
+This guide explains how to install and run Keycloak as a Windows service using Apache Commons Daemon (Procrun).
+
+### Prerequisites
+
+1. A working Keycloak installation
+2. Apache Commons Daemon Procrun executable (`prunsrv.exe`) which can be downloaded from [Apache Commons Daemon](https://downloads.apache.org/commons/daemon/binaries/windows/)
+
+### Important: Pre-build Requirement
+
+**For production deployments**, you should run the Keycloak build command before installing the service:
+
+```bash
+bin\kc.bat build
+```
+
+This pre-builds and optimizes Keycloak with your desired configuration. The Windows service is configured to skip the automatic rebuild check (via `-Dkc.config.built=true`) since services cannot handle the restart logic that the normal `kc.bat` script uses for on-the-fly rebuilds.
+
+For development/testing purposes, you can use `start-dev` mode which doesn't require a pre-build.
+
+### Setup Instructions
+
+1. Download the appropriate Procrun executable for your architecture:
+   - For 64-bit systems: `prunsrv.exe` (amd64)
+   - For 32-bit systems: `prunsrv.exe` (x86)
+
+2. Copy `prunsrv.exe` to this location in your Keycloak installation:
+   - `<KEYCLOAK_HOME>\bin\prunsrv.exe`
+
+### Installing as a Service
+
+Use the following command to install Keycloak as a Windows service:
+
+```bash
+bin\kc.bat service install [options]
+```
+
+To see all available options:
+
+```bash
+bin\kc.bat service install --help
+```
+
+#### Options
+
+- `--name <service-name>`: The name of the Windows service (default: keycloak)
+- `--display-name <display-name>`: The display name of the service (default: Keycloak Server)
+- `--description <description>`: The service description (default: Keycloak Identity and Access Management)
+- `--startup <mode>`: Service startup mode: auto, manual (default: auto)
+- `--jvm <path>`: Path to jvm.dll to use (default: auto-detected from JAVA_HOME)
+- `--kc-args "<args>"`: Arguments to pass to Keycloak (e.g., "start --http-port=8080")
+- `--jvm-args "<args>"`: Additional JVM options separated by semicolons. Omit the leading dash - it will be added automatically (e.g., "Djava.net.preferIPv4Stack=true;verbose:gc")
+- `--jvm-ms <size>`: Initial Java heap size in MB (e.g., 256)
+- `--jvm-mx <size>`: Maximum Java heap size in MB (e.g., 1024)
+- `--service-user "<username>"`: The user account the service should run as
+- `--service-password "<password>"`: The password for the service user account
+- `--classpath-jar "<path>"`: Path to quarkus-run.jar if auto-detection fails
+
+#### Service Account Configuration
+
+**Important:** By default, the service is configured to run as the **Local System account**, which has the necessary privileges to run Keycloak successfully.
+
+You have these options:
+
+1. **Run as Local System Account (default and recommended):**
+   - Simply omit the `--service-user` and `--service-password` parameters
+   - This account has full access to the local system and is the recommended choice
+   - Example: `bin\kc.bat service install --name keycloak --kc-args="start --http-port=8080"`
+
+2. **Run as Specific User (advanced):**
+   - Specify both `--service-user` and `--service-password` parameters
+   - The user must have "Log on as a service" privilege
+   - Example: `bin\kc.bat service install --service-user="Domain\Username" --service-password="password"`
+
+**Note:** If you experience "Access Denied" errors, ensure the service is running as Local System account, which is the default when no user is specified.
+
+**Troubleshooting:** The service runs under Apache Commons Daemon Service Runner. If you need to forcefully terminate the process, look for `prunsrv.exe` in Task Manager or use `taskkill /f /im prunsrv.exe` (use with caution as this will kill all services using Procrun).
+
+#### Examples
+
+Install with production mode and custom memory settings:
+
+```bash
+bin\kc.bat service install --name keycloak --kc-args="start --http-port=8080" --jvm-ms=512 --jvm-mx=1024
+```
+
+Install for development mode:
+
+```bash
+bin\kc.bat service install --kc-args="start-dev"
+```
+
+Install with custom classpath to quarkus-run.jar:
+
+```bash
+bin\kc.bat service install --classpath-jar="C:\path\to\keycloak\lib\quarkus-run.jar" --kc-args="start --http-port=8080"
+```
+
+Install to run as a specific user (ensure the user has "Log on as a service" privilege):
+
+```bash
+bin\kc.bat service install --service-user="Domain\Username" --service-password="password"
+```
+
+### Managing the Service
+
+Once installed, you can manage the service using standard Windows tools:
+
+- Start the service: `net start keycloak` (or use the Windows Services console)
+  **IMPORTANT**: You must run this command from an Administrator command prompt. To open one:
+  1. Click Start, search for "Command Prompt" or "cmd"
+  2. Right-click on Command Prompt and select "Run as administrator"
+  3. Click Yes on the UAC prompt
+  
+- Stop the service: `net stop keycloak` (or use the Windows Services console)
+- Check service status: Use the Windows Services console
+
+### Uninstalling the Service
+
+To remove the service:
+
+```bash
+bin\kc.bat service uninstall [--name <service-name>]
+```
+
+### Logs
+
+Service logs are stored in the `log` directory of your Keycloak installation.
