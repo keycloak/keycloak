@@ -315,20 +315,6 @@ public class DPoPUtil {
         }
     }
 
-    public static void bindToken(AccessToken token, String thumbprint) {
-        AccessToken.Confirmation confirmation = token.getConfirmation();
-
-        if (confirmation == null) {
-            confirmation = new AccessToken.Confirmation();
-            token.setConfirmation(confirmation);
-        }
-
-        confirmation.setKeyThumbprint(thumbprint);
-    }
-
-    public static void bindToken(AccessToken token, DPoP dPoP) {
-        bindToken(token, dPoP.getThumbprint());
-    }
 
     public static void validateDPoPJkt(String dpopJkt, KeycloakSession session, EventBuilder event, Cors cors) {
         if (dpopJkt == null) {
