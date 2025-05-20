@@ -21,8 +21,6 @@ import org.keycloak.config.BootstrapAdminOptions;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.platform.Platform;
-import org.keycloak.quarkus.runtime.Environment;
-import org.keycloak.quarkus.runtime.cli.command.AbstractNonServerCommand;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.configuration.PropertyMappingInterceptor;
@@ -50,11 +48,6 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
         QuarkusPlatform platform = (QuarkusPlatform) Platform.getPlatform();
         platform.started();
         startup();
-        Environment.getParsedCommand().ifPresent(ac -> {
-            if (ac instanceof AbstractNonServerCommand) {
-                ((AbstractNonServerCommand)ac).onStart(this);
-            }
-        });
     }
 
     void onShutdownEvent(@Observes ShutdownEvent event) {
