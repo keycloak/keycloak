@@ -27,12 +27,7 @@ public class KeycloakCompatibilityMetadataProviderTest {
         });
 
         // Make compatibility provider return hardcoded version as we are not able to test this in integration tests with micro versions equal to 0
-        KeycloakCompatibilityMetadataProvider compatibilityProvider = new KeycloakCompatibilityMetadataProvider() {
-            @Override
-            public Map<String, String> metadata() {
-                return Map.of(VERSION_KEY, "999.999.999-Final");
-            }
-        };
+        KeycloakCompatibilityMetadataProvider compatibilityProvider = new KeycloakCompatibilityMetadataProvider("999.999.999-Final");
 
         // Test compatible
         assertCompatibility(CompatibilityResult.ExitCode.ROLLING, compatibilityProvider.isCompatible(Map.of(VERSION_KEY, "999.999.999-Final")));
@@ -55,12 +50,7 @@ public class KeycloakCompatibilityMetadataProviderTest {
         Profile.configure();
 
         // Make compatibility provider return hardcoded version so we can subtract and add to any of major.minor.micro number
-        KeycloakCompatibilityMetadataProvider compatibilityProvider = new KeycloakCompatibilityMetadataProvider() {
-            @Override
-            public Map<String, String> metadata() {
-                return Map.of(VERSION_KEY, "999.999.999-Final");
-            }
-        };
+        KeycloakCompatibilityMetadataProvider compatibilityProvider = new KeycloakCompatibilityMetadataProvider("999.999.999-Final") ;
 
         // Test compatible
         assertCompatibility(CompatibilityResult.ExitCode.ROLLING, compatibilityProvider.isCompatible(Map.of(VERSION_KEY, "999.999.999-Final")));

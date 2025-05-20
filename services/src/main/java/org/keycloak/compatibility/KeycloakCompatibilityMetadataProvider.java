@@ -14,10 +14,19 @@ public class KeycloakCompatibilityMetadataProvider implements CompatibilityMetad
 
     public static final String ID = "keycloak";
     public static final String VERSION_KEY = "version";
+    private final String version;
+
+    public KeycloakCompatibilityMetadataProvider() {
+        this(Version.VERSION);
+    }
+
+    public KeycloakCompatibilityMetadataProvider(String version) {
+        this.version = version;
+    }
 
     @Override
     public Map<String, String> metadata() {
-        return Map.of(VERSION_KEY, Version.VERSION);
+        return Map.of(VERSION_KEY, version);
     }
 
     @Override
@@ -34,7 +43,7 @@ public class KeycloakCompatibilityMetadataProvider implements CompatibilityMetad
             }
 
             ModelVersion otherModelVersion = new ModelVersion(otherVersion);
-            ModelVersion currentModelVersion = new ModelVersion(metadata().get(VERSION_KEY));
+            ModelVersion currentModelVersion = new ModelVersion(version);
             if (!ModelVersionUtils.areSameMajorMinorVersions(otherModelVersion, currentModelVersion)) {
                 return equalComparison;
             }
