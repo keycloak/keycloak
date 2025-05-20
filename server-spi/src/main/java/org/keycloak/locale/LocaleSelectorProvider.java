@@ -41,4 +41,8 @@ public interface LocaleSelectorProvider extends Provider {
         return resolveLocale(realm, user);
     }
 
+    default Locale resolveLocale(RealmModel realm, UserModel user, boolean ignoreAcceptLanguageHeader) {
+        return resolveLocale(realm, user);
+    }
+
 }
