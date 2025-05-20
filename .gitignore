@@ -71,6 +71,10 @@ bin
 #############
 *dependency-reduced-pom.xml
 
+# npm #
+#########
+node_modules
+
 # testsuite #
 #############
 *offline-token.txt
