@@ -128,6 +128,11 @@ public class SMTPConnectionTest extends AbstractKeycloakTest {
             Response response = realm.testSMTPConnection(settings("127.0.0.1", "3025", "auto@keycloak.org", "true", null, null,
                     "admin@localhost", SECRET_VALUE));
             assertStatus(response, 204);
+
+            // no reuse password if the server is different (localhost) to the saved one (127.0.0.1)
+            response = realm.testSMTPConnection(settings("localhost", "3025", "auto@keycloak.org", "true", null, null,
+                    "admin@localhost", SECRET_VALUE));
+            assertStatus(response, 500);
         } finally {
             // Revert SMTP back
             realmRep.setSmtpServer(oldSmtp);
