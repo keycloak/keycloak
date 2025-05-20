@@ -4,7 +4,7 @@
 <@tmpl.guide
 title="Creating your own Console"
 priority=70
-summary="Learn create a React-based Admin Console or Account Console.">
+summary="Learn to create your own version of Admin Console or Account Console.">
 
 The Admin Console and Account Console are based on React.
 To create your own version of these consoles, you can use these React based npm packages:

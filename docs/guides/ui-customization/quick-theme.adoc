@@ -4,7 +4,7 @@
 <@tmpl.guide
 title="Customizing with Quick Theme"
 priority=30
-summary="Learn how to customize the consoles and login with the Quick Theme utility.">
+summary="Learn how to customize the consoles and login screens with the Quick Theme utility.">
 
 "Quick Theme" is an experimental feature which allows you to quickly and easily create themes with new logos and colors.  Often, this is all you need to facilitate branding and skinning for the Account Console, Admin Console, and login page.
 
