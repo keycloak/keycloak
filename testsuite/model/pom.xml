@@ -23,7 +23,7 @@
         <jdbc.mvn.groupId>com.h2database</jdbc.mvn.groupId>
         <jdbc.mvn.artifactId>h2</jdbc.mvn.artifactId>
         <jdbc.mvn.version>${h2.version}</jdbc.mvn.version>
-        <log4j.configuration>file:${project.build.directory}/dependency/log4j.properties</log4j.configuration>
+        <log4j.configuration>file:${project.build.directory}/dependency/log4j2.xml</log4j.configuration>
         <jacoco.skip>true</jacoco.skip>
     </properties>
     
@@ -45,16 +45,21 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
+            <version>${log4j2-api.version}</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-reload4j</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -172,9 +177,9 @@
                         <keycloak.connectionsJpa.default.user>${keycloak.connectionsJpa.user}</keycloak.connectionsJpa.default.user>
                         <keycloak.connectionsJpa.default.password>${keycloak.connectionsJpa.password}</keycloak.connectionsJpa.default.password>
                         <keycloak.connectionsJpa.default.url>${keycloak.connectionsJpa.url}</keycloak.connectionsJpa.default.url>
-                        <log4j.configuration>file:${project.build.directory}/test-classes/log4j.properties</log4j.configuration> <!-- for the logging to properly work with tests in the 'other' module -->
+                        <log4j.configuration>file:${project.build.directory}/test-classes/log4j2.xml</log4j.configuration> <!-- for the logging to properly work with tests in the 'other' module -->
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
-                        <org.jboss.logging.provider>log4j</org.jboss.logging.provider>
+                        <org.jboss.logging.provider>log4j2</org.jboss.logging.provider>
                         <infinispan.version>${infinispan.version}</infinispan.version>
                         <project.version>${project.version}</project.version>
                     </systemPropertyVariables>
