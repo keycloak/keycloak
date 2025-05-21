@@ -4,6 +4,7 @@
 <@tmpl.guide
 title="Customizing with Quick Theme"
 priority=30
+preview="true"
 summary="Learn how to customize the consoles and login screens with the Quick Theme utility.">
 
 "Quick Theme" is an experimental feature which allows you to quickly and easily create themes with new logos and colors.  Often, this is all you need to facilitate branding and skinning for the Account Console, Admin Console, and login page.
@@ -18,7 +19,7 @@ For example:
 bin/kc.[sh|bat] start --features=quick-theme
 ----
 
-==Setting logos and colors
+== Setting logos and colors
 The "Quick Theme" tool is shown below.  The theme you create will extend the default {project_name} theme.  Therefore, when you want to create a new theme with the tool you will start out with the default colors and images.
 
 image::ui-customization/quick-theme-overview.png[title="Quick Theme"]
