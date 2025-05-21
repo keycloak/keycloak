@@ -63,7 +63,7 @@
       <#nested "info">
     <#else>
       <div class="footer flex gap-4 text-secondary-600" style="justify-content: center"><img class="h-6" src="${url.resourcesPath}/img/vunet-logo.svg"
-        alt="Vunet Systems Logo"> <small>Powered by Vunet Systems - ${.now?string('yyyy')}. All Rights reserved</small>
+        alt="VuNet Systems Logo"> <small>Powered by VuNet Systems - ${.now?string('yyyy')}. All Rights reserved</small>
       </div>
     </#if>
   </#assign>
