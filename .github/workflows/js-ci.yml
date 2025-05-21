@@ -191,6 +191,7 @@ jobs:
           name: account-ui-server-log
           path: ~/server.log
 
+
   generate-test-seed:
     name: Generate Test Seed
     needs:
@@ -218,8 +219,6 @@ jobs:
       WORKSPACE: keycloak-admin-ui
     strategy:
       matrix:
-        shardIndex: [1, 2, 3, 4]
-        shardTotal: [4]
         browser: [chromium, firefox]
         exclude:
           # Only test with Firefox on scheduled runs
@@ -257,50 +256,23 @@ jobs:
         working-directory: js
 
       - name: Run Playwright tests
-        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test:integration --project=${{ matrix.browser }} --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
-        working-directory: js
-
-      - name: Upload blob report to GitHub Actions Artifacts
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: blob-report-${{ matrix.shardIndex }}
-          path: ./js/apps/admin-ui/blob-report
-          retention-days: 1
-
-      - name: Upload server logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: admin-ui-server-log-${{ matrix.browser }}-${{ matrix.shardIndex }}
-          path: ~/server.log
-
-  merge-reports:
-    name: Merge Playwright reports
-    if: ${{ !cancelled() }}
-    needs: [admin-ui-e2e]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/pnpm-setup
-
-      - name: Download blob reports from GitHub Actions Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: ~/all-blob-reports/
-          pattern: blob-report-*
-          merge-multiple: true
-
-      - name: Merge Playwright reports
-        run: pnpm --fail-if-no-match --filter keycloak-admin-ui exec playwright merge-reports  -c ./output-config.ts ~/all-blob-reports
+        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test:integration --project=${{ matrix.browser }}
         working-directory: js
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: admin-ui-playwright-report
+          name: admin-ui-playwright-report-${{ matrix.browser }}
           path: js/apps/admin-ui/playwright-report
+          retention-days: 30
+
+      - name: Upload server logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-ui-server-log-${{ matrix.browser }}
+          path: ~/server.log
 
   check:
     name: Status Check - Keycloak JavaScript CI
