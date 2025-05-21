@@ -44,6 +44,8 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.authorization.ResourceType;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 
+import static org.keycloak.models.utils.RoleUtils.getDeepUserRoleMappings;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
@@ -138,9 +140,8 @@ public class RolePolicyProvider implements PolicyProvider, PartialEvaluationPoli
         StoreFactory storeFactory = provider.getStoreFactory();
         ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(adminPermissionsClient);
         PolicyStore policyStore = storeFactory.getPolicyStore();
-        List<RoleModel> subjectRoles = subject.getRoleMappingsStream().toList();
+        List<String> roleIds = getDeepUserRoleMappings(subject).stream().map(RoleModel::getId).toList();
         Stream<Policy> policies = Stream.of();
-        List<String> roleIds = subjectRoles.stream().map(RoleModel::getId).toList();
 
         return Stream.concat(policies, policyStore.findDependentPolicies(resourceServer, resourceType.getType(), RolePolicyProviderFactory.ID, "roles", roleIds));
     }
