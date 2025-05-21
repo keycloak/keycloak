@@ -191,7 +191,6 @@ jobs:
           name: account-ui-server-log
           path: ~/server.log
 
-
   generate-test-seed:
     name: Generate Test Seed
     needs:
@@ -282,8 +281,8 @@ jobs:
     needs: [admin-ui-e2e]
     runs-on: ubuntu-latest
     steps:
-      - name: List files in js directory
-        run: ls -lR
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/pnpm-setup
 
       - name: Download blob reports from GitHub Actions Artifacts
         uses: actions/download-artifact@v4
@@ -292,11 +291,8 @@ jobs:
           pattern: blob-report-*
           merge-multiple: true
 
-      - name: List files in all-blob-reports
-        run: ls -lR ~/all-blob-reports
-        
       - name: Merge Playwright reports
-        run: pnpm --fail-if-no-match --filter keycloak-admin-ui exec playwright merge-reports -c ./output-config.ts ~/all-blob-reports
+        run: pnpm --fail-if-no-match --filter keycloak-admin-ui exec playwright merge-reports  -c ./output-config.ts ~/all-blob-reports
         working-directory: js
 
       - name: Upload Playwright report
