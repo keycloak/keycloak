@@ -13,11 +13,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.resource.ScopePermissionResource;
-import org.keycloak.admin.client.resource.ScopePermissionsResource;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -45,15 +43,6 @@ public class ClientResourceTypePermissionTest extends AbstractPermissionTest {
         UserPolicyRepresentation policy = new UserPolicyRepresentation();
         policy.setName("User Policy");
         client.admin().authorization().policies().user().create(policy).close();
-    }
-
-    @AfterEach
-    public void onAfter() {
-        ScopePermissionsResource permissions = getScopePermissionsResource(client);
-
-        for (ScopePermissionRepresentation permission : permissions.findAll(null, null, null, -1, -1)) {
-            permissions.findById(permission.getId()).remove();
-        }
     }
 
     @Test
