@@ -111,8 +111,8 @@ const UserDetailLink = (event: EventRepresentation) => {
       >
         {userName}
       </Link>
-      <span style={{ fontSize: "0.9rem", color: "#888", marginLeft: "5px" }}>
-        (ID: {userId}) {/* Show userId also but in a subtle way */}
+      <span class="keycloak_eventsection_userid">
+        (ID: {userId})
       </span>
     </div>
   ) : (
