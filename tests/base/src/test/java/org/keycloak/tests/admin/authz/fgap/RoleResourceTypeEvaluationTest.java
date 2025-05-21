@@ -19,11 +19,9 @@ package org.keycloak.tests.admin.authz.fgap;
 
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientScopeResource;
-import org.keycloak.admin.client.resource.ScopePermissionsResource;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -56,13 +54,6 @@ public class RoleResourceTypeEvaluationTest extends AbstractPermissionTest {
     Keycloak realmAdminClient;
 
     private final String rolesType = AdminPermissionsSchema.ROLES.getType();
-
-    @AfterEach
-    public void onAfter() {
-        ScopePermissionsResource permissions = getScopePermissionsResource(client);
-
-        permissions.findAll(null, null, null, -1, -1).forEach(p -> permissions.findById(p.getId()).remove());
-    }
 
     @Test
     public void testMapRoleClientScopeAllRoles() {
