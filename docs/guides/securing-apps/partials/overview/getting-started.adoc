@@ -11,8 +11,8 @@ Connect and SAML protocols.
 
 ifeval::[{project_community}==true]
 ==== Java
-* {quickstartRepo_link}/tree/latest/jakarta/servlet-authz-client[Wildfly Elytron OIDC]
-* {quickstartRepo_link}/tree/latest/spring/rest-authz-resource-server[Spring Boot]
+* {quickstartRepo_link}/tree/main/jakarta/servlet-authz-client[Wildfly Elytron OIDC]
+* {quickstartRepo_link}/tree/main/spring/rest-authz-resource-server[Spring Boot]
 endif::[]
 
 ==== JavaScript (client-side)

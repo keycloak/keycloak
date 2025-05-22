@@ -269,6 +269,12 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
 
         oauth.getDriver().findElement(By.id("social-" + brokerId)).click();
         oauth.fillLoginForm(username, password);
+
+        if (updateAccountInformationPage.isCurrent()) {
+            log.debug("Updating info on updateAccount page");
+            updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
+        }
+
         return oauth.parseLoginResponse();
     }
 

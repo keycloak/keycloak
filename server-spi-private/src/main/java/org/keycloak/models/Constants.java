@@ -87,6 +87,8 @@ public final class Constants {
     public static final String KC_ACTION = "kc_action";
 
     public static final String KC_ACTION_PARAMETER = "kc_action_parameter";
+    // parameter used by some actions to skip executing it if a credential for that type already exists for the user
+    public static final String KC_ACTION_PARAMETER_SKIP_IF_EXISTS = "skip_if_exists";
     public static final String KC_ACTION_STATUS = "kc_action_status";
     public static final String KC_ACTION_EXECUTING = "kc_action_executing";
     /**

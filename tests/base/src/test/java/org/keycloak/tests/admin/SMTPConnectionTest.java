@@ -27,7 +27,6 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 
 import jakarta.mail.internet.MimeMessage;
@@ -123,6 +122,12 @@ public class SMTPConnectionTest {
         Response response = realm.testSMTPConnection(settings("127.0.0.1", "3025", "auto@keycloak.org", "true", null, null,
                 "admin@localhost", SECRET_VALUE));
         assertStatus(response, 204);
+
+        // no reuse password if the server is different (localhost) to the saved one (127.0.0.1)
+        mailServer.credentials("admin@localhost", password);
+        response = realm.testSMTPConnection(settings("localhost", "3025", "auto@keycloak.org", "true", null, null,
+                "admin@localhost", SECRET_VALUE));
+        assertStatus(response, 500);
     }
 
     @Test
@@ -156,6 +161,10 @@ public class SMTPConnectionTest {
         assertMailReceived();
         assertEventsEmpty(realm);
 
+        // no reuse password if the server is different (localhost) to the saved one (127.0.0.1)
+        final var thirdResponse = realm.testSMTPConnection(settings("localhost", "3025", "auto@keycloak.org", "true", null, null,
+                "admin@localhost", keycloakUrls.getToken(managedRealm.getName()), "test-smtp-client-I", SECRET_VALUE, "basic"));
+        assertStatus(thirdResponse, 500);
     }
 
     @Test

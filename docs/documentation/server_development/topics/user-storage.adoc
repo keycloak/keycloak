@@ -19,10 +19,10 @@ There are two sample projects in link:{quickstartRepo_link}[{quickstartRepo_name
 |===
 |Name |Description
 
-| {quickstartRepo_link}/tree/latest/extension/user-storage-jpa[user-storage-jpa]
+| {quickstartRepo_link}/tree/main/extension/user-storage-jpa[user-storage-jpa]
 | Demonstrates implementing a user storage provider using JPA.
 
-| {quickstartRepo_link}/tree/latest/extension/user-storage-simple[user-storage-simple]
+| {quickstartRepo_link}/tree/main/extension/user-storage-simple[user-storage-simple]
 | Demonstrates implementing a user storage provider using a simple properties file that contains username/password key pairs.
 
 |===

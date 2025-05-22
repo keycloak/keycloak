@@ -51,12 +51,13 @@ import io.quarkus.runtime.configuration.ConfigurationException;
 import io.quarkus.vertx.http.deployment.HttpRootPathBuildItem;
 import io.quarkus.vertx.http.deployment.NonApplicationRootPathBuildItem;
 import io.quarkus.vertx.http.deployment.RouteBuildItem;
-
+import jakarta.persistence.Entity;
+import jakarta.persistence.spi.PersistenceUnitTransactionType;
 import org.eclipse.microprofile.health.Readiness;
 import org.hibernate.cfg.AvailableSettings;
-import org.hibernate.jpa.boot.spi.PersistenceUnitDescriptor;
 import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
 import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
+import org.hibernate.jpa.boot.spi.PersistenceUnitDescriptor;
 import org.infinispan.protostream.SerializationContextInitializer;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
@@ -84,6 +85,7 @@ import org.keycloak.config.ManagementOptions;
 import org.keycloak.config.MetricsOptions;
 import org.keycloak.config.SecurityOptions;
 import org.keycloak.config.TracingOptions;
+import org.keycloak.config.TransactionOptions;
 import org.keycloak.connections.jpa.DefaultJpaConnectionProviderFactory;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionSpi;
@@ -131,8 +133,6 @@ import org.keycloak.utils.StringUtil;
 import org.keycloak.vault.FilesKeystoreVaultProviderFactory;
 import org.keycloak.vault.FilesPlainTextVaultProviderFactory;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.spi.PersistenceUnitTransactionType;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -149,6 +149,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.jar.JarEntry;
@@ -307,19 +308,29 @@ class KeycloakProcessor {
     @BuildStep
     @Produce(CheckMultipleDatasourcesBuildStep.class)
     void checkMultipleDatasourcesUseXA(TransactionManagerBuildTimeConfig transactionManagerConfig, DataSourcesBuildTimeConfig dataSourcesConfig, DataSourcesJdbcBuildTimeConfig jdbcConfig) {
+        Set<String> datasources = dataSourcesConfig.dataSources().keySet();
+        if (datasources.size() > 1) {
+            logger.infof("Multiple datasources are specified: %s", String.join(", ", datasources));
+        }
+
         if (transactionManagerConfig.unsafeMultipleLastResources()
                 .orElse(UnsafeMultipleLastResourcesMode.DEFAULT) != UnsafeMultipleLastResourcesMode.FAIL) {
             return;
         }
-        long nonXADatasourcesCount = dataSourcesConfig.dataSources().keySet().stream()
-                .map(ds -> jdbcConfig.dataSources().get(ds).jdbc())
-                .filter(jdbc -> jdbc.enabled() && jdbc.transactions() != TransactionIntegration.XA)
-                .count();
-        if (nonXADatasourcesCount > 1) {
-            throwConfigError("Multiple datasources are configured but more than 1 is using non-XA transactions. " +
+
+        List<String> nonXADatasources = datasources.stream()
+                .filter(ds -> !Configuration.isKcPropertyTrue(TransactionOptions.getNamedTxXADatasource(ds)))
+                .filter(ds -> {
+                    var jdbc = jdbcConfig.dataSources().get(ds).jdbc();
+                    return jdbc.enabled() && jdbc.transactions() != TransactionIntegration.XA;
+                })
+                .toList();
+
+        if (nonXADatasources.size() > 1) {
+            throwConfigError("Multiple datasources are configured but more than 1 (%s) is using non-XA transactions. ".formatted(String.join(", ", nonXADatasources)) +
                     "All the datasources except one must must be XA to be able to use Last Resource Commit Optimization (LRCO). " +
                     "Please update your configuration by setting --transaction-xa-enabled=true " +
-                    "and/or quarkus.datasource.<your-datasource-name>.jdbc.transactions=xa.");
+                    "and/or --transaction-xa-enabled-<your-datasource-name>=true.");
         }
     }
 
