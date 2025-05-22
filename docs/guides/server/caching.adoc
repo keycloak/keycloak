@@ -271,22 +271,22 @@ and define your own transport stack.
 
 For more details, see https://infinispan.org/docs/stable/titles/server/server.html#using-inline-jgroups-stacks_cluster-transport[Using inline JGroups stacks].
 
-.defining a custom transport stack
-[source]
+.Defining a custom stack with encryption using UDP
+[source,xml]
 ----
 <jgroups>
     <stack name="my-encrypt-udp" extends="udp">
-    <SSL_KEY_EXCHANGE keystore_name="server.jks"
-        keystore_password="password"
-        stack.combine="INSERT_AFTER"
-        stack.position="VERIFY_SUSPECT2"/>
+        <SSL_KEY_EXCHANGE keystore_name="server.jks"
+            keystore_password="password"
+            stack.combine="INSERT_AFTER"
+            stack.position="VERIFY_SUSPECT2"/>
         <ASYM_ENCRYPT asym_keylength="2048"
-        asym_algorithm="RSA"
-        change_key_on_coord_leave = "false"
-        change_key_on_leave = "false"
-        use_external_key_exchange = "true"
-        stack.combine="INSERT_BEFORE"
-        stack.position="pbcast.NAKACK2"/>
+            asym_algorithm="RSA"
+            change_key_on_coord_leave = "false"
+            change_key_on_leave = "false"
+            use_external_key_exchange = "true"
+            stack.combine="INSERT_BEFORE"
+            stack.position="pbcast.NAKACK2"/>
     </stack>
 </jgroups>
 
@@ -295,6 +295,26 @@ For more details, see https://infinispan.org/docs/stable/titles/server/server.ht
     ...
 </cache-container>
 ----
+
+When IP multicast (or UDP) is unavailable in your environment, configure {project_name} using a static list of IP addresses as shown in the following example.
+
+.Defining a custom stack without multicast discovery
+[source,xml]
+----
+<jgroups>
+    <stack name="tcpping" extends="tcp">
+        <TCPPING initial_hosts="192.168.1.1[7800],192.168.1.2[7800]" <!--1-->
+               stack.combine="REPLACE"
+               stack.position="MPING"/>
+    </stack>
+</jgroups>
+
+<cache-container name="keycloak">
+    <transport lock-timeout="60000" stack="tcpping"/>
+    ...
+</cache-container>
+----
+<1> The `initial_hosts` is a comma separated list of IP and port, using the format `IP[PORT]`.
 
 By default, the value set to the `cache-stack` option has precedence over the transport stack you define in the cache configuration file.
 If you are defining a custom stack, make sure the `cache-stack` option is not used for the custom changes to take effect.
