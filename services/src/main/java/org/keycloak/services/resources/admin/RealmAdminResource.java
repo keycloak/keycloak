@@ -108,6 +108,7 @@ import org.keycloak.services.util.DateUtil;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.ExportImportManager;
 import org.keycloak.storage.StoreSyncEvent;
+import org.keycloak.storage.datastore.DefaultExportImportManager;
 import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.ProfileHelper;
 import org.keycloak.utils.ReservedCharValidator;
@@ -118,7 +119,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -1142,31 +1142,26 @@ public class RealmAdminResource {
             if (user.getEmail() == null) {
                 throw ErrorResponse.error("Logged in user does not have an e-mail.", Response.Status.INTERNAL_SERVER_ERROR);
             }
-            if (ComponentRepresentation.SECRET_VALUE.equals(settings.get("password"))
-                    && reuseConfiguredAuthenticationForSmtp(settings, EmailAuthenticator.AuthenticatorType.BASIC)) {
+            if (ComponentRepresentation.SECRET_VALUE.equals(settings.get("password"))) {
+                if (!DefaultExportImportManager.reuseConfiguredAuthenticationForSmtp(realm, settings))
+                    throw new BadRequestException("Please enter your password again");
+
                 settings.put("password", realm.getSmtpConfig().get("password"));
             }
-            if (ComponentRepresentation.SECRET_VALUE.equals(settings.get("authTokenClientSecret"))
-                    && reuseConfiguredAuthenticationForSmtp(settings, EmailAuthenticator.AuthenticatorType.TOKEN)) {
+            if (ComponentRepresentation.SECRET_VALUE.equals(settings.get("authTokenClientSecret"))) {
+                if (!DefaultExportImportManager.reuseConfiguredAuthenticationForSmtp(realm, settings))
+                    throw new BadRequestException("Please enter your client secret again");
                 settings.put("authTokenClientSecret", realm.getSmtpConfig().get("authTokenClientSecret"));
             }
             session.getProvider(EmailTemplateProvider.class).sendSmtpTestEmail(settings, user);
+        } catch (BadRequestException e) {
+            throw ErrorResponse.error("Failed to send email: " + e.getMessage(), Status.BAD_REQUEST);
         } catch (Exception e) {
             logger.errorf(e, "Failed to send email \n %s", e.getCause());
             throw ErrorResponse.error("Failed to send email", Response.Status.INTERNAL_SERVER_ERROR);
         }
 
         return Response.noContent().build();
-    }
-
-    private boolean reuseConfiguredAuthenticationForSmtp(Map<String, String> settings, EmailAuthenticator.AuthenticatorType type) {
-        // just reuse the configured authentication if the same authenticator, host, port and user are passed
-        return Boolean.parseBoolean(settings.get("auth")) && Boolean.parseBoolean(realm.getSmtpConfig().get("auth"))
-                && settings.getOrDefault("authType", EmailAuthenticator.AuthenticatorType.BASIC.name()).equalsIgnoreCase(type.name())
-                && realm.getSmtpConfig().getOrDefault("authType", EmailAuthenticator.AuthenticatorType.BASIC.name()).equalsIgnoreCase(type.name())
-                && Objects.equals(settings.getOrDefault("host", ""), realm.getSmtpConfig().getOrDefault("host", ""))
-                && Objects.equals(settings.getOrDefault("port", "25"), realm.getSmtpConfig().getOrDefault("port", "25"))
-                && Objects.equals(settings.getOrDefault("user", ""), realm.getSmtpConfig().getOrDefault("user", ""));
     }
 
     @Path("identity-provider")
