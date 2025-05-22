@@ -29,7 +29,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CredentialResponse {
 
-    // concrete type depends on the format
+    // Concrete type depends on the format; may be a JWE string if encrypted
+    // as per https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-response
     private Object credential;
 
     @JsonProperty("notification_id")

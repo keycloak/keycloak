@@ -20,13 +20,12 @@ package org.keycloak.protocol.oid4vc.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Represents a credentials issuer according to the OID4VCI Credentials Issuer Metadata
- * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-issuer-metadata}
+ * Represents the Credential Issuer Metadata as per OID4VCI spec
+ * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#section-11.2.2}
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
@@ -39,19 +38,14 @@ public class CredentialIssuer {
     @JsonProperty("credential_endpoint")
     private String credentialEndpoint;
 
+    @JsonProperty("credentials_supported")
+    private Map<String, SupportedCredentialConfiguration> credentialsSupported;
+
     @JsonProperty("authorization_servers")
     private List<String> authorizationServers;
 
-    @JsonProperty("batch_credential_endpoint")
-    private String batchCredentialEndpoint;
-
-    @JsonProperty("notification_endpoint")
-    private String notificationEndpoint;
-
-    @JsonProperty("credential_configurations_supported")
-    private Map<String, SupportedCredentialConfiguration> credentialsSupported;
-
-    private DisplayObject display;
+    @JsonProperty("credential_response_encryption")
+    private CredentialResponseEncryption credentialResponseEncryption;
 
     public String getCredentialIssuer() {
         return credentialIssuer;
@@ -71,30 +65,12 @@ public class CredentialIssuer {
         return this;
     }
 
-    public String getBatchCredentialEndpoint() {
-        return batchCredentialEndpoint;
-    }
-
-    public CredentialIssuer setBatchCredentialEndpoint(String batchCredentialEndpoint) {
-        this.batchCredentialEndpoint = batchCredentialEndpoint;
-        return this;
-    }
-
     public Map<String, SupportedCredentialConfiguration> getCredentialsSupported() {
         return credentialsSupported;
     }
 
     public CredentialIssuer setCredentialsSupported(Map<String, SupportedCredentialConfiguration> credentialsSupported) {
-        this.credentialsSupported = Collections.unmodifiableMap(credentialsSupported);
-        return this;
-    }
-
-    public DisplayObject getDisplay() {
-        return display;
-    }
-
-    public CredentialIssuer setDisplay(DisplayObject display) {
-        this.display = display;
+        this.credentialsSupported = credentialsSupported;
         return this;
     }
 
@@ -107,13 +83,43 @@ public class CredentialIssuer {
         return this;
     }
 
-    public String getNotificationEndpoint() {
-        return notificationEndpoint;
+    public CredentialResponseEncryption getCredentialResponseEncryption() {
+        return credentialResponseEncryption;
     }
 
-    public CredentialIssuer setNotificationEndpoint(String notificationEndpoint) {
-        this.notificationEndpoint = notificationEndpoint;
+    public CredentialIssuer setCredentialResponseEncryption(CredentialResponseEncryption credentialResponseEncryption) {
+        this.credentialResponseEncryption = credentialResponseEncryption;
         return this;
     }
-}
 
+    /**
+     * Represents the credential_response_encryption metadata as per OID4VCI spec
+     * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#section-11.2.2}
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class CredentialResponseEncryption {
+        @JsonProperty("alg_values_supported")
+        private List<String> algValuesSupported;
+
+        @JsonProperty("enc_values_supported")
+        private List<String> encValuesSupported;
+
+        public List<String> getAlgValuesSupported() {
+            return algValuesSupported;
+        }
+
+        public CredentialResponseEncryption setAlgValuesSupported(List<String> algValuesSupported) {
+            this.algValuesSupported = algValuesSupported;
+            return this;
+        }
+
+        public List<String> getEncValuesSupported() {
+            return encValuesSupported;
+        }
+
+        public CredentialResponseEncryption setEncValuesSupported(List<String> encValuesSupported) {
+            this.encValuesSupported = encValuesSupported;
+            return this;
+        }
+    }
+}

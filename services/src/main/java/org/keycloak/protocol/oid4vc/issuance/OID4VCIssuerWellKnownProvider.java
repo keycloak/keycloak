@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oid4vc.issuance;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.ws.rs.core.UriInfo;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
@@ -47,7 +48,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * {@link  WellKnownProvider} implementation to provide the .well-known/openid-credential-issuer endpoint, offering
+ * {@link WellKnownProvider} implementation to provide the .well-known/openid-credential-issuer endpoint, offering
  * the Credential Issuer Metadata as defined by the OID4VCI protocol
  * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#section-11.2.2}
  *
@@ -72,8 +73,10 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                 .setCredentialIssuer(getIssuer(keycloakSession.getContext()))
                 .setCredentialEndpoint(getCredentialsEndpoint(keycloakSession.getContext()))
                 .setCredentialsSupported(getSupportedCredentials(keycloakSession))
-                .setAuthorizationServers(List.of(getIssuer(keycloakSession.getContext())));
-
+                .setAuthorizationServers(List.of(getIssuer(keycloakSession.getContext())))
+                .setCredentialResponseEncryption(new CredentialIssuer.CredentialResponseEncryption()
+                        .setAlgValuesSupported(List.of("RSA-OAEP"))
+                        .setEncValuesSupported(List.of("A256GCM")));
     }
 
     /**
@@ -103,7 +106,6 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                 .distinct()
                 .peek(sc -> sc.setCredentialSigningAlgValuesSupported(supportedAlgorithms))
                 .collect(Collectors.toMap(SupportedCredentialConfiguration::getId, sc -> sc, (sc1, sc2) -> sc1));
-
 
         // Retrieving attributes from the realm
         Map<String, SupportedCredentialConfiguration> realmAttr = fromRealmAttributes(realm.getAttributes())
