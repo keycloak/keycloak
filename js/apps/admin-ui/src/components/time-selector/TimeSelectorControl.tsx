@@ -48,7 +48,7 @@ export const TimeSelectorControl = <
       isRequired={controller.rules?.required === true}
       label={label || name}
       fieldId={name}
-      labelIcon={
+      labelHelp={
         labelIcon ? (
           <HelpItem helpText={labelIcon} fieldLabelId={name} />
         ) : undefined

@@ -1,9 +1,8 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import { FormPanel, HelpItem, useAlerts } from "@keycloak/keycloak-ui-shared";
 import { FormGroup, PageSection, Switch } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { FormPanel, HelpItem } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../admin-client";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../components/form/FormAccess";
 import { useRealm } from "../context/realm-context/RealmContext";
 
@@ -47,7 +46,7 @@ export const RealmSettingsLoginTab = ({
   };
 
   return (
-    <PageSection variant="light">
+    <PageSection hasBodyWrapper={false}>
       <FormPanel
         className="kc-login-screen"
         title={t("loginScreenCustomization")}
@@ -56,7 +55,7 @@ export const RealmSettingsLoginTab = ({
           <FormGroup
             label={t("registrationAllowed")}
             fieldId="kc-user-reg"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("userRegistrationHelpText")}
                 fieldLabelId="registrationAllowed"
@@ -69,7 +68,6 @@ export const RealmSettingsLoginTab = ({
               data-testid="user-reg-switch"
               value={realm.registrationAllowed ? "on" : "off"}
               label={t("on")}
-              labelOff={t("off")}
               isChecked={realm.registrationAllowed}
               onChange={(_event, value) => {
                 updateSwitchValue({ registrationAllowed: value });
@@ -80,7 +78,7 @@ export const RealmSettingsLoginTab = ({
           <FormGroup
             label={t("resetPasswordAllowed")}
             fieldId="kc-forgot-pw"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("forgotPasswordHelpText")}
                 fieldLabelId="resetPasswordAllowed"
@@ -94,7 +92,6 @@ export const RealmSettingsLoginTab = ({
               name="resetPasswordAllowed"
               value={realm.resetPasswordAllowed ? "on" : "off"}
               label={t("on")}
-              labelOff={t("off")}
               isChecked={realm.resetPasswordAllowed}
               onChange={(_event, value) => {
                 updateSwitchValue({ resetPasswordAllowed: value });
@@ -105,7 +102,7 @@ export const RealmSettingsLoginTab = ({
           <FormGroup
             label={t("rememberMe")}
             fieldId="kc-remember-me"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("rememberMeHelpText")}
                 fieldLabelId="rememberMe"
@@ -118,7 +115,6 @@ export const RealmSettingsLoginTab = ({
               data-testid="remember-me-switch"
               value={realm.rememberMe ? "on" : "off"}
               label={t("on")}
-              labelOff={t("off")}
               isChecked={realm.rememberMe}
               onChange={(_event, value) => {
                 updateSwitchValue({ rememberMe: value });
@@ -133,7 +129,7 @@ export const RealmSettingsLoginTab = ({
           <FormGroup
             label={t("registrationEmailAsUsername")}
             fieldId="kc-email-as-username"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("emailAsUsernameHelpText")}
                 fieldLabelId="registrationEmailAsUsername"
@@ -146,7 +142,6 @@ export const RealmSettingsLoginTab = ({
               data-testid="email-as-username-switch"
               value={realm.registrationEmailAsUsername ? "on" : "off"}
               label={t("on")}
-              labelOff={t("off")}
               isChecked={realm.registrationEmailAsUsername}
               onChange={(_event, value) => {
                 updateSwitchValue([
@@ -164,7 +159,7 @@ export const RealmSettingsLoginTab = ({
           <FormGroup
             label={t("loginWithEmailAllowed")}
             fieldId="kc-login-with-email"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("loginWithEmailHelpText")}
                 fieldLabelId="loginWithEmailAllowed"
@@ -177,7 +172,6 @@ export const RealmSettingsLoginTab = ({
               data-testid="login-with-email-switch"
               value={realm.loginWithEmailAllowed ? "on" : "off"}
               label={t("on")}
-              labelOff={t("off")}
               isChecked={realm.loginWithEmailAllowed}
               onChange={(_event, value) => {
                 updateSwitchValue([
@@ -193,7 +187,7 @@ export const RealmSettingsLoginTab = ({
           <FormGroup
             label={t("duplicateEmailsAllowed")}
             fieldId="kc-duplicate-emails"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("duplicateEmailsHelpText")}
                 fieldLabelId="duplicateEmailsAllowed"
@@ -205,7 +199,6 @@ export const RealmSettingsLoginTab = ({
               id="kc-duplicate-emails-switch"
               data-testid="duplicate-emails-switch"
               label={t("on")}
-              labelOff={t("off")}
               isChecked={realm.duplicateEmailsAllowed}
               onChange={(_event, value) => {
                 updateSwitchValue({
@@ -221,7 +214,7 @@ export const RealmSettingsLoginTab = ({
           <FormGroup
             label={t("verifyEmail")}
             fieldId="kc-verify-email"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("verifyEmailHelpText")}
                 fieldLabelId="verifyEmail"
@@ -235,7 +228,6 @@ export const RealmSettingsLoginTab = ({
               name="verifyEmail"
               value={realm.verifyEmail ? "on" : "off"}
               label={t("on")}
-              labelOff={t("off")}
               isChecked={realm.verifyEmail}
               onChange={(_event, value) => {
                 updateSwitchValue({ verifyEmail: value });
@@ -253,7 +245,7 @@ export const RealmSettingsLoginTab = ({
           <FormGroup
             label={t("editUsernameAllowed")}
             fieldId="kc-edit-username"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("editUsernameHelp")}
                 fieldLabelId="editUsernameAllowed"
@@ -266,7 +258,6 @@ export const RealmSettingsLoginTab = ({
               data-testid="edit-username-switch"
               value={realm.editUsernameAllowed ? "on" : "off"}
               label={t("on")}
-              labelOff={t("off")}
               isChecked={realm.editUsernameAllowed}
               onChange={(_event, value) => {
                 updateSwitchValue({ editUsernameAllowed: value });

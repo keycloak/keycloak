@@ -70,7 +70,7 @@ export const App = () => {
           </FlexItem>
           <FlexItem grow={{ default: "grow" }} style={{ minHeight: 0 }}>
             <Page
-              header={<Header />}
+              masthead={<Header />}
               isManagedSidebar
               sidebar={<PageNav />}
               breadcrumb={<PageBreadCrumbs />}

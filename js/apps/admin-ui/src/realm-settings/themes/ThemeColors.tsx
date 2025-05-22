@@ -8,8 +8,7 @@ import {
   InputGroup,
   InputGroupItem,
   PageSection,
-  Text,
-  TextContent,
+  Content,
   TextInputProps,
 } from "@patternfly/react-core";
 import { useEffect, useMemo } from "react";
@@ -65,9 +64,9 @@ const switchTheme = (theme: ThemeType) => {
     document
       .querySelector('meta[name="color-scheme"]')!
       .setAttribute("content", "light");
-    document.documentElement.classList.remove("pf-v5-theme-dark");
+    document.documentElement.classList.remove("pf-v6-theme-dark");
   } else {
-    document.documentElement.classList.add("pf-v5-theme-dark");
+    document.documentElement.classList.add("pf-v6-theme-dark");
   }
 };
 
@@ -151,14 +150,14 @@ export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
           onClose={toggle}
         />
       )}
-      <PageSection variant="light">
-        <TextContent className="pf-v5-u-mb-lg">
-          <Text>{t("themeColorInfo")}</Text>
-        </TextContent>
+      <PageSection hasBodyWrapper={false}>
+        <Content className="pf-v6-u-mb-lg">
+          <Content component="p">{t("themeColorInfo")}</Content>
+        </Content>
         {mediaQuery.matches && theme === "light" && (
           <Alert variant="info" isInline title={t("themePreviewInfo")} />
         )}
-        <Flex className="pf-v5-u-pt-lg">
+        <Flex className="pf-v6-u-pt-lg">
           <FlexItem>
             <FormAccess isHorizontal role="manage-realm">
               <FormProvider {...form}>

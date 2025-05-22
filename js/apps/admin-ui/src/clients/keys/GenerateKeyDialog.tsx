@@ -1,18 +1,11 @@
 import type KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
 import {
+  FileUploadControl,
   HelpItem,
   SelectControl,
-  FileUploadControl,
 } from "@keycloak/keycloak-ui-shared";
-import {
-  Button,
-  ButtonVariant,
-  Form,
-  Modal,
-  ModalVariant,
-  Text,
-  TextContent,
-} from "@patternfly/react-core";
+import { Button, ButtonVariant, Content, Form } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import { FormProvider, useForm, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
@@ -61,7 +54,7 @@ export const KeyForm = ({
   ];
 
   return (
-    <Form className="pf-v5-u-pt-lg">
+    <Form className="pf-v6-u-pt-lg">
       <SelectControl
         name="format"
         label={t("archiveFormat")}
@@ -145,9 +138,9 @@ export const GenerateKeyDialog = ({
         </Button>,
       ]}
     >
-      <TextContent>
-        <Text>{t("generateKeysDescription")}</Text>
-      </TextContent>
+      <Content>
+        <Content component="p">{t("generateKeysDescription")}</Content>
+      </Content>
       <FormProvider {...form}>
         <KeyForm />
       </FormProvider>

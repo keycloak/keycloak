@@ -59,7 +59,7 @@ export const RoleSelect = ({ name, isRadio = false }: RoleSelectorProps) => {
   return (
     <FormGroup
       label={isRadio ? t("role") : t("roles")}
-      labelIcon={
+      labelHelp={
         <HelpItem
           helpText={isRadio ? t("selectRole") : t("policyRolesHelp")}
           fieldLabelId="roles"

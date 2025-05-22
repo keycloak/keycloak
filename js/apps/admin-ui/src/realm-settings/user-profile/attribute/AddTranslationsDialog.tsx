@@ -10,13 +10,11 @@ import {
   Form,
   FormGroup,
   Label,
-  Modal,
-  ModalVariant,
-  Text,
-  TextContent,
+  Content,
   TextInput,
-  TextVariants,
+  ContentVariants,
 } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import { SearchIcon } from "@patternfly/react-icons";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { useState } from "react";
@@ -159,14 +157,14 @@ export const AddTranslationsDialog = ({
               />
             </FormGroup>
             <FlexItem>
-              <TextContent>
-                <Text
-                  className="pf-v5-u-font-size-sm pf-v5-u-font-weight-bold"
-                  component={TextVariants.p}
+              <Content>
+                <Content
+                  className="pf-v6-u-font-size-sm pf-v6-u-font-weight-bold"
+                  component={ContentVariants.p}
                 >
                   {t("translationsTableHeading")}
-                </Text>
-              </TextContent>
+                </Content>
+              </Content>
               <PaginatingTableToolbar
                 count={translations.length}
                 first={first}
@@ -201,10 +199,10 @@ export const AddTranslationsDialog = ({
                   >
                     <Thead>
                       <Tr>
-                        <Th className="pf-v5-u-py-lg">
+                        <Th className="pf-v6-u-py-lg">
                           {t("supportedLanguagesTableColumnName")}
                         </Th>
-                        <Th className="pf-v5-u-py-lg">
+                        <Th className="pf-v6-u-py-lg">
                           {t("translationTableColumnName")}
                         </Th>
                       </Tr>
@@ -218,7 +216,7 @@ export const AddTranslationsDialog = ({
                               whoAmI.getLocale(),
                             )}
                             {translation.locale === realm?.defaultLocale && (
-                              <Label className="pf-v5-u-ml-xs" color="blue">
+                              <Label className="pf-v6-u-ml-xs" color="blue">
                                 {t("defaultLanguage")}
                               </Label>
                             )}

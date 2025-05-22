@@ -9,15 +9,16 @@ import {
   DataListItem,
   DataListItemCells,
   DataListItemRow,
+  Content,
+} from "@patternfly/react-core";
+import {
   DragDrop,
   Draggable,
   DraggableItemPosition,
   Droppable,
   Modal,
   ModalVariant,
-  Text,
-  TextContent,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { sortBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -113,9 +114,9 @@ export const ManagePriorityDialog = ({
         </Button>,
       ]}
     >
-      <TextContent className="pf-v5-u-pb-lg">
-        <Text>{t("managePriorityInfo")}</Text>
-      </TextContent>
+      <Content className="pf-v6-u-pb-lg">
+        <Content component="p">{t("managePriorityInfo")}</Content>
+      </Content>
 
       <DragDrop
         onDrag={onDragStart}
@@ -149,7 +150,7 @@ export const ManagePriorityDialog = ({
           </DataList>
         </Droppable>
       </DragDrop>
-      <div className="pf-v5-screen-reader" aria-live="assertive">
+      <div className="pf-v6-screen-reader" aria-live="assertive">
         {liveText}
       </div>
     </Modal>

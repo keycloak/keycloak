@@ -1,13 +1,6 @@
 import { useEnvironment } from "@keycloak/keycloak-ui-shared";
-import {
-  Badge,
-  Button,
-  Chip,
-  Icon,
-  Modal,
-  ModalVariant,
-  Text,
-} from "@patternfly/react-core";
+import { Label, Badge, Button, Icon, Content } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import { UserCheckIcon } from "@patternfly/react-icons";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { useState } from "react";
@@ -62,10 +55,15 @@ export const PermissionRequest = ({
 
   return (
     <>
-      <Button variant="link" onClick={toggle}>
-        <Icon size="lg">
-          <UserCheckIcon />
-        </Icon>
+      <Button
+        icon={
+          <Icon size="lg">
+            <UserCheckIcon />
+          </Icon>
+        }
+        variant="link"
+        onClick={toggle}
+      >
         <Badge>{resource.shareRequests?.length}</Badge>
       </Button>
       <Modal
@@ -94,13 +92,13 @@ export const PermissionRequest = ({
                   {shareRequest.firstName} {shareRequest.lastName}{" "}
                   {shareRequest.lastName ? "" : shareRequest.username}
                   <br />
-                  <Text component="small">{shareRequest.email}</Text>
+                  <Content component="small">{shareRequest.email}</Content>
                 </Td>
                 <Td>
                   {shareRequest.scopes.map((scope) => (
-                    <Chip key={scope.toString()} isReadOnly>
+                    <Label variant="outline" key={scope.toString()}>
                       {scope as string}
-                    </Chip>
+                    </Label>
                   ))}
                 </Td>
                 <Td>
@@ -115,7 +113,7 @@ export const PermissionRequest = ({
                     onClick={() => {
                       approveDeny(shareRequest);
                     }}
-                    className="pf-v5-u-ml-sm"
+                    className="pf-v6-u-ml-sm"
                     variant="danger"
                   >
                     {t("deny")}

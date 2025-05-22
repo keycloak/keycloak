@@ -10,8 +10,7 @@ import {
   CardHeader,
   CardTitle,
   PageSection,
-  Text,
-  TextContent,
+  Content,
 } from "@patternfly/react-core";
 import { saveAs } from "file-saver";
 import { useState } from "react";
@@ -116,7 +115,7 @@ export const Keys = ({
   };
 
   return (
-    <PageSection variant="light" className="keycloak__form">
+    <PageSection hasBodyWrapper={false} className="keycloak__form">
       {openGenerateKeys && (
         <GenerateKeyDialog
           clientId={getValues("clientId")!}
@@ -127,14 +126,14 @@ export const Keys = ({
       {openImportKeys && (
         <ImportKeyDialog toggleDialog={toggleOpenImportKeys} save={importKey} />
       )}
-      <Card isFlat>
+      <Card>
         <CardHeader>
           <CardTitle>{t("jwksUrlConfig")}</CardTitle>
         </CardHeader>
         <CardBody>
-          <TextContent>
-            <Text>{t("keysIntro")}</Text>
-          </TextContent>
+          <Content>
+            <Content component="p">{t("keysIntro")}</Content>
+          </Content>
         </CardBody>
         <CardBody>
           <FormAccess

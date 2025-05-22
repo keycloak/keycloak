@@ -1,7 +1,7 @@
 import {
+  Label,
+  LabelGroup,
   Button,
-  Chip,
-  ChipGroup,
   MenuToggle,
   MenuToggleStatus,
   Select,
@@ -11,6 +11,7 @@ import {
   TextInputGroupMain,
   TextInputGroupUtilities,
 } from "@patternfly/react-core";
+
 import { TimesIcon } from "@patternfly/react-icons";
 import { get } from "lodash-es";
 import { useMemo, useRef, useState } from "react";
@@ -239,12 +240,13 @@ export const TypeaheadSelectControl = <
                   >
                     {variant === SelectVariant.typeaheadMulti &&
                       Array.isArray(field.value) && (
-                        <ChipGroup aria-label="Current selections">
+                        <LabelGroup aria-label="Current selections">
                           {field.value.map(
                             (selection: string, index: number) => (
-                              <Chip
+                              <Label
+                                variant="outline"
                                 key={index}
-                                onClick={(ev) => {
+                                onClose={(ev) => {
                                   ev.stopPropagation();
                                   field.onChange(
                                     field.value.filter(
@@ -259,15 +261,16 @@ export const TypeaheadSelectControl = <
                                       ...selectedOptionsState,
                                     ].find((o) => selection === o.key)?.value
                                   : getValue(selection)}
-                              </Chip>
+                              </Label>
                             ),
                           )}
-                        </ChipGroup>
+                        </LabelGroup>
                       )}
                   </TextInputGroupMain>
                   <TextInputGroupUtilities>
                     {(!!filterValue || field.value) && (
                       <Button
+                        icon={<TimesIcon aria-hidden />}
                         variant="plain"
                         onClick={() => {
                           setFilterValue("");
@@ -275,9 +278,7 @@ export const TypeaheadSelectControl = <
                           textInputRef?.current?.focus();
                         }}
                         aria-label="Clear input value"
-                      >
-                        <TimesIcon aria-hidden />
-                      </Button>
+                      />
                     )}
                   </TextInputGroupUtilities>
                 </TextInputGroup>

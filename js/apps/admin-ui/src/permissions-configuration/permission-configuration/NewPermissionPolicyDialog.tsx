@@ -5,17 +5,15 @@ import PolicyRepresentation, {
 import PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
 import { useTranslation } from "react-i18next";
 import {
-  Modal,
-  ModalVariant,
-  TextContent,
-  Text,
-  TextVariants,
+  Content,
+  ContentVariants,
   ActionGroup,
   Button,
   Form,
   ButtonVariant,
   AlertVariant,
 } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import {
   SelectControl,
   TextControl,
@@ -170,9 +168,11 @@ export const NewPermissionPolicyDialog = ({
       aria-label={t("createPermissionPolicy")}
       variant={ModalVariant.medium}
       header={
-        <TextContent>
-          <Text component={TextVariants.h1}>{t("createPermissionPolicy")}</Text>
-        </TextContent>
+        <Content>
+          <Content component={ContentVariants.h1}>
+            {t("createPermissionPolicy")}
+          </Content>
+        </Content>
       }
       isOpen
       onClose={toggleDialog}
@@ -211,10 +211,10 @@ export const NewPermissionPolicyDialog = ({
           <LogicSelector />
         </FormProvider>
         <ActionGroup>
-          <div className="pf-v5-u-mt-md">
+          <div className="pf-v6-u-mt-md">
             <Button
               variant={ButtonVariant.primary}
-              className="pf-v5-u-mr-md"
+              className="pf-v6-u-mr-md"
               type="submit"
               data-testid="save"
               isDisabled={
