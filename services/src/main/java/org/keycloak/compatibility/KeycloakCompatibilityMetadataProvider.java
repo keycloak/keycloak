@@ -34,7 +34,14 @@ public class KeycloakCompatibilityMetadataProvider implements CompatibilityMetad
         CompatibilityResult equalComparison = CompatibilityMetadataProvider.super.isCompatible(other);
 
         // If V2 feature is enabled, we consider versions upgradable in rolling way also if other is the previous micro release
-        if (Profile.isFeatureEnabled(Profile.Feature.ROLLING_UPDATES_V2) && Util.isNotCompatible(equalComparison)) {
+        if (Profile.isFeatureEnabled(Profile.Feature.ROLLING_UPDATES_V2)
+                && Util.isNotCompatible(equalComparison)
+                // Check if only version attribute is incompatible,
+                // we don't want to allow rolling update if some other metadata didn't match
+                && equalComparison.incompatibleAttributes()
+                    .map(erroredAttributes -> erroredAttributes.size() == 1 && erroredAttributes.iterator().next().equals(VERSION_KEY))
+                    .orElse(false)
+        ) {
             String otherVersion = other.get(VERSION_KEY);
 
             // We need to make sure the previous version is not null

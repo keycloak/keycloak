@@ -66,6 +66,38 @@ public class KeycloakCompatibilityMetadataProviderTest {
         assertCompatibility(CompatibilityResult.ExitCode.RECREATE, compatibilityProvider.isCompatible(Map.of(VERSION_KEY, "998.999.998-Final")));
     }
 
+    @Test
+    public void testRollingUpgradeRefusedWithOtherMetadataNotEquals() {
+        // Enable V2 feature
+        Profile.configure(new ProfileConfigResolver() {
+            @Override
+            public Profile.ProfileName getProfileName() {
+                return null;
+            }
+
+            @Override
+            public FeatureConfig getFeatureConfig(String feature) {
+                return Profile.Feature.ROLLING_UPDATES_V2.getVersionedKey().equals(feature) ? FeatureConfig.ENABLED : FeatureConfig.UNCONFIGURED;
+            }
+        });
+
+        // Make compatibility provider return hardcoded version as we are not able to test this in integration tests with micro versions equal to 0
+        KeycloakCompatibilityMetadataProvider compatibilityProvider = new KeycloakCompatibilityMetadataProvider("999.999.999-Final") {
+            @Override
+            public Map<String, String> metadata() {
+                return Map.of(VERSION_KEY, "999.999.999-Final",
+                        "key2", "value2");
+            }
+        };
+
+        // Test compatible
+        assertCompatibility(CompatibilityResult.ExitCode.ROLLING, compatibilityProvider.isCompatible(Map.of(VERSION_KEY, "999.999.998-Final", "key2", "value2")));
+
+        // Test incompatible
+        assertCompatibility(CompatibilityResult.ExitCode.RECREATE, compatibilityProvider.isCompatible(Map.of(VERSION_KEY, "999.999.998-Final", "key2", "different-value")));
+        assertCompatibility(CompatibilityResult.ExitCode.RECREATE, compatibilityProvider.isCompatible(Map.of(VERSION_KEY, "999.999.998-Final")));
+    }
+
     private void assertCompatibility(CompatibilityResult.ExitCode expected, CompatibilityResult actual) {
         assertEquals("Expected compatibility result was " + expected, expected.exitCode, actual.exitCode());
     }

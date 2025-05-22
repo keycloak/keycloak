@@ -2,6 +2,7 @@ package org.keycloak.compatibility;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
 
 public final class Util {
@@ -21,7 +22,13 @@ public final class Util {
                 .sorted()
                 .map(key -> compare(provider, key, old.get(key), current.get(key)))
                 .filter(Util::isNotCompatible)
-                .findFirst()
+                .reduce((a, b) -> {
+                    if (! (a instanceof AggregatedCompatibilityResult)) {
+                        a = new AggregatedCompatibilityResult(Set.of(a));
+                    }
+
+                    return ((AggregatedCompatibilityResult) a).add(b);
+                })
                 .orElse(CompatibilityResult.providerCompatible(provider));
     }
 

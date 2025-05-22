@@ -111,6 +111,10 @@ public class ModelVersion {
         return false;
     }
 
+    public boolean hasSameMajorMinor(ModelVersion v2) {
+        return major == v2.major && minor == v2.minor;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof ModelVersion)) {
