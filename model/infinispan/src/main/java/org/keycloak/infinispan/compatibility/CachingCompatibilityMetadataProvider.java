@@ -30,9 +30,7 @@ public class CachingCompatibilityMetadataProvider implements CompatibilityMetada
     private static Map<String, String> remoteInfinispanMetadata() {
         return Map.of(
                 "mode", "remote",
-                "persistence", Boolean.toString(MultiSiteUtils.isPersistentSessionsEnabled()),
-                "version", Version.getVersion(),
-                "jgroupsVersion", org.jgroups.Version.printVersion()
+                "persistence", Boolean.toString(MultiSiteUtils.isPersistentSessionsEnabled())
         );
     }
 
