@@ -5,7 +5,6 @@ import java.util.Map;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.migration.ModelVersion;
-import org.keycloak.migration.ModelVersionUtils;
 
 /**
  * A {@link CompatibilityMetadataProvider} implementation to provide the Keycloak version.
@@ -51,7 +50,7 @@ public class KeycloakCompatibilityMetadataProvider implements CompatibilityMetad
 
             ModelVersion otherModelVersion = new ModelVersion(otherVersion);
             ModelVersion currentModelVersion = new ModelVersion(version);
-            if (!ModelVersionUtils.areSameMajorMinorVersions(otherModelVersion, currentModelVersion)) {
+            if (!currentModelVersion.hasSameMajorMinor(otherModelVersion)) {
                 return equalComparison;
             }
 
