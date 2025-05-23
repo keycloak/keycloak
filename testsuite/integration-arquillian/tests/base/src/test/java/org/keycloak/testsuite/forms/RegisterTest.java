@@ -169,7 +169,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
             assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-            String userId = events.expectRegister("registerExistingEmailUser", "test-user@localhost").assertEvent().getUserId();
+            String userId = events.expectRegister("registerexistingemailuser", "test-user@localhost").assertEvent().getUserId();
             events.expectLogin().detail("username", "registerexistingemailuser").user(userId).assertEvent();
 
             assertUserBasicRegisterAttributes(userId, "registerexistingemailuser", "test-user@localhost", "firstName", "lastName");
@@ -211,7 +211,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             assertThat(RequestType.AUTH_RESPONSE, is(appPage.getRequestType()));
 
             events.expectLogin()
-                    .detail("username", EMAIL)
+                    .detail("username", "uppercase")
                     .user(userId)
                     .assertEvent();
         } finally {
@@ -282,7 +282,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             registerPage.register("firstName", "lastName", "registerPasswordPolicy@email", "registerPasswordPolicy", generatePassword());
             assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-            String userId = events.expectRegister("registerPasswordPolicy", "registerPasswordPolicy@email").assertEvent().getUserId();
+            String userId = events.expectRegister("registerpasswordpolicy", "registerPasswordPolicy@email").assertEvent().getUserId();
 
             events.expectLogin().user(userId).detail(Details.USERNAME, "registerpasswordpolicy").assertEvent();
         }
@@ -379,7 +379,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         appPage.assertCurrent();
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        String userId = events.expectRegister(username, "registerUserSuccess@email").assertEvent().getUserId();
+        String userId = events.expectRegister(username.toLowerCase(), "registerUserSuccess@email").assertEvent().getUserId();
         assertUserRegistered(userId, username.toLowerCase(), "registerusersuccess@email");
 
         UserRepresentation user = getUser(userId);
@@ -401,7 +401,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         appPage.assertCurrent();
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        String userId = events.expectRegister("registerGerman", "registerGerman@localhost").assertEvent().getUserId();
+        String userId = events.expectRegister("registergerman", "registerGerman@localhost").assertEvent().getUserId();
         assertUserRegistered(userId, "registergerman", "registerGerman@localhost");
 
         UserRepresentation user = getUser(userId);
@@ -487,7 +487,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             registerPage.register("firstName", "lastName", "registerUserSuccessWithEmailVerification@email", "registerUserSuccessWithEmailVerification", generatePassword());
             verifyEmailPage.assertCurrent();
 
-            String userId = events.expectRegister("registerUserSuccessWithEmailVerification", "registerUserSuccessWithEmailVerification@email").assertEvent().getUserId();
+            String userId = events.expectRegister("registerusersuccesswithemailverification", "registerUserSuccessWithEmailVerification@email").assertEvent().getUserId();
 
             {
                 assertTrue("Expecting verify email", greenMail.waitForIncomingEmail(1000, 1));
@@ -529,7 +529,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             registerPage.register("firstName", "lastName", "registerUserSuccessWithEmailVerificationWithResend@email", "registerUserSuccessWithEmailVerificationWithResend", generatePassword());
             verifyEmailPage.assertCurrent();
 
-            String userId = events.expectRegister("registerUserSuccessWithEmailVerificationWithResend", "registerUserSuccessWithEmailVerificationWithResend@email").assertEvent().getUserId();
+            String userId = events.expectRegister("registerusersuccesswithemailverificationwithresend", "registerUserSuccessWithEmailVerificationWithResend@email").assertEvent().getUserId();
 
             {
                 assertTrue("Expecting verify email", greenMail.waitForIncomingEmail(1000, 1));
@@ -745,7 +745,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
             assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-            String userId = events.expectRegister("registerUserSuccessE@email", "registerUserSuccessE@email").assertEvent().getUserId();
+            String userId = events.expectRegister("registerusersuccesse@email", "registerUserSuccessE@email").assertEvent().getUserId();
             events.expectLogin().detail("username", "registerusersuccesse@email").user(userId).assertEvent();
 
             UserRepresentation user = getUser(userId);
@@ -843,7 +843,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
             assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-            String userId = events.expectRegister("registerUserSuccessTermsAcceptance", "registerUserSuccessTermsAcceptance@email")
+            String userId = events.expectRegister("registerusersuccesstermsacceptance", "registerUserSuccessTermsAcceptance@email")
                     .assertEvent().getUserId();
             UserRepresentation user = assertUserRegistered(userId, "registerUserSuccessTermsAcceptance", "registerUserSuccessTermsAcceptance@email");
             assertEquals(Map.of(UserModel.LOCALE, List.of("en")), user.getAttributes());
@@ -876,7 +876,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
             assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-            String userId = events.expectRegister("registerUserSuccessTermsAcceptance2", "registerUserSuccessTermsAcceptance2@email")
+            String userId = events.expectRegister("registerusersuccesstermsacceptance2", "registerUserSuccessTermsAcceptance2@email")
                     .assertEvent().getUserId();
             UserRepresentation user = assertUserRegistered(userId, "registerUserSuccessTermsAcceptance2", "registerUserSuccessTermsAcceptance2@email");
             Assert.assertNotNull(user.getAttributes());
@@ -955,7 +955,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             registerPage.register("firstName", "lastName", EMAIL, USERNAME, password, password);
         }
 
-        String userId = events.expectRegister(EMAIL_OR_USERNAME, EMAIL)
+        String userId = events.expectRegister(EMAIL_OR_USERNAME.toLowerCase(), EMAIL)
                 .assertEvent()
                 .getUserId();
 

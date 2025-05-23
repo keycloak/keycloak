@@ -150,7 +150,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         loginPage.clickRegister();
         registerPage.register("firstName", "lastName", "email@mail.com", "setupTotp", "password", "password");
 
-        String userId = events.expectRegister("setupTotp", "email@mail.com").assertEvent().getUserId();
+        String userId = events.expectRegister("setuptotp", "email@mail.com").assertEvent().getUserId();
 
         totpPage.assertCurrent();
         assertFalse(totpPage.isCancelDisplayed());
@@ -315,7 +315,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         loginPage.clickRegister();
         registerPage.register("firstName", "lastName", "setupTotpRegister@mail.com", "setupTotpRegister", "password", "password");
 
-        String userId = events.expectRegister("setupTotpRegister", "setupTotpRegister@mail.com").assertEvent().getUserId();
+        String userId = events.expectRegister("setuptotpregister", "setupTotpRegister@mail.com").assertEvent().getUserId();
 
         totpPage.assertCurrent();
 
@@ -454,7 +454,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         loginPage.clickRegister();
         registerPage.register("firstName2", "lastName2", "email2@mail.com", "setupTotp2", "password2", "password2");
 
-        String userId = events.expectRegister("setupTotp2", "email2@mail.com").assertEvent().getUserId();
+        String userId = events.expectRegister("setuptotp2", "email2@mail.com").assertEvent().getUserId();
 
         // Configure totp
         totpPage.assertCurrent();
@@ -496,7 +496,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         // Login with one-time password
         loginTotpPage.login(totp.generateTOTP(totpCode));
 
-        loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent();
+        loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "setuptotp2").assertEvent();
 
         // Remove google authenticator
         Assert.assertTrue(AccountHelper.deleteTotpAuthentication(testRealm(),"setupTotp2"));
@@ -526,7 +526,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         assertEquals(sessionId1, sessionId2);
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().user(userId).session(sessionId1).detail(Details.USERNAME, "setupTotp2").assertEvent();
+        events.expectLogin().user(userId).session(sessionId1).detail(Details.USERNAME, "setuptotp2").assertEvent();
     }
 
     @Test
