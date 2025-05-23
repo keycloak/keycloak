@@ -33,9 +33,7 @@ import io.smallrye.config.SmallRyeConfig;
 
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.NetworkUtils;
-import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
-import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 public final class Environment {
 
@@ -47,8 +45,6 @@ public final class Environment {
     public static final String DEFAULT_THEMES_PATH = File.separator +  "themes";
     public static final String PROD_PROFILE_VALUE = "prod";
     public static final String LAUNCH_MODE = "kc.launch.mode";
-
-    private static volatile AbstractCommand parsedCommand;
 
     private Environment() {}
 
@@ -107,21 +103,6 @@ public final class Environment {
         if (isTestLaunchMode()) {
             System.setProperty("mp.config.profile", profile);
         }
-    }
-
-    /**
-     * Update the profile settings based upon what was set in the system, environment, or optionally persistent values
-     */
-    public static String updateProfile(boolean usePersistent) {
-        String profile = org.keycloak.common.util.Environment.getProfile();
-        if(profile == null && usePersistent) {
-            profile = PersistedConfigSource.getInstance().getValue(org.keycloak.common.util.Environment.PROFILE);
-        }
-        if (profile == null) {
-            profile = Environment.PROD_PROFILE_VALUE;
-        }
-        setProfile(profile);
-        return profile;
     }
 
     public static boolean isDevMode() {
@@ -245,21 +226,6 @@ public final class Environment {
         }
 
         return profile;
-    }
-
-    /**
-     * Get parsed AbstractCommand we obtained from the CLI
-     */
-    public static Optional<AbstractCommand> getParsedCommand() {
-        return Optional.ofNullable(parsedCommand);
-    }
-
-    public static boolean isParsedCommand(String commandName) {
-        return getParsedCommand().filter(f -> f.getName().equals(commandName)).isPresent();
-    }
-
-    public static void setParsedCommand(AbstractCommand command) {
-        Environment.parsedCommand = command;
     }
 
     public static void removeHomeDir() {

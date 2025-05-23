@@ -32,7 +32,6 @@ import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Stream;
@@ -43,6 +42,7 @@ import org.junit.Test;
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakMain;
+import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.test.AbstractConfigurationTest;
 
@@ -98,8 +98,8 @@ public class PicocliTest extends AbstractConfigurationTest {
         }
 
         @Override
-        protected void initProfile(List<String> cliArgs, String currentCommandName) {
-            super.initProfile(cliArgs, currentCommandName);
+        public void initConfig(AbstractCommand command) {
+            super.initConfig(command);
             config = createConfig();
         }
 
@@ -117,6 +117,25 @@ public class PicocliTest extends AbstractConfigurationTest {
         nonRunningPicocli.config = createConfig();
         KeycloakMain.main(args, nonRunningPicocli);
         return nonRunningPicocli;
+    }
+
+    @Test
+    public void testUnbuiltHelp() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("bootstrap-admin");
+        assertTrue(nonRunningPicocli.getErrString().contains("Missing required subcommand"));
+    }
+
+    @Test
+    public void testProfileForHelp() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("-pf=dev", "bootstrap-admin", "-h");
+        assertEquals("dev", nonRunningPicocli.config.getConfigValue("kc.profile").getValue());
+    }
+
+    @Test
+    public void testCleanStartDev() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev");
+        assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().toUpperCase().contains("WARN"));
+        assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().toUpperCase().contains("ERROR"));
     }
 
     @Test
@@ -138,10 +157,12 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals("1h",
                 nonRunningPicocli.config.getConfigValue("quarkus.management.ssl.certificate.reload-period").getValue());
 
+        onAfter();
         nonRunningPicocli = pseudoLaunch("start-dev", "--https-management-certificates-reload-period=-1");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertNull(nonRunningPicocli.config.getConfigValue("quarkus.management.ssl.certificate.reload-period").getValue());
 
+        onAfter();
         nonRunningPicocli = pseudoLaunch("start-dev", "--https-certificates-reload-period=5m");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertEquals("5m",
@@ -285,7 +306,7 @@ public class PicocliTest extends AbstractConfigurationTest {
 
     @Test
     public void failBuildDev() {
-        NonRunningPicocli nonRunningPicocli = pseudoLaunch("--profile=dev", "build");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("--profile=dev", "build", "--verbose");
         assertThat(nonRunningPicocli.getErrString(), containsString("You can not 'build' the server in development mode."));
         assertEquals(CommandLine.ExitCode.SOFTWARE, nonRunningPicocli.exitCode);
     }
@@ -332,7 +353,7 @@ public class PicocliTest extends AbstractConfigurationTest {
             Environment.setRebuildCheck(); // auto-build
         }
         NonRunningPicocli nonRunningPicocli = pseudoLaunch(args);
-        assertTrue(nonRunningPicocli.reaug);
+        assertTrue(nonRunningPicocli.getErrString(), nonRunningPicocli.reaug);
         assertEquals(nonRunningPicocli.getErrString(), CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().contains("first-class"));
         assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().toUpperCase().contains("WARN"));
@@ -393,7 +414,7 @@ public class PicocliTest extends AbstractConfigurationTest {
 
     @Test
     public void testReaugFromDevToProdExport() {
-        build("start-dev");
+        build("start-dev", "-v");
 
         Environment.setRebuildCheck(); // will be reset by the system properties logic
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("export", "--db=dev-file", "--file=file");
@@ -421,7 +442,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         System.setProperty("kc.hostname-strict", "false");
 
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--optimized");
-        assertEquals(Integer.MAX_VALUE, nonRunningPicocli.exitCode); // "running" state
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
     }
 
     @Test
@@ -740,5 +761,12 @@ public class PicocliTest extends AbstractConfigurationTest {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev","--db-kind-<default>=postgres");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString("Unknown option: '--db-kind-<default>'"));
+    }
+
+    @Test
+    public void updateCommandValidation(){
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("update-compatibility","check");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Missing required argument: --file"));
     }
 }
