@@ -16,7 +16,7 @@
  */
 package org.keycloak.models.cache.infinispan;
 
-import static org.keycloak.authorization.AdminPermissionsSchema.runWithoutAuthorization;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.runWithoutAuthorization;
 
 import java.util.function.Function;
 import java.util.function.Supplier;

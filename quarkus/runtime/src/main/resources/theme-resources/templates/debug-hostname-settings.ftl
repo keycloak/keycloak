@@ -28,6 +28,12 @@
 
 <body>
 
+    <ul>
+    <#list configWarnings as warning>
+        <li>${warning}</li>
+    </#list>
+    </ul>
+
     <table>
         <tr>
             <th>URL</th>
@@ -109,7 +115,7 @@
                 if (xhr.readyState == 4) {
                     clearTimeout(timeout);
                     if (xhr.status == 200) {
-                        document.getElementById(responseId).textContent='OK';
+                        document.getElementById(responseId).textContent=xhr.response;
                     } else {
                         document.getElementById(responseId).textContent='FAILED';
                     }

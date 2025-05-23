@@ -125,18 +125,6 @@ export async function assertAdvancedSwitchesOn(page: Page) {
   ).toBeChecked();
 }
 
-function getKeyForCodeExchangeInput(page: Page) {
-  return page.locator("#keyForCodeExchange");
-}
-
-export async function selectKeyForCodeExchangeInput(page: Page, value: string) {
-  await selectItem(page, getKeyForCodeExchangeInput(page), value);
-}
-
-export async function assertKeyForCodeExchangeInput(page: Page, value: string) {
-  await assertSelectValue(getKeyForCodeExchangeInput(page), value);
-}
-
 export async function saveAdvanced(page: Page) {
   await page.getByTestId("OIDCAdvancedSave").click();
 }

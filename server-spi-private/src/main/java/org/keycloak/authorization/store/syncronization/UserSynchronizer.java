@@ -20,7 +20,7 @@ package org.keycloak.authorization.store.syncronization;
 import java.util.EnumMap;
 import java.util.Map;
 
-import org.keycloak.authorization.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.store.PermissionTicketStore;

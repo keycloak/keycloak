@@ -32,12 +32,6 @@ public class CredentialResponse {
     // concrete type depends on the format
     private Object credential;
 
-    @JsonProperty("c_nonce")
-    private String cNonce;
-
-    @JsonProperty("c_nonce_expires_in")
-    private String cNonceExpiresIn;
-
     @JsonProperty("notification_id")
     private String notificationId;
 
@@ -47,24 +41,6 @@ public class CredentialResponse {
 
     public CredentialResponse setCredential(Object credential) {
         this.credential = credential;
-        return this;
-    }
-
-    public String getcNonce() {
-        return cNonce;
-    }
-
-    public CredentialResponse setcNonce(String cNonce) {
-        this.cNonce = cNonce;
-        return this;
-    }
-
-    public String getcNonceExpiresIn() {
-        return cNonceExpiresIn;
-    }
-
-    public CredentialResponse setcNonceExpiresIn(String cNonceExpiresIn) {
-        this.cNonceExpiresIn = cNonceExpiresIn;
         return this;
     }
 

@@ -29,3 +29,7 @@ details, see link:{upgradingguide_link}[{upgradingguide_name}].
 = Recovery Codes supported
 
 In this release, the *Recovery Codes* two-factor authentication is promoted from preview to supported feature. For more information about the 2FA method, see the link:{adminguide_link}#_recovery-codes[Recovery Codes] chapter in the {adminguide_name}.
+
+= New AIA action parameter `skip_if_exists` for WebAuthn register
+
+Both WebAuthn Register actions (`webauthn-register` and `webauthn-register-passwordless`) now support a parameter `skip_if_exists` when initiated by the application (AIA). The parameter allows to skip the action if the user already has a credential of that type. For more information, see the link:{adminguide_link}#_webauthn_aia[Registering WebAuthn credentials using AIA] chapter in the {adminguide_name}.
