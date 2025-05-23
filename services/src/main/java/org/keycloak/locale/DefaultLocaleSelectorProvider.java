@@ -43,11 +43,11 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
 
     @Override
     public Locale resolveLocale(RealmModel realm, UserModel user) {
-        return resolveLocale(realm, user, null);
+        return resolveLocale(realm, user, false);
     }
 
     @Override
-    public Locale resolveLocale(RealmModel realm, UserModel user, Theme.Type themeType) {
+    public Locale resolveLocale(RealmModel realm, UserModel user, boolean ignoreAcceptLanguageHeader) {
         HttpHeaders requestHeaders = session.getContext().getRequestHeaders();
         AuthenticationSessionModel session = this.session.getContext().getAuthenticationSession();
 
@@ -55,7 +55,7 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
             return Locale.ENGLISH;
         }
 
-        Locale userLocale = getUserLocale(realm, session, user, requestHeaders, themeType);
+        Locale userLocale = getUserLocale(realm, session, user, requestHeaders, ignoreAcceptLanguageHeader);
         if (userLocale != null) {
             return userLocale;
         }
@@ -68,7 +68,7 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
         return Locale.ENGLISH;
     }
 
-    private Locale getUserLocale(RealmModel realm, AuthenticationSessionModel session, UserModel user, HttpHeaders requestHeaders, Theme.Type themeType) {
+    private Locale getUserLocale(RealmModel realm, AuthenticationSessionModel session, UserModel user, HttpHeaders requestHeaders, boolean ignoreAcceptLanguageHeader) {
         Locale locale;
 
         locale = getUserSelectedLocale(realm, session);
@@ -81,10 +81,6 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
             return locale;
         }
 
-        if(Theme.Type.EMAIL.equals(themeType)) {
-            return null;
-        }
-
         locale = getClientSelectedLocale(realm, session);
         if (locale != null) {
             return locale;
@@ -95,7 +91,7 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
             return locale;
         }
 
-        locale = getAcceptLanguageHeaderLocale(realm, requestHeaders);
+        locale = getAcceptLanguageHeaderLocale(realm, requestHeaders, ignoreAcceptLanguageHeader);
         if (locale != null) {
             return locale;
         }
@@ -151,7 +147,12 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
         return findLocale(realm, localeCookie);
     }
 
-    private Locale getAcceptLanguageHeaderLocale(RealmModel realm, HttpHeaders httpHeaders) {
+    private Locale getAcceptLanguageHeaderLocale(RealmModel realm, HttpHeaders httpHeaders, boolean ignoreAcceptLanguageHeader) {
+
+        if (ignoreAcceptLanguageHeader) {
+            return null;
+        }
+
         if (httpHeaders == null) {
             return null;
         }
