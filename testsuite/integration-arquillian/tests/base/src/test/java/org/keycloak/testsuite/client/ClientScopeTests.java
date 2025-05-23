@@ -22,24 +22,15 @@ import jakarta.ws.rs.core.Response;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.models.AdminRoles;
-import org.keycloak.models.Constants;
-import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * @author Pascal Knüppel
@@ -48,54 +39,20 @@ public class ClientScopeTests extends AbstractKeycloakTest {
 
     private static String realmName;
 
-    private static String clientUUID;
-    private static String clientId;
-    private static String clientSecret;
-
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
-    @Override
-    public void beforeAbstractKeycloakTest() throws Exception {
-        super.beforeAbstractKeycloakTest();
-    }
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         realmName = "test";
-        RealmBuilder realm = RealmBuilder.create().name(realmName)
-                                         .testEventListener();
-
-        clientId = "service-account-cl";
-        clientSecret = "secret1";
-        ClientRepresentation enabledAppWithSkipRefreshToken = ClientBuilder.create()
-                                                                           .clientId(clientId)
-                                                                           .secret(clientSecret)
-                                                                           .serviceAccountsEnabled(true)
-                                                                           .build();
-        realm.client(enabledAppWithSkipRefreshToken);
-
-        UserBuilder defaultUser = UserBuilder.create()
-                                             .id(KeycloakModelUtils.generateId())
-                                             .username("test-user@localhost")
-                                             .password("password")
-                                             .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN)
-                                             .addRoles(OAuth2Constants.OFFLINE_ACCESS);
-        realm.user(defaultUser);
-
+        RealmBuilder realm = RealmBuilder.create().name(realmName);
         testRealms.add(realm.build());
     }
 
-    @Override
-    public void importRealm(RealmRepresentation realm) {
-        super.importRealm(realm);
-        if (Objects.equals(realm.getRealm(), realmName)) {
-            clientUUID = adminClient.realm(realmName).clients().findByClientId(clientId).get(0).getId();
-        }
-    }
 
     @Test
-    public void createClientScopeWithoutProtocol() throws IOException {
+    public void createClientScopeWithoutProtocol() {
         ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
         clientScope.setName("test-client-scope");
         clientScope.setDescription("test-client-scope-description");
@@ -111,49 +68,25 @@ public class ClientScopeTests extends AbstractKeycloakTest {
     }
 
     @Test
-    public void createClientScopeWithOpenIdProtocol() throws IOException {
-        ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
-        clientScope.setName("test-client-scope");
-        clientScope.setDescription("test-client-scope-description");
-        clientScope.setProtocol("openid-connect");
-        clientScope.setAttributes(Map.of("test-attribute", "test-value"));
-
-        final RealmResource testRealm = adminClient.realm(realmName);
-
-        String clientScopeId = null;
-        try {
-            clientScopeId = createClientScope(realmName, clientScope);
-        } finally {
-            // cleanup
-            testRealm.clientScopes().get(clientScopeId).remove();
-        }
+    public void createClientScopeWithOpenIdProtocol() {
+        createClientScope("openid-connect");
     }
 
     @Test
     public void createClientScopeWithSamlProtocol() {
-        ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
-        clientScope.setName("test-client-scope");
-        clientScope.setDescription("test-client-scope-description");
-        clientScope.setProtocol("saml");
-        clientScope.setAttributes(Map.of("test-attribute", "test-value"));
-
-        final RealmResource testRealm = adminClient.realm(realmName);
-
-        String clientScopeId = null;
-        try {
-            clientScopeId = createClientScope(realmName, clientScope);
-        } finally {
-            // cleanup
-            testRealm.clientScopes().get(clientScopeId).remove();
-        }
+        createClientScope("saml");
     }
 
     @Test
     public void createClientScopeWithOpenId4VCIProtocol() {
+        createClientScope("oid4vc");
+    }
+
+    private void createClientScope(String oid4vc) {
         ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
         clientScope.setName("test-client-scope");
         clientScope.setDescription("test-client-scope-description");
-        clientScope.setProtocol("oid4vc");
+        clientScope.setProtocol(oid4vc);
         clientScope.setAttributes(Map.of("test-attribute", "test-value"));
 
         final RealmResource testRealm = adminClient.realm(realmName);
