@@ -155,12 +155,23 @@ export const Keys = ({
                 "No client certificate configured"
               ))}
             {useJwksUrl === "true" && (
-              <TextControl
-                name={convertAttributeNameToForm("attributes.jwks.url")}
-                label={t("jwksUrl")}
-                labelIcon={t("jwksUrlHelp")}
-                type="url"
-              />
+              <>
+                <TextControl
+                  name={convertAttributeNameToForm("attributes.jwks.url")}
+                  label={t("jwksUrl")}
+                  labelIcon={t("jwksUrlHelp")}
+                  type="url"
+                />
+                <TextControl
+                  name={convertAttributeNameToForm(
+                    "attributes.jwks.url.auth.bearer.token",
+                  )}
+                  // TODO: Proper translation
+                  label="JWKS Authentication Bearer Token URL"
+                  labelIcon="For example: file:///var/run/secrets/kubernetes.io/serviceaccount/token"
+                  type="url"
+                />
+              </>
             )}
             <ActionGroup>
               <Button
