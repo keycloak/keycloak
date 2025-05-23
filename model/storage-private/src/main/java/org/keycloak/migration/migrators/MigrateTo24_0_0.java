@@ -28,34 +28,25 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.DefaultKeyProviders;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.userprofile.UserProfileProvider;
 
-public class MigrateTo24_0_0 implements Migration {
+public class MigrateTo24_0_0 extends RealmMigration {
 
     private static final Logger LOG = Logger.getLogger(MigrateTo24_0_0.class);
     public static final ModelVersion VERSION = new ModelVersion("24.0.0");
     public static final String REALM_USER_PROFILE_ENABLED = "userProfileEnabled";
 
-    @Override
-    public void migrate(KeycloakSession session) {
-        session.realms().getRealmsStream().forEach(realm -> migrateRealm(session, realm));
-    }
-
-    @Override
-    public void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
-        migrateRealm(session, realm);
-    }
 
     @Override
     public ModelVersion getVersion() {
         return VERSION;
     }
 
-    private void migrateRealm(KeycloakSession session, RealmModel realm) {
+    @Override
+    public void migrateRealm(KeycloakSession session, RealmModel realm) {
         KeycloakContext context = session.getContext();
         try {
             context.setRealm(realm);

@@ -28,10 +28,9 @@ import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.userprofile.UserProfileProvider;
 
-public class MigrateTo23_0_0 implements Migration {
+public class MigrateTo23_0_0 extends RealmMigration {
 
     private static final Logger LOG = Logger.getLogger(MigrateTo23_0_0.class);
 
@@ -43,16 +42,7 @@ public class MigrateTo23_0_0 implements Migration {
     private static final String UP_COMPONENT_CONFIG_KEY = "kc.user.profile.config";
 
     @Override
-    public void migrate(KeycloakSession session) {
-        session.realms().getRealmsStream().forEach(realm -> migrateRealm(session, realm));
-    }
-
-    @Override
-    public void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
-        migrateRealm(session, realm);
-    }
-
-    private void migrateRealm(KeycloakSession session, RealmModel realm) {
+    public void migrateRealm(KeycloakSession session, RealmModel realm) {
         KeycloakContext context = session.getContext();
 
         try {
@@ -66,7 +56,7 @@ public class MigrateTo23_0_0 implements Migration {
 
     private void updateUserProfileConfig(RealmModel realm) {
         if (realm.getAttribute(USER_PROFILE_ENABLED_PROP, Boolean.FALSE)) {
-            
+
             Optional<ComponentModel> component = realm.getComponentsStream(realm.getId(), UserProfileProvider.class.getName()).findAny();
             if (component.isPresent()) {
                 ComponentModel userProfileComponent = component.get();
