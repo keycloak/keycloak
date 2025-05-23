@@ -104,6 +104,7 @@ import org.keycloak.testsuite.broker.oidc.OverwrittenMappersTestIdentityProvider
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.KeyUtils;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -1190,27 +1191,41 @@ public class IdentityProviderTest extends AbstractAdminTest {
         Assert.assertEquals("ProtocolSupportEnumeration", expected, actual);
 
         Assert.assertNotNull("AssertionConsumerService not null", desc.getAssertionConsumerService());
-        Assert.assertEquals("AssertionConsumerService.size", 1, desc.getAssertionConsumerService().size());
+        Assert.assertEquals("AssertionConsumerService.size", 3, desc.getAssertionConsumerService().size());
 
         IndexedEndpointType endpoint = desc.getAssertionConsumerService().get(0);
+        final URI samlUri = new URI(OAuthClient.AUTH_SERVER_ROOT + "/realms/admin-client-test/broker/saml/endpoint");
 
-        Assert.assertEquals("AssertionConsumerService.Location",
-                new URI(oauth.AUTH_SERVER_ROOT + "/realms/admin-client-test/broker/saml/endpoint"), endpoint.getLocation());
+        Assert.assertEquals("AssertionConsumerService.Location", samlUri, endpoint.getLocation());
         Assert.assertEquals("AssertionConsumerService.Binding",
                 postBindingResponse ? JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.getUri() : JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.getUri(),
                 endpoint.getBinding());
         Assert.assertTrue("AssertionConsumerService.isDefault", endpoint.isIsDefault());
 
+        endpoint = desc.getAssertionConsumerService().get(1);
+
+        Assert.assertEquals("AssertionConsumerService.Location", samlUri, endpoint.getLocation());
+        Assert.assertEquals("AssertionConsumerService.Binding",
+                postBindingResponse ? JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.getUri() : JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.getUri(),
+                endpoint.getBinding());
+
+        endpoint = desc.getAssertionConsumerService().get(2);
+
+        Assert.assertEquals("AssertionConsumerService.Location", samlUri, endpoint.getLocation());
+        Assert.assertEquals("AssertionConsumerService.Binding", JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.getUri(), endpoint.getBinding());
 
         Assert.assertNotNull("SingleLogoutService not null", desc.getSingleLogoutService());
-        Assert.assertEquals("SingleLogoutService.size", 1, desc.getSingleLogoutService().size());
+        Assert.assertEquals("SingleLogoutService.size", 2, desc.getSingleLogoutService().size());
 
         EndpointType sloEndpoint = desc.getSingleLogoutService().get(0);
 
-        Assert.assertEquals("SingleLogoutService.Location",
-                new URI(oauth.AUTH_SERVER_ROOT + "/realms/admin-client-test/broker/saml/endpoint"), sloEndpoint.getLocation());
-        Assert.assertEquals("SingleLogoutService.Binding",
-                new URI("urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"), sloEndpoint.getBinding());
+        Assert.assertEquals("SingleLogoutService.Location", samlUri, sloEndpoint.getLocation());
+        Assert.assertEquals("SingleLogoutService.Binding", JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.getUri(), sloEndpoint.getBinding());
+
+        sloEndpoint = desc.getSingleLogoutService().get(1);
+
+        Assert.assertEquals("SingleLogoutService.Location", samlUri, sloEndpoint.getLocation());
+        Assert.assertEquals("SingleLogoutService.Binding", JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.getUri(), sloEndpoint.getBinding());
 
         Assert.assertNotNull("KeyDescriptor not null", desc.getKeyDescriptor());
         Assert.assertEquals("KeyDescriptor.size", 1, desc.getKeyDescriptor().size());

@@ -19,7 +19,9 @@ package org.keycloak.saml;
 
 import java.net.URI;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.ListIterator;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -45,9 +47,17 @@ import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_
 public class SPMetadataDescriptor {
 
     public static EntityDescriptorType buildSPDescriptor(URI loginBinding, URI logoutBinding, URI assertionEndpoint, URI logoutEndpoint,
-                                                         boolean wantAuthnRequestsSigned, boolean wantAssertionsSigned, boolean wantAssertionsEncrypted,
-                                                         String entityId, String nameIDPolicyFormat, List<KeyDescriptorType> signingCerts, List<KeyDescriptorType> encryptionCerts)
-    {
+            boolean wantAuthnRequestsSigned, boolean wantAssertionsSigned, boolean wantAssertionsEncrypted,
+            String entityId, String nameIDPolicyFormat, List<KeyDescriptorType> signingCerts, List<KeyDescriptorType> encryptionCerts) {
+        return buildSPDescriptor(Collections.singletonList(new EndpointType(loginBinding, assertionEndpoint)),
+                Collections.singletonList(new EndpointType(logoutBinding, logoutEndpoint)),
+                wantAuthnRequestsSigned, wantAssertionsSigned, wantAssertionsEncrypted, entityId, nameIDPolicyFormat, signingCerts, encryptionCerts);
+    }
+
+    public static EntityDescriptorType buildSPDescriptor(List<EndpointType> assertionConsumerServices, List<EndpointType> singleLogoutServices,
+            boolean wantAuthnRequestsSigned, boolean wantAssertionsSigned, boolean wantAssertionsEncrypted,
+            String entityId, String nameIDPolicyFormat, List<KeyDescriptorType> signingCerts,
+            List<KeyDescriptorType> encryptionCerts) {
         EntityDescriptorType entityDescriptor = new EntityDescriptorType(entityId);
         entityDescriptor.setID(IDGenerator.create("ID_"));
 
@@ -55,7 +65,7 @@ public class SPMetadataDescriptor {
         spSSODescriptor.setAuthnRequestsSigned(wantAuthnRequestsSigned);
         spSSODescriptor.setWantAssertionsSigned(wantAssertionsSigned);
         spSSODescriptor.addNameIDFormat(nameIDPolicyFormat);
-        spSSODescriptor.addSingleLogoutService(new EndpointType(logoutBinding, logoutEndpoint));
+        singleLogoutServices.forEach(spSSODescriptor::addSingleLogoutService);
 
         if (wantAuthnRequestsSigned && signingCerts != null) {
             for (KeyDescriptorType key: signingCerts) {
@@ -69,10 +79,13 @@ public class SPMetadataDescriptor {
             }
         }
 
-        IndexedEndpointType assertionConsumerEndpoint = new IndexedEndpointType(loginBinding, assertionEndpoint);
-        assertionConsumerEndpoint.setIsDefault(true);
-        assertionConsumerEndpoint.setIndex(1);
-        spSSODescriptor.addAssertionConsumerService(assertionConsumerEndpoint);
+        for (ListIterator<EndpointType> iter = assertionConsumerServices.listIterator(); iter.hasNext(); ) {
+            EndpointType endpoint = iter.next();
+            IndexedEndpointType assertionConsumerService = new IndexedEndpointType(endpoint.getBinding(), endpoint.getLocation());
+            assertionConsumerService.setIndex(iter.nextIndex());
+            assertionConsumerService.setIsDefault(iter.nextIndex() == 1 ? Boolean.TRUE : null);
+            spSSODescriptor.addAssertionConsumerService(assertionConsumerService);
+        }
 
         entityDescriptor.addChoiceType(new EntityDescriptorType.EDTChoiceType(Arrays.asList(new EntityDescriptorType.EDTDescriptorChoiceType(spSSODescriptor))));
 
