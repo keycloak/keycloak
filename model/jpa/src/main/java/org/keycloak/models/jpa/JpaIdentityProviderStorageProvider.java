@@ -42,11 +42,14 @@ import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderStorageProvider;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.jpa.entities.IdentityProviderEntity;
 import org.keycloak.models.jpa.entities.IdentityProviderMapperEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.resources.admin.IdentityProvidersResource;
 import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.models.IdentityProviderModel.ALIAS;
@@ -83,6 +86,12 @@ public class JpaIdentityProviderStorageProvider implements IdentityProviderStora
 
     @Override
     public IdentityProviderModel create(IdentityProviderModel identityProvider) {
+        if (identityProvider.getDisplayName() != null &&
+                getEntityByDisplayNameAndProviderId(identityProvider.getDisplayName(), identityProvider.getProviderId()) != null) {
+            throw new ModelDuplicateException(
+                    "Display name '" + identityProvider.getDisplayName() + "' already exists for provider type '" +
+                            identityProvider.getProviderId() + "'.");
+        }
         IdentityProviderEntity entity = new IdentityProviderEntity();
         if (identityProvider.getInternalId() == null) {
             entity.setInternalId(KeycloakModelUtils.generateId());
@@ -115,6 +124,16 @@ public class JpaIdentityProviderStorageProvider implements IdentityProviderStora
 
     @Override
     public void update(IdentityProviderModel identityProvider) {
+        // Check for duplicate display name + providerId in the same realm,
+        IdentityProviderEntity existing = getEntityByDisplayNameAndProviderId(
+                identityProvider.getDisplayName(), identityProvider.getProviderId());
+        if (identityProvider.getDisplayName() != null &&
+                existing != null &&
+                !existing.getInternalId().equals(identityProvider.getInternalId())) {
+            throw new ModelDuplicateException(
+                    "Display name '" + identityProvider.getDisplayName() + "' already exists for provider type '" +
+                            identityProvider.getProviderId() + "'.");
+        }
         // find idp by id and update it.
         IdentityProviderEntity entity = this.getEntityById(identityProvider.getInternalId(), true);
         entity.setAlias(identityProvider.getAlias());
@@ -499,6 +518,26 @@ public class JpaIdentityProviderStorageProvider implements IdentityProviderStora
 
         Predicate predicate = builder.and(builder.equal(idp.get("realmId"), getRealm().getId()),
                 builder.equal(idp.get(ALIAS), alias));
+
+        TypedQuery<IdentityProviderEntity> typedQuery = em.createQuery(query.select(idp).where(predicate));
+        try {
+            return typedQuery.getSingleResult();
+        } catch (NoResultException nre) {
+            return null;
+        }
+    }
+
+    private IdentityProviderEntity getEntityByDisplayNameAndProviderId(String displayName, String providerId) {
+        String trimmedDisplayName = displayName != null ? displayName.trim() : null;
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<IdentityProviderEntity> query = builder.createQuery(IdentityProviderEntity.class);
+        Root<IdentityProviderEntity> idp = query.from(IdentityProviderEntity.class);
+
+        Predicate predicate = builder.and(
+                builder.equal(idp.get("realmId"), getRealm().getId()),
+                builder.equal(idp.get("displayName"), trimmedDisplayName),
+                builder.equal(idp.get("providerId"), providerId)
+        );
 
         TypedQuery<IdentityProviderEntity> typedQuery = em.createQuery(query.select(idp).where(predicate));
         try {
