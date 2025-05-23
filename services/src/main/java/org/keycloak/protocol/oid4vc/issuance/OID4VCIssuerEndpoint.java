@@ -33,6 +33,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.SecretGenerator;
@@ -53,6 +54,8 @@ import org.keycloak.protocol.oid4vc.OID4VCClientRegistrationProvider;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBody;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
+import org.keycloak.protocol.oid4vc.issuance.keybinding.CNonceHandler;
+import org.keycloak.protocol.oid4vc.issuance.keybinding.JwtCNonceHandler;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.ProofValidator;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
 import org.keycloak.protocol.oid4vc.issuance.signing.CredentialSigner;
@@ -63,6 +66,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.ErrorResponse;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.Format;
+import org.keycloak.protocol.oid4vc.model.NonceResponse;
 import org.keycloak.protocol.oid4vc.model.OID4VCClient;
 import org.keycloak.protocol.oid4vc.model.OfferUriType;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
@@ -118,6 +122,7 @@ public class OID4VCIssuerEndpoint {
     private static final String CODE_LIFESPAN_REALM_ATTRIBUTE_KEY = "preAuthorizedCodeLifespanS";
     private static final int DEFAULT_CODE_LIFESPAN_S = 30;
 
+    public static final String NONCE_PATH = "nonce";
     public static final String CREDENTIAL_PATH = "credential";
     public static final String CREDENTIAL_OFFER_PATH = "credential-offer/";
     public static final String RESPONSE_TYPE_IMG_PNG = "image/png";
@@ -196,6 +201,26 @@ public class OID4VCIssuerEndpoint {
                     return componentFactory.create(keycloakSession, componentModel);
                 })
                 .collect(Collectors.toMap(CredentialBuilder::getSupportedFormat, component -> component));
+    }
+
+    /**
+     * the OpenId4VCI nonce-endpoint
+     *
+     * @return a short-lived c_nonce value that must be presented in key-bound proofs at the credential endpoint.
+     * @see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-15.html#name-nonce-endpoint
+     * @see https://datatracker.ietf.org/doc/html/draft-demarco-nonce-endpoint#name-nonce-response
+     */
+    @POST
+    @Produces({MediaType.APPLICATION_JSON})
+    @Path(NONCE_PATH)
+    public Response getCNonce() {
+        CNonceHandler cNonceHandler = session.getProvider(CNonceHandler.class);
+        NonceResponse nonceResponse = new NonceResponse();
+        String sourceEndpoint = OID4VCIssuerWellKnownProvider.getNonceEndpoint(session.getContext());
+        String audience = OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(session.getContext());
+        String nonce = cNonceHandler.buildCNonce(List.of(audience), Map.of(JwtCNonceHandler.SOURCE_ENDPOINT, sourceEndpoint));
+        nonceResponse.setNonce(nonce);
+        return Response.ok().header(HttpHeaders.CACHE_CONTROL, "no-store").entity(nonceResponse).build();
     }
 
     /**
