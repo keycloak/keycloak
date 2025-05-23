@@ -43,12 +43,15 @@ use of the token
 . To serve the request, the `requester-client` may need to call another service `target-client`. However it may be unable to use the token sent to it from `initial-client`. For example:
 * The token has insufficient permissions or scopes.
 * The `target-client` is not specified as the token audience; the token was intended to be used to invoke `requester-client`.
-* The token has to many permissions; therefore, the `requester-client` may not want to share it with the `target-client`.
+* The token has too many permissions; therefore, the `requester-client` may not want to share it with the `target-client`.
 +
 Any of these situations could be the reason to invoke the token exchange. The `requester-client` may need to send the token exchange request to the {project_name} server and use the original token from step 1 as the
 _subject token_ and exchange it for another token _requested token_.
 . The _requested token_ is returned to `requester-client`. This token can now be sent to the `target-client`.
 . The `target-client` can fulfill the request and return the response to the `requester-client`. The `requester-client` can then follow and return the response to the request from step 2.
+
+.Token Exchange Example Flow
+image::token-exchange-example-flow.png[Token Exchange Example Flow]
 
 Many other use-cases exist for token exchange, but the preceding example is the most typical.
 
