@@ -123,6 +123,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -891,8 +892,10 @@ public class DefaultExportImportManager implements ExportImportManager {
 
             Map<String, String> config = new HashMap<>(rep.getSmtpServer());
 
-            if(rep.getSmtpServer().containsKey("authType") && "basic".equals(rep.getSmtpServer().get("authType"))) {
-                if (rep.getSmtpServer().containsKey("password") && ComponentRepresentation.SECRET_VALUE.equals(rep.getSmtpServer().get("password"))) {
+            if (rep.getSmtpServer().containsKey("authType") && "basic".equals(rep.getSmtpServer().get("authType"))) {
+                if (rep.getSmtpServer().containsKey("password")
+                        && ComponentRepresentation.SECRET_VALUE.equals(rep.getSmtpServer().get("password"))
+                        && reuseConfiguredAuthenticationForSmtp(realm, config)) {
                     String passwordValue = realm.getSmtpConfig() != null ? realm.getSmtpConfig().get("password") : null;
                     config.put("password", passwordValue);
                 }
@@ -902,8 +905,10 @@ public class DefaultExportImportManager implements ExportImportManager {
                 config.remove("authTokenClientSecret");
             }
 
-            if(rep.getSmtpServer().containsKey("authType") && "token".equals(rep.getSmtpServer().get("authType"))) {
-                if (rep.getSmtpServer().containsKey("authTokenClientSecret") && ComponentRepresentation.SECRET_VALUE.equals(rep.getSmtpServer().get("authTokenClientSecret"))) {
+            if (rep.getSmtpServer().containsKey("authType") && "token".equals(rep.getSmtpServer().get("authType"))) {
+                if (rep.getSmtpServer().containsKey("authTokenClientSecret")
+                        && ComponentRepresentation.SECRET_VALUE.equals(rep.getSmtpServer().get("authTokenClientSecret"))
+                        && reuseConfiguredAuthenticationForSmtp(realm, config)) {
                     String authTokenClientSecretValue = realm.getSmtpConfig() != null ? realm.getSmtpConfig().get("authTokenClientSecret") : null;
                     config.put("authTokenClientSecret", authTokenClientSecretValue);
                 }
@@ -947,6 +952,15 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (rep.getFirstBrokerLoginFlow() != null) {
             realm.setFirstBrokerLoginFlow(realm.getFlowByAlias(rep.getFirstBrokerLoginFlow()));
         }
+    }
+
+    public static boolean reuseConfiguredAuthenticationForSmtp(RealmModel realm, Map<String, String> newConfig) {
+        // just reuse the configured authentication if the same authenticator, host, port are passed
+        Map<String, String> persistentSmtpConfig = realm.getSmtpConfig();
+        return Boolean.parseBoolean(newConfig.get("auth")) && Boolean.parseBoolean(persistentSmtpConfig.get("auth"))
+                && newConfig.getOrDefault("authType", "basic").equalsIgnoreCase(persistentSmtpConfig.get("authType"))
+                && Objects.equals(newConfig.get("host"), persistentSmtpConfig.get("host"))
+                && Objects.equals(newConfig.get("port"), persistentSmtpConfig.get("port"));
     }
 
     @Override

@@ -127,11 +127,44 @@ public class SMTPConnectionTest {
         mailServer.credentials("admin@localhost", password);
         response = realm.testSMTPConnection(settings("localhost", "3025", "auto@keycloak.org", "true", null, null,
                 "admin@localhost", SECRET_VALUE));
-        assertStatus(response, 500);
+        assertStatus(response, 400);
     }
 
     @Test
     @Order(6)
+    public void testSaveSettingInvalidatePassword() throws Exception {
+        String password = "admin";
+        String user = "admin@localhost";
+
+        RealmResource realm = adminClient.realms().realm(managedRealm.getName());
+        RealmRepresentation realmRep = realm.toRepresentation();
+        realmRep.setSmtpServer(smtpMap("127.0.0.1", "3025", "auto@keycloak.org", "true", null, null,
+                user, password, null, null));
+        managedRealm.updateWithCleanup(r -> r.update(realmRep));
+
+        mailServer.credentials("admin@localhost", password);
+
+        // should succeed with correct credentials
+        Response response = realm.testSMTPConnection(realmRep.getSmtpServer());
+        assertStatus(response, 204);
+
+        // load updated realm and verify password is stored as secret
+        RealmRepresentation realmRepUpdated = adminClient.realms().realm(managedRealm.getName()).toRepresentation();
+        assertEquals(SECRET_VALUE, realmRepUpdated.getSmtpServer().get("password"));
+
+        // modify host and trigger an update
+        realmRepUpdated.getSmtpServer().put("host", "localhost");
+        managedRealm.updateWithCleanup(r -> r.update(realmRepUpdated));
+
+        mailServer.credentials("admin@localhost", password);
+
+        // credentials are not preserved (password is masked), should fail
+        response = realm.testSMTPConnection(realmRepUpdated.getSmtpServer());
+        assertStatus(response, 500);
+    }
+
+    @Test
+    @Order(7)
     public void testWithTokenAuthEnabledAndTokenCacheAndSavedCredentials() throws Exception {
         final var realm = adminClient.realms().realm(managedRealm.getName());
 
@@ -164,11 +197,11 @@ public class SMTPConnectionTest {
         // no reuse password if the server is different (localhost) to the saved one (127.0.0.1)
         final var thirdResponse = realm.testSMTPConnection(settings("localhost", "3025", "auto@keycloak.org", "true", null, null,
                 "admin@localhost", keycloakUrls.getToken(managedRealm.getName()), "test-smtp-client-I", SECRET_VALUE, "basic"));
-        assertStatus(thirdResponse, 500);
+        assertStatus(thirdResponse, 400);
     }
 
     @Test
-    @Order(7)
+    @Order(8)
     public void testWithTokenAuthEnabledRetryGivesUp() throws Exception {
         RealmResource realm = adminClient.realms().realm(managedRealm.getName());
         RealmRepresentation realmRep = realm.toRepresentation();
@@ -187,7 +220,7 @@ public class SMTPConnectionTest {
     }
 
     @Test
-    @Order(8)
+    @Order(9)
     public void testWithTokenAuthEnabledAndRetryWithValidTokenInSecondTry() throws Exception {
         final var realm = adminClient.realms().realm(managedRealm.getName());
 
