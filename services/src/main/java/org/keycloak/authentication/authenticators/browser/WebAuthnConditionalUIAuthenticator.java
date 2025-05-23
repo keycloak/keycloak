@@ -20,6 +20,7 @@ import jakarta.ws.rs.core.Response;
 import java.util.function.Function;
 import org.keycloak.WebAuthnConstants;
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.common.Profile;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
 
@@ -48,5 +49,10 @@ public class WebAuthnConditionalUIAuthenticator extends WebAuthnPasswordlessAuth
         context.form().setError(errorCase, "");
         context.form().setAttribute(WebAuthnConstants.ENABLE_WEBAUTHN_CONDITIONAL_UI, null);
         return errorChallenge.apply(context);
+    }
+
+    public boolean isPasskeysEnabled() {
+        return Profile.isFeatureEnabled(Profile.Feature.PASSKEYS) &&
+                Boolean.TRUE.equals(session.getContext().getRealm().getWebAuthnPolicyPasswordless().isPasskeysEnabled());
     }
 }

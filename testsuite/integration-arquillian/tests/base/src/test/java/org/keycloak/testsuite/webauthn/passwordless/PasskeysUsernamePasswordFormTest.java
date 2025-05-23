@@ -25,7 +25,7 @@ import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 import org.keycloak.WebAuthnConstants;
-import org.keycloak.authentication.authenticators.browser.PasskeysUsernamePasswordFormFactory;
+import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -66,7 +66,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
         RealmRepresentation realmRepresentation = AbstractAdminTest.loadJson(getClass().getResourceAsStream("/webauthn/testrealm-webauthn.json"), RealmRepresentation.class);
 
         makePasswordlessRequiredActionDefault(realmRepresentation);
-        switchExecutionInBrowserFormToProvider(realmRepresentation, PasskeysUsernamePasswordFormFactory.PROVIDER_ID);
+        switchExecutionInBrowserFormToProvider(realmRepresentation, UsernamePasswordFormFactory.PROVIDER_ID);
 
         testRealms.add(realmRepresentation);
     }
@@ -85,6 +85,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
                 .setWebAuthnPolicyRpEntityName("localhost")
                 .setWebAuthnPolicyRequireResidentKey(PropertyRequirement.YES.getValue())
                 .setWebAuthnPolicyUserVerificationRequirement(WebAuthnConstants.OPTION_REQUIRED)
+                .setWebAuthnPolicyPasskeysEnabled(Boolean.TRUE)
                 .update()) {
 
             checkWebAuthnConfiguration(PropertyRequirement.YES.getValue(), WebAuthnConstants.OPTION_REQUIRED);
@@ -149,41 +150,51 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
 
     @Test
     public void passwordLoginWithNonDiscoverableKey() throws IOException {
-        registerDefaultUser();
+        getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.PASSKEYS.getOptions());
 
-        UserRepresentation user = userResource().toRepresentation();
-        MatcherAssert.assertThat(user, Matchers.notNullValue());
+        // set passwordless policy not specified, key will not be discoverable
+        try (Closeable c = getWebAuthnRealmUpdater()
+                .setWebAuthnPolicyRpEntityName("localhost")
+                .setWebAuthnPolicyRequireResidentKey(PropertyRequirement.NOT_SPECIFIED.getValue())
+                .setWebAuthnPolicyUserVerificationRequirement(WebAuthnConstants.OPTION_NOT_SPECIFIED)
+                .setWebAuthnPolicyPasskeysEnabled(Boolean.TRUE)
+                .update()) {
+            registerDefaultUser();
 
-        logout();
+            UserRepresentation user = userResource().toRepresentation();
+            MatcherAssert.assertThat(user, Matchers.notNullValue());
 
-        events.clear();
+            logout();
 
-        // login should be done manually but webauthn is enabled
-        oauth.openLoginForm();
-        WaitUtils.waitForPageToLoad();
-        loginPage.assertCurrent();
-        MatcherAssert.assertThat(loginPage.getUsernameAutocomplete(), Matchers.is("username webauthn"));
-        MatcherAssert.assertThat(driver.findElement(By.xpath("//form[@id='webauth']")), Matchers.notNullValue());
+            events.clear();
 
-        // invalid login first
-        loginPage.login(USERNAME, "invalid-password");
-        loginPage.assertCurrent();
-        MatcherAssert.assertThat(loginPage.getUsernameInputError(), Matchers.is("Invalid username or password."));
-        MatcherAssert.assertThat(loginPage.getPasswordInputError(), Matchers.nullValue());
-        events.expect(EventType.LOGIN_ERROR)
-                .detail(Details.USERNAME, USERNAME)
-                .error(Errors.INVALID_USER_CREDENTIALS)
-                .user(user.getId())
-                .assertEvent();
+            // login should be done manually but webauthn is enabled
+            oauth.openLoginForm();
+            WaitUtils.waitForPageToLoad();
+            loginPage.assertCurrent();
+            MatcherAssert.assertThat(loginPage.getUsernameAutocomplete(), Matchers.is("username webauthn"));
+            MatcherAssert.assertThat(driver.findElement(By.xpath("//form[@id='webauth']")), Matchers.notNullValue());
 
-        // login OK now
-        loginPage.login(USERNAME, getPassword(USERNAME));
-        appPage.assertCurrent();
-        events.expectLogin()
+            // invalid login first
+            loginPage.login(USERNAME, "invalid-password");
+            loginPage.assertCurrent();
+            MatcherAssert.assertThat(loginPage.getUsernameInputError(), Matchers.is("Invalid username or password."));
+            MatcherAssert.assertThat(loginPage.getPasswordInputError(), Matchers.nullValue());
+            events.expect(EventType.LOGIN_ERROR)
+                    .detail(Details.USERNAME, USERNAME)
+                    .error(Errors.INVALID_USER_CREDENTIALS)
+                    .user(user.getId())
+                    .assertEvent();
+
+            // login OK now
+            loginPage.login(USERNAME, getPassword(USERNAME));
+            appPage.assertCurrent();
+            events.expectLogin()
                     .user(user.getId())
                     .detail(Details.USERNAME, USERNAME)
                     .detail(Details.CREDENTIAL_TYPE, Matchers.nullValue())
                     .assertEvent();
+        }
     }
 
     @Test
@@ -195,6 +206,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
                 .setWebAuthnPolicyRpEntityName("localhost")
                 .setWebAuthnPolicyRequireResidentKey(PropertyRequirement.YES.getValue())
                 .setWebAuthnPolicyUserVerificationRequirement(WebAuthnConstants.OPTION_REQUIRED)
+                .setWebAuthnPolicyPasskeysEnabled(Boolean.TRUE)
                 .update();
              Closeable realmUpdate = new RealmAttributeUpdater(testRealm())
                 .setOrganizationsEnabled(true)

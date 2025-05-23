@@ -67,7 +67,7 @@ import static org.keycloak.services.messages.Messages.*;
 public class WebAuthnAuthenticator implements Authenticator, CredentialValidator<WebAuthnCredentialProvider> {
 
     private static final Logger logger = Logger.getLogger(WebAuthnAuthenticator.class);
-    private final KeycloakSession session;
+    protected final KeycloakSession session;
 
     public WebAuthnAuthenticator(KeycloakSession session) {
         this.session = session;
