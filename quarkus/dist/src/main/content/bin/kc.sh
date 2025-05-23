@@ -55,9 +55,14 @@ do
     case "$1" in
       --debug)
           DEBUG_MODE=true
-          if [ -n "$2" ] && expr "$2" : '[0-9]\{0,\}$' >/dev/null; then
-              DEBUG_PORT=$2
-              shift
+          if [ -n "$2" ]; then
+              if echo "$2" | grep -Eq '^[0-9]+$'; then
+                  DEBUG_ADDRESS="$2"
+                  shift
+              elif echo "$2" | grep -Eq '^([^:]+):[0-9]+$'; then
+                  DEBUG_ADDRESS="$2"
+                  shift
+              fi
           fi
           ;;
       --)
@@ -142,7 +147,15 @@ fi
 if [ "$DEBUG_MODE" = "true" ]; then
     DEBUG_OPT="$(echo "$JAVA_OPTS" | $GREP "\-agentlib:jdwp")"
     if [ -z "$DEBUG_OPT" ]; then
-        JAVA_OPTS="$JAVA_OPTS -agentlib:jdwp=transport=dt_socket,address=$DEBUG_PORT,server=y,suspend=$DEBUG_SUSPEND"
+        # If DEBUG_ADDRESS contains a colon, use it verbatim (host:port).
+        # Otherwise (plain port or no arg), bind to 0.0.0.0:<port> for backward compatibility.
+        if [ -n "$DEBUG_ADDRESS" ] && echo "$DEBUG_ADDRESS" | grep -Eq '^[^:]+:[0-9]+$'; then
+            AGENT_ADDR="$DEBUG_ADDRESS"
+        else
+            AGENT_ADDR="0.0.0.0:${DEBUG_ADDRESS:-$DEBUG_PORT}"
+        fi
+
+        JAVA_OPTS="$JAVA_OPTS -agentlib:jdwp=transport=dt_socket,address=$AGENT_ADDR,server=y,suspend=$DEBUG_SUSPEND"
     else
         echo "Debug already enabled in JAVA_OPTS, ignoring --debug argument"
     fi
@@ -152,7 +165,7 @@ esceval_args() {
   while IFS= read -r entry; do
     result="$result $(esceval "$entry")"
   done
-  echo $result
+  echo "$result"
 }
 
 JAVA_RUN_OPTS=$(echo "$JAVA_OPTS" | xargs printf '%s\n' | esceval_args)
@@ -166,8 +179,8 @@ if [ "$PRINT_ENV" = "true" ]; then
 fi
 
 if [ "$PRE_BUILD" = "true" ]; then
-  eval "'$JAVA'" -Dkc.config.build-and-exit=true $JAVA_RUN_OPTS || exit $?
+  eval "'$JAVA'" -Dkc.config.build-and-exit=true "$JAVA_RUN_OPTS" || exit $?
   JAVA_RUN_OPTS="-Dkc.config.built=true $JAVA_RUN_OPTS"
 fi
 
-eval exec "'$JAVA'" $JAVA_RUN_OPTS
+eval exec "'$JAVA'" "$JAVA_RUN_OPTS"
