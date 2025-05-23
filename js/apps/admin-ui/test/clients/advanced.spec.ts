@@ -144,8 +144,6 @@ test.describe("Client Offline Session Max", () => {
 test.describe("OpenID for Verifiable Credentials", () => {
   const realmName = `oid4vci-test-${uuidv4()}`;
   const clientIdOpenIdConnect = `client-oidc-${uuidv4()}`;
-  const clientIdOid4vc = `client-oid4vc-${uuidv4()}`;
-
   test.beforeAll(async () => {
     await adminClient.createRealm(realmName, {});
     await adminClient.createClient({
@@ -153,16 +151,9 @@ test.describe("OpenID for Verifiable Credentials", () => {
       realm: realmName,
       protocol: "openid-connect",
     });
-
-    await adminClient.createClient({
-      clientId: clientIdOid4vc,
-      realm: realmName,
-      protocol: "oid4vc",
-    });
   });
 
   test.afterAll(() => adminClient.deleteRealm(realmName));
-
   test.describe("with protocol openid-connect", () => {
     test.beforeEach(async ({ page }) => {
       await login(page);
@@ -171,31 +162,6 @@ test.describe("OpenID for Verifiable Credentials", () => {
       await clickTableRowItem(page, clientIdOpenIdConnect);
       await goToAdvancedTab(page);
     });
-
-    test("should toggle oid4vci.enabled switch", async ({ page }) => {
-      const toggleSwitch = page.locator("#attributes\\.oid4vci🍺enabled");
-      await toggleSwitch.scrollIntoViewIfNeeded();
-      await expect(toggleSwitch).toBeVisible();
-      await assertOid4vciEnabled(page, false);
-      await switchOid4vciEnabled(page, true);
-      await saveOid4vci(page);
-      await assertOid4vciEnabled(page, true);
-      await switchOid4vciEnabled(page, false);
-      await assertOid4vciEnabled(page, false);
-      await revertOid4vci(page);
-      await assertOid4vciEnabled(page, true);
-    });
-  });
-
-  test.describe("with protocol oid4vc", () => {
-    test.beforeEach(async ({ page }) => {
-      await login(page);
-      await goToRealm(page, realmName);
-      await goToClients(page);
-      await clickTableRowItem(page, clientIdOid4vc);
-      await goToAdvancedTab(page);
-    });
-
     test("should toggle oid4vci.enabled switch", async ({ page }) => {
       const toggleSwitch = page.locator("#attributes\\.oid4vci🍺enabled");
       await toggleSwitch.scrollIntoViewIfNeeded();
