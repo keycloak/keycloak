@@ -16,9 +16,7 @@
  */
 package org.keycloak.services.managers;
 
-import java.net.URI;
 import java.util.Collections;
-import java.util.Objects;
 import java.util.Set;
 import javax.naming.ldap.LdapContext;
 
@@ -27,14 +25,12 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.TestLdapConnectionRepresentation;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.representations.idm.LDAPCapabilityRepresentation;
-import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPContextManager;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.storage.ldap.mappers.membership.group.GroupTreeResolver;
@@ -74,8 +70,7 @@ public class LDAPServerCapabilitiesManager {
             ComponentModel component = realm.getComponent(config.getComponentId());
             if (component != null) {
                 LDAPConfig ldapConfig = new LDAPConfig(component.getConfig());
-                if (checkLdapConnectionUrl(config, ldapConfig)
-                        && config.getBindDn() != null && config.getBindDn().equalsIgnoreCase(ldapConfig.getBindDN())) {
+                if (ldapConfig.matchLdapConnection(config)) {
                     bindCredential = ldapConfig.getBindCredential();
                 }
             }
@@ -93,28 +88,6 @@ public class LDAPServerCapabilitiesManager {
         configMap.putSingle(LDAPConstants.READ_TIMEOUT, timeoutStr);
         configMap.add(LDAPConstants.START_TLS, config.getStartTls());
         return new LDAPConfig(configMap);
-    }
-
-    /**
-     * Ensure provided connection URI matches parsed LDAP connection URI.
-     *
-     * See: https://docs.oracle.com/javase/jndi/tutorial/ldap/misc/url.html
-     * @param config
-     * @param ldapConfig
-     * @return
-     */
-    private static boolean checkLdapConnectionUrl(TestLdapConnectionRepresentation config, LDAPConfig ldapConfig) {
-        // There could be multiple connection URIs separated via spaces.
-        String[] configConnectionUrls = config.getConnectionUrl().trim().split(" ");
-        String[] ldapConfigConnectionUrls = ldapConfig.getConnectionUrl().trim().split(" ");
-        if (configConnectionUrls.length != ldapConfigConnectionUrls.length) {
-            return false;
-        }
-        boolean urlsMatch = true;
-        for (int i = 0; i < configConnectionUrls.length && urlsMatch; i++) {
-            urlsMatch = Objects.equals(URI.create(configConnectionUrls[i]), URI.create(ldapConfigConnectionUrls[i]));
-        }
-        return urlsMatch;
     }
 
     public static Set<LDAPCapabilityRepresentation> queryServerCapabilities(TestLdapConnectionRepresentation config, KeycloakSession session,

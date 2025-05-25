@@ -38,6 +38,7 @@ import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
@@ -296,7 +297,28 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
         if (config.getId() == null) {
             // the ldap component is being created, use short id for ldap components
             config.setId(KeycloakModelUtils.generateShortId());
+        } else {
+            ComponentModel currentConfig = realm.getComponent(config.getId());
+            if (currentConfig != null) {
+                LDAPConfig currentCfg = new LDAPConfig(currentConfig.getConfig());
+
+                // Clear stored bind credentials when the LDAP connection parameters are changed, to prevent pass-back attacks
+                if (LDAPConstants.AUTH_TYPE_SIMPLE.equals(cfg.getAuthType()) &&
+                        isNoCredentialProvided(config) && !currentCfg.matchLdapConnection(cfg)) {
+                    throw new ComponentValidationException("ldapErrorReenterCredentials");
+                }
+            }
         }
+
+        if (!LDAPConstants.AUTH_TYPE_SIMPLE.equals(cfg.getAuthType())) {
+            config.getConfig().remove(LDAPConstants.BIND_DN);
+            config.getConfig().remove(LDAPConstants.BIND_CREDENTIAL);
+        }
+    }
+
+    private boolean isNoCredentialProvided(ComponentModel model) {
+        return model.getNote(LDAPConstants.BIND_CREDENTIAL) instanceof String maskedCredential
+                    && ComponentRepresentation.SECRET_VALUE.equals(maskedCredential);
     }
 
     @Override

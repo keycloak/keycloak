@@ -1079,12 +1079,24 @@ public class RepresentationToModel {
                     while (itr.hasNext()) {
                         String v = itr.next();
                         if (v == null || v.trim().isEmpty() || v.equals(ComponentRepresentation.SECRET_VALUE)) {
+                            component.setNote(k, ComponentRepresentation.SECRET_VALUE);
                             itr.remove();
                         }
                     }
 
                     if (!values.isEmpty()) {
                         component.getConfig().put(k, values);
+                    }
+                }
+            }
+
+            if (providerConfiguration != null) {
+                for (String componentKey : component.getConfig().keySet()) {
+                    if (!keys.contains(componentKey)) {
+                        ProviderConfigProperty providerConfigProperty = providerConfiguration.get(componentKey);
+                        if (providerConfigProperty != null && providerConfigProperty.isSecret()) {
+                            component.setNote(componentKey, ComponentRepresentation.SECRET_VALUE);
+                        }
                     }
                 }
             }
