@@ -104,8 +104,17 @@ public class ThemeResource {
             }
 
             if (hasContentHash && Objects.equals(etag, Version.RESOURCES_VERSION)) {
+                CacheControl defaultCacheControl = CacheControlUtil.getDefaultCacheControl();
+                if (defaultCacheControl.isNoCache()) {
+                    // If there is a content hash, and no-cache is set, we are good to allow caching with 5 minutes.
+                    // Together with a etag we can at least avoid serving it again when we reply "not modified".
+                    defaultCacheControl.setNoCache(false);
+                    defaultCacheControl.setMaxAge(300);
+                }
                 // We delivered this resource earlier, and it etag matches the resource version, so it has not changed
-                return Response.notModified().build();
+                return Response.notModified()
+                        .header(HttpHeaders.ETAG, Version.RESOURCES_VERSION)
+                        .cacheControl(defaultCacheControl).build();
             }
 
             ResourceEncodingProvider encodingProvider = session.theme().isCacheEnabled() ? ResourceEncodingHelper.getResourceEncodingProvider(session, contentType) : null;
@@ -125,10 +134,10 @@ public class ThemeResource {
                     defaultCacheControl.setMaxAge(300);
                 }
                 if (hasContentHash && defaultCacheControl.isNoCache()) {
-                    // If there is a content hash, and no-cache is set, we are good to allow caching with zero seconds.
+                    // If there is a content hash, and no-cache is set, we are good to allow caching with 5 minutes.
                     // Together with a etag we can at least avoid serving it again when we reply "not modified".
                     defaultCacheControl.setNoCache(false);
-                    defaultCacheControl.setMaxAge(0);
+                    defaultCacheControl.setMaxAge(300);
                 }
                 Response.ResponseBuilder rb = Response.ok(resource).type(contentType).cacheControl(defaultCacheControl);
                 if (hasContentHash) {
