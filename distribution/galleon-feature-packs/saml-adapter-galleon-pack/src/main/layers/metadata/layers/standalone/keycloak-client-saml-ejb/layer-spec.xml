@@ -1,6 +1,9 @@
 <?xml version="1.0" ?>
 <layer-spec xmlns="urn:jboss:galleon:layer-spec:2.0" name="keycloak-client-saml-ejb">
     <props>
+        <prop name="org.wildfly.category" value="Security"/>
+        <prop name="org.wildfly.description" value="Support for securing your EJB with the keyloack SAML protocol."/>
+        <prop name="org.wildfly.note" value="Not to be used when provisioning for the cloud if you are using the env variables to automatically configure SAML (SSO_URL, SSO_REALM)."/>
         <prop name="org.wildfly.rule.inclusion-mode" value="all-dependencies"/>
     </props>
     <dependencies>
