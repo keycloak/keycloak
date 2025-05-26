@@ -361,7 +361,7 @@ jobs:
 
       - name: Build with JDK
         run:
-          ./mvnw install -e -DskipTests -DskipExamples
+          ./mvnw install -e -DskipTests -DskipExamples -DskipProtoLock=true
 
       - name: Upload JVM Heapdumps
         if: always()
