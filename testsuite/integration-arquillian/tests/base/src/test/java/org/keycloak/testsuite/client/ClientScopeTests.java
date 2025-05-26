@@ -82,11 +82,11 @@ public class ClientScopeTests extends AbstractKeycloakTest {
         createClientScope("oid4vc");
     }
 
-    private void createClientScope(String oid4vc) {
+    private void createClientScope(String protocol) {
         ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
         clientScope.setName("test-client-scope");
         clientScope.setDescription("test-client-scope-description");
-        clientScope.setProtocol(oid4vc);
+        clientScope.setProtocol(protocol);
         clientScope.setAttributes(Map.of("test-attribute", "test-value"));
 
         final RealmResource testRealm = adminClient.realm(realmName);
