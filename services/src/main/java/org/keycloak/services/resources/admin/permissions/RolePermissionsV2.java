@@ -19,6 +19,7 @@ package org.keycloak.services.resources.admin.permissions;
 
 import static org.keycloak.authorization.AdminPermissionsSchema.ROLES_RESOURCE_TYPE;
 
+import org.keycloak.Config;
 import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
@@ -49,12 +50,28 @@ public class RolePermissionsV2 extends RolePermissions {
         super(session, realm, authz, root);
     }
 
+    private boolean hasMasterAdminRole() {
+        RealmModel masterRealm = root.adminsRealm().getName().equals(Config.getAdminRealm()) ? 
+                root.adminsRealm(): 
+                session.realms().getRealmByName(Config.getAdminRealm());
+
+        RoleModel adminRole = masterRealm.getRole(AdminRoles.ADMIN);
+        return root.admin().hasRole(adminRole);
+    }
+
     @Override
     public boolean canMapClientScope(RoleModel role) {
-        if (root.clients().canManageClientsDefault()) return true;
-
         if (role.getContainer() instanceof ClientModel clientModel) {
-            if (root.clients().canMapClientScopeRoles(clientModel)) return true;
+            if (root.hasOneAdminRole(AdminRoles.MANAGE_CLIENTS)) {
+                return true;
+            }
+            if (root.clients().canMapClientScopeRoles(clientModel)) {
+                return true;
+            }
+        } else {
+            if (root.hasOneAdminRole(AdminRoles.MANAGE_REALM)) {
+                return true;
+            }
         }
 
         return hasPermission(role, MAP_ROLE_CLIENT_SCOPE_SCOPE);
@@ -62,24 +79,32 @@ public class RolePermissionsV2 extends RolePermissions {
 
     @Override
     public boolean canMapComposite(RoleModel role) {
-        if (canManageDefault(role)) return checkAdminRoles(role);
+        if (AdminRoles.ALL_ROLES.contains(role.getName()) && !hasMasterAdminRole()) {
+            return false;
+        }
 
         if (role.getContainer() instanceof ClientModel clientModel) {
             if (root.clients().canMapCompositeRoles(clientModel)) return true;
         }
 
-        return hasPermission(role, MAP_ROLE_COMPOSITE_SCOPE) && checkAdminRoles(role);
+        return hasPermission(role, MAP_ROLE_COMPOSITE_SCOPE);
     }
 
     @Override
     public boolean canMapRole(RoleModel role) {
-        if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS)) return checkAdminRoles(role);
+        if (AdminRoles.ALL_ROLES.contains(role.getName()) && !hasMasterAdminRole()) {
+            return false;
+        }
+
+        if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS)) {
+            return true;
+        }
 
         if (role.getContainer() instanceof ClientModel clientModel) {
             if (root.clients().canMapRoles(clientModel)) return true;
         }
 
-        return hasPermission(role, MAP_ROLE_SCOPE) && checkAdminRoles(role);
+        return hasPermission(role, MAP_ROLE_SCOPE);
     }
 
     @Override
