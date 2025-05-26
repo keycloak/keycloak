@@ -348,6 +348,28 @@ public class ClientTest extends AbstractAdminTest {
     }
 
     @Test
+    public void removeClientWithDependentCompositeRoles() {
+        ClientRepresentation clientRep = createClient();
+        String id = clientRep.getId();
+        ClientResource clientRsc = realm.clients().get(id);
+
+        RoleRepresentation roleB = RoleBuilder.create().name("role-b").build();
+        clientRsc.roles().create(roleB);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(id, "role-b"), roleB, ResourceType.CLIENT_ROLE);
+
+        RoleRepresentation roleA = RoleBuilder.create().name("role-a").build();
+        clientRsc.roles().create(roleA);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(id, "role-a"), roleA, ResourceType.CLIENT_ROLE);
+
+        List<RoleRepresentation> composites = List.of( clientRsc.roles().get("role-b").toRepresentation());
+        clientRsc.roles().get("role-a").addComposites(composites);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientRoleResourceCompositesPath(id, "role-a"), composites, ResourceType.CLIENT_ROLE);
+
+        clientRsc.remove();
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.clientResourcePath(id), ResourceType.CLIENT);
+    }
+
+    @Test
     public void removeInternalClientExpectingBadRequestException() {
         final String testRealmClientId = ApiUtil.findClientByClientId(realmsResouce().realm("master"), "test-realm")
                 .toRepresentation().getId();
