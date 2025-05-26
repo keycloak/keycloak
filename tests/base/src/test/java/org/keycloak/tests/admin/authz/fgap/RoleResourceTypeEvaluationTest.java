@@ -48,6 +48,7 @@ import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLES;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLE_CLIENT_SCOPE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLE_COMPOSITE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
+import org.keycloak.models.AdminRoles;
 
 @KeycloakIntegrationTest
 public class RoleResourceTypeEvaluationTest extends AbstractPermissionTest {
@@ -166,6 +167,37 @@ public class RoleResourceTypeEvaluationTest extends AbstractPermissionTest {
         // the following operation should fail as there is no permission for "otherRole"
         try {
             realmAdminClient.realm(realm.getName()).users().get(myadmin.getId()).roles().realmLevel().add(List.of(otherRole));
+            fail("Expected exception wasn't thrown.");
+        } catch (Exception ex) {
+            assertThat(ex, instanceOf(ForbiddenException.class));
+        }
+    }
+
+    @Test
+    public void testMappingAdminRoles() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        ClientRepresentation realmManagement = realm.admin().clients().findByClientId("realm-management").get(0);
+        RoleRepresentation createClientRole = realm.admin().clients().get(realmManagement.getId()).roles().get(AdminRoles.CREATE_CLIENT).toRepresentation();
+
+        // create permission to map roles from all clients and to all users
+        UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());
+        createAllPermission(client, AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE, onlyMyAdminUserPolicy, Set.of(MAP_ROLES));
+        createAllPermission(client, AdminPermissionsSchema.USERS_RESOURCE_TYPE, onlyMyAdminUserPolicy, Set.of(MAP_ROLES));
+
+        // create a role
+        RoleRepresentation role = new RoleRepresentation();
+        role.setName("myRole");
+        ClientRepresentation myclient = realm.admin().clients().findByClientId("myclient").get(0);
+        realm.admin().clients().get(myclient.getId()).roles().create(role);
+        role = realm.admin().clients().get(myclient.getId()).roles().get("myRole").toRepresentation();
+
+        // should pass
+        realmAdminClient.realm(realm.getName()).users().get(myadmin.getId()).roles().clientLevel(myclient.getId()).add(List.of(role));
+
+        // should fail as it is admin role and myadmin does not have master realm admin role assigned
+        try {
+            realmAdminClient.realm(realm.getName()).users().get(myadmin.getId()).roles().clientLevel(realmManagement.getId())
+                    .add(List.of(createClientRole));
             fail("Expected exception wasn't thrown.");
         } catch (Exception ex) {
             assertThat(ex, instanceOf(ForbiddenException.class));
