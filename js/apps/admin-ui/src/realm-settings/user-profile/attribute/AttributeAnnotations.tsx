@@ -26,7 +26,7 @@ export const AttributeAnnotations = () => {
                 {
                   key: "inputType",
                   label: t("inputType"),
-                  values: [
+                  options: [
                     "text",
                     "textarea",
                     "select",
@@ -47,10 +47,12 @@ export const AttributeAnnotations = () => {
                 },
                 {
                   key: "inputHelperTextBefore",
+                  type: "TranslateComponent",
                   label: t("inputHelperTextBefore"),
                 },
                 {
                   key: "inputHelperTextAfter",
+                  type: "TranslateComponent",
                   label: t("inputHelperTextAfter"),
                 },
                 {
@@ -59,6 +61,7 @@ export const AttributeAnnotations = () => {
                 },
                 {
                   key: "inputTypePlaceholder",
+                  type: "TranslateComponent",
                   label: t("inputTypePlaceholder"),
                 },
                 {
