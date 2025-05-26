@@ -1097,6 +1097,11 @@ jobs:
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
 
+        # This step is necessary because test/clustering requires building a new Keycloak image built from tar.gz
+        # file that is not part of m2-keycloak.tzts archive
+      - name: Build tar keycloak-quarkus-dist
+        run: ./mvnw package -pl quarkus/dist/
+
       - name: Run tests
         run: ./mvnw package -f tests/pom.xml
 
