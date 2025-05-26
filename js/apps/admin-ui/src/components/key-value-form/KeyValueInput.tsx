@@ -23,7 +23,6 @@ import { useTranslation } from "react-i18next";
 
 export type DefaultValue = {
   key: string;
-  values?: string[];
   label: string;
 };
 
