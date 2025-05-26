@@ -1,6 +1,7 @@
 package org.keycloak.infinispan.module.factory;
 
 import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.Tracer;
@@ -11,6 +12,7 @@ import org.infinispan.telemetry.InfinispanSpanAttributes;
 import org.infinispan.telemetry.InfinispanSpanContext;
 import org.infinispan.telemetry.InfinispanTelemetry;
 import org.infinispan.telemetry.impl.DisabledInfinispanSpan;
+import org.keycloak.jgroups.protocol.OPEN_TELEMETRY;
 
 public class OpenTelemetryService implements InfinispanTelemetry, TextMapGetter<InfinispanSpanContext> {
 
@@ -35,14 +37,14 @@ public class OpenTelemetryService implements InfinispanTelemetry, TextMapGetter<
         }
         */
 
+        // TODO: Maybe do this only when the span is recorded?
+
         var builder = tracer.spanBuilder(operationName)
                 .setSpanKind(SpanKind.SERVER);
         // the parent context is inherited automatically,
         // because the parent span is created in the same process
 
-        InfinispanSpan<T> openTelemetrySpan = createOpenTelemetrySpan(builder, attributes);
-        openTelemetrySpan.makeCurrent();
-        return openTelemetrySpan;
+        return createOpenTelemetrySpan(builder, attributes);
     }
 
     @Override
@@ -51,12 +53,9 @@ public class OpenTelemetryService implements InfinispanTelemetry, TextMapGetter<
             return DisabledInfinispanSpan.instance();
         }
 
-        var extractedContext = openTelemetry.getPropagators().getTextMapPropagator()
-                .extract(Context.current(), context, this);
-
         var builder = tracer.spanBuilder(operationName)
                 .setSpanKind(SpanKind.SERVER)
-                .setParent(extractedContext);
+                .setParent(Context.current().with(Span.current()));
 
         return createOpenTelemetrySpan(builder, attributes);
     }
