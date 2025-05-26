@@ -45,6 +45,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
     }
 
     private static final Logger LOGGER = Logger.getLogger(DockerKeycloakDistribution.class);
+    private static final File DOCKER_SCRIPT_FILE = new File("../../container/ubi-null.sh");
 
     private final boolean debug;
     private final boolean manualStop;
@@ -56,19 +57,25 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
     private String stdout = "";
     private String stderr = "";
     private BackupConsumer backupConsumer = new BackupConsumer();
-    private final File dockerScriptFile = new File("../../container/ubi-null.sh");
+
 
     private GenericContainer<?> keycloakContainer = null;
     private String containerId = null;
 
     private final Executor parallelReaperExecutor = Executors.newSingleThreadExecutor();
     private final Map<String, String> envVars = new HashMap<>();
+    private final LazyFuture<String> image;
 
     public DockerKeycloakDistribution(boolean debug, boolean manualStop, int requestPort, int[] exposedPorts) {
+        this(debug, manualStop, requestPort, exposedPorts, null);
+    }
+
+    public DockerKeycloakDistribution(boolean debug, boolean manualStop, int requestPort, int[] exposedPorts, LazyFuture<String> image) {
         this.debug = debug;
         this.manualStop = manualStop;
         this.requestPort = requestPort;
         this.exposedPorts = IntStream.of(exposedPorts).boxed().toArray(Integer[]::new);
+        this.image = image == null ? createImage(false) : image;
     }
 
     @Override
@@ -77,6 +84,15 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
     }
 
     private GenericContainer<?> getKeycloakContainer() {
+        return new GenericContainer<>(image)
+                .withEnv(envVars)
+                .withExposedPorts(exposedPorts)
+                .withStartupAttempts(1)
+                .withStartupTimeout(Duration.ofSeconds(120))
+                .waitingFor(Wait.forListeningPorts(8080));
+    }
+
+    public static LazyFuture<String> createImage(boolean failIfDockerFileMissing) {
         File distributionFile = new File("../../dist/" + File.separator + "target" + File.separator + "keycloak-" + Version.VERSION + ".tar.gz");
 
         if (!distributionFile.exists()) {
@@ -91,22 +107,17 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
         LazyFuture<String> image;
 
         if (dockerFile.exists()) {
-            image = new ImageFromDockerfile("keycloak-under-test", false)
+            return new ImageFromDockerfile("keycloak-under-test", false)
                     .withFileFromFile("keycloak.tar.gz", distributionFile)
-                    .withFileFromFile("ubi-null.sh", dockerScriptFile)
+                    .withFileFromFile("ubi-null.sh", DOCKER_SCRIPT_FILE)
                     .withFileFromFile("Dockerfile", dockerFile)
                     .withBuildArg("KEYCLOAK_DIST", "keycloak.tar.gz");
-            toString();
         } else {
-            image = new RemoteDockerImage(DockerImageName.parse("quay.io/keycloak/keycloak"));
+            if (failIfDockerFileMissing) {
+                throw new RuntimeException("Docker file %s not found".formatted(DOCKER_SCRIPT_FILE.toPath()));
+            }
+            return new RemoteDockerImage(DockerImageName.parse("quay.io/keycloak/keycloak"));
         }
-
-        return new GenericContainer<>(image)
-                .withEnv(envVars)
-                .withExposedPorts(exposedPorts)
-                .withStartupAttempts(1)
-                .withStartupTimeout(Duration.ofSeconds(120))
-                .waitingFor(Wait.forListeningPorts(8080));
     }
 
     @Override
@@ -290,6 +301,10 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
     @Override
     public void clearEnv() {
         this.envVars.clear();
+    }
+
+    public int getMappedPort(int port) {
+        return keycloakContainer.getMappedPort(port);
     }
 
 }
