@@ -4,7 +4,6 @@ import {
   selectItem,
   switchOff,
   switchOn,
-  switchToggle,
 } from "../utils/form";
 import { confirmModal } from "../utils/modal";
 import { clickRowKebabItem } from "../utils/table";

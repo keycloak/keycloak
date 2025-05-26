@@ -1,13 +1,6 @@
-import {
-  FormGroup,
-  Text,
-  Button,
-  ActionGroup,
-} from "@patternfly/react-core";
+import { Text, Button, ActionGroup } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
-import { useFormContext } from "react-hook-form";
 import { convertAttributeNameToForm } from "../../util";
 import { FormFields, SaveOptions } from "../ClientDetails";
 import ClientRepresentation from "libs/keycloak-admin-client/lib/defs/clientRepresentation";
@@ -20,12 +13,10 @@ type OpenIdVerifiableCredentialsProps = {
 };
 
 export const OpenIdVerifiableCredentials = ({
-  client,
   save,
   reset,
 }: OpenIdVerifiableCredentialsProps) => {
   const { t } = useTranslation();
-  const { control } = useFormContext();
 
   return (
     <>
@@ -34,7 +25,9 @@ export const OpenIdVerifiableCredentials = ({
       </Text>
       <FormAccess role="manage-clients" isHorizontal>
         <DefaultSwitchControl
-          name={convertAttributeNameToForm<FormFields>("attributes.oid4vci.enabled")}
+          name={convertAttributeNameToForm<FormFields>(
+            "attributes.oid4vci.enabled",
+          )}
           label={t("oid4vciEnabled")}
           labelIcon={t("oid4vciEnabledHelp")}
           stringify
