@@ -23,7 +23,7 @@ import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.util.JsonSerialization;
 

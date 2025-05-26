@@ -46,7 +46,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.authorization.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.admin.representation.PolicyEvaluationResponseBuilder;
 import org.keycloak.authorization.attribute.Attributes;
@@ -84,7 +84,7 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.KeycloakOpenAPI;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 /**

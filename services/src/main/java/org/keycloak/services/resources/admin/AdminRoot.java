@@ -36,7 +36,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.WelcomeResource;
 import org.keycloak.services.resources.admin.info.ServerInfoAdminResource;
-import org.keycloak.services.resources.admin.permissions.AdminPermissions;
+import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 import org.keycloak.theme.Theme;
 import org.keycloak.urls.UrlType;
 

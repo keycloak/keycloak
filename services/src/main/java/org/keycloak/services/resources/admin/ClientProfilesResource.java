@@ -39,7 +39,7 @@ import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.resources.KeycloakOpenAPI;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class ClientProfilesResource {

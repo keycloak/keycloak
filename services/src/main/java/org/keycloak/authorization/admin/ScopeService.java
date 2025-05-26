@@ -23,7 +23,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.jboss.resteasy.reactive.NoCache;
-import org.keycloak.authorization.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
@@ -41,7 +41,7 @@ import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
