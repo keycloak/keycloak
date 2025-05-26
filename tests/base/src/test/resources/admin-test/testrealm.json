@@ -1,0 +1,105 @@
+{
+    "realm": "admin-test-1",
+    "enabled": true,
+    "sslRequired": "external",
+    "registrationAllowed": true,
+    "registrationEmailAsUsername": true,
+    "resetPasswordAllowed": true,
+    "requiredCredentials": [ "password" ],
+    "defaultRoles": [ "user" ],
+    "actionTokenGeneratedByAdminLifespan": "147",
+    "actionTokenGeneratedByUserLifespan": "258",
+    "smtpServer": {
+        "from": "auto@keycloak.org",
+        "host": "localhost",
+        "port":"3025"
+    },
+    "users" : [
+        {
+            "username" : "test-user@localhost",
+            "enabled": true,
+            "email" : "test-user@localhost",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "realmRoles": ["user"],
+            "applicationRoles": {
+                "test-app": [ "customer-user" ],
+                "account": [ "view-profile", "manage-account" ]
+            }
+        }
+    ],
+    "oauthClients" : [
+        {
+            "name" : "third-party",
+            "enabled": true,
+            "redirectUris": [
+                "http://localhost:8081/app/*"
+            ],
+            "secret": "password"
+        }
+    ],
+    "scopeMappings": [
+        {
+            "client": "third-party",
+            "roles": ["user"]
+        },
+        {
+            "client": "test-app",
+            "roles": ["user"]
+        }
+    ],
+    "applications": [
+        {
+            "name": "test-app",
+            "enabled": true,
+            "baseUrl": "http://localhost:8081/app",
+            "redirectUris": [
+                "http://localhost:8081/app/*"
+            ],
+            "adminUrl": "http://localhost:8081/app/logout",
+            "secret": "password"
+        }
+    ],
+    "roles" : {
+        "realm" : [
+            {
+                "name": "user",
+                "description": "Have User privileges"
+            },
+            {
+                "name": "admin",
+                "description": "Have Administrator privileges"
+            }
+        ],
+        "application" : {
+            "test-app" : [
+                {
+                    "name": "customer-user",
+                    "description": "Have Customer User privileges"
+                },
+                {
+                    "name": "customer-admin",
+                    "description": "Have Customer Admin privileges"
+                }
+            ]
+        }
+
+    },
+
+    "applicationScopeMappings": {
+        "test-app": [
+            {
+                "client": "third-party",
+                "roles": ["customer-user"]
+            }
+        ]
+    },
+    "attributes": {
+        "string-attr": "foo",
+        "int-attr": "123",
+        "long-attr": "1234567890123456",
+        "bool-attr": "true"
+    }
+}
