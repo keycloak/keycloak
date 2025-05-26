@@ -2,6 +2,7 @@ package org.keycloak.it.utils;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.exception.NotFoundException;
+import io.quarkus.bootstrap.utils.BuildToolHelper;
 import io.restassured.RestAssured;
 import org.jboss.logging.Logger;
 import org.keycloak.common.Version;
@@ -18,6 +19,8 @@ import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.LazyFuture;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
@@ -75,7 +78,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
         this.manualStop = manualStop;
         this.requestPort = requestPort;
         this.exposedPorts = IntStream.of(exposedPorts).boxed().toArray(Integer[]::new);
-        this.image = image == null ? createImage(false) : image;
+        this.image = image == null ? createImage(BuildToolHelper.getProjectDir(Paths.get("")).getParent().getParent(), false) : image;
     }
 
     @Override
@@ -92,29 +95,39 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
                 .waitingFor(Wait.forListeningPorts(8080));
     }
 
-    public static LazyFuture<String> createImage(boolean failIfDockerFileMissing) {
-        File distributionFile = new File("../../dist/" + File.separator + "target" + File.separator + "keycloak-" + Version.VERSION + ".tar.gz");
+    public static LazyFuture<String> createImage(Path quarkusModule, boolean failIfDockerFileMissing) {
+        System.out.println(quarkusModule.toAbsolutePath());
+        var distributionFile = quarkusModule.resolve(Path.of("dist", "target", "keycloak-" + Version.VERSION + ".tar.gz"))
+                .toFile();
 
+        System.out.println(distributionFile.getAbsoluteFile());
         if (!distributionFile.exists()) {
             distributionFile = Maven.resolveArtifact("org.keycloak", "keycloak-quarkus-dist").toFile();
         }
+
+        System.out.println(distributionFile.getAbsoluteFile());
 
         if (!distributionFile.exists()) {
             throw new RuntimeException("Distribution archive " + distributionFile.getAbsolutePath() +" doesn't exist");
         }
 
-        File dockerFile = new File("../../container/Dockerfile");
+        var dockerFile = quarkusModule.resolve(Path.of("container", "Dockerfile"))
+                .toFile();
+        System.out.println(dockerFile.getAbsoluteFile());
+        var ubiNullScript = quarkusModule.resolve(Path.of("container", "ubi-null.sh"))
+                .toFile();
+        System.out.println(ubiNullScript.getAbsoluteFile());
         LazyFuture<String> image;
 
         if (dockerFile.exists()) {
             return new ImageFromDockerfile("keycloak-under-test", false)
                     .withFileFromFile("keycloak.tar.gz", distributionFile)
-                    .withFileFromFile("ubi-null.sh", DOCKER_SCRIPT_FILE)
+                    .withFileFromFile("ubi-null.sh", ubiNullScript)
                     .withFileFromFile("Dockerfile", dockerFile)
                     .withBuildArg("KEYCLOAK_DIST", "keycloak.tar.gz");
         } else {
             if (failIfDockerFileMissing) {
-                throw new RuntimeException("Docker file %s not found".formatted(DOCKER_SCRIPT_FILE.toPath()));
+                throw new RuntimeException("Docker file %s not found".formatted(dockerFile.getAbsolutePath()));
             }
             return new RemoteDockerImage(DockerImageName.parse("quay.io/keycloak/keycloak"));
         }

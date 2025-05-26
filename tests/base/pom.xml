@@ -131,4 +131,16 @@
         </plugins>
     </build>
 
+    <profiles>
+        <profile>
+            <id>mixed-cluster</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <kc.test.server>cluster</kc.test.server>
+            </properties>
+        </profile>
+    </profiles>
+
 </project>

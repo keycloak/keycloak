@@ -6,6 +6,34 @@ framework handles the lifecycle of Keycloak, the database, and any injected reso
 Tests simply declare what they want, including specific configuration, and the framework takes care of the rest. 
 
 
+TODO, remove or organize at the bottom of the document.
+
+Mixed cluster
+
+KC_TEST_SERVER_IMAGES   -> if empty, uses the built distribution archive from quarkus/dist directory in all containers
+                        -> if single value, uses that value in all the containers
+                        -> if comma separated value ("imageA,imageB"), each container will use the image specified from the list. The number of items must match the cluster size.
+                        -> "-" special keyword to use the built distribution archive
+KC_TEST_SERVER=cluster  -> enables cluster mode
+KC_TEST_DATABASE_INTERNAL=true -> configure keycloak with the internal database container IP (instead of localhost)
+
+Example, 2 node cluster, the first using the distribution archive and the second the nightly image
+KC_TEST_DATABASE=postgres KC_TEST_DATABASE_INTERNAL=true KC_TEST_SERVER=cluster KC_TEST_SERVER_IMAGES=-,quay.io/keycloak/keycloak:nightly mvn verify -pl tests/base/  -Dtest=MixedVersionClusterTest
+
+Using a mixed cluster with 26.2.3 and 26.2.4
+KC_TEST_DATABASE=postgres KC_TEST_DATABASE_INTERNAL=true KC_TEST_SERVER=cluster KC_TEST_SERVER_IMAGES=quay.io/keycloak/keycloak:26.2.3,quay.io/keycloak/keycloak:26.2.4 mvn verify -pl tests/base/  -Dtest=MixedVersionClusterTest
+
+The test has some println to check the state. Example:
+
+```
+2025-05-26 15:37:09,055 INFO  [org.infinispan.CLUSTER] (main) ISPN000094: Received new cluster view for channel ISPN: [f258a293828f-16122|0] (1) [f258a293828f-16122]
+2025-05-26 15:37:10,452 INFO  [io.quarkus] (main) Keycloak 26.2.3 on JVM (powered by Quarkus 3.20.0) started in 7.848s. Listening on: http://0.0.0.0:8080
+2025-05-26 15:37:18,608 INFO  [org.infinispan.CLUSTER] (main) ISPN000094: Received new cluster view for channel ISPN: [f258a293828f-16122|1] (2) [f258a293828f-16122, 64864a76fcfa-14422]
+2025-05-26 15:37:19,289 INFO  [io.quarkus] (main) Keycloak 26.2.4 on JVM (powered by Quarkus 3.20.0) started in 4.124s. Listening on: http://0.0.0.0:8080
+url0->http://localhost:32889
+url1->http://localhost:32891
+```
+
 # Writing tests
 
 An example is better than a lot of words, so here is a very basic test:

@@ -14,7 +14,6 @@ import org.keycloak.testframework.injection.Supplier;
 import org.keycloak.testframework.realm.ClientSupplier;
 import org.keycloak.testframework.realm.RealmSupplier;
 import org.keycloak.testframework.realm.UserSupplier;
-import org.keycloak.testframework.server.ClusterKeycloakUrlsSupplier;
 import org.keycloak.testframework.server.ContainerKeycloakClusterSupplier;
 import org.keycloak.testframework.server.DistributionKeycloakServerSupplier;
 import org.keycloak.testframework.server.EmbeddedKeycloakServerSupplier;
@@ -40,7 +39,6 @@ public class CoreTestFrameworkExtension implements TestFrameworkExtension {
                 new RemoteKeycloakServerSupplier(),
                 new ContainerKeycloakClusterSupplier(),
                 new KeycloakUrlsSupplier(),
-                new ClusterKeycloakUrlsSupplier(),
                 new DevMemDatabaseSupplier(),
                 new DevFileDatabaseSupplier(),
                 new SysLogServerSupplier(),

@@ -9,4 +9,6 @@ import java.lang.annotation.Target;
 @Target(ElementType.FIELD)
 public @interface InjectKeycloakUrls {
 
+    int nodeIndex() default  0;
+
 }

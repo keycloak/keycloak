@@ -21,22 +21,27 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
-import org.keycloak.testframework.annotations.InjectClusterKeycloakUrls;
+import org.keycloak.it.junit5.extension.WithDatabase;
+import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.server.ClusterKeycloakUrls;
+import org.keycloak.testframework.server.KeycloakUrls;
 
 @KeycloakIntegrationTest
 public class MixedVersionClusterTest {
 
-    @InjectClusterKeycloakUrls
-    ClusterKeycloakUrls clusterKeycloakUrls;
+    @InjectKeycloakUrls
+    KeycloakUrls node0Url;
+
+    @InjectKeycloakUrls(nodeIndex = 1)
+    KeycloakUrls node1Url;
 
     @Test
     public void testUrls() throws InterruptedException {
         // TODO annotation based to skip if running in non-clustered mode.
-        Assumptions.assumeTrue(clusterKeycloakUrls.isClusterMode());
-        System.out.println(clusterKeycloakUrls.getKeycloakUrls(0).getBaseUrl());
-        System.out.println(clusterKeycloakUrls.getKeycloakUrls(1).getBaseUrl());
+        Assumptions.assumeTrue(node0Url.isEnabled());
+        Assumptions.assumeTrue(node1Url.isEnabled());
+        System.out.println("url0->" + node0Url.getBaseUrl());
+        System.out.println("url1->" + node1Url.getBaseUrl());
         Thread.sleep(TimeUnit.MINUTES.toMillis(1));
     }
 }

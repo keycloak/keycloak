@@ -17,9 +17,13 @@
 
 package org.keycloak.testframework.server;
 
+import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Objects;
 
+import io.quarkus.bootstrap.utils.BuildToolHelper;
 import org.keycloak.it.utils.DockerKeycloakDistribution;
 import org.testcontainers.images.RemoteDockerImage;
 import org.testcontainers.utility.DockerImageName;
@@ -36,6 +40,17 @@ public class ContainerKeycloakCluster implements KeycloakServer {
     private final String images;
     private final boolean debug;
 
+    private static LazyFuture<String> defaultImage() {
+        Path classPathDir;
+        try {
+            classPathDir = Paths.get(Thread.currentThread().getContextClassLoader().getResource(".").toURI());
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+        var quarkusModule = BuildToolHelper.getProjectDir(classPathDir).getParent().getParent().resolve("quarkus");
+        return DockerKeycloakDistribution.createImage(quarkusModule,true);
+    }
+
     public ContainerKeycloakCluster(int mumServers, String images, boolean debug) {
         containers = new DockerKeycloakDistribution[mumServers];
         this.images = images;
@@ -45,7 +60,8 @@ public class ContainerKeycloakCluster implements KeycloakServer {
     @Override
     public void start(KeycloakServerConfigBuilder configBuilder) {
         if (!configBuilder.toDependencies().isEmpty()) {
-            throw new UnsupportedOperationException("Adding dependencies not supported yet.");
+            // TODO fix me, we have remote-provider (from test framework) to inject in the container
+            //throw new UnsupportedOperationException("Adding dependencies not supported yet.");
         }
         if (!configBuilder.toConfigFiles().isEmpty()) {
             throw new UnsupportedOperationException("Adding configuration files not supported yet.");
@@ -69,7 +85,7 @@ public class ContainerKeycloakCluster implements KeycloakServer {
             LazyFuture<String> resolvedImage;
             if (SNAPSHOT_IMAGE.equals(imagePeServer[i])) {
                 if (snapshotImage == null) {
-                    snapshotImage = DockerKeycloakDistribution.createImage(true);
+                    snapshotImage = defaultImage();
                 }
                 resolvedImage = snapshotImage;
             } else {
@@ -77,14 +93,19 @@ public class ContainerKeycloakCluster implements KeycloakServer {
             }
             var container = new DockerKeycloakDistribution(debug, MANUAL_STOP, REQUEST_PORT, exposedPorts, resolvedImage);
             containers[i] = container;
-            container.run(configBuilder.toArgs());
+            // TODO remove println
+            container.run(configBuilder.toArgs())
+                    .getOutputStream()
+                    .stream()
+                    .filter(s -> s.contains("started in") || s.contains("view"))
+                    .forEach(System.out::println);
         }
     }
 
     private void startContainersWithSameImage(KeycloakServerConfigBuilder configBuilder, String image) {
         int[] exposedPorts = new int[]{REQUEST_PORT, MANAGEMENT_PORT};
         LazyFuture<String> imageFuture = image == null || SNAPSHOT_IMAGE.equals(image) ?
-                DockerKeycloakDistribution.createImage(true) :
+                defaultImage() :
                 new RemoteDockerImage(DockerImageName.parse(image));
         for (int i = 0; i < containers.length; ++i) {
             var container = new DockerKeycloakDistribution(debug, MANUAL_STOP, REQUEST_PORT, exposedPorts, imageFuture);
@@ -116,5 +137,9 @@ public class ContainerKeycloakCluster implements KeycloakServer {
 
     public String getManagementBaseUrl(int index) {
         return "http://localhost:%d".formatted(containers[index].getMappedPort(MANAGEMENT_PORT));
+    }
+
+    public int clusterSize() {
+        return containers.length;
     }
 }

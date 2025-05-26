@@ -12,11 +12,13 @@ import java.util.Map;
 public abstract class AbstractContainerTestDatabase implements TestDatabase {
 
     protected boolean reuse;
+    protected boolean internal;
 
     protected JdbcDatabaseContainer<?> container;
 
     public AbstractContainerTestDatabase() {
         reuse = Config.getValueTypeConfig(TestDatabase.class, "reuse", false, Boolean.class);
+        internal = Config.getValueTypeConfig(TestDatabase.class, "internal", false, Boolean.class);
     }
 
     public void start() {
@@ -80,7 +82,12 @@ public abstract class AbstractContainerTestDatabase implements TestDatabase {
     }
 
     public String getJdbcUrl() {
-        return container.getJdbcUrl();
+        var url = container.getJdbcUrl();
+        if (internal) {
+            var ip = container.getContainerInfo().getNetworkSettings().getNetworks().values().iterator().next().getIpAddress();
+            return url.replace(container.getHost() + ":" + container.getFirstMappedPort(), ip + ":" + container.getExposedPorts().get(0));
+        }
+        return url;
     }
 
     public abstract String getDatabaseVendor();

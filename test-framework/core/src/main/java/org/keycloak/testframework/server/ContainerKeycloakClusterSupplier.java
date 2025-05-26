@@ -35,4 +35,11 @@ public class ContainerKeycloakClusterSupplier extends AbstractKeycloakServerSupp
     public Logger getLogger() {
         return LOGGER;
     }
+
+    @Override
+    protected String cache() {
+        return "ispn";
+    }
+
+
 }
