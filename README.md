@@ -78,3 +78,4 @@ Joining a [community meeting](https://www.keycloak.org/community) is a great way
 ## License
 
 * [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
+Alteração feita no fork
