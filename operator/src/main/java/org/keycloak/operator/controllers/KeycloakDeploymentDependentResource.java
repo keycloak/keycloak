@@ -514,7 +514,9 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                     }
                     EnvVar mainVar = envBuilder.build();
                     if (!defaultKeys.contains(v.getName())) {
-                        EnvVar keyVar = new EnvVarBuilder().withName("KCKEY_" + mainVar.getName().substring(3)).withValue(v.getName()).build();
+                        EnvVar keyVar = new EnvVarBuilder()
+                                .withName("KCKEY_" + mainVar.getName().substring(KeycloakDistConfigurator.KC_PREFIX.length()))
+                                .withValue(v.getName()).build();
                         return Stream.of(mainVar, keyVar);
                     }
                     return Stream.of(mainVar);

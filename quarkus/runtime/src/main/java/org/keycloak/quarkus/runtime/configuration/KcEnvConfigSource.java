@@ -20,14 +20,18 @@ package org.keycloak.quarkus.runtime.configuration;
 import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-import io.smallrye.config.PropertiesConfigSource;
-
+import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.mappers.WildcardPropertyMapper;
+
+import io.smallrye.config.EnvConfigSource;
+import io.smallrye.config.PropertiesConfigSource;
 
 // Not extending EnvConfigSource as it's too smart for our own good. It does unnecessary mapping of provided keys
 // leading to e.g. duplicate entries (like kc.db-password and kc.db.password), or incorrectly handling getters due to
@@ -37,15 +41,17 @@ public class KcEnvConfigSource extends PropertiesConfigSource {
     public static final String NAME = "KcEnvVarConfigSource";
     public static final String KCKEY_PREFIX = "KCKEY_";
 
-    public KcEnvConfigSource() {
-        super(buildProperties(), NAME, 500);
+    static final Map<String, String> ENV_OVERRIDE = new HashMap<String, String>();
+
+    public KcEnvConfigSource(Map<String, String> env) {
+        super(buildProperties(env), NAME, 500);
     }
 
-    private static Map<String, String> buildProperties() {
+    private static Map<String, String> buildProperties(Map<String, String> env) {
         Map<String, String> properties = new HashMap<>();
         String kcPrefix = replaceNonAlphanumericByUnderscores(NS_KEYCLOAK_PREFIX.toUpperCase());
 
-        for (Map.Entry<String, String> entry : System.getenv().entrySet()) {
+        for (Map.Entry<String, String> entry : env.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
             String transformedKey = null;
@@ -53,7 +59,7 @@ public class KcEnvConfigSource extends PropertiesConfigSource {
             if (key.startsWith(kcPrefix)) {
                 String baseKey = key.substring(kcPrefix.length());
 
-                String actualKey = System.getenv(KCKEY_PREFIX + baseKey);
+                String actualKey = env.get(KCKEY_PREFIX + baseKey);
                 if (actualKey != null) {
                     transformedKey = NS_KEYCLOAK_PREFIX + actualKey;
                 } else {
@@ -77,5 +83,18 @@ public class KcEnvConfigSource extends PropertiesConfigSource {
         }
 
         return properties;
+    }
+
+    public static Collection<ConfigSource> getConfigSources() {
+        Map<String, String> env = System.getenv();
+
+        if (ENV_OVERRIDE.isEmpty()) {
+            return List.of(new KcEnvConfigSource(env));
+        }
+
+        env = new HashMap<String, String>(env);
+        env.putAll(ENV_OVERRIDE);
+
+        return List.of(new KcEnvConfigSource(env), new EnvConfigSource(ENV_OVERRIDE, EnvConfigSource.ORDINAL + 1));
     }
 }
