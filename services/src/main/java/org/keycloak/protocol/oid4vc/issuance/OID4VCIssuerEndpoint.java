@@ -199,6 +199,15 @@ public class OID4VCIssuerEndpoint {
     }
 
     /**
+     * Generates a unique notification ID for use in CredentialResponse.
+     *
+     * @return a unique string identifier
+     */
+    private String generateNotificationId() {
+        return SecretGenerator.getInstance().randomString();
+    }
+
+    /**
      * Provides the URI to the OID4VCI compliant credentials offer
      */
     @GET
@@ -384,6 +393,7 @@ public class OID4VCIssuerEndpoint {
         Object theCredential = getCredential(authResult, supportedCredentialConfiguration, credentialRequestVO);
         if (SUPPORTED_FORMATS.contains(requestedFormat)) {
             responseVO.setCredential(theCredential);
+            responseVO.setNotificationId(generateNotificationId());
         } else {
             throw new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_TYPE));
         }
