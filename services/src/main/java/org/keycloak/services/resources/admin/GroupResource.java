@@ -21,7 +21,7 @@ import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
-import org.keycloak.authorization.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.events.admin.OperationType;
@@ -39,9 +39,9 @@ import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
-import org.keycloak.services.resources.admin.permissions.AdminPermissions;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionManagement;
+import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.ProfileHelper;
 
@@ -173,7 +173,8 @@ public class GroupResource {
             @Parameter(description = "Boolean which defines whether the params \"search\" must match exactly or not") @QueryParam("exact") Boolean exact,
             @Parameter(description = "The position of the first result to be returned (pagination offset).") @QueryParam("first") @DefaultValue("0") Integer first,
             @Parameter(description = "The maximum number of results that are to be returned. Defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max,
-            @Parameter(description = "Boolean which defines whether brief groups representations are returned or not (default: false)") @QueryParam("briefRepresentation") @DefaultValue("false") Boolean briefRepresentation) {
+            @Parameter(description = "Boolean which defines whether brief groups representations are returned or not (default: false)") @QueryParam("briefRepresentation") @DefaultValue("false") Boolean briefRepresentation,
+            @Parameter(description = "Boolean which defines whether to return the count of subgroups for each subgroup of this group (default: true") @QueryParam("subGroupsCount") @DefaultValue("true") Boolean subGroupsCount) {
         this.auth.groups().requireView(group);
 
         Stream<GroupModel> stream = group.getSubGroupsStream(search, exact, -1, -1);
@@ -183,7 +184,15 @@ public class GroupResource {
         }
 
         return paginatedStream(stream, first, max)
-            .map(g -> GroupUtils.populateSubGroupCount(g, GroupUtils.toRepresentation(auth.groups(), g, !briefRepresentation)));
+            .map(g -> {
+                GroupRepresentation rep = GroupUtils.toRepresentation(auth.groups(), g, !briefRepresentation);
+
+                if (subGroupsCount) {
+                    return GroupUtils.populateSubGroupCount(g, rep);
+                }
+
+                return rep;
+            });
     }
 
     /**

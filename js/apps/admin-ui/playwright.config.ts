@@ -11,7 +11,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: retryCount,
   workers: 1,
-  reporter: process.env.CI ? "blob" : "list",
+  reporter: process.env.CI ? [["github"], ["html"]] : "list",
 
   use: {
     baseURL: "http://localhost:8080",

@@ -48,12 +48,12 @@
     "@patternfly/react-icons": "^5.4.2",
     "@patternfly/react-styles": "^5.4.1",
     "@patternfly/react-table": "^5.4.16",
-    "i18next": "^25.2.0",
+    "i18next": "^25.2.1",
     "keycloak-js": "^26.2.0",
     "lodash-es": "^4.17.21",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-hook-form": "7.54.2",
+    "react-hook-form": "7.56.4",
     "react-i18next": "^15.5.1"
   },
   "devDependencies": {

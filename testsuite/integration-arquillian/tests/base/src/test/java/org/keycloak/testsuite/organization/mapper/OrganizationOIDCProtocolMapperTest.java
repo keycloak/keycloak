@@ -22,6 +22,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
@@ -33,7 +34,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -571,7 +571,6 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
     @Test
     public void testAuthenticatingUsingBroker() {
-        driver.manage().timeouts().pageLoadTimeout(Duration.ofDays(1));
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
         idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, "neworg.org");
@@ -664,7 +663,6 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
     @Test
     public void testForceSelectingOrganizationWhenReAuthenticatingUsingDifferentClient() {
-        driver.manage().timeouts().pageLoadTimeout(Duration.ofDays(1));
         OrganizationRepresentation orgA = createOrganization("orga", true);
         MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
         OrganizationRepresentation orgB = createOrganization("orgb", true);
@@ -707,7 +705,6 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
     @Test
     public void testReAuthenticationUserMemberOfSingleOrganizationUsingDifferentClient() {
-        driver.manage().timeouts().pageLoadTimeout(Duration.ofDays(1));
         OrganizationRepresentation orgA = createOrganization("orga", true);
         MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
         ClientRepresentation client = testRealm().clients().findByClientId("broker-app").get(0);
@@ -736,7 +733,6 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
     @Test
     public void testReAuthenticationUserNotMemberOfOrganizationUsingDifferentClient() {
-        driver.manage().timeouts().pageLoadTimeout(Duration.ofDays(1));
         OrganizationRepresentation orgA = createOrganization("orga", true);
         MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
         testRealm().organizations().get(orgA.getId()).members().member(member.getId()).delete().close();
@@ -767,7 +763,6 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
     @Test
     public void testDoNotAskToSelectOrganizationIfOrganizationScopeNotPresent() {
-        driver.manage().timeouts().pageLoadTimeout(Duration.ofDays(1));
         OrganizationRepresentation orgA = createOrganization("orga", true);
         MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
         OrganizationRepresentation orgB = createOrganization("orgb", true);
@@ -795,7 +790,6 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
     @Test
     public void testSelectDifferentOrganizationWhenReAuthenticating() {
-        driver.manage().timeouts().pageLoadTimeout(Duration.ofDays(1));
         OrganizationRepresentation orgA = createOrganization("orga", true);
         MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
         OrganizationRepresentation orgB = createOrganization("orgb", true);
@@ -860,6 +854,58 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         loginPage.login(memberPassword);
 
         assertScopeAndClaims(scopeName, orgA);
+    }
+
+    @Test
+    public void testCustomOrganizationScopeNameAllOrganizations() {
+        OrganizationResource orga = testRealm().organizations().get(createOrganization("org-a").getId());
+        OrganizationResource orgb = testRealm().organizations().get(createOrganization("org-b").getId());
+
+        addMember(orga);
+
+        UserRepresentation member = getUserRepresentation(memberEmail);
+
+        orgb.members().addMember(member.getId()).close();
+
+        Assert.assertTrue(orga.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
+        Assert.assertTrue(orgb.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
+
+        ClientScopeRepresentation orgScope = testRealm().clientScopes().findAll().stream()
+                .filter(s -> OIDCLoginProtocolFactory.ORGANIZATION.equals(s.getName()))
+                .findAny()
+                .orElseThrow();
+        ClientScopeResource orgScopeResource = testRealm().clientScopes().get(orgScope.getId());
+        ProtocolMapperRepresentation orgMapper = orgScopeResource.getProtocolMappers().getMappers().stream()
+                .filter(m -> OIDCLoginProtocolFactory.ORGANIZATION.equals(m.getName()))
+                .findAny()
+                .orElseThrow();
+        orgMapper.setId(null);
+        orgScope.setProtocolMappers(List.of(orgMapper));
+        orgScope.setId(null);
+        orgScope.setName("org");
+        String createdId = ApiUtil.getCreatedId(testRealm().clientScopes().create(orgScope));
+        testRealm().addDefaultDefaultClientScope(createdId);
+        ClientRepresentation client = testRealm().clients().findByClientId("broker-app").get(0);
+        testRealm().clients().get(client.getId()).addDefaultClientScope(createdId);
+        getCleanup().addCleanup(() -> testRealm().clientScopes().get(createdId).remove());
+
+        oauth.client("broker-app", KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
+        String scopeName = "org:*";
+        oauth.scope(scopeName);
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
+        loginPage.loginUsername(member.getEmail());
+        loginPage.login(memberPassword);
+
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
+        assertThat(response.getScope(), containsString(scopeName));
+        assertThat(List.of(response.getScope().split(" ")), not(hasItem("org")));
+        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+        assertThat(accessToken.getScope(), containsString(scopeName));
+        assertThat(List.of(accessToken.getScope().split(" ")), not(hasItem("org")));
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        assertThat((List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION), hasSize(2));
     }
 
     @Test
@@ -1006,8 +1052,6 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         OrganizationResource orgA = testRealm().organizations().get(orgARep.getId());
         MemberRepresentation member = addMember(orgA, "member@" + orgARep.getDomains().iterator().next().getName());
         orgA.members().member(member.getId()).delete().close();
-        driver.manage().timeouts().pageLoadTimeout(Duration.ofDays(1));
-        // resolve organization based on the organization scope value
         oauth.client("broker-app", KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
         oauth.scope(orgScope);
         loginPage.open(bc.consumerRealmName());
