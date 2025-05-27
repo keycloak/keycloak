@@ -176,6 +176,12 @@ public class RealmsAdminResource {
         } catch (PasswordPolicyNotMetException e) {
             logger.error("Password policy not met for user " + e.getUsername(), e);
             throw ErrorResponse.error("Password policy not met. See logs for details", Response.Status.BAD_REQUEST);
+        } catch (ModelIllegalStateException mise) {
+            logger.error(mise.getMessage(), mise);
+            throw ErrorResponse.error(mise.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
+        } catch (ModelDuplicateException mde) {
+            logger.error("Conflict detected", mde);
+            throw ErrorResponse.exists(mde.getMessage());
         } catch (ModelException e) {
             throw ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);
         }
