@@ -32,41 +32,41 @@ public class KeycloakCompatibilityMetadataProvider implements CompatibilityMetad
     public CompatibilityResult isCompatible(Map<String, String> other) {
         CompatibilityResult equalComparison = CompatibilityMetadataProvider.super.isCompatible(other);
 
-        // If V2 feature is enabled, we consider versions upgradable in rolling way also if other is the previous micro release
-        if (Profile.isFeatureEnabled(Profile.Feature.ROLLING_UPDATES_V2)
-                && Util.isNotCompatible(equalComparison)
-                // Check if only version attribute is incompatible,
-                // we don't want to allow rolling update if some other metadata didn't match
-                && equalComparison.incompatibleAttributes()
-                    .map(erroredAttributes -> erroredAttributes.size() == 1 && erroredAttributes.iterator().next().equals(VERSION_KEY))
-                    .orElse(false)
-        ) {
-            String otherVersion = other.get(VERSION_KEY);
-
-            // We need to make sure the previous version is not null
-            if (otherVersion == null) {
-                return equalComparison;
-            }
-
-            ModelVersion otherModelVersion = new ModelVersion(otherVersion);
-            ModelVersion currentModelVersion = new ModelVersion(version);
-            if (!currentModelVersion.hasSameMajorMinor(otherModelVersion)) {
-                return equalComparison;
-            }
-
-            // We are in the same major.minor release stream
-            int otherMicro = otherModelVersion.getMicro();
-            int currentMicro = currentModelVersion.getMicro();
-
-            // Do not allow rolling rollback
-            if (currentMicro < otherMicro) {
-                return equalComparison;
-            }
-
-            return CompatibilityResult.providerCompatible(ID);
+        // If V2 feature is enabled, we consider versions upgradable in a rolling way if the other is a previous micro release
+        if (!Util.isNotCompatible(equalComparison) || !Profile.isFeatureEnabled(Profile.Feature.ROLLING_UPDATES_V2)) {
+            return equalComparison;
         }
 
-        return equalComparison;
+
+        // We need to make sure the previous version is not null
+        String otherVersion = other.get(VERSION_KEY);
+        if (otherVersion == null)
+            return equalComparison;
+
+        // Check if only version attribute is incompatible we don't want to allow rolling update if some other metadata didn't match
+        boolean versionMismatch = equalComparison.incompatibleAttributes()
+                .map(erroredAttributes -> erroredAttributes.size() == 1 && erroredAttributes.iterator().next().equals(VERSION_KEY))
+                .orElse(false);
+
+        if (!versionMismatch) {
+            return equalComparison;
+        }
+
+        ModelVersion otherModelVersion = new ModelVersion(otherVersion);
+        ModelVersion currentModelVersion = new ModelVersion(version);
+
+        // Check we are in the same major.minor release stream
+        if (!currentModelVersion.hasSameMajorMinor(otherModelVersion)) {
+            return equalComparison;
+        }
+
+        int otherMicro = otherModelVersion.getMicro();
+        int currentMicro = currentModelVersion.getMicro();
+
+        // Make sure we are updating to a newer or the same micro release and do not allow rolling rollback
+        return currentMicro < otherMicro ?
+                equalComparison :
+                CompatibilityResult.providerCompatible(ID);
     }
 
     @Override

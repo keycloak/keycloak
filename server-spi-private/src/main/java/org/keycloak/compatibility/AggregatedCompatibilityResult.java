@@ -7,12 +7,10 @@ import java.util.stream.Collectors;
 
 record AggregatedCompatibilityResult(Set<CompatibilityResult> compatibilityResults) implements CompatibilityResult {
 
-    public AggregatedCompatibilityResult(Set<CompatibilityResult> compatibilityResults) {
-        this.compatibilityResults = new HashSet<>();
-        this.compatibilityResults.addAll(compatibilityResults);
+    public AggregatedCompatibilityResult(CompatibilityResult compatibilityResult) {
+        this(new HashSet<>());
+        this.compatibilityResults.add(compatibilityResult);
     }
-
-
 
     public AggregatedCompatibilityResult add(CompatibilityResult a) {
         compatibilityResults.add(a);

@@ -2,7 +2,6 @@ package org.keycloak.compatibility;
 
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Stream;
 
 public final class Util {
@@ -24,7 +23,7 @@ public final class Util {
                 .filter(Util::isNotCompatible)
                 .reduce((a, b) -> {
                     if (! (a instanceof AggregatedCompatibilityResult)) {
-                        a = new AggregatedCompatibilityResult(Set.of(a));
+                        a = new AggregatedCompatibilityResult(a);
                     }
 
                     return ((AggregatedCompatibilityResult) a).add(b);
