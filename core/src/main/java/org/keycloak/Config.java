@@ -235,6 +235,10 @@ public class Config {
 
         Scope scope(String... scope);
 
+        /**
+         * @deprecated to be removed
+         */
+        @Deprecated
         Set<String> getPropertyNames();
     }
 }

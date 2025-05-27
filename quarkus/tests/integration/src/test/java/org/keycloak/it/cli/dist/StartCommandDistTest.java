@@ -76,8 +76,8 @@ public class StartCommandDistTest {
         CLIResult cliResult = dist.run("build",  "--db=dev-file");
         cliResult.assertBuild();
 
-        cliResult = dist.run("start", "--optimized", "--http-enabled=true", "--hostname-strict=false", "--spi-events-listener-jboss-logging-enabled=false");
-        cliResult.assertError("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.spi-events-listener-jboss-logging-enabled");
+        cliResult = dist.run("start", "--optimized", "--http-enabled=true", "--hostname-strict=false", "--spi-events-listener--jboss-logging--enabled=false");
+        cliResult.assertError("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.spi-events-listener--jboss-logging--enabled");
     }
 
     @DryRun
