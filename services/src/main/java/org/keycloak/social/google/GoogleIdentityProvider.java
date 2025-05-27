@@ -42,6 +42,7 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
     public static final String AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
     public static final String TOKEN_URL = "https://oauth2.googleapis.com/token";
     public static final String PROFILE_URL = "https://openidconnect.googleapis.com/v1/userinfo";
+    public static final String JWKS_URL = "https://www.googleapis.com/oauth2/v3/certs";
     public static final String DEFAULT_SCOPE = "openid profile email";
 
     private static final String OIDC_PARAMETER_HOSTED_DOMAINS = "hd";
@@ -53,6 +54,7 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
         config.setAuthorizationUrl(AUTH_URL);
         config.setTokenUrl(TOKEN_URL);
         config.setUserInfoUrl(PROFILE_URL);
+        config.setJwksUrl(JWKS_URL);
     }
 
     @Override
@@ -75,21 +77,10 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
     }
 
     @Override
-    protected boolean supportsExternalExchange() {
-        return true;
-    }
-
-    @Override
     public boolean isIssuer(String issuer, MultivaluedMap<String, String> params) {
         String requestedIssuer = params.getFirst(OAuth2Constants.SUBJECT_ISSUER);
         if (requestedIssuer == null) requestedIssuer = issuer;
         return requestedIssuer.equals(getConfig().getAlias());
-    }
-
-
-    @Override
-    protected BrokeredIdentityContext exchangeExternalImpl(EventBuilder event, MultivaluedMap<String, String> params) {
-        return exchangeExternalUserInfoValidationOnly(event, params);
     }
 
     @Override
