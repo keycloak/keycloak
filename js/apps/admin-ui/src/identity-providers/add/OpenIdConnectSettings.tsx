@@ -55,7 +55,7 @@ export const OpenIdConnectSettings = ({
   return (
     <>
       <Title headingLevel="h2" size="xl" className="kc-form-panel__title">
-        {t("oidcSettings")}
+        {isOIDC ? t("oidcSettings") : t("oAuthSettings")}
       </Title>
 
       <DiscoveryEndpointField
