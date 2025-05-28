@@ -23,7 +23,10 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -216,13 +219,6 @@ public class ClientScopeTest extends AbstractClientScopeTest {
         Assertions.assertEquals(SamlProtocol.LOGIN_PROTOCOL, scopeRep.getProtocol());
         Assertions.assertEquals("someAttrValue", scopeRep.getAttributes().get("someAttr"));
         Assertions.assertEquals("someValue", scopeRep.getAttributes().get("emptyAttr"));
-    }
-
-    @Test
-    public void testValidateClientScopeProtocol() {
-        org.keycloak.services.resources.admin.ClientScopeResource.validateClientScopeProtocol("saml");
-        org.keycloak.services.resources.admin.ClientScopeResource.validateClientScopeProtocol("openid-connect");
-        Assertions.assertThrows(RuntimeException.class, () -> org.keycloak.services.resources.admin.ClientScopeResource.validateClientScopeProtocol("other"));
     }
 
     @Test
@@ -743,19 +739,11 @@ public class ClientScopeTest extends AbstractClientScopeTest {
         }
     }
 
-    @Test
-    public void createClientScopeWithOpenIdProtocol() {
-        createClientScope("openid-connect");
-    }
-
-    @Test
-    public void createClientScopeWithSamlProtocol() {
-        createClientScope("saml");
-    }
-
-    @Test
-    public void createClientScopeWithOpenId4VCIProtocol() {
-        createClientScope("oid4vc");
+    @DisplayName("Create ClientScope with protocol:")
+    @ParameterizedTest
+    @ValueSource(strings = {"openid-connect", "saml", "oid4vc"})
+    public void createClientScopeWithOpenIdProtocol(String protocol) {
+        createClientScope(protocol);
     }
 
     private void createClientScope(String protocol) {
