@@ -736,6 +736,13 @@ public class PicocliTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void testUnaryBooleanFails() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--health-enabled");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Option '--health-enabled' (true|false) expects a single value. Expected values are: true, false"));
+    }
+
+    @Test
     public void datasourcesNotAllowedChar(){
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev","--db-kind-<default>=postgres");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
