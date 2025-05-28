@@ -19,6 +19,7 @@ package org.keycloak.tests.admin.client;
 
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import org.junit.jupiter.api.Assertions;
@@ -52,6 +53,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -723,6 +725,57 @@ public class ClientScopeTest extends AbstractClientScopeTest {
             } else {
                 removeClientScopeMustFail(clientScope.getId());
             }
+        }
+    }
+
+    @Test
+    public void createClientScopeWithoutProtocol() {
+        ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
+        clientScope.setName("test-client-scope");
+        clientScope.setDescription("test-client-scope-description");
+        clientScope.setProtocol(null); // this should cause a BadRequestException
+        clientScope.setAttributes(Map.of("test-attribute", "test-value"));
+
+        try (Response response = clientScopes().create(clientScope)) {
+            Assertions.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            String errorMessage = response.readEntity(String.class);
+            Assertions.assertTrue(errorMessage.contains("Unexpected protocol"));
+        }
+    }
+
+    @Test
+    public void createClientScopeWithOpenIdProtocol() {
+        createClientScope("openid-connect");
+    }
+
+    @Test
+    public void createClientScopeWithSamlProtocol() {
+        createClientScope("saml");
+    }
+
+    @Test
+    public void createClientScopeWithOpenId4VCIProtocol() {
+        createClientScope("oid4vc");
+    }
+
+    private void createClientScope(String protocol) {
+        ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
+        clientScope.setName("test-client-scope");
+        clientScope.setDescription("test-client-scope-description");
+        clientScope.setProtocol(protocol);
+        clientScope.setAttributes(Map.of("test-attribute", "test-value"));
+
+        String clientScopeId = null;
+        try (Response response = clientScopes().create(clientScope)) {
+            Assertions.assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            String location = (String) Optional.ofNullable(response.getHeaders().get(HttpHeaders.LOCATION))
+                                               .map(list -> list.get(0))
+                                               .orElse(null);
+            Assertions.assertNotNull(location);
+            clientScopeId = location.substring(location.lastIndexOf("/") + 1);
+        } finally {
+            // cleanup
+            clientScopes().get(clientScopeId).remove();
         }
     }
 
