@@ -65,7 +65,7 @@ public class ClientPoliciesResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation()
+    @Operation(operationId = "getPolicies")
     public ClientPoliciesRepresentation getPolicies(@QueryParam("include-global-policies") boolean includeGlobalPolicies) {
         auth.realm().requireViewRealm();
 
@@ -79,7 +79,7 @@ public class ClientPoliciesResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation()
+    @Operation(operationId = "updatePolicies")
     public Response updatePolicies(final ClientPoliciesRepresentation clientPolicies) {
         auth.realm().requireManageRealm();
 

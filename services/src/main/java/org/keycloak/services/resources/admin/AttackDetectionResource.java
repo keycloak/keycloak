@@ -83,7 +83,7 @@ public class AttackDetectionResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ATTACK_DETECTION)
-    @Operation( summary = "Get status of a username in brute force detection")
+    @Operation(summary = "Get status of a username in brute force detection", operationId = "bruteForceUserStatus")
     public Map<String, Object> bruteForceUserStatus(@PathParam("userId") String userId) {
         UserModel user = session.users().getUserById(realm, userId);
         if (user == null) {
@@ -145,7 +145,10 @@ public class AttackDetectionResource {
     @Path("brute-force/users/{userId}")
     @DELETE
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ATTACK_DETECTION)
-    @Operation( summary="Clear any user login failures for the user This can release temporary disabled user")
+    @Operation(
+            summary = "Clear any user login failures for the user This can release temporary disabled user",
+            operationId = "clearBruteForceForUser"
+    )
     public void clearBruteForceForUser(@PathParam("userId") String userId) {
         UserModel user = session.users().getUserById(realm, userId);
         if (user == null) {
@@ -169,7 +172,10 @@ public class AttackDetectionResource {
     @Path("brute-force/users")
     @DELETE
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ATTACK_DETECTION)
-    @Operation( summary = "Clear any user login failures for all users This can release temporary disabled users")
+    @Operation(
+            summary = "Clear any user login failures for all users This can release temporary disabled users",
+            operationId = "clearAllBruteForce"
+    )
     public void clearAllBruteForce() {
         auth.users().requireManage();
 
