@@ -76,10 +76,12 @@ public interface ClientScopeProvider extends Provider, ClientScopeLookupProvider
     void removeClientScopes(RealmModel realm);
 
     /**
-     * Must retrieve all client scopes of the given realm that are used for the OpenId4VC Oauth2 extension.
-     * @param realm the realm to retrieve the client scopes from.
+     * Must retrieve all client scopes of the given realm that are use the given protocol.
+     *
+     * @param realm    the realm to retrieve the client scopes from.
+     * @param protocol the protocol expected from the clientScope
      */
-    Stream<CredentialScopeModel> getOid4VcClientScopes(RealmModel realm);
+    Stream<CredentialScopeModel> getClientScopesByProtocol(RealmModel realm, String protocol);
 
     /**
      * Allows us to filter for scopes by specific attributes

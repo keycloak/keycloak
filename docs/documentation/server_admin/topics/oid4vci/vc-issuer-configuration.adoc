@@ -49,13 +49,13 @@ To enable the feature, add the following flag to the startup command:
 
 Verify activation by checking the server logs for the `OID4VC_VCI` initialization message.
 
-=== Abstract Concept
+=== Configuring Credential Issuance in Keycloak
 
 In {project_name}, Verifiable Credentials are managed through *ClientScopes*, with each ClientScope representing a single Verifiable Credential. To enable the issuance of a credential, the corresponding ClientScope must be assigned to an OpenID Connect client - ideally as *optional*.
 
 During the OAuth2 authorization process, the credential-specific scope can be requested by including the ClientScope's name in the `scope` parameter of the authorization request. Once the user has successfully authenticated, the resulting Access Token *MUST* include the requested ClientScope in its `scope` claim. To ensure this, make sure the ClientScope option *Include in token scope* is enabled.
 
-With this Access Token, the Verifiable Credential can be issued at the credentials endpoint.
+With this Access Token, the Verifiable Credential can be issued at the Credential Endpoint.
 
 === Authentication
 
@@ -168,15 +168,9 @@ curl -X PUT "https://localhost:8443/admin/realms/oid4vc-vci" \
 
 === Create Client Scopes with Mappers
 
-Client scopes define **which user attributes** are included in Verifiable Credentials (VCs). Therefore, they are considered the Verifiable Credential configuration itself. These scopes use **protocol mappers** to map specific claims into VCs and the protocol mappers will also contain the corresponding metadata for claims that is displayed at the credential-issuer metadata-endpoint.
+Client scopes define **which user attributes** are included in Verifiable Credentials (VCs). Therefore, they are considered the Verifiable Credential configuration itself. These scopes use **protocol mappers** to map specific claims into VCs and the protocol mappers will also contain the corresponding metadata for claims that is displayed at the Credential Issuer Metadata Endpoint.
 
-You can create the ClientScopes using the {project_name}'s Webadministration Console, but the Webadministration Console
-does not yet support adding metadata configuration. For metadata configuration you will need to use the Admin REST-API.
-
-Client scopes define **which user attributes** are included in Verifiable Credentials (VCs). Therefore, they are considered the Verifiable Credential configuration itself. These scopes use **protocol mappers** to map specific claims into VCs. The protocol mappers also contain the corresponding metadata for the claim they represent, which is exposed via the credential issuer's metadata endpoint.
-
-You can create ClientScopes using the `{project_name}` Web Administration Console. However, the Web Console does not currently support adding metadata configuration. For that, you will need to use the Admin REST API.
-
+You can create the ClientScopes using the {project_name} web Administration Console, but the web Administration Console does not yet support adding metadata configuration. For metadata configuration, you will need to use the Admin REST API.
 
 ==== Define a Client Scope with a Mapper
 
@@ -243,8 +237,8 @@ You can define **additional protocol mappers** to support different claim mappin
 
 From the example above:
 
-- It is important to set `include.in.token.scope=true`
-- Most of the named attributes above are optional. See below: <<client-scope-attribute-breakdown,Attribute Breakdown>>
+- It is important to set `include.in.token.scope=true`, see <<include.in.token.scope, Attribute table: include.in.token.scope>>.
+- Most of the named attributes above are optional. See below: <<client-scope-attribute-breakdown,Attribute Breakdown>>.
 - You can determine the appropriate `protocolMapper` names by first creating them through the Web Administration Console and then retrieving their definitions via the Admin REST API.
 
 ==== Attribute Breakdown - ClientScope [[client-scope-attribute-breakdown]]
@@ -265,13 +259,13 @@ From the example above:
 
 | `include.in.token.scope`
 | required
-| This value MUST be `true`. It ensures that the scope’s name is included in the `scope` claim of the issued Access Token.
+| [[include.in.token.scope]] This value MUST be `true`. It ensures that the scope’s name is included in the `scope` claim of the issued Access Token.
 
 | `protocolMappers`
 | optional
 | Defines how claims are mapped into the credential and how metadata is exposed via the issuer’s metadata endpoint.
 
-| `vc.issuerDid`
+| `vc.issuer_did`
 | optional
 | The Decentralized Identifier (DID) of the issuer. +
 _Default_: `$\{name}`
@@ -366,6 +360,16 @@ Most claims are dependent on the `protocolMapper`-value, but there are also comm
 | Property
 | Required
 | Description / Default
+
+| `claim.name`
+| required
+| The name of the attribute that will be added into the Verifiable Credential. +
+_Default_: _none_
+
+| `userAttribute`
+| required
+| The name of the users-attribute that will be used to map the value into the `claim.name` of the Verifiable Credential. +
+_Default_: _none_
 
 | `vc.mandatory`
 | optional

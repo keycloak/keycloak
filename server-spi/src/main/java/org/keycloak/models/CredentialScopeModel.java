@@ -41,6 +41,7 @@ public class CredentialScopeModel implements ClientScopeModel {
     public static final String HASH_ALGORITHM_DEFAULT = "SHA-256";
     public static final String TOKEN_TYPE_DEFAULT = "JWS";
     public static final int EXPIRY_IN_SECONDS_DEFAULT = 31536000;
+    public static final String CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT = "jwk";
 
     /**
      * the credential configuration id as provided in the metadata endpoint
@@ -103,6 +104,7 @@ public class CredentialScopeModel implements ClientScopeModel {
      * this attribute holds the 'typ' value that will be added into the JWS header of the credential.
      */
     public static final String TOKEN_JWS_TYPE = "vc.credential_build_config.token_jws_type";
+
 
     /**
      * the actual object that is represented by this scope

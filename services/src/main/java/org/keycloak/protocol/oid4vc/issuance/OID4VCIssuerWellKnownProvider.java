@@ -79,7 +79,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         RealmModel realm = keycloakSession.getContext().getRealm();
         Map<String, SupportedCredentialConfiguration> supportedCredentialConfigurations =
                 keycloakSession.clientScopes()
-                               .getOid4VcClientScopes(realm)
+                               .getClientScopesByProtocol(realm, OID4VCLoginProtocolFactory.PROTOCOL_ID)
                                .map(clientScope -> {
                                    return SupportedCredentialConfiguration.parse(keycloakSession,
                                                                                  clientScope,
