@@ -1441,8 +1441,8 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     @Override
-    public Stream<CredentialScopeModel> getOid4VcClientScopes(RealmModel realm) {
-        return getClientScopeDelegate().getOid4VcClientScopes(realm);
+    public Stream<CredentialScopeModel> getClientScopesByProtocol(RealmModel realm, String protocol) {
+        return getClientScopeDelegate().getClientScopesByProtocol(realm, protocol);
     }
 
     @Override

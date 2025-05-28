@@ -153,7 +153,8 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
         {
             // TODO this is still hardcoded
             Assert.assertEquals(1, supportedConfig.getCryptographicBindingMethodsSupported().size());
-            Assert.assertEquals("jwk", supportedConfig.getCryptographicBindingMethodsSupported().get(0));
+            Assert.assertEquals(CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT,
+                                supportedConfig.getCryptographicBindingMethodsSupported().get(0));
         }
 
         compareDisplay(supportedConfig, clientScope);

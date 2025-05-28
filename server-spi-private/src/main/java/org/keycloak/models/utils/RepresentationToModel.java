@@ -764,13 +764,20 @@ public class RepresentationToModel {
         rep.getAttributes().computeIfAbsent(CredentialScopeModel.TYPES, k -> rep.getName());
         rep.getAttributes().computeIfAbsent(CredentialScopeModel.CONTEXTS, k -> rep.getName());
         rep.getAttributes().computeIfAbsent(CredentialScopeModel.VCT, k -> rep.getName());
-        rep.getAttributes().computeIfAbsent(CredentialScopeModel.FORMAT, k -> "vc+sd-jwt");
-        rep.getAttributes().computeIfAbsent(CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS, k -> "jwk");
-        rep.getAttributes().computeIfAbsent(CredentialScopeModel.SD_JWT_NUMBER_OF_DECOYS, k -> "10");
-        rep.getAttributes().computeIfAbsent(CredentialScopeModel.SD_JWT_VISIBLE_CLAIMS, k -> "id,iat,nbf,exp,jti");
-        rep.getAttributes().computeIfAbsent(CredentialScopeModel.HASH_ALGORITHM, k -> "SHA-256");
-        rep.getAttributes().computeIfAbsent(CredentialScopeModel.TOKEN_JWS_TYPE, k -> "JWS");
-        rep.getAttributes().computeIfAbsent(CredentialScopeModel.EXPIRY_IN_SECONDS, k -> "31536000");
+        rep.getAttributes().computeIfAbsent(CredentialScopeModel.FORMAT,
+                                            k -> CredentialScopeModel.FORMAT_DEFAULT);
+        rep.getAttributes().computeIfAbsent(CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS,
+                                            k -> CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
+        rep.getAttributes().computeIfAbsent(CredentialScopeModel.SD_JWT_NUMBER_OF_DECOYS,
+                                            k -> String.valueOf(CredentialScopeModel.SD_JWT_DECOYS_DEFAULT));
+        rep.getAttributes().computeIfAbsent(CredentialScopeModel.SD_JWT_VISIBLE_CLAIMS,
+                                            k -> CredentialScopeModel.SD_JWT_VISIBLE_CLAIMS_DEFAULT);
+        rep.getAttributes().computeIfAbsent(CredentialScopeModel.HASH_ALGORITHM,
+                                            k -> CredentialScopeModel.HASH_ALGORITHM_DEFAULT);
+        rep.getAttributes().computeIfAbsent(CredentialScopeModel.TOKEN_JWS_TYPE,
+                                            k -> CredentialScopeModel.TOKEN_TYPE_DEFAULT);
+        rep.getAttributes().computeIfAbsent(CredentialScopeModel.EXPIRY_IN_SECONDS,
+                                            k -> String.valueOf(CredentialScopeModel.EXPIRY_IN_SECONDS_DEFAULT));
     }
 
     // Scope mappings

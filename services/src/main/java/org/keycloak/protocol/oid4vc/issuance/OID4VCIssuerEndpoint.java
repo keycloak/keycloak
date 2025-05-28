@@ -37,8 +37,6 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.SecretGenerator;
-import org.keycloak.component.ComponentFactory;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -338,18 +336,18 @@ public class OID4VCIssuerEndpoint {
         // do first to fail fast on auth
         AuthenticationManager.AuthResult authResult = getAuthResult();
 
-        // Both Format and identifier are optional.
-        // If the credential_identifier is present, Format can't be present. But this implementation will
-        // tolerate the presence of both, waiting for clarity in specifications.
-        // This implementation will privilege the presence of the credential config identifier.
+        // Both credential_configuration_id and credential_identifier are optional.
+        // If the credential_configuration_id is present, credential_identifier can't be present.
+        // But this implementation will tolerate the presence of both, waiting for clarity in specifications.
+        // This implementation will privilege the presence of the credential_configuration_id.
         String requestedCredentialConfigurationId = credentialRequestVO.getCredentialConfigurationId();
         String requestedCredentialIdentifier = credentialRequestVO.getCredentialIdentifier();
 
         // Check if at least one of both is available.
-        if (requestedCredentialIdentifier == null && requestedCredentialConfigurationId == null) {
+        if (requestedCredentialConfigurationId == null && requestedCredentialIdentifier == null) {
             LOGGER.debugf("Missing both credential_configuration_id and credential_identifier. " +
                                   "At least one must be specified.");
-            throw new BadRequestException(getErrorResponse(ErrorType.MISSING_CREDENTIAL_CONFIG_AND_FORMAT));
+            throw new BadRequestException(getErrorResponse(ErrorType.MISSING_CREDENTIAL_IDENTIFIER_AND_CONFIGURATION_ID));
         }
 
         CredentialScopeModel requestedCredential = credentialRequestVO.findCredentialScope(session).orElseThrow(() -> {

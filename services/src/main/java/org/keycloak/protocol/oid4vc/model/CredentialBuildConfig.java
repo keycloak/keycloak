@@ -51,7 +51,6 @@ public class CredentialBuildConfig {
     private static final String SIGNING_ALGORITHM_KEY = "signing_algorithm";
     private static final String LDP_PROOF_TYPE_KEY = "ldp_proof_type";
 
-    // This is saved here to facilitate dot notation reconstruction
     private String credentialIssuer;
 
     private String credentialId;

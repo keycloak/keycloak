@@ -162,7 +162,6 @@ public class JwtCredentialSignerTest extends OID4VCTest {
             KeycloakSession session, String signingKeyId, String algorithm, Map<String, Object> claims) {
         CredentialBuildConfig credentialBuildConfig = new CredentialBuildConfig()
                 .setCredentialIssuer(TEST_DID.toString())
-                .setCredentialIssuer(TEST_DID.toString())
                 .setTokenJwsType("JWT")
                 .setSigningKeyId(signingKeyId)
                 .setSigningAlgorithm(algorithm);

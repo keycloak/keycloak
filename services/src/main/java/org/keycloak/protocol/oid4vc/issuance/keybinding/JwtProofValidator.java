@@ -61,7 +61,7 @@ public class JwtProofValidator extends AbstractProofValidator {
 
     @Override
     public String getProofType() {
-        return "jwt";
+        return ProofType.JWT;
     }
 
     public JWK validateProof(VCIssuanceContext vcIssuanceContext) throws VCIssuerException {

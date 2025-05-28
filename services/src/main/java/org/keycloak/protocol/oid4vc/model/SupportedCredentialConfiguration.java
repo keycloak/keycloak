@@ -130,7 +130,8 @@ public class SupportedCredentialConfiguration {
         credentialConfiguration.setCredentialSigningAlgValuesSupported(signingAlgsSupported);
 
         // TODO resolve value dynamically from provider implementations?
-        credentialConfiguration.setCryptographicBindingMethodsSupported(List.of("jwk"));
+        String bindingMethodsSupported = CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT;
+        credentialConfiguration.setCryptographicBindingMethodsSupported(List.of(bindingMethodsSupported));
 
         credentialConfiguration.setDisplay(DisplayObject.parse(credentialScope));
 

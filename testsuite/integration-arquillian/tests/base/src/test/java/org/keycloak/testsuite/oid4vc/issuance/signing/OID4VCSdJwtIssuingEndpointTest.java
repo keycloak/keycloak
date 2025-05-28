@@ -77,6 +77,7 @@ import java.util.stream.Collectors;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -247,7 +248,6 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
 
         final String credentialConfigurationId = clientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
         CredentialRequest credentialRequest = new CredentialRequest()
-                .setVct(sdJwtCredentialVct)
                 .setCredentialConfigurationId(credentialConfigurationId)
                 .setProof(proof);
 
@@ -354,11 +354,11 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
      */
     @Test
     public void getConfig() {
-        final String scopeName = jwtTypeCredentialClientScope.getName();
-        final String credentialConfigurationId = jwtTypeCredentialClientScope.getAttributes()
-                                                                             .get(CredentialScopeModel.CONFIGURATION_ID);
-        final String verifiableCredentialType = jwtTypeCredentialClientScope.getAttributes()
-                                                                            .get(CredentialScopeModel.VCT);
+        final String scopeName = sdJwtTypeCredentialClientScope.getName();
+        final String credentialConfigurationId = sdJwtTypeCredentialClientScope.getAttributes()
+                                                                               .get(CredentialScopeModel.CONFIGURATION_ID);
+        final String verifiableCredentialType = sdJwtTypeCredentialClientScope.getAttributes()
+                                                                              .get(CredentialScopeModel.VCT);
         String expectedIssuer = suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/" + TEST_REALM_NAME;
         String expectedCredentialsEndpoint = expectedIssuer + "/protocol/oid4vc/credential";
         String expectedNonceEndpoint = expectedIssuer + "/protocol/oid4vc/" + OID4VCIssuerEndpoint.NONCE_PATH;
@@ -378,50 +378,63 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                     assertEquals("Since the authorization server is equal to the issuer, just 1 should be returned.", 1, credentialIssuer.getAuthorizationServers().size());
                     assertEquals("The expected server should have been returned.", expectedAuthorizationServer, credentialIssuer.getAuthorizationServers().get(0));
 
-                    assertTrue("The jwt-credential should be supported.",
+                    assertTrue("The sd-jwt-credential should be supported.",
                                credentialIssuer.getCredentialsSupported()
                                                .containsKey(credentialConfigurationId));
-                    assertEquals("The jwt-credential should offer type test-credential",
+                    assertEquals("The sd-jwt-credential should offer type test-credential",
                                  scopeName,
                                  credentialIssuer.getCredentialsSupported().get(credentialConfigurationId)
                                                  .getScope());
-                    assertEquals("The jwt-credential should be offered in the jwt_vc format.",
-                                 Format.JWT_VC, credentialIssuer.getCredentialsSupported()
+                    assertEquals("The sd-jwt-credential should be offered in the jwt_vc format.",
+                                 Format.SD_JWT_VC, credentialIssuer.getCredentialsSupported()
                                                                 .get(credentialConfigurationId).getFormat());
-                    assertNotNull("The jwt-credential can optionally provide a claims claim.",
+                    assertNotNull("The sd-jwt-credential can optionally provide a claims claim.",
                                   credentialIssuer.getCredentialsSupported().get(credentialConfigurationId)
                                                   .getClaims());
 
-                    assertEquals("The jwt-credential claim firstName is present.",
+                    assertEquals("The sd-jwt-credential claim email is present.",
                                   "credentialSubject",
                                   credentialIssuer.getCredentialsSupported().get(credentialConfigurationId)
                                                   .getClaims().get(1).getPath().get(0));
-                    assertEquals("The jwt-credential claim firstName is present.",
-                                  "given_name",
+                    assertEquals("The sd-jwt-credential claim email is present.",
+                                  "email",
                                   credentialIssuer.getCredentialsSupported().get(credentialConfigurationId)
                                                   .getClaims().get(1).getPath().get(1));
-                    assertFalse("The jwt-credential claim firstName is not mandatory.",
+                    assertFalse("The sd-jwt-credential claim email is not mandatory.",
                                 credentialIssuer.getCredentialsSupported().get(credentialConfigurationId)
                                                 .getClaims().get(1).isMandatory());
-                    assertEquals("The jwt-credential claim givenName shall be displayed as Given Name",
-                                 "Given Name",
+                    assertNull("The sd-jwt-credential claim email has no display configured",
                                  credentialIssuer.getCredentialsSupported().get(credentialConfigurationId)
-                                                 .getClaims().get(1).getDisplay()
-                                                 // index 2 is locale en-EN
-                                                 .get(2).getName());
+                                                 .getClaims().get(1).getDisplay());
 
-                    assertEquals("The jwt-credential should offer vct",
+                    assertEquals("The sd-jwt-credential claim firstName is present.",
+                                  "credentialSubject",
+                                  credentialIssuer.getCredentialsSupported().get(credentialConfigurationId)
+                                                  .getClaims().get(2).getPath().get(0));
+                    assertEquals("The sd-jwt-credential claim firstName is present.",
+                                  "firstName",
+                                  credentialIssuer.getCredentialsSupported().get(credentialConfigurationId)
+                                                  .getClaims().get(2).getPath().get(1));
+                    assertFalse("The sd-jwt-credential claim firstName is not mandatory.",
+                                credentialIssuer.getCredentialsSupported().get(credentialConfigurationId)
+                                                .getClaims().get(2).isMandatory());
+                    assertNull("The sd-jwt-credential claim givenName has no display configured",
+                                 credentialIssuer.getCredentialsSupported().get(credentialConfigurationId)
+                                                 .getClaims().get(2).getDisplay());
+
+                    assertEquals("The sd-jwt-credential should offer vct",
                                  verifiableCredentialType,
                                  credentialIssuer.getCredentialsSupported().get(credentialConfigurationId).getVct());
 
                     // We are offering key binding only for identity credential
-                    assertTrue("The jwt-credential should contain a cryptographic binding method supported named jwk",
+                    assertTrue("The sd-jwt-credential should contain a cryptographic binding method supported named jwk",
                                credentialIssuer.getCredentialsSupported().get(credentialConfigurationId)
-                                               .getCryptographicBindingMethodsSupported().contains("jwk"));
-                    assertTrue("The jwt-credential should contain a credential signing algorithm named ES256",
+                                               .getCryptographicBindingMethodsSupported()
+                                               .contains(CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT));
+                    assertTrue("The sd-jwt-credential should contain a credential signing algorithm named ES256",
                                credentialIssuer.getCredentialsSupported().get(credentialConfigurationId)
                                                .getCredentialSigningAlgValuesSupported().contains("ES256"));
-                    assertTrue("The jwt-credential should support a proof of type jwt with signing algorithm ES256",
+                    assertTrue("The sd-jwt-credential should support a proof of type jwt with signing algorithm ES256",
                                credentialIssuer.getCredentialsSupported()
                                                .get(credentialConfigurationId)
                                                .getProofTypesSupported()
@@ -429,7 +442,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                                                .get("jwt")
                                                .getSigningAlgorithmsSupported()
                                                .contains("ES256"));
-                    assertEquals("The jwt-credential should display as Test Credential",
+                    assertEquals("The sd-jwt-credential should display as Test Credential",
                                  credentialConfigurationId,
                                  credentialIssuer.getCredentialsSupported().get(credentialConfigurationId)
                                                  .getDisplay().get(0).getName());
