@@ -114,7 +114,7 @@ export const DeviceActivity = () => {
       title={t("deviceActivity")}
       description={t("signedInDevicesExplanation")}
     >
-      <Split hasGutter className="pf-v5-u-mb-lg">
+      <Split hasGutter className="pf-v6-u-mb-lg">
         <SplitItem isFilled>
           <Title headingLevel="h2" size="xl">
             {t("signedInDevices")}
@@ -153,14 +153,14 @@ export const DeviceActivity = () => {
               <DataListItemRow key={device.id} data-testid={`row-${index}`}>
                 <DataListContent
                   aria-label="device-sessions-content"
-                  className="pf-v5-u-flex-grow-1"
+                  className="pf-v6-u-flex-grow-1"
                 >
                   <Grid hasGutter>
                     <GridItem span={1} rowSpan={2}>
                       {device.mobile ? <MobileAltIcon /> : <DesktopIcon />}
                     </GridItem>
                     <GridItem sm={8} md={9} span={10}>
-                      <span className="pf-v5-u-mr-md session-title">
+                      <span className="pf-v6-u-mr-md session-title">
                         {device.os.toLowerCase().includes("unknown")
                           ? t("unknownOperatingSystem")
                           : device.os}{" "}
@@ -173,7 +173,7 @@ export const DeviceActivity = () => {
                       )}
                     </GridItem>
                     <GridItem
-                      className="pf-v5-u-text-align-right"
+                      className="pf-v6-u-text-align-right"
                       sm={3}
                       md={2}
                       span={1}

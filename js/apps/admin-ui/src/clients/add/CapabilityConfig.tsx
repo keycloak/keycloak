@@ -47,7 +47,7 @@ export const CapabilityConfig = ({
             hasNoPaddingTop
             label={t("clientAuthentication")}
             fieldId="kc-authentication"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("authenticationHelp")}
                 fieldLabelId="authentication"
@@ -63,7 +63,6 @@ export const CapabilityConfig = ({
                   data-testid="authentication"
                   id="kc-authentication"
                   label={t("on")}
-                  labelOff={t("off")}
                   isChecked={!field.value}
                   onChange={(_event, value) => {
                     field.onChange(!value);
@@ -93,7 +92,7 @@ export const CapabilityConfig = ({
             hasNoPaddingTop
             label={t("clientAuthorization")}
             fieldId="kc-authorization"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("authorizationHelp")}
                 fieldLabelId="authorization"
@@ -109,7 +108,6 @@ export const CapabilityConfig = ({
                   data-testid="authorization"
                   id="kc-authorization-switch"
                   label={t("on")}
-                  labelOff={t("off")}
                   isChecked={field.value && !clientAuthentication}
                   onChange={(_event, value) => {
                     field.onChange(value);

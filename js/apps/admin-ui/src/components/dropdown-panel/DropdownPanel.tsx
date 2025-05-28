@@ -1,7 +1,4 @@
-import { useEffect, useRef } from "react";
-import { Icon } from "@patternfly/react-core";
-import { CaretDownIcon } from "@patternfly/react-icons";
-import "./dropdown-panel.css";
+import { Dropdown, MenuToggle } from "@patternfly/react-core";
 
 type DropdownPanelProps = {
   buttonText: string;
@@ -19,54 +16,23 @@ const DropdownPanel: React.FC<DropdownPanelProps> = ({
   searchDropdownOpen,
   marginRight,
   width,
-}) => {
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setSearchDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [setSearchDropdownOpen]);
-
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "hidden") {
-        setSearchDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () =>
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [setSearchDropdownOpen]);
-
-  return (
-    <span ref={dropdownRef}>
-      <button
-        className="kc-dropdown-panel"
+}) => (
+  <Dropdown
+    onOpenChange={setSearchDropdownOpen}
+    toggle={(ref) => (
+      <MenuToggle
+        data-testid="searchdropdown_dorpdown"
+        ref={ref}
         onClick={() => setSearchDropdownOpen(!searchDropdownOpen)}
-        aria-label={buttonText}
-        style={{ width, marginRight }}
-        data-testid="dropdown-panel-btn"
+        style={{ width, marginRight: marginRight ? marginRight : "0" }}
       >
         {buttonText}
-        <Icon className="kc-dropdown-panel-icon">
-          <CaretDownIcon />
-        </Icon>
-      </button>
-      {searchDropdownOpen && (
-        <div className="kc-dropdown-panel-content">{children}</div>
-      )}
-    </span>
-  );
-};
+      </MenuToggle>
+    )}
+    isOpen={searchDropdownOpen}
+  >
+    {children}
+  </Dropdown>
+);
 
 export default DropdownPanel;

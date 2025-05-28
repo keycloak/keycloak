@@ -2,11 +2,9 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   EmptyState,
-  EmptyStateIcon,
   EmptyStateBody,
   Button,
   Tooltip,
-  EmptyStateHeader,
   EmptyStateFooter,
 } from "@patternfly/react-core";
 import { PlusCircleIcon } from "@patternfly/react-icons";
@@ -33,7 +31,7 @@ const EmptyButton = ({
     <Button
       data-testid={`create-${permissionType}`}
       className={
-        disabled ? "keycloak__permissions__empty_state " : "" + "pf-v5-u-m-sm"
+        disabled ? "keycloak__permissions__empty_state " : "" + "pf-v6-u-m-sm"
       }
       variant="secondary"
       onClick={() =>
@@ -82,12 +80,13 @@ export const EmptyPermissionsState = ({
 }: EmptyPermissionsStateProps) => {
   const { t } = useTranslation();
   return (
-    <EmptyState data-testid="empty-state" variant="lg">
-      <EmptyStateHeader
-        titleText={<>{t("emptyPermissions")}</>}
-        icon={<EmptyStateIcon icon={PlusCircleIcon} />}
-        headingLevel="h1"
-      />
+    <EmptyState
+      headingLevel="h1"
+      icon={PlusCircleIcon}
+      titleText={<>{t("emptyPermissions")}</>}
+      data-testid="empty-state"
+      variant="lg"
+    >
       <EmptyStateBody>{t("emptyPermissionInstructions")}</EmptyStateBody>
       <EmptyStateFooter>
         <TooltipEmptyButton

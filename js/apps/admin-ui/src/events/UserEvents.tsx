@@ -9,10 +9,10 @@ import {
   useFetch,
 } from "@keycloak/keycloak-ui-shared";
 import {
+  Label,
+  LabelGroup,
   ActionGroup,
   Button,
-  Chip,
-  ChipGroup,
   DatePicker,
   DescriptionList,
   DescriptionListDescription,
@@ -26,6 +26,7 @@ import {
   SelectOption,
   Tooltip,
 } from "@patternfly/react-core";
+
 import { CheckCircleIcon, WarningTriangleIcon } from "@patternfly/react-icons";
 import { cellWidth } from "@patternfly/react-table";
 import { pickBy } from "lodash-es";
@@ -276,7 +277,6 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
                         className="keycloak__events_search__type_select"
                         data-testid="event-type-searchField"
                         chipGroupProps={{
-                          numChips: 1,
                           expandedText: t("hide"),
                           collapsedText: t("showRemaining"),
                         }}
@@ -300,11 +300,12 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
                         isOpen={selectOpen}
                         aria-labelledby={"eventType"}
                         chipGroupComponent={
-                          <ChipGroup>
+                          <LabelGroup>
                             {field.value.map((chip: string) => (
-                              <Chip
+                              <Label
+                                variant="outline"
                                 key={chip}
-                                onClick={(event) => {
+                                onClose={(event) => {
                                   event.stopPropagation();
                                   field.onChange(
                                     field.value.filter(
@@ -314,9 +315,9 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
                                 }}
                               >
                                 {t(`eventTypes.${chip}.name`)}
-                              </Chip>
+                              </Label>
                             ))}
-                          </ChipGroup>
+                          </LabelGroup>
                         }
                       >
                         {events?.map((option) => (
@@ -345,7 +346,7 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
                     control={control}
                     render={({ field }) => (
                       <DatePicker
-                        className="pf-v5-u-w-100"
+                        className="pf-v6-u-w-100"
                         value={field.value}
                         onChange={(_, value) => field.onChange(value)}
                         inputProps={{ id: "kc-dateFrom" }}
@@ -363,7 +364,7 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
                     control={control}
                     render={({ field }) => (
                       <DatePicker
-                        className="pf-v5-u-w-100"
+                        className="pf-v6-u-w-100"
                         value={field.value}
                         onChange={(_, value) => field.onChange(value)}
                         inputProps={{ id: "kc-dateTo" }}
@@ -398,7 +399,7 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
           </FlexItem>
           <FlexItem>
             {Object.entries(activeFilters).length > 0 && (
-              <div className="keycloak__searchChips pf-v5-u-ml-md">
+              <div className="keycloak__searchChips pf-v6-u-ml-md">
                 {Object.entries(activeFilters).map((filter) => {
                   const [key, value] = filter as [
                     keyof UserEventSearchForm,
@@ -413,26 +414,27 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
                   }
 
                   return (
-                    <ChipGroup
-                      className="pf-v5-u-mt-md pf-v5-u-mr-md"
+                    <LabelGroup
+                      className="pf-v6-u-mt-md pf-v6-u-mr-md"
                       key={key}
                       categoryName={filterLabels[key]}
                       onClick={() => removeFilter(key)}
                       isClosable
                     >
                       {typeof value === "string" ? (
-                        <Chip isReadOnly>{value}</Chip>
+                        <Label variant="outline">{value}</Label>
                       ) : (
                         value.map((entry) => (
-                          <Chip
+                          <Label
+                            variant="outline"
                             key={entry}
-                            onClick={() => removeFilterValue(key, entry)}
+                            onClose={() => removeFilterValue(key, entry)}
                           >
                             {t(`eventTypes.${entry}.name`)}
-                          </Chip>
+                          </Label>
                         ))
                       )}
-                    </ChipGroup>
+                    </LabelGroup>
                   );
                 })}
               </div>
