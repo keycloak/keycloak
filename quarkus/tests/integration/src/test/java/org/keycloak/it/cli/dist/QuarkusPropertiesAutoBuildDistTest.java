@@ -112,7 +112,7 @@ public class QuarkusPropertiesAutoBuildDistTest {
     @Launch({ "start" })
     @Order(9)
     void nonXADatasourceFailsToStart(CLIResult cliResult) {
-        cliResult.assertError("Multiple datasources are configured but more than 1 is using non-XA transactions.");
+        cliResult.assertError("Multiple datasources are configured but more than 1 (user-store3, <default>) is using non-XA transactions.");
     }
 
     @Test
@@ -144,45 +144,43 @@ public class QuarkusPropertiesAutoBuildDistTest {
     public static class AddAdditionalDatasource implements Consumer<KeycloakDistribution> {
         @Override
         public void accept(KeycloakDistribution distribution) {
-            distribution.setQuarkusProperty("quarkus.datasource.user-store.db-kind", "h2");
-            distribution.setQuarkusProperty("quarkus.datasource.user-store.username","sa");
-            distribution.setQuarkusProperty("quarkus.datasource.user-store.jdbc.url","jdbc:h2:mem:user-store;DB_CLOSE_DELAY=-1");
-            distribution.setQuarkusProperty("quarkus.datasource.user-store.jdbc.transactions", "xa");
+            distribution.setProperty("db-kind-user-store", "dev-mem");
+            distribution.setProperty("db-username-user-store", "sa");
+            distribution.setProperty("db-url-full-user-store", "jdbc:h2:mem:user-store;DB_CLOSE_DELAY=-1");
         }
     }
 
     public static class AddAdditionalDatasource2 implements Consumer<KeycloakDistribution> {
         @Override
         public void accept(KeycloakDistribution distribution) {
-            distribution.setQuarkusProperty("quarkus.datasource.user-store2.db-kind", "h2");
-            distribution.setQuarkusProperty("quarkus.datasource.user-store2.db-transactions", "enabled");
-            distribution.setQuarkusProperty("quarkus.datasource.user-store2.username","sa");
-            distribution.setQuarkusProperty("quarkus.datasource.user-store2.jdbc.url","jdbc:h2:mem:user-store2;DB_CLOSE_DELAY=-1");
-            distribution.setQuarkusProperty("quarkus.datasource.user-store2.jdbc.transactions", "xa");
+            distribution.setProperty("db-kind-user-store2", "dev-mem");
+            distribution.setProperty("transaction-xa-enabled-user-store2", "true");
+            distribution.setProperty("db-username-user-store2", "sa");
+            distribution.setProperty("db-url-full-user-store2", "jdbc:h2:mem:user-store2;DB_CLOSE_DELAY=-1");
         }
     }
 
     public static class AddNonXADatasource implements Consumer<KeycloakDistribution> {
         @Override
         public void accept(KeycloakDistribution distribution) {
-            distribution.setQuarkusProperty("quarkus.datasource.user-store3.db-kind", "h2");
-            distribution.setQuarkusProperty("quarkus.datasource.user-store3.db-transactions", "enabled");
-            distribution.setQuarkusProperty("quarkus.datasource.user-store3.username","sa");
-            distribution.setQuarkusProperty("quarkus.datasource.user-store3.jdbc.url","jdbc:h2:mem:user-store2;DB_CLOSE_DELAY=-1");
+            distribution.setProperty("db-kind-user-store3", "dev-mem");
+            distribution.setProperty("transaction-xa-enabled-user-store3", "false");
+            distribution.setProperty("db-username-user-store3", "sa");
+            distribution.setProperty("db-url-full-user-store3", "jdbc:h2:mem:user-store2;DB_CLOSE_DELAY=-1");
         }
     }
 
     public static class ChangeAdditionalDatasourceUsername implements Consumer<KeycloakDistribution> {
         @Override
         public void accept(KeycloakDistribution distribution) {
-            distribution.setQuarkusProperty("quarkus.datasource.user-store.username","foo");
+            distribution.setProperty("db-username-user-store", "foo");
         }
     }
 
     public static class ChangeAdditionalDatasourceDbKind implements Consumer<KeycloakDistribution> {
         @Override
         public void accept(KeycloakDistribution distribution) {
-            distribution.setQuarkusProperty("quarkus.datasource.user-store.db-kind","h2");
+            distribution.setProperty("db-kind-user-store", "dev-mem");
         }
     }
 

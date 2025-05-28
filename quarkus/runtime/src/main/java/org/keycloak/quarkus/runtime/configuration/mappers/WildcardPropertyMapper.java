@@ -15,6 +15,9 @@ import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_QUARKUS_PREFIX;
+
 public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
 
     public static final String WILDCARD_FROM_START = "<";
@@ -28,12 +31,10 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
     private String toPrefix;
     private String toSuffix;
 
-    public WildcardPropertyMapper(Option<T> option, String to, BooleanSupplier enabled, String enabledWhen,
-            BiFunction<String, ConfigSourceInterceptorContext, String> mapper,
-            String mapFrom, BiFunction<String, ConfigSourceInterceptorContext, String> parentMapper,
+    public WildcardPropertyMapper(Option<T> option, String to, BooleanSupplier enabled, String enabledWhen, ValueMapper mapper, String mapFrom, ValueMapper parentMapper,
             String paramLabel, boolean mask, BiConsumer<PropertyMapper<T>, ConfigValue> validator,
             String description, BooleanSupplier required, String requiredWhen, BiFunction<String, Set<String>, Set<String>> wildcardKeysTransformer, ValueMapper wildcardMapFrom) {
-        super(option, to, enabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, mask, validator, description, required, requiredWhen, null);
+        super(option, to, enabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, mask, validator, description, required, requiredWhen, null, null);
         this.wildcardMapFrom = wildcardMapFrom;
 
         this.fromPrefix = getFrom().substring(0, getFrom().indexOf(WILDCARD_FROM_START));
@@ -42,8 +43,8 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
         }
 
         if (to != null) {
-            if (!to.startsWith(MicroProfileConfigProvider.NS_QUARKUS_PREFIX)) {
-                throw new IllegalArgumentException("Wildcards should map to quarkus options. If not, PropertyMappers logic will need adjusted");
+            if (!to.startsWith(NS_QUARKUS_PREFIX) && !to.startsWith(NS_KEYCLOAK_PREFIX)) {
+                throw new IllegalArgumentException("Wildcards should map to Quarkus or Keycloak options (option '%s' mapped to '%s'). If not, PropertyMappers logic will need adjusted".formatted(option.getKey(), to));
             }
             this.toPrefix = to.substring(0, to.indexOf(WILDCARD_FROM_START));
             int lastIndexOf = to.lastIndexOf(">");
@@ -81,8 +82,14 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
         String wildcardValue = extractWildcardValue(key).orElseThrow();
         String to = getTo(wildcardValue);
         String from = getFrom(wildcardValue);
-        return new PropertyMapper<T>(this, from, to,
-                wildcardMapFrom == null ? null : (v, context) -> wildcardMapFrom.map(wildcardValue, v, context));
+        String mapFrom = getMapFrom();
+        // resolve even the mapFrom() value
+        if (mapFrom != null && mapFrom.contains(WILDCARD_FROM_START)) {
+            mapFrom = mapFrom.substring(0, mapFrom.indexOf(WILDCARD_FROM_START)).concat(wildcardValue);
+        }
+
+        return new PropertyMapper<T>(this, from, to, mapFrom, wildcardValue,
+                wildcardMapFrom == null ? null : (name, v, context) -> wildcardMapFrom.map(wildcardValue, v, context));
     }
 
     private Optional<String> extractWildcardValue(String key) {

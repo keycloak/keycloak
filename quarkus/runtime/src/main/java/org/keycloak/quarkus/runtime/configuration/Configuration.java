@@ -69,6 +69,10 @@ public final class Configuration {
         return getOptionalBooleanValue(propertyName).orElse(false);
     }
 
+    public static boolean isKcPropertyTrue(String propertyName) {
+        return getOptionalBooleanKcValue(propertyName).orElse(false);
+    }
+
     public static boolean isBlank(Option<?> option) {
         return getOptionalKcValue(option.getKey())
                 .map(StringUtil::isBlank)

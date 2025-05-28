@@ -52,6 +52,7 @@ import org.keycloak.credential.WebAuthnCredentialProviderFactory;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.WebAuthnPolicy;
@@ -107,7 +108,14 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
 
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
+        String actionParameter = context.getAuthenticationSession().getClientNote(Constants.KC_ACTION_PARAMETER);
         UserModel userModel = context.getUser();
+        if (Constants.KC_ACTION_PARAMETER_SKIP_IF_EXISTS.equals(actionParameter)
+                && userModel.credentialManager().getStoredCredentialsByTypeStream(getCredentialType()).findAny().isPresent()) {
+            context.success();
+            return;
+        }
+
         // Use standard UTF-8 charset to get bytes from string.
         // Otherwise the platform's default charset is used and it might cause problems later when
         // decoded on different system.

@@ -80,7 +80,7 @@ export default function AddOpenIdConnect() {
             onSubmit={handleSubmit(onSubmit)}
           >
             <OIDCGeneralSettings />
-            <OpenIdConnectSettings />
+            <OpenIdConnectSettings isOIDC />
             <OIDCAuthentication />
             <ActionGroup>
               <Button

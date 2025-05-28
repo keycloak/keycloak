@@ -30,6 +30,7 @@ export const SingleSelectControl = <
   name,
   label,
   options,
+  selectedOptions = [],
   controller,
   labelIcon,
   isDisabled,
@@ -105,7 +106,7 @@ export const SingleSelectControl = <
             isOpen={open}
           >
             <SelectList data-testid={`select-${name}`}>
-              {options.map((option) => (
+              {[...options, ...selectedOptions].map((option) => (
                 <SelectOption key={key(option)} value={key(option)}>
                   {isString(option) ? option : option.value}
                 </SelectOption>

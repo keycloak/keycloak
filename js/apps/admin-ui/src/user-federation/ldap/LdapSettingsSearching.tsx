@@ -41,7 +41,10 @@ export const LdapSettingsSearching = ({
           controller={{
             defaultValue: "",
             rules: {
-              required: t("validateEditMode"),
+              required: {
+                value: true,
+                message: t("validateEditMode"),
+              },
             },
           }}
           options={["", "READ_ONLY", "WRITABLE", "UNSYNCED"]}

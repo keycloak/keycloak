@@ -101,6 +101,24 @@ public interface GroupResource {
     List<GroupRepresentation> getSubGroups(@QueryParam("first") Integer first, @QueryParam("max") Integer max, @QueryParam("briefRepresentation") Boolean briefRepresentation);
 
     /**
+     * Get the paginated list of subgroups belonging to this group.
+     *
+     * @param first the position of the first result to be returned.
+     * @param max the maximum number of results that are to be returned.
+     * @param briefRepresentation if {@code true}, each returned subgroup representation will only contain basic information
+     *                           (id, name, path, and parentId). If {@code false}, the complete representations of the subgroups
+     *                            are returned (include role mappings and attributes).
+     * @param subGroupsCount if {@code true}, the count of subgroups is returned for each subgroup. Defaults to true.
+     */
+    @GET
+    @Path("children")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    List<GroupRepresentation> getSubGroups(@QueryParam("first") Integer first, @QueryParam("max") Integer max,
+                                           @QueryParam("briefRepresentation") Boolean briefRepresentation,
+                                           @QueryParam("subGroupsCount") Boolean subGroupsCount);
+
+    /**
      * Get the paginated list of subgroups belonging to this group, filtered according to the specified parameters.
      *
      * @param search a {@code String} representing either an exact group name or a partial name. If empty or {@code null}
@@ -124,6 +142,31 @@ public interface GroupResource {
             @QueryParam("max") Integer max,
             @QueryParam("briefRepresentation") Boolean briefRepresentation);
 
+    /**
+     * Get the paginated list of subgroups belonging to this group, filtered according to the specified parameters.
+     *
+     * @param search a {@code String} representing either an exact group name or a partial name. If empty or {@code null}
+     *              then all subgroups of this group are returned. Parameter available since Keycloak server 25. Will be ignored on older Keycloak versions with the default value null.
+     * @param exact if {@code true}, the subgroups will be searched using exact match for the {@code search} param. If false
+     *              or {@code null}, the method returns all subgroups that partially match the specified name. Parameter available since Keycloak server 25. Will be ignored on older Keycloak versions with the default value null.
+     * @param first the position of the first result to be returned.
+     * @param max the maximum number of results that are to be returned.
+     * @param briefRepresentation if {@code true}, each returned subgroup representation will only contain basic information
+     *                           (id, name, path, and parentId). If {@code false}, the complete representations of the subgroups
+     *                            are returned (including role mappings and attributes).
+     * @param subGroupsCount if {@code true}, the count of subgroups is returned for each subgroup. Defaults to true.
+     */
+    @GET
+    @Path("children")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    List<GroupRepresentation> getSubGroups(
+            @QueryParam("search") String search,
+            @QueryParam("exact") Boolean exact,
+            @QueryParam("first") Integer first,
+            @QueryParam("max") Integer max,
+            @QueryParam("briefRepresentation") Boolean briefRepresentation,
+            @QueryParam("subGroupsCount") Boolean subGroupsCount);
 
     /**
      * Set or create child.  This will just set the parent if it exists.  Create it and set the parent

@@ -124,7 +124,12 @@ export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
   });
 
   useFetch(
-    () => adminClient.users.getCredentials({ id: user.id! }),
+    () => {
+      if (user.enabled) {
+        return adminClient.users.getCredentials({ id: user.id! });
+      }
+      return Promise.resolve([]);
+    },
     (credentials) => {
       credentials = [
         ...credentials.filter((c: CredentialRepresentation) => {
@@ -361,7 +366,12 @@ export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
   >([]);
 
   useFetch(
-    () => adminClient.users.getCredentials({ id: user.id! }),
+    () => {
+      if (user.enabled) {
+        return adminClient.users.getCredentials({ id: user.id! });
+      }
+      return Promise.resolve([]);
+    },
     (credentials) => {
       credentials = [
         ...credentials.filter((c: CredentialRepresentation) => {

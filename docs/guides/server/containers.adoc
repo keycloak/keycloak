@@ -202,7 +202,7 @@ You use the `start-dev` command:
 
 [source,bash,subs="attributes+"]
 ----
-podman|docker run --name mykeycloak -p 8080:8080 \
+podman|docker run --name mykeycloak -p 127.0.0.1:8080:8080 \
         -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=change_me \
         quay.io/keycloak/keycloak:{containerlabel} \
         start-dev
@@ -221,10 +221,11 @@ For example:
 
 [source,bash,subs="attributes+"]
 ----
-podman|docker run --name mykeycloak -p 8080:8080 \
+podman|docker run --name mykeycloak -p 127.0.0.1:8080:8080 \
         -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=change_me \
         quay.io/keycloak/keycloak:{containerlabel} \
         start \
+        --hostname=localhost --http-enabled=true
         --db=postgres --features=token-exchange \
         --db-url=<JDBC-URL> --db-username=<DB-USER> --db-password=<DB-PASSWORD> \
         --https-key-store-file=<file> --https-key-store-password=<password>
@@ -254,7 +255,7 @@ The {project_name} containers have a directory `/opt/keycloak/data/import`. If y
 
 [source,bash,subs="attributes+"]
 ----
-podman|docker run --name keycloak_unoptimized -p 8080:8080 \
+podman|docker run --name keycloak_unoptimized -p 127.0.0.1:8080:8080 \
         -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=change_me \
         -v /path/to/realm/data:/opt/keycloak/data/import \
         quay.io/keycloak/keycloak:{containerlabel} \
@@ -283,7 +284,7 @@ For example, you can specify the environment variable and memory limit as follow
 
 [source,bash,subs="attributes+"]
 ----
-podman|docker run --name mykeycloak -p 8080:8080 -m 1g \
+podman|docker run --name mykeycloak -p 127.0.0.1:8080:8080 -m 1g \
         -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=change_me \
         -e JAVA_OPTS_KC_HEAP="-XX:MaxHeapFreeRatio=30 -XX:MaxRAMPercentage=65" \
         quay.io/keycloak/keycloak:{containerlabel} \

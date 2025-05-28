@@ -22,6 +22,10 @@ It has been a while since discussions started about any activity around the Inst
 and any objection from the community about deprecating it for removal. For more details, see
 https://github.com/keycloak/keycloak/issues/37967[Deprecate for removal the Instagram social broker].
 
+=== Inconsistent user endpoints harmonized
+
+In previous releases there was an inconsistency in the REST endpoint result of getting a user (`GET /admin/realms/{realm}/users/{user-id}`) and searching for a user (`GET /admin/realms/{realm}/users`). When BruteForce is enabled and a user was temporarily locked out the former endpoint would return enabled=false while the latter would return enabled=true. If the user was updated and enabled was false due to temporary lockout then the user would be disabled permanently. Both endpoints now return enabled=true when a user is temporarily locked out. To check whether a user is temporarily locked out the BruteForceUserResource endpoint should be utilised (`GET /admin/realms/{realm}/attack-detection/brute-force/users/{userId}`).
+
 === Deprecated password policy Recovery Codes Warning Threshold
 
 In relation to supported Recovery codes, we deprecated the password policy `Recovery Codes Warning Threshold`. This password policy might be removed in the future major version of {project_name}.
@@ -36,7 +40,7 @@ Client initiated account link section of the link:{developerguide_link}[{develop
 
 === `KeycloakSessionTask.useExistingSession` method removed
 
-`KeycloakSessionTask.useExistingSession` was only useful to private server logic. Now that this logic has been refined, there is no need for this method. 
+`KeycloakSessionTask.useExistingSession` was only useful to private server logic. Now that this logic has been refined, there is no need for this method.
 
 === Deprecation of `spi-connections-infinispan-quarkus-site-name`
 
@@ -51,6 +55,18 @@ Both system properties have been used internally within Keycloak and have not be
 
 Instead, use the command line option `spi-cache-embedded-default-site-name` as `jboss.site.name` replacement, and `spi-cache-embedded-default-node-name` as `jboss.node.name` replacement.
 See the https://www.keycloak.org/server/all-provider-config[All provider configuration] for more details on these options.
+
+
+=== Deprecation of `method RequiredActionProvider.getMaxAuthAge()`
+The method `RequiredActionProvider.getMaxAuthAge()` is deprecated. It is effectively not used now. Please use the method `RequiredActionProvider.getMaxAuthAge(KeycloakSession session)` instead. This is due to enable individual configuration for required actions.
+
+=== User searches through the User API are now respecting the user profile settings
+
+When querying users through the User API, the user representation and their attributes are now taking into account the
+user profile settings defined for the realm.
+
+It might happen that attributes in user representations are no longer available depending on the
+user profile configuration.
 
 == Notable changes
 
@@ -72,3 +88,35 @@ Consider one of the following cases and recommended migration steps:
 * With the feature `persistent-user-session` feature enabled, the remote store configuration is ignored and {project_name} will print a warning.
 ====
 
+=== Signing out from other devices will log out offline sessions
+
+When a user updates their credentials, like changing their password or adding another factor like an OTP or Passkey, they have a checkbox *Sign out from other devices* which is checked by default.
+
+In previous versions, this logged out only regular sessions.
+Starting with this release, it logs out also offline sessions as this is what users would expect to happen given the current screen design.
+
+To revert to the old behavior, enable the deprecated feature `logout-all-sessions:v1`.
+This deprecated feature will be removed in a future version.
+
+=== Updates to the `user-profile-commons.ftl` theme template
+
+The `user-profile-commons.ftl` changed to improve support for localization. See https://github.com/keycloak/keycloak/issues/38029.
+As a result, and if you are extending this template, pages might start displaying a `locale` field. To avoid that, update
+the theme template with the changes aforementioned.
+
+=== Subgroup counts are no longer cached
+
+When returning subgroups of a group, the count of subgroups of each subgroup of a group is no longer cached. With the
+introduction of Fine-Grained Admin Permissions, the result set is filtered at the database level based on any permissions
+defined to a realm so that the count will change accordingly to these permissions.
+
+Instead of caching the count, a query will be executed every time to obtain the expected number of groups an administrator can access.
+
+Most of the time, this change will not impact clients querying the API to fetch the subgroups of a group. However, if not the case,
+a new parameter `subGroupsCount` was introduced to the following endpoints:
+
+* `/realms/{realm}/groups/{id}/children`
+* `/realms/{realm}/groups`
+
+With this parameter, clients can decide whether the count should be returned to each individual group returned. To not break existing deployments,
+this parameter defaults to `true` so that the count is returned if the parameter is not set.

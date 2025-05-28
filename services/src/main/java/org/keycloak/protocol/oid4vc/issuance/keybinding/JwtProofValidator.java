@@ -27,6 +27,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
+import org.keycloak.protocol.oid4vc.model.JwtProof;
 import org.keycloak.protocol.oid4vc.model.Proof;
 import org.keycloak.protocol.oid4vc.model.ProofType;
 import org.keycloak.protocol.oid4vc.model.ProofTypeJWT;
@@ -82,14 +83,16 @@ public class JwtProofValidator extends AbstractProofValidator {
 
         Optional<Proof> optionalProof = getProofFromContext(vcIssuanceContext);
 
-        if (optionalProof.isEmpty()) {
+        if (optionalProof.isEmpty() || !(optionalProof.get() instanceof JwtProof)) {
             return null; // No proof support
         }
+
+        JwtProof proof = (JwtProof) optionalProof.get();
 
         // Check key binding config for jwt. Only type supported.
         checkCryptographicKeyBinding(vcIssuanceContext);
 
-        JWSInput jwsInput = getJwsInput(optionalProof.get());
+        JWSInput jwsInput = getJwsInput(proof);
         JWSHeader jwsHeader = jwsInput.getHeader();
         validateJwsHeader(vcIssuanceContext, jwsHeader);
 
@@ -126,9 +129,16 @@ public class JwtProofValidator extends AbstractProofValidator {
                     Optional.ofNullable(proofTypesSupported.getJwt())
                             .orElseThrow(() -> new VCIssuerException("SD-JWT supports only jwt proof type."));
 
-                    Proof proof = Optional.ofNullable(vcIssuanceContext.getCredentialRequest().getProof())
-                            .orElseThrow(() -> new VCIssuerException("Credential configuration requires a proof of type: " + ProofType.JWT));
+                    Proof proofObject = vcIssuanceContext.getCredentialRequest().getProof();
+                    if (proofObject == null) {
+                        throw new VCIssuerException("Credential configuration requires a proof of type: " + ProofType.JWT);
+                    }
 
+                    if (!(proofObject instanceof JwtProof)) {
+                        throw new VCIssuerException("Wrong proof type. Expected JwtProof, but got: " + proofObject.getClass().getSimpleName());
+                    }
+
+                    Proof proof = (Proof) proofObject;
                     if (!Objects.equals(proof.getProofType(), ProofType.JWT)) {
                         throw new VCIssuerException("Wrong proof type");
                     }
@@ -137,7 +147,7 @@ public class JwtProofValidator extends AbstractProofValidator {
                 });
     }
 
-    private JWSInput getJwsInput(Proof proof) throws JWSInputException {
+    private JWSInput getJwsInput(JwtProof proof) throws JWSInputException {
         return new JWSInput(proof.getJwt());
     }
 

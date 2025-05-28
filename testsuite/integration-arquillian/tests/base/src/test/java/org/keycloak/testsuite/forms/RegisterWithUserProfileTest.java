@@ -22,6 +22,9 @@ import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.PERMISSIONS_ADMIN_ONLY;
 import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.PERMISSIONS_ALL;
 import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.PERMISSIONS_ADMIN_EDITABLE;
 import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.SCOPE_DEPARTMENT;
@@ -620,6 +623,71 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
                 containsString("Please specify email"),
                 containsString("Please specify this field")
         ));
+    }
+
+    @Test
+    public void testEmailNotWritable() {
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"email\"," + PERMISSIONS_ADMIN_ONLY + ", \"required\": {\"roles\" : [\"user\"]}}"
+                + "]}");
+
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+
+        assertFalse(registerPage.isEmailPresent());
+
+        registerPage.register("firstName", "lastName", null, "myusername", generatePassword());
+
+        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+    }
+
+    @Test
+    public void testEmailNotShownIfReadOnly() {
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"email\"," + PERMISSIONS_ADMIN_EDITABLE + ", \"required\": {\"roles\" : [\"user\"]}}"
+                + "]}");
+
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+
+        assertFalse(registerPage.isEmailPresent());
+
+        registerPage.register("firstName", "lastName", null, "myusername1", generatePassword());
+
+        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+    }
+
+    @Test
+    public void testEmailNotAllowedButEmailAsUsername() {
+        RealmRepresentation realm = testRealm().toRepresentation();
+        realm.setRegistrationEmailAsUsername(true);
+        testRealm().update(realm);
+        getCleanup().addCleanup(() -> {
+            realm.setRegistrationEmailAsUsername(false);
+            testRealm().update(realm);
+        });
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"email\"," + PERMISSIONS_ADMIN_EDITABLE + ", \"required\": {\"roles\" : [\"user\"]}}"
+                + "]}");
+
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+
+        assertFalse(registerPage.isUsernamePresent());
+        assertTrue(registerPage.isEmailPresent());
+
+        registerPage.registerWithEmailAsUsername("firstName", "lastName", "myusername1@keycloak.org", generatePassword());
+
+        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
     }
 
     private void assertUserRegistered(String userId, String username, String email, String firstName, String lastName) {

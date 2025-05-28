@@ -16,6 +16,8 @@ Using the {project_name} Operator, you can perform a realm import for the Keyclo
 * If a Realm with the same name already exists in {project_name}, it will not be overwritten.
 
 * The Realm Import CR only supports creation of new realms and does not update or delete those. Changes to the realm performed directly on {project_name} are not synced back in the CR.
+
+* Once the realm is imported you should delete the Realm Import CR as that will cleanup the associated Kubernetes Job and Pod resources.
 ====
 
 === Creating a Realm Import Custom Resource

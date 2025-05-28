@@ -32,6 +32,7 @@ import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
+import io.fabric8.kubernetes.api.model.apps.StatefulSetSpec;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -405,10 +406,12 @@ public class PodTemplateTest {
         PodTemplateSpec additionalPodTemplate = null;
 
         // Act
-        var podTemplate = getDeployment(additionalPodTemplate).getSpec().getTemplate();
+        StatefulSetSpec spec = getDeployment(additionalPodTemplate).getSpec();
+        var podTemplate = spec.getTemplate();
         var container = podTemplate.getSpec().getContainers().get(0);
 
         // Assert
+        assertThat(spec.getServiceName()).isEqualTo("instance-discovery");
         assertNotNull(container);
         assertThat(container.getArgs()).doesNotContain(KeycloakDeploymentDependentResource.OPTIMIZED_ARG);
         assertThat(container.getArgs()).contains("-Djgroups.bind.address=$(POD_IP)");

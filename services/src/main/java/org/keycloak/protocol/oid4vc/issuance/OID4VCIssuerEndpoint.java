@@ -333,22 +333,32 @@ public class OID4VCIssuerEndpoint {
     private void checkScope(CredentialRequest credentialRequestVO) {
         AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession();
         String vcIssuanceFlow = clientSession.getNote(PreAuthorizedCodeGrantType.VC_ISSUANCE_FLOW);
+
         if (vcIssuanceFlow == null || !vcIssuanceFlow.equals(PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE)) {
-            // authz code flow
-            ClientModel client = clientSession.getClient();
+            // Authorization Code Flow
+            RealmModel realm = session.getContext().getRealm();
             String credentialIdentifier = credentialRequestVO.getCredentialIdentifier();
-            String scope = client.getAttributes().get("vc." + credentialIdentifier + ".scope"); // following credential identifier in client attribute
+
+            String scope = realm.getAttribute("vc." + credentialIdentifier + ".scope");
+
             AccessToken accessToken = bearerTokenAuthenticator.authenticate().getToken();
-            if (Arrays.stream(accessToken.getScope().split(" ")).sequential().noneMatch(i -> i.equals(scope))) {
-                LOGGER.debugf("Scope check failure: credentialIdentifier = %s, required scope = %s, scope in access token = %s.", credentialIdentifier, scope, accessToken.getScope());
-                throw new CorsErrorResponseException(cors, ErrorType.UNSUPPORTED_CREDENTIAL_TYPE.toString(), "Scope check failure", Response.Status.BAD_REQUEST);
+            if (scope == null || Arrays.stream(accessToken.getScope().split(" "))
+                    .noneMatch(tokenScope -> tokenScope.equals(scope))) {
+                LOGGER.debugf("Scope check failure: credentialIdentifier = %s, required scope = %s, scope in access token = %s.",
+                        credentialIdentifier, scope, accessToken.getScope());
+                throw new CorsErrorResponseException(cors,
+                        ErrorType.UNSUPPORTED_CREDENTIAL_TYPE.toString(),
+                        "Scope check failure",
+                        Response.Status.BAD_REQUEST);
             } else {
-                LOGGER.debugf("Scope check success: credentialIdentifier = %s, required scope = %s, scope in access token = %s.", credentialIdentifier, scope, accessToken.getScope());
+                LOGGER.debugf("Scope check success: credentialIdentifier = %s, required scope = %s, scope in access token = %s.",
+                        credentialIdentifier, scope, accessToken.getScope());
             }
         } else {
             clientSession.removeNote(PreAuthorizedCodeGrantType.VC_ISSUANCE_FLOW);
         }
     }
+
 
     /**
      * Returns a verifiable credential
@@ -655,9 +665,11 @@ public class OID4VCIssuerEndpoint {
             return;
         }
 
-        ProofValidator proofValidator = session.getProvider(ProofValidator.class, proof.getProofType());
+        String proofType = proof.getProofType();
+
+        ProofValidator proofValidator = session.getProvider(ProofValidator.class, proofType);
         if (proofValidator == null) {
-            throw new BadRequestException(String.format("Unable to validate proofs of type %s", proof.getProofType()));
+            throw new BadRequestException(String.format("Unable to validate proofs of type %s", proofType));
         }
 
         // Validate proof and bind public key to credential

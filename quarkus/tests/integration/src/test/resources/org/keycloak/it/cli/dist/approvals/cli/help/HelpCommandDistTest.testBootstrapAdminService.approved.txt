@@ -64,10 +64,59 @@ Database:
 --db-username <username>
                      The username of the database user.
 
+Database - additional datasources:
+
+--db-active-<datasource> <true|false>
+                     Deactivate specific named datasource <datasource>. Default: true.
+--db-driver-<datasource> <driver>
+                     Used for named <datasource>. The fully qualified class name of the JDBC
+                       driver. If not set, a default driver is set accordingly to the chosen
+                       database.
+--db-kind-<datasource> <vendor>
+                     Used for named <datasource>. The database vendor. In production mode the
+                       default value of 'dev-file' is deprecated, you should explicitly specify the
+                       db instead. Possible values are: dev-file, dev-mem, mariadb, mssql, mysql,
+                       oracle, postgres. Default: dev-file.
+--db-password-<datasource> <password>
+                     Used for named <datasource>. The password of the database user.
+--db-pool-initial-size-<datasource> <size>
+                     Used for named <datasource>. The initial size of the connection pool.
+--db-pool-max-size-<datasource> <size>
+                     Used for named <datasource>. The maximum size of the connection pool. Default:
+                       100.
+--db-pool-min-size-<datasource> <size>
+                     Used for named <datasource>. The minimal size of the connection pool.
+--db-schema-<datasource> <schema>
+                     Used for named <datasource>. The database schema to be used.
+--db-url-database-<datasource> <dbname>
+                     Used for named <datasource>. Sets the database name of the default JDBC URL of
+                       the chosen vendor. If the `db-url` option is set, this option is ignored.
+--db-url-full-<datasource> <jdbc-url>
+                     Used for named <datasource>. The full database JDBC URL. If not provided, a
+                       default URL is set based on the selected database vendor. For instance, if
+                       using 'postgres', the default JDBC URL would be 'jdbc:postgresql:
+                       //localhost/keycloak'.
+--db-url-host-<datasource> <hostname>
+                     Used for named <datasource>. Sets the hostname of the default JDBC URL of the
+                       chosen vendor. If the `db-url` option is set, this option is ignored.
+--db-url-port-<datasource> <port>
+                     Used for named <datasource>. Sets the port of the default JDBC URL of the
+                       chosen vendor. If the `db-url` option is set, this option is ignored.
+--db-url-properties-<datasource> <properties>
+                     Used for named <datasource>. Sets the properties of the default JDBC URL of
+                       the chosen vendor. Make sure to set the properties accordingly to the format
+                       expected by the database vendor, as well as appending the right character at
+                       the beginning of this property value. If the `db-url` option is set, this
+                       option is ignored.
+--db-username-<datasource> <username>
+                     Used for named <datasource>. The username of the database user.
+
 Transaction:
 
 --transaction-xa-enabled <true|false>
                      If set to true, XA datasources will be used. Default: false.
+--transaction-xa-enabled-<datasource> <true|false>
+                     If set to true, XA for <datasource> datasource will be used. Default: true.
 
 Feature:
 

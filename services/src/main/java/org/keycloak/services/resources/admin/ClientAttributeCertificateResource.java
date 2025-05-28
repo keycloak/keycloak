@@ -17,10 +17,12 @@
 
 package org.keycloak.services.resources.admin;
 
+import com.google.common.base.Strings;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 import jakarta.ws.rs.NotAcceptableException;
 import jakarta.ws.rs.NotFoundException;
@@ -42,7 +44,7 @@ import org.keycloak.representations.KeyStoreConfig;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.KeycloakOpenAPI;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.util.CertificateInfoHelper;
 
 import jakarta.ws.rs.BadRequestException;
@@ -59,6 +61,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.PrivateKey;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Set;
@@ -75,6 +78,8 @@ public class ClientAttributeCertificateResource {
     public static final String CERTIFICATE_PEM = "Certificate PEM";
     public static final String PUBLIC_KEY_PEM = "Public Key PEM";
     public static final String JSON_WEB_KEY_SET = "JSON Web Key Set";
+
+    private static final Logger logger = Logger.getLogger(ClientAttributeCertificateResource.class);
 
     protected final RealmModel realm;
     private final AdminPermissionEvaluator auth;
@@ -186,6 +191,18 @@ public class ClientAttributeCertificateResource {
         }
         String keystoreFormat = keystoreFormatPart.asString();
         FormPartValue inputParts = uploadForm.getFirst("file");
+
+        boolean fileEmpty = false;
+        try {
+            fileEmpty = inputParts == null || Strings.isNullOrEmpty(inputParts.asString());
+        } catch (Exception e) {
+            // ignore
+        }
+
+        if (fileEmpty) {
+            throw new BadRequestException("file cannot be empty");
+        }
+
         if (keystoreFormat.equals(CERTIFICATE_PEM)) {
             String pem = StreamUtil.readString(inputParts.asInputStream(), StandardCharsets.UTF_8);
             pem = PemUtils.removeBeginEnd(pem);
@@ -228,13 +245,18 @@ public class ClientAttributeCertificateResource {
             KeyStore keyStore = CryptoIntegration.getProvider().getKeyStore(KeystoreFormat.valueOf(keystoreFormat));
             keyStore.load(inputParts.asInputStream(), storePassword);
             try {
-                privateKey = (PrivateKey)keyStore.getKey(keyAlias, keyPassword);
+                privateKey = (PrivateKey) keyStore.getKey(keyAlias, keyPassword);
             } catch (Exception e) {
                 // ignore
             }
-            certificate = (X509Certificate)keyStore.getCertificate(keyAlias);
+            certificate = (X509Certificate) keyStore.getCertificate(keyAlias);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            logger.error("Error loading keystore", e);
+            if (e.getCause() instanceof UnrecoverableKeyException keyException) {
+                throw new BadRequestException(keyException.getMessage());
+            } else {
+                throw new BadRequestException("error loading keystore");
+            }
         }
 
         if (privateKey != null) {

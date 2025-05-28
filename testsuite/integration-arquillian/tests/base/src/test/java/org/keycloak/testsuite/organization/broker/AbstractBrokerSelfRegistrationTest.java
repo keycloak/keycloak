@@ -785,9 +785,9 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         assertFalse(loginPage.isSocialButtonPresent(realmIdp.getAlias()));
 
         driver.navigate().back();
-        // only org idp, back button won't reset the flow and the organization is the same
-        assertTrue(loginPage.isSocialButtonPresent(orgIdp.getAlias()));
-        assertFalse(loginPage.isSocialButtonPresent(realmIdp.getAlias()));
+        // chrome requires refresh, otherwise Sign in button is not active
+        driver.navigate().refresh();
+
         loginPage.loginUsername("test");
         // both realm and org idps because the user does not map to any organization
         assertTrue(loginPage.isSocialButtonPresent(orgIdp.getAlias()));

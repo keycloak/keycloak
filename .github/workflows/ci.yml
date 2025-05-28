@@ -361,7 +361,7 @@ jobs:
 
       - name: Build with JDK
         run:
-          ./mvnw install -e -DskipTests -DskipExamples
+          ./mvnw install -e -DskipTests -DskipExamples -DskipProtoLock=true
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -562,7 +562,7 @@ jobs:
           pipx inject ansible-core boto3 botocore
           ./aws_ec2.sh create ${AWS_REGION} ${EC2_CLUSTER_NAME}
           ./keycloak_ec2_installer.sh ${AWS_REGION} ${EC2_CLUSTER_NAME} /tmp/keycloak.zip m2.tar.gz
-          ./mvn_ec2_runner.sh ${AWS_REGION} ${EC2_CLUSTER_NAME} "clean install -B -DskipTests -Pdistribution"
+          ./mvn_ec2_runner.sh ${AWS_REGION} ${EC2_CLUSTER_NAME} "clean install -B -DskipTests -Pdistribution -DskipProtoLock=true"
           ./mvn_ec2_runner.sh ${AWS_REGION} ${EC2_CLUSTER_NAME} "clean install -B -DskipTests -pl testsuite/integration-arquillian/servers/auth-server/quarkus -Pauth-server-quarkus -Pdb-aurora-postgres -Dmaven.build.cache.enabled=true"
 
       - name: Run Aurora migration tests on EC2

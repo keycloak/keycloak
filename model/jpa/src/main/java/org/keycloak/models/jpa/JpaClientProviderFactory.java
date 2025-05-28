@@ -18,7 +18,7 @@
 package org.keycloak.models.jpa;
 
 import org.keycloak.Config;
-import org.keycloak.authorization.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.ClientProvider;

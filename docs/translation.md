@@ -82,7 +82,7 @@ The following translations are available in Weblate. If you have any questions o
 
 * German: [Robin Meese](https://github.com/robson90) && [Alexander Schwartz](https://github.com/ahus1)
 * Dutch: [Jon Koops](https://github.com/jonkoops) && [janher](https://github.com/janher)
-* Japanese: [y-tabata](https://github.com/y-tabata) && [wadahiro](https://github.com/wadahiro) && [tnorimat](https://github.com/tnorimat)
+* Japanese: [y-tabata](https://github.com/y-tabata) && [wadahiro](https://github.com/wadahiro) && [tnorimat](https://github.com/tnorimat) && [k-tamura](https://github.com/k-tamura)
 * Catalan: [jmallach](https://github.com/jmallach) && [Ecron](https://github.com/Ecron)
 * Spanish: [herver1971](https://github.com/herver1971) && [anthieni](https://github.com/anthieni)
 * Slovenian: [mathmul](https://github.com/mathmul) && [SaraPristovnik](https://github.com/SaraPristovnik)

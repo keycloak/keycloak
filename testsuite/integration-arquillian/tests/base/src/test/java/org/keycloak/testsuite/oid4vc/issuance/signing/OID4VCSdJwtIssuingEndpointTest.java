@@ -46,6 +46,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.Format;
+import org.keycloak.protocol.oid4vc.model.JwtProof;
 import org.keycloak.protocol.oid4vc.model.Proof;
 import org.keycloak.protocol.oid4vc.model.ProofType;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
@@ -94,8 +95,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         testingClient
                 .server(TEST_REALM_NAME)
                 .run((session -> {
-                    Proof proof = new Proof()
-                            .setProofType(ProofType.JWT)
+                    JwtProof proof = new JwtProof()
                             .setJwt(generateJwtProof(getCredentialIssuer(session), null));
 
                     SdJwtVP sdJwtVP = testRequestTestCredential(session, token, proof);
@@ -110,8 +110,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                 testingClient
                         .server(TEST_REALM_NAME)
                         .run((session -> {
-                                    Proof proof = new Proof()
-                                            .setProofType(ProofType.JWT)
+                                    JwtProof proof = new JwtProof()
                                             .setJwt(generateInvalidJwtProof(getCredentialIssuer(session), null));
 
                                     testRequestTestCredential(session, token, proof);

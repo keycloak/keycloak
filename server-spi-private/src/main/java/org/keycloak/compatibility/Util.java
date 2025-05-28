@@ -21,7 +21,13 @@ public final class Util {
                 .sorted()
                 .map(key -> compare(provider, key, old.get(key), current.get(key)))
                 .filter(Util::isNotCompatible)
-                .findFirst()
+                .reduce((a, b) -> {
+                    if (! (a instanceof AggregatedCompatibilityResult)) {
+                        a = new AggregatedCompatibilityResult(a);
+                    }
+
+                    return ((AggregatedCompatibilityResult) a).add(b);
+                })
                 .orElse(CompatibilityResult.providerCompatible(provider));
     }
 

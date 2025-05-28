@@ -29,3 +29,11 @@ runs:
         unzip -j /tmp/chromedriver.zip -d /tmp
         sudo mv -f /tmp/chromedriver $CHROMEWEBDRIVER/chromedriver
         sudo chmod +x $CHROMEWEBDRIVER/chromedriver
+
+    - id: show-version
+      name: Show Version
+      if: inputs.version == 'default'
+      shell: bash
+      run: |
+        google-chrome --version
+        $CHROMEWEBDRIVER/chromedriver --version

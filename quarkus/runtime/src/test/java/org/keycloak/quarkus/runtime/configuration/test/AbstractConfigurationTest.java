@@ -19,6 +19,7 @@ package org.keycloak.quarkus.runtime.configuration.test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.lang.reflect.Field;
@@ -170,6 +171,19 @@ public abstract class AbstractConfigurationTest {
 
     protected void assertExternalConfig(Map<String, String> expectedValues) {
         expectedValues.forEach(this::assertExternalConfig);
+    }
+    
+    protected void assertConfigNull(String key, boolean isExternal) {
+        Function<String, ConfigValue> getConfig = isExternal ? Configuration::getConfigValue : Configuration::getKcConfigValue;
+        assertThat(String.format("We expect that the value is null for key '%s'", key), getConfig.apply(key).getValue(), nullValue());
+    }
+
+    protected void assertConfigNull(String key) {
+        assertConfigNull(key, false);
+    }
+
+    protected void assertExternalConfigNull(String key) {
+        assertConfigNull(key, true);
     }
 
     protected static void addPersistedConfigValues(Map<String, String> values) {

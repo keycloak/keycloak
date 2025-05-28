@@ -122,13 +122,15 @@
 </#macro>
 
 <#macro textareaTag attribute>
-	<textarea id="${attribute.name}" name="${attribute.name}" class="${properties.kcInputClass!}"
+	<span class="${properties.kcInputClass!}">
+	<textarea id="${attribute.name}" name="${attribute.name}"
 		aria-invalid="<#if messagesPerField.existsError('${attribute.name}')>true</#if>"
 		<#if attribute.readOnly>disabled</#if>
 		<#if attribute.annotations.inputTypeCols??>cols="${attribute.annotations.inputTypeCols}"</#if>
 		<#if attribute.annotations.inputTypeRows??>rows="${attribute.annotations.inputTypeRows}"</#if>
 		<#if attribute.annotations.inputTypeMaxlength??>maxlength="${attribute.annotations.inputTypeMaxlength}"</#if>
 	>${(attribute.value!'')}</textarea>
+	</span>
 </#macro>
 
 <#macro selectTag attribute>
