@@ -199,6 +199,6 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
      */
     @Override
     public int order() {
-        return OIDCLoginProtocolFactory.UI_ORDER - 1;
+        return OIDCLoginProtocolFactory.UI_ORDER - 10;
     }
 }

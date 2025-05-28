@@ -70,7 +70,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     /**
      * determines the order in which the login protocols are displayed in the dropdown boxes in the UI
      */
-    public static final int UI_ORDER = Integer.MAX_VALUE;
+    public static final int UI_ORDER = 100;
 
     public static final String USERNAME = "username";
     public static final String EMAIL = "email";

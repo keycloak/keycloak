@@ -129,6 +129,6 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
      */
     @Override
     public int order() {
-        return OIDCLoginProtocolFactory.UI_ORDER - 2;
+        return OIDCLoginProtocolFactory.UI_ORDER - 20;
     }
 }

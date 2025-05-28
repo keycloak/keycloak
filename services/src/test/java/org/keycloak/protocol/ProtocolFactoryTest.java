@@ -57,8 +57,8 @@ public class ProtocolFactoryTest {
                             OIDCLoginProtocolFactory.class,
                             factories.get(OIDCLoginProtocolFactory.UI_ORDER).getClass());
         Assert.assertEquals(SamlProtocolFactory.class,
-                            factories.get(OIDCLoginProtocolFactory.UI_ORDER - 1).getClass());
+                            factories.get(OIDCLoginProtocolFactory.UI_ORDER - 10).getClass());
         Assert.assertEquals(OID4VCLoginProtocolFactory.class,
-                            factories.get(OIDCLoginProtocolFactory.UI_ORDER - 2).getClass());
+                            factories.get(OIDCLoginProtocolFactory.UI_ORDER - 20).getClass());
     }
 }
