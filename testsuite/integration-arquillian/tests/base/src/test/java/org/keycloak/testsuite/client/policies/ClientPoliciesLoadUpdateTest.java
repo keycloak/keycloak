@@ -128,7 +128,7 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
         String modifiedProfileDescription = "The profile has been updated.";
         ClientProfilesRepresentation actualProfilesRep = getProfilesWithoutGlobals();
         ClientProfilesBuilder profilesBuilder = new ClientProfilesBuilder();
-        actualProfilesRep.getProfiles().stream().forEach(i->{
+        actualProfilesRep.getProfiles().forEach(i->{
             if (i.getName().equals("ordinal-test-profile")) {
                 i.setDescription(modifiedProfileDescription);
             }
@@ -146,7 +146,7 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
         String modifiedPolicyDescription = "The policy has also been updated.";
         ClientPoliciesRepresentation actualPoliciesRep = getPolicies();
         ClientPoliciesBuilder policiesBuilder = new ClientPoliciesBuilder();
-        actualPoliciesRep.getPolicies().stream().forEach(i->{
+        actualPoliciesRep.getPolicies().forEach(i->{
             if (i.getName().equals("new-policy")) {
                 i.setDescription(modifiedPolicyDescription);
                 i.setEnabled(null);
@@ -285,24 +285,25 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
     public void testInvalidFormattedJsonProfiles() throws Exception {
         String beforeUpdateProfilesJson = ClientPoliciesUtil.convertClientProfilesRepresentationToJson(getProfilesWithGlobals());
 
-        String json = "{\n"
-                + "    \"profiles\": [\n"
-                + "        {\n"
-                + "            \"name\" : \"ordinal-test-profile\",\n"
-                + "            \"description\" : \"invalid , added.\",\n"
-                + "            \"builtin\" : false,\n"
-                + "            \"executors\": [\n"
-                + "                {\n"
-                + "                    \"new-secure-client-authnenticator\": {\n"
-                + "                        \"client-authns\": [ \"private-key-jwt\" ],\n"
-                + "                        \"client-authns-augment\" : \"private-key-jwt\",\n"
-                + "                        \"is-augment\" : true\n"
-                + "                    }\n"
-                + "                }\n"
-                + "            ]\n"
-                + "        },\n"
-                + "    ]\n"
-                + "}";
+        String json = """
+                {
+                    "profiles": [
+                        {
+                            "name" : "ordinal-test-profile",
+                            "description" : "invalid , added.",
+                            "builtin" : false,
+                            "executors": [
+                                {
+                                    "new-secure-client-authnenticator": {
+                                        "client-authns": [ "private-key-jwt" ],
+                                        "client-authns-augment" : "private-key-jwt",
+                                        "is-augment" : true
+                                    }
+                                }
+                            ]
+                        },
+                    ]
+                }""";
         try {
             updateProfiles(json);
         } catch (ClientPolicyException cpe) {
@@ -318,22 +319,23 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
     public void testInvalidFieldTypeJsonProfiles() throws Exception {
         String beforeUpdateProfilesJson = ClientPoliciesUtil.convertClientProfilesRepresentationToJson(getProfilesWithGlobals());
 
-        String json = "{\n"
-                + "    \"profiles\": [\n"
-                + "        {\n"
-                + "            \"name\" : \"ordinal-test-profile\",\n"
-                + "            \"description\" : \"Not builtin profile that should be skipped.\",\n"
-                + "            \"builtin\" : \"no\",\n"
-                + "            \"executors\": {\n"
-                + "                    \"new-secure-client-authnenticator\": {\n"
-                + "                        \"client-authns\": [ \"private-key-jwt\" ],\n"
-                + "                        \"client-authns-augment\" : \"private-key-jwt\",\n"
-                + "                        \"is-augment\" : true\n"
-                + "                    }\n"
-                + "            ]\n"
-                + "        }\n"
-                + "    ]\n"
-                + "}";
+        String json = """
+                {
+                    "profiles": [
+                        {
+                            "name" : "ordinal-test-profile",
+                            "description" : "Not builtin profile that should be skipped.",
+                            "builtin" : "no",
+                            "executors": {
+                                    "new-secure-client-authnenticator": {
+                                        "client-authns": [ "private-key-jwt" ],
+                                        "client-authns-augment" : "private-key-jwt",
+                                        "is-augment" : true
+                                    }
+                            ]
+                        }
+                    ]
+                }""";
         try {
             updateProfiles(json);
         } catch (ClientPolicyException cpe) {
@@ -356,7 +358,7 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
                         "builtin duplicated new policy is ignored.",
                         Boolean.TRUE)
                     .addCondition(ClientRolesConditionFactory.PROVIDER_ID,
-                        createClientRolesConditionConfig(Arrays.asList(SAMPLE_CLIENT_ROLE)))
+                        createClientRolesConditionConfig(List.of(SAMPLE_CLIENT_ROLE)))
                         .addProfile(FAPI1_BASELINE_PROFILE_NAME)
                     .toRepresentation();
 
@@ -407,24 +409,25 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
     public void testInvalidFormattedJsonPolicies() throws Exception {
         String beforeUpdatePoliciesJson = ClientPoliciesUtil.convertClientPoliciesRepresentationToJson(getPolicies());
 
-        String json = "{\n"
-                + "    \"policies\": [\n"
-                + "        {\n"
-                + "            \"name\": \"ordinal-test-policy\",\n"
-                + "            \"description\" : \"bracket not enclosed properly.\",\n"
-                + "            \"builtin\": false,\n"
-                + "            \"enable\": true,\n"
-                + "            \"conditions\": [\n"
-                + "                {\n"
-                + "                    \"new-client-updater-source-host\": {\n"
-                + "                        \"trusted-hosts\": [\"myuniversity\"],\n"
-                + "                        \"host-sending-request-must-match\" : [true]\n"
-                + "                    }\n"
-                + "                }\n"
-                + "            ],\n"
-                + "            \"profiles\": [ \"builtin-advanced-security\" ]\n"
-                + "        }\n"
-                + "}";
+        String json = """
+                {
+                    "policies": [
+                        {
+                            "name": "ordinal-test-policy",
+                            "description" : "bracket not enclosed properly.",
+                            "builtin": false,
+                            "enable": true,
+                            "conditions": [
+                                {
+                                    "new-client-updater-source-host": {
+                                        "trusted-hosts": ["myuniversity"],
+                                        "host-sending-request-must-match" : [true]
+                                    }
+                                }
+                            ],
+                            "profiles": [ "builtin-advanced-security" ]
+                        }
+                }""";
         try {
             updatePolicies(json);
         } catch (ClientPolicyException cpe) {
@@ -440,18 +443,20 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
     public void testInvalidFieldTypeJsonPolicies() throws Exception {
         String beforeUpdatePoliciesJson = ClientPoliciesUtil.convertClientPoliciesRepresentationToJson(getPolicies());
 
-        String json = "{    \n"
-                + "    \"policies\": [    \n"
-                + "        {    \n"
-                + "            \"name\": \"ordinal-test-policy\",    \n"
-                + "            \"description\" : \"Not builtin policy that should be skipped.\",    \n"
-                + "            \"builtin\": false,    \n"
-                + "            \"enable\": true,    \n"
-                + "            \"conditions\": true,    \n"
-                + "            \"profiles\": [ \"builtin-advanced-security\" ]    \n"
-                + "        }    \n"
-                + "    ]    \n"
-                + "}";
+        // the field "conditions" should take an array of condition objects.
+        String json = """
+                {
+                    "policies": [
+                        {
+                            "name": "ordinal-test-policy",
+                            "description" : "Not builtin policy that should be skipped.",
+                            "builtin": false,
+                            "enable": true,
+                            "conditions": true,
+                            "profiles": [ "builtin-advanced-security" ]
+                        }
+                    ]
+                }""";
         try {
             updatePolicies(json);
         } catch (ClientPolicyException cpe) {
