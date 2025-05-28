@@ -1234,11 +1234,12 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     }
 
     @Override
-    public Stream<CredentialScopeModel> getOid4VcClientScopes(RealmModel realm)
+    public Stream<CredentialScopeModel> getClientScopesByProtocol(RealmModel realm, String protocol)
     {
-        TypedQuery<ClientScopeEntity> query = em.createNamedQuery("getOid4VcClientScopes",
+        TypedQuery<ClientScopeEntity> query = em.createNamedQuery("getClientScopesByProtocol",
                                                                   ClientScopeEntity.class)
-                                                .setParameter("realm", realm.getId());
+                                                .setParameter("realm", realm.getId())
+                                                .setParameter("protocol", protocol);
         return query.getResultStream()
                     .map(entity -> new ClientScopeAdapter(realm, em, session, entity))
                     .map(CredentialScopeModel::new);
@@ -1359,7 +1360,6 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
     @Override
     public Map<String, ClientScopeModel> getClientScopes(RealmModel realm, ClientModel client, boolean defaultScope) {
-        // Defaults to openid-connect
         List<String> acceptedClientProtocols = getAcceptedClientProtocols(client);
 
         TypedQuery<String> query = em.createNamedQuery("clientScopeClientMappingIdsByClient", String.class);

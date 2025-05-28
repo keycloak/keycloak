@@ -77,8 +77,8 @@ public class ClientScopeStorageManager extends AbstractStorageManager<ClientScop
     }
 
     @Override
-    public Stream<CredentialScopeModel> getOid4VcClientScopes(RealmModel realm) {
-        return localStorage().getOid4VcClientScopes(realm);
+    public Stream<CredentialScopeModel> getClientScopesByProtocol(RealmModel realm, String protocol) {
+        return localStorage().getClientScopesByProtocol(realm, protocol);
     }
 
     @Override
