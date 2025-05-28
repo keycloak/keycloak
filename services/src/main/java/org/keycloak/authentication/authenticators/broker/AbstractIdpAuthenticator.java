@@ -44,14 +44,8 @@ public abstract class AbstractIdpAuthenticator implements Authenticator {
     // The clientSession note with all the info about existing user
     public static final String EXISTING_USER_INFO = "EXISTING_USER_INFO";
 
-    // The clientSession note flag to indicate that email provided by identityProvider was changed on updateProfile page
-    public static final String UPDATE_PROFILE_EMAIL_CHANGED = "UPDATE_PROFILE_EMAIL_CHANGED";
-
     // The clientSession note flag to indicate that updateProfile page will be always displayed even if "updateProfileOnFirstLogin" is off
     public static final String ENFORCE_UPDATE_PROFILE = "ENFORCE_UPDATE_PROFILE";
-
-    // clientSession.note flag specifies if we imported new user to keycloak (true) or we just linked to an existing keycloak user (false)
-    public static final String BROKER_REGISTERED_NEW_USER = "BROKER_REGISTERED_NEW_USER";
 
     // Set after firstBrokerLogin is successfully finished and contains the providerId of the provider, whose 'first-broker-login' flow was just finished
     public static final String FIRST_BROKER_LOGIN_SUCCESS = "FIRST_BROKER_LOGIN_SUCCESS";
