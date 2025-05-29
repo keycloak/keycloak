@@ -168,7 +168,7 @@
         <postgresql-jdbc.version>42.7.5</postgresql-jdbc.version>
         <mariadb.version>11.4</mariadb.version>
         <mariadb.container>mirror.gcr.io/mariadb:${mariadb.version}</mariadb.container>
-        <mariadb-jdbc.version>3.5.2</mariadb-jdbc.version>
+        <mariadb-jdbc.version>3.5.3</mariadb-jdbc.version>
         <mssql.version>2022</mssql.version>
         <mssql.container>mcr.microsoft.com/mssql/server:${mssql.version}-latest</mssql.container>
         <!-- this is the mssql driver version also used in the Quarkus BOM -->
