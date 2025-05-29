@@ -20,13 +20,14 @@ import {
   useWatch,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
+import { TranslatableField } from "../../realm-settings/user-profile/attribute/TranslatableField";
 import { KeySelect } from "./KeySelect";
 import { ValueSelect } from "./ValueSelect";
 
 export type DefaultValue = {
   key: string;
-  values?: string[];
+  type?: string;
+  options?: string[];
   label: string;
 };
 
@@ -106,7 +107,15 @@ export const KeyValueInput = ({
                 )}
               </GridItem>
               <GridItem span={5}>
-                {defaultKeyValue ? (
+                {defaultKeyValue?.find((d) => d.key === values?.[index]?.key)
+                  ?.type === "TranslateComponent" ? (
+                  <TranslatableField
+                    attributeName="name"
+                    prefix={`profile.annotations.${values?.[index]?.key}`}
+                    fieldName={values?.[index]?.key}
+                  />
+                ) : defaultKeyValue?.find((d) => d.key === values?.[index]?.key)
+                    ?.options ? (
                   <ValueSelect
                     name={`${name}.${index}.value`}
                     keyValue={values[index]?.key}
