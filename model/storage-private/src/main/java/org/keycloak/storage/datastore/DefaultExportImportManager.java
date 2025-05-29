@@ -891,8 +891,16 @@ public class DefaultExportImportManager implements ExportImportManager {
 
             Map<String, String> config = new HashMap<>(rep.getSmtpServer());
 
-            if(rep.getSmtpServer().containsKey("authType") && "basic".equals(rep.getSmtpServer().get("authType"))) {
-                if (rep.getSmtpServer().containsKey("password") && ComponentRepresentation.SECRET_VALUE.equals(rep.getSmtpServer().get("password"))) {
+            if (!Boolean.parseBoolean(config.get("auth"))) {
+                config.remove("authTokenUrl");
+                config.remove("authTokenScope");
+                config.remove("authTokenClientId");
+                config.remove("authTokenClientSecret");
+                config.remove("password");
+                config.remove("user");
+                config.remove("authType");
+            } else if (config.get("authType") == null || "basic".equals(config.get("authType"))) {
+                if (ComponentRepresentation.SECRET_VALUE.equals(config.get("password"))) {
                     String passwordValue = realm.getSmtpConfig() != null ? realm.getSmtpConfig().get("password") : null;
                     config.put("password", passwordValue);
                 }
@@ -900,10 +908,8 @@ public class DefaultExportImportManager implements ExportImportManager {
                 config.remove("authTokenScope");
                 config.remove("authTokenClientId");
                 config.remove("authTokenClientSecret");
-            }
-
-            if(rep.getSmtpServer().containsKey("authType") && "token".equals(rep.getSmtpServer().get("authType"))) {
-                if (rep.getSmtpServer().containsKey("authTokenClientSecret") && ComponentRepresentation.SECRET_VALUE.equals(rep.getSmtpServer().get("authTokenClientSecret"))) {
+            } else if ("token".equals(config.get("authType"))) {
+                if (ComponentRepresentation.SECRET_VALUE.equals(config.get("authTokenClientSecret"))) {
                     String authTokenClientSecretValue = realm.getSmtpConfig() != null ? realm.getSmtpConfig().get("authTokenClientSecret") : null;
                     config.put("authTokenClientSecret", authTokenClientSecretValue);
                 }
