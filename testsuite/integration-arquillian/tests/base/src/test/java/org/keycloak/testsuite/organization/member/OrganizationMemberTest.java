@@ -44,6 +44,7 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import org.hamcrest.Matchers;
@@ -342,17 +343,54 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
     @Test
     public void testSearchMembers() {
 
+        // enable unmanaged attributes
+        UPConfig upConfig = testRealm().users().userProfile().getConfiguration();
+        upConfig.setUnmanagedAttributePolicy(UPConfig.UnmanagedAttributePolicy.ENABLED);
+        testRealm().users().userProfile().update(upConfig);
+
         // create test users, ordered by username (e-mail).
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         List<UserRepresentation> expected = new ArrayList<>();
-        expected.add(addMember(organization, "batwoman@neworg.org", "Katherine", "Kane"));
-        expected.add(addMember(organization, "brucewayne@neworg.org", "Bruce", "Wayne"));
+        expected.add(addMember(organization, "batwoman@neworg.org", "batwoman@neworg.org","Katherine", "Kane",false, Map.of("department", List.of("GothamPD"), "role", List.of("Detective"))));
+        expected.add(addMember(organization, "brucewayne@neworg.org","brucewayne@neworg.org", "Bruce", "Wayne",false, Map.of("department", List.of("WayneCorp"), "role", List.of("CEO"))));
         expected.add(addMember(organization, "harveydent@neworg.org", "Harvey", "Dent"));
         expected.add(addMember(organization, "marthaw@neworg.org", "Martha", "Wayne"));
         expected.add(addMember(organization, "thejoker@neworg.org", "Jack", "White"));
 
+        List<MemberRepresentation> result = organization.members().search("brucewayne@neworg.org", true, null, null);
+        assertThat(result, hasSize(1));
+        assertThat(result.get(0).getAttributes(), is(equalTo(Map.of("department", List.of("WayneCorp"), "role", List.of("CEO")))));
+
+        // Test searching by custom attributes
+        List<MemberRepresentation> existing = organization.members().search(null, null, null, null, null, "department:GothamPD", null, null, null, -1,-1);
+        assertThat(existing, hasSize(1));
+        assertThat(existing.get(0).getUsername(), is(equalTo("batwoman@neworg.org")));
+
+        existing = organization.members().search(null, null, null, null, null, "department:WayneCorp", null, null, null, -1, -1);
+        assertThat(existing, hasSize(1));
+        assertThat(existing.get(0).getUsername(), is(equalTo("brucewayne@neworg.org")));
+
+        // Test searching with multiple custom attributes
+        existing = organization.members().search(null, null, null, null, null, "department:GothamPD role:Detective", null, null,null, -1, -1);
+        assertThat(existing, hasSize(1));
+        assertThat(existing.get(0).getUsername(), is(equalTo("batwoman@neworg.org")));
+
+        // Test searching with non-existent attribute
+        existing = organization.members().search(null, null, null, null, null, "department:NonExistent", null, null, null,-1, -1);
+        assertThat(existing, is(empty()));
+
+        // Test searching with custom attributes combined with other filters
+        existing = organization.members().search(null, null, null, "Bruce", null, "department:WayneCorp", null, null, null,-1, -1);
+        assertThat(existing, hasSize(1));
+        assertThat(existing.get(0).getUsername(), is(equalTo("brucewayne@neworg.org")));
+
+        // Test searching with custom attributes and pagination
+        existing = organization.members().search(null, null, null, null, null, "department:WayneCorp", null, null, null,0, 1);
+        assertThat(existing, hasSize(1));
+        assertThat(existing.get(0).getUsername(), is(equalTo("brucewayne@neworg.org")));
+
         // exact search - username/e-mail, first name, last name.
-        List<MemberRepresentation> existing = organization.members().search("brucewayne@neworg.org", true, null, null);
+        existing = organization.members().search("brucewayne@neworg.org", true, null, null);
         assertThat(existing, hasSize(1));
         assertThat(existing.get(0).getUsername(), is(equalTo("brucewayne@neworg.org")));
         assertThat(existing.get(0).getEmail(), is(equalTo("brucewayne@neworg.org")));
@@ -547,13 +585,56 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
     @Test
     public void testMembersCount() {
+        // enable unmanaged attributes
+        UPConfig upConfig = testRealm().users().userProfile().getConfiguration();
+        upConfig.setUnmanagedAttributePolicy(UPConfig.UnmanagedAttributePolicy.ENABLED);
+        testRealm().users().userProfile().update(upConfig);
+
+        // create test users with custom attributes
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        addMember(organization, "batwoman", "batwoman@neworg.org", "Katherine", "Kane", false, Map.of("department", List.of("GothamPD"), "role", List.of("Detective")));
+        addMember(organization, "brucewayne", "brucewayne@neworg.org", "Bruce", "Wayne", false, Map.of("department", List.of("WayneCorp"), "role", List.of("CEO")));
+        addMember(organization, "harveydent@neworg.org", "Harvey", "Dent");
+        addMember(organization, "marthaw@neworg.org", "Martha", "Wayne");
+        addMember(organization, "thejoker@neworg.org", "Jack", "White");
 
-        for (int i = 0; i < 10; i++) {
-            addMember(organization, "user" + i +"@neworg.org", "First" + i, "Last" + i);
-        }
+        // Test basic count
+        assertThat(organization.members().count(), is(5L));
 
-        assertEquals(10, (long) organization.members().count());
+        // Test count with search parameter
+        assertThat(organization.members().count("brucewayne@neworg.org", null, null, null, null, null, null, null, null), is(1L));
+
+        // Test count with username filter
+        assertThat(organization.members().count(null, "batwoman", null, null, null, null, null, null, null), is(1L));
+
+        // Test count with email filter
+        assertThat(organization.members().count(null, null, "harveydent@neworg.org", null, null, null, null, null, null), is(1L));
+
+        // Test count with firstName filter
+        assertThat(organization.members().count(null, null, null, "Bruce", null, null, null, null, null), is(1L));
+
+        // Test count with lastName filter
+        assertThat(organization.members().count(null, null, null, null, "Wayne", null, null, null, null), is(2L));
+
+        // Test count with custom attributes using searchQuery
+        assertThat(organization.members().count(null, null, null, null, null, "department:GothamPD", null, null, null), is(1L));
+        assertThat(organization.members().count(null, null, null, null, null, "role:CEO", null, null, null), is(1L));
+
+        // Test count with multiple custom attributes
+        assertThat(organization.members().count(null, null, null, null, null, "department:GothamPD role:Detective", null, null, null), is(1L));
+
+        // Test count with non-existent attribute
+        assertThat(organization.members().count(null, null, null, null, null, "department:NonExistent", null, null, null), is(0L));
+
+        // Test count with enabled filter
+        assertThat(organization.members().count(null, null, null, null, null, null, true, null, null), is(5L));
+
+        // Test count with membership type filter
+        assertThat(organization.members().count(null, null, null, null, null, null, null, null, MembershipType.UNMANAGED), is(5L));
+
+        // Test count with combined filters
+        assertThat(organization.members().count(null, null, null, "Bruce", null, "department:WayneCorp", null, null, null), is(1L));
+        assertThat(organization.members().count(null, null, null, null, "Wayne", "role:CEO", null, null, null), is(1L));
     }
 
     @Test
