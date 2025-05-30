@@ -20,19 +20,27 @@ package org.keycloak.protocol.oidc.par.endpoints.request;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
+import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.endpoints.request.AuthzEndpointRequestParser;
 import org.keycloak.protocol.oidc.par.endpoints.ParEndpoint;
+import org.keycloak.services.managers.AuthenticationSessionManager;
+import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 import static org.keycloak.protocol.oidc.par.endpoints.ParEndpoint.PAR_CREATED_TIME;
 import static org.keycloak.protocol.oidc.par.endpoints.ParEndpoint.PAR_DPOP_PROOF_JKT;
+import static org.keycloak.protocol.oidc.par.endpoints.ParEndpoint.PAR_REQUEST_KEY;
 
 /**
  * Parse the parameters from PAR
@@ -44,7 +52,8 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
 
     private final KeycloakSession session;
     private final ClientModel client;
-    private Map<String, String> requestParams;
+    private final String key;
+    private final Map<String, String> requestParams;
     private String invalidRequestMessage = null;
 
     public AuthzEndpointParParser(KeycloakSession session, ClientModel client, String requestUri) {
@@ -52,22 +61,25 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
         this.session = session;
         this.client = client;
         SingleUseObjectProvider singleUseStore = session.singleUseObjects();
-        String key;
         try {
-            key = requestUri.substring(ParEndpoint.REQUEST_URI_PREFIX_LENGTH);
+            this.key = requestUri.substring(ParEndpoint.REQUEST_URI_PREFIX_LENGTH);
         } catch (RuntimeException re) {
             logger.warnf(re,"Unable to parse request_uri: %s", requestUri);
             throw new RuntimeException("Unable to parse request_uri");
         }
         Map<String, String> retrievedRequest = singleUseStore.remove(key);
         if (retrievedRequest == null) {
-            throw new RuntimeException("PAR not found. not issued or used multiple times.");
+            // retrieve the data from the authentication session if it is a reload
+            retrievedRequest = getRetrievedRequestFromAuthSession();
+            if (retrievedRequest == null) {
+                throw new RuntimeException("PAR not found. not issued or used multiple times.");
+            }
         }
 
         RealmModel realm = session.getContext().getRealm();
         int expiresIn = realm.getParPolicy().getRequestUriLifespan();
-        long created = Long.parseLong(retrievedRequest.get(PAR_CREATED_TIME));
-        if (System.currentTimeMillis() - created < (expiresIn * 1000)) {
+        String created = retrievedRequest.get(PAR_CREATED_TIME);
+        if (created != null && Time.currentTimeMillis() - Long.parseLong(created) < expiresIn * 1000) {
             requestParams = retrievedRequest;
         } else {
             throw new RuntimeException("PAR expired.");
@@ -90,6 +102,12 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
         } else {
             super.parseRequest(request);
         }
+        // add the specific par data as additional params to be later added into the auth session
+        request.getAdditionalReqParams().put(PAR_REQUEST_KEY, key);
+        request.getAdditionalReqParams().put(PAR_CREATED_TIME, requestParams.get(PAR_CREATED_TIME));
+        if (requestParams.containsKey(PAR_DPOP_PROOF_JKT)) {
+            request.getAdditionalReqParams().put(PAR_DPOP_PROOF_JKT, requestParams.get(PAR_DPOP_PROOF_JKT));
+        }
     }
 
     @Override
@@ -110,6 +128,40 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
     @Override
     protected Set<String> keySet() {
         return requestParams.keySet();
+    }
+
+    private Map<String, String> getRetrievedRequestFromAuthSession() {
+        AuthenticationSessionManager authSessionManager = new AuthenticationSessionManager(session);
+        RootAuthenticationSessionModel existingRootAuthSession = authSessionManager.getCurrentRootAuthenticationSession(session.getContext().getRealm());
+        if (existingRootAuthSession == null) {
+            return null;
+        }
+        String restartCookie = RestartLoginCookie.getRestartCookie(session);
+        if (restartCookie == null) {
+            return null;
+        }
+        AuthenticationSessionModel authSession = null;
+        try {
+            authSession = RestartLoginCookie.restartSession(session,
+                    session.getContext().getRealm(), existingRootAuthSession, client.getClientId(), restartCookie);
+        } catch (Exception e) {
+            logger.tracef("Error restarting session for client", e);
+        }
+        if (authSession == null) {
+            return null;
+        }
+        // check the session contains the par key with the same key
+        String keyInSession = authSession.getClientNote(AuthorizationEndpoint.LOGIN_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX + PAR_REQUEST_KEY);
+        if (!key.equals(keyInSession)) {
+            return null;
+        }
+        return authSession.getClientNotes().entrySet().stream()
+                .collect(Collectors.toMap(
+                        entry -> entry.getKey().startsWith(AuthorizationEndpoint.LOGIN_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX)
+                                ? entry.getKey().substring(AuthorizationEndpoint.LOGIN_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX.length())
+                                : entry.getKey(),
+                        Map.Entry::getValue,
+                        (value1, value2) -> value1));
     }
 
 }
