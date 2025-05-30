@@ -45,12 +45,12 @@
 
         <asciidoctor.plugin.version>1.5.8</asciidoctor.plugin.version>
 
-        <jboss.repo.nexusUrl>https://s01.oss.sonatype.org/</jboss.repo.nexusUrl>
-        <jboss.releases.repo.id>jboss-releases-repository</jboss.releases.repo.id>
-        <jboss.releases.repo.name>keycloak</jboss.releases.repo.name>
-        <jboss.releases.repo.url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</jboss.releases.repo.url>
-        <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
-        <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
+        <keycloak.releases.repo.id>central</keycloak.releases.repo.id>
+        <keycloak.releases.repo.name>Maven Central Repository</keycloak.releases.repo.name>
+        <keycloak.releases.repo.url>https://central.sonatype.com/</keycloak.releases.repo.url>
+        <keycloak.snapshots.repo.id>central-snapshots</keycloak.snapshots.repo.id>
+        <keycloak.snapshots.repo.name>Maven Central Snapshot Repository</keycloak.snapshots.repo.name>
+        <keycloak.snapshots.repo.url>https://central.sonatype.com/repository/maven-snapshots/</keycloak.snapshots.repo.url>
 
         <quarkus.version>3.20.1</quarkus.version>
         <quarkus.build.version>3.20.1</quarkus.build.version>
@@ -196,7 +196,7 @@
         <jmeter.plugin.version>1.9.0</jmeter.plugin.version>
         <jmeter.analysis.plugin.version>1.0.4</jmeter.analysis.plugin.version>
         <wildfly.plugin.version>5.0.0.Final</wildfly.plugin.version>
-        <nexus.staging.plugin.version>1.6.13</nexus.staging.plugin.version>
+        <central.publishing.plugin.version>0.7.0</central.publishing.plugin.version>
         <nexus3.staging.plugin.version>1.0.7</nexus3.staging.plugin.version>
         <frontend.plugin.version>1.15.0</frontend.plugin.version>
         <docker.maven.plugin.version>0.40.3</docker.maven.plugin.version>
@@ -258,10 +258,15 @@
 
     <distributionManagement>
         <repository>
-            <id>${jboss.releases.repo.id}</id>
-            <name>JBoss Releases Repository</name>
-            <url>${jboss.releases.repo.url}</url>
+            <id>${keycloak.releases.repo.id}</id>
+            <name>${keycloak.releases.repo.name}</name>
+            <url>${keycloak.releases.repo.url}</url>
         </repository>
+        <snapshotRepository>
+            <id>${keycloak.snapshots.repo.id}</id>
+            <name>${keycloak.snapshots.repo.name}</name>
+            <url>${keycloak.snapshots.repo.url}</url>
+        </snapshotRepository>
     </distributionManagement>
 
     <issueManagement>
@@ -1319,16 +1324,6 @@
         <pluginManagement>
             <plugins>
                 <plugin>
-                    <groupId>org.sonatype.plugins</groupId>
-                    <artifactId>nexus-staging-maven-plugin</artifactId>
-                    <version>${nexus.staging.plugin.version}</version>
-                    <extensions>true</extensions>
-                    <configuration>
-                        <serverId>${jboss.releases.repo.id}</serverId>
-                        <nexusUrl>${jboss.repo.nexusUrl}</nexusUrl>
-                    </configuration>
-                </plugin>
-                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-shade-plugin</artifactId>
                     <version>${shade.plugin.version}</version>
@@ -1637,12 +1632,22 @@
         </profile>
 
         <profile>
-            <id>nexus-staging</id>
+            <id>central-staging</id>
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>${central.publishing.plugin.version}</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <autoPublish>false</autoPublish>
+                            <centralBaseUrl>${keycloak.releases.repo.url}</centralBaseUrl>
+                            <centralSnapshotsUrl>${keycloak.snapshots.repo.url}</centralSnapshotsUrl>
+                            <deploymentName>keycloak:${project.version}</deploymentName>
+                            <publishingServerId>${keycloak.snapshots.repo.id}</publishingServerId>
+                            <waitUntil>published</waitUntil>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>
