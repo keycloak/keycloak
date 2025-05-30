@@ -18,7 +18,6 @@ import org.testcontainers.images.builder.ImageFromDockerfile;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.LazyFuture;
 
-import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -48,7 +47,6 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
     }
 
     private static final Logger LOGGER = Logger.getLogger(DockerKeycloakDistribution.class);
-    private static final File DOCKER_SCRIPT_FILE = new File("../../container/ubi-null.sh");
 
     private final boolean debug;
     private final boolean manualStop;
@@ -96,28 +94,22 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
     }
 
     public static LazyFuture<String> createImage(Path quarkusModule, boolean failIfDockerFileMissing) {
-        System.out.println(quarkusModule.toAbsolutePath());
         var distributionFile = quarkusModule.resolve(Path.of("dist", "target", "keycloak-" + Version.VERSION + ".tar.gz"))
                 .toFile();
 
-        System.out.println(distributionFile.getAbsoluteFile());
         if (!distributionFile.exists()) {
             distributionFile = Maven.resolveArtifact("org.keycloak", "keycloak-quarkus-dist").toFile();
         }
 
-        System.out.println(distributionFile.getAbsoluteFile());
-
         if (!distributionFile.exists()) {
             throw new RuntimeException("Distribution archive " + distributionFile.getAbsolutePath() +" doesn't exist");
         }
+        LOGGER.infof("Building a new docker image from distribution: %s", distributionFile.getAbsoluteFile());
 
         var dockerFile = quarkusModule.resolve(Path.of("container", "Dockerfile"))
                 .toFile();
-        System.out.println(dockerFile.getAbsoluteFile());
         var ubiNullScript = quarkusModule.resolve(Path.of("container", "ubi-null.sh"))
                 .toFile();
-        System.out.println(ubiNullScript.getAbsoluteFile());
-        LazyFuture<String> image;
 
         if (dockerFile.exists()) {
             return new ImageFromDockerfile("keycloak-under-test", false)

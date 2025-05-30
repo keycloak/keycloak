@@ -60,7 +60,6 @@ public class ContainerKeycloakCluster implements KeycloakServer {
     @Override
     public void start(KeycloakServerConfigBuilder configBuilder) {
         if (!configBuilder.toDependencies().isEmpty()) {
-            // TODO fix me, we have remote-provider (from test framework) to inject in the container
             //throw new UnsupportedOperationException("Adding dependencies not supported yet.");
         }
         if (!configBuilder.toConfigFiles().isEmpty()) {
@@ -93,12 +92,7 @@ public class ContainerKeycloakCluster implements KeycloakServer {
             }
             var container = new DockerKeycloakDistribution(debug, MANUAL_STOP, REQUEST_PORT, exposedPorts, resolvedImage);
             containers[i] = container;
-            // TODO remove println
-            container.run(configBuilder.toArgs())
-                    .getOutputStream()
-                    .stream()
-                    .filter(s -> s.contains("started in") || s.contains("view"))
-                    .forEach(System.out::println);
+            container.run(configBuilder.toArgs());
         }
     }
 
