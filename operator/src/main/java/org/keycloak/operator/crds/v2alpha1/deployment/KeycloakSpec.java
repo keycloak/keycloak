@@ -60,11 +60,11 @@ public class KeycloakSpec {
     private Boolean startOptimized;
 
     @JsonPropertyDescription("Secret(s) that might be used when pulling an image from a private container image registry or repository.")
-    private List<LocalObjectReference> imagePullSecrets;
+    private List<LocalObjectReference> imagePullSecrets = new ArrayList<LocalObjectReference>();
 
     @JsonPropertyDescription("Configuration of the Keycloak server.\n" +
             "expressed as a keys (reference: https://www.keycloak.org/server/all-config) and values that can be either direct values or references to secrets.")
-    private List<ValueOrSecret> additionalOptions; // can't use Set due to a bug in Sundrio https://github.com/sundrio/sundrio/issues/316
+    private List<ValueOrSecret> additionalOptions = new ArrayList<ValueOrSecret>(); // can't use Set due to a bug in Sundrio https://github.com/sundrio/sundrio/issues/316
 
     @JsonProperty("http")
     @JsonPropertyDescription("In this section you can configure Keycloak features related to HTTP and HTTPS")
