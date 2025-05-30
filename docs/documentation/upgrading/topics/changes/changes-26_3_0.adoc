@@ -142,3 +142,12 @@ The expectation is that databases will favor this index and improve query effici
 as well as the cost.
 
 For larger databases, this index should be manually created. Please, check the server logs when upgrading to the new server version.
+
+=== A new index was added to the `USER_ROLE_MAPPING` table
+
+In this release, a new index `constraint_user_role_by_user` was added to the `USER_ROLE_MAPPING` table to improve
+the query efficiency when fetching user role mappings.
+
+The expectation is that databases will favor this index and improve query efficiency by reducing the overall cost of the query.
+
+For larger databases, this index should be manually created. Please, check the server logs when upgrading to the new server version.
