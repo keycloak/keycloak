@@ -19,3 +19,9 @@
   max-height: 200px;
   overflow: auto;
 }
+
+.keycloak_eventsection_userid {
+  fontSize: 0.9rem;
+  color: black;
+  marginLeft: 5px;
+}

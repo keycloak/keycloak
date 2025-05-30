@@ -626,7 +626,6 @@ public class SamlService extends AuthorizationEndpointBase {
                                 .client(session.getContext().getClient())
                                 .user(userSession.getUser())
                                 .session(userSession)
-                                .detail(Details.USERNAME, userSession.getLoginUsername())
                                 .detail(Details.RESPONSE_MODE, getBindingType());
                         authManager.backchannelLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers, true);
                         event.success();
