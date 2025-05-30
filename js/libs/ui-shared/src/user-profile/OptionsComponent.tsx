@@ -27,7 +27,7 @@ export const OptionComponent = (props: UserProfileFieldProps) => {
       <Controller
         name={fieldName(attribute.name)}
         control={form.control}
-        defaultValue=""
+        defaultValue={attribute.defaultValue}
         render={({ field }) => (
           <>
             {options.map((option) => (
