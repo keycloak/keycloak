@@ -175,6 +175,9 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
 
     protected void updateEmail(UserModel user, BrokeredIdentityContext context) {
         AuthenticationSessionModel authSession = context.getAuthenticationSession();
+        // Could be the case during external-internal token exchange
+        if (authSession == null) return;
+
         boolean isNewUser = Boolean.parseBoolean(authSession.getAuthNote(BROKER_REGISTERED_NEW_USER));
 
         if (isNewUser || IdentityProviderSyncMode.FORCE.equals(getConfig().getSyncMode())) {
