@@ -59,12 +59,6 @@ public class ContainerKeycloakCluster implements KeycloakServer {
 
     @Override
     public void start(KeycloakServerConfigBuilder configBuilder) {
-        if (!configBuilder.toDependencies().isEmpty()) {
-            //throw new UnsupportedOperationException("Adding dependencies not supported yet.");
-        }
-        if (!configBuilder.toConfigFiles().isEmpty()) {
-            throw new UnsupportedOperationException("Adding configuration files not supported yet.");
-        }
         String[] imagePeServer = null;
         if (images == null || images.isEmpty() || (imagePeServer = images.split(",")).length == 1) {
             startContainersWithSameImage(configBuilder, imagePeServer == null ? SNAPSHOT_IMAGE : imagePeServer[0]);
@@ -92,6 +86,9 @@ public class ContainerKeycloakCluster implements KeycloakServer {
             }
             var container = new DockerKeycloakDistribution(debug, MANUAL_STOP, REQUEST_PORT, exposedPorts, resolvedImage);
             containers[i] = container;
+
+            copyProvidersAndConfigs(container, configBuilder);
+
             container.run(configBuilder.toArgs());
         }
     }
@@ -104,7 +101,20 @@ public class ContainerKeycloakCluster implements KeycloakServer {
         for (int i = 0; i < containers.length; ++i) {
             var container = new DockerKeycloakDistribution(debug, MANUAL_STOP, REQUEST_PORT, exposedPorts, imageFuture);
             containers[i] = container;
+
+            copyProvidersAndConfigs(container, configBuilder);
+
             container.run(configBuilder.toArgs());
+        }
+    }
+
+    private void copyProvidersAndConfigs(DockerKeycloakDistribution container, KeycloakServerConfigBuilder configBuilder) {
+        for (var dependency : configBuilder.toDependencies()) {
+            container.copyProvider(dependency.getGroupId(), dependency.getArtifactId());
+        }
+
+        for(var config : configBuilder.toConfigFiles()) {
+            container.copyConfigFile(config);
         }
     }
 

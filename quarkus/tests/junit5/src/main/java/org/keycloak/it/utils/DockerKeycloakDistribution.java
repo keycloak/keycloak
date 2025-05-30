@@ -17,7 +17,9 @@ import org.testcontainers.images.RemoteDockerImage;
 import org.testcontainers.images.builder.ImageFromDockerfile;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.LazyFuture;
+import org.testcontainers.utility.MountableFile;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -66,6 +68,8 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
     private final Executor parallelReaperExecutor = Executors.newSingleThreadExecutor();
     private final Map<String, String> envVars = new HashMap<>();
     private final LazyFuture<String> image;
+
+    private final Map<MountableFile, String> copyToContainer = new HashMap<>();
 
     public DockerKeycloakDistribution(boolean debug, boolean manualStop, int requestPort, int[] exposedPorts) {
         this(debug, manualStop, requestPort, exposedPorts, null);
@@ -137,6 +141,8 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
 
             keycloakContainer = getKeycloakContainer();
 
+            copyToContainer.forEach(keycloakContainer::withCopyFileToContainer);
+
             keycloakContainer
                     .withLogConsumer(backupConsumer)
                     .withCommand(arguments.toArray(new String[0]))
@@ -172,6 +178,19 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
         if (keycloakContainer != null) {
             RestAssured.port = keycloakContainer.getMappedPort(port);
         }
+    }
+
+    public void copyProvider(String groupId, String artifactId) {
+        Path providerPath = Maven.resolveArtifact(groupId, artifactId);
+        if (!Files.isRegularFile(providerPath)) {
+            throw new RuntimeException("Failed to copy JAR file to 'providers' directory; " + providerPath + " is not a file");
+        }
+
+        copyToContainer.put(MountableFile.forHostPath(providerPath), "/opt/keycloak/providers/" + providerPath.getFileName());
+    }
+
+    public void copyConfigFile(Path configFilePath) {
+        copyToContainer.put(MountableFile.forHostPath(configFilePath), "/opt/keycloak/conf/" + configFilePath.getFileName());
     }
 
     // After the web server is responding we are still producing some logs that got checked in the tests
