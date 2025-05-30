@@ -15,6 +15,7 @@ import { FineGrainOpenIdConnect } from "./advanced/FineGrainOpenIdConnect";
 import { FineGrainSamlEndpointConfig } from "./advanced/FineGrainSamlEndpointConfig";
 import { OpenIdConnectCompatibilityModes } from "./advanced/OpenIdConnectCompatibilityModes";
 import { OpenIdVerifiableCredentials } from "./advanced/OpenIdVerifiableCredentials";
+import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 
 export const parseResult = (
   result: GlobalRequestResult,
@@ -53,6 +54,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
   const { t } = useTranslation();
   const openIdConnect = "openid-connect";
   const oid4vc = "oid4vc";
+  const isFeatureEnabled = useIsFeatureEnabled();
 
   const { setValue } = useFormContext();
   const {
@@ -203,7 +205,9 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
           },
           {
             title: t("openIdVerifiableCredentials"),
-            isHidden: protocol !== openIdConnect && protocol !== oid4vc,
+            isHidden:
+              (protocol !== openIdConnect && protocol !== oid4vc) ||
+              !isFeatureEnabled(Feature.OpenId4VCI),
             panel: (
               <OpenIdVerifiableCredentials
                 client={client}

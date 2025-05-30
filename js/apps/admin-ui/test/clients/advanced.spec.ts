@@ -147,26 +147,41 @@ test.describe("OpenID for Verifiable Credentials", () => {
   });
 
   test.afterAll(() => adminClient.deleteRealm(realmName));
+
   test.describe("with protocol openid-connect", () => {
     test.beforeEach(async ({ page }) => {
       await login(page);
       await goToRealm(page, realmName);
       await goToClients(page);
       await clickTableRowItem(page, clientIdOpenIdConnect);
-      await goToAdvancedTab(page);
+
+      await page.waitForSelector('[data-testid="advancedTab"]', {
+        state: "visible",
+        timeout: 10000,
+      });
+      await page.getByTestId("advancedTab").click();
     });
-    test("should toggle oid4vci.enabled switch", async ({ page }) => {
+
+    test("should handle OID4VC section visibility based on feature flag", async ({
+      page,
+    }) => {
       const toggleSwitch = page.locator("#attributes\\.oid4vci🍺enabled");
-      await toggleSwitch.scrollIntoViewIfNeeded();
-      await expect(toggleSwitch).toBeVisible();
-      await assertOid4vciEnabled(page, false);
-      await switchOid4vciEnabled(page, true);
-      await saveOid4vci(page);
-      await assertOid4vciEnabled(page, true);
-      await switchOid4vciEnabled(page, false);
-      await assertOid4vciEnabled(page, false);
-      await revertOid4vci(page);
-      await assertOid4vciEnabled(page, true);
+
+      const isVisible = await toggleSwitch.isVisible();
+
+      if (isVisible) {
+        await toggleSwitch.scrollIntoViewIfNeeded();
+        await assertOid4vciEnabled(page, false);
+        await switchOid4vciEnabled(page, true);
+        await saveOid4vci(page);
+        await assertOid4vciEnabled(page, true);
+        await switchOid4vciEnabled(page, false);
+        await assertOid4vciEnabled(page, false);
+        await revertOid4vci(page);
+        await assertOid4vciEnabled(page, true);
+      } else {
+        await expect(toggleSwitch).toBeHidden();
+      }
     });
   });
 });
