@@ -486,6 +486,9 @@ public class ModelToRepresentation {
                 .sorted(String::compareTo)
                 .collect(Collectors.toList()));
 
+        rep.setOtpPolicyUseEmail(otpPolicy.isEmailInUrl());
+        rep.setOtpPolicyIssuerOverride(otpPolicy.getIssuerOverride());
+
         WebAuthnPolicy webAuthnPolicy = realm.getWebAuthnPolicy();
         rep.setWebAuthnPolicyRpEntityName(webAuthnPolicy.getRpEntityName());
         rep.setWebAuthnPolicySignatureAlgorithms(webAuthnPolicy.getSignatureAlgorithm());

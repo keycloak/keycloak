@@ -45,6 +45,8 @@ public class OTPPolicy implements Serializable {
     protected int lookAheadWindow;
     protected int period;
     protected boolean isCodeReusable;
+    protected boolean isEmailInUrl;
+    protected String issuerOverride;
 
     private static final Map<String, String> algToKeyUriAlg = new HashMap<>();
 
@@ -62,6 +64,10 @@ public class OTPPolicy implements Serializable {
     }
 
     public OTPPolicy(String type, String algorithm, int initialCounter, int digits, int lookAheadWindow, int period, boolean isCodeReusable) {
+        this(type, algorithm, initialCounter, digits, lookAheadWindow, period, isCodeReusable, false, null);
+    }
+
+    public OTPPolicy(String type, String algorithm, int initialCounter, int digits, int lookAheadWindow, int period, boolean isCodeReusable, boolean isEmailInUrl, String issuerOverride) {
         this.type = type;
         this.algorithm = algorithm;
         this.initialCounter = initialCounter;
@@ -69,13 +75,18 @@ public class OTPPolicy implements Serializable {
         this.lookAheadWindow = lookAheadWindow;
         this.period = period;
         this.isCodeReusable = isCodeReusable;
+        this.isEmailInUrl = isEmailInUrl;
+        this.issuerOverride = issuerOverride;
     }
 
     public static OTPPolicy DEFAULT_POLICY = new OTPPolicy(OTPCredentialModel.TOTP, HmacOTP.HMAC_SHA1, 0, 6, 1, 30);
     public static final boolean DEFAULT_IS_REUSABLE = false;
+    public static final Boolean DEFAULT_EMAIL_IN_URL = false;
 
     // Realm attributes
     public static final String REALM_REUSABLE_CODE_ATTRIBUTE = "realmReusableOtpCode";
+    public static final String REALM_IS_EMAIL_IN_URL_ATTRIBUTE = "realmOtpEmailInUrl";
+    public static final String REALM_ISSUER_OVERRIDE_ATTRIBUTE = "realmOtpIssuerOverride";
 
     public String getAlgorithmKey() {
         return algToKeyUriAlg.containsKey(algorithm) ? algToKeyUriAlg.get(algorithm) : algorithm;
@@ -137,6 +148,22 @@ public class OTPPolicy implements Serializable {
         isCodeReusable = isReusable;
     }
 
+    public boolean isEmailInUrl() {
+        return isEmailInUrl;
+    }
+
+    public void setEmailInUrl(boolean isEmailInUrl) {
+        this.isEmailInUrl = isEmailInUrl;
+    }
+
+    public String getIssuerOverride() {
+        return issuerOverride;
+    }
+
+    public void setIssuerOverride(String issuerOverride) {
+        this.issuerOverride = issuerOverride;
+    }
+
     /**
      * Constructs the <code>otpauth://</code> URI based on the <a href="https://github.com/google/google-authenticator/wiki/Key-Uri-Format">Key-Uri-Format</a>.
      *
@@ -146,9 +173,13 @@ public class OTPPolicy implements Serializable {
      * @return the <code>otpauth://</code> URI
      */
     public String getKeyURI(RealmModel realm, UserModel user, String secret) {
-
-        String issuerName = !StringUtil.isNullOrEmpty(realm.getDisplayName()) ? realm.getDisplayName() : realm.getName();
-        String accountName = user.getUsername();
+        String issuerName;
+        if (StringUtil.isNotBlank(issuerOverride)) {
+            issuerName = issuerOverride;
+        } else {
+            issuerName = !StringUtil.isNullOrEmpty(realm.getDisplayName()) ? realm.getDisplayName() : realm.getName();
+        }
+        String accountName = isEmailInUrl && StringUtil.isNotBlank(user.getEmail()) ? user.getEmail() : user.getUsername();
 
         return getKeyURI(issuerName, accountName, secret);
     }

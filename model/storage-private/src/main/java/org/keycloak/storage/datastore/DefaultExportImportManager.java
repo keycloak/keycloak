@@ -1537,6 +1537,8 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (rep.getOtpPolicyDigits() != null) policy.setDigits(rep.getOtpPolicyDigits());
         if (rep.getOtpPolicyPeriod() != null) policy.setPeriod(rep.getOtpPolicyPeriod());
         if (rep.isOtpPolicyCodeReusable() != null) policy.setCodeReusable(rep.isOtpPolicyCodeReusable());
+        if (rep.isOtpPolicyUseEmail() != null) policy.setEmailInUrl(rep.isOtpPolicyUseEmail());
+        if (rep.getOtpPolicyIssuerOverride() != null) policy.setIssuerOverride(rep.getOtpPolicyIssuerOverride());
         return policy;
     }
 
