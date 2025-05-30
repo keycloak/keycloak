@@ -17,6 +17,8 @@
 
 package org.keycloak.it.cli.dist;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 
 import org.junit.jupiter.api.Test;
@@ -57,6 +59,34 @@ public class CacheEmbeddedMtlsDistTest {
     @DryRun
     @Test
     @RawDistOnly(reason = "Containers are immutable")
+    public void testCacheEmbeddedMtlsFileExistsValidation(KeycloakDistribution dist) throws IOException {
+        var result = dist.run(
+              "start-dev",
+              "--cache=ispn",
+              "--cache-embedded-mtls-enabled=true",
+              "--cache-embedded-mtls-key-store-file=keystore.p12",
+              "--cache-embedded-mtls-key-store-password=password",
+              "--cache-embedded-mtls-trust-store-file=truststore.p12",
+              "--cache-embedded-mtls-trust-store-password=password"
+              );
+        result.assertError("The 'cache-embedded-mtls-key-store-file' file 'keystore.p12' does not exist");
+
+        File keystore = Util.createTempFile("key", ".p12");
+        result = dist.run(
+              "start-dev",
+              "--cache=ispn",
+              "--cache-embedded-mtls-enabled=true",
+              "--cache-embedded-mtls-key-store-file=%s".formatted(keystore.getAbsolutePath()),
+              "--cache-embedded-mtls-key-store-password=password",
+              "--cache-embedded-mtls-trust-store-file=truststore.p12",
+              "--cache-embedded-mtls-trust-store-password=password"
+        );
+        result.assertError("The 'cache-embedded-mtls-trust-store-file' file 'truststore.p12' does not exist");
+    }
+
+    @DryRun
+    @Test
+    @RawDistOnly(reason = "Containers are immutable")
     public void testCacheEmbeddedMtlsValidation(KeycloakDistribution dist) {
         var key = CachingOptions.CACHE_EMBEDDED_MTLS_ROTATION.getKey();
         // test zero
@@ -87,6 +117,4 @@ public class CacheEmbeddedMtlsDistTest {
         result = dist.run("start-dev", "--cache=ispn", "--cache-embedded-mtls-enabled=true", "--%s=secret".formatted(passwordOption.getKey()));
         result.assertError("The option '%s' requires '%s' to be enabled.".formatted(passwordOption.getKey(), fileOption.getKey()));
     }
-
-
 }
