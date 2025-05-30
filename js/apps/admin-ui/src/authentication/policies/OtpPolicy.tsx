@@ -4,6 +4,7 @@ import {
   NumberControl,
   SelectControl,
   SwitchControl,
+  TextControl,
   useAlerts,
 } from "@keycloak/keycloak-ui-shared";
 import {
@@ -57,6 +58,8 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
       otpPolicyPeriod: realm.otpPolicyPeriod ?? 30,
       otpPolicyInitialCounter: realm.otpPolicyInitialCounter ?? 30,
       otpPolicyCodeReusable: realm.otpPolicyCodeReusable ?? false,
+      otpPolicyUseEmail: realm.otpPolicyUseEmail ?? false,
+      otpPolicyIssuerOverride: realm.otpPolicyIssuerOverride,
     },
   });
   const {
@@ -238,6 +241,18 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
               labelOff={t("off")}
             />
           )}
+          <SwitchControl
+            name={"otpPolicyUseEmail"}
+            label={t("otpPolicyUseEmail")}
+            labelIcon={t("otpPolicyUseEmailHelp")}
+            labelOn={t("on")}
+            labelOff={t("off")}
+          />
+          <TextControl
+            name={"otpPolicyIssuerOverride"}
+            label={t("otpPolicyIssuerOverride")}
+            labelIcon={t("otpPolicyIssuerOverrideHelp")}
+          />
 
           <ActionGroup>
             <Button
