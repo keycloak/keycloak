@@ -23,4 +23,14 @@
         </addColumn>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.3.0-composite-index-optimization">
+
+        <!-- Improves the query plan by favoring an index scan and a reduced total cost, plan and execution time when querying user memberships-->
+        <createIndex unique="true" indexName="constraint_user_group_by_user" tableName="USER_GROUP_MEMBERSHIP">
+            <column name="USER_ID" type="VARCHAR(36)"/>
+            <column name="GROUP_ID" type="VARCHAR(36)"/>
+        </createIndex>
+
+    </changeSet>
+
 </databaseChangeLog>
