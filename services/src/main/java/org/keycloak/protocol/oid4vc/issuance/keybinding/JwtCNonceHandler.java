@@ -32,6 +32,7 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.oid4vci.Oid4VciConstants;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.model.JwtCNonce;
 import org.keycloak.representations.JsonWebToken;
@@ -77,7 +78,7 @@ public class JwtCNonceHandler implements CNonceHandler {
         RealmModel realm = keycloakSession.getContext().getRealm();
         final String issuer = OID4VCIssuerWellKnownProvider.getIssuer(keycloakSession.getContext());
         // TODO discussion about the attribute name to use
-        final Integer nonceLifetimeMillis = realm.getAttribute(RealmModel.C_NONCE_LIFETIME_IN_SECONDS, 60);
+        final Integer nonceLifetimeMillis = realm.getAttribute(Oid4VciConstants.C_NONCE_LIFETIME_IN_SECONDS, 60);
         audiences = Optional.ofNullable(audiences).orElseGet(Collections::emptyList);
         final Instant now = Instant.now();
         final long expiresAt = now.plus(nonceLifetimeMillis, ChronoUnit.SECONDS).getEpochSecond();
