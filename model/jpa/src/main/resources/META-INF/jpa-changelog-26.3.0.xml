@@ -31,6 +31,11 @@
             <column name="GROUP_ID" type="VARCHAR(36)"/>
         </createIndex>
 
+        <!-- Improves the query execution to be less resource intensive due to favoring an index scan and reducing the overall cost when querying user role mappings -->
+        <createIndex unique="true" indexName="constraint_user_role_by_user" tableName="USER_ROLE_MAPPING">
+            <column name="USER_ID" type="VARCHAR(36)"/>
+            <column name="ROLE_ID" type="VARCHAR(255)"/>
+        </createIndex>
     </changeSet>
 
 </databaseChangeLog>
