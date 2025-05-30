@@ -34,10 +34,7 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
     public static final String ISSUER_CLAIM = "iss";
     public static final String VERIFIABLE_CREDENTIAL_TYPE_CLAIM = "vct";
 
-    private final String credentialIssuer;
-
-    public SdJwtCredentialBuilder(String credentialIssuer) {
-        this.credentialIssuer = credentialIssuer;
+    public SdJwtCredentialBuilder() {
     }
 
     @Override
@@ -58,7 +55,7 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
         DisclosureSpec.Builder disclosureSpecBuilder = DisclosureSpec.builder();
         claimSet.entrySet()
                 .stream()
-                .filter(entry -> !credentialBuildConfig.getVisibleClaims().contains(entry.getKey()))
+                .filter(entry -> !credentialBuildConfig.getSdJwtVisibleClaims().contains(entry.getKey()))
                 .forEach(entry -> {
                     if (entry instanceof List<?> listValue) {
                         // FIXME: Unreachable branch. The intent was probably to check `entry.getValue()`,
@@ -75,7 +72,7 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
                 });
 
         // Populate configured fields (necessarily visible)
-        claimSet.put(ISSUER_CLAIM, credentialIssuer);
+        claimSet.put(ISSUER_CLAIM, credentialBuildConfig.getCredentialIssuer());
         claimSet.put(VERIFIABLE_CREDENTIAL_TYPE_CLAIM, credentialBuildConfig.getCredentialType());
 
         // jti, nbf, iat and exp are all optional. So need to be set by a protocol mapper if needed.
