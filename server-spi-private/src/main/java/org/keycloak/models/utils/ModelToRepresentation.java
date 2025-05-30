@@ -511,6 +511,10 @@ public class ModelToRepresentation {
         rep.setWebAuthnPolicyPasswordlessAcceptableAaguids(webAuthnPolicy.getAcceptableAaguids());
         rep.setWebAuthnPolicyPasswordlessExtraOrigins(webAuthnPolicy.getExtraOrigins());
 
+        TrustedDevicePolicy trustedDevicePolicy = realm.getTrustedDevicePolicy();
+        rep.setTrustedDeviceEnabled(trustedDevicePolicy.isEnabled());
+        rep.setTrustedDeviceExpiration(trustedDevicePolicy.getTrustExpiration());
+
         CibaConfig cibaPolicy = realm.getCibaPolicy();
         Map<String, String> attrMap = ofNullable(rep.getAttributes()).orElse(new HashMap<>());
         attrMap.put(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE, cibaPolicy.getBackchannelTokenDeliveryMode());

@@ -1090,6 +1090,16 @@ public class IdentityBrokerStateTestHelpers {
         }
 
         @Override
+        public TrustedDevicePolicy getTrustedDevicePolicy() {
+            return null;
+        }
+
+        @Override
+        public void setTrustedDevicePolicy(TrustedDevicePolicy policy) {
+
+        }
+
+        @Override
         public RoleModel getRoleById(String id) {
             return null;
         }
