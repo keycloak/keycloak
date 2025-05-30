@@ -132,3 +132,13 @@ a new parameter `subGroupsCount` was introduced to the following endpoints:
 
 With this parameter, clients can decide whether the count should be returned to each individual group returned. To not break existing deployments,
 this parameter defaults to `true` so that the count is returned if the parameter is not set.
+
+=== A new index was added to the `USER_GROUP_MEMBERSHIP` table
+
+In this release, a new index `constraint_user_group_by_user` was added to the `USER_GROUP_MEMBERSHIP` table to improve
+the query efficiency when fetching user group memberships.
+
+The expectation is that databases will favor this index and improve query efficiency by reducing the overall plan and execution times,
+as well as the cost.
+
+For larger databases, this index should be manually created. Please, check the server logs when upgrading to the new server version.
