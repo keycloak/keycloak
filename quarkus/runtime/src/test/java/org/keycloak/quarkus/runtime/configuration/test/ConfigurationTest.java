@@ -206,10 +206,9 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         System.getProperties().remove("kc.spi-client-registration-openid-connect-static-jwk-url");
         putEnvVar("KC_SPI_CLIENT_REGISTRATION_OPENID_CONNECT_STATIC_JWK_URL", "http://c.jwk.url/from-env");
         config = initConfig("client-registration", "openid-connect");
-        assertEquals(2, config.getPropertyNames().size()); // transformed name is coming from KcEnvVarConfigSource, raw env var name is coming from EnvVarConfigSource
+        assertEquals(1, config.getPropertyNames().size());
         assertEquals("http://c.jwk.url/from-env", config.get("static-jwk-url"));
     }
-
 
     @Test
     public void testPropertyMapping() {

@@ -20,6 +20,12 @@ Providers can be configured by using a specific configuration format. The format
 
 [source]
 ----
+spi-<spi-id>--<provider-id>--<property>=<value>
+----
+
+Or if there is no possibility of ambiguity between multiple providers:
+
+----
 spi-<spi-id>-<provider-id>-<property>=<value>
 ----
 
@@ -27,7 +33,9 @@ The `<spi-id>` is the name of the SPI you want to configure.
 
 The `<provider-id>` is the id of the provider you want to configure. This is the id set to the corresponding provider factory implementation.
 
-The `<property>` is the actual name of the property you want to set for a given provider.
+The `<property>` is the actual name of the property you want to set for a given provider
+
+NOTE: the property name `enabled` is effectively reserved for enabling / disabling a provider
 
 All those names (for spi, provider, and property) should be in lower case and if the name is in camel-case such as `myKeycloakProvider`, it should include dashes (`-`) before upper-case letters as follows: `my-keycloak-provider`.
 
@@ -35,31 +43,47 @@ Taking the `HttpClientSpi` SPI as an example, the name of the SPI is `connection
 
 [source]
 ----
-spi-connections-http-client-default-connection-pool-size=10
+spi-connections-http-client--default--connection-pool-size=10
 ----
 
-== Setting a provider configuration option
+=== Setting a provider configuration option
 
 Provider configuration options are provided when starting the server. See all support configuration sources and formats for options in <@links.server id="configuration"/>. For example via a command line option:
 
 .Setting the `connection-pool-size` for the `default` provider of the `connections-http-client` SPI
-<@kc.start parameters="--spi-connections-http-client-default-connection-pool-size=10"/>
+<@kc.start parameters="--spi-connections-http-client--default--connection-pool-size=10"/>
 
-== Configuring a single provider for an SPI
+== Build time options
+
+=== Configuring a single provider for an SPI
 
 Depending on the SPI, multiple provider implementations can co-exist but only one of them is going to be used at runtime.
-For these SPIs, a specific provider is the primary implementation that is going to be active and used at runtime.
+For these SPIs, a specific provider is the primary implementation that is going to be active and used at runtime. The format consists of:
+
+[source]
+----
+spi-<spi-id>--provider=<provider-id>
+----
+
+NOTE: `spi-<spi-id>-provider=<provider-id>` may still be used, but the server will not properly detect when reaugmentation is needed.
 
 To configure a provider as the single provider you should run the `build` command as follows:
 
 .Marking the `mycustomprovider` provider as the single provider for the `email-template` SPI
-<@kc.build parameters="--spi-email-template-provider=mycustomprovider"/>
+<@kc.build parameters="--spi-email-template--provider=mycustomprovider"/>
 
-== Configuring a default provider for an SPI
+=== Configuring a default provider for an SPI
 
 Depending on the SPI, multiple provider implementations can co-exist and one is used by default.
 For these SPIs, a specific provider is the default implementation that is going to selected unless a specific provider
-is requested.
+is requested. The format consists of:
+
+[source]
+----
+spi-<spi-id>--provider-default=<provider-id>
+----
+
+NOTE: `spi-<spi-id>-provider-default=<provider-id>` may still be used, but the server will not properly detect when reaugmentation is needed.
 
 The following logic is used to determine the default provider:
 
@@ -70,15 +94,23 @@ The following logic is used to determine the default provider:
 To configure a provider as the default provider you should run the `build` command as follows:
 
 .Marking the `mycustomhash` provider as the default provider for the `password-hashing` SPI
-<@kc.build parameters="--spi-password-hashing-provider-default=mycustomprovider"/>
+<@kc.build parameters="--spi-password-hashing--provider-default=mycustomprovider"/>
 
+=== Enabling and disabling a provider
 
-== Enabling and disabling a provider
+The format consists of:
+
+[source]
+----
+spi-<spi-id>--<provider-id>--enabled=<boolean>
+----
+
+NOTE: `spi-<spi-id>-<provider-id>-enabled=<boolean>` may still be used, but the server will not properly detect when reaugmentation is needed.
 
 To enable or disable a provider you should run the `build` command as follows:
 
 .Enabling a provider
-<@kc.build parameters="--spi-email-template-mycustomprovider-enabled=true"/>
+<@kc.build parameters="--spi-email-template--mycustomprovider--enabled=true"/>
 
 To disable a provider, use the same command and set the `enabled` property to `false`.
 
