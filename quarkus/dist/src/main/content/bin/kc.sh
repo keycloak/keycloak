@@ -61,17 +61,13 @@ do
               if echo "$2" | grep -Eq '^[0-9]+$'; then
                   DEBUG_ADDRESS="0.0.0.0:$2"
                   shift
-              # IP (assume bracketed IPv6)
+              # IPv4 or bracketed IPv6 with optional port
               elif echo "$2" | grep -Eq '^(([0-9.]+)|(\[[0-9A-Fa-f:]+\]))'; then
                   if echo "$2" | grep -Eq ':[0-9]+$'; then
                       DEBUG_ADDRESS="$2"
                   else
                       DEBUG_ADDRESS="$2:$DEBUG_PORT"
                   fi
-                  shift
-              # Anything else (e.g. host:port)
-              else
-                  DEBUG_ADDRESS="$2"
                   shift
               fi
           fi
