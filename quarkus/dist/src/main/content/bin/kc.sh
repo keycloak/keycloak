@@ -57,41 +57,23 @@ do
       --debug)
           DEBUG_MODE=true
           if [ -n "$2" ]; then
-            # Special cases
-            if [[ "$2" == "::" ]] || [[ "$2" == "::0" ]] || [[ "$2" == "[::]" ]] || [[ "$2" == "[::0]" ]]; then
-              DEBUG_ADDRESS="0.0.0.0:$DEBUG_PORT"
-              shift
-            # Plain port
-            elif echo "$2" | grep -Eq '^[0-9]+$'; then
-              DEBUG_ADDRESS="0.0.0.0:$2"
-              shift
-            # IPv6 with port
-            elif [[ "$2" =~ ^([0-9A-Fa-f:]+|\[[0-9A-Fa-f:]+\]):([0-9]+)$ ]]; then
-              raw_ip="${BASH_REMATCH[1]}"
-              port="${BASH_REMATCH[2]}"
-              # Strip existing brackets if present, so that 'ip' is just the literal
-              if [[ "$raw_ip" =~ ^\[(.*)\]$ ]]; then
-                ip="${BASH_REMATCH[1]}"
+              # Plain port
+              if echo "$2" | grep -Eq '^[0-9]+$'; then
+                  DEBUG_ADDRESS="0.0.0.0:$2"
+                  shift
+              # IP (assume bracketed IPv6)
+              elif echo "$2" | grep -Eq '^(([0-9.]+)|(\[[0-9A-Fa-f:]+\]))'; then
+                  if echo "$2" | grep -Eq ':[0-9]+$'; then
+                      DEBUG_ADDRESS="$2"
+                  else
+                      DEBUG_ADDRESS="$2:$DEBUG_PORT"
+                  fi
+                  shift
+              # Anything else (e.g. host:port)
               else
-                ip="$raw_ip"
+                  DEBUG_ADDRESS="$2"
+                  shift
               fi
-              DEBUG_ADDRESS="[$ip]:$port"
-              shift
-            # IPv6, no port
-            elif [[ "$2" =~ ^[0-9A-Fa-f:]*:[0-9A-Fa-f]*$ ]] || [[ "$2" =~ ^\[([0-9A-Fa-f:]+)\]$ ]]; then
-              # Decide whether it was bracketed already
-              if [[ "$2" =~ ^\[([0-9A-Fa-f:]+)\]$ ]]; then
-                ip="${BASH_REMATCH[1]}"
-              else
-                ip="$2"
-              fi
-              DEBUG_ADDRESS="[$ip]:$DEBUG_PORT"
-              shift
-            # General case (IPv4 or hostname with port)
-            else
-              DEBUG_ADDRESS="$2"
-              shift
-            fi
           fi
           ;;
       --)
