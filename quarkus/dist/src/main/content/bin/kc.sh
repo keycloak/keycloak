@@ -57,26 +57,41 @@ do
       --debug)
           DEBUG_MODE=true
           if [ -n "$2" ]; then
-              # Plain port
-              if echo "$2" | grep -Eq '^[0-9]+$'; then
-                  DEBUG_ADDRESS="0.0.0.0:$2"
-                  shift
-              # Bare IPv6 with explicit port
-              elif [[ "$2" =~ ^([0-9A-Fa-f]*:[0-9A-Fa-f:]*):([0-9]+)$ ]]; then
-                  addr="${BASH_REMATCH[1]}"
-                  port="${BASH_REMATCH[2]}"
-                  DEBUG_ADDRESS="[$addr]:$port"
-                  shift
-              # Bare IPv6, no port
-              elif echo "$2" | grep -Eq '^[0-9A-Fa-f:]*:[0-9A-Fa-f]*$'; then
-                  ip_part="$2"
-                  DEBUG_ADDRESS="[$ip_part]:$DEBUG_PORT"
-                  shift
-              # Anything else (IPv4:port, hostname:port, or bracketed IPv6:port)
+            # Special cases
+            if [[ "$2" == "::" ]] || [[ "$2" == "::0" ]] || [[ "$2" == "[::]" ]] || [[ "$2" == "[::0]" ]]; then
+              DEBUG_ADDRESS="0.0.0.0:$DEBUG_PORT"
+              shift
+            # Plain port
+            elif echo "$2" | grep -Eq '^[0-9]+$'; then
+              DEBUG_ADDRESS="0.0.0.0:$2"
+              shift
+            # IPv6 with port
+            elif [[ "$2" =~ ^([0-9A-Fa-f:]+|\[[0-9A-Fa-f:]+\]):([0-9]+)$ ]]; then
+              raw_ip="${BASH_REMATCH[1]}"
+              port="${BASH_REMATCH[2]}"
+              # Strip existing brackets if present, so that 'ip' is just the literal
+              if [[ "$raw_ip" =~ ^\[(.*)\]$ ]]; then
+                ip="${BASH_REMATCH[1]}"
               else
-                  DEBUG_ADDRESS="$2"
-                  shift
+                ip="$raw_ip"
               fi
+              DEBUG_ADDRESS="[$ip]:$port"
+              shift
+            # IPv6, no port
+            elif [[ "$2" =~ ^[0-9A-Fa-f:]*:[0-9A-Fa-f]*$ ]] || [[ "$2" =~ ^\[([0-9A-Fa-f:]+)\]$ ]]; then
+              # Decide whether it was bracketed already
+              if [[ "$2" =~ ^\[([0-9A-Fa-f:]+)\]$ ]]; then
+                ip="${BASH_REMATCH[1]}"
+              else
+                ip="$2"
+              fi
+              DEBUG_ADDRESS="[$ip]:$DEBUG_PORT"
+              shift
+            # General case (IPv4 or hostname with port)
+            else
+              DEBUG_ADDRESS="$2"
+              shift
+            fi
           fi
           ;;
       --)
