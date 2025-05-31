@@ -94,6 +94,8 @@ export default interface RealmRepresentation {
   otpPolicyType?: string;
   otpSupportedApplications?: string[];
   otpPolicyCodeReusable?: boolean;
+  otpPolicyUseEmail?: boolean;
+  otpPolicyIssuerOverride?: string;
   passwordPolicy?: string;
   permanentLockout?: boolean;
   // ProtocolMapperRepresentation
