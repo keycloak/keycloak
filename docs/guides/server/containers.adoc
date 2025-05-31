@@ -152,9 +152,25 @@ Health check endpoints are available at `https://localhost:9000/health`, `https:
 
 Opening up `https://localhost:9000/metrics` leads to a page containing operational metrics that could be used by your monitoring solution.
 
+==== Custom ENTRYPOINT Shell Scripts
+
+[WARNING]
+====
+If you use a custom entry point script for {project_name}, make sure to start the server with `exec` so it can receive termination signals properly.
+
+.Correct approach
+[source,bash]
+----
+#!/bin/bash
+exec /opt/keycloak/bin/kc.sh start "$@"
+----
+
+Without `exec`, the shell script becomes PID 1 and blocks signals like `SIGTERM` from reaching {project_name}, which can prevent graceful shutdown and lead to cache inconsistencies or data loss.
+====
+
 === Known issues with Docker
 
-* If a `RUN dnf install` command seems to be taking an excessive amount of time, then likely your Docker systemd service has the file limit setting `LimitNOFILE` configured incorrectly. 
+* If a `RUN dnf install` command seems to be taking an excessive amount of time, then likely your Docker systemd service has the file limit setting `LimitNOFILE` configured incorrectly.
 Either update the service configuration to use a better value, such as 1024000, or directly use `ulimit` in the RUN command:
 
 [source, dockerfile]
@@ -164,10 +180,10 @@ RUN ulimit -n 1024000 && dnf install --installroot ...
 ...
 ----
 
-* If you are including provider JARs and your container fails a `start --optimized` with a notification that a provider JAR has changed, this is due to Docker truncating 
+* If you are including provider JARs and your container fails a `start --optimized` with a notification that a provider JAR has changed, this is due to Docker truncating
 or otherwise modifying file modification timestamps from what the `build` command recorded to what is seen at runtime.
   In this case you will need to force the image to use a known timestamp of your choosing with a `touch` command prior to running a `build`:
-  
+
 [source, dockerfile]
 ----
 ...
