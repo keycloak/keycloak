@@ -111,6 +111,7 @@ import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.quarkus.runtime.integration.resteasy.KeycloakHandlerChainCustomizer;
 import org.keycloak.quarkus.runtime.integration.resteasy.KeycloakTracingCustomizer;
+import org.keycloak.quarkus.runtime.services.health.KeycloakLocalReadinessHandler;
 import org.keycloak.quarkus.runtime.services.health.KeycloakReadyHealthCheck;
 import org.keycloak.quarkus.runtime.storage.database.jpa.NamedJpaConnectionProviderFactory;
 import org.keycloak.quarkus.runtime.themes.FlatClasspathThemeResourceProviderFactory;
@@ -251,6 +252,21 @@ class KeycloakProcessor {
                                 .handler(recorder.getRedirectHandler(relativePath))
                                 .build())
                 );
+    }
+
+    @Record(ExecutionTime.STATIC_INIT)
+    @BuildStep
+    @Consume(ConfigBuildItem.class)
+    void configureLocalHealthCheck(BuildProducer<RouteBuildItem> routes,
+                                      HttpRootPathBuildItem httpRootPathBuildItem,
+                                      KeycloakRecorder recorder) {
+        if (isHealthEnabled() && !Configuration.isTrue(ManagementOptions.LEGACY_OBSERVABILITY_INTERFACE)) {
+            routes.produce(httpRootPathBuildItem.routeBuilder()
+                    .nestedRoute("health", "ready")
+                    .handler(new KeycloakLocalReadinessHandler())
+                    .displayOnNotFoundPage("Health Readiness Check")
+                    .build());
+        }
     }
 
     @Record(ExecutionTime.STATIC_INIT)
