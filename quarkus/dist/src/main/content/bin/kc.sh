@@ -44,7 +44,7 @@ CLASSPATH_OPTS="'$(abs_path "../lib/quarkus-run.jar")'"
 DEBUG_MODE="${DEBUG:-false}"
 DEBUG_PORT="${DEBUG_PORT:-8787}"
 DEBUG_SUSPEND="${DEBUG_SUSPEND:-n}"
-DEBUG_ADDRESS=""
+DEBUG_ADDRESS="0.0.0.0:$DEBUG_PORT"
 
 esceval() {
     printf '%s\n' "$1" | sed "s/'/'\\\\''/g; 1 s/^/'/; $ s/$/'/"
@@ -59,18 +59,21 @@ do
           if [ -n "$2" ]; then
               # Plain port
               if echo "$2" | grep -Eq '^[0-9]+$'; then
-                  DEBUG_ADDRESS="$2"
+                  DEBUG_ADDRESS="0.0.0.0:$2"
                   shift
-              # Bare IPv6 literal (no port)
-              elif echo "$2" | grep -Eq '^[0-9A-Fa-f:]+$'; then
-                  DEBUG_ADDRESS="[$2]:$DEBUG_PORT"
+              # Bare IPv6 with explicit port
+              elif [[ "$2" =~ ^([0-9A-Fa-f]*:[0-9A-Fa-f:]*):([0-9]+)$ ]]; then
+                  addr="${BASH_REMATCH[1]}"
+                  port="${BASH_REMATCH[2]}"
+                  DEBUG_ADDRESS="[$addr]:$port"
                   shift
-              # Bracketed IPv6, optional port
-              elif echo "$2" | grep -Eq '^\[[0-9A-Fa-f:]+\](:[0-9]+)?$'; then
-                  DEBUG_ADDRESS="$2"
+              # Bare IPv6, no port
+              elif echo "$2" | grep -Eq '^[0-9A-Fa-f:]*:[0-9A-Fa-f]*$'; then
+                  ip_part="$2"
+                  DEBUG_ADDRESS="[$ip_part]:$DEBUG_PORT"
                   shift
-              # IPv4 or hostname:port
-              elif echo "$2" | grep -Eq '^[^:]+:[0-9]+$'; then
+              # Anything else (IPv4:port, hostname:port, or bracketed IPv6:port)
+              else
                   DEBUG_ADDRESS="$2"
                   shift
               fi
@@ -158,15 +161,7 @@ fi
 if [ "$DEBUG_MODE" = "true" ]; then
     DEBUG_OPT="$(echo "$JAVA_OPTS" | $GREP "\-agentlib:jdwp")"
     if [ -z "$DEBUG_OPT" ]; then
-        # If DEBUG_ADDRESS is digits only (a plain port), bind 0.0.0.0:<port>
-        # Otherwise (host:port or [IPv6]:port), use DEBUG_ADDRESS verbatim
-        if echo "$DEBUG_ADDRESS" | grep -Eq '^[0-9]+$'; then
-          AGENT_ADDR="0.0.0.0:$DEBUG_ADDRESS"
-        else
-          AGENT_ADDR="$DEBUG_ADDRESS"
-        fi
-
-        JAVA_OPTS="$JAVA_OPTS -agentlib:jdwp=transport=dt_socket,address=$AGENT_ADDR,server=y,suspend=$DEBUG_SUSPEND"
+        JAVA_OPTS="$JAVA_OPTS -agentlib:jdwp=transport=dt_socket,address=$DEBUG_ADDRESS,server=y,suspend=$DEBUG_SUSPEND"
     else
         echo "Debug already enabled in JAVA_OPTS, ignoring --debug argument"
     fi
