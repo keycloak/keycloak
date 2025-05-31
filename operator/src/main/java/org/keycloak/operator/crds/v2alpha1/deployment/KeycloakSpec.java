@@ -29,6 +29,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.NetworkPolicySpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProbeSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProxySpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.SchedulingSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec;
@@ -134,6 +135,8 @@ public class KeycloakSpec {
     @JsonProperty("update")
     @JsonPropertyDescription("Configuration related to Keycloak deployment updates.")
     private UpdateSpec updateSpec;
+
+    private ProbeSpec probeSpec;
 
     public HttpSpec getHttpSpec() {
         return httpSpec;
@@ -316,4 +319,7 @@ public class KeycloakSpec {
     public void setUpdateSpec(UpdateSpec updateSpec) {
         this.updateSpec = updateSpec;
     }
+
+    public ProbeSpec getProbeSpec() {return probeSpec;}
+    public void setProbeSpec(ProbeSpec probeSpec) {}
 }
