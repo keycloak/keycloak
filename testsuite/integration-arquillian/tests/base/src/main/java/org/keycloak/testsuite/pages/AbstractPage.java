@@ -20,6 +20,7 @@ package org.keycloak.testsuite.pages;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.Assert;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testsuite.util.webdriver.PageUtils;
 import org.openqa.selenium.WebDriver;
 
 /**

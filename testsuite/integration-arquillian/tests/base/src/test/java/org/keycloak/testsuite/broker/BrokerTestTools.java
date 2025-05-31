@@ -4,7 +4,7 @@ import org.apache.http.client.utils.URIBuilder;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.testsuite.pages.PageUtils;
+import org.keycloak.testsuite.util.webdriver.PageUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;

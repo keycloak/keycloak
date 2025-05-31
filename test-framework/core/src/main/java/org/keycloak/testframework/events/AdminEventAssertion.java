@@ -82,6 +82,11 @@ public class AdminEventAssertion {
         return this;
     }
 
+    public AdminEventAssertion resourcePath(String expectedResourcePath) {
+        Assertions.assertEquals(expectedResourcePath, event.getResourcePath());
+        return this;
+    }
+
     public AdminEventAssertion representation(Object expectedRep) {
         String actualRepresentation = event.getRepresentation();
         if (expectedRep == null) {

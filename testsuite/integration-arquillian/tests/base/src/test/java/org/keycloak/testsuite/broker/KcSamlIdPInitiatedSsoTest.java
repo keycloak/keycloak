@@ -27,7 +27,7 @@ import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.pages.PageUtils;
+import org.keycloak.testsuite.util.webdriver.PageUtils;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
 import org.keycloak.testsuite.utils.io.IOUtil;
 

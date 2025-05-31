@@ -21,6 +21,7 @@ package org.keycloak.testsuite.pages;
 
 import org.junit.Assert;
 import org.keycloak.testsuite.util.UIUtils;
+import org.keycloak.testsuite.util.webdriver.PageUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 

@@ -1,5 +1,7 @@
 package org.keycloak.testframework.ui.page;
 
+import org.junit.jupiter.api.Assertions;
+import org.keycloak.testframework.ui.util.PageUtils;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -38,4 +40,14 @@ public abstract class AbstractPage {
         return getExpectedPageId().equals(getCurrentPageId());
     }
 
+    public void assertCurrent() {
+        String name = getClass().getSimpleName();
+        Assertions.assertTrue(isCurrent(), "Expected " + name + " but was " + driver.getTitle() + " (" + driver.getCurrentUrl() + ")");
+    }
+
+    abstract public boolean isCurrent();
+
+    public boolean isCurrent(String expectedTitle) {
+        return PageUtils.getPageTitle(driver).equals(expectedTitle);
+    }
 }

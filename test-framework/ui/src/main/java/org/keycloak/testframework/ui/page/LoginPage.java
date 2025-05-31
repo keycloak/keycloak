@@ -32,4 +32,15 @@ public class LoginPage extends AbstractPage {
     public String getExpectedPageId() {
         return "login-login";
     }
+
+    @Override
+    public boolean isCurrent() {
+        String realm = "default";
+        return isCurrent(realm);
+    }
+
+    @Override
+    public boolean isCurrent(String realm) {
+        return driver.getTitle().equals("Sign in to " + realm) || driver.getTitle().equals("Anmeldung bei " + realm);
+    }
 }

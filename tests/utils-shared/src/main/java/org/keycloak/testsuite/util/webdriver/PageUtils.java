@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.pages;
+package org.keycloak.testsuite.util.webdriver;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
