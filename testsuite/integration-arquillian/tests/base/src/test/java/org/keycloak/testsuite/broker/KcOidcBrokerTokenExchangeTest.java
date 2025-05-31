@@ -116,7 +116,9 @@ public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBroker
 
     @Test
     public void testExternalInternalTokenExchangeUsingIssuer() throws Exception {
-        assertExternalToInternalExchange(bc.getIDPAlias(), true, false);
+        RealmResource consumerRealm = realmsResouce().realm(bc.consumerRealmName());
+        IdentityProviderRepresentation broker = consumerRealm.identityProviders().get(bc.getIDPAlias()).toRepresentation();
+        assertExternalToInternalExchange(broker.getConfig().get(OIDCIdentityProviderConfigRep.ISSUER), true, false);
     }
 
     @Test
