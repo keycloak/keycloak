@@ -47,7 +47,7 @@ public class EntityManagers {
         }
     }
 
-    static boolean isBatchMode() {
+    public static boolean isBatchMode() {
         return Boolean.TRUE.equals(batchMode.get());
     }
 
