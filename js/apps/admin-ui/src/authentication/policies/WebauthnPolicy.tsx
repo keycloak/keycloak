@@ -27,6 +27,7 @@ import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput
 import { TimeSelectorControl } from "../../components/time-selector/TimeSelectorControl";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
+import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 
 import { useAdminClient } from "../../admin-client";
 import "./webauthn-policy.css";
@@ -140,6 +141,8 @@ export const WebauthnPolicy = ({
       addError("webAuthnUpdateError", error);
     }
   };
+
+  const isFeatureEnabled = useIsFeatureEnabled();
 
   return (
     <PageSection variant="light">
@@ -261,6 +264,15 @@ export const WebauthnPolicy = ({
               addButtonLabel="addOrigins"
             />
           </FormGroup>
+          {isPasswordLess && isFeatureEnabled(Feature.Passkeys) && (
+            <SwitchControl
+              name={`${namePrefix}PasskeysEnabled`}
+              label={t("webAuthnPolicyPasskeysEnabled")}
+              labelIcon={t("webAuthnPolicyPasskeysEnabledHelp")}
+              labelOn={t("on")}
+              labelOff={t("off")}
+            />
+          )}
         </FormProvider>
 
         <ActionGroup>

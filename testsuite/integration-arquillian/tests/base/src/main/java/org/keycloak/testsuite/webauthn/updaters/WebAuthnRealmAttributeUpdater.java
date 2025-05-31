@@ -89,4 +89,10 @@ public class WebAuthnRealmAttributeUpdater extends AbstractWebAuthnRealmUpdater<
         return this;
     }
 
+    @Override
+    public WebAuthnRealmAttributeUpdater setWebAuthnPolicyPasskeysEnabled(Boolean webAuthnPolicyPasskeysEnabled) {
+        // passkeys are only used in passwordless policy
+        return this;
+    }
+
 }
