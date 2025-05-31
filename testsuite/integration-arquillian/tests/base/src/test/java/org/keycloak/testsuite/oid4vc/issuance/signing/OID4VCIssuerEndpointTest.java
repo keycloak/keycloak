@@ -115,8 +115,14 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         // Assign the registered optional client scopes to the client
         assignOptionalClientScopeToClient(verifiableCredentialScopeId, client.getClientId());
         assignOptionalClientScopeToClient(testCredentialScopeId, client.getClientId());
+
+        // Enable OID4VCI for the client by default, but allow tests to override
+        setClientOid4vciEnabled(clientId, shouldEnableOid4vci());
     }
 
+    protected boolean shouldEnableOid4vci() {
+        return true;
+    }
 
     protected String getBearerToken(OAuthClient oAuthClient) {
         AuthorizationEndpointResponse authorizationEndpointResponse = oAuthClient.doLogin("john", "password");
@@ -169,6 +175,17 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         clientRepresentation.setAttributes(Map.of(
                 "vc." + credentialConfigurationId + ".format", format,
                 "vc." + credentialConfigurationId + ".scope", scope));
+
+        clientResource.update(clientRepresentation);
+    }
+
+    void setClientOid4vciEnabled(String clientId, boolean enabled) {
+        ClientRepresentation clientRepresentation = adminClient.realm(TEST_REALM_NAME).clients().findByClientId(clientId).get(0);
+        ClientResource clientResource = adminClient.realm(TEST_REALM_NAME).clients().get(clientRepresentation.getId());
+
+        Map<String, String> attributes = new HashMap<>(clientRepresentation.getAttributes() != null ? clientRepresentation.getAttributes() : Map.of());
+        attributes.put("oid4vci.enabled", String.valueOf(enabled));
+        clientRepresentation.setAttributes(attributes);
 
         clientResource.update(clientRepresentation);
     }
@@ -287,8 +304,8 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
 
     protected static OID4VCIssuerEndpoint prepareIssuerEndpoint(KeycloakSession session, AppAuthManager.BearerTokenAuthenticator authenticator) {
         JwtCredentialBuilder jwtCredentialBuilder = new JwtCredentialBuilder(
-            TEST_DID.toString(), 
-            new StaticTimeProvider(1000));
+                TEST_DID.toString(),
+                new StaticTimeProvider(1000));
 
         return prepareIssuerEndpoint(
                 session,
