@@ -20,6 +20,7 @@ package org.keycloak.authentication.requiredactions;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.UriInfo;
@@ -43,12 +44,16 @@ import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsPages;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.forms.login.freemarker.Templates;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionConfigModel;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.Urls;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -57,10 +62,13 @@ import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
+import org.keycloak.utils.RequiredActionHelper;
 
 public class UpdateEmail implements RequiredActionProvider, RequiredActionFactory, EnvironmentDependentProviderFactory {
 
     private static final Logger logger = Logger.getLogger(UpdateEmail.class);
+
+    private List<ProviderConfigProperty> MAX_AUTH_AGE_CONFIG_PROPERTIES;
 
     @Override
     public InitiatedActionSupport initiatedActionSupport() {
@@ -176,6 +184,10 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
 
     @Override
     public RequiredActionProvider create(KeycloakSession session) {
+        MAX_AUTH_AGE_CONFIG_PROPERTIES = RequiredActionFactory.getMaxAuthAgePropertyConfig();
+        MAX_AUTH_AGE_CONFIG_PROPERTIES.stream()
+                .filter(c -> Constants.MAX_AUTH_AGE_KEY.equals(c.getName()))
+                .forEach(c -> c.setDefaultValue(getMaxAuthAge(session)));
         return this;
     }
 
@@ -197,6 +209,35 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
     @Override
     public String getId() {
         return UserModel.RequiredAction.UPDATE_EMAIL.name();
+    }
+
+    @Override
+    public int getMaxAuthAge(KeycloakSession session) {
+        if (session == null) {
+            // session is null, support for legacy implementation, fallback to 0
+            return 0;
+        }
+
+        RealmModel realm = session.getContext().getRealm();
+        RequiredActionProviderModel requiredAction = RequiredActionHelper.getRequiredActionByProviderId(realm, getId());
+
+        if (requiredAction != null) {
+            RequiredActionConfigModel configModel = realm.getRequiredActionConfigByAlias(requiredAction.getAlias());
+            if (configModel != null && configModel.containsConfigKey(Constants.MAX_AUTH_AGE_KEY)) {
+                int maxAge = RequiredActionFactory.parseMaxAuthAge(configModel);
+                if (maxAge >= 0) {
+                    return maxAge;
+                }
+            }
+        }
+
+        // fallback to 0 => always require re-authentication
+        return 0;
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return MAX_AUTH_AGE_CONFIG_PROPERTIES;
     }
 
     @Override
