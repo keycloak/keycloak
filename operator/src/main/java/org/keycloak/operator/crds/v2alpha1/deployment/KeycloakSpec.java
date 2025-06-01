@@ -333,16 +333,19 @@ public class KeycloakSpec {
     }
 
     public ProbeSpec getLivenessProbeSpec() {return livenessProbeSpec;}
+
     public void setLivenessProbeSpec(ProbeSpec livenessProbeSpec) {
         this.livenessProbeSpec = livenessProbeSpec;
     }
 
     public ProbeSpec getReadinessProbeSpec() {return readinessProbeSpec;}
+
     public void setReadinessProbeSpec(ProbeSpec readinessProbeSpec) {
         this.readinessProbeSpec = readinessProbeSpec;
     }
 
     public ProbeSpec getStartupProbeSpec() {return startupProbeSpec;}
+
     public void setStartupProbeSpec(ProbeSpec startupProbeSpec) {
         this.startupProbeSpec = startupProbeSpec;
     }

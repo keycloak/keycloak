@@ -732,7 +732,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
 
     @Test
     public void testProbeConfig(){
-        var kc = getTestKeycloakDeployment(true);
+        var kc = getTestKeycloakDeployment(false);
 
         var livenessProbe = new ProbeSpec();
         livenessProbe.setProbeFailureThreshold(10);
