@@ -10,13 +10,13 @@ import io.sundr.builder.annotations.Buildable;
 public class ProbeSpec {
 
     @JsonProperty("periodSeconds")
-    private int probePeriodSeconds = 10;
+    private int probePeriodSeconds;
 
     @JsonProperty("failureThreshold")
-    private int probeFailureThreshold = 3;
+    private int probeFailureThreshold;
 
     public int getProbeFailureThreshold() {return probeFailureThreshold;}
-    public void setProbeFailureThreshold(int probeFailureThreshold) {}
+    public void setProbeFailureThreshold(int probeFailureThreshold) {this.probeFailureThreshold = probeFailureThreshold;}
     public int getProbePeriodSeconds() {return probePeriodSeconds;}
-    public void setProbePeriodSeconds(int probePeriodSeconds) {}
+    public void setProbePeriodSeconds(int probePeriodSeconds) {this.probePeriodSeconds = probePeriodSeconds;}
 }
