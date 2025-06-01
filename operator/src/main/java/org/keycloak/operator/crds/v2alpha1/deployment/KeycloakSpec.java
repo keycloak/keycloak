@@ -136,7 +136,19 @@ public class KeycloakSpec {
     @JsonPropertyDescription("Configuration related to Keycloak deployment updates.")
     private UpdateSpec updateSpec;
 
-    private ProbeSpec probeSpec;
+    @JsonProperty("readinessProbe")
+    @JsonPropertyDescription("Configuration for readiness probe")
+    private ProbeSpec readinessProbeSpec;
+
+
+    @JsonProperty("livenessProbe")
+    @JsonPropertyDescription("Configuration for liveness probe")
+    private ProbeSpec livenessProbeSpec;
+
+    @JsonProperty("startupProbe")
+    @JsonPropertyDescription("Configuration for startup probe")
+    private ProbeSpec startupProbeSpec;
+
 
     public HttpSpec getHttpSpec() {
         return httpSpec;
@@ -320,6 +332,18 @@ public class KeycloakSpec {
         this.updateSpec = updateSpec;
     }
 
-    public ProbeSpec getProbeSpec() {return probeSpec;}
-    public void setProbeSpec(ProbeSpec probeSpec) {}
+    public ProbeSpec getLivenessProbeSpec() {return livenessProbeSpec;}
+    public void setLivenessProbeSpec(ProbeSpec livenessProbeSpec) {
+        this.livenessProbeSpec = livenessProbeSpec;
+    }
+
+    public ProbeSpec getReadinessProbeSpec() {return readinessProbeSpec;}
+    public void setReadinessProbeSpec(ProbeSpec readinessProbeSpec) {
+        this.readinessProbeSpec = readinessProbeSpec;
+    }
+
+    public ProbeSpec getStartupProbeSpec() {return startupProbeSpec;}
+    public void setStartupProbeSpec(ProbeSpec startupProbeSpec) {
+        this.startupProbeSpec = startupProbeSpec;
+    }
 }
