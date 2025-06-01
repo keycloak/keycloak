@@ -47,6 +47,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.BootstrapAdminSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProbeSpec;
 import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.unit.WatchedResourcesTest;
 import org.keycloak.operator.testsuite.utils.CRAssert;
@@ -727,5 +728,51 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         K8sUtils.set(k8sclient, imagePullSecret);
         LocalObjectReference localObjRefAsSecretTmp = new LocalObjectReferenceBuilder().withName(imagePullSecret.getMetadata().getName()).build();
         keycloakCR.getSpec().setImagePullSecrets(Collections.singletonList(localObjRefAsSecretTmp));
+    }
+
+    @Test
+    public void testProbeConfig(){
+        var kc = getTestKeycloakDeployment(true);
+
+        var livenessProbe = new ProbeSpec();
+        livenessProbe.setProbeFailureThreshold(10);
+        livenessProbe.setProbePeriodSeconds(1);
+
+        var readinessProbe = new ProbeSpec();
+        readinessProbe.setProbeFailureThreshold(20);
+        readinessProbe.setProbePeriodSeconds(2);
+
+        var startupProbe = new ProbeSpec();
+        startupProbe.setProbeFailureThreshold(30);
+        startupProbe.setProbePeriodSeconds(3);
+
+        kc.getSpec().setLivenessProbeSpec(livenessProbe);
+        kc.getSpec().setReadinessProbeSpec(readinessProbe);
+        kc.getSpec().setStartupProbeSpec(startupProbe);
+
+        deployKeycloak(k8sclient, kc, true);
+
+        var pods = k8sclient.pods().inNamespace(namespace).withLabels(Constants.DEFAULT_LABELS).list().getItems();
+        assertThat(pods).isNotNull();
+        assertThat(pods).isNotEmpty();
+
+        var containers = pods.get(0).getSpec().getContainers();
+        assertThat(containers).isNotNull();
+        assertThat(containers).isNotEmpty();
+
+        var actualReadinessProbe = containers.get(0).getReadinessProbe();
+        assertThat(actualReadinessProbe).isNotNull();
+        assertThat(actualReadinessProbe.getPeriodSeconds()).isEqualTo(2);
+        assertThat(actualReadinessProbe.getFailureThreshold()).isEqualTo(20);
+
+        var actualLivenessProbe = containers.get(0).getLivenessProbe();
+        assertThat(actualLivenessProbe).isNotNull();
+        assertThat(actualLivenessProbe.getPeriodSeconds()).isEqualTo(1);
+        assertThat(actualLivenessProbe.getFailureThreshold()).isEqualTo(10);
+
+        var actualStartupProbe = containers.get(0).getStartupProbe();
+        assertThat(actualStartupProbe).isNotNull();
+        assertThat(actualStartupProbe.getPeriodSeconds()).isEqualTo(3);
+        assertThat(actualStartupProbe.getFailureThreshold()).isEqualTo(30);
     }
 }
