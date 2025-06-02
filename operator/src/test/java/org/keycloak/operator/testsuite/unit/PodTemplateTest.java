@@ -676,6 +676,35 @@ public class PodTemplateTest {
         assertThat(podTemplate.getSpec().getAffinity()).isNotEqualTo(affinity);
     }
 
+    @Test
+    public void testProbe(){
+        PodTemplateSpec additionalPodTemplate = null;
+        var readinessProbe = new ProbeBuilder().withFailureThreshold(1).withPeriodSeconds(2).build();
+        var livenessProbe = new ProbeBuilder().withFailureThreshold(3).withPeriodSeconds(4).build();
+        var startupProbe = new ProbeBuilder().withFailureThreshold(5).withPeriodSeconds(6).build();
+        var readinessPodTemplate = getDeployment(additionalPodTemplate, null,
+                s-> s.withNewReadinessProbeSpec()
+                        .withProbeFailureThreshold(1)
+                        .withProbePeriodSeconds(2)
+                        .endReadinessProbeSpec()).getSpec().getTemplate();
+        assertThat(readinessPodTemplate.getSpec().getContainers().get(0).getReadinessProbe().getPeriodSeconds()).isEqualTo(readinessProbe.getPeriodSeconds());
+        assertThat(readinessPodTemplate.getSpec().getContainers().get(0).getReadinessProbe().getFailureThreshold()).isEqualTo(readinessProbe.getFailureThreshold());
+        var livenessPodTemplate = getDeployment(additionalPodTemplate, null,
+                s-> s.withNewReadinessProbeSpec()
+                        .withProbeFailureThreshold(3)
+                        .withProbePeriodSeconds(4)
+                        .endReadinessProbeSpec()).getSpec().getTemplate();
+        assertThat(livenessPodTemplate.getSpec().getContainers().get(0).getReadinessProbe().getPeriodSeconds()).isEqualTo(livenessProbe.getPeriodSeconds());
+        assertThat(livenessPodTemplate.getSpec().getContainers().get(0).getReadinessProbe().getFailureThreshold()).isEqualTo(livenessProbe.getFailureThreshold());
+        var startupPodTemplate = getDeployment(additionalPodTemplate, null,
+                s-> s.withNewReadinessProbeSpec()
+                        .withProbeFailureThreshold(5)
+                        .withProbePeriodSeconds(6)
+                        .endReadinessProbeSpec()).getSpec().getTemplate();
+        assertThat(startupPodTemplate.getSpec().getContainers().get(0).getReadinessProbe().getPeriodSeconds()).isEqualTo(startupProbe.getPeriodSeconds());
+        assertThat(startupPodTemplate.getSpec().getContainers().get(0).getReadinessProbe().getFailureThreshold()).isEqualTo(startupProbe.getFailureThreshold());
+    }
+
     private Job getUpdateJob(Consumer<KeycloakSpecBuilder> newSpec, Consumer<KeycloakSpecBuilder> oldSpec, Consumer<StatefulSetBuilder> existingModifier) {
         // create an existing from the old spec and modifier
         StatefulSetBuilder existingBuilder = getDeployment(null, null, oldSpec).toBuilder();
