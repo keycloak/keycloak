@@ -149,6 +149,28 @@ spec:
               secretName: keycloak-additional-secret
 ----
 
+===== Probe Configuration
+
+The Keycloak CR exposes options to set periodSeconds and failureThreshold on each of the three probes (readiness, liveness and startup)
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  readinessProbe:
+    periodSeconds: 20
+    failureThreshold: 5
+  livenessProbe:
+    periodSeconds: 20
+    failureThreshold: 5
+  startupProbe:
+    periodSeconds: 20
+    failureThreshold: 5
+----
+
 ===== Probe Timeouts
 
 The unsupported podTemplate may be used to override the default probes.
