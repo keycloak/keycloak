@@ -959,6 +959,20 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
+    public void searchByAttributesForAnyValue() {
+        createUsers();
+
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put("attr", "");
+        for (int i = 1; i < 10; i++) {
+            // exact needs to be set to false to match for any users with the attribute attr
+            List<UserRepresentation> users = realm.users().searchByAttributes(i - 1, 1, null, false, false, mapToSearchQuery(attributes));
+            assertEquals(1, users.size());
+            assertTrue(users.get(0).getAttributes().keySet().stream().anyMatch(attributes::containsKey));
+        }
+    }
+
+    @Test
     public void storeAndReadUserWithLongAttributeValue() {
         String longValue = RandomStringUtils.random(Integer.parseInt(DefaultAttributes.DEFAULT_MAX_LENGTH_ATTRIBUTES), true, true);
 
