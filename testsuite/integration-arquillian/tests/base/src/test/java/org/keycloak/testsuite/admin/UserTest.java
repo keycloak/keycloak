@@ -127,6 +127,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -959,6 +960,33 @@ public class UserTest extends AbstractAdminTest {
             assertEquals(1, users.size());
             assertTrue(users.get(0).getAttributes().keySet().stream().anyMatch(attributes::containsKey));
         }
+    }
+
+    @Test
+    public void searchByAttributesForAnyValue() {
+        createUser(UserBuilder.create().username("user-0").addAttribute("attr", "common").build());
+        createUser(UserBuilder.create().username("user-1").addAttribute("test", "common").build());
+        createUser(UserBuilder.create().username("user-2").addAttribute("test", "common").addAttribute("attr", "common").build());
+
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put("attr", "");
+        // exact needs to be set to false to match for any users with the attribute attr
+        List<UserRepresentation> users = realm.users().searchByAttributes(-1, -1, null, false, false, mapToSearchQuery(attributes));
+        assertEquals(2, users.size());
+        assertTrue(users.stream().allMatch(r -> Set.of("user-0", "user-2").contains(r.getUsername())));
+
+        attributes = new HashMap<>();
+        attributes.put("test", "");
+        users = realm.users().searchByAttributes(-1, -1, null, false, false, mapToSearchQuery(attributes));
+        assertEquals(2, users.size());
+        assertTrue(users.stream().allMatch(r -> Set.of("user-1", "user-2").contains(r.getUsername())));
+
+        attributes = new HashMap<>();
+        attributes.put("test", "");
+        attributes.put("attr", "");
+        users = realm.users().searchByAttributes(-1, -1, null, false, false, mapToSearchQuery(attributes));
+        assertEquals(1, users.size());
+        assertTrue(users.stream().allMatch(r -> "user-2".equals(r.getUsername())));
     }
 
     @Test
