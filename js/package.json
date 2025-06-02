@@ -23,7 +23,7 @@
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.27.0",
     "@types/node": "^22.15.26",
-    "eslint": "^9.27.0",
+    "eslint": "^9.28.0",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-lodash": "^8.0.0",
     "eslint-plugin-playwright": "^2.2.0",
