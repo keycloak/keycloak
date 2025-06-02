@@ -2,9 +2,7 @@ package org.keycloak.connections.jpa.updater.liquibase.custom;
 
 import liquibase.exception.CustomChangeException;
 import liquibase.statement.core.DeleteStatement;
-import liquibase.structure.core.Catalog;
 import liquibase.structure.core.Column;
-import liquibase.structure.core.Schema;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -19,6 +17,8 @@ import java.util.stream.Collectors;
  */
 public class JpaUpdate26_2_6_RemoveDuplicateMigrationModelVersion extends CustomKeycloakTask {
 
+    private final static String MIGRATION_MODEL_TABLE = "MIGRATION_MODEL";
+
     @Override
     protected String getTaskId() {
         return "Delete duplicated records for DB version in MIGRATION_MODEL table";
@@ -28,20 +28,21 @@ public class JpaUpdate26_2_6_RemoveDuplicateMigrationModelVersion extends Custom
     protected void generateStatementsImpl() throws CustomChangeException {
         Set<String> idsToDelete = new HashSet<>();
 
-        final String catalog = database.escapeObjectName(database.getDefaultCatalogName(), Catalog.class);
-        final String schema = getSchema();
-        final String tableName = getTableName("MIGRATION_MODEL");
+        final String tableName = getTableName(MIGRATION_MODEL_TABLE);
         final String colId = database.correctObjectName("ID", Column.class);
+        final String colVersion = database.correctObjectName("VERSION", Column.class);
+
+        database.getConcatSql();
 
         final String GET_OLDER_DUPLICATED_RECORDS = """
-                SELECT m1.ID
-                FROM %sMIGRATION_MODEL m1
+                SELECT m1.%s
+                FROM %s m1
                 WHERE EXISTS (
-                    SELECT m2.ID
-                    FROM %sMIGRATION_MODEL m2
-                    WHERE m2.VERSION = m1.VERSION AND m2.UPDATE_TIME > m1.UPDATE_TIME
+                    SELECT m2.%s
+                    FROM %s m2
+                    WHERE m2.%s = m1.%s AND m2.%s > m1.%s
                 )
-                """.formatted(schema, schema);
+                """.formatted(colId, tableName, colId, tableName, colVersion, colVersion, colId, colId);
 
         try (PreparedStatement ps = connection.prepareStatement(GET_OLDER_DUPLICATED_RECORDS)) {
             ResultSet resultSet = ps.executeQuery();
@@ -56,7 +57,7 @@ public class JpaUpdate26_2_6_RemoveDuplicateMigrationModelVersion extends Custom
         idsToDelete.stream()
                 .collect(Collectors.groupingByConcurrent(id -> i.getAndIncrement() / 20, Collectors.toList())) // Split into chunks of at most 20 items
                 .values().stream()
-                .map(ids -> new DeleteStatement(catalog, schema, tableName)
+                .map(ids -> new DeleteStatement(null, null, MIGRATION_MODEL_TABLE)
                         .setWhere(":name IN (" + ids.stream().map(id -> "?").collect(Collectors.joining(",")) + ")")
                         .addWhereColumnName(colId)
                         .addWhereParameters(ids.toArray())
@@ -64,8 +65,4 @@ public class JpaUpdate26_2_6_RemoveDuplicateMigrationModelVersion extends Custom
                 .forEach(statements::add);
     }
 
-    private String getSchema() {
-        String schema = database.escapeObjectName(database.getDefaultSchemaName(), Schema.class);
-        return schema == null ? "" : schema + ".";
-    }
 }
