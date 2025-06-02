@@ -1,6 +1,5 @@
 import OrganizationRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationRepresentation";
 import {
-  ErrorBoundaryProvider,
   KeycloakSpinner,
   ListEmptyState,
   OrganizationTable,
@@ -30,17 +29,15 @@ export const Organizations = () => {
 
   return (
     <Page title={t("organizations")} description={t("organizationDescription")}>
-      <ErrorBoundaryProvider>
-        <OrganizationTable
-          link={({ children }) => <span>{children}</span>}
-          loader={userOrgs}
-        >
-          <ListEmptyState
-            message={t("emptyUserOrganizations")}
-            instructions={t("emptyUserOrganizationsInstructions")}
-          />
-        </OrganizationTable>
-      </ErrorBoundaryProvider>
+      <OrganizationTable
+        link={({ children }) => <span>{children}</span>}
+        loader={userOrgs}
+      >
+        <ListEmptyState
+          message={t("emptyUserOrganizations")}
+          instructions={t("emptyUserOrganizationsInstructions")}
+        />
+      </OrganizationTable>
     </Page>
   );
 };

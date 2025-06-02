@@ -29,7 +29,7 @@ export const ErrorPage = (props: ErrorPageProps) => {
     <Page>
       <Modal
         variant={ModalVariant.small}
-        title={errorMessage ? "" : t("somethingWentWrong")}
+        title={t("somethingWentWrong")}
         titleIconVariant="danger"
         showClose={false}
         isOpen
