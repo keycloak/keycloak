@@ -137,16 +137,16 @@ public class KeycloakSpec {
     private UpdateSpec updateSpec;
 
     @JsonProperty("readinessProbe")
-    @JsonPropertyDescription("Configuration for readiness probe")
+    @JsonPropertyDescription("Configuration for readiness probe, by default it is 10 for periodSeconds and 3 for failureThreshold")
     private ProbeSpec readinessProbeSpec;
 
 
     @JsonProperty("livenessProbe")
-    @JsonPropertyDescription("Configuration for liveness probe")
+    @JsonPropertyDescription("Configuration for liveness probe, by default it is 10 for periodSeconds and 3 for failureThreshold")
     private ProbeSpec livenessProbeSpec;
 
     @JsonProperty("startupProbe")
-    @JsonPropertyDescription("Configuration for startup probe")
+    @JsonPropertyDescription("Configuration for startup probe, by default it is 1 for periodSeconds and 600 for failureThreshold")
     private ProbeSpec startupProbeSpec;
 
 
