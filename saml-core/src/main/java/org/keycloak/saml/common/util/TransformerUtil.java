@@ -380,7 +380,7 @@ public class TransformerUtil {
                 if (prefix != null && ! prefix.isEmpty())
                     qual = (localPart != null && ! localPart.isEmpty()) ? prefix + ":" + localPart : prefix;
 
-                if (qual.equals("xmlns"))
+                if ("xmlns".equals(qual))
                     continue;
                 if (logger.isTraceEnabled()) {
                     logger.trace("Set Attribute Namespace=" + name.getNamespaceURI() + "::Qual=:" + qual + "::Value="
