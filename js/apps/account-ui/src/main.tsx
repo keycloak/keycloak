@@ -1,7 +1,10 @@
 import "@patternfly/patternfly/patternfly-addons.css";
 import "@patternfly/react-core/dist/styles/base.css";
 
-import { KeycloakProvider } from "@keycloak/keycloak-ui-shared";
+import {
+  ErrorBoundaryProvider,
+  KeycloakProvider,
+} from "@keycloak/keycloak-ui-shared";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { environment } from "./environment";
@@ -17,7 +20,9 @@ const root = createRoot(container!);
 root.render(
   <StrictMode>
     <KeycloakProvider environment={environment}>
-      <Root />
+      <ErrorBoundaryProvider>
+        <Root />
+      </ErrorBoundaryProvider>
     </KeycloakProvider>
   </StrictMode>,
 );
