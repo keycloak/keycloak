@@ -1508,12 +1508,7 @@ public class AuthenticationManagementResource {
         rep.setProviderId(providerId);
         rep.setName(factory.getDisplayType());
         rep.setHelpText(factory.getHelpText());
-        rep.setProperties(new LinkedList<>());
-        List<ProviderConfigProperty> configProperties = Optional.ofNullable(factory.getConfigProperties()).orElse(Collections.emptyList());
-        for (ProviderConfigProperty prop : configProperties) {
-            ConfigPropertyRepresentation propRep = getConfigPropertyRep(prop);
-            rep.getProperties().add(propRep);
-        }
+        rep.setProperties(ModelToRepresentation.toRepresentation(Optional.ofNullable(factory.getConfigProperties()).orElse(Collections.emptyList())));
         return rep;
     }
 

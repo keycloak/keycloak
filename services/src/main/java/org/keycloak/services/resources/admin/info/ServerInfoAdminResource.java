@@ -166,31 +166,35 @@ public class ServerInfoAdminResource {
 
             if (providerIds != null) {
                 for (String name : providerIds) {
-                    ProviderRepresentation provider = new ProviderRepresentation();
-                    ProviderFactory<?> pi = session.getKeycloakSessionFactory().getProviderFactory(spi.getProviderClass(), name);
-                    provider.setOrder(pi.order());
-                    if (ServerInfoAwareProviderFactory.class.isAssignableFrom(pi.getClass())) {
-                        provider.setOperationalInfo(((ServerInfoAwareProviderFactory) pi).getOperationalInfo());
-                    }
-                    if (pi instanceof ConfiguredProvider) {
-                        ComponentTypeRepresentation rep = new ComponentTypeRepresentation();
-                        rep.setId(pi.getId());
-                        ConfiguredProvider configured = (ConfiguredProvider)pi;
-                        rep.setHelpText(configured.getHelpText());
-                        List<ProviderConfigProperty> configProperties = configured.getConfigProperties();
-                        if (configProperties == null) configProperties = Collections.EMPTY_LIST;
-                        rep.setProperties(ModelToRepresentation.toRepresentation(configProperties));
-                        if (pi instanceof ComponentFactory) {
-                            rep.setMetadata(((ComponentFactory)pi).getTypeMetadata());
+                    try {
+                        ProviderRepresentation provider = new ProviderRepresentation();
+                        ProviderFactory<?> pi = session.getKeycloakSessionFactory().getProviderFactory(spi.getProviderClass(), name);
+                        provider.setOrder(pi.order());
+                        if (ServerInfoAwareProviderFactory.class.isAssignableFrom(pi.getClass())) {
+                            provider.setOperationalInfo(((ServerInfoAwareProviderFactory) pi).getOperationalInfo());
                         }
-                        List<ComponentTypeRepresentation> reps = info.getComponentTypes().get(spi.getProviderClass().getName());
-                        if (reps == null) {
-                            reps = new LinkedList<>();
-                            info.getComponentTypes().put(spi.getProviderClass().getName(), reps);
+                        if (pi instanceof ConfiguredProvider) {
+                            ComponentTypeRepresentation rep = new ComponentTypeRepresentation();
+                            rep.setId(pi.getId());
+                            ConfiguredProvider configured = (ConfiguredProvider) pi;
+                            rep.setHelpText(configured.getHelpText());
+                            List<ProviderConfigProperty> configProperties = configured.getConfigProperties();
+                            if (configProperties == null) configProperties = Collections.EMPTY_LIST;
+                            rep.setProperties(ModelToRepresentation.toRepresentation(configProperties));
+                            if (pi instanceof ComponentFactory) {
+                                rep.setMetadata(((ComponentFactory) pi).getTypeMetadata());
+                            }
+                            List<ComponentTypeRepresentation> reps = info.getComponentTypes().get(spi.getProviderClass().getName());
+                            if (reps == null) {
+                                reps = new LinkedList<>();
+                                info.getComponentTypes().put(spi.getProviderClass().getName(), reps);
+                            }
+                            reps.add(rep);
                         }
-                        reps.add(rep);
+                        providers.put(name, provider);
+                    } catch (IllegalStateException e) {
+                        throw new IllegalStateException("Unable to prepare information for provider " + name, e);
                     }
-                    providers.put(name, provider);
                 }
             }
             spiRep.setProviders(providers);

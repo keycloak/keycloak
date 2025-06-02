@@ -1019,9 +1019,14 @@ public class ModelToRepresentation {
 
     public static List<ConfigPropertyRepresentation> toRepresentation(List<ProviderConfigProperty> configProperties) {
         List<ConfigPropertyRepresentation> propertiesRep = new LinkedList<>();
+        Set<String> propertyNames = new HashSet<>();
         for (ProviderConfigProperty prop : configProperties) {
             ConfigPropertyRepresentation propRep = toRepresentation(prop);
             propertiesRep.add(propRep);
+            if (propertyNames.contains(prop.getName())) {
+                throw new IllegalStateException("Duplicate property name: " + prop.getName());
+            }
+            propertyNames.add(prop.getName());
         }
         return propertiesRep;
     }
