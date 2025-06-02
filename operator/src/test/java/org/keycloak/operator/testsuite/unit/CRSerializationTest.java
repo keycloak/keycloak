@@ -102,6 +102,14 @@ public class CRSerializationTest {
         HttpManagementSpec managementSpec = keycloak.getSpec().getHttpManagementSpec();
         assertNotNull(managementSpec);
         assertEquals(9003, managementSpec.getPort());
+
+        assertEquals(50,keycloak.getSpec().getReadinessProbeSpec().getProbePeriodSeconds());
+        assertEquals(3,keycloak.getSpec().getReadinessProbeSpec().getProbeFailureThreshold());
+        assertEquals(60,keycloak.getSpec().getLivenessProbeSpec().getProbePeriodSeconds());
+        assertEquals(1,keycloak.getSpec().getLivenessProbeSpec().getProbeFailureThreshold());
+        assertEquals(40,keycloak.getSpec().getStartupProbeSpec().getProbePeriodSeconds());
+        assertEquals(2,keycloak.getSpec().getStartupProbeSpec().getProbeFailureThreshold());
+
     }
 
     @Test
