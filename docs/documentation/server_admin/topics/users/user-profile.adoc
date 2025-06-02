@@ -160,6 +160,10 @@ Multivalued::
 If enabled, the attribute supports multiple values and UIs are rendered accordingly to allow setting many values. When enabling this
 setting, make sure to add a validator to set a hard limit to the number of values.
 
+Default Value::
+Defines the value that will be automatically assigned to the attribute if the user does not provide one.
+Ensure that this default value complies with all configured validators for the attribute.
+
 Attribute Group::
 The attribute group to which the attribute belongs to, if any.
 

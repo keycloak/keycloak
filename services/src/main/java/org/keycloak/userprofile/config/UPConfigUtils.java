@@ -45,6 +45,7 @@ import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.userprofile.UserProfileConstants;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationResult;
 import org.keycloak.validate.ValidatorConfig;
 import org.keycloak.validate.Validators;
@@ -184,6 +185,15 @@ public class UPConfigUtils {
         }
         if (attributeConfig.getValidations() != null) {
             attributeConfig.getValidations().forEach((validator, validatorConfig) -> validateValidationConfig(session, validator, validatorConfig, attributeName, errors));
+
+            if (attributeConfig.getDefaultValue() != null) {
+                attributeConfig.getValidations().forEach((validator, validatorConfig) -> {
+                    ValidationContext context = Validators.validator(session, validator).validate(attributeConfig.getDefaultValue(), attributeName, ValidatorConfig.configFromMap(validatorConfig));
+                    if (!context.isValid()) {
+                        errors.add("Default value is invalid");
+                    }
+                });
+            }
         }
         if (attributeConfig.getPermissions() != null) {
             if (attributeConfig.getPermissions().getView() != null) {

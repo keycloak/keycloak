@@ -410,14 +410,17 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
             }
         }
 
-        // the profile should always hold all attributes defined in the config
+        // the profile should always hold all attributes defined in the config and set default value if needed
         for (String attributeName : metadataByAttribute.keySet()) {
             if (!isSupportedAttribute(attributeName) || newAttributes.containsKey(attributeName)) {
                 continue;
             }
 
-            List<String> values = EMPTY_VALUE;
             AttributeMetadata metadata = metadataByAttribute.get(attributeName);
+            List<String> values = EMPTY_VALUE;
+            if (metadata.getDefaultValue() != null) {
+                values = Collections.singletonList(metadata.getDefaultValue());
+            }
 
             if (user != null && isIncludeAttributeIfNotProvided(metadata)) {
                 values = normalizeAttributeValues(attributeName, user.getAttributes().getOrDefault(attributeName, EMPTY_VALUE));

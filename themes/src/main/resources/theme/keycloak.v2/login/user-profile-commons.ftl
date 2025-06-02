@@ -81,7 +81,7 @@
 				<@inputTag attribute=attribute value=value!''/>
 			</#list>
 		<#else>
-			<@inputTag attribute=attribute value=attribute.value!''/>
+			<@inputTag attribute=attribute value=(attribute.value!attribute.defaultValue!'')/>
 		</#if>
 	</#switch>
 </#macro>
@@ -129,7 +129,7 @@
 		<#if attribute.annotations.inputTypeCols??>cols="${attribute.annotations.inputTypeCols}"</#if>
 		<#if attribute.annotations.inputTypeRows??>rows="${attribute.annotations.inputTypeRows}"</#if>
 		<#if attribute.annotations.inputTypeMaxlength??>maxlength="${attribute.annotations.inputTypeMaxlength}"</#if>
-	>${(attribute.value!'')}</textarea>
+	>${(attribute.value!attribute.defaultValue!'')}</textarea>
 	</span>
 </#macro>
 
@@ -153,8 +153,13 @@
 				<#assign options=[]>
 			</#if>
 
+			<#assign selectedValues = attribute.values![]>
+			<#if !selectedValues?has_content && (attribute.defaultValue??)>
+				<#assign selectedValues = [attribute.defaultValue]>
+			</#if>
+
 			<#list options as option>
-				<option value="${option}" <#if attribute.values?seq_contains(option)>selected</#if>><@selectOptionLabelText attribute=attribute option=option/></option>
+				<option value="${option}" <#if selectedValues?seq_contains(option)>selected</#if>><@selectOptionLabelText attribute=attribute option=option/></option>
 			</#list>
 		</select>
 		<span class="${properties.kcFormControlUtilClass}">
@@ -200,16 +205,21 @@
         <#assign options=[]>
     </#if>
 
-    <#list options as option>
-        <div class="${classDiv}">
-            <input type="${inputType}" id="${attribute.name}-${option}" name="${attribute.name}" value="${option}" class="${classInput}"
-                aria-invalid="<#if messagesPerField.existsError('${attribute.name}')>true</#if>"
-                <#if attribute.readOnly>disabled</#if>
-                <#if attribute.values?seq_contains(option)>checked</#if>
-            />
-            <label for="${attribute.name}-${option}" class="${classLabel}<#if attribute.readOnly> ${properties.kcInputClassRadioCheckboxLabelDisabled!}</#if>"><@selectOptionLabelText attribute=attribute option=option/></label>
-        </div>
-    </#list>
+	<#assign selectedValues = attribute.values![]>
+	<#if !selectedValues?has_content && (attribute.defaultValue??)>
+		<#assign selectedValues = [attribute.defaultValue]>
+	</#if>
+
+	<#list options as option>
+		<div class="${classDiv}">
+			<input type="${inputType}" id="${attribute.name}-${option}" name="${attribute.name}" value="${option}" class="${classInput}"
+				   aria-invalid="<#if messagesPerField.existsError('${attribute.name}')>true</#if>"
+				   <#if attribute.readOnly>disabled</#if>
+					<#if selectedValues?seq_contains(option)>checked</#if>
+			/>
+			<label for="${attribute.name}-${option}" class="${classLabel}<#if attribute.readOnly> ${properties.kcInputClassRadioCheckboxLabelDisabled!}</#if>"><@selectOptionLabelText attribute=attribute option=option/></label>
+		</div>
+	</#list>
 </#macro>
 
 <#macro selectOptionLabelText attribute option>
