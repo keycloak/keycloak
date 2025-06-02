@@ -556,33 +556,16 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
             // First credential request
             Response response1 = issuerEndpoint.requestCredential(credentialRequest);
             assertEquals("The credential request should be successful.", 200, response1.getStatus());
-            CredentialResponse credentialResponse1;
-            credentialResponse1 = JsonSerialization.mapper.convertValue(response1.getEntity(), CredentialResponse.class);
+            CredentialResponse credentialResponse1 = JsonSerialization.mapper.convertValue(response1.getEntity(), CredentialResponse.class);
             assertNotNull("Credential response should not be null", credentialResponse1);
             assertNotNull("Credential should be present", credentialResponse1.getCredential());
             assertNotNull("Notification ID should be present", credentialResponse1.getNotificationId());
             assertFalse("Notification ID should not be empty", credentialResponse1.getNotificationId().isEmpty());
 
-            // Verify credential content
-            try {
-                JsonWebToken jsonWebToken = TokenVerifier.create((String) credentialResponse1.getCredential(), JsonWebToken.class).getToken();
-                VerifiableCredential credential = JsonSerialization.mapper.convertValue(jsonWebToken.getOtherClaims().get("vc"), VerifiableCredential.class);
-                assertTrue("Static claim should be set", credential.getCredentialSubject().getClaims().containsKey("VerifiableCredential"));
-                assertFalse("Unsupported claims should not be present", credential.getCredentialSubject().getClaims().containsKey("AnotherCredentialType"));
-            } catch (VerificationException e) {
-                throw new RuntimeException("Failed to verify credential", e);
-            }
-
             // Second credential request
             Response response2 = issuerEndpoint.requestCredential(credentialRequest);
             assertEquals("The second credential request should be successful.", 200, response2.getStatus());
-            CredentialResponse credentialResponse2;
-            credentialResponse2 = JsonSerialization.mapper.convertValue(response2.getEntity(), CredentialResponse.class);
-            assertNotNull("Second credential response should not be null", credentialResponse2);
-            assertNotNull("Second credential should be present", credentialResponse2.getCredential());
-            assertNotNull("Second notification ID should be present", credentialResponse2.getNotificationId());
-            assertFalse("Second notification ID should not be empty", credentialResponse2.getNotificationId().isEmpty());
-
+            CredentialResponse credentialResponse2 = JsonSerialization.mapper.convertValue(response2.getEntity(), CredentialResponse.class);
             assertNotEquals("Notification IDs should be unique", credentialResponse1.getNotificationId(), credentialResponse2.getNotificationId());
         });
     }

@@ -392,8 +392,9 @@ public class OID4VCIssuerEndpoint {
 
         Object theCredential = getCredential(authResult, supportedCredentialConfiguration, credentialRequestVO);
         if (SUPPORTED_FORMATS.contains(requestedFormat)) {
-            responseVO.setCredential(theCredential);
-            responseVO.setNotificationId(generateNotificationId());
+            responseVO
+                    .setCredential(theCredential)
+                    .setNotificationId(generateNotificationId());
         } else {
             throw new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_TYPE));
         }
