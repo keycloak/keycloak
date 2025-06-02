@@ -120,6 +120,28 @@ This approach uses a chroot, `+/mnt/rootfs+`, so that only the packages you spec
 
 WARNING: Some packages have a large tree of dependencies. By installing new RPMs you may unintentionally increase the container's attack surface. Check the list of installed packages carefully.
 
+=== Custom ENTRYPOINT shell scripts
+
+If you use a custom entry point script, start {project_name} with `exec` so it can receive termination signals that are essential for a graceful shutdown.
+
+.Correct approach for an ENTRYPOINT shell script
+[source,bash]
+----
+#!/bin/bash
+
+# (add your custom logic here)
+
+# Run the 'exec' command as the last step of the script.
+# As it replaces the current shell process, no additional shell commands will run after the 'exec' command.
+exec /opt/keycloak/bin/kc.sh start "$@"
+----
+
+[WARNING]
+====
+Without `exec`, the shell script remains PID 1 in the container and blocks signals like `SIGTERM` from reaching {project_name}.
+This prevents a graceful shutdown and can lead to cache inconsistencies or data loss.
+====
+
 === Building the container image
 To build the actual container image, run the following command from the directory containing your Containerfile:
 
@@ -151,22 +173,6 @@ podman|docker run --name mykeycloak -p 8443:8443 -p 9000:9000 \
 Health check endpoints are available at `https://localhost:9000/health`, `https://localhost:9000/health/ready` and `https://localhost:9000/health/live`.
 
 Opening up `https://localhost:9000/metrics` leads to a page containing operational metrics that could be used by your monitoring solution.
-
-==== Custom ENTRYPOINT Shell Scripts
-
-[WARNING]
-====
-If you use a custom entry point script for {project_name}, make sure to start the server with `exec` so it can receive termination signals properly.
-
-.Correct approach
-[source,bash]
-----
-#!/bin/bash
-exec /opt/keycloak/bin/kc.sh start "$@"
-----
-
-Without `exec`, the shell script becomes PID 1 and blocks signals like `SIGTERM` from reaching {project_name}, which can prevent graceful shutdown and lead to cache inconsistencies or data loss.
-====
 
 === Known issues with Docker
 
