@@ -68,6 +68,18 @@ user profile settings defined for the realm.
 It might happen that attributes in user representations are no longer available depending on the
 user profile configuration.
 
+=== Email verification is now automatically set when using a OpenID Connect broker with `Trust email` is enabled and `Sync Mode` is `FORCE`
+
+Until now, the OpenID Connect broker did not support the standard `email_verified` claim available from the ID Tokens issued by
+OpenID Connect Providers.
+
+In this release, the broker was updated to respect the value from this claim to set the email verification status for the federated (local) user account.
+Whenever users are federated for the first time or re-authenticating, if the `Trust email` setting is enabled and `Sync Mode` is set to `FORCE`,
+the user account will be updated to (un)mark the email as verified.
+
+In the future, we might evaluate changing this specific configuration to avoid automatic updates on the email verification
+status on federated user accounts depending on the use cases and the demand from the community.
+
 == Notable changes
 
 Notable changes where an internal behavior changed to prevent common misconfigurations, fix bugs or simplify running {project_name}.
@@ -103,3 +115,20 @@ This deprecated feature will be removed in a future version.
 The `user-profile-commons.ftl` changed to improve support for localization. See https://github.com/keycloak/keycloak/issues/38029.
 As a result, and if you are extending this template, pages might start displaying a `locale` field. To avoid that, update
 the theme template with the changes aforementioned.
+
+=== Subgroup counts are no longer cached
+
+When returning subgroups of a group, the count of subgroups of each subgroup of a group is no longer cached. With the
+introduction of Fine-Grained Admin Permissions, the result set is filtered at the database level based on any permissions
+defined to a realm so that the count will change accordingly to these permissions.
+
+Instead of caching the count, a query will be executed every time to obtain the expected number of groups an administrator can access.
+
+Most of the time, this change will not impact clients querying the API to fetch the subgroups of a group. However, if not the case,
+a new parameter `subGroupsCount` was introduced to the following endpoints:
+
+* `/realms/{realm}/groups/{id}/children`
+* `/realms/{realm}/groups`
+
+With this parameter, clients can decide whether the count should be returned to each individual group returned. To not break existing deployments,
+this parameter defaults to `true` so that the count is returned if the parameter is not set.

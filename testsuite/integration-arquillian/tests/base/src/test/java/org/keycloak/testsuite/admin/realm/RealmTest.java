@@ -436,6 +436,7 @@ public class RealmTest extends AbstractAdminTest {
     public void smtpPasswordSecret() {
         RealmRepresentation rep = RealmBuilder.create().testEventListener().testMail().build();
         rep.setRealm("realm-with-smtp");
+        rep.getSmtpServer().put("auth", "true");
         rep.getSmtpServer().put("user", "user");
         rep.getSmtpServer().put("password", "secret");
 
@@ -461,6 +462,19 @@ public class RealmTest extends AbstractAdminTest {
         assertEquals("secret", internalRep.getSmtpServer().get("password"));
 
         RealmRepresentation realm = adminClient.realms().findAll().stream().filter(r -> r.getRealm().equals("realm-with-smtp")).findFirst().get();
+        assertEquals(ComponentRepresentation.SECRET_VALUE, realm.getSmtpServer().get("password"));
+
+        // updating setting the secret value with asterisks
+        rep.getSmtpServer().put("password", ComponentRepresentation.SECRET_VALUE);
+        adminClient.realm("realm-with-smtp").update(rep);
+
+        event = testingClient.testing().pollAdminEvent();
+        assertTrue(event.getRepresentation().contains(ComponentRepresentation.SECRET_VALUE));
+
+        internalRep = serverClient.fetch(RunHelpers.internalRealm());
+        assertEquals("secret", internalRep.getSmtpServer().get("password"));
+
+        realm = adminClient.realm("realm-with-smtp").toRepresentation();
         assertEquals(ComponentRepresentation.SECRET_VALUE, realm.getSmtpServer().get("password"));
     }
 

@@ -41,7 +41,7 @@ public class PrioritizedComponentModel extends ComponentModel {
     public static int parsePriority(ComponentModel component) {
         String priority = component.getConfig().getFirst(PRIORITY);
         if (priority == null) return 0;
-        return Integer.valueOf(priority);
+        return Integer.parseInt(priority);
 
     }
 

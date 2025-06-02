@@ -73,6 +73,14 @@ public class GroupSearchTest extends AbstractGroupTest {
                     .attribute(ATTR_QUOTES_NAME, ATTR_QUOTES_VAL)
                     .build();
             addSubGroup(managedRealm, parentGroup, testGroup);
+
+            if (i == 2) {
+                GroupRepresentation subGroup = GroupConfigBuilder.create()
+                        .name("kcsubgroup-" + i)
+                        .build();
+
+                addSubGroup(managedRealm, testGroup, subGroup);
+            }
         }
         for (int i = 1; i <= 3; i++) {
             GroupRepresentation testGroup = GroupConfigBuilder.create()
@@ -109,11 +117,31 @@ public class GroupSearchTest extends AbstractGroupTest {
         subGroups = parentGroupResource.getSubGroups("kcgroup-2", true, 0, 10, false);
         assertThat(subGroups, hasSize(1));
         assertThat(subGroups.get(0).getName(), is(equalTo("kcgroup-2")));
+        assertThat(subGroups.get(0).getSubGroupCount(), is(1L));
         // attributes should be present in the returned subgroup.
         Map<String, List<String>> attributes = subGroups.get(0).getAttributes();
         assertThat(attributes, not(anEmptyMap()));
         assertThat(attributes.keySet(), hasSize(2));
         assertThat(attributes.keySet(), containsInAnyOrder(ATTR_ORG_NAME, ATTR_QUOTES_NAME));
+
+        subGroups = parentGroupResource.getSubGroups("kcgroup-2", true, 0, 10, false, false);
+        assertThat(subGroups, hasSize(1));
+        assertThat(subGroups.get(0).getName(), is(equalTo("kcgroup-2")));
+        assertThat(subGroups.get(0).getSubGroupCount(), is(nullValue()));
+
+        subGroups = managedRealm.admin().groups().groups("kcgroup-2", true, 0, 1, true);
+        Assertions.assertEquals(1, subGroups.size());
+        assertThat(subGroups.get(0).getName(), is(equalTo(parentGroup.getName())));
+        Assertions.assertEquals(1, subGroups.get(0).getSubGroups().size());
+        assertThat(subGroups.get(0).getSubGroups().get(0).getName(), is(equalTo("kcgroup-2")));
+        assertThat(subGroups.get(0).getSubGroups().get(0).getSubGroupCount(), is(1L));
+
+        subGroups = managedRealm.admin().groups().groups("kcgroup-2", true, 0, 1, true, false);
+        Assertions.assertEquals(1, subGroups.size());
+        assertThat(subGroups.get(0).getName(), is(equalTo(parentGroup.getName())));
+        Assertions.assertEquals(1, subGroups.get(0).getSubGroups().size());
+        assertThat(subGroups.get(0).getSubGroups().get(0).getName(), is(equalTo("kcgroup-2")));
+        assertThat(subGroups.get(0).getSubGroups().get(0).getSubGroupCount(), is(nullValue()));
     }
 
     /**

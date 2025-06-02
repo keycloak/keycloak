@@ -17,9 +17,9 @@ import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.admin.ui.rest.model.RealmNameRepresentation;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.services.resources.admin.permissions.AdminPermissions;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
-import org.keycloak.services.resources.admin.permissions.RealmsPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.AdminPermissions;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.RealmsPermissionEvaluator;
 
 public class UIRealmsResource {
 

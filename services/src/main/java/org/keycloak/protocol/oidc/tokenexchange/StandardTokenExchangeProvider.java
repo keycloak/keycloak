@@ -197,12 +197,6 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
     }
 
     @Override
-    protected void setClientToContext(List<ClientModel> targetAudienceClients) {
-        // The client requesting exchange is set in the context
-        session.getContext().setClient(client);
-    }
-
-    @Override
     protected Response exchangeClientToOIDCClient(UserModel targetUser, UserSessionModel targetUserSession, String requestedTokenType,
                                                   List<ClientModel> targetAudienceClients, String scope, AccessToken subjectToken) {
         RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);

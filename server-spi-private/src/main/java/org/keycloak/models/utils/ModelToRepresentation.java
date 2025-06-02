@@ -24,7 +24,7 @@ import static org.keycloak.models.utils.StripSecretsUtils.stripSecrets;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.authentication.otp.OTPApplicationProvider;
-import org.keycloak.authorization.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.AuthorizationProviderFactory;
 import org.keycloak.authorization.model.PermissionTicket;
@@ -564,7 +564,10 @@ public class ModelToRepresentation {
         }
 
         rep.setInternationalizationEnabled(realm.isInternationalizationEnabled());
-        rep.setSupportedLocales(realm.getSupportedLocalesStream().collect(Collectors.toSet()));
+        Set<String> supportedLocales = realm.getSupportedLocalesStream().collect(Collectors.toSet());
+        if (!supportedLocales.isEmpty()) {
+            rep.setSupportedLocales(supportedLocales);
+        }
         rep.setDefaultLocale(realm.getDefaultLocale());
         if (internal) {
             exportAuthenticationFlows(session, realm, rep);

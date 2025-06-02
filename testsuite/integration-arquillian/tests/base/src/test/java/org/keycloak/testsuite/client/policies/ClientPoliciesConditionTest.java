@@ -74,7 +74,6 @@ import org.keycloak.services.clientpolicy.executor.SecureSessionEnforceExecutorF
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
-import org.keycloak.testsuite.pages.OAuth2DeviceVerificationPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExceptionExecutorFactory;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -92,9 +91,6 @@ import org.keycloak.testsuite.util.UserBuilder;
  */
 @EnableFeature(value = Profile.Feature.CLIENT_SECRET_ROTATION)
 public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
-
-    @Page
-    protected OAuth2DeviceVerificationPage verificationPage;
 
     @Page
     protected OAuthGrantPage grantPage;
@@ -130,7 +126,7 @@ public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
         user.setUsername("create-clients");
         user.setCredentials(credentials);
         user.setClientRoles(Collections.singletonMap(Constants.REALM_MANAGEMENT_CLIENT_ID, Collections.singletonList(AdminRoles.CREATE_CLIENT)));
-        user.setGroups(Arrays.asList("topGroup")); // defined in testrealm.json
+        user.setGroups(List.of("topGroup")); // defined in testrealm.json
 
         users.add(user);
 
@@ -189,14 +185,12 @@ public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
         String clientAlphaId = generateSuffixedName("Alpha-App");
         String clientAlphaSecret = "secretAlpha";
         createClientByAdmin(clientAlphaId, (ClientRepresentation clientRep) -> {
-            clientRep.setDefaultRoles((String[]) Arrays.asList("sample-client-role-alpha").toArray(new String[1]));
+            clientRep.setDefaultRoles(List.of("sample-client-role-alpha").toArray(new String[1]));
             clientRep.setSecret(clientAlphaSecret);
         });
 
         String clientBetaId = generateSuffixedName("Beta-App");
-        createClientByAdmin(clientBetaId, (ClientRepresentation clientRep) -> {
-            clientRep.setSecret("secretBeta");
-        });
+        createClientByAdmin(clientBetaId, (ClientRepresentation clientRep) -> clientRep.setSecret("secretBeta"));
 
         try {
             failLoginWithoutSecureSessionParameter(clientBetaId, ERR_MSG_MISSING_NONCE);
@@ -233,9 +227,7 @@ public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
         String clientId = generateSuffixedName(CLIENT_NAME);
         String clientSecret = "secret";
         try {
-            createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
-                clientRep.setSecret(clientSecret);
-            });
+            createClientByAdmin(clientId, (ClientRepresentation clientRep) -> clientRep.setSecret(clientSecret));
             fail();
         } catch (ClientPolicyException e) {
             assertEquals(OAuthErrorException.INVALID_CLIENT_METADATA, e.getMessage());
@@ -245,16 +237,14 @@ public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
         json = (new ClientPoliciesBuilder()).addPolicy(
                 (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Aktualizovana Prvni Politika", Boolean.TRUE)
                         .addCondition(ClientUpdaterSourceHostsConditionFactory.PROVIDER_ID,
-                                createClientUpdateSourceHostsConditionConfig(Arrays.asList("example.com")))
+                                createClientUpdateSourceHostsConditionConfig(List.of("example.com")))
                         .addProfile(PROFILE_NAME)
                         .toRepresentation()
         ).toString();
         updatePolicies(json);
 
         try {
-            createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
-                clientRep.setSecret(clientSecret);
-            });
+            createClientByAdmin(clientId, (ClientRepresentation clientRep) -> clientRep.setSecret(clientSecret));
         } catch (Exception e) {
             fail();
         }
@@ -267,7 +257,7 @@ public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profil")
                         .addExecutor(SecureClientAuthenticatorExecutorFactory.PROVIDER_ID,
                                 createSecureClientAuthenticatorExecutorConfig(
-                                        Arrays.asList(JWTClientAuthenticator.PROVIDER_ID),
+                                        List.of(JWTClientAuthenticator.PROVIDER_ID),
                                         null)
                         )
                         .toRepresentation()
@@ -278,7 +268,7 @@ public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
         json = (new ClientPoliciesBuilder()).addPolicy(
                 (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Den Forste Politik", Boolean.TRUE)
                         .addCondition(ClientUpdaterSourceGroupsConditionFactory.PROVIDER_ID,
-                                createClientUpdateSourceGroupsConditionConfig(Arrays.asList("topGroup")))
+                                createClientUpdateSourceGroupsConditionConfig(List.of("topGroup")))
                         .addProfile(PROFILE_NAME)
                         .toRepresentation()
         ).toString();
@@ -308,7 +298,7 @@ public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Il Primo Profilo")
                         .addExecutor(SecureClientAuthenticatorExecutorFactory.PROVIDER_ID,
                                 createSecureClientAuthenticatorExecutorConfig(
-                                        Arrays.asList(JWTClientSecretAuthenticator.PROVIDER_ID),
+                                        List.of(JWTClientSecretAuthenticator.PROVIDER_ID),
                                         null)
                         )
                         .toRepresentation()
@@ -319,7 +309,7 @@ public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
         json = (new ClientPoliciesBuilder()).addPolicy(
                 (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Prima Politica", Boolean.TRUE)
                         .addCondition(ClientUpdaterSourceRolesConditionFactory.PROVIDER_ID,
-                                createClientUpdateSourceRolesConditionConfig(Arrays.asList(Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.CREATE_CLIENT)))
+                                createClientUpdateSourceRolesConditionConfig(List.of(Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.CREATE_CLIENT)))
                         .addProfile(PROFILE_NAME)
                         .toRepresentation()
         ).toString();
@@ -365,9 +355,7 @@ public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
 
         String clientId = generateSuffixedName(CLIENT_NAME);
         String clientSecret = "secret";
-        createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
-            clientRep.setSecret(clientSecret);
-        });
+        createClientByAdmin(clientId, (ClientRepresentation clientRep) -> clientRep.setSecret(clientSecret));
 
         try {
             oauth.scope("address" + " " + "phone");
@@ -408,9 +396,7 @@ public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
 
         String clientId = generateSuffixedName(CLIENT_NAME);
         String clientSecret = "secret";
-        String id = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
-            clientRep.setSecret(clientSecret);
-        });
+        String id = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> clientRep.setSecret(clientSecret));
 
 
         String emailClientScopeId = adminClient.realm(REALM_NAME)
@@ -459,7 +445,7 @@ public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
         json = (new ClientPoliciesBuilder()).addPolicy(
                 (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Het Eerste Beleid", Boolean.TRUE)
                         .addCondition(ClientAttributesConditionFactory.PROVIDER_ID,
-                                createClientAttributesConditionConfig(new MultivaluedHashMap<String, String>() {
+                                createClientAttributesConditionConfig(new MultivaluedHashMap<>() {
                                     {
                                         putSingle("attr1", "Apple");
                                         putSingle("attr2", "Orange");
@@ -474,7 +460,7 @@ public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
         String clientSecret = "secret";
         createClientByAdmin(clientAlphaId, (ClientRepresentation clientRep) -> {
             clientRep.setSecret(clientSecret);
-            clientRep.setAttributes(new HashMap<String, String>() {
+            clientRep.setAttributes(new HashMap<>() {
                 {
                     put("attr1", "Apple");
                     put("attr2", "Orange");
@@ -486,7 +472,7 @@ public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
         String clientBetaId = generateSuffixedName("Beta-App");
         createClientByAdmin(clientBetaId, (ClientRepresentation clientRep) -> {
             clientRep.setSecret(clientSecret);
-            clientRep.setAttributes(new HashMap<String, String>() {
+            clientRep.setAttributes(new HashMap<>() {
                 {
                     put("attr1", "Apple");
                     put("attr2", "Peach"); // attr2 is not "Orange"
@@ -523,7 +509,7 @@ public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
         json = (new ClientPoliciesBuilder()).addPolicy(
                 (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Primera Plitica", Boolean.TRUE)
                         .addCondition(ClientAccessTypeConditionFactory.PROVIDER_ID,
-                                createClientAccessTypeConditionConfig(Arrays.asList(ClientAccessTypeConditionFactory.TYPE_CONFIDENTIAL)))
+                                createClientAccessTypeConditionConfig(List.of(ClientAccessTypeConditionFactory.TYPE_CONFIDENTIAL)))
                         .addProfile(PROFILE_NAME)
                         .toRepresentation()
         ).toString();
@@ -578,9 +564,7 @@ public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
         updateProfiles(json);
 
         authCreateClients();
-        String clientGammaId = createClientDynamically(generateSuffixedName("Gamma-App"), (OIDCClientRepresentation clientRep) -> {
-            clientRep.setClientSecret("secretGamma");
-        });
+        String clientGammaId = createClientDynamically(generateSuffixedName("Gamma-App"), (OIDCClientRepresentation clientRep) -> clientRep.setClientSecret("secretGamma"));
 
         ClientRepresentation clientRep = getClientByAdmin(clientGammaId);
         assertEquals(OAuth2Constants.PKCE_METHOD_S256, OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).getPkceCodeChallengeMethod());
@@ -625,7 +609,7 @@ public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
                         .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
-                                createTestRaiseExeptionExecutorConfig(Arrays.asList(ClientPolicyEvent.SERVICE_ACCOUNT_TOKEN_REQUEST)))
+                                createTestRaiseExeptionExecutorConfig(List.of(ClientPolicyEvent.SERVICE_ACCOUNT_TOKEN_REQUEST)))
                         .toRepresentation()
         ).toString();
         updateProfiles(json);
@@ -647,7 +631,7 @@ public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
             assertEquals(ClientPolicyEvent.SERVICE_ACCOUNT_TOKEN_REQUEST.toString(), response.getError());
             assertEquals("Exception thrown intentionally", response.getErrorDescription());
         } finally {
-            oauth.clientId(origClientId);
+            oauth.client(origClientId);
         }
     }
 }

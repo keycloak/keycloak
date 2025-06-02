@@ -17,6 +17,7 @@
 
 package org.keycloak.organization.protocol.mappers.oidc;
 
+import static org.keycloak.models.ClientScopeModel.VALUE_SEPARATOR;
 import static org.keycloak.organization.utils.Organizations.getProvider;
 import static org.keycloak.utils.StringUtil.isBlank;
 
@@ -151,7 +152,6 @@ public enum OrganizationScope {
 
     private static final String ORGANIZATION_SCOPES_SESSION_ATTRIBUTE = "kc.org.client.scope";
     private static final String UNSUPPORTED_ORGANIZATION_SCOPES_ATTRIBUTE = "kc.org.client.scope.unsupported";
-    private static final char VALUE_SEPARATOR = ':';
     private static final Pattern SCOPE_PATTERN = Pattern.compile("(.*)" + VALUE_SEPARATOR + "(.*)");
     private static final String EMPTY_SCOPE = "";
 

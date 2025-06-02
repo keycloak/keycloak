@@ -20,6 +20,7 @@ package org.keycloak.authentication.authenticators.broker;
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
+import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
@@ -205,7 +206,7 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
 
             profile.update((attributeName, userModel, oldValue) -> {
                 if (attributeName.equals(UserModel.EMAIL)) {
-                    context.getAuthenticationSession().setAuthNote(UPDATE_PROFILE_EMAIL_CHANGED, "true");
+                    context.getAuthenticationSession().setAuthNote(AbstractIdentityProvider.UPDATE_PROFILE_EMAIL_CHANGED, "true");
                     event.clone().event(EventType.UPDATE_EMAIL).detail(Details.CONTEXT, UserProfileContext.IDP_REVIEW.name()).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, profile.getAttributes().getFirst(UserModel.EMAIL)).success();
                 }
             });

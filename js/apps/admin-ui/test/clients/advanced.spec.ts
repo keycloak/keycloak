@@ -8,7 +8,6 @@ import {
   assertAccessTokenSignatureAlgorithm,
   assertAdvancedSwitchesOn,
   assertBrowserFlowInput,
-  assertKeyForCodeExchangeInput,
   assertOnExcludeSessionStateSwitch,
   assertTestClusterAvailability,
   assertTokenLifespanClientOfflineSessionMaxVisible,
@@ -28,7 +27,6 @@ import {
   selectAccessTokenSignatureAlgorithm,
   selectBrowserFlowInput,
   selectDirectGrantInput,
-  selectKeyForCodeExchangeInput,
   switchOffExcludeSessionStateSwitch,
   saveAuthFlowOverride,
   revertAuthFlowOverride,
@@ -83,15 +81,10 @@ test.describe("Advanced tab test", () => {
 
   test("Advanced settings", async ({ page }) => {
     await clickAdvancedSwitches(page);
-    await selectKeyForCodeExchangeInput(page, "S256");
     await saveAdvanced(page);
     await assertAdvancedSwitchesOn(page);
-    await assertKeyForCodeExchangeInput(page, "S256");
-    await selectKeyForCodeExchangeInput(page, "plain");
-    await assertKeyForCodeExchangeInput(page, "plain");
     await clickAdvancedSwitches(page, false);
     await revertAdvanced(page);
-    await assertKeyForCodeExchangeInput(page, "S256");
     await assertAdvancedSwitchesOn(page);
   });
 

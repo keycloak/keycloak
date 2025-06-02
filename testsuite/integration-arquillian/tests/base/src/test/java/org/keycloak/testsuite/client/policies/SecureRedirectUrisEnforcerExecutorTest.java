@@ -77,7 +77,7 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
 
         // Registration
         // Success - even if not setting a valid redirect uri
-        String clientId = null;
+        String clientId;
         String cId = null;
         try {
             clientId = generateSuffixedName(CLIENT_NAME);
@@ -554,9 +554,7 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
         String json = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile(
                 (new ClientPoliciesUtil.ClientProfileBuilder()).createProfile(PROFILE_NAME, "Le Premier Profil")
                         .addExecutor(SecureRedirectUrisEnforcerExecutorFactory.PROVIDER_ID,
-                                createSecureRedirectUrisEnforcerExecutorConfig(it-> {
-                                    it.setAllowPermittedDomains(List.of("oauth.redirect"));
-                                })
+                                createSecureRedirectUrisEnforcerExecutorConfig(it-> it.setAllowPermittedDomains(List.of("oauth.redirect")))
                         )
                         .toRepresentation()
         ).toString();
@@ -694,7 +692,7 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
     }
 
     private void testSecureRedirectUrisEnforcerExecutor_failAuthorizationRequest(String clientId, String redirectUri) {
-        oauth.clientId(clientId);
+        oauth.client(clientId);
         oauth.redirectUri(redirectUri);
         oauth.openLoginForm();
         assertTrue(errorPage.isCurrent());

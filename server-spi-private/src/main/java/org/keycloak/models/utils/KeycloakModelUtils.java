@@ -1167,8 +1167,12 @@ public final class KeycloakModelUtils {
         if (clientAuthenticatorType != null)
             switch (clientAuthenticatorType) {
                 case AUTH_TYPE_CLIENT_SECRET_JWT: {
-                    if (Algorithm.HS384.equals(signingAlg)) return SecretGenerator.SECRET_LENGTH_384_BITS;
-                    if (Algorithm.HS512.equals(signingAlg)) return SecretGenerator.SECRET_LENGTH_512_BITS;
+                    if (Algorithm.HS384.equals(signingAlg))
+                        return SecretGenerator.equivalentEntropySize(SecretGenerator.SECRET_LENGTH_384_BITS, SecretGenerator.ALPHANUM.length);
+                    else if (Algorithm.HS512.equals(signingAlg))
+                        return SecretGenerator.equivalentEntropySize(SecretGenerator.SECRET_LENGTH_512_BITS, SecretGenerator.ALPHANUM.length);
+                    else
+                        return SecretGenerator.equivalentEntropySize(SecretGenerator.SECRET_LENGTH_256_BITS, SecretGenerator.ALPHANUM.length);
                 }
             }
         return SecretGenerator.SECRET_LENGTH_256_BITS;
