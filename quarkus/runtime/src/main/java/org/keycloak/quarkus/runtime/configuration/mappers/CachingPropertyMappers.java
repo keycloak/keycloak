@@ -66,7 +66,7 @@ final class CachingPropertyMappers {
                 fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE.withRuntimeSpecificDefault(getDefaultKeystorePathValue()))
                         .paramLabel("file")
                         .isEnabled(() -> Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED), "property '%s' is enabled".formatted(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED.getKey()))
-                        .validator(value -> checkOptionPresent(CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE, CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD))
+                        .validator(value -> checkValidKeystore(value, CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE, CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD))
                         .build(),
                 fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD)
                         .paramLabel("password")
@@ -77,7 +77,7 @@ final class CachingPropertyMappers {
                 fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE.withRuntimeSpecificDefault(getDefaultTruststorePathValue()))
                         .paramLabel("file")
                         .isEnabled(() -> Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED), "property '%s' is enabled".formatted(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED.getKey()))
-                        .validator(value -> checkOptionPresent(CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE, CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD))
+                        .validator(value -> checkValidKeystore(value, CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE, CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD))
                         .build(),
                 fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD)
                         .paramLabel("password")
@@ -210,6 +210,12 @@ final class CachingPropertyMappers {
         if (getOptionalKcValue(optionRequired).isEmpty()) {
             throw new PropertyException("The option '%s' is required when '%s' is set.".formatted(optionRequired.getKey(), optionSet.getKey()));
         }
+    }
+
+    private static void checkValidKeystore(String store, Option<String> option, Option<String> requiredOption) {
+        checkOptionPresent(option, requiredOption);
+        if (!new File(store).exists())
+            throw new IllegalArgumentException("The '%s' file '%s' does not exist.".formatted(option.getKey(), store));
     }
 
     private static void checkOptionPresent(Option<String> option, Option<String> requiredOption) {

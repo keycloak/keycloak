@@ -36,6 +36,7 @@ import org.keycloak.quarkus.runtime.cli.command.UpdateCompatibilityMetadata;
 import org.keycloak.util.JsonSerialization;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.keycloak.it.cli.dist.Util.createTempFile;
 
 @DistributionTest
 @RawDistOnly(reason = "Requires creating JSON file to be available between containers")
@@ -69,7 +70,7 @@ public class UpdateCommandDistTest {
 
     @Test
     public void testCompatible(KeycloakDistribution distribution) throws IOException {
-        var jsonFile = createTempFile("compatible");
+        var jsonFile = createTempFile("compatible", ".json");
         var result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityMetadata.NAME, UpdateCompatibilityMetadata.OUTPUT_OPTION_NAME, jsonFile.getAbsolutePath());
         result.assertMessage("Metadata:");
         assertEquals(0, result.exitCode());
@@ -85,7 +86,7 @@ public class UpdateCommandDistTest {
 
     @Test
     public void testWrongVersions(KeycloakDistribution distribution) throws IOException {
-        var jsonFile = createTempFile("wrong-versions");
+        var jsonFile = createTempFile("wrong-versions", ".json");
 
         // incompatible keycloak version
         var info = new HashMap<String, Map<String, String>>();
@@ -112,11 +113,4 @@ public class UpdateCommandDistTest {
         result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath());
         result.assertError("[%s] Rolling Update is not available. '%s.version' is incompatible: 0.0.0.Final -> %s.".formatted(CachingCompatibilityMetadataProvider.ID, CachingCompatibilityMetadataProvider.ID, org.infinispan.commons.util.Version.getVersion()));
     }
-
-    private static File createTempFile(String prefix) throws IOException {
-        var file = File.createTempFile(prefix, ".json");
-        file.deleteOnExit();
-        return file;
-    }
-
 }
