@@ -132,3 +132,11 @@ a new parameter `subGroupsCount` was introduced to the following endpoints:
 
 With this parameter, clients can decide whether the count should be returned to each individual group returned. To not break existing deployments,
 this parameter defaults to `true` so that the count is returned if the parameter is not set.
+
+=== Upgrade procedure changed for the distribution
+
+If you are upgrading {project_name} by downloading the distribution, the upgrade procedure has been changed. Previously it recommended copying over the contents from the `conf/` folder from the old to the new installation.
+The new procedure recommends to re-apply any changes to `cache-ispn.xml` or a custom cache configuration based on the file included in the new version.
+
+This prevents accidentally downgrading functionality, for example, by using an old `cache-ispn.xml` file from a previous version.
+
