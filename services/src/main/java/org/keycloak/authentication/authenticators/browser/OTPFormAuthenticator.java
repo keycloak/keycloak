@@ -59,6 +59,7 @@ public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator impl
 
     @Override
     public void action(AuthenticationFlowContext context) {
+        context.getEvent().detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE);
         validateOTP(context);
     }
 
