@@ -100,6 +100,10 @@ public final class PropertyMappers {
         return name.startsWith(KC_SPI_PREFIX) && (name.endsWith("--provider") || name.endsWith("--enabled") || name.endsWith("--provider-default"));
     }
 
+    public static boolean isMaybeSpiBuildTimeProperty(String name) {
+        return name.startsWith(KC_SPI_PREFIX) && (name.endsWith("-provider") || name.endsWith("-enabled") || name.endsWith("-provider-default") && !name.contains("--"));
+    }
+
     private static boolean isKeycloakRuntime(String name, PropertyMapper<?> mapper) {
         if (mapper == null) {
             return name.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK) && !isSpiBuildTimeProperty(name);
