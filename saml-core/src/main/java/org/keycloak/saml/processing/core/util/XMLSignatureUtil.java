@@ -135,8 +135,6 @@ public class XMLSignatureUtil {
 
         private boolean keyLocated = false;
 
-        private String keyName = null;
-
         public KeySelectorUtilizingKeyNameHint(KeyLocator locator) {
             this.locator = locator;
         }
@@ -527,7 +525,7 @@ public class XMLSignatureUtil {
                 return false;
             }
         } catch (XMLSignatureException ex) { // pass through MarshalException
-            logger.debug("Verification failed for key " + sel.keyName + ": " + ex);
+            logger.debug("Verification failed: " + ex);
             logger.trace(ex);
         }
 
