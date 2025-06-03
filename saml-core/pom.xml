@@ -84,6 +84,12 @@
             <groupId>jakarta.xml.ws</groupId>
             <artifactId>jakarta.xml.ws-api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>kms</artifactId>
+            <version>2.31.54</version>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
     <build>
         <resources>

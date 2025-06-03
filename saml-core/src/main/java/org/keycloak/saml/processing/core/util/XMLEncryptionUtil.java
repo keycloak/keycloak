@@ -16,6 +16,7 @@
  */
 package org.keycloak.saml.processing.core.util;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.xml.security.encryption.EncryptedData;
 import org.apache.xml.security.encryption.EncryptedKey;
 import org.apache.xml.security.encryption.XMLCipher;
@@ -35,6 +36,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import javax.xml.namespace.QName;
 import java.security.Key;
 import java.security.PrivateKey;
@@ -76,8 +78,8 @@ public class XMLEncryptionUtil {
     public static final String DS_KEY_INFO = "ds:KeyInfo";
 
     private static final String RSA_ENCRYPTION_SCHEME = Objects.equals(System.getProperty("keycloak.saml.key_trans.rsa_v1.5"), "true")
-      ? XMLCipher.RSA_v1dot5
-      : XMLCipher.RSA_OAEP;
+            ? XMLCipher.RSA_v1dot5
+            : XMLCipher.RSA_OAEP;
 
     /**
      * <p>
@@ -100,8 +102,8 @@ public class XMLEncryptionUtil {
      * @throws org.keycloak.saml.common.exceptions.ProcessingException
      */
     private static EncryptedKey encryptKey(Document document, SecretKey keyToBeEncrypted, PublicKey keyUsedToEncryptSecretKey,
-                                          int keySize, String keyEncryptionAlgorithm, String keyEncryptionDigestMethod,
-                                          String keyEncryptionMgfAlgorithm) throws ProcessingException {
+                                           int keySize, String keyEncryptionAlgorithm, String keyEncryptionDigestMethod,
+                                           String keyEncryptionMgfAlgorithm) throws ProcessingException {
         XMLCipher keyCipher;
 
         try {
@@ -283,25 +285,47 @@ public class XMLEncryptionUtil {
             List<PrivateKey> encryptionKeys;
             encryptionKeys = decryptionKeyLocator.getKeys(encryptedData);
 
-            if (encryptionKeys == null || encryptionKeys.isEmpty()) {
-                throw logger.nullValueError("Key for EncryptedData not found.");
-            }
+//            if (encryptionKeys == null || encryptionKeys.isEmpty()) {
+//                throw logger.nullValueError("Key for EncryptedData not found.");
+//            }
 
-            for (PrivateKey privateKey : encryptionKeys) {
-                try {
-                    String encAlgoURL = encryptedData.getEncryptionMethod().getAlgorithm();
-                    XMLCipher keyCipher = XMLCipher.getInstance();
-                    keyCipher.init(XMLCipher.UNWRAP_MODE, privateKey);
-                    Key encryptionKey = keyCipher.decryptKey(encryptedKey, encAlgoURL);
+            try {
+                String encAlgoURL = encryptedData.getEncryptionMethod().getAlgorithm();
+
+                if (encryptionKeys == null || encryptionKeys.isEmpty()) {
+                    System.setProperty("aws.accessKeyId", System.getenv("AWS_ACCESS_KEY_ID"));
+                    System.setProperty("aws.secretAccessKey", System.getenv("AWS_SECRET_ACCESS_KEY"));
+                    System.setProperty("aws.region", System.getenv("AWS_REGION"));
+
+                    AmazonKMS amazonKMS = new AmazonKMS(System.getenv("AWS_DEV_KEY_ID"));
+                    amazonKMS.setClient();
+
+                    byte[] encryptedBytes = Base64.decodeBase64(encryptedKey.getCipherData().getCipherValue().getValue());
+                    byte[] decryptedKey = amazonKMS.unwrapKey(encAlgoURL, encryptedBytes);
+
+                    SecretKey encryptionKey = new SecretKeySpec(decryptedKey, 0, decryptedKey.length, "AES");
+
                     cipher = XMLCipher.getInstance();
                     cipher.init(XMLCipher.DECRYPT_MODE, encryptionKey);
 
                     decryptedDoc = cipher.doFinal(documentWithEncryptedElement, encDataElement);
                     success = true;
-                    break;
-                } catch (Exception e) {
-                    enclosingThrowable.addSuppressed(e);
+                } else {
+                    for (PrivateKey privateKey : encryptionKeys) {
+                        XMLCipher keyCipher = XMLCipher.getInstance();
+                        keyCipher.init(XMLCipher.UNWRAP_MODE, privateKey);
+                        Key encryptionKey = keyCipher.decryptKey(encryptedKey, encAlgoURL);
+
+                        cipher = XMLCipher.getInstance();
+                        cipher.init(XMLCipher.DECRYPT_MODE, encryptionKey);
+
+                        decryptedDoc = cipher.doFinal(documentWithEncryptedElement, encDataElement);
+                        success = true;
+                        break;
+                    }
                 }
+            } catch (Exception e) {
+                enclosingThrowable.addSuppressed(e);
             }
 
             if (!success) {
