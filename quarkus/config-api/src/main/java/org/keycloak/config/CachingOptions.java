@@ -65,7 +65,7 @@ public class CachingOptions {
             .strictExpectedValues(false)
             .description("Define the default stack to use for cluster communication and node discovery. Defaults to 'jdbc-ping' if not set.")
             // Do not set a default value here as it would otherwise overwrite an explicit stack chosen in cache config XML
-            .deprecatedValues("Use 'jdbc-ping' instead by leaving it unset", Stack.azure, Stack.ec2, Stack.google, Stack.tcp, Stack.udp, Stack.jdbc_ping_udp)
+            .deprecatedValues("Use 'jdbc-ping' instead by leaving it unset", Stack.azure, Stack.ec2, Stack.google, Stack.jdbc_ping_udp, Stack.kubernetes, Stack.tcp, Stack.udp)
             .build();
 
     public static final Option<File> CACHE_CONFIG_FILE = new OptionBuilder<>(CACHE_CONFIG_FILE_PROPERTY, File.class)

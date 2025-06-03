@@ -100,6 +100,12 @@ Consider one of the following cases and recommended migration steps:
 * With the feature `persistent-user-session` feature enabled, the remote store configuration is ignored and {project_name} will print a warning.
 ====
 
+=== Kubernetes cache stack has been deprecated
+
+The `kubernetes` cache stack has been deprecated and will be removed in a future release. Users should transition to the `jdbc-ping` stack.
+
+Consequently, the Keycloak Operator now uses the `jdbc-ping` cache stack by default.
+
 === Signing out from other devices now disabled by default
 
 Previously, when a user updated their credentials, like changing their password or adding another factor like an OTP or Passkey, they had a checkbox *Sign out from other devices* which was checked by default. Since this release, {project_name} displays the checkbox *Sign out from other devices* not checked by default. This checkbox should now be intentionally enabled by the user to logout all the other related sessions associated to the same user.
