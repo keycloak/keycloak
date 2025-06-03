@@ -17,11 +17,20 @@
                challenge : '${challenge}',
                userVerification : '${userVerification}',
                rpId : '${rpId}',
-               createTimeout : ${createTimeout},
-               errmsg : "${msg("passkey-unsupported-browser-text")?no_esc}"
+               createTimeout : ${createTimeout}
            };
 
-           document.addEventListener("DOMContentLoaded", (event) => initAuthenticate(args));
+           document.addEventListener("DOMContentLoaded", (event) => initAuthenticate({errmsg : "${msg("passkey-unsupported-browser-text")?no_esc}", ...args}));
+           const authButton = document.getElementById('authenticateWebAuthnButton');
+           if (authButton) {
+               authButton.addEventListener("click", (event) => {
+                   event.preventDefault();
+                   authenticateByWebAuthn({errmsg : "${msg("webauthn-unsupported-browser-text")?no_esc}", ...args});
+               });
+           }
         </script>
+        <a id="authenticateWebAuthnButton" href="#" class="${properties.kcButtonSecondaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcMarginTopClass!}">
+            ${kcSanitize(msg("webauthn-doAuthenticate"))?no_esc}
+        </a>
     </#if>
 </#macro>

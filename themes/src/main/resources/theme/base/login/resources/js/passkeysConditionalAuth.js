@@ -1,5 +1,5 @@
 import { base64url } from "rfc4648";
-import { returnSuccess, returnFailure } from "./webauthnAuthenticate.js";
+import { returnSuccess, signal } from "./webauthnAuthenticate.js";
 
 export function initAuthenticate(input, availableCallback = (available) => {}) {
     // Check if WebAuthn is supported by this browser
@@ -38,6 +38,7 @@ function doAuthenticate(input) {
 
     return navigator.credentials.get({
         publicKey: publicKey,
+        signal: signal(),
         ...input.additionalOptions
     });
 }

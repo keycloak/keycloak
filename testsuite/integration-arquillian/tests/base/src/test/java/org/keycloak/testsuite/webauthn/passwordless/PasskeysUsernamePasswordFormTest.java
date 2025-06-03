@@ -31,7 +31,6 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
-import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -112,39 +111,6 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
                     .assertEvent();
 
             logout();
-            events.clear();
-
-            // remove the passkey in the user
-            String credentialId = userResource().credentials().stream()
-                    .filter(cred -> WebAuthnCredentialModel.TYPE_PASSWORDLESS.equals(cred.getType()))
-                    .findAny()
-                    .map(CredentialRepresentation::getId)
-                    .orElse(null);
-            MatcherAssert.assertThat(credentialId, Matchers.notNullValue());
-            userResource().removeCredential(credentialId);
-
-            // login again should try to login automatically and fail
-            oauth.openLoginForm();
-            WaitUtils.waitForPageToLoad();
-            loginPage.assertCurrent();
-            MatcherAssert.assertThat(loginPage.getError(), Matchers.is("Unknown user authenticated by the Passkey."));
-            MatcherAssert.assertThat(loginPage.getUsernameAutocomplete(), Matchers.is("username")); // only password allowed now
-            events.expect(EventType.LOGIN_ERROR)
-                    .detail(WebAuthnConstants.AUTHENTICATED_USER_ID, user.getId())
-                    .detail(WebAuthnConstants.PUBKEY_CRED_ID_ATTR, Matchers.notNullValue())
-                    .error(Errors.USER_NOT_FOUND)
-                    .detail(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
-                    .user(Matchers.emptyOrNullString())
-                    .assertEvent();
-
-            // login using username and password now that passkey failed
-            loginPage.login(USERNAME, getPassword(USERNAME));
-            appPage.assertCurrent();
-            events.expectLogin()
-                    .user(user.getId())
-                    .detail(Details.USERNAME, USERNAME)
-                    .detail(Details.CREDENTIAL_TYPE, Matchers.nullValue())
-                    .assertEvent();
         }
     }
 
@@ -194,6 +160,51 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
                     .detail(Details.USERNAME, USERNAME)
                     .detail(Details.CREDENTIAL_TYPE, Matchers.nullValue())
                     .assertEvent();
+        }
+    }
+
+    @Test
+    public void passwordLoginWithExternalKey() throws Exception {
+        // use a default resident key which is not shown in conditional UI
+        getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.DEFAULT_RESIDENT_KEY.getOptions());
+
+        // set passwordless policy for discoverable keys
+        try (Closeable c = getWebAuthnRealmUpdater()
+                .setWebAuthnPolicyRpEntityName("localhost")
+                .setWebAuthnPolicyRequireResidentKey(PropertyRequirement.YES.getValue())
+                .setWebAuthnPolicyUserVerificationRequirement(WebAuthnConstants.OPTION_REQUIRED)
+                .setWebAuthnPolicyPasskeysEnabled(Boolean.TRUE)
+                .update()) {
+
+            checkWebAuthnConfiguration(PropertyRequirement.YES.getValue(), WebAuthnConstants.OPTION_REQUIRED);
+
+            registerDefaultUser();
+
+            UserRepresentation user = userResource().toRepresentation();
+            MatcherAssert.assertThat(user, Matchers.notNullValue());
+
+            logout();
+            events.clear();
+
+            // open login page, the key is not internal so not opened by default
+            oauth.openLoginForm();
+            WaitUtils.waitForPageToLoad();
+
+            loginPage.assertCurrent();
+            MatcherAssert.assertThat(loginPage.getUsernameAutocomplete(), Matchers.is("username webauthn"));
+            MatcherAssert.assertThat(driver.findElement(By.xpath("//form[@id='webauth']")), Matchers.notNullValue());
+
+            // force login using webauthn link
+            webAuthnLoginPage.clickAuthenticate();
+            appPage.assertCurrent();
+
+            events.expectLogin()
+                    .user(user.getId())
+                    .detail(Details.USERNAME, user.getUsername())
+                    .detail(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
+                    .detail(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true")
+                    .assertEvent();
+            logout();
         }
     }
 
