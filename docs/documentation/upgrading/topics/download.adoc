@@ -11,4 +11,6 @@ from the {project_name} website.
 +
 After extracting this file, you should have a directory that is named `{archivebasename}-{project_version}`.
 . Move this directory to the desired location.
-. Copy `conf/`, `providers/` and `themes/` from the previous installation to the new installation.
+. Copy `providers/` and `themes/` from the previous installation to the new installation.
+. If you modified configurations files in `conf/`: Re-apply your changes to those files, otherwise leave them unchanged.
+. If you previously modified `cache-ispn.xml` or provided your own cache configuration file: Review the latest {project_name} options for cache sizes and transport stacks if they can be used instead of your modifications as they provide better documentation, additional validations and functionality, and a simpler upgrade experience.
