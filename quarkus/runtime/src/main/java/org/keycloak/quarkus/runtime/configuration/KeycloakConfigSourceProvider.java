@@ -49,7 +49,7 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider, Confi
 
         addConfigSources("CLI", List.of(new ConfigArgsConfigSource()));
 
-        addConfigSources("ENV", List.of(new KcEnvConfigSource()));
+        addConfigSources("ENV", KcEnvConfigSource.getConfigSources());
 
         addConfigSources("quarkus.properties", new QuarkusPropertiesConfigSource().getConfigSources(Thread.currentThread().getContextClassLoader()));
 
