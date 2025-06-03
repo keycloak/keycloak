@@ -2,6 +2,10 @@
 
 Breaking changes are identified as requiring changes from existing users to their configurations.
 
+=== Scope.getPropertyNames deprecated for removal
+
+The `org.keycloak.Config.Scope.getPropertyNames` method has been deprecated for removal.
+
 === local admin deprecated for removal
 
 `UrlType.LOCAL_ADMIN` and the corresponding welcome theme variable `localAdminUrl` have been deprecated for eventual removal. The default welcome resource will now simply mention localhost rather than providing a URL when an admin user has yet to be created.

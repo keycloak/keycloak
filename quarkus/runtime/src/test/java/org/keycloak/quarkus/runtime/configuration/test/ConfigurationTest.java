@@ -84,13 +84,13 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         Config.Scope config = initConfig("vault", FilesPlainTextVaultProviderFactory.ID);
         assertEquals("/foo/bar", config.get("dir"));
         assertTrue(config.getPropertyNames()
-                .contains("kc.spi-vault-".concat(FilesPlainTextVaultProviderFactory.ID).concat("-dir")));
+                .contains("kc.spi-vault--".concat(FilesPlainTextVaultProviderFactory.ID).concat("--dir")));
 
         putEnvVar("KC_VAULT_TYPE", "JKS");
         config = initConfig("vault", FilesKeystoreVaultProviderFactory.ID);
         assertEquals("JKS", config.get("type"));
         assertTrue(config.getPropertyNames()
-                .contains("kc.spi-vault-".concat(FilesKeystoreVaultProviderFactory.ID).concat("-type")));
+                .contains("kc.spi-vault--".concat(FilesKeystoreVaultProviderFactory.ID).concat("--type")));
     }
 
     @Test
@@ -183,7 +183,6 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     public void testPropertyNamesFromConfig() {
         ConfigArgsConfigSource.setCliArgs("--spi-client-registration-openid-connect-static-jwk-url=http://c.jwk.url");
         Config.Scope config = initConfig("client-registration", "openid-connect");
-        assertEquals(1, config.getPropertyNames().size());
         assertEquals("http://c.jwk.url", config.get("static-jwk-url"));
 
         ConfigArgsConfigSource.setCliArgs("--vault-dir=secrets");
@@ -199,14 +198,12 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         ConfigArgsConfigSource.setCliArgs();
         System.setProperty("kc.spi-client-registration-openid-connect-static-jwk-url", "http://c.jwk.url");
         config = initConfig("client-registration", "openid-connect");
-        assertEquals(1, config.getPropertyNames().size());
         assertEquals("http://c.jwk.url", config.get("static-jwk-url"));
 
         ConfigArgsConfigSource.setCliArgs();
         System.getProperties().remove("kc.spi-client-registration-openid-connect-static-jwk-url");
         putEnvVar("KC_SPI_CLIENT_REGISTRATION_OPENID_CONNECT_STATIC_JWK_URL", "http://c.jwk.url/from-env");
         config = initConfig("client-registration", "openid-connect");
-        assertEquals(1, config.getPropertyNames().size());
         assertEquals("http://c.jwk.url/from-env", config.get("static-jwk-url"));
     }
 
@@ -589,5 +586,5 @@ public class ConfigurationTest extends AbstractConfigurationTest {
 
     private static Config.Scope cacheEmbeddedConfiguration() {
         return initConfig(CacheEmbeddedConfigProviderSpi.SPI_NAME, DefaultCacheEmbeddedConfigProviderFactory.PROVIDER_ID);
-    } 
+    }
 }

@@ -466,7 +466,7 @@ public class Picocli {
                 warn("The following used options or option values are DEPRECATED and will be removed or their behaviour changed in a future release:\n" + String.join("\n", deprecatedInUse) + "\nConsult the Release Notes for details.", getOutWriter());
             }
             if (!ambiguousSpi.isEmpty()) {
-                warn("The following spi options are using the legacy format and are not being treated as build time options. Please use the new format with the appropriate -- separators to resolve this ambiguity:" + String.join("\n", ambiguousSpi));
+                warn("The following spi options are using the legacy format and are not being treated as build time options. Please use the new format with the appropriate -- separators to resolve this ambiguity: " + String.join("\n", ambiguousSpi));
             }
             secondClassOptions.forEach((key, firstClass) -> {
                 warn("Please use the first-class option `%s` instead of `%s`".formatted(firstClass, key), getOutWriter());

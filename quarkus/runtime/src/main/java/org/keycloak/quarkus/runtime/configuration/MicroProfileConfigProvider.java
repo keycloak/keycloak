@@ -127,7 +127,7 @@ public class MicroProfileConfigProvider implements Config.ConfigProvider {
         @Override
         public Set<String> getPropertyNames() {
             return StreamSupport.stream(config.getPropertyNames().spliterator(), false)
-                    .filter(key -> key.startsWith(prefix))
+                    .filter(key -> key.startsWith(separatorPrefix))
                     .collect(Collectors.toSet());
         }
 
