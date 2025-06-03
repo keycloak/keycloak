@@ -155,6 +155,11 @@ public class ReadOnlyUserModelDelegate extends UserModelDelegate {
         throw readOnlyException("role mapping for role " + role.getName());
     }
 
+    @Override
+    public boolean equals(Object o) {
+        return super.equals(o);
+    }
+
     private RuntimeException readOnlyException(String detail) {
         String message = String.format("The user is read-only. Not possible to write '%s' when updating user '%s'.", detail, getUsername());
         return exceptionCreator.apply(message);
