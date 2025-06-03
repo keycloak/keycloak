@@ -31,7 +31,7 @@ import static org.keycloak.quarkus.runtime.configuration.Configuration.getOption
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 public final class ImportPropertyMappers {
-    private static final String IMPORTER_PROPERTY = "kc.spi-import-importer";
+    private static final String IMPORTER_PROPERTY = "kc.spi-import--importer";
     private static final String SINGLE_FILE = "singleFile";
     private static final String DIR = "dir";
 
@@ -46,20 +46,20 @@ public final class ImportPropertyMappers {
                         .paramLabel("file")
                         .build(),
                 fromOption(ImportOptions.FILE)
-                        .to("kc.spi-import-single-file-file")
+                        .to("kc.spi-import--single-file--file")
                         .paramLabel("file")
                         .build(),
                 fromOption(ImportOptions.DIR)
-                        .to("kc.spi-import-dir-dir")
+                        .to("kc.spi-import--dir--dir")
                         .paramLabel("dir")
                         .build(),
                 fromOption(ImportOptions.OVERRIDE)
-                        .to("kc.spi-import-single-file-strategy")
+                        .to("kc.spi-import--single-file--strategy")
                         .transformer(ImportPropertyMappers::transformOverride)
                         .isEnabled(ImportPropertyMappers::isSingleFileProvider)
                         .build(),
                 fromOption(ImportOptions.OVERRIDE)
-                        .to("kc.spi-import-dir-strategy")
+                        .to("kc.spi-import--dir--strategy")
                         .transformer(ImportPropertyMappers::transformOverride)
                         .isEnabled(ImportPropertyMappers::isDirProvider)
                         .build(),
@@ -107,8 +107,8 @@ public final class ImportPropertyMappers {
             return importer.getValue();
         }
 
-        var file = getOptionalValue("kc.spi-import-single-file-file").map(f -> SINGLE_FILE);
-        var dir = getOptionalValue("kc.spi-import-dir-dir")
+        var file = getOptionalValue("kc.spi-import--single-file--file").map(f -> SINGLE_FILE);
+        var dir = getOptionalValue("kc.spi-import--dir--dir")
                 .or(() -> getOptionalValue("kc.dir"))
                 .map(f -> DIR);
 

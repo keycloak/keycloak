@@ -18,16 +18,16 @@ final class EventPropertyMappers {
     public static PropertyMapper<?>[] getMetricsPropertyMappers() {
         return new PropertyMapper[] {
                 fromOption(USER_EVENT_METRICS_ENABLED)
-                        .to("kc.spi-events-listener-micrometer-user-event-metrics-enabled")
+                        .to("kc.spi-events-listener--micrometer-user-event-metrics--enabled")
                         .isEnabled(EventPropertyMappers::userEventsMetricsEnabled, METRICS_ENABLED_MSG + " and feature " + Profile.Feature.USER_EVENT_METRICS.getKey() + " is enabled")
                         .build(),
                 fromOption(USER_EVENT_METRICS_TAGS)
-                        .to("kc.spi-events-listener-micrometer-user-event-metrics-tags")
+                        .to("kc.spi-events-listener--micrometer-user-event-metrics--tags")
                         .paramLabel("tags")
                         .isEnabled(EventPropertyMappers::userEventsMetricsTags, "user event metrics are enabled")
                         .build(),
                 fromOption(USER_EVENT_METRICS_EVENTS)
-                        .to("kc.spi-events-listener-micrometer-user-event-metrics-events")
+                        .to("kc.spi-events-listener--micrometer-user-event-metrics--events")
                         .paramLabel("events")
                         .isEnabled(EventPropertyMappers::userEventsMetricsTags, "user event metrics are enabled")
                         .build(),

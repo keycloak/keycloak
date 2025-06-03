@@ -101,7 +101,7 @@ public final class PropertyMappers {
     }
 
     public static boolean isMaybeSpiBuildTimeProperty(String name) {
-        return name.startsWith(KC_SPI_PREFIX) && (name.endsWith("-provider") || name.endsWith("-enabled") || name.endsWith("-provider-default") && !name.contains("--"));
+        return name.startsWith(KC_SPI_PREFIX) && (name.endsWith("-provider") || name.endsWith("-enabled") || name.endsWith("-provider-default")) && !name.contains("--");
     }
 
     private static boolean isKeycloakRuntime(String name, PropertyMapper<?> mapper) {
@@ -403,7 +403,15 @@ public final class PropertyMappers {
         private static void handleMapper(PropertyMapper<?> mapper, BiConsumer<String, PropertyMapper<?>> operation) {
             operation.accept(mapper.getFrom(), mapper);
             if (!mapper.getFrom().equals(mapper.getTo())) {
-                operation.accept(mapper.getTo(), mapper);
+                String to = mapper.getTo();
+                operation.accept(to, mapper);
+                if (to.startsWith(KC_SPI_PREFIX)) {
+                    if (!mapper.getTo().contains("--")) {
+                        throw new IllegalStateException("Mapper should use the new form of the spi option: " + to);
+                    }
+                    String legacyTo = mapper.getTo().replace("--", "-");
+                    operation.accept(legacyTo, mapper);
+                }
             }
         }
     }

@@ -614,7 +614,7 @@ public class PicocliTest extends AbstractConfigurationTest {
     public void testAmbiguousSpiOption() {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--spi-x-y-enabled=true");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        assertThat(nonRunningPicocli.getOutString(), containsString("WARNING: The following spi options are using the legacy format and are not being treated as build time options. Please use the new format with the appropriate -- separators to resolve this ambiguity:kc.spi-x-y-enabled"));
+        assertThat(nonRunningPicocli.getOutString(), containsString("The following spi options are using the legacy format and are not being treated as build time options. Please use the new format with the appropriate -- separators to resolve this ambiguity: kc.spi-x-y-enabled"));
     }
 
     @Test
