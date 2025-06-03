@@ -45,13 +45,20 @@
     </licenses>
 
     <properties>
-        <jboss.repo.nexusUrl>https://s01.oss.sonatype.org/</jboss.repo.nexusUrl>
-        <jboss.releases.repo.id>jboss-releases-repository</jboss.releases.repo.id>
-        <jboss.releases.repo.name>keycloak</jboss.releases.repo.name>
-        <jboss.releases.repo.url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</jboss.releases.repo.url>
-        <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
-        <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
+        <central.publishing.plugin.version>0.7.0</central.publishing.plugin.version>
+        <nexus3.staging.plugin.version>1.0.7</nexus3.staging.plugin.version>
     </properties>
+
+    <distributionManagement>
+        <repository>
+            <id>keycloak-publish</id>
+            <url>https://central.sonatype.com/</url>
+        </repository>
+        <snapshotRepository>
+            <id>keycloak-publish</id>
+            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
 
     <modules>
         <module>spi</module>
@@ -105,17 +112,28 @@
                 </plugins>
             </build>
         </profile>
+
         <profile>
-            <id>nexus-staging</id>
+            <id>central-staging</id>
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>${central.publishing.plugin.version}</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <autoPublish>true</autoPublish>
+                            <checksums>all</checksums>
+                            <deploymentName>keycloak-${project.version}</deploymentName>
+                            <publishingServerId>keycloak-publish</publishingServerId>
+                            <waitUntil>published</waitUntil>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>
         </profile>
+
         <profile>
             <id>nexus3-staging</id>
             <build>
@@ -123,6 +141,7 @@
                     <plugin>
                         <groupId>org.sonatype.plugins</groupId>
                         <artifactId>nxrm3-maven-plugin</artifactId>
+                        <version>${nexus3.staging.plugin.version}</version>
                         <extensions>true</extensions>
                         <configuration>
                             <serverId>${jboss.releases.repo.id}</serverId>
