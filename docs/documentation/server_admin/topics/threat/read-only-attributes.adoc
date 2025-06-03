@@ -29,11 +29,11 @@ This is the list of the read-only attributes, which are used internally by the {
 
 System administrators have a way to add additional attributes to this list. The configuration is currently available at the server level.
 
-You can add this configuration by using the `spi-user-profile-declarative-user-profile-read-only-attributes` and `spi-user-profile-declarative-user-profile-admin-read-only-attributes` options. For example:
+You can add this configuration by using the `spi-user-profile--declarative-user-profile--read-only-attributes` and `spi-user-profile--declarative-user-profile--admin-read-only-attributes` options. For example:
 
 [source,bash,options="nowrap"]
 ----
-kc.[sh|bat] start --spi-user-profile-declarative-user-profile-read-only-attributes=foo,bar*
+kc.[sh|bat] start --spi-user-profile--declarative-user-profile--read-only-attributes=foo,bar*
 ----
 
 For this example, users and administrators would not be able to update attribute `foo`. Users would not be able to edit any attributes starting with the `bar`.

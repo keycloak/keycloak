@@ -33,7 +33,7 @@ All built-in providers support the configuration of key resolvers. A key resolve
 
 [source,bash]
 ----
-kc.[sh|bat] start --spi-vault-file-key-resolvers=REALM_UNDERSCORE_KEY,KEY_ONLY
+kc.[sh|bat] start --spi-vault--file--key-resolvers=REALM_UNDERSCORE_KEY,KEY_ONLY
 ----
 
 The resolvers run in the same order you declare them in the configuration. For each resolver, {project_name} uses the last entry name the resolver produces, which combines the realm with the vault key to search for the vault's secret. If {project_name} finds a secret, it returns the secret. If not, {project_name} uses the next resolver. This search continues until {project_name} finds a non-empty secret or runs out of resolvers. If {project_name} finds no secret, {project_name} returns an empty secret.
