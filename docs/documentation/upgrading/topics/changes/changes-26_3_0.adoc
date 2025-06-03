@@ -100,11 +100,13 @@ Consider one of the following cases and recommended migration steps:
 * With the feature `persistent-user-session` feature enabled, the remote store configuration is ignored and {project_name} will print a warning.
 ====
 
+=== Signing out from other devices now disabled by default
+
+Previously, when a user updated their credentials, like changing their password or adding another factor like an OTP or Passkey, they had a checkbox *Sign out from other devices* which was checked by default. Since this release, {project_name} displays the checkbox *Sign out from other devices* not checked by default. This checkbox should now be intentionally enabled by the user to logout all the other related sessions associated to the same user.
+
 === Signing out from other devices will log out offline sessions
 
-When a user updates their credentials, like changing their password or adding another factor like an OTP or Passkey, they have a checkbox *Sign out from other devices* which is checked by default.
-
-In previous versions, this logged out only regular sessions.
+Related to the previous point, in previous versions, the *Sign out from other devices* checkbox logged out only regular sessions.
 Starting with this release, it logs out also offline sessions as this is what users would expect to happen given the current screen design.
 
 To revert to the old behavior, enable the deprecated feature `logout-all-sessions:v1`.
