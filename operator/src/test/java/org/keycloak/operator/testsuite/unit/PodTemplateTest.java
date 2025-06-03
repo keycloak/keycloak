@@ -660,10 +660,10 @@ public class PodTemplateTest {
         assertThat(podTemplate.getSpec().getAffinity()).isNotEqualTo(affinity);
     }
 
-    private Job getUpdateJob(Consumer<KeycloakSpecBuilder> newSpec, Consumer<KeycloakSpecBuilder> oldSpec, Consumer<StatefulSetBuilder> exsitingModifier) {
+    private Job getUpdateJob(Consumer<KeycloakSpecBuilder> newSpec, Consumer<KeycloakSpecBuilder> oldSpec, Consumer<StatefulSetBuilder> existingModifier) {
         // create an existing from the old spec and modifier
         StatefulSetBuilder existingBuilder = getDeployment(null, null, oldSpec).toBuilder();
-        exsitingModifier.accept(existingBuilder);
+        existingModifier.accept(existingBuilder);
         StatefulSet existingStatefulSet = existingBuilder.build();
 
         // determine the desired statefulset state
