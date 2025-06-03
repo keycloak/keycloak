@@ -17,11 +17,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.resource.ScopePermissionResource;
-import org.keycloak.admin.client.resource.ScopePermissionsResource;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -46,15 +44,6 @@ public class GroupResourceTypePermissionTest extends AbstractPermissionTest {
         GroupRepresentation group = new GroupRepresentation();
         group.setName("MyGroup");
         realm.admin().groups().add(group).close();;
-    }
-
-    @AfterEach
-    public void onAfter() {
-        ScopePermissionsResource permissions = getScopePermissionsResource(client);
-
-        for (ScopePermissionRepresentation permission : permissions.findAll(null, null, null, -1, -1)) {
-            permissions.findById(permission.getId()).remove();
-        }
     }
 
     @Test

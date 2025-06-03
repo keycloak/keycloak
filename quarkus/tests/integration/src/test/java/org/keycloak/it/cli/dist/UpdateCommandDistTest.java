@@ -37,6 +37,7 @@ import org.keycloak.quarkus.runtime.cli.command.UpdateCompatibilityMetadata;
 import org.keycloak.util.JsonSerialization;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.keycloak.it.cli.dist.Util.createTempFile;
 
 @DistributionTest
 @RawDistOnly(reason = "Requires creating JSON file to be available between containers")
@@ -47,7 +48,7 @@ public class UpdateCommandDistTest {
     @Test
     @Launch({UpdateCompatibility.NAME, UpdateCompatibilityMetadata.NAME, DISABLE_FEATURE})
     public void testFeatureNotEnabled(CLIResult cliResult) {
-        cliResult.assertError("Unable to use this command. The feature 'rolling-updates:v1' is not enabled.");
+        cliResult.assertError("Unable to use this command. None of the versions of the feature 'rolling-updates' is enabled.");
     }
 
     @Test
@@ -70,7 +71,7 @@ public class UpdateCommandDistTest {
 
     @Test
     public void testCompatible(KeycloakDistribution distribution) throws IOException {
-        var jsonFile = createTempFile("compatible");
+        var jsonFile = createTempFile("compatible", ".json");
         var result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityMetadata.NAME, UpdateCompatibilityMetadata.OUTPUT_OPTION_NAME, jsonFile.getAbsolutePath());
         result.assertMessage("Metadata:");
         assertEquals(0, result.exitCode());
@@ -78,15 +79,17 @@ public class UpdateCommandDistTest {
         var info = JsonSerialization.mapper.readValue(jsonFile, UpdateCompatibilityCheck.METADATA_TYPE_REF);
         assertEquals(Version.VERSION, info.get(KeycloakCompatibilityMetadataProvider.ID).get("version"));
         assertEquals(org.infinispan.commons.util.Version.getVersion(), info.get(CachingCompatibilityMetadataProvider.ID).get("version"));
+        assertEquals(org.jgroups.Version.printVersion(), info.get(CachingCompatibilityMetadataProvider.ID).get("jgroupsVersion"));
 
         result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath());
+        result.assertExitCode(CompatibilityResult.ExitCode.ROLLING.value());
         result.assertMessage("[OK] Rolling Update is available.");
         result.assertNoError("Rolling Update is not available.");
     }
 
     @Test
     public void testWrongVersions(KeycloakDistribution distribution) throws IOException {
-        var jsonFile = createTempFile("wrong-versions");
+        var jsonFile = createTempFile("wrong-versions", ".json");
 
         // incompatible keycloak version
         var info = new HashMap<String, Map<String, String>>();
@@ -94,7 +97,8 @@ public class UpdateCommandDistTest {
         info.put(CachingCompatibilityMetadataProvider.ID, Map.of(
                 "version", org.infinispan.commons.util.Version.getVersion(),
                 "persistence", "true",
-                "mode", "embedded"
+                "mode", "embedded",
+                "jgroupsVersion", org.jgroups.Version.printVersion()
         ));
         JsonSerialization.mapper.writeValue(jsonFile, info);
 
@@ -107,18 +111,28 @@ public class UpdateCommandDistTest {
         info.put(CachingCompatibilityMetadataProvider.ID, Map.of(
                 "version", "0.0.0.Final",
                 "persistence", "true",
-                "mode", "embedded"
+                "mode", "embedded",
+                "jgroupsVersion", org.jgroups.Version.printVersion()
+        ));
+        JsonSerialization.mapper.writeValue(jsonFile, info);
+
+        // incompatible jgroups version
+        result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath());
+        result.assertExitCode(CompatibilityResult.ExitCode.RECREATE.value());
+        result.assertError("[%s] Rolling Update is not available. '%s.version' is incompatible: 0.0.0.Final -> %s.".formatted(CachingCompatibilityMetadataProvider.ID, CachingCompatibilityMetadataProvider.ID, org.infinispan.commons.util.Version.getVersion())); // incompatible infinispan version
+
+        info.put(KeycloakCompatibilityMetadataProvider.ID, Map.of("version", Version.VERSION));
+        info.put(CachingCompatibilityMetadataProvider.ID, Map.of(
+                "version", org.infinispan.commons.util.Version.getVersion(),
+                "persistence", "true",
+                "mode", "embedded",
+                "jgroupsVersion", "0.0.0.Final"
         ));
         JsonSerialization.mapper.writeValue(jsonFile, info);
 
         result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath());
-        result.assertError("[%s] Rolling Update is not available. '%s.version' is incompatible: 0.0.0.Final -> %s.".formatted(CachingCompatibilityMetadataProvider.ID, CachingCompatibilityMetadataProvider.ID, org.infinispan.commons.util.Version.getVersion()));
+        result.assertExitCode(CompatibilityResult.ExitCode.RECREATE.value());
+        result.assertError("[%s] Rolling Update is not available. '%s.jgroupsVersion' is incompatible: 0.0.0.Final -> %s.".formatted(CachingCompatibilityMetadataProvider.ID, CachingCompatibilityMetadataProvider.ID, org.jgroups.Version.printVersion()));
     }
-
-    private static File createTempFile(String prefix) throws IOException {
-        var file = File.createTempFile(prefix, ".json");
-        file.deleteOnExit();
-        return file;
-    }
-
 }
+

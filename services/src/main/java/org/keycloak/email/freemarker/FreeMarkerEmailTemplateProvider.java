@@ -36,6 +36,7 @@ import org.keycloak.email.freemarker.beans.ProfileBean;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.OrganizationModel;
@@ -200,7 +201,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         attributes.put("link", link);
         attributes.put("linkExpiration", expirationInMinutes);
         try {
-            Locale locale = session.getContext().resolveLocale(user, getTheme().getType());
+            Locale locale = session.getContext().resolveLocale(user, Boolean.parseBoolean(String.valueOf(attributes.get(Constants.IGNORE_ACCEPT_LANGUAGE_HEADER))));
             attributes.put("linkExpirationFormatter", new LinkExpirationFormatterMethod(getTheme().getMessages(locale), locale));
         } catch (IOException e) {
             throw new EmailException("Failed to template email", e);
@@ -214,10 +215,10 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
 
     protected EmailTemplate processTemplate(String subjectKey, List<Object> subjectAttributes, String template, Map<String, Object> attributes) throws EmailException {
         try {
-            Theme theme = getTheme();
-            Locale locale = session.getContext().resolveLocale(user, theme.getType());
+            Locale locale = session.getContext().resolveLocale(user, Boolean.parseBoolean(String.valueOf(attributes.get(Constants.IGNORE_ACCEPT_LANGUAGE_HEADER))));
             attributes.put("locale", locale);
 
+            Theme theme = getTheme();
             Properties messages = theme.getEnhancedMessages(realm, locale);
 
             String currentLanguageTag = locale.getLanguage();

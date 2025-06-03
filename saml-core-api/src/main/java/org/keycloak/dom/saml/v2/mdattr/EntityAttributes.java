@@ -50,12 +50,12 @@ public class EntityAttributes implements Serializable {
         return assertion;
     }
 
-    public void addAssertion(AssertionType attributeType) {
-        assertion.add(attributeType);
+    public void addAssertion(AssertionType assertionType) {
+        assertion.add(assertionType);
     }
 
-    public void removeAssertion(AttributeType attributeType) {
-        assertion.remove(attributeType);
+    public void removeAssertion(AssertionType assertionType) {
+        assertion.remove(assertionType);
     }
 
 }

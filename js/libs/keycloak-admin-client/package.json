@@ -48,10 +48,10 @@
     "@types/chai": "^5.2.2",
     "@types/lodash-es": "^4.17.12",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^22.15.21",
+    "@types/node": "^22.15.26",
     "chai": "^5.2.0",
     "lodash-es": "^4.17.21",
-    "mocha": "^11.4.0",
+    "mocha": "^11.5.0",
     "ts-node": "^10.9.2"
   },
   "author": {

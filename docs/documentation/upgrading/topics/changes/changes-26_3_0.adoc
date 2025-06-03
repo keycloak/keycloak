@@ -68,6 +68,18 @@ user profile settings defined for the realm.
 It might happen that attributes in user representations are no longer available depending on the
 user profile configuration.
 
+=== Email verification is now automatically set when using a OpenID Connect broker with `Trust email` is enabled and `Sync Mode` is `FORCE`
+
+Until now, the OpenID Connect broker did not support the standard `email_verified` claim available from the ID Tokens issued by
+OpenID Connect Providers.
+
+In this release, the broker was updated to respect the value from this claim to set the email verification status for the federated (local) user account.
+Whenever users are federated for the first time or re-authenticating, if the `Trust email` setting is enabled and `Sync Mode` is set to `FORCE`,
+the user account will be updated to (un)mark the email as verified.
+
+In the future, we might evaluate changing this specific configuration to avoid automatic updates on the email verification
+status on federated user accounts depending on the use cases and the demand from the community.
+
 == Notable changes
 
 Notable changes where an internal behavior changed to prevent common misconfigurations, fix bugs or simplify running {project_name}.
