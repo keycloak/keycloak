@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -377,10 +378,11 @@ public class Picocli {
             DisabledMappersInterceptor.disable(); // we want all properties, even disabled ones
 
             final List<String> ignoredRunTime = new ArrayList<>();
-            final Set<String> disabledBuildTime = new HashSet<>();
-            final Set<String> disabledRunTime = new HashSet<>();
-            final Set<String> deprecatedInUse = new HashSet<>();
-            final Set<String> missingOption = new HashSet<>();
+            final Set<String> disabledBuildTime = new LinkedHashSet<>();
+            final Set<String> disabledRunTime = new LinkedHashSet<>();
+            final Set<String> deprecatedInUse = new LinkedHashSet<>();
+            final Set<String> missingOption = new LinkedHashSet<>();
+            final Set<String> ambiguousSpi = new LinkedHashSet<>();
             final LinkedHashMap<String, String> secondClassOptions = new LinkedHashMap<>();
 
             final Set<PropertyMapper<?>> disabledMappers = new HashSet<>();
@@ -401,6 +403,9 @@ public class Picocli {
                 }
                 if (!options.includeRuntime) {
                     checkRuntimeSpiOptions(name, ignoredRunTime);
+                }
+                if (PropertyMappers.isMaybeSpiBuildTimeProperty(name)) {
+                    ambiguousSpi.add(name);
                 }
                 PropertyMapper<?> mapper = PropertyMappers.getMapper(name);
                 if (mapper == null) {
@@ -460,7 +465,9 @@ public class Picocli {
             if (!deprecatedInUse.isEmpty()) {
                 warn("The following used options or option values are DEPRECATED and will be removed or their behaviour changed in a future release:\n" + String.join("\n", deprecatedInUse) + "\nConsult the Release Notes for details.", getOutWriter());
             }
-
+            if (!ambiguousSpi.isEmpty()) {
+                warn("The following spi options are using the legacy format and are not being treated as build time options. Please use the new format with the appropriate -- separators to resolve this ambiguity:" + String.join("\n", ambiguousSpi));
+            }
             secondClassOptions.forEach((key, firstClass) -> {
                 warn("Please use the first-class option `%s` instead of `%s`".formatted(firstClass, key), getOutWriter());
             });
