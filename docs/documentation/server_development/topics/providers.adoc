@@ -91,7 +91,7 @@ For example, to configure a provider you can set options as follows:
 
 [source,bash]
 ----
-bin/kc.[sh|bat] --spi-theme-selector-my-theme-selector-enabled=true --spi-theme-selector-my-theme-selector-theme=my-theme
+bin/kc.[sh|bat] --spi-theme-selector--my-theme-selector--enabled=true --spi-theme-selector--my-theme-selector--theme=my-theme
 ----
 
 Then you can retrieve the config in the `ProviderFactory` init method:
@@ -234,7 +234,7 @@ one of them needs to be specified as the default one.
 For example such as:
 [source,bash]
 ----
-bin/kc.[sh|bat] build --spi-hostname-provider=default
+bin/kc.[sh|bat] build --spi-hostname--provider=default
 ----
 
 The value `default` used as the value of `default-provider` must match the ID returned by the `ProviderFactory.getId()` of the particular provider factory implementation.
@@ -293,7 +293,7 @@ For example to disable the Infinispan user cache provider use:
 
 [source,bash]
 ----
-bin/kc.[sh|bat] build --spi-user-cache-infinispan-enabled=false
+bin/kc.[sh|bat] build --spi-user-cache--infinispan--enabled=false
 ----
 
 [[_script_providers]]

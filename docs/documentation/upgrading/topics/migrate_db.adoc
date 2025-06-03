@@ -25,7 +25,7 @@ To change the threshold, set the `index-creation-threshold` property, value for 
 
 [source,bash]
 ----
-kc.[sh|bat] start --spi-connections-liquibase-quarkus-index-creation-threshold=300000
+kc.[sh|bat] start --spi-connections-liquibase--quarkus--index-creation-threshold=300000
 ----
 
 === Manual relational database migration
@@ -35,7 +35,7 @@ default `connections-jpa` provider:
 
 [source,bash]
 ----
-kc.[sh|bat] start --spi-connections-jpa-quarkus-migration-strategy=manual
+kc.[sh|bat] start --spi-connections-jpa--quarkus--migration-strategy=manual
 ----
 
 When you start the server with this configuration, the server checks if the database needs to be migrated. If migration is needed, the required changes are written to the `bin/keycloak-database-update.sql` SQL file. You can review and manually run these commands against the database.
@@ -45,7 +45,7 @@ default `connections-jpa` provider:
 
 [source,bash]
 ----
-kc.[sh|bat] start --spi-connections-jpa-quarkus-migration-export=<path>/<file.sql>
+kc.[sh|bat] start --spi-connections-jpa--quarkus--migration-export=<path>/<file.sql>
 ----
 
 For further details on how to apply this file to the database, see the documentation for your relational database.
