@@ -109,8 +109,11 @@ public class ClientsResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
-    @Operation( summary = "Get clients belonging to the realm.",
-        description = "If a client can’t be retrieved from the storage due to a problem with the underlying storage, it is silently removed from the returned list. This ensures that concurrent modifications to the list don’t prevent callers from retrieving this list.")
+    @Operation(
+            summary = "Get clients belonging to the realm.",
+            description = "If a client can’t be retrieved from the storage due to a problem with the underlying storage, it is silently removed from the returned list. This ensures that concurrent modifications to the list don’t prevent callers from retrieving this list.",
+            operationId = "getClients"
+    )
     public Stream<ClientRepresentation> getClients(@Parameter(description = "filter by clientId") @QueryParam("clientId") String clientId,
                                                  @Parameter(description = "filter clients that cannot be viewed in full by admin") @QueryParam("viewableOnly") @DefaultValue("false") boolean viewableOnly,
                                                  @Parameter(description = "whether this is a search query or a getClientById query") @QueryParam("search") @DefaultValue("false") boolean search,
@@ -184,7 +187,7 @@ public class ClientsResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
-    @Operation( summary = "Create a new client Client’s client_id must be unique!")
+    @Operation(summary = "Create a new client Client’s client_id must be unique!", operationId = "createClient")
     @APIResponse(responseCode = "201", description = "Created")
     public Response createClient(final ClientRepresentation rep) {
         auth.clients().requireManage();
