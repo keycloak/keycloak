@@ -85,7 +85,7 @@ public final class PropertyMappers {
         // The special handling of log properties is because some logging runtime properties are requested during build time
         // and we need to resolve them. That should be fine as they are generally not considered security sensitive.
         // See https://github.com/quarkusio/quarkus/pull/42157
-        if ((isRebuild() || Environment.isRebuildCheck()) && isKeycloakRuntime(name, mapper)
+        if (isRebuild() && isKeycloakRuntime(name, mapper)
                 && !NestedPropertyMappingInterceptor.getResolvingRoot().orElse(name).startsWith("quarkus.log.")) {
             return ConfigValue.builder().withName(name).build();
         }
