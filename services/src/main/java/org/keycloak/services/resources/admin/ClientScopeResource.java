@@ -37,6 +37,8 @@ import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.saml.common.util.StringUtil;
 import org.keycloak.services.ErrorResponse;
@@ -54,6 +56,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
@@ -230,9 +233,23 @@ public class ClientScopeResource {
         }
     }
 
-    public static void validateClientScopeProtocol(String protocol)throws ErrorResponseException{
-        if(protocol==null || (!protocol.equals("openid-connect") && !protocol.equals("saml"))) throw ErrorResponse.error("Unexpected protocol",Response.Status.BAD_REQUEST);
+    public static void validateClientScopeProtocol(KeycloakSession session, String protocol) throws ErrorResponseException {
+        List<String> validProtocols = session.getKeycloakSessionFactory()
+                .getProviderFactoriesStream(LoginProtocol.class)
+                .map(ProviderFactory::getId)
+                .toList();
+
+        boolean found = validProtocols.contains(protocol);
+
+        if (!found) {
+            String message = String.format(
+                "Unexpected protocol: %s. Valid protocols are: %s",
+                protocol, String.join(", ", validProtocols)
+            );
+            throw ErrorResponse.error(message, Response.Status.BAD_REQUEST);
+        }
     }
+
     /**
      * Makes sure that an update that makes a Client Scope Dynamic is rejected if the Client Scope is assigned to a client
      * as a default scope.

@@ -56,6 +56,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.startsWith;
 import static org.keycloak.tests.utils.Assert.assertNames;
 
 /**
@@ -218,9 +219,27 @@ public class ClientScopeTest extends AbstractClientScopeTest {
 
     @Test
     public void testValidateClientScopeProtocol() {
-        org.keycloak.services.resources.admin.ClientScopeResource.validateClientScopeProtocol("saml");
-        org.keycloak.services.resources.admin.ClientScopeResource.validateClientScopeProtocol("openid-connect");
-        Assertions.assertThrows(RuntimeException.class, () -> org.keycloak.services.resources.admin.ClientScopeResource.validateClientScopeProtocol("other"));
+        ClientScopeRepresentation scopeRep1 = new ClientScopeRepresentation();
+        scopeRep1.setName("scope1");
+        scopeRep1.setProtocol("saml");
+        createClientScopeWithCleanup(scopeRep1);
+
+        ClientScopeRepresentation scopeRep2 = new ClientScopeRepresentation();
+        scopeRep2.setName("scope2");
+        scopeRep2.setProtocol("openid-connect");
+        createClientScopeWithCleanup(scopeRep2);
+
+        ClientScopeRepresentation scopeRep3 = new ClientScopeRepresentation();
+        scopeRep3.setName("scope3");
+        scopeRep3.setProtocol("other");
+
+        ErrorRepresentation error;
+        try (Response response = clientScopes().create(scopeRep3)) {
+            Assertions.assertEquals(400, response.getStatus());
+            error = response.readEntity(ErrorRepresentation.class);
+        }
+
+        assertThat(error.getErrorMessage(), startsWith("Unexpected protocol: other"));
     }
 
     @Test
