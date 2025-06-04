@@ -23,6 +23,8 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import jakarta.ws.rs.core.Response;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.security.PrivilegedAction;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
@@ -34,6 +36,8 @@ import javax.naming.NamingException;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
+import javax.security.auth.Subject;
+import javax.security.auth.login.LoginException;
 import javax.security.sasl.Sasl;
 
 import org.apache.http.NameValuePair;
@@ -47,7 +51,12 @@ import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSCredential;
+import org.ietf.jgss.GSSException;
+import org.ietf.jgss.GSSManager;
+import org.ietf.jgss.GSSName;
+import org.ietf.jgss.Oid;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
@@ -64,6 +73,7 @@ import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.events.Details;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
+import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.UserModel;
@@ -85,6 +95,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.KerberosRule;
 import org.keycloak.testsuite.util.KerberosUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.ServerURLs;
 
 /**
  * Contains just helper methods. No test methods.
@@ -407,6 +418,36 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
 
         }
         return config;
+    }
+
+    public String generateGSSAuthorization(String username, String password) throws GSSException {
+        CommonKerberosConfig kerberosConfig = getKerberosConfig();
+        KerberosUsernamePasswordAuthenticator authenticator = new KerberosUsernamePasswordAuthenticator(kerberosConfig);
+
+        try {
+            Subject clientSubject = authenticator.authenticateSubject(username, password);
+
+            return Base64.getEncoder().encodeToString(
+                    Subject.doAs(clientSubject, (PrivilegedAction<byte[]>) () -> {
+                        try {
+                            byte[] token = new byte[0];
+                            Oid oid = new Oid("1.3.6.1.5.5.2"); // spnego oid
+                            GSSManager manager = GSSManager.getInstance();
+                            String httPrincipal = kerberosConfig.getServerPrincipal().replaceFirst("/.*@", "/" + ServerURLs.AUTH_SERVER_HOST + "@");
+                            GSSName serverName = manager.createName(httPrincipal, null);
+                            GSSContext gssContext = manager.createContext(serverName.canonicalize(oid), oid, null, GSSContext.DEFAULT_LIFETIME);
+                            gssContext.requestMutualAuth(true);
+                            gssContext.requestCredDeleg(true);
+                            return gssContext.initSecContext(token, 0, token.length);
+                        } catch (GSSException e) {
+                            return null;
+                        }
+                    }));
+        } catch (LoginException le) {
+            throw new RuntimeException(le);
+        } finally {
+            authenticator.logoutSubject();
+        }
     }
 
 }
