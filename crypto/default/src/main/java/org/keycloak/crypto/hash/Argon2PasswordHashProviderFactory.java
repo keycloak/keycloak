@@ -89,7 +89,7 @@ public class Argon2PasswordHashProviderFactory implements PasswordHashProviderFa
                 .add();
 
         builder.property()
-                .name(TYPE_KEY)
+                .name(HASH_LENGTH_KEY)
                 .type("int")
                 .helpText("Hash length")
                 .defaultValue(Argon2Parameters.DEFAULT_HASH_LENGTH)
