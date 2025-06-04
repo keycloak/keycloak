@@ -285,10 +285,6 @@ public class XMLEncryptionUtil {
             List<PrivateKey> encryptionKeys;
             encryptionKeys = decryptionKeyLocator.getKeys(encryptedData);
 
-//            if (encryptionKeys == null || encryptionKeys.isEmpty()) {
-//                throw logger.nullValueError("Key for EncryptedData not found.");
-//            }
-
             try {
                 String encAlgoURL = encryptedData.getEncryptionMethod().getAlgorithm();
 
