@@ -301,7 +301,7 @@ public class XMLEncryptionUtil {
                     amazonKMS.setClient();
 
                     byte[] encryptedBytes = Base64.decodeBase64(encryptedKey.getCipherData().getCipherValue().getValue());
-                    byte[] decryptedKey = amazonKMS.unwrapKey(encAlgoURL, encryptedBytes);
+                    byte[] decryptedKey = amazonKMS.unwrapKey(encryptedKey.getEncryptionMethod().getAlgorithm(), encryptedBytes);
 
                     SecretKey encryptionKey = new SecretKeySpec(decryptedKey, 0, decryptedKey.length, "AES");
 
