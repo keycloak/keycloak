@@ -87,7 +87,7 @@
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>kms</artifactId>
-            <version>2.31.54</version>
+            <version>2.28.24</version>
             <optional>true</optional>
         </dependency>
     </dependencies>
