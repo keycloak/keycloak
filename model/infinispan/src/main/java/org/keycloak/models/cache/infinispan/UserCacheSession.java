@@ -17,6 +17,7 @@
 
 package org.keycloak.models.cache.infinispan;
 
+import static java.util.Optional.ofNullable;
 import static org.keycloak.organization.utils.Organizations.isReadOnlyOrganizationMember;
 
 import org.jboss.logging.Logger;
@@ -254,9 +255,12 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     }
 
     @Override
-    public UserModel getUserByUsername(RealmModel realm, String username) {
+    public UserModel getUserByUsername(RealmModel realm, String rawUsername) {
+        if (rawUsername == null) {
+            return null;
+        }
+        String username = rawUsername.toLowerCase();
         logger.tracev("getUserByUsername: {0}", username);
-        username = username.toLowerCase();
         if (realmInvalidations.contains(realm.getId())) {
             logger.tracev("realmInvalidations");
             return getDelegate().getUserByUsername(realm, username);
@@ -268,7 +272,6 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         }
         UserListQuery query = cache.get(cacheKey, UserListQuery.class);
 
-        String userId = null;
         if (query == null) {
             logger.tracev("query null");
             Long loaded = cache.getCurrentRevision(cacheKey);
@@ -277,7 +280,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
                 logger.tracev("model from delegate null");
                 return null;
             }
-            userId = model.getId();
+            String userId = model.getId();
             if (invalidations.contains(userId)) return model;
             if (managedUsers.containsKey(userId)) {
                 logger.tracev("return managed user");
@@ -291,16 +294,21 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             }
             managedUsers.put(userId, adapter);
             return adapter;
-        } else {
-            userId = query.getUsers().iterator().next();
-            if (invalidations.contains(userId)) {
-                logger.tracev("invalidated cache return delegate");
-                return getDelegate().getUserByUsername(realm, username);
-
-            }
-            logger.trace("return getUserById");
-            return getUserById(realm, userId);
         }
+
+        String userId = query.getUsers().iterator().next();
+        if (invalidations.contains(userId)) {
+            logger.tracev("invalidated cache return delegate");
+            return getDelegate().getUserByUsername(realm, username);
+
+        }
+        logger.trace("return getUserById");
+        return ofNullable(getUserById(realm, userId))
+                .filter((u) -> username.equalsIgnoreCase(u.getUsername()))
+                .orElseGet(() -> {
+                    registerInvalidation(cacheKey);
+                    return null;
+                });
     }
 
     protected UserModel getUserAdapter(RealmModel realm, String userId, Long loaded, UserModel delegate) {
@@ -384,9 +392,9 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     }
 
     @Override
-    public UserModel getUserByEmail(RealmModel realm, String email) {
-        if (email == null) return null;
-        email = email.toLowerCase();
+    public UserModel getUserByEmail(RealmModel realm, String rawEmail) {
+        if (rawEmail == null) return null;
+        String email = rawEmail.toLowerCase();
         if (realmInvalidations.contains(realm.getId())) {
             return getDelegate().getUserByEmail(realm, email);
         }
@@ -396,12 +404,11 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         }
         UserListQuery query = cache.get(cacheKey, UserListQuery.class);
 
-        String userId = null;
         if (query == null) {
             Long loaded = cache.getCurrentRevision(cacheKey);
             UserModel model = getDelegate().getUserByEmail(realm, email);
             if (model == null) return null;
-            userId = model.getId();
+            String userId = model.getId();
             if (invalidations.contains(userId)) return model;
             if (managedUsers.containsKey(userId)) return managedUsers.get(userId);
 
@@ -412,14 +419,19 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             }
             managedUsers.put(userId, adapter);
             return adapter;
-        } else {
-            userId = query.getUsers().iterator().next();
-            if (invalidations.contains(userId)) {
-                return getDelegate().getUserByEmail(realm, email);
-
-            }
-            return getUserById(realm, userId);
         }
+
+        String userId = query.getUsers().iterator().next();
+        if (invalidations.contains(userId)) {
+            return getDelegate().getUserByEmail(realm, email);
+
+        }
+        return ofNullable(getUserById(realm, userId))
+                .filter((u) -> email.equalsIgnoreCase(u.getEmail()))
+                .orElseGet(() -> {
+                    registerInvalidation(cacheKey);
+                    return null;
+                });
     }
 
     @Override
