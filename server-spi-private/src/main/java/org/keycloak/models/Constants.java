@@ -108,6 +108,7 @@ public final class Constants {
     public static final String SKIP_LINK = "skipLink";
     public static final String TEMPLATE_ATTR_ACTION_URI = "actionUri";
     public static final String TEMPLATE_ATTR_REQUIRED_ACTIONS = "requiredActions";
+    public static final String IGNORE_ACCEPT_LANGUAGE_HEADER = "IGNORE_ACCEPT_LANGUAGE_HEADER";
 
     // Prefix for user attributes used in various "context"data maps
     public static final String USER_ATTRIBUTES_PREFIX = "user.attributes.";

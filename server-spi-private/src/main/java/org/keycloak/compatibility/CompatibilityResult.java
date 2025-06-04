@@ -20,6 +20,7 @@ package org.keycloak.compatibility;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * The result of {@link CompatibilityMetadataProvider#isCompatible(Map)}.
@@ -47,6 +48,8 @@ public interface CompatibilityResult {
     default Optional<String> endMessage() {
         return Optional.empty();
     }
+
+    default Optional<Set<String>> incompatibleAttributes() {return Optional.empty();}
 
     static CompatibilityResult providerCompatible(String providerId) {
         return new ProviderCompatibleResult(Objects.requireNonNull(providerId));
