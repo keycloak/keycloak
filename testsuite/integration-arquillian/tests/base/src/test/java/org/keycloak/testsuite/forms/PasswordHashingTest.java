@@ -33,6 +33,7 @@ import org.keycloak.credential.hash.Pbkdf2Sha256PasswordHashProviderFactory;
 import org.keycloak.credential.hash.Pbkdf2Sha512PasswordHashProviderFactory;
 import org.keycloak.crypto.hash.Argon2Parameters;
 import org.keycloak.crypto.hash.Argon2PasswordHashProviderFactory;
+import org.keycloak.exportimport.util.ExportUtils;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
@@ -206,23 +207,26 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
         String username = "testPasswordRehashedWhenCredentialImportedWithDifferentKeySize";
         String password = generatePassword();
 
-        // Encode with a specific key size ( 256 instead of default: 512)
+        // Encode with a specific key size (256 instead of default: 512)
         Pbkdf2PasswordHashProvider specificKeySizeHashProvider = new Pbkdf2PasswordHashProvider(Pbkdf2Sha512PasswordHashProviderFactory.ID,
                 Pbkdf2Sha512PasswordHashProviderFactory.PBKDF2_ALGORITHM,
                 Pbkdf2Sha512PasswordHashProviderFactory.DEFAULT_ITERATIONS,
                 0,
                 256);
-        String encodedPassword = specificKeySizeHashProvider.encodedCredential(password, -1).getPasswordSecretData().getValue();
+        PasswordCredentialModel passwordCredentialModel = specificKeySizeHashProvider.encodedCredential(password, -1);
 
         // Create a user with the encoded password, simulating a user import from a different system using a specific key size
-        UserRepresentation user = UserBuilder.create().username(username).password(encodedPassword).build();
+        UserRepresentation user = UserBuilder.create().username(username).build();
+        user.setCredentials(List.of(ExportUtils.exportCredential(passwordCredentialModel)));
         ApiUtil.createUserWithAdminClient(adminClient.realm("test"), user);
 
         loginPage.open();
         loginPage.login(username, password);
+        appPage.assertCurrent();
 
         PasswordCredentialModel postLoginCredentials = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
-        assertEquals(encodedPassword.length() * 2, postLoginCredentials.getPasswordSecretData().getValue().length());
+        // Check that the password was rehashed and the secret string is now twice the size as before
+        assertEquals(passwordCredentialModel.getPasswordSecretData().getValue().length() * 2, postLoginCredentials.getPasswordSecretData().getValue().length());
 
     }
 
