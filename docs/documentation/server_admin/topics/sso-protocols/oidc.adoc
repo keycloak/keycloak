@@ -157,7 +157,7 @@ The CIBA grant uses the following two providers.
 
 [source,bash,subs="attributes+"]
 ----
-kc.[sh|bat] start --spi-ciba-auth-channel-ciba-http-auth-channel-http-authentication-channel-uri=https://backend.internal.example.com{kc_base_path}
+kc.[sh|bat] start --spi-ciba-auth-channel--ciba-http-auth-channel--http-authentication-channel-uri=https://backend.internal.example.com{kc_base_path}
 ----
 
 The configurable items and their description follow.
