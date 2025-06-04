@@ -555,7 +555,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
 
             // First credential request
             Response response1 = issuerEndpoint.requestCredential(credentialRequest);
-            assertEquals("The credential request should be successful.", 200, response1.getStatus());
+            assertEquals("The credential request should be successful", 200, response1.getStatus());
             CredentialResponse credentialResponse1 = JsonSerialization.mapper.convertValue(response1.getEntity(), CredentialResponse.class);
             assertNotNull("Credential response should not be null", credentialResponse1);
             assertNotNull("Credential should be present", credentialResponse1.getCredential());
