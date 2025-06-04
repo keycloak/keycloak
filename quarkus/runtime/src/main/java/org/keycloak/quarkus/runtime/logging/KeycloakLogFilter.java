@@ -18,6 +18,7 @@
 package org.keycloak.quarkus.runtime.logging;
 
 import io.quarkus.logging.LoggingFilter;
+import org.keycloak.common.util.MultiSiteUtils;
 
 import java.util.Objects;
 import java.util.logging.Filter;
@@ -42,11 +43,14 @@ public final class KeycloakLogFilter implements Filter {
             return false;
         }
 
-        // Suppress messages for ISPN000312 as there shouldn't be a warning as this is expected as user and client sessions have only a single owner.
-        // https://github.com/keycloak/keycloak/issues/39816
-        if (Objects.equals(record.getLevel(), Level.WARNING) && record.getLoggerName().equals("org.infinispan.CLUSTER") && ISPN000312_PATTERN.matcher(record.getMessage()).matches()) {
-            return false;
+        if (MultiSiteUtils.isPersistentSessionsEnabled()) {
+            // Suppress messages for ISPN000312 as there shouldn't be a warning as this is expected as user and client sessions have only a single owner.
+            // https://github.com/keycloak/keycloak/issues/39816
+            if (Objects.equals(record.getLevel(), Level.WARNING) && record.getLoggerName().equals("org.infinispan.CLUSTER") && ISPN000312_PATTERN.matcher(record.getMessage()).matches()) {
+                return false;
+            }
         }
+
         return true;
     }
 }
