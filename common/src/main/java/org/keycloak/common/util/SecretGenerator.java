@@ -71,6 +71,15 @@ public class SecretGenerator {
         return buf;
     }
 
+    public String randomBytesHex(int length) {
+        final StringBuilder sb = new StringBuilder();
+        for (byte b : randomBytes(length)) {
+            sb.append(Character.forDigit((b >> 4) & 0xF, 16));
+            sb.append(Character.forDigit((b & 0xF), 16));
+        }
+        return sb.toString();
+    }
+
     /**
      * Returns the equivalent length for a destination alphabet to have the same
      * entropy bits than a byte array random generated.
