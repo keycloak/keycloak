@@ -23,18 +23,28 @@ import java.util.Objects;
 import java.util.logging.Filter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import java.util.regex.Pattern;
 
 /**
  * @author Alexander Schwartz
  */
 @LoggingFilter(name = "keycloak-filter")
 public final class KeycloakLogFilter implements Filter {
+
+    private static final Pattern ISPN000312_PATTERN = Pattern.compile("^\\[Context=[^]]+] ISPN000312: .*");
+
     @Override
     public boolean isLoggable(LogRecord record) {
         // The ARJUNA012125 messages are logged and then thrown.
         // As those messages might later be caught and handled, this is an antipattern so we prevent logging them.
         // https://narayana.zulipchat.com/#narrow/channel/323714-users/topic/Message.20.22ARJUNA012125.22.20implements.20log-and-throw.20antipattern
         if (Objects.equals(record.getLevel(), Level.WARNING) && record.getLoggerName().equals("com.arjuna.ats.arjuna") && record.getMessage().startsWith("ARJUNA012125:")) {
+            return false;
+        }
+
+        // Suppress messages for ISPN000312 as there shouldn't be a warning as this is expected as user and client sessions have only a single owner.
+        // https://github.com/keycloak/keycloak/issues/39816
+        if (Objects.equals(record.getLevel(), Level.WARNING) && record.getLoggerName().equals("org.infinispan.CLUSTER") && ISPN000312_PATTERN.matcher(record.getMessage()).matches()) {
             return false;
         }
         return true;
