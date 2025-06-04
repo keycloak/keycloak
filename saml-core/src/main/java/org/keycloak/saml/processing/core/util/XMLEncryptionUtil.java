@@ -293,10 +293,6 @@ public class XMLEncryptionUtil {
                 String encAlgoURL = encryptedData.getEncryptionMethod().getAlgorithm();
 
                 if (encryptionKeys == null || encryptionKeys.isEmpty()) {
-                    System.setProperty("aws.accessKeyId", System.getenv("AWS_ACCESS_KEY_ID"));
-                    System.setProperty("aws.secretAccessKey", System.getenv("AWS_SECRET_ACCESS_KEY"));
-                    System.setProperty("aws.region", System.getenv("AWS_REGION"));
-
                     AmazonKMS amazonKMS = new AmazonKMS(System.getenv("AWS_DEV_KEY_ID"));
                     amazonKMS.setClient();
 
