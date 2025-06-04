@@ -95,4 +95,13 @@ public class SecretGenerator {
     public static int equivalentEntropySize(int length, int srcAlphabetLength, int dstAlphabetLeng) {
         return (int) Math.ceil(length * ((Math.log(srcAlphabetLength)) / (Math.log(dstAlphabetLeng))));
     }
+
+    public static String randomBytesHex(int length) {
+        final StringBuilder sb = new StringBuilder();
+        for (byte b : instance.randomBytes(length)) {
+            sb.append(Character.forDigit((b >> 4) & 0xF, 16));
+            sb.append(Character.forDigit((b & 0xF), 16));
+        }
+        return sb.toString();
+    }
 }
