@@ -42,7 +42,6 @@ import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
@@ -57,7 +56,6 @@ import org.keycloak.userprofile.validator.BrokeringFederatedUsernameHasValueVali
 import org.keycloak.userprofile.validator.DuplicateEmailValidator;
 import org.keycloak.userprofile.validator.DuplicateUsernameValidator;
 import org.keycloak.userprofile.validator.EmailExistsAsUsernameValidator;
-import org.keycloak.userprofile.validator.ImmutableAttributeValidator;
 import org.keycloak.userprofile.validator.ReadOnlyAttributeUnchangedValidator;
 import org.keycloak.userprofile.validator.RegistrationEmailAsUsernameEmailValueValidator;
 import org.keycloak.userprofile.validator.RegistrationEmailAsUsernameUsernameValueValidator;
@@ -231,9 +229,7 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         addContextualProfileMetadata(configureUserProfile(createBrokeringProfile(readOnlyValidator)));
         addContextualProfileMetadata(configureUserProfile(createAccountProfile(ACCOUNT, readOnlyValidator)));
         addContextualProfileMetadata(configureUserProfile(createDefaultProfile(UPDATE_PROFILE, readOnlyValidator)));
-        if (Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL)) {
-            addContextualProfileMetadata(configureUserProfile(createDefaultProfile(UPDATE_EMAIL, readOnlyValidator)));
-        }
+        addContextualProfileMetadata(configureUserProfile(createDefaultProfile(UPDATE_EMAIL, readOnlyValidator)));
         addContextualProfileMetadata(configureUserProfile(createRegistrationUserCreationProfile(readOnlyValidator)));
         addContextualProfileMetadata(configureUserProfile(createUserResourceValidation(config)));
     }

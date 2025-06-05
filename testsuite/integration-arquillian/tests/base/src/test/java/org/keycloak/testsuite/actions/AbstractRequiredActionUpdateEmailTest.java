@@ -28,14 +28,12 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.common.Profile;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.auth.page.login.UpdateEmailPage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -43,7 +41,6 @@ import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.WebDriver;
 
-@EnableFeature(Profile.Feature.UPDATE_EMAIL)
 public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTestRealmKeycloakTest {
 
 	@Rule

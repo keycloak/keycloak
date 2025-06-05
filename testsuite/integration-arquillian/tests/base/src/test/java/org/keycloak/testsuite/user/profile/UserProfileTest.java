@@ -47,7 +47,6 @@ import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
@@ -63,7 +62,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.representations.userprofile.config.UPGroup;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.userprofile.AttributeGroupMetadata;
@@ -2225,7 +2223,6 @@ public class UserProfileTest extends AbstractUserProfileTest {
         assertEquals(attributes.get(UserModel.EMAIL).toLowerCase(), profileAttributes.getFirst(UserModel.EMAIL));
     }
 
-    @EnableFeature(Feature.UPDATE_EMAIL)
     @Test
     public void testEmailAttributeInUpdateEmailContext() {
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testEmailAttributeInUpdateEmailContext);
