@@ -37,7 +37,6 @@ import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.events.Attribute;
 import javax.xml.stream.events.Characters;
 import javax.xml.stream.events.Comment;
-import javax.xml.stream.events.EndElement;
 import javax.xml.stream.events.Namespace;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
@@ -107,21 +106,22 @@ public class TransformerUtil {
                     boolean tccl_jaxp = SystemPropertiesUtil.getSystemProperty(GeneralConstants.TCCL_JAXP, "false")
                             .equalsIgnoreCase("true");
                     ClassLoader prevTCCL = SecurityActions.getTCCL();
+                    TransformerFactory localTransformerFactory;
                     try {
                         if (tccl_jaxp) {
                             SecurityActions.setTCCL(TransformerUtil.class.getClassLoader());
                         }
-                        transformerFactory = TransformerFactory.newInstance();
+                        localTransformerFactory = TransformerFactory.newInstance();
                         try {
-                            transformerFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+                            localTransformerFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
                         } catch (TransformerConfigurationException ignored) {
                             // some platforms don't support this.   For example our testsuite pulls Selenium which requires Xalan 2.7.1
                             logger.warn("XML External Entity switches are not supported.  You may get XML injection vulnerabilities.");
                         }
                         try {
-                            transformerFactory.setAttribute(FixXMLConstants.ACCESS_EXTERNAL_DTD, "");
+                            localTransformerFactory.setAttribute(FixXMLConstants.ACCESS_EXTERNAL_DTD, "");
 
-                            transformerFactory.setAttribute(FixXMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+                            localTransformerFactory.setAttribute(FixXMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
                         } catch (Exception ignored) {
                             // some platforms don't support this.   For example our testsuite pulls Selenium which requires Xalan 2.7.1
                             logger.warn("XML External Entity switches are not supported.  You may get XML injection vulnerabilities.");
@@ -132,6 +132,7 @@ public class TransformerUtil {
                             SecurityActions.setTCCL(prevTCCL);
                         }
                     }
+                    transformerFactory = localTransformerFactory;
                 }
             }
         }
