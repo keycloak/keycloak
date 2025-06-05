@@ -20,7 +20,6 @@ test.describe("Personal info page", () => {
   test("sets basic information", async ({ page }) => {
     await login(page, user, "pwd", realm);
 
-    await page.getByTestId("email").fill(`${user}@somewhere.com`);
     await page.getByTestId("firstName").fill("Erik");
     await page.getByTestId("lastName").fill("de Wit");
     await page.getByTestId("save").click();
