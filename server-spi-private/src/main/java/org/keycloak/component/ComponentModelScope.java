@@ -73,7 +73,7 @@ public class ComponentModelScope implements Scope {
     @Override
     public String[] getArray(String key) {
         final String[] res = get(prefix + key, "").split("\\s*,\\s*");
-        return (res == null) ? origScope.getArray(key) : res;
+        return (res.length == 0) ? origScope.getArray(key) : res;
     }
 
     @Override

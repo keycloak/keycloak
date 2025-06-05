@@ -230,11 +230,11 @@ public class BaseWriter {
 
         StaxUtil.writeNameSpace(writer, JBossSAMLURIConstants.XSI_PREFIX.get(), JBossSAMLURIConstants.XSI_NSURI.get());
         StaxUtil.writeNameSpace(writer, "xs", JBossSAMLURIConstants.XMLSCHEMA_NSURI.get());
-        StaxUtil.writeAttribute(writer, "xsi", JBossSAMLURIConstants.XSI_NSURI.get(), "type", "xs:" + attributeValue.getXMLSchemaType().getLocalPart());
 
         if (attributeValue == null) {
             StaxUtil.writeAttribute(writer, "xsi", JBossSAMLURIConstants.XSI_NSURI.get(), "nil", "true");
         } else {
+            StaxUtil.writeAttribute(writer, "xsi", JBossSAMLURIConstants.XSI_NSURI.get(), "type", "xs:" + attributeValue.getXMLSchemaType().getLocalPart());
             StaxUtil.writeCharacters(writer, attributeValue.toString());
         }
 
