@@ -34,13 +34,14 @@ public class AuthenticationFlowSelectorExecutorFactory implements ClientPolicyEx
     public static final String PROVIDER_ID = "auth-flow-enforcer";
 
     public static final String AUTH_FLOW_ALIAS = "auth-flow-alias";
+    public static final String AUTH_FLOW_LOA = "auth-flow-loa";
 
     private static final ProviderConfigProperty AUTH_FLOW_ALIAS_PROPERTY = new ProviderConfigProperty(
             AUTH_FLOW_ALIAS, "Auth Flow Alias", "Insert the alias of the authentication flow",
             ProviderConfigProperty.STRING_TYPE, null);
 
     private static final ProviderConfigProperty AUTH_FLOW_LOA_PROPERTY = new ProviderConfigProperty(
-            AUTH_FLOW_ALIAS, "Auth Flow Loa", "Insert the loa to enforce when the selected authentication flow is executed",
+            AUTH_FLOW_LOA, "Auth Flow Loa", "Insert the loa to enforce when the selected authentication flow is executed",
             ProviderConfigProperty.INTEGER_TYPE, 1);
 
     @Override
