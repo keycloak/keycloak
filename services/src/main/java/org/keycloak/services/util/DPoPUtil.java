@@ -19,6 +19,7 @@ package org.keycloak.services.util;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -73,7 +74,9 @@ import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
 import org.keycloak.protocol.oidc.mappers.TokenIntrospectionTokenMapper;
 import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
+import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.services.CorsErrorResponseException;
@@ -103,18 +106,6 @@ public class DPoPUtil {
     public static final String DPOP_HTTP_HEADER = "DPoP";
     private static final String DPOP_JWT_HEADER_TYPE = "dpop+jwt";
     public static final String DPOP_ATH_ALG = "RS256";
-
-    public static final Set<String> DPOP_SUPPORTED_ALGS = Stream.of(
-        Algorithm.ES256,
-        Algorithm.ES384,
-        Algorithm.ES512,
-        Algorithm.PS256,
-        Algorithm.PS384,
-        Algorithm.PS512,
-        Algorithm.RS256,
-        Algorithm.RS384,
-        Algorithm.RS512
-    ).collect(Collectors.toSet());
 
     private static URI normalize(URI uri) {
         return UriBuilder.fromUri(uri).replaceQuery("").build();
@@ -197,7 +188,7 @@ public class DPoPUtil {
 
         String algorithm = header.getAlgorithm().name();
 
-        if (!DPOP_SUPPORTED_ALGS.contains(algorithm)) {
+        if (!getDPoPSupportedAlgorithms(session).contains(algorithm)) {
             throw new VerificationException("Unsupported DPoP algorithm: " + header.getAlgorithm());
         }
 
@@ -336,6 +327,26 @@ public class DPoPUtil {
             }
         }
 
+    }
+
+    private static List<String> getSupportedAlgorithms(KeycloakSession session, Class<? extends Provider> clazz, boolean includeNone) {
+        Stream<String> supportedAlgorithms = session.getKeycloakSessionFactory().getProviderFactoriesStream(clazz)
+                .map(ProviderFactory::getId);
+
+        if (includeNone) {
+            supportedAlgorithms = Stream.concat(supportedAlgorithms, Stream.of("none"));
+        }
+        return supportedAlgorithms.collect(Collectors.toList());
+    }
+
+    public static List<String> getDPoPSupportedAlgorithms(KeycloakSession session) {
+        return getSupportedAlgorithms(session, SignatureProvider.class, false).stream()
+                .map(algorithm -> new AbstractMap.SimpleEntry<>(algorithm, session.getProvider(SignatureProvider.class, algorithm)))
+                .filter(entry -> entry.getValue() != null)
+                .filter(entry -> entry.getValue().isAsymmetricAlgorithm())
+                .filter(entry -> !entry.getKey().equals(Algorithm.EdDSA))
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
     }
 
     private static class DPoPHTTPCheck implements TokenVerifier.Predicate<DPoP> {
