@@ -39,6 +39,8 @@ import org.keycloak.component.JsonConfigComponentModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientPolicyConditionRepresentation;
@@ -49,6 +51,7 @@ import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.securityprofile.SecurityProfileProvider;
 import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider;
+import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProviderFactory;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
 import org.keycloak.util.JsonSerialization;
 
@@ -531,6 +534,9 @@ public class ClientPoliciesUtil {
                     if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_POLICIES) && !isValidCondition(session, condition.getConditionProviderId())) {
                         throw new ClientPolicyException("Policy " + proposedPolicyRep.getName() + " contains invalid condition " + condition.getConditionProviderId());
                     }
+                    if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_POLICIES)) {
+                        validateConditionConfig(session, condition);
+                    }
                     policyRep.getConditions().add(condition);
                 }
             }
@@ -595,6 +601,30 @@ public class ClientPoliciesUtil {
         }
         logger.warnv("no condition provider found. providerId = {0}", conditionProviderId);
         return false;
+    }
+
+    private static void validateConditionConfig(KeycloakSession session, ClientPolicyConditionRepresentation conditionRep) throws ClientPolicyException {
+        ClientPolicyConditionProviderFactory factory = getClientPolicyConditionFactory(session, conditionRep.getConditionProviderId());
+        try {
+            factory.validateConfiguration(session, session.getContext().getRealm(), conditionRep);
+        }
+        catch (ClientPolicyException e) {
+            throw new ClientPolicyException("Invalid " + conditionRep.getConditionProviderId() + " configuration - " + e.getMessage());
+        }
+    }
+
+    private static ClientPolicyConditionProviderFactory getClientPolicyConditionFactory(KeycloakSession session, String providerId) {
+        Class<? extends Provider> provider = session.getProviderClass(ClientPolicyConditionProvider.class.getName());
+        if (provider == null) {
+            throw new IllegalArgumentException("Invalid provider type '" + ClientPolicyConditionProvider.class.getName() + "'");
+        }
+
+        ProviderFactory<? extends Provider> f = session.getKeycloakSessionFactory().getProviderFactory(provider, providerId);
+        if (f == null) {
+            throw new IllegalArgumentException("No such provider '" + providerId + "'");
+        }
+
+        return (ClientPolicyConditionProviderFactory) f;
     }
 
     static String getClientProfilesJsonString(RealmModel realm) {
