@@ -49,7 +49,7 @@ import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.Profile.Feature;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
@@ -577,7 +577,6 @@ public class UserProfileTest extends AbstractUserProfileTest {
         String userName = org.keycloak.models.utils.KeycloakModelUtils.generateId();
 
         attributes.put(UserModel.USERNAME, userName);
-        attributes.put(UserModel.EMAIL, "user@keycloak.org");
         attributes.put(UserModel.FIRST_NAME, "Joe");
         attributes.put(UserModel.LAST_NAME, "Doe");
         attributes.put("address", "fixed-address");
@@ -590,14 +589,12 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
         attributes.put(UserModel.FIRST_NAME, "Alice");
         attributes.put(UserModel.LAST_NAME, "In Chains");
-        attributes.put(UserModel.EMAIL, "alice@keycloak.org");
 
         profile = provider.create(UserProfileContext.ACCOUNT, attributes, user);
         Set<String> attributesUpdated = new HashSet<>();
         Map<String, String> attributesUpdatedOldValues = new HashMap<>();
         attributesUpdatedOldValues.put(UserModel.FIRST_NAME, "Joe");
         attributesUpdatedOldValues.put(UserModel.LAST_NAME, "Doe");
-        attributesUpdatedOldValues.put(UserModel.EMAIL, "user@keycloak.org");
 
         profile.update((attributeName, userModel, oldValue) -> {
             assertTrue(attributesUpdated.add(attributeName));
@@ -605,7 +602,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
             assertEquals(attributes.get(attributeName), userModel.getFirstAttribute(attributeName));
             });
 
-        assertThat(attributesUpdated, containsInAnyOrder(UserModel.FIRST_NAME, UserModel.LAST_NAME, UserModel.EMAIL));
+        assertThat(attributesUpdated, containsInAnyOrder(UserModel.FIRST_NAME, UserModel.LAST_NAME));
 
         configureAuthenticationSession(session);
 
@@ -637,7 +634,6 @@ public class UserProfileTest extends AbstractUserProfileTest {
         attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId());
         attributes.put(UserModel.FIRST_NAME, "John");
         attributes.put(UserModel.LAST_NAME, "Doe");
-        attributes.put(UserModel.EMAIL, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
         attributes.put("address", Arrays.asList("fixed-address"));
         attributes.put("department", Arrays.asList("sales"));
 
@@ -766,9 +762,12 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
         profile = provider.create(UserProfileContext.ACCOUNT, attributes, user);
 
-        profile.update();
-
-        assertEquals("E-Mail address should have been changed!", "changed@foo.bar", user.getEmail());
+        try {
+            profile.update();
+            fail("Should fail since email can be updated only via update-email action");
+        } catch (ValidationException ve) {
+            assertTrue(ve.isAttributeOnError("email"));
+        }
     }
 
     @Test
@@ -782,7 +781,6 @@ public class UserProfileTest extends AbstractUserProfileTest {
         attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId());
         attributes.put(UserModel.FIRST_NAME, "John");
         attributes.put(UserModel.LAST_NAME, "Doe");
-        attributes.put(UserModel.EMAIL, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
         attributes.put("address", Arrays.asList("fixed-address"));
         attributes.put("department", Arrays.asList("sales"));
         attributes.put("phone", Arrays.asList("fixed-phone"));
@@ -2227,7 +2225,6 @@ public class UserProfileTest extends AbstractUserProfileTest {
         assertEquals(attributes.get(UserModel.EMAIL).toLowerCase(), profileAttributes.getFirst(UserModel.EMAIL));
     }
 
-    @EnableFeature(Feature.UPDATE_EMAIL)
     @Test
     public void testEmailAttributeInUpdateEmailContext() {
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testEmailAttributeInUpdateEmailContext);
@@ -2313,7 +2310,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         }
     }
 
-    @EnableFeature(Feature.UPDATE_EMAIL)
+    @EnableFeature(Profile.Feature.UPDATE_EMAIL)
     @Test
     public void testEmailAnnotationsInAccountContext() {
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testEmailAnnotationsInAccountContext);

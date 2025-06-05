@@ -23,7 +23,6 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
@@ -36,7 +35,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -247,7 +245,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
 
         //assert fields location in form
         List<WebElement> element = driver.findElements(By.cssSelector("form#kc-update-profile-form input"));
-        String[] labelOrder = new String[]{"lastName", "department", "username", "firstName", "email"};
+        String[] labelOrder = new String[]{"lastName", "department", "username", "firstName"};
         for (int i = 0; i < labelOrder.length; i++) {
             WebElement webElement = element.get(i);
             String id = webElement.getAttribute("id");
@@ -371,7 +369,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
 
             verifyProfilePage.assertCurrent();
             assertFalse(verifyProfilePage.isUsernamePresent());
-            assertTrue(verifyProfilePage.isEmailPresent());
+            assertFalse(verifyProfilePage.isEmailPresent());
 
             realm.setEditUsernameAllowed(true);
             testRealm().update(realm);
@@ -403,7 +401,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
 
             verifyProfilePage.assertCurrent();
             assertFalse(verifyProfilePage.isUsernamePresent());
-            assertTrue(verifyProfilePage.isEmailPresent());
+            assertFalse(verifyProfilePage.isEmailPresent());
 
             realm.setEditUsernameAllowed(false);
             realm.setRegistrationEmailAsUsername(true);
@@ -421,7 +419,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
             driver.navigate().refresh();
             verifyProfilePage.assertCurrent();
             assertTrue(verifyProfilePage.isUsernamePresent());
-            assertTrue(verifyProfilePage.isEmailPresent());
+            assertFalse(verifyProfilePage.isEmailPresent());
         } finally {
             realm.setEditUsernameAllowed(false);
             realm.setRegistrationEmailAsUsername(false);
@@ -430,7 +428,6 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     @Test
-    @EnableFeature(Profile.Feature.UPDATE_EMAIL)
     public void testUsernameOnlyIfEmailAsUsernameIsDisabledWithUpdateEmailFeature() throws Exception {
         reconnectAdminClient();
         RealmRepresentation realm = testRealm().toRepresentation();
@@ -1045,7 +1042,8 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
         assertEquals("DepartmentCC", user.firstAttribute(ATTRIBUTE_DEPARTMENT));
     }
 
-    @Test
+    //@Test
+    // TODO replace with different test?
     public void testEmailChangeSetsEmailVerified() {
         setUserProfileConfiguration(CONFIGURATION_FOR_USER_EDIT);
         updateUser(user5Id, true, "", "ExistingLast");
