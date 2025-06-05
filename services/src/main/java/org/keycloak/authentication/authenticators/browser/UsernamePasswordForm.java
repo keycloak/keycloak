@@ -19,11 +19,13 @@ package org.keycloak.authentication.authenticators.browser;
 
 import org.keycloak.WebAuthnConstants;
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.managers.AuthenticationManager;
 
@@ -37,7 +39,7 @@ import jakarta.ws.rs.core.Response;
  */
 public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator implements Authenticator {
 
-    private final WebAuthnConditionalUIAuthenticator webauthnAuth;
+    protected final WebAuthnConditionalUIAuthenticator webauthnAuth;
 
     public UsernamePasswordForm() {
         webauthnAuth = null;
@@ -62,11 +64,17 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
             // normal username and form authenticator
             return;
         }
-        context.success();
+        context.success(PasswordCredentialModel.TYPE);
     }
 
     protected boolean validateForm(AuthenticationFlowContext context, MultivaluedMap<String, String> formData) {
         return validateUserAndPassword(context, formData);
+    }
+
+    protected boolean alreadyAuthenticatedUsingPasswordlessCredential(AuthenticationFlowContext context) {
+        // check if the authentication was already done using passwordless via passkeys
+        return webauthnAuth != null && webauthnAuth.isPasskeysEnabled() && webauthnAuth.getCredentialType().equals(
+                context.getAuthenticationSession().getAuthNote(AuthenticationProcessor.LAST_AUTHN_CREDENTIAL));
     }
 
     @Override

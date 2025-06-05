@@ -2,6 +2,7 @@
 <#import "field.ftl" as field>
 <#import "buttons.ftl" as buttons>
 <#import "social-providers.ftl" as identityProviders>
+<#import "passkeys.ftl" as passkeys>
 <@layout.registrationLayout displayMessage=!messagesPerField.existsError('username') displayInfo=(realm.password && realm.registrationAllowed && !registrationDisabled??); section>
 <!-- template: login-username.ftl -->
 
@@ -18,7 +19,7 @@
                                 <#assign label>
                                     <#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>
                                 </#assign>
-                                <@field.input name="username" label=label value=login.username!'' autofocus=true autocomplete="username" />
+                                <@field.input name="username" label=label value=login.username!'' autofocus=true autocomplete="${(enableWebAuthnConditionalUI?has_content)?then('username webauthn', 'username')}" />
                             </div>
                         </#if>
 
@@ -33,6 +34,7 @@
                 </#if>
             </div>
         </div>
+        <@passkeys.conditionalUIData />
 
     <#elseif section = "info" >
         <#if realm.password && realm.registrationAllowed && !registrationDisabled??>
