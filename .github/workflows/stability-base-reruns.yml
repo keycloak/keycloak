@@ -1,0 +1,61 @@
+name: Stability - Base Reruns
+
+on:
+  workflow_dispatch:
+    inputs:
+      tests:
+        type: string
+        description: Tests to run
+        required: true
+      count:
+        type: number
+        description: Number of re-runs
+        default: 50
+
+env:
+  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
+  SUREFIRE_RERUN_FAILING_COUNT: 0
+  SUREFIRE_RETRY: "-Dsurefire.rerunFailingTestsCount=0"
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Keycloak
+        uses: ./.github/actions/build-keycloak
+
+  base-integration-tests:
+    name: Base IT
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+      - name: Run base tests
+        run: |
+          TESTS="${{ inputs.tests }}"
+          COUNT=${{ inputs.count }}
+          echo "Tests: $TESTS, count: $COUNT"
+          FAILURES=0
+          for i in $(seq 1 $COUNT); do
+            echo "========================================================================="
+            echo Run: $i
+            echo "========================================================================="
+            ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh || FAILURES=$(($FAILURES + 1)) 
+            FAILURES=$(($FAILURES + $?))
+          done
+          echo "Failures: $FAILURES"
+          exit $FAILURES
