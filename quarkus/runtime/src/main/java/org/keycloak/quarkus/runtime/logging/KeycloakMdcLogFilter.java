@@ -30,10 +30,12 @@ public class KeycloakMdcLogFilter implements ContainerRequestFilter, ContainerRe
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
         KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
-        LOG.tracef("Request %s %s has session %s",
-                requestContext.getMethod(),
-                requestContext.getUriInfo().getPath(),
-                session);
+        if (LOG.isTraceEnabled()) {
+            LOG.tracef("Request %s %s has session %s",
+                    requestContext.getMethod(),
+                    requestContext.getUriInfo().getPath(),
+                    session);
+        }
         if (session != null && session.getContext() != null) {
             MdcDefinitionProvider provider = session.getProvider(MdcDefinitionProvider.class);
             for (Map.Entry<String, String> entry : provider.getMdcValues(session.getContext()).entrySet()) {

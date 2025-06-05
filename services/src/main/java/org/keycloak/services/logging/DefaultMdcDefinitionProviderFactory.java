@@ -5,11 +5,17 @@ import org.keycloak.logging.MdcDefinitionProvider;
 import org.keycloak.logging.MdcDefinitionProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import static org.keycloak.services.logging.DefaultMdcDefinitionProvider.MDC_KEY_CLIENT_ID;
+import static org.keycloak.services.logging.DefaultMdcDefinitionProvider.MDC_KEY_IP_ADDRESS;
 import static org.keycloak.services.logging.DefaultMdcDefinitionProvider.MDC_KEY_REALM;
+import static org.keycloak.services.logging.DefaultMdcDefinitionProvider.MDC_KEY_USER_ID;
 
 /**
  * The default provider factory can be configured via --spi-mdc-definition-default-mdc-keys to define mdc
@@ -21,7 +27,9 @@ import static org.keycloak.services.logging.DefaultMdcDefinitionProvider.MDC_KEY
  */
 public class DefaultMdcDefinitionProviderFactory implements MdcDefinitionProviderFactory {
 
-    private String[] mdcKeys;
+    public static final String MDC_KEYS = "mdcKeys";
+    public static final String[] MDC_KEYS_DEFAULT = {MDC_KEY_REALM, MDC_KEY_CLIENT_ID};
+    private Set<String> mdcKeys;
 
     @Override
     public MdcDefinitionProvider create(KeycloakSession session) {
@@ -30,8 +38,8 @@ public class DefaultMdcDefinitionProviderFactory implements MdcDefinitionProvide
 
     @Override
     public void init(Config.Scope config) {
-        this.mdcKeys = Objects.requireNonNullElse(config.getArray("mdcKeys"),
-                new String[]{MDC_KEY_REALM, MDC_KEY_CLIENT_ID});
+        this.mdcKeys = Set.of(Objects.requireNonNullElse(config.getArray(MDC_KEYS),
+                MDC_KEYS_DEFAULT));
     }
 
     @Override
@@ -47,5 +55,20 @@ public class DefaultMdcDefinitionProviderFactory implements MdcDefinitionProvide
     @Override
     public String getId() {
         return "default";
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        ProviderConfigurationBuilder builder = ProviderConfigurationBuilder.create();
+
+        builder.property()
+                .name(MDC_KEYS)
+                .type("string")
+                .helpText("Version")
+                .options(MDC_KEY_REALM, MDC_KEY_CLIENT_ID, MDC_KEY_USER_ID, MDC_KEY_IP_ADDRESS)
+                .defaultValue(MDC_KEYS_DEFAULT)
+                .add();
+
+        return builder.build();
     }
 }

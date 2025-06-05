@@ -19,18 +19,19 @@ import java.util.Set;
  */
 public class DefaultMdcDefinitionProvider implements MdcDefinitionProvider {
 
-    public static final String MDC_KEY_REALM = "realm";
-    public static final String MDC_KEY_CLIENT_ID = "clientId";
-    public static final String MDC_KEY_USER_ID = "userId";
-    public static final String MDC_KEY_IP_ADDRESS = "ipAddress";
+    public static final String MDC_PREFIX = "kc.";
+    public static final String MDC_KEY_REALM = MDC_PREFIX + "realm";
+    public static final String MDC_KEY_CLIENT_ID = MDC_PREFIX + "clientId";
+    public static final String MDC_KEY_USER_ID = MDC_PREFIX + "userId";
+    public static final String MDC_KEY_IP_ADDRESS = MDC_PREFIX + "ipAddress";
 
     protected final KeycloakSession session;
     protected final Set<String> mdcKeys;
 
     public DefaultMdcDefinitionProvider(KeycloakSession session,
-                                        String... mdcKeys) {
+                                        Set<String> mdcKeys) {
         this.session = session;
-        this.mdcKeys = Set.of(mdcKeys);
+        this.mdcKeys = mdcKeys;
     }
 
     @Override
