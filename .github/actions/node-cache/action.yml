@@ -12,7 +12,7 @@ runs:
         echo "pnpm=$(cat js/pom.xml | grep '<pnpm.version>' | cut -d '>' -f 2 | cut -d '<' -f 1 | cut -c 1-)" >> $GITHUB_OUTPUT
 
     # Downloading Node.js often fails due to network issues, therefore we cache the artifacts downloaded by the frontend plugin.
-    - uses: actions/cache@v4
+    - uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
       id: cache-binaries
       name: Cache Node.js and PNPM binaries
       with:

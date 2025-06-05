@@ -49,7 +49,7 @@ runs:
     - id: upload-keycloak-maven-repository
       name: Upload Keycloak Maven artifacts
       if: inputs.upload-m2-repo == 'true'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: m2-keycloak.tzts
         path: m2-keycloak.tzts
@@ -58,7 +58,7 @@ runs:
     - id: upload-keycloak-dist
       name: Upload Keycloak dist
       if: inputs.upload-dist == 'true'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: keycloak-dist
         path: quarkus/dist/target/keycloak*.tar.gz
