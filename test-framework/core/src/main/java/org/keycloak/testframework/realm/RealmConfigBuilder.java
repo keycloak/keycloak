@@ -210,6 +210,11 @@ public class RealmConfigBuilder {
         return this;
     }
 
+    public RealmConfigBuilder duplicateEmailsAllowed(boolean duplicateEmailsAllowed) {
+        rep.setDuplicateEmailsAllowed(duplicateEmailsAllowed);
+        return this;
+    }
+
     public RealmRepresentation build() {
         return rep;
     }
