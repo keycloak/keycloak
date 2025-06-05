@@ -19,12 +19,17 @@ package org.keycloak.tests.admin;
 
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 
 import java.util.List;
 
@@ -37,23 +42,17 @@ import static org.hamcrest.Matchers.hasSize;
 @KeycloakIntegrationTest
 public class UsersTest {
 
+    private static final String realmName = "default";
+
     @InjectRealm(lifecycle = LifeCycle.METHOD)
     ManagedRealm realm;
 
-    private void createUser(String username, String password, String firstName, String lastName, String email) {
-        UserRepresentation user = UserConfigBuilder.create()
-                .username(username)
-                .password(password)
-                .name(firstName, lastName)
-                .email(email)
-                .enabled(true)
-                .build();
-        realm.admin().users().create(user);
-    }
+    @InjectRunOnServer(permittedPackages = {"org.keycloak.tests", "org.keycloak.admin"})
+    RunOnServerClient runOnServer;
 
     @Test
     public void searchUserWithWildcards() {
-        createUser("User", "password", "firstName", "lastName", "user@example.com");
+        createUser("User", "firstName", "lastName", "user@example.com");
 
         assertThat(realm.admin().users().search("Use%", null, null), hasSize(0));
         assertThat(realm.admin().users().search("Use_", null, null), hasSize(0));
@@ -65,14 +64,14 @@ public class UsersTest {
 
     @Test
     public void searchUserDefaultSettings() throws Exception {
-        createUser("User", "password", "firstName", "lastName", "user@example.com");
+        createUser("User", "firstName", "lastName", "user@example.com");
 
         assertCaseInsensitiveSearch();
     }
 
     @Test
     public void searchUserMatchUsersCount() {
-        createUser("john.doe", "password", "John", "Doe Smith", "john.doe@keycloak.org");
+        createUser("john.doe", "John", "Doe Smith", "john.doe@keycloak.org");
         String search = "jo do";
 
         assertThat(realm.admin().users().count(search), is(1));
@@ -86,24 +85,22 @@ public class UsersTest {
      */
     @Test
     public void findUsersByEmailVerifiedStatus() {
-        UserRepresentation user1 = UserConfigBuilder.create()
+        createUser(UserConfigBuilder.create()
                 .username("user1")
                 .password("password")
                 .name("user1FirstName", "user1LastName")
                 .email("user1@example.com")
                 .emailVerified()
                 .enabled(true)
-                .build();
-        realm.admin().users().create(user1);
+                .build());
 
-        UserRepresentation user2 = UserConfigBuilder.create()
+        createUser(UserConfigBuilder.create()
                 .username("user2")
                 .password("password")
                 .name("user2FirstName", "user2LastName")
                 .email("user2@example.com")
                 .enabled(true)
-                .build();
-        realm.admin().users().create(user2);
+                .build());
 
         boolean emailVerified;
         emailVerified = true;
@@ -111,10 +108,95 @@ public class UsersTest {
         assertThat(usersEmailVerified, is(not(empty())));
         assertThat(usersEmailVerified.get(0).getUsername(), is("user1"));
 
+        createUser(UserConfigBuilder.create()
+                .username("testuser2")
+                .password("password")
+                .name("testuser2", "testuser2")
+                .email("testuser2@example.com")
+                .emailVerified()
+                .enabled(true)
+                .build());
+
+        usersEmailVerified = realm.admin().users().search("user", null, null, null, emailVerified, null, null, null);
+        assertThat(usersEmailVerified, is(not(empty())));
+        assertThat(usersEmailVerified.size(), is(1));
+        assertThat(usersEmailVerified.get(0).getUsername(), is("user1"));
+        assertThat(realm.admin().users().count("user", null, null, null, emailVerified, null, null, null), is(1));
+
         emailVerified = false;
         List<UserRepresentation> usersEmailNotVerified = realm.admin().users().search(null, null, null, null, emailVerified, null, null, null, true);
         assertThat(usersEmailNotVerified, is(not(empty())));
         assertThat(usersEmailNotVerified.get(0).getUsername(), is("user2"));
+
+        createUser(UserConfigBuilder.create()
+                .username("testuser3")
+                .password("password")
+                .name("testuser3", "testuser3")
+                .email("testuser3@example.com")
+                .enabled(true)
+                .build());
+
+        usersEmailVerified = realm.admin().users().search("user", null, null, null, emailVerified, null, null, null);
+        assertThat(usersEmailVerified, is(not(empty())));
+        assertThat(usersEmailVerified.size(), is(1));
+        assertThat(usersEmailVerified.get(0).getUsername(), is("user2"));
+        assertThat(realm.admin().users().count("user", null, null, null, emailVerified, null, null, null), is(1));
+    }
+
+    @Test
+    public void testCountUsersByEnabledStatus() {
+        createUser(UserConfigBuilder.create()
+                .username("user1")
+                .password("password")
+                .name("user1FirstName", "user1LastName")
+                .email("user1@example.com")
+                .emailVerified()
+                .enabled(true)
+                .build());
+
+        createUser(UserConfigBuilder.create()
+                .username("user2")
+                .password("password")
+                .name("user2FirstName", "user2LastName")
+                .email("user2@example.com")
+                .enabled(false)
+                .build());
+
+        assertThat(realm.admin().users().count("user", null, null, null, null, null, true, null), is(1));
+        assertThat(realm.admin().users().count("user", null, null, null, null, null, false, null), is(1));
+    }
+
+    @Test
+    public void testCountUsersByFederatedIdentity() {
+        createUser(UserConfigBuilder.create()
+                .username("user1")
+                .password("password")
+                .name("user1FirstName", "user1LastName")
+                .email("user1@example.com")
+                .emailVerified()
+                .enabled(true)
+                .build());
+        createUser(UserConfigBuilder.create()
+                .username("user2")
+                .password("password")
+                .name("user2FirstName", "user2LastName")
+                .email("user2@example.com")
+                .enabled(false)
+                .build());
+
+        runOnServer.run((session -> {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            session.getContext().setRealm(realm);
+            UserProvider users = session.users();
+            users.addFederatedIdentity(realm, users.getUserById(realm, users.getUserByUsername(realm, "user1").getId()), new FederatedIdentityModel("user1Broker", "user1BrokerId", "user1BrokerUsername"));
+            users.addFederatedIdentity(realm, users.getUserById(realm, users.getUserByUsername(realm, "user2").getId()), new FederatedIdentityModel("user2Broker", "user2BrokerId", "user2BrokerUsername"));
+        }));
+
+        assertThat(realm.admin().users().count(null, "user", null, null, null, null, null, "user1Broker", null, null), is(1));
+        assertThat(realm.admin().users().count(null, "user", null, null, null, null, null, "user1Broker", "user1BrokerId", null), is(1));
+        assertThat(realm.admin().users().count(null, "user", null, null, null, null, null, "user1Broker", "invalidId", null), is(0));
+        assertThat(realm.admin().users().count(null, "user", null, null, null, null, false, "user2Broker", null, null), is(1));
+        assertThat(realm.admin().users().count(null, "user", null, null, null, null, false, "user2Broker", "user1BrokerId", null), is(0));
     }
 
     /**
@@ -122,34 +204,31 @@ public class UsersTest {
      */
     @Test
     public void countUsersByEmailVerifiedStatus() {
-        UserRepresentation user1 = UserConfigBuilder.create()
+        createUser(UserConfigBuilder.create()
                 .username("user1")
                 .password("password")
                 .name("user1FirstName", "user1LastName")
                 .email("user1@example.com")
                 .emailVerified()
                 .enabled(true)
-                .build();
-        realm.admin().users().create(user1);
+                .build());
 
-        UserRepresentation user2 = UserConfigBuilder.create()
+        createUser(UserConfigBuilder.create()
                 .username("user2")
                 .password("password")
                 .name("user2FirstName", "user2LastName")
                 .email("user2@example.com")
                 .enabled(true)
-                .build();
-        realm.admin().users().create(user2);
+                .build());
 
-        UserRepresentation user3 = UserConfigBuilder.create()
+        createUser(UserConfigBuilder.create()
                 .username("user3")
                 .password("password")
                 .name("user3FirstName", "user3LastName")
                 .email("user3@example.com")
                 .emailVerified()
                 .enabled(true)
-                .build();
-        realm.admin().users().create(user3);
+                .build());
 
         boolean emailVerified;
         emailVerified = true;
@@ -163,41 +242,38 @@ public class UsersTest {
 
     @Test
     public void countUsersWithViewPermission() {
-        createUser("user1", "password", "user1FirstName", "user1LastName", "user1@example.com");
-        createUser("user2", "password", "user2FirstName", "user2LastName", "user2@example.com");
+        createUser("user1", "user1FirstName", "user1LastName", "user1@example.com");
+        createUser("user2", "user2FirstName", "user2LastName", "user2@example.com");
         assertThat(realm.admin().users().count(), is(2));
     }
 
     @Test
     public void countUsersBySearchWithViewPermission() {
-        UserRepresentation user1 = UserConfigBuilder.create()
+        createUser(UserConfigBuilder.create()
                 .username("user1")
                 .password("password")
                 .name("user1FirstName", "user1LastName")
                 .email("user1@example.com")
                 .emailVerified()
                 .enabled(true)
-                .build();
-        realm.admin().users().create(user1);
+                .build());
 
-        UserRepresentation user2 = UserConfigBuilder.create()
+        createUser(UserConfigBuilder.create()
                 .username("user2")
                 .password("password")
                 .name("user2FirstName", "user2LastName")
                 .email("user2@example.com")
                 .enabled(true)
-                .build();
-        realm.admin().users().create(user2);
+                .build());
 
-        UserRepresentation user3 = UserConfigBuilder.create()
+        createUser(UserConfigBuilder.create()
                 .username("user3")
                 .password("password")
                 .name("user3FirstName", "user3LastName")
                 .email("user3@example.com")
                 .emailVerified()
                 .enabled(true)
-                .build();
-        realm.admin().users().create(user3);
+                .build());
 
         // Prefix search count
         assertSearchMatchesCount(realm.admin(), "user", 3);
@@ -231,8 +307,8 @@ public class UsersTest {
 
     @Test
     public void countUsersByFiltersWithViewPermission() {
-        createUser("user1", "password", "user1FirstName", "user1LastName", "user1@example.com");
-        createUser("user2", "password", "user2FirstName", "user2LastName", "user2@example.com");
+        createUser("user1", "user1FirstName", "user1LastName", "user1@example.com");
+        createUser("user2", "user2FirstName", "user2LastName", "user2@example.com");
         //search username
         assertThat(realm.admin().users().count(null, null, null, "user"), is(2));
         assertThat(realm.admin().users().count(null, null, null, "user1"), is(1));
@@ -283,5 +359,19 @@ public class UsersTest {
         assertThat(realm.admin().users().search("User", true), hasSize(1));
         assertThat(realm.admin().users().search("USER", true), hasSize(1));
         assertThat(realm.admin().users().search("Use", true), hasSize(0));
+    }
+
+    private void createUser(UserRepresentation user) {
+        realm.admin().users().create(user).close();
+    }
+
+    private void createUser(String username, String firstName, String lastName, String email) {
+        createUser(UserConfigBuilder.create()
+                .username(username)
+                .password("password")
+                .name(firstName, lastName)
+                .email(email)
+                .enabled(true)
+                .build());
     }
 }
