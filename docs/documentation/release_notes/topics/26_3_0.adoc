@@ -53,3 +53,7 @@ the `Trust email` setting is enabled. If this claim is set to `true`, the federa
 user account will have their email marked as unverified.
 
 The `email_verified` claim is a standard claim as defined by the https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims[OpenID Connect Core Specification].
+
+= Restrict admin role mappings to server administrators
+
+To enhance security, only users with the `admin` role in the `master` realm (server admins) can assign admin roles. This ensures that critical permissions cannot be delegated by realm-level administrators.
