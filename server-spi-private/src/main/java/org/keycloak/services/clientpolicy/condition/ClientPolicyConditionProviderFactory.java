@@ -19,9 +19,13 @@ package org.keycloak.services.clientpolicy.condition;
 
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.representations.idm.ClientPolicyConditionRepresentation;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -31,5 +35,16 @@ public interface ClientPolicyConditionProviderFactory extends ProviderFactory<Cl
     @Override
     default boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.CLIENT_POLICIES);
+    }
+
+    /**
+     * Called before a Client Policy is created or updated.  Allows you to validate the configuration
+     *
+     * @param session
+     * @param realm
+     * @param conditionRepresentation
+     * @throws ClientPolicyException
+     */
+    default void validateConfiguration(KeycloakSession session, RealmModel realm, ClientPolicyConditionRepresentation conditionRepresentation) throws ClientPolicyException {
     }
 }
