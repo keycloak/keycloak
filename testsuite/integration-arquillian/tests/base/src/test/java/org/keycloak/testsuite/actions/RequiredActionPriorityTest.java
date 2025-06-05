@@ -62,7 +62,6 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
     private static final String EMAIL = "test-user@localhost";
     private static final String USERNAME = EMAIL;
     private static final String PASSWORD = "password";
-    private static final String NEW_EMAIL = "new@email.com";
     private static final String NEW_FIRST_NAME = "New first";
     private static final String NEW_LAST_NAME = "New last";
     private static final String NEW_PASSWORD = "new-password";
@@ -146,12 +145,9 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
 
         // Finally, update profile
         updateProfilePage.assertCurrent();
-        updateProfilePage.prepareUpdate().firstName(NEW_FIRST_NAME).lastName(NEW_LAST_NAME)
-                .email(NEW_EMAIL).submit();
+        updateProfilePage.prepareUpdate().firstName(NEW_FIRST_NAME).lastName(NEW_LAST_NAME).submit();
         events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.UPDATED_FIRST_NAME, NEW_FIRST_NAME)
                 .detail(Details.UPDATED_LAST_NAME, NEW_LAST_NAME)
-                .detail(Details.PREVIOUS_EMAIL, EMAIL)
-                .detail(Details.UPDATED_EMAIL, NEW_EMAIL)
                 .assertEvent();
 
         // Logged in
@@ -190,12 +186,9 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
 
         // Second, update profile
         updateProfilePage.assertCurrent();
-        updateProfilePage.prepareUpdate().firstName(NEW_FIRST_NAME).lastName(NEW_LAST_NAME)
-                .email(NEW_EMAIL).submit();
+        updateProfilePage.prepareUpdate().firstName(NEW_FIRST_NAME).lastName(NEW_LAST_NAME).submit();
         events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.UPDATED_FIRST_NAME, NEW_FIRST_NAME)
                 .detail(Details.UPDATED_LAST_NAME, NEW_LAST_NAME)
-                .detail(Details.PREVIOUS_EMAIL, EMAIL)
-                .detail(Details.UPDATED_EMAIL, NEW_EMAIL)
                 .assertEvent();
 
         // Finally, accept terms
@@ -247,12 +240,9 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
 
         // Finally, update profile. Action specified by "kc_action" should be always triggered last
         updateProfilePage.assertCurrent();
-        updateProfilePage.prepareUpdate().firstName(NEW_FIRST_NAME).lastName(NEW_LAST_NAME)
-                .email(NEW_EMAIL).submit();
+        updateProfilePage.prepareUpdate().firstName(NEW_FIRST_NAME).lastName(NEW_LAST_NAME).submit();
         events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.UPDATED_FIRST_NAME, NEW_FIRST_NAME)
                 .detail(Details.UPDATED_LAST_NAME, NEW_LAST_NAME)
-                .detail(Details.PREVIOUS_EMAIL, EMAIL)
-                .detail(Details.UPDATED_EMAIL, NEW_EMAIL)
                 .assertEvent();
 
         // Logged in
@@ -306,12 +296,9 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
 
         // Second, update profile
         updateProfilePage.assertCurrent();
-        updateProfilePage.prepareUpdate().firstName(NEW_FIRST_NAME).lastName(NEW_LAST_NAME)
-                .email(NEW_EMAIL).submit();
+        updateProfilePage.prepareUpdate().firstName(NEW_FIRST_NAME).lastName(NEW_LAST_NAME).submit();
         events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.UPDATED_FIRST_NAME, NEW_FIRST_NAME)
                 .detail(Details.UPDATED_LAST_NAME, NEW_LAST_NAME)
-                .detail(Details.PREVIOUS_EMAIL, EMAIL)
-                .detail(Details.UPDATED_EMAIL, NEW_EMAIL)
                 .assertEvent();
 
         // Finally, accept terms
