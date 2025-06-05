@@ -1001,9 +1001,9 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
                 if (action.getAlias().equals("update_user_locale")) {
                     assertEquals(1000, action.getPriority());
                 } else if (action.getAlias().equals("delete_credential")) {
-                    assertEquals(100, action.getPriority());
-                } else if (action.getAlias().equals("idp_link")) {
                     assertEquals(110, action.getPriority());
+                } else if (action.getAlias().equals("idp_link")) {
+                    assertEquals(120, action.getPriority());
                 } else {
                     assertEquals(priority, action.getPriority());
                 }
@@ -1353,7 +1353,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         assertEquals("delete_credential", rep.getAlias());
         assertEquals("delete_credential", rep.getProviderId());
         assertEquals("Delete Credential", rep.getName());
-        assertEquals(100, rep.getPriority());
+        assertEquals(110, rep.getPriority());
         assertTrue(rep.isEnabled());
         assertFalse(rep.isDefaultAction());
     }
@@ -1364,7 +1364,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         assertEquals("idp_link", rep.getAlias());
         assertEquals("idp_link", rep.getProviderId());
         assertEquals("Linking Identity Provider", rep.getName());
-        assertEquals(110, rep.getPriority());
+        assertEquals(120, rep.getPriority());
         assertTrue(rep.isEnabled());
         assertFalse(rep.isDefaultAction());
     }
