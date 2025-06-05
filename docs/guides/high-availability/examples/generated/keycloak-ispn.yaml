@@ -490,7 +490,7 @@ spec:
       secret:
         name: remote-store-secret
         key: password
-    - name: spi-connections-infinispan-quarkus-site-name # <5>
+    - name: spi-cache-embedded-default-site-name # <5>
       value: keycloak
     # end::keycloak-ispn[]
     - name: db-driver

@@ -38,6 +38,7 @@ import javax.naming.AuthenticationException;
 
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -62,6 +63,11 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
     public static final Set<String> PASSWORD_UPDATE_LDAP_ERROR_CODES = Set.of("53", "19");
     // See https://msdn.microsoft.com/en-us/library/windows/desktop/ms681385(v=vs.85).aspx
     public static final Set<String> PASSWORD_UPDATE_MSAD_ERROR_CODES = Set.of("52D");
+
+    private final Function<LDAPObject, UserAccountControl> GET_USER_ACCOUNT_CONTROL = ldapUser -> {
+        String userAccountControl = ldapUser.getAttributeAsString(LDAPConstants.USER_ACCOUNT_CONTROL);
+        return UserAccountControl.of(userAccountControl);
+    };
 
     public MSADUserAccountControlStorageMapper(ComponentModel mapperModel, LDAPStorageProvider ldapProvider) {
         super(mapperModel, ldapProvider);
@@ -211,9 +217,21 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
     }
 
     protected UserAccountControl getUserAccountControl(LDAPObject ldapUser) {
-        String userAccountControl = ldapUser.getAttributeAsString(LDAPConstants.USER_ACCOUNT_CONTROL);
-        long longValue = userAccountControl == null ? 0 : Long.parseLong(userAccountControl);
-        return new UserAccountControl(longValue);
+        UserAccountControl control = GET_USER_ACCOUNT_CONTROL.apply(ldapUser);
+
+        if (control.isAnySet()) {
+            return control;
+        }
+
+        RealmModel realm = session.getContext().getRealm();
+
+        if (realm == null) {
+            return control;
+        }
+
+        ldapUser = ldapProvider.loadLDAPUserByUuid(realm, ldapUser.getUuid());
+
+        return GET_USER_ACCOUNT_CONTROL.apply(ldapUser);
     }
 
     // Update user in LDAP if "updateInLDAP" is true. Otherwise it is assumed that LDAP update will be called at the end of transaction
@@ -256,18 +274,20 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
         @Override
         public void setEnabled(boolean enabled) {
             if (UserStorageProvider.EditMode.WRITABLE.equals(ldapProvider.getEditMode())) {
-                MSADUserAccountControlStorageMapper.logger.debugf("Going to propagate enabled=%s for ldapUser '%s' to MSAD", enabled, ldapUser.getDn().toString());
-
                 UserAccountControl control = getUserAccountControl(ldapUser);
-                if (enabled) {
-                    control.remove(UserAccountControl.ACCOUNTDISABLE);
-                } else {
-                    control.add(UserAccountControl.ACCOUNTDISABLE);
+
+                if (control.isAnySet()) {
+                    MSADUserAccountControlStorageMapper.logger.debugf("Going to propagate enabled=%s for ldapUser '%s' to MSAD", enabled, ldapUser.getDn().toString());
+
+                    if (enabled) {
+                        control.remove(UserAccountControl.ACCOUNTDISABLE);
+                    } else {
+                        control.add(UserAccountControl.ACCOUNTDISABLE);
+                    }
+
+                    markUpdatedAttributeInTransaction(LDAPConstants.ENABLED);
+                    updateUserAccountControl(false, ldapUser, control);
                 }
-
-                markUpdatedAttributeInTransaction(LDAPConstants.ENABLED);
-
-                updateUserAccountControl(false, ldapUser, control);
             }
             // Always update DB
             super.setEnabled(enabled);

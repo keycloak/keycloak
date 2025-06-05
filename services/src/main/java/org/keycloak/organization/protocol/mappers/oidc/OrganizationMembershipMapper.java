@@ -134,7 +134,7 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
     }
 
     private Stream<OrganizationModel> resolveFromRequestedScopes(KeycloakSession session, UserSessionModel userSession, ClientSessionContext context) {
-        String rawScopes = context.getScopeString();
+        String rawScopes = context.getScopeString(true);
         OrganizationScope scope = OrganizationScope.valueOfScope(session, rawScopes);
 
         if (scope == null) {
@@ -142,7 +142,6 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
         }
 
         return scope.resolveOrganizations(userSession.getUser(), rawScopes, session);
-
     }
 
     private Object resolveValue(ProtocolMapperModel model, UserModel user, List<OrganizationModel> organizations) {

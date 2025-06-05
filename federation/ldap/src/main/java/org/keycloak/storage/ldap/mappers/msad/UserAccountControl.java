@@ -47,9 +47,18 @@ public class UserAccountControl {
     public static final long TRUSTED_TO_AUTH_FOR_DELEGATION = 0x1000000L;
     public static final long PARTIAL_SECRETS_ACCOUNT = 0x04000000L;
 
+    private static final UserAccountControl EMPTY = new UserAccountControl(0);
+
+    public static UserAccountControl of(String userAccountControl) {
+        if (userAccountControl == null) {
+            return EMPTY;
+        }
+        return new UserAccountControl(Long.parseLong(userAccountControl));
+    }
+
     private long value;
 
-    public UserAccountControl(long value) {
+    private UserAccountControl(long value) {
         this.value = value;
     }
 
@@ -71,5 +80,9 @@ public class UserAccountControl {
 
     public long getValue() {
         return value;
+    }
+
+    public boolean isAnySet() {
+        return value != 0;
     }
 }

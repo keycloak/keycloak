@@ -445,13 +445,13 @@ export const EffectiveMessageBundles = ({
                         }}
                       />
                       <ChipGroup>
-                        {field.value.map((word, index) => (
+                        {field.value.map((word: string, index: number) => (
                           <Chip
                             key={index}
                             onClick={(e) => {
                               e.stopPropagation();
                               const newWords = field.value.filter(
-                                (_, i) => i !== index,
+                                (_: string, i: number) => i !== index,
                               );
                               field.onChange(newWords);
                             }}

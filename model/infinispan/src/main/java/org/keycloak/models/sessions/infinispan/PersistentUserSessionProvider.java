@@ -726,7 +726,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         return sessionsById.entrySet().stream().findFirst().map(Map.Entry::getValue).orElse(null);
     }
 
-    private <T extends SessionEntity, K> Map<K, SessionEntityWrapper<T>> importSessionsWithExpiration(Map<K, SessionEntityWrapper<T>> sessionsById,
+    public <T extends SessionEntity, K> Map<K, SessionEntityWrapper<T>> importSessionsWithExpiration(Map<K, SessionEntityWrapper<T>> sessionsById,
                                                                               BasicCache<K, SessionEntityWrapper<T>> cache, SessionFunction<T> lifespanMsCalculator,
                                                                               SessionFunction<T> maxIdleTimeMsCalculator) {
         return sessionsById.entrySet().stream().map(entry -> {

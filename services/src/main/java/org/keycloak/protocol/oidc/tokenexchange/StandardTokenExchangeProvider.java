@@ -63,6 +63,11 @@ import org.keycloak.util.TokenUtil;
 public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider {
 
     @Override
+    public int getVersion() {
+        return 2;
+    }
+
+    @Override
     public boolean supports(TokenExchangeContext context) {
         // Subject impersonation request
         String requestedSubject = context.getFormParams().getFirst(OAuth2Constants.REQUESTED_SUBJECT);
@@ -194,12 +199,6 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         }
 
         return scope;
-    }
-
-    @Override
-    protected void setClientToContext(List<ClientModel> targetAudienceClients) {
-        // The client requesting exchange is set in the context
-        session.getContext().setClient(client);
     }
 
     @Override

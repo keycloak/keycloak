@@ -5,11 +5,17 @@ import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Stream;
+
+import static java.lang.Thread.sleep;
 
 public class MigrateTest {
 
@@ -22,7 +28,8 @@ public class MigrateTest {
             UpdateAssertsRewrite.class,
             AddManagedResourcesRewrite.class,
             AdminEventAssertRewrite.class,
-            BeforeRewrite.class);
+            BeforeRewrite.class,
+            CommonStatementsRewrite.class);
 
     Path rootPath = getRootPath();
     Path oldTestsuitePath = rootPath.resolve("testsuite/integration-arquillian/tests/base/src/test/java/org/keycloak/testsuite").toAbsolutePath();
@@ -66,9 +73,20 @@ public class MigrateTest {
         writeFile(content, destinationPath);
 
         if (DIFF_COMMAND != null && !DIFF_COMMAND.isEmpty()) {
+            List<String> args = new ArrayList<>(List.of(DIFF_COMMAND.split(" ")));
+            args.add(testPath.toString());
+            args.add(destinationPath.toString());
+
             ProcessBuilder pb = new ProcessBuilder();
-            pb.command(DIFF_COMMAND, testPath.toString(), destinationPath.toString());
-            pb.start();
+            pb.command(args);
+            Process diffProcess = pb.start();
+            BufferedReader diffOutput = new BufferedReader(new InputStreamReader(diffProcess.getInputStream()));
+            String line = diffOutput.readLine();
+            while (line != null) {
+                System.out.println(line);
+                line = diffOutput.readLine();
+            }
+            diffOutput.close();
         }
     }
 

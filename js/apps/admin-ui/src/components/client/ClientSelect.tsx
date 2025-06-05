@@ -49,6 +49,13 @@ export const ClientSelect = ({
     defaultValue: defaultValue || "",
   });
 
+  const getValue = (): string[] => {
+    if (typeof value === "string") {
+      return [value];
+    }
+    return value || [];
+  };
+
   useFetch(
     () => {
       const params: ClientQuery = {
@@ -66,7 +73,7 @@ export const ClientSelect = ({
 
   useFetch(
     () => {
-      const values = ((value as string[]) || []).map(async (clientId) => {
+      const values = getValue().map(async (clientId) => {
         if (clientKey === "clientId") {
           return (await adminClient.clients.find({ clientId }))[0];
         } else {

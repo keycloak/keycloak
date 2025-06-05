@@ -56,6 +56,7 @@ public class AuthenticationFlowURLHelper {
 
         logger.debugf("Redirecting to 'page expired' now. Will use last step URL: %s", lastStepUrl);
 
+        LocaleUtil.processLocaleParam(session, realm, authSession);
         return session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authSession)
                 .setActionUri(lastStepUrl)
                 .setExecution(getExecutionId(authSession))

@@ -95,6 +95,19 @@ public class OrganizationTest extends AbstractOrganizationTest {
     }
 
     @Test
+    public void testUpdateConflict() {
+        OrganizationRepresentation org1 = createOrganization();
+        OrganizationRepresentation org2 = createOrganization("orga");
+
+        org1.setName(org2.getName());
+        OrganizationResource organization = testRealm().organizations().get(org1.getId());
+
+        try (Response response = organization.update(org1)) {
+            assertEquals(Status.CONFLICT.getStatusCode(), response.getStatus());
+        }
+    }
+
+    @Test
     public void testGet() {
         OrganizationRepresentation expected = createOrganization();
         OrganizationRepresentation existing = testRealm().organizations().get(expected.getId()).toRepresentation();

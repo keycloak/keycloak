@@ -345,6 +345,52 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         }
     }
 
+
+    @Test
+    public void refreshingTokenLoadsSessionIntoCache() {
+
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS);
+
+        oauth.doLogin("test-user@localhost", "password");
+
+        String code = oauth.parseLoginResponse().getCode();
+
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
+        String refreshTokenString = response.getRefreshToken();
+
+        // Test when neither client nor user session is in the cache
+        testingClient.server().run(session -> {
+            session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).clear();
+            session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME).clear();
+        });
+
+        response = oauth.doRefreshTokenRequest(refreshTokenString);
+        Assert.assertEquals(200, response.getStatusCode());
+
+        testingClient.server().run(session -> {
+            assertThat(session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).size(),
+                    greaterThan(0));
+            assertThat(session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME).size(),
+                    greaterThan(0));
+        });
+
+        // Test is only the client session is missing
+        testingClient.server().run(session -> {
+            session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME).clear();
+        });
+
+        response = oauth.doRefreshTokenRequest(refreshTokenString);
+        Assert.assertEquals(200, response.getStatusCode());
+
+        testingClient.server().run(session -> {
+            assertThat(session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).size(),
+                    greaterThan(0));
+            assertThat(session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME).size(),
+                    greaterThan(0));
+        });
+
+    }
+
     @Test
     public void refreshTokenWithAccessToken() {
         oauth.doLogin("test-user@localhost", "password");
@@ -1527,7 +1573,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             String code = oauth.parseLoginResponse().getCode();
             AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
-            assertTrue("Invalid ExpiresIn", 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 7200);
+            assertEquals(200, tokenResponse.getStatusCode());
+            assertTrue("Invalid ExpiresIn: " + tokenResponse.getRefreshExpiresIn(), 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 7200);
             String clientSessionId = getClientSessionUuid(sessionId, loginEvent.getClientId());
             assertEquals(2, checkIfUserAndClientSessionExist(sessionId, loginEvent.getClientId(), clientSessionId));
 
@@ -1551,7 +1598,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             sessionId = loginEvent.getSessionId();
             code = oauth.parseLoginResponse().getCode();
             tokenResponse = oauth.doAccessTokenRequest(code);
-            assertTrue("Invalid ExpiresIn", 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 3000);
+            assertEquals(200, tokenResponse.getStatusCode());
+            assertTrue("Invalid ExpiresIn: " + tokenResponse.getRefreshExpiresIn(), 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 3000);
             events.expectCodeToToken(loginEvent.getDetails().get(Details.CODE_ID), sessionId).assertEvent();
 
             clientSessionId = getClientSessionUuid(sessionId, loginEvent.getClientId());

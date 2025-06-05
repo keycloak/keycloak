@@ -11,11 +11,13 @@ import {
 } from "@patternfly/react-table";
 
 type CredentialDataDialogProps = {
+  title: string;
   credentialData: [string, string][];
   onClose: () => void;
 };
 
 export const CredentialDataDialog = ({
+  title,
   credentialData,
   onClose,
 }: CredentialDataDialogProps) => {
@@ -23,13 +25,13 @@ export const CredentialDataDialog = ({
   return (
     <Modal
       variant={ModalVariant.medium}
-      title={t("passwordDataTitle")}
+      title={title}
       data-testid="passwordDataDialog"
       isOpen
       onClose={onClose}
     >
       <Table
-        aria-label={t("passwordDataTitle")}
+        aria-label={title}
         data-testid="password-data-dialog"
         variant={TableVariant.compact}
       >

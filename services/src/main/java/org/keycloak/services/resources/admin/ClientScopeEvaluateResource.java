@@ -71,7 +71,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.KeycloakOpenAPI;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
@@ -274,6 +274,7 @@ public class ClientScopeEvaluateResource {
 
     private<R> R sessionAware(UserModel user, String scopeParam, String audienceParam, TriFunction<UserSessionModel, ClientSessionContext, ClientModel[], R> function) {
         AuthenticationSessionModel authSession = null;
+        UserSessionModel userSession = null;
         AuthenticationSessionManager authSessionManager = new AuthenticationSessionManager(session);
 
         try {
@@ -285,8 +286,8 @@ public class ClientScopeEvaluateResource {
             authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
             authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, scopeParam);
 
-            UserSessionModel userSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, user, user.getUsername(),
-                    clientConnection.getRemoteHost(), "example-auth", false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
+            userSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, user, user.getUsername(),
+                    clientConnection.getRemoteHost(), "example-auth", false, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
 
             AuthenticationManager.setClientScopesInSession(session, authSession);
             ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(session, userSession, authSession);
@@ -301,6 +302,9 @@ public class ClientScopeEvaluateResource {
         } finally {
             if (authSession != null) {
                 authSessionManager.removeAuthenticationSession(realm, authSession, false);
+            }
+            if (userSession != null) {
+                session.sessions().removeUserSession(realm, userSession);
             }
         }
     }

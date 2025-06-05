@@ -19,12 +19,6 @@
                                     <#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>
                                 </#assign>
                                 <@field.input name="username" label=label value=login.username!'' autofocus=true autocomplete="username" />
-
-                                <#if messagesPerField.existsError('username')>
-                                    <span id="input-error-username" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
-                                        ${kcSanitize(messagesPerField.get('username'))?no_esc}
-                                    </span>
-                                </#if>
                             </div>
                         </#if>
 

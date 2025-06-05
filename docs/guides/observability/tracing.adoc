@@ -179,6 +179,6 @@ You can filter out the required traces in your tracing backend based on their ta
 
 {project_name} Operator automatically sets the `KC_TRACING_SERVICE_NAME` and `KC_TRACING_RESOURCE_ATTRIBUTES` environment variables for each {project_name} container included in pods it manages.
 
-NOTE: The `KC_TRACING_RESOURCE_ATTRIBUTES` variable always contains (if not overridden) the `k8s.namespace.name` attribute representing current namespace.
+NOTE: The `KC_TRACING_RESOURCE_ATTRIBUTES` variable always contains (if not overridden) the `k8s.namespace.name` attribute representing the current namespace.
 
 </@tmpl.guide>

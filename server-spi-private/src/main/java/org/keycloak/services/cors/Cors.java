@@ -22,7 +22,6 @@ import java.util.concurrent.TimeUnit;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.ResponseBuilder;
 
-import org.keycloak.common.util.Resteasy;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.Provider;

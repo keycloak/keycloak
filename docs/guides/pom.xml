@@ -14,8 +14,9 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
         <artifactId>keycloak-docs-parent</artifactId>
         <groupId>org.keycloak</groupId>
@@ -28,7 +29,8 @@
     <name>Keycloak Guides</name>
     <artifactId>keycloak-guides</artifactId>
     <description>Keycloak Guides</description>
-    <!-- although this doesn't provide a JAR, this is necessary to call the DocsBuildDebugUtil class from an IDE for debugging -->
+    <!-- although this doesn't provide a JAR, this is necessary to call the DocsBuildDebugUtil class
+    from an IDE for debugging -->
     <packaging>jar</packaging>
 
     <dependencies>
@@ -133,7 +135,7 @@
                         <toc>left</toc>
                         <icons>font</icons>
                         <sectanchors>true</sectanchors>
-                        <idprefix/>
+                        <idprefix />
                         <idseparator>-</idseparator>
                         <docinfo1>true</docinfo1>
                         <imagesdir>../images</imagesdir>
@@ -198,7 +200,8 @@
                         </goals>
                         <configuration>
                             <sourceDirectory>${basedir}/target/generated-guides/getting-started</sourceDirectory>
-                            <outputDirectory>${project.build.directory}/generated-docs/getting-started</outputDirectory>
+                            <outputDirectory>
+                                ${project.build.directory}/generated-docs/getting-started</outputDirectory>
                         </configuration>
                     </execution>
                     <execution>
@@ -209,7 +212,8 @@
                         </goals>
                         <configuration>
                             <sourceDirectory>${basedir}/target/generated-guides/high-availability</sourceDirectory>
-                            <outputDirectory>${project.build.directory}/generated-docs/high-availability</outputDirectory>
+                            <outputDirectory>
+                                ${project.build.directory}/generated-docs/high-availability</outputDirectory>
                         </configuration>
                     </execution>
                     <execution>
@@ -221,6 +225,19 @@
                         <configuration>
                             <sourceDirectory>${basedir}/target/generated-guides/securing-apps</sourceDirectory>
                             <outputDirectory>${project.build.directory}/generated-docs/securing-apps</outputDirectory>
+                            <preserveDirectories>true</preserveDirectories>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>ui-customization-asciidoc-to-html</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>process-asciidoc</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>${basedir}/target/generated-guides/ui-customization</sourceDirectory>
+                            <outputDirectory>
+                                ${project.build.directory}/generated-docs/ui-customization</outputDirectory>
                             <preserveDirectories>true</preserveDirectories>
                         </configuration>
                     </execution>

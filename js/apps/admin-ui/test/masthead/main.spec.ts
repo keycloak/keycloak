@@ -7,7 +7,6 @@ import { goToClients } from "../utils/sidebar";
 import {
   assertIsDesktopView,
   assertIsMobileView,
-  clickDocumentationLink,
   clickGlobalHelp,
   getDocumentationLink,
   goToAccountManagement,
@@ -43,13 +42,10 @@ test.describe("Masthead tests", () => {
 
     test("Should go to documentation page", async ({ page }) => {
       await clickGlobalHelp(page);
-      const href = await getDocumentationLink(page);
-      if (href) {
-        await clickDocumentationLink(page);
-        await expect(page.locator("#header")).toContainText(
-          "Server Administration Guide",
-        );
-      }
+      await expect(getDocumentationLink(page)).toHaveAttribute(
+        "href",
+        "https://www.keycloak.org/docs/latest/server_admin/index.html",
+      );
     });
 
     test("Enable/disable help mode in desktop mode", async ({ page }) => {
@@ -59,7 +55,7 @@ test.describe("Masthead tests", () => {
       await expect(page.locator(helpLabel)).toBeVisible();
       await clickGlobalHelp(page);
       await toggleGlobalHelp(page);
-      await expect(page.locator(helpLabel)).not.toBeVisible();
+      await expect(page.locator(helpLabel)).toBeHidden();
       await toggleGlobalHelp(page);
       await expect(page.locator(helpLabel)).toBeVisible();
     });

@@ -40,7 +40,7 @@ export async function deleteClusterNode(page: Page, host: string) {
 }
 
 function getAccessTokenSignatureAlgorithm(page: Page) {
-  return page.locator("#access🍺token🍺signed🍺response🍺alg");
+  return page.locator("#attributes\\.access🍺token🍺signed🍺response🍺alg");
 }
 
 export async function selectAccessTokenSignatureAlgorithm(
@@ -125,18 +125,6 @@ export async function assertAdvancedSwitchesOn(page: Page) {
   ).toBeChecked();
 }
 
-function getKeyForCodeExchangeInput(page: Page) {
-  return page.locator("#keyForCodeExchange");
-}
-
-export async function selectKeyForCodeExchangeInput(page: Page, value: string) {
-  await selectItem(page, getKeyForCodeExchangeInput(page), value);
-}
-
-export async function assertKeyForCodeExchangeInput(page: Page, value: string) {
-  await assertSelectValue(getKeyForCodeExchangeInput(page), value);
-}
-
 export async function saveAdvanced(page: Page) {
   await page.getByTestId("OIDCAdvancedSave").click();
 }
@@ -146,11 +134,11 @@ export async function revertAdvanced(page: Page) {
 }
 
 function getBrowserFlowInput(page: Page) {
-  return page.locator("#browser");
+  return page.locator("#authenticationFlowBindingOverrides\\.browser");
 }
 
 function getDirectFlowInput(page: Page) {
-  return page.locator("#direct_grant");
+  return page.locator("#authenticationFlowBindingOverrides\\.direct_grant");
 }
 
 export async function selectBrowserFlowInput(page: Page, value: string) {

@@ -6,10 +6,6 @@ The Recovery Codes are a number of sequential one-time passwords (currently 12) 
 
 Due to its nature, the Recovery Codes work normally as a backup for another 2FA methods. They can complement the `OTP Form` or the `WebAuthn Authenticator` to give a backing way to log inside {project_name}, for example, if the software or hardware device used for the previous 2FA methods is broken or unavailable.
 
-:tech_feature_name: RecoveryCodes
-:tech_feature_id: recovery-codes
-include::../templates/techpreview.adoc[]
-
 ==== Enable Recovery Codes required action
 
 Check the Recovery Codes action is enabled in {project_name}:
@@ -19,6 +15,15 @@ Check the Recovery Codes action is enabled in {project_name}:
 . Ensure the *Recovery Authentication Codes* switch *Enabled* is set to *On*.
 
 Toggle the *Default Action* switch to *On* if you want all the new users to register their Recovery Codes credentials in the first login.
+
+==== Configure the Recovery Codes required action
+
+From the *Required Actions* tab of the admin console, you have the option to configure the *Recovery Authentication Codes* required action. So far, there is a configuration option
+*Warning Threshold* available. When user has smaller amount of remaining recovery codes on his account than the value configured here, account console will show warning to the user, which will
+recommend him to setup new set of recovery codes. The warning displayed to the user may look similar to this:
+
+.Recovery Codes Account console warning
+image:images/recovery-codes-account-console-warn.png[Recovery Codes Account console warning]
 
 ==== Adding Recovery Codes to the browser flow
 

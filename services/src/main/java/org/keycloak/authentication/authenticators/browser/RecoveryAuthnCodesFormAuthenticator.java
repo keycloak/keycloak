@@ -4,6 +4,7 @@ import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
+import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.events.Details;
@@ -18,6 +19,7 @@ import org.keycloak.models.utils.RecoveryAuthnCodesUtils;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.storage.ReadOnlyException;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
@@ -88,7 +90,7 @@ public class RecoveryAuthnCodesFormAuthenticator implements Authenticator {
                     }
                 }
                 if (recoveryCodeCredentialModel == null || recoveryCodeCredentialModel.allCodesUsed()) {
-                    authenticatedUser.addRequiredAction(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES);
+                    addRequiredAction(authnFlowContext);
                 }
             }
         }
@@ -96,6 +98,15 @@ public class RecoveryAuthnCodesFormAuthenticator implements Authenticator {
             authnFlowContext.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.SESSION_INVALID, "true");
         }
         return result;
+    }
+
+    protected void addRequiredAction(AuthenticationFlowContext authnFlowContext) {
+        try {
+            authnFlowContext.getUser().addRequiredAction(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES);
+        } catch (ReadOnlyException e) {
+            // user is read-only, at least add the action to the auth session
+            authnFlowContext.getAuthenticationSession().addRequiredAction(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES);
+        }
     }
 
     protected boolean isDisabledByBruteForce(AuthenticationFlowContext authnFlowContext, UserModel authenticatedUser) {
@@ -152,7 +163,9 @@ public class RecoveryAuthnCodesFormAuthenticator implements Authenticator {
     @Override
     public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
         AuthenticationSessionModel authenticationSession = session.getContext().getAuthenticationSession();
-        authenticationSession.addRequiredAction(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name());
+        if (!authenticationSession.getRequiredActions().contains(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name())) {
+            authenticationSession.addRequiredAction(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name());
+        }
     }
 
     @Override

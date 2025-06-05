@@ -33,12 +33,6 @@ public class ErrorResponse {
     @JsonProperty("error_description")
     private String errorDescription;
 
-    @JsonProperty("c_nonce")
-    private String cNonce;
-
-    @JsonProperty("c_nonce_expires_in")
-    private long cNonceExpiresIn;
-
     public ErrorType getError() {
         return error;
     }
@@ -54,24 +48,6 @@ public class ErrorResponse {
 
     public ErrorResponse setErrorDescription(String errorDescription) {
         this.errorDescription = errorDescription;
-        return this;
-    }
-
-    public String getcNonce() {
-        return cNonce;
-    }
-
-    public ErrorResponse setcNonce(String cNonce) {
-        this.cNonce = cNonce;
-        return this;
-    }
-
-    public long getcNonceExpiresIn() {
-        return cNonceExpiresIn;
-    }
-
-    public ErrorResponse setcNonceExpiresIn(long cNonceExpiresIn) {
-        this.cNonceExpiresIn = cNonceExpiresIn;
         return this;
     }
 }

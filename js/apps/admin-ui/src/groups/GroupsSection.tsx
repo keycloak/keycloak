@@ -169,7 +169,7 @@ export default function GroupsSection() {
                           key="renameGroup"
                           onClick={() => setRename(currentGroup())}
                         >
-                          {t("renameGroup")}
+                          {t("edit")}
                         </DropdownItem>,
                         <DropdownItem
                           data-testid="deleteGroup"
@@ -182,6 +182,9 @@ export default function GroupsSection() {
                     : undefined
                 }
               />
+              <PageSection className="pf-v5-u-pt-0">
+                {currentGroup()?.description}
+              </PageSection>
               {subGroups.length > 0 && (
                 <Tabs
                   inset={{

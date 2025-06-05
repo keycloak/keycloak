@@ -45,6 +45,8 @@ public interface UserModel extends RoleMapperModel {
     String SEARCH = "keycloak.session.realm.users.query.search";
     String EXACT = "keycloak.session.realm.users.query.exact";
     String DISABLED_REASON = "disabledReason";
+    //attribute name used to mark a temporary admin user/service account as temporary
+    String IS_TEMP_ADMIN_ATTR_NAME = "is_temporary_admin";
 
     Comparator<UserModel> COMPARE_BY_USERNAME = Comparator.comparing(UserModel::getUsername, String.CASE_INSENSITIVE_ORDER);
 

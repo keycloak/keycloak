@@ -88,6 +88,11 @@
             <artifactId>infinispan-component-processor</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
 
         <dependency>
             <groupId>junit</groupId>

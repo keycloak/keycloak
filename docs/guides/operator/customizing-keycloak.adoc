@@ -22,7 +22,7 @@ To avoid this delay, you can provide a custom image with the augmentation built-
 
 With a custom image, you can also specify the Keycloak _build-time_ configurations and extensions during the build of the container.
 
-WARNING: When using optimized custom image, `health-enabled` and `metrics-enabled` options need to be explicitly set in the Containerfile.
+WARNING: When using the optimized custom image, `health-enabled` and `metrics-enabled` options need to be explicitly set in the Containerfile.
 
 For instructions on how to build such an image, see <@links.server id="containers"/>.
 
@@ -52,7 +52,7 @@ Use the Keycloak CR for any configuration that requires Operator awareness, name
 
 === Non-optimized custom image
 
-While it is considered a best practice use a pre-augmented image, if you want to use a non-optimized custom image or build time properties with an augmented image that is still possible. You just need set the `startOptimized` field to `false` as shown in this example:
+While it is considered a best practice to use a pre-augmented image, if you want to use a non-optimized custom image or build time properties with an augmented image that is still possible. You just need set the `startOptimized` field to `false` as shown in this example:
 
 [source,yaml]
 ----

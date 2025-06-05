@@ -45,7 +45,7 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.resources.KeycloakOpenAPI;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

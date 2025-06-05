@@ -58,10 +58,14 @@ public class SecureContextResolver {
             return false;
         }
 
-        if (isLocalAddress(host)) {
-            return true;
-        }
+        return isLocal(host);
+    }
 
+    public static boolean isLocal(String host) {
+        return isLocalHost(host) || isLocalAddress(host);
+    }
+
+    public static boolean isLocalHost(String host) {
         if (host.equals("localhost") || host.equals("localhost.")) {
             return true;
         }

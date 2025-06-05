@@ -43,8 +43,8 @@ public class RequiredActionUpdateEmailTest extends AbstractRequiredActionUpdateE
 
         loginPage.login("test-user@localhost", "password");
         updateEmailPage.assertCurrent();
-        if (!logoutOtherSessions) {
-            updateEmailPage.uncheckLogoutSessions();
+        if (logoutOtherSessions) {
+            updateEmailPage.checkLogoutSessions();
         }
         Assert.assertEquals(logoutOtherSessions, updateEmailPage.isLogoutSessionsChecked());
 

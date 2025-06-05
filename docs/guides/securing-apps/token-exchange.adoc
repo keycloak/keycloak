@@ -22,7 +22,7 @@ The standard token exchange supports only use-case (1). The legacy token exchang
 backwards compatible with future {project_name} versions. You can also enable both token exchange features and use them together. For example, you could use both internal-internal exchange
 provided by V2 together with other use cases that are supported by V1. For more details, see this <<_standard-token-exchange-comparison,token exchange comparison>>.
 
-NOTE: If you still need legacy token exchange feature, you also need link:{adminguide_link}#_fine_grained_permissions[Fine-grained admin permissions version 1] enabled (FGAP:v1) because
+NOTE: If you still need legacy token exchange feature, you also need link:{adminguide_link}#fine-grained-admin-permissions-v1[Fine-grained admin permissions version 1] (FGAP:v1) enabled because
 link:{adminguide_link}#_fine_grained_permissions[version 2 (FGAP:v2)] does not have support for token exchange permissions. This is on purpose because
 token-exchange is conceptually not really an "admin" permission and hence there is no plan to add token exchange permissions to FGAP:v2.
 

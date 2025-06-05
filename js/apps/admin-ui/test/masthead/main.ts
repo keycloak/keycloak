@@ -25,13 +25,13 @@ export async function goToAccountManagement(page: Page) {
 }
 
 export async function assertIsMobileView(page: Page) {
-  await expect(getUserDropdownSelector(page)).not.toBeVisible();
+  await expect(getUserDropdownSelector(page)).toBeHidden();
   await expect(getMobileUserDropdownSelector(page)).toBeVisible();
 }
 
 export async function assertIsDesktopView(page: Page) {
   await expect(getUserDropdownSelector(page)).toBeVisible();
-  await expect(getMobileUserDropdownSelector(page)).not.toBeVisible();
+  await expect(getMobileUserDropdownSelector(page)).toBeHidden();
 }
 
 export async function toggleUsernameDropdown(page: Page) {
@@ -42,18 +42,12 @@ export async function toggleMobileViewHelp(page: Page) {
   await page.getByRole("menuitem", { name: "Help on" }).click();
 }
 
-export async function getDocumentationLink(page: Page) {
-  return await page
-    .getByRole("menuitem", { name: "Documentation" })
-    .getAttribute("href");
-}
-
-export async function clickDocumentationLink(page: Page) {
-  await page.getByRole("menuitem", { name: "Documentation" }).click();
+export function getDocumentationLink(page: Page) {
+  return page.getByTestId("documentation-link");
 }
 
 export async function clickGlobalHelp(page: Page) {
-  await page.getByRole("button", { name: "Help" }).click();
+  await page.getByTestId("help-toggle").click();
 }
 
 export async function toggleGlobalHelp(page: Page) {

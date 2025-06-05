@@ -17,6 +17,7 @@
 
 package org.keycloak.authentication.requiredactions;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -49,6 +50,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.Urls;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -197,6 +199,17 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
     @Override
     public String getId() {
         return UserModel.RequiredAction.UPDATE_EMAIL.name();
+    }
+
+    @Override
+    public int getMaxAuthAge(KeycloakSession session) {
+        // always require re-authentication
+        return 0;
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return Collections.emptyList();
     }
 
     @Override

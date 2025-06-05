@@ -394,7 +394,6 @@ Then run any cluster test as usual.
     mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
     -Pauth-server-cluster-undertow,db-mysql \
     -Dsession.cache.owners=2 \
-    -Dkeycloak.connectionsInfinispan.sessionsOwners=2 \
     -Dbackends.console.output=true \
     -Dauth.server.log.check=false \
     -Dfrontend.console.output=true \
@@ -410,8 +409,8 @@ You can use any cluster test (eg. AuthenticationSessionFailoverClusterTest) and 
 
     -Dauth.server.undertow=false -Dauth.server.undertow.cluster=true -Dauth.server.cluster=true
     -Dkeycloak.connectionsJpa.url=jdbc:mysql://localhost/keycloak -Dkeycloak.connectionsJpa.driver=com.mysql.jdbc.Driver
-    -Dkeycloak.connectionsJpa.user=keycloak -Dkeycloak.connectionsJpa.password=keycloak -Dkeycloak.connectionsInfinispan.clustered=true -Dresources
-    -Dkeycloak.connectionsInfinispan.sessionsOwners=2 -Dsession.cache.owners=2
+    -Dkeycloak.connectionsJpa.user=keycloak -Dkeycloak.connectionsJpa.password=keycloak -Dresources
+    -Dsession.cache.owners=2
 
 Invalidation tests (subclass of `AbstractInvalidationClusterTest`) don't need last two properties.
 
@@ -423,8 +422,8 @@ This mode is useful for develop/manual tests of clustering features. You will ne
 1) Run KeycloakServer server1 with:
 
     -Dkeycloak.connectionsJpa.url=jdbc:mysql://localhost/keycloak -Dkeycloak.connectionsJpa.driver=com.mysql.jdbc.Driver
-    -Dkeycloak.connectionsJpa.user=keycloak -Dkeycloak.connectionsJpa.password=keycloak -Dkeycloak.connectionsInfinispan.clustered=true
-    -Dkeycloak.connectionsInfinispan.sessionsOwners=2 -Dresources
+    -Dkeycloak.connectionsJpa.user=keycloak -Dkeycloak.connectionsJpa.password=keycloak
+    -Dresources
 
 and argument: `-p 8181`
 

@@ -16,11 +16,11 @@
  */
 package org.keycloak.broker.provider;
 
-import org.keycloak.broker.provider.BrokeredIdentityContext;
-import org.keycloak.events.EventBuilder;
 import org.keycloak.models.UserSessionModel;
 
 import jakarta.ws.rs.core.MultivaluedMap;
+import org.keycloak.protocol.oidc.TokenExchangeContext;
+import org.keycloak.protocol.oidc.TokenExchangeProvider;
 
 /**
  * Exchange a token crafted by this provider for a local realm token.
@@ -30,7 +30,7 @@ import jakarta.ws.rs.core.MultivaluedMap;
  */
 public interface ExchangeExternalToken {
     boolean isIssuer(String issuer, MultivaluedMap<String, String> params);
-    BrokeredIdentityContext exchangeExternal(EventBuilder event, MultivaluedMap<String, String> params);
+    BrokeredIdentityContext exchangeExternal(TokenExchangeProvider tokenExchangeProvider, TokenExchangeContext tokenExchangeContext);
 
     void exchangeExternalComplete(UserSessionModel userSession, BrokeredIdentityContext context, MultivaluedMap<String, String> params);
 }

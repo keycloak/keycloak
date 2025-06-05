@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.client;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
 
@@ -55,9 +56,9 @@ import org.keycloak.testsuite.util.oauth.PkceGenerator;
 
 /**
  * Test for the FAPI 2 specifications (still implementer's draft):
- * - FAPI 2.0 Security Profile - https://openid.bitbucket.io/fapi/fapi-2_0-security-profile.html
- * - FAPI 2.0 Message Signing - https://openid.bitbucket.io/fapi/fapi-2_0-message-signing.html
- *
+ * - <a href="https://openid.bitbucket.io/fapi/fapi-security-profile-2_0.html">FAPI 2.0 Security Profile</a>
+ * - <a href="https://openid.bitbucket.io/fapi/fapi-message-signing-2_0.html">FAPI 2.0 Message Signing</a>
+ * <p>
  * Mostly tests the global FAPI policies work as expected
  *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -97,7 +98,7 @@ public class FAPI2Test extends AbstractFAPITest {
         assertEquals(Algorithm.PS256, OIDCAdvancedConfigWrapper.fromClientRepresentation(client).getTokenEndpointAuthSigningAlg());
         assertEquals(false, client.isImplicitFlowEnabled());
         assertEquals(OAuth2Constants.PKCE_METHOD_S256, OIDCAdvancedConfigWrapper.fromClientRepresentation(client).getPkceCodeChallengeMethod());
-        assertEquals(true, OIDCAdvancedConfigWrapper.fromClientRepresentation(client).isUseMtlsHokToken());
+        assertTrue(OIDCAdvancedConfigWrapper.fromClientRepresentation(client).isUseMtlsHokToken());
         assertEquals(false, client.isFullScopeAllowed());
         assertEquals(true, client.isConsentRequired());
 
@@ -124,7 +125,7 @@ public class FAPI2Test extends AbstractFAPITest {
         // send a token request
         signedJwt = createSignedRequestToken(clientId, Algorithm.PS256);
         this.pkceGenerator = pkceGenerator;
-        AccessTokenResponse tokenResponse = doAccessTokenRequestWithClientSignedJWT(code, signedJwt, () -> MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore());
+        AccessTokenResponse tokenResponse = doAccessTokenRequestWithClientSignedJWT(code, signedJwt, MutualTLSUtils::newCloseableHttpClientWithDefaultKeyStoreAndTrustStore);
         assertSuccessfulTokenResponse(tokenResponse);
 
         // check HoK required
@@ -155,7 +156,7 @@ public class FAPI2Test extends AbstractFAPITest {
         assertEquals(Algorithm.PS256, OIDCAdvancedConfigWrapper.fromClientRepresentation(client).getTokenEndpointAuthSigningAlg());
         assertEquals(false, client.isImplicitFlowEnabled());
         assertEquals(OAuth2Constants.PKCE_METHOD_S256, OIDCAdvancedConfigWrapper.fromClientRepresentation(client).getPkceCodeChallengeMethod());
-        assertEquals(true, OIDCAdvancedConfigWrapper.fromClientRepresentation(client).isUseMtlsHokToken());
+        assertTrue(OIDCAdvancedConfigWrapper.fromClientRepresentation(client).isUseMtlsHokToken());
         assertEquals(false, client.isFullScopeAllowed());
         assertEquals(true, client.isConsentRequired());
 
@@ -256,7 +257,7 @@ public class FAPI2Test extends AbstractFAPITest {
         assertEquals(Algorithm.PS256, OIDCAdvancedConfigWrapper.fromClientRepresentation(client).getTokenEndpointAuthSigningAlg());
         assertEquals(false, client.isImplicitFlowEnabled());
         assertEquals(OAuth2Constants.PKCE_METHOD_S256, OIDCAdvancedConfigWrapper.fromClientRepresentation(client).getPkceCodeChallengeMethod());
-        assertEquals(true, OIDCAdvancedConfigWrapper.fromClientRepresentation(client).isUseMtlsHokToken());
+        assertTrue(OIDCAdvancedConfigWrapper.fromClientRepresentation(client).isUseMtlsHokToken());
         assertEquals(false, client.isFullScopeAllowed());
         assertEquals(true, client.isConsentRequired());
         assertEquals(Algorithm.PS256, OIDCAdvancedConfigWrapper.fromClientRepresentation(client).getRequestObjectSignatureAlg());
@@ -318,7 +319,7 @@ public class FAPI2Test extends AbstractFAPITest {
         assertEquals(Algorithm.PS256, OIDCAdvancedConfigWrapper.fromClientRepresentation(client).getRequestObjectSignatureAlg());
         assertEquals(false, client.isImplicitFlowEnabled());
         assertEquals(OAuth2Constants.PKCE_METHOD_S256, OIDCAdvancedConfigWrapper.fromClientRepresentation(client).getPkceCodeChallengeMethod());
-        assertEquals(true, OIDCAdvancedConfigWrapper.fromClientRepresentation(client).isUseMtlsHokToken());
+        assertTrue(OIDCAdvancedConfigWrapper.fromClientRepresentation(client).isUseMtlsHokToken());
         assertEquals(false, client.isFullScopeAllowed());
         assertEquals(true, client.isConsentRequired());
 
@@ -357,7 +358,7 @@ public class FAPI2Test extends AbstractFAPITest {
 
         // send a token request
         signedJwt = createSignedRequestToken(clientId, Algorithm.PS256);
-        AccessTokenResponse tokenResponse = doAccessTokenRequestWithClientSignedJWT(code, signedJwt, () -> MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore());
+        AccessTokenResponse tokenResponse = doAccessTokenRequestWithClientSignedJWT(code, signedJwt, MutualTLSUtils::newCloseableHttpClientWithDefaultKeyStoreAndTrustStore);
         assertSuccessfulTokenResponse(tokenResponse);
  
         // check HoK required
@@ -374,9 +375,7 @@ public class FAPI2Test extends AbstractFAPITest {
 
         // Register client with clientIdAndSecret - should fail
         try {
-            createClientByAdmin("invalid", (ClientRepresentation clientRep) -> {
-                clientRep.setClientAuthenticatorType(ClientIdAndSecretAuthenticator.PROVIDER_ID);
-            });
+            createClientByAdmin("invalid", (ClientRepresentation clientRep) -> clientRep.setClientAuthenticatorType(ClientIdAndSecretAuthenticator.PROVIDER_ID));
             fail();
         } catch (ClientPolicyException e) {
             assertEquals(OAuthErrorException.INVALID_CLIENT_METADATA, e.getMessage());
@@ -384,9 +383,7 @@ public class FAPI2Test extends AbstractFAPITest {
 
         // Register client with signedJWT - should fail
         try {
-            createClientByAdmin("invalid", (ClientRepresentation clientRep) -> {
-                clientRep.setClientAuthenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID);
-            });
+            createClientByAdmin("invalid", (ClientRepresentation clientRep) -> clientRep.setClientAuthenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID));
             fail();
         } catch (ClientPolicyException e) {
             assertEquals(OAuthErrorException.INVALID_CLIENT_METADATA, e.getMessage());
@@ -404,16 +401,12 @@ public class FAPI2Test extends AbstractFAPITest {
         }
 
         // Try to register client with "client-jwt" - should pass
-        String clientUUID = createClientByAdmin("client-jwt", (ClientRepresentation clientRep) -> {
-            clientRep.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID);
-        });
+        String clientUUID = createClientByAdmin("client-jwt", (ClientRepresentation clientRep) -> clientRep.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID));
         ClientRepresentation client = getClientByAdmin(clientUUID);
         Assert.assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // Try to register client with "client-x509" - should pass
-        clientUUID = createClientByAdmin("client-x509", (ClientRepresentation clientRep) -> {
-            clientRep.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID);
-        });
+        clientUUID = createClientByAdmin("client-x509", (ClientRepresentation clientRep) -> clientRep.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID));
         client = getClientByAdmin(clientUUID);
         Assert.assertEquals(X509ClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
@@ -437,9 +430,7 @@ public class FAPI2Test extends AbstractFAPITest {
 
         // Try to register client with clientIdAndSecret - should fail
         try {
-            createClientDynamically(generateSuffixedName(clientId), (OIDCClientRepresentation clientRep) -> {
-                clientRep.setTokenEndpointAuthMethod(OIDCLoginProtocol.CLIENT_SECRET_BASIC);
-            });
+            createClientDynamically(generateSuffixedName(clientId), (OIDCClientRepresentation clientRep) -> clientRep.setTokenEndpointAuthMethod(OIDCLoginProtocol.CLIENT_SECRET_BASIC));
             fail();
         } catch (ClientRegistrationException e) {
             assertEquals(ERR_MSG_CLIENT_REG_FAIL, e.getMessage());
@@ -458,9 +449,7 @@ public class FAPI2Test extends AbstractFAPITest {
         setInitialAccessTokenForDynamicClientRegistration();
 
         // Try to register client with "client-x509" - should pass
-        clientUUID = createClientDynamically("client-x509", (OIDCClientRepresentation clientRep) -> {
-            clientRep.setTokenEndpointAuthMethod(OIDCLoginProtocol.TLS_CLIENT_AUTH);
-        });
+        clientUUID = createClientDynamically("client-x509", (OIDCClientRepresentation clientRep) -> clientRep.setTokenEndpointAuthMethod(OIDCLoginProtocol.TLS_CLIENT_AUTH));
         client = getClientByAdmin(clientUUID);
         Assert.assertEquals(X509ClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
@@ -497,13 +486,11 @@ public class FAPI2Test extends AbstractFAPITest {
         Assert.assertEquals(Algorithm.PS256, clientConfig.getRequestObjectSignatureAlg());
 
         // Test default algorithms set everywhere
-        clientUUID = createClientByAdmin("client-jwt-default-alg", (ClientRepresentation clientRep) -> {
-            clientRep.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID);
-        });
+        clientUUID = createClientByAdmin("client-jwt-default-alg", (ClientRepresentation clientRep) -> clientRep.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID));
         client = getClientByAdmin(clientUUID);
         clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
         Assert.assertEquals(Algorithm.PS256, clientConfig.getIdTokenSignedResponseAlg());
-        Assert.assertEquals(Algorithm.PS256, clientConfig.getRequestObjectSignatureAlg().toString());
+        Assert.assertEquals(Algorithm.PS256, clientConfig.getRequestObjectSignatureAlg());
         Assert.assertEquals(Algorithm.PS256, clientConfig.getUserInfoSignedResponseAlg());
         Assert.assertEquals(Algorithm.PS256, clientConfig.getTokenEndpointAuthSigningAlg());
         Assert.assertEquals(Algorithm.PS256, client.getAttributes().get(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG));
@@ -520,5 +507,4 @@ public class FAPI2Test extends AbstractFAPITest {
         ).toString();
         updatePolicies(json);
     }
-
 }

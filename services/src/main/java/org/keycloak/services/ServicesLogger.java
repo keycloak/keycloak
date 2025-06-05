@@ -71,25 +71,13 @@ public interface ServicesLogger extends BasicLogger {
     void unableToImportRealm(@Cause Throwable t, String realmName, String from);
 
     @LogMessage(level = INFO)
-    @Message(id=6, value="Importing users from '%s'")
-    void imprtingUsersFrom(Object from);
-
-    @LogMessage(level = ERROR)
-    @Message(id=7, value="Failed to load 'keycloak-add-user.json'")
-    void failedToLoadUsers(@Cause Throwable t);
-
-    @LogMessage(level = ERROR)
-    @Message(id=8, value="Failed to add user %s to realm %s: realm not found")
-    void addUserFailedRealmNotFound(String user, String realm);
-
-    @LogMessage(level = INFO)
     @Message(id=9, value="Added user '%s' to realm '%s'")
     void addUserSuccess(String user, String realm);
 
     @LogMessage(level = ERROR)
     @Message(id=10, value="Failed to add user '%s' to realm '%s': user with username exists")
     void addUserFailedUserExists(String user, String realm);
-    
+
     @LogMessage(level = ERROR)
     @Message(id=11, value="Failed to add user '%s' to realm '%s'")
     void addUserFailed(@Cause Throwable t, String user, String realm);
@@ -472,11 +460,11 @@ public interface ServicesLogger extends BasicLogger {
     @LogMessage(level = WARN)
     @Message(id=108, value="URI '%s' doesn't match any trustedHost or trustedDomain")
     void uriDoesntMatch(String uri);
-    
+
     @LogMessage(level = ERROR)
     @Message(id=109, value="Failed to add client '%s' to realm '%s': client with client ID exists")
     void addClientFailedClientExists(String clientId, String realm);
-    
+
     @LogMessage(level = WARN)
     @Message(id=110, value="Environment variable '%s' is deprecated, use '%s' instead")
     void usingDeprecatedEnvironmentVariable(String deprecated, String supported);

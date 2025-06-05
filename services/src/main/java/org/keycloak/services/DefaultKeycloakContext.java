@@ -162,8 +162,8 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     }
 
     @Override
-    public Locale resolveLocale(UserModel user, Theme.Type themeType) {
-        return session.getProvider(LocaleSelectorProvider.class).resolveLocale(getRealm(), user, themeType);
+    public Locale resolveLocale(UserModel user, boolean ignoreAcceptLanguageHeader) {
+        return session.getProvider(LocaleSelectorProvider.class).resolveLocale(getRealm(), user, ignoreAcceptLanguageHeader);
     }
 
     @Override
@@ -297,7 +297,10 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
             String issuer = jwt.getIssuer();
             String realmName = issuer.substring(issuer.lastIndexOf("/") + 1);
             RealmModel realm = session.realms().getRealmByName(realmName);
-            user = session.users().getUserById(realm, jwt.getSubject());
+
+            if (realm != null) {
+                user = session.users().getUserById(realm, jwt.getSubject());
+            }
         }
 
         if (user == null) {

@@ -63,6 +63,7 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
         List<RequiredActionProviderRepresentation> result = authMgmtResource.getRequiredActions();
 
         List<RequiredActionProviderRepresentation> expected = new ArrayList<>();
+        addRequiredAction(expected, "CONFIGURE_RECOVERY_AUTHN_CODES", "Recovery Authentication Codes", true, false, null);
         addRequiredAction(expected, "CONFIGURE_TOTP", "Configure OTP", true, false, null);
         addRequiredAction(expected, "TERMS_AND_CONDITIONS", "Terms and Conditions", false, false, null);
         addRequiredAction(expected, "UPDATE_PASSWORD", "Update Password", true, false, null);
@@ -188,7 +189,7 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
         RequiredActionConfigInfoRepresentation requiredActionConfigDescription = authMgmtResource.getRequiredActionConfigDescription(providerId);
         Assertions.assertNotNull(requiredActionConfigDescription);
         Assertions.assertNotNull(requiredActionConfigDescription.getProperties());
-        Assertions.assertTrue(requiredActionConfigDescription.getProperties().size() == 2);
+        Assertions.assertEquals(3, requiredActionConfigDescription.getProperties().size());
     }
 
     @Test

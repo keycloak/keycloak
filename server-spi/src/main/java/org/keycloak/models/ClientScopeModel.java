@@ -28,6 +28,11 @@ import org.keycloak.provider.ProviderEvent;
  */
 public interface ClientScopeModel extends ProtocolMapperContainerModel, ScopeContainerModel, OrderedModel {
 
+    /**
+     * The character separator used to specify values when the client scope is dynamic. For instance, {@code <scope>:<value>}.
+     */
+    String VALUE_SEPARATOR = ":";
+
     interface ClientScopeRemovedEvent extends ProviderEvent {
         ClientScopeModel getClientScope();
 

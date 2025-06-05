@@ -10,14 +10,11 @@ In this {section}, you are going to understand the different approaches for impo
 
 [NOTE]
 ====
-Exporting and importing into single files can produce large files, so if your database contains more than 500 users, export to a directory and not a single file.
-Using a directory performs better as the directory provider uses a separate transaction for each "page" (a file of users).
-The default count of users per file and per transaction is fifty.
-Increasing this to a larger number leads to an exponentially increasing execution time.
-====
+Exporting and importing into single files can produce large files which may run the export / import process out of memory. If your database contains more than 50,000 users, export to a directory and not a single file.
+The default count of users per file and per transaction is fifty, but you may use a much larger value if desired.
 
-All {project_name} nodes need to be stopped prior to using `kc.[sh|bat] import | export` commands. This ensures that the resulting operations will have no consistency issues with concurrent requests.
-It also ensures that running an import or export command from the same machine as a server instance will not result in port or other conflicts.
+The `import` and `export` commands are essentially server launches that exit before bringing up the full server. They are not currently designed to be run from the same machine as another server instance, which may result in port or other conflicts.
+====
 
 == Providing options for database connection parameters
 
@@ -31,7 +28,7 @@ As default, {project_name} will re-build automatically for the `export` and `imp
 If you have built an optimized version of {project_name} with the `build` command as outlined in <@links.server id="configuration"/>, use the command line option `--optimized` to have {project_name} skip the build check for a faster startup time.
 When doing this, remove the build time options from the command line and keep only the runtime options.
 
-NOTE: if you do not use `--optimized` keep in mind that an `import` or `export` command will implicitly create or update an optimized image for you - if you are running the command from the same machine as a server instance, this may impact the next start of your server.
+NOTE: if you do not use `--optimized` keep in mind that an `import` or `export` command may implicitly create or update an optimized build for you - if you are running the command from the same machine as a server instance, this may impact the next start of your server.
 
 == Exporting a Realm to a Directory
 

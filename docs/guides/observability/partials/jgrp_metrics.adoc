@@ -68,7 +68,7 @@ m| vendor_jgroups_tcp_get_num_bytes_sent
 m| TCP
 .3+| The total number of bytes sent by a node.
 
-m| vendor_jgroups_tunnel_get_num_bytes_sent
+m| vendor_jgroups_udp_get_num_bytes_sent
 m| UDP
 
 m| vendor_jgroups_tunnel_get_num_bytes_sent

@@ -60,7 +60,7 @@ public class OAuth2_1ConfidentialClientTest extends AbstractFAPITest {
 
     private static final String OAUTH2_1_CONFIDENTIAL_CLIENT_PROFILE_NAME = "oauth-2-1-for-confidential-client";
 
-    private String validRedirectUri;;
+    private String validRedirectUri;
 
     private PkceGenerator pkceGenerator;
 
@@ -113,7 +113,7 @@ public class OAuth2_1ConfidentialClientTest extends AbstractFAPITest {
     @Test
     public void testOAuth2_1NotAllowResourceOwnerPasswordCredentialsGrant() throws Exception {
         String clientId = generateSuffixedName(CLIENT_NAME);
-        String cId = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+        createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
             clientRep.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID);
             OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
             clientConfig.setRequestUris(Collections.singletonList(TestApplicationResourceUrls.clientRequestUri()));
@@ -141,9 +141,7 @@ public class OAuth2_1ConfidentialClientTest extends AbstractFAPITest {
 
         // register client with clientIdAndSecret - fail
         try {
-            createClientByAdmin("invalid", (ClientRepresentation clientRep) -> {
-                clientRep.setClientAuthenticatorType(ClientIdAndSecretAuthenticator.PROVIDER_ID);
-            });
+            createClientByAdmin("invalid", (ClientRepresentation clientRep) -> clientRep.setClientAuthenticatorType(ClientIdAndSecretAuthenticator.PROVIDER_ID));
             fail();
         } catch (ClientPolicyException e) {
             assertEquals(OAuthErrorException.INVALID_CLIENT_METADATA, e.getMessage());
@@ -190,7 +188,7 @@ public class OAuth2_1ConfidentialClientTest extends AbstractFAPITest {
         // setup profiles and policies
         setupPolicyOAuth2_1ConfidentialClientForAllClient();
 
-        faiilUpdateRedirectUrisDynamically(clientId, List.of("https://dev.example.com:8443/*"));
+        failUpdateRedirectUrisDynamically(clientId, List.of("https://dev.example.com:8443/*"));
         successUpdateRedirectUrisByAdmin(cId,
                 List.of("https://dev.example.com:8443/callback", "https://[::1]/auth/admin",
                         "com.example.app:/oauth2redirect/example-provider", "https://127.0.0.1/auth/admin"));
@@ -252,7 +250,7 @@ public class OAuth2_1ConfidentialClientTest extends AbstractFAPITest {
         clientConfig.setAllowRegexPatternComparison(false);
         clientConfig.setPkceCodeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
         clientConfig.setUseMtlsHoKToken(true);
-    };
+    }
 
     private String generateNonce() {
         return SecretGenerator.getInstance().randomString(16);
@@ -281,7 +279,7 @@ public class OAuth2_1ConfidentialClientTest extends AbstractFAPITest {
         }
     }
 
-    private void faiilUpdateRedirectUrisDynamically(String clientId, List<String> redirectUrisList) {
+    private void failUpdateRedirectUrisDynamically(String clientId, List<String> redirectUrisList) {
         try {
             updateClientDynamically(clientId, (OIDCClientRepresentation clientRep) ->
                     clientRep.setRedirectUris(redirectUrisList));
@@ -292,7 +290,7 @@ public class OAuth2_1ConfidentialClientTest extends AbstractFAPITest {
     }
 
     private void failAuthorizationRequest(String clientId, String redirectUri) {
-        oauth.clientId(clientId);
+        oauth.client(clientId);
         oauth.redirectUri(redirectUri);
         oauth.openLoginForm();
         assertTrue(errorPage.isCurrent());

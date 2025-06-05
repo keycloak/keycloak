@@ -5,6 +5,7 @@
 export default interface GroupRepresentation {
   id?: string;
   name?: string;
+  description?: string;
   path?: string;
   subGroupCount?: number;
   subGroups?: GroupRepresentation[];

@@ -5,14 +5,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class RecoveryAuthnCodesCredentialData {
 
-    private final int hashIterations;
+    private final Integer hashIterations;
     private final String algorithm;
 
     private int totalCodes;
     private int remainingCodes;
 
     @JsonCreator
-    public RecoveryAuthnCodesCredentialData(@JsonProperty("hashIterations") int hashIterations,
+    public RecoveryAuthnCodesCredentialData(@JsonProperty("hashIterations") Integer hashIterations,
             @JsonProperty("algorithm") String algorithm, @JsonProperty("remaining") int remainingCodes,
                                             @JsonProperty("total") int totalCodes) {
         this.hashIterations = hashIterations;
@@ -21,7 +21,7 @@ public class RecoveryAuthnCodesCredentialData {
         this.totalCodes = totalCodes;
     }
 
-    public int getHashIterations() {
+    public Integer getHashIterations() {
         return hashIterations;
     }
 

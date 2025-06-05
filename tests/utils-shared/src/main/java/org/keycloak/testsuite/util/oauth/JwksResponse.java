@@ -22,4 +22,12 @@ public class JwksResponse extends AbstractHttpResponse {
         return jwks;
     }
 
+    @Override
+    protected void assertJsonContentType() throws IOException {
+        String contentType = getContentType();
+        if (contentType == null || !(contentType.startsWith("application/jwk-set+json") || contentType.startsWith("application/json"))) {
+            throw new IOException("Invalid content type retrieved. Status: " + getStatusCode() + ", contentType: " + contentType);
+        }
+    }
+
 }

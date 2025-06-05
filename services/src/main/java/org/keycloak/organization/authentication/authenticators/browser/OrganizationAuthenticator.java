@@ -23,6 +23,7 @@ import static org.keycloak.models.utils.KeycloakModelUtils.findUserByNameOrEmail
 import static org.keycloak.organization.utils.Organizations.getEmailDomain;
 import static org.keycloak.organization.utils.Organizations.isEnabledAndOrganizationsPresent;
 import static org.keycloak.organization.utils.Organizations.resolveHomeBroker;
+import static org.keycloak.utils.StringUtil.isNotBlank;
 
 import java.util.List;
 import java.util.Map;
@@ -64,6 +65,8 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 
 public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
 
+    private static final String LOGIN_HINT_ALREADY_HANDLED = "loginHintAlreadyHandled";
+
     private final KeycloakSession session;
 
     public OrganizationAuthenticator(KeycloakSession session) {
@@ -77,6 +80,16 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         if (!isEnabledAndOrganizationsPresent(provider)) {
             context.attempted();
             return;
+        }
+
+        String loginHint = session.getContext().getAuthenticationSession().getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
+
+        if (isNotBlank(loginHint) && !"true".equals(context.getAuthenticationSession().getClientNote(LOGIN_HINT_ALREADY_HANDLED))) {
+            UserModel user = resolveUser(context, loginHint);
+            context.setUser(user);
+
+            // set auth note to true to handle login_hint only once, we don't want to handle it again after a flow restart
+            context.getAuthenticationSession().setClientNote(LOGIN_HINT_ALREADY_HANDLED, "true");
         }
 
         OrganizationModel organization = Organizations.resolveOrganization(session);

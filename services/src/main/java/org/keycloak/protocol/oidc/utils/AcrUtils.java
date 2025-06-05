@@ -119,6 +119,8 @@ public class AcrUtils {
                         if (!essential || acrClaim.isEssential()) {
                             if (acrClaim.getValues() != null) {
                                 acrValues.addAll(acrClaim.getValues());
+                            } else if (acrClaim.getValue() != null) {
+                                acrValues.add(acrClaim.getValue());
                             }
                         }
                     }

@@ -17,7 +17,10 @@
 
 package org.keycloak.connections.infinispan;
 
-import org.infinispan.commons.dataconversion.MediaType;
+import java.time.Instant;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.infinispan.commons.time.TimeService;
 import org.infinispan.commons.util.FileLookup;
 import org.infinispan.commons.util.FileLookupFactory;
@@ -35,10 +38,7 @@ import org.jboss.logging.Logger;
 import org.jgroups.JChannel;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
-
-import java.time.Instant;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
+import org.keycloak.spi.infinispan.impl.embedded.CacheConfigurator;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -56,6 +56,10 @@ public class InfinispanUtil {
 
     private static final Object CHANNEL_INIT_SYNCHRONIZER = new Object();
 
+    /**
+     * @deprecated to be removed without replacement.
+     */
+    @Deprecated(since = "26.3", forRemoval = true)
     public static void configureTransport(GlobalConfigurationBuilder gcb, String nodeName, String siteName, String jgroupsUdpMcastAddr,
                                           String jgroupsBindAddr, String jgroupsConfigPath) {
         if (nodeName == null) {
@@ -115,20 +119,20 @@ public class InfinispanUtil {
         }
     }
 
+    /**
+     * @deprecated to be removed. Use {@link CacheConfigurator#createCacheConfigurationBuilder()}.
+     */
+    @Deprecated(since = "26.3", forRemoval = true)
     public static ConfigurationBuilder createCacheConfigurationBuilder() {
-        ConfigurationBuilder builder = new ConfigurationBuilder();
-
-        // need to force the encoding to application/x-java-object to avoid unnecessary conversion of keys/values. See WFLY-14356.
-        builder.encoding().mediaType(MediaType.APPLICATION_OBJECT_TYPE);
-
-        // needs to be disabled if transaction is enabled
-        builder.simpleCache(true);
-
-        return builder;
+        return CacheConfigurator.createCacheConfigurationBuilder();
     }
 
+    /**
+     * @deprecated to be removed without replacement.
+     */
+    @Deprecated(since = "26.3", forRemoval = true)
     public static ConfigurationBuilder getActionTokenCacheConfig() {
-        ConfigurationBuilder cb = createCacheConfigurationBuilder();
+        var cb = CacheConfigurator.createCacheConfigurationBuilder();
 
         cb.memory()
                 .whenFull(EvictionStrategy.MANUAL)
@@ -140,19 +144,26 @@ public class InfinispanUtil {
         return cb;
     }
 
+    /**
+     * @deprecated to be removed. Use {@link CacheConfigurator#getCrlCacheConfig()}.
+     */
+    @Deprecated(since = "26.3", forRemoval = true)
     public static ConfigurationBuilder getCrlCacheConfig() {
-        var builder = createCacheConfigurationBuilder();
+        return CacheConfigurator.getCrlCacheConfig();
+    }
 
-        builder.memory()
-                .whenFull(EvictionStrategy.REMOVE)
-                .maxCount(InfinispanConnectionProvider.CRL_CACHE_DEFAULT_MAX);
-
-        return builder;
+    /**
+     * @deprecated to be removed. Use {@link CacheConfigurator#getRevisionCacheConfig(long)}.
+     */
+    @Deprecated(since = "26.3", forRemoval = true)
+    public static ConfigurationBuilder getRevisionCacheConfig(long maxEntries) {
+        return CacheConfigurator.getRevisionCacheConfig(maxEntries);
     }
 
     /**
      * Replaces the {@link TimeService} in infinispan with the one that respects Keycloak {@link Time}.
-     * @param cacheManager
+     *
+     * @param cacheManager The {@link EmbeddedCacheManager} to inject the Keycloak {@link Time}.
      * @return Runnable to revert replacement of the infinispan time service
      */
     public static Runnable setTimeServiceToKeycloakTime(EmbeddedCacheManager cacheManager) {
@@ -172,14 +183,13 @@ public class InfinispanUtil {
 
     /**
      * Forked from org.infinispan.test.TestingUtil class
-     *
+     * <p>
      * Replaces a component in a running cache manager (global component registry).
      *
-     * @param cacheMgr       cache in which to replace component
+     * @param cacheMgr             cache in which to replace component
      * @param componentType        component type of which to replace
      * @param replacementComponent new instance
      * @param rewire               if true, ComponentRegistry.rewire() is called after replacing.
-     *
      * @return the original component that was replaced
      */
     private static <T> T replaceComponent(EmbeddedCacheManager cacheMgr, Class<T> componentType, T replacementComponent, boolean rewire) {

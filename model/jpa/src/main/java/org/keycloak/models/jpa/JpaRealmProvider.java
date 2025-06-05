@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.hibernate.Session;
 import org.jboss.logging.Logger;
-import org.keycloak.authorization.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
@@ -458,18 +458,16 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         // So in any case, native query is not an option. This is not optimal as it executes additional queries but
         // the alternative of clearing the persistence context is not either as we don't know if something currently present
         // in the context is not needed later.
-        Stream<RoleEntity> parentRoles = em.createNamedQuery("getParentRolesOfACompositeRole", RoleEntity.class).setParameter("compositeRole", roleEntity).getResultStream();
-        parentRoles.forEach(parentRole -> parentRole.getCompositeRoles().remove(roleEntity));
-        parentRoles.close();
+
+        roleEntity.getCompositeRoles().forEach(childRole -> childRole.getParentRoles().remove(roleEntity));
+        roleEntity.getParentRoles().forEach(parentRole -> parentRole.getCompositeRoles().remove(roleEntity));
 
         em.createNamedQuery("deleteClientScopeRoleMappingByRole").setParameter("role", roleEntity).executeUpdate();
 
-        em.flush();
         em.remove(roleEntity);
 
         session.getKeycloakSessionFactory().publish(roleRemovedEvent(role));
 
-        em.flush();
         return true;
 
     }

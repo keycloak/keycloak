@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 
+import com.google.common.base.CaseFormat;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import org.keycloak.common.Profile;
 import org.keycloak.config.CachingOptions;
@@ -39,7 +40,7 @@ final class CachingPropertyMappers {
                         .build(),
                 fromOption(CachingOptions.CACHE_STACK)
                         .isEnabled(CachingPropertyMappers::cacheSetToInfinispan, CACHE_STACK_SET_TO_ISPN)
-                        .to("kc.spi-connections-infinispan-quarkus-stack")
+                        .to("kc.spi-cache-embedded-default-stack")
                         .paramLabel("stack")
                         .build(),
                 fromOption(CachingOptions.CACHE_CONFIG_FILE)
@@ -51,7 +52,7 @@ final class CachingPropertyMappers {
                             } else
                                 return null;
                         })
-                        .to("kc.spi-connections-infinispan-quarkus-config-file")
+                        .to("kc.spi-cache-embedded-default-config-file")
                         .transformer(CachingPropertyMappers::resolveConfigFile)
                         .validator(s -> {
                             if (!Files.exists(Paths.get(resolveConfigFile(s, null)))) {
@@ -68,7 +69,7 @@ final class CachingPropertyMappers {
                         .paramLabel("file")
                         .to("kc.spi-jgroups-mtls-default-keystore-file")
                         .isEnabled(() -> Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED), "property '%s' is enabled".formatted(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED.getKey()))
-                        .validator(value -> checkOptionPresent(CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE, CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD))
+                        .validator(value -> checkValidKeystore(value, CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE, CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD))
                         .build(),
                 fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD)
                         .paramLabel("password")
@@ -81,7 +82,7 @@ final class CachingPropertyMappers {
                         .paramLabel("file")
                         .to("kc.spi-jgroups-mtls-default-truststore-file")
                         .isEnabled(() -> Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED), "property '%s' is enabled".formatted(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED.getKey()))
-                        .validator(value -> checkOptionPresent(CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE, CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD))
+                        .validator(value -> checkValidKeystore(value, CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE, CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD))
                         .build(),
                 fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD)
                         .paramLabel("password")
@@ -126,6 +127,7 @@ final class CachingPropertyMappers {
                         .build(),
                 fromOption(CachingOptions.CACHE_METRICS_HISTOGRAMS_ENABLED)
                         .isEnabled(MetricsPropertyMappers::metricsEnabled, MetricsPropertyMappers.METRICS_ENABLED_MSG)
+                        .to("kc.spi-cache-embedded-default-metrics-histograms-enabled")
                         .build()
         );
 
@@ -210,6 +212,7 @@ final class CachingPropertyMappers {
         return fromOption(CachingOptions.maxCountOption(cacheName))
                 .isEnabled(isEnabled, enabledWhen)
                 .paramLabel("max-count")
+                .to("kc.spi-cache-embedded-default-%s-max-count".formatted(CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_HYPHEN, cacheName)))
                 .build();
     }
 
@@ -221,6 +224,12 @@ final class CachingPropertyMappers {
         if (getOptionalKcValue(optionRequired).isEmpty()) {
             throw new PropertyException("The option '%s' is required when '%s' is set.".formatted(optionRequired.getKey(), optionSet.getKey()));
         }
+    }
+
+    private static void checkValidKeystore(String store, Option<String> option, Option<String> requiredOption) {
+        checkOptionPresent(option, requiredOption);
+        if (!new File(store).exists())
+            throw new IllegalArgumentException("The '%s' file '%s' does not exist.".formatted(option.getKey(), store));
     }
 
     private static void checkOptionPresent(Option<String> option, Option<String> requiredOption) {

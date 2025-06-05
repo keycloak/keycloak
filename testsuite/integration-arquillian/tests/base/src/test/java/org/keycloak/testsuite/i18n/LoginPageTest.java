@@ -42,10 +42,14 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LanguageComboboxAwarePage;
+import org.keycloak.testsuite.pages.LoginExpiredPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
+import org.keycloak.testsuite.pages.PageUtils;
+import org.keycloak.testsuite.updaters.UserAttributeUpdater;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.Cookie;
 
 import java.io.IOException;
@@ -58,7 +62,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -81,6 +84,9 @@ public class LoginPageTest extends AbstractI18NTest {
 
     @Page
     protected OAuthGrantPage grantPage;
+
+    @Page
+    protected LoginExpiredPage loginExpiredPage;
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -339,6 +345,31 @@ public class LoginPageTest extends AbstractI18NTest {
         driver.navigate().to(newUrl);
 
         Assert.assertEquals("Die Aktion ist nicht mehr gültig.", errorPage.getError()); // Action expired.
+    }
+
+    @Test
+    public void languageUserUpdatesOnExpiredPage() throws Exception {
+        try (UserAttributeUpdater userUpdater = UserAttributeUpdater.forUserByUsername(testRealm(), "test-user@localhost")
+                .setRequiredActions(UserModel.RequiredAction.UPDATE_PASSWORD).update()) {
+            // login with a failure attempt
+            loginPage.open();
+            loginPage.login("test-user@localhost", "invalid-password");
+            loginPage.assertCurrent();
+            assertThat(loginPage.getUsernameInputError(), is("Invalid username or password."));
+            loginPage.login("test-user@localhost", "password");
+            changePasswordPage.assertCurrent();
+
+            // navigate back to the login expired page and change language to german
+            UIUtils.navigateBackWithRefresh(driver, loginExpiredPage);
+            errorPage.openLanguage("Deutsch");
+            assertEquals("Deutsch", errorPage.getLanguageDropdownText());
+            assertThat(PageUtils.getPageTitle(driver), is("Diese Seite ist nicht mehr gültig."));
+
+            // continue should show password update in german
+            loginExpiredPage.clickLoginContinueLink();
+            assertEquals("Deutsch", changePasswordPage.getLanguageDropdownText());
+            assertThat(PageUtils.getPageTitle(driver), is("Passwort aktualisieren"));
+        }
     }
 
     @Test

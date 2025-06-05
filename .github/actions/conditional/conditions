@@ -36,6 +36,7 @@ docs/documentation/                         documentation
 js/                                         js
 rest/admin-ui-ext/                          js
 services/                                   js
+themes/                                     js
 js/apps/account-ui/                         ci ci-webauthn
 js/libs/ui-shared/                          ci ci-webauthn
 

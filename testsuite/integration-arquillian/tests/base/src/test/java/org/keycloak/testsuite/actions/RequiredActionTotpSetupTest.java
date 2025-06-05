@@ -707,8 +707,8 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
         totpPage.assertCurrent();
-        if (!logoutOtherSessions) {
-            totpPage.uncheckLogoutSessions();
+        if (logoutOtherSessions) {
+            totpPage.checkLogoutSessions();
         }
         Assert.assertEquals(logoutOtherSessions, totpPage.isLogoutSessionsChecked());
         totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));

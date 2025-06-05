@@ -56,6 +56,7 @@ import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.AccountHelper;
+import org.keycloak.testsuite.util.UIUtils;
 
 import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response;
@@ -904,9 +905,8 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         driver.navigate().back();
         driver.navigate().back();
         events.clear();
-        driver.navigate().back();
 
-        errorPage.assertCurrent();
+        UIUtils.navigateBackWithRefresh(driver, errorPage);
         Assert.assertEquals("Action expired. Please continue with login now.", errorPage.getError());
 
         events.expectRegister("registerUserMissingTermsAcceptance", "registerUserMissingTermsAcceptance@email")

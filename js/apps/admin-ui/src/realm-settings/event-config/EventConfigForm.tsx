@@ -81,28 +81,24 @@ export const EventConfigForm = ({
           )}
         />
       </FormGroup>
+      {type === "admin" && (
+        <DefaultSwitchControl
+          name="adminEventsDetailsEnabled"
+          label={t("includeRepresentation")}
+          labelIcon={t("includeRepresentationHelp")}
+        />
+      )}
       {eventsEnabled && (
-        <>
-          {type === "admin" && (
-            <DefaultSwitchControl
-              name="adminEventsDetailsEnabled"
-              label={t("includeRepresentation")}
-              labelIcon={t("includeRepresentationHelp")}
-            />
-          )}
-          <TimeSelectorControl
-            name={
-              type === "user" ? "eventsExpiration" : "adminEventsExpiration"
-            }
-            label={t("expiration")}
-            labelIcon={t("expirationHelp")}
-            defaultValue=""
-            units={["minute", "hour", "day"]}
-            controller={{
-              defaultValue: "",
-            }}
-          />
-        </>
+        <TimeSelectorControl
+          name={type === "user" ? "eventsExpiration" : "adminEventsExpiration"}
+          label={t("expiration")}
+          labelIcon={t("expirationHelp")}
+          defaultValue=""
+          units={["minute", "hour", "day"]}
+          controller={{
+            defaultValue: "",
+          }}
+        />
       )}
       <ActionGroup>
         <Button

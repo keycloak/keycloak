@@ -161,7 +161,9 @@ export const BruteForceDetection = ({
                 <SelectControl
                   name="bruteForceStrategy"
                   label={t("bruteForceStrategy")}
-                  labelIcon={t("bruteForceStrategyHelp")}
+                  labelIcon={t("bruteForceStrategyHelp", {
+                    failureFactor: form.getValues("failureFactor"),
+                  })}
                   controller={{ defaultValue: "" }}
                   options={bruteForceStrategyTypes.map((key) => ({
                     key,

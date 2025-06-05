@@ -34,7 +34,7 @@ import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.services.resources.KeycloakOpenAPI;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
 
 public class AuthenticationManagementResource extends RoleMappingResource {

@@ -26,10 +26,24 @@ Database:
 --db-driver <driver> The fully qualified class name of the JDBC driver. If not set, a default
                        driver is set accordingly to the chosen database.
 
+Database - additional datasources:
+
+--db-driver-<datasource> <driver>
+                     Used for named <datasource>. The fully qualified class name of the JDBC
+                       driver. If not set, a default driver is set accordingly to the chosen
+                       database.
+--db-kind-<datasource> <vendor>
+                     Used for named <datasource>. The database vendor. In production mode the
+                       default value of 'dev-file' is deprecated, you should explicitly specify the
+                       db instead. Possible values are: dev-file, dev-mem, mariadb, mssql, mysql,
+                       oracle, postgres. Default: dev-file.
+
 Transaction:
 
 --transaction-xa-enabled <true|false>
                      If set to true, XA datasources will be used. Default: false.
+--transaction-xa-enabled-<datasource> <true|false>
+                     If set to true, XA for <datasource> datasource will be used. Default: true.
 
 Feature:
 

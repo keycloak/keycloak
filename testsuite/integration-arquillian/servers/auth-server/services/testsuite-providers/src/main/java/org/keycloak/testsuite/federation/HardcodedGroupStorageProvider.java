@@ -115,6 +115,15 @@ public class HardcodedGroupStorageProvider implements GroupStorageProvider {
         }
 
         @Override
+        public String getDescription() {
+            return null;
+        }
+
+        public void setDescription(String description) {
+            throw new ReadOnlyException("group is read only");
+        }
+
+        @Override
         public Stream<RoleModel> getRealmRoleMappingsStream() {
             return Stream.empty();
         }

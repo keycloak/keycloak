@@ -29,7 +29,10 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ *
+ * @deprecated Please use rather the recovery codes required action to configure warning threshold for recovery codes. This password policy may be removed in the future versions.
  */
+@Deprecated
 public class RecoveryCodesWarningThresholdPasswordPolicyProviderFactory implements PasswordPolicyProviderFactory, PasswordPolicyProvider, EnvironmentDependentProviderFactory {
 
     private KeycloakSession session;

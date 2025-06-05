@@ -44,6 +44,7 @@ import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
+import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.UserBuilder;
 
 /**
@@ -150,8 +151,7 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
         updateProfilePage.assertCurrent();
 
         // Click browser back. Assert on "Page expired" page
-        driver.navigate().back();
-        loginExpiredPage.assertCurrent();
+        UIUtils.navigateBackWithRefresh(driver, loginExpiredPage);
 
         // Click browser forward. Assert on "updateProfile" page again
         driver.navigate().forward();
@@ -182,8 +182,7 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
         updateProfilePage.assertCurrent();
 
         // Click browser back. Assert on "Page expired" page
-        driver.navigate().back();
-        loginExpiredPage.assertCurrent();
+        UIUtils.navigateBackWithRefresh(driver, loginExpiredPage);
 
         // Click browser refresh. Assert still on "Page expired" page
         driver.navigate().refresh();
@@ -198,8 +197,7 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
         updateProfilePage.assertCurrent();
 
         // Click browser back. Assert on "Page expired" page
-        driver.navigate().back();
-        loginExpiredPage.assertCurrent();
+        UIUtils.navigateBackWithRefresh(driver, loginExpiredPage);
 
         // Click "login continue" and assert on updateProfile page
         loginExpiredPage.clickLoginContinueLink();
@@ -226,8 +224,7 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
         grantPage.assertCurrent();
 
         // Click browser back. Assert on "page expired"
-        driver.navigate().back();
-        loginExpiredPage.assertCurrent();
+        UIUtils.navigateBackWithRefresh(driver, loginExpiredPage);
 
         // Click continue login. Assert on consent screen again
         loginExpiredPage.clickLoginContinueLink();
@@ -363,8 +360,7 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
         updatePasswordPage.assertCurrent();
 
         // Click browser back. Should be on 'page expired'
-        driver.navigate().back();
-        loginExpiredPage.assertCurrent();
+        UIUtils.navigateBackWithRefresh(driver, loginExpiredPage);
 
         // Click 'continue' should be on updatePasswordPage
         loginExpiredPage.clickLoginContinueLink();

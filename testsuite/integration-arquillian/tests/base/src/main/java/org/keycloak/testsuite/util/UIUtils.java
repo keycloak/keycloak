@@ -3,6 +3,7 @@ package org.keycloak.testsuite.util;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.keycloak.testsuite.page.AbstractPatternFlyAlert;
+import org.keycloak.testsuite.pages.AbstractPage;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.Keys;
@@ -310,5 +311,23 @@ public final class UIUtils {
 
     public static String getRawPageSource() {
         return getRawPageSource(getCurrentDriver());
+    }
+
+    /**
+     * Navigates the driver back but it refreshes the page if it is not the expected one for
+     * chrome. Chrome 136 does not respect cache-control and refresh is needed
+     * to reach the server again (the page is cached no matter the cache-control
+     * directive returned).
+     * See https://issues.chromium.org/issues/415773538
+     *
+     * @param driver The driver used
+     * @param expectedPage The expected page
+     */
+    public static void navigateBackWithRefresh(WebDriver driver, AbstractPage expectedPage) {
+        driver.navigate().back();
+        if (!expectedPage.isCurrent() && BrowserDriverUtil.isDriverChrome(driver)) {
+            driver.navigate().refresh();
+        }
+        expectedPage.assertCurrent();
     }
 }

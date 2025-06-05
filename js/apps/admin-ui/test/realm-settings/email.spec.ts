@@ -35,18 +35,14 @@ test.describe("Email", () => {
     await goToRealmSettings(page);
     await goToEmailTab(page);
     await assertEmailPageNoAuth(page);
-  });
 
-  test("Add email data with password authentication", async ({ page }) => {
     await populateEmailPageWithPasswordAuth(page);
     await clickSaveEmailButton(page);
     await assertNotificationMessage(page, "Realm successfully updated");
     await goToRealmSettings(page);
     await goToEmailTab(page);
     await assertEmailPageWithPasswordAuth(page);
-  });
 
-  test("Add email data with token authentication", async ({ page }) => {
     await populateEmailPageWithTokenAuth(page);
     await clickSaveEmailButton(page);
     await assertNotificationMessage(page, "Realm successfully updated");
