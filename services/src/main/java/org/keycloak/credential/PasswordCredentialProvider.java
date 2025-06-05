@@ -22,6 +22,7 @@ import io.micrometer.core.instrument.Tag;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.hash.PasswordHashProvider;
+import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.PasswordPolicy;
@@ -282,14 +283,26 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
         if (!provider.policyCheck(passwordPolicy, password)) {
             final int iterations = passwordPolicy != null ? passwordPolicy.getHashIterations() : -1;
             final String hashAlgorithm = passwordPolicy != null ? passwordPolicy.getHashAlgorithm() : null;
-            try {
-                // refresh the password in a different transaction, do not fail if there is a model exception
-                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(),
-                        (KeycloakSession s) -> refreshPassword(s, hashAlgorithm, iterations, input.getChallengeResponse(),
-                                password.getId(), password.getCreatedDate(), password.getUserLabel(), user.getId()));
-            } catch (ModelException e) {
-                logger.info("Error re-hashing the password in a different transaction", e);
-            }
+            // Refresh the password in a different transaction, do not fail if there is a model exception on current modifications due to concurrent logins.
+            // Also do not start it as a nested transaction, as the current transaction might have auto-migrated the credential.
+            // see: JpaUserCredentialStore#toModel for the on-the-fly migration of the salt column
+            session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+                @Override
+                protected void commitImpl() {
+                    try {
+                        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(),
+                                (KeycloakSession s) -> refreshPassword(s, hashAlgorithm, iterations, input.getChallengeResponse(),
+                                        password.getId(), password.getCreatedDate(), password.getUserLabel(), user.getId()));
+                    } catch (ModelException e) {
+                        logger.info("Error re-hashing the password in a different transaction", e);
+                    }
+                }
+
+                @Override
+                protected void rollbackImpl() {
+
+                }
+            });
         }
     }
 
