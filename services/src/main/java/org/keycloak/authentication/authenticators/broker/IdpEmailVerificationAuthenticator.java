@@ -122,7 +122,6 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
 
         EventBuilder event = context.getEvent().clone().event(EventType.SEND_IDENTITY_PROVIDER_LINK)
                 .user(existingUser)
-                .detail(Details.USERNAME, existingUser.getUsername())
                 .detail(Details.EMAIL, existingUser.getEmail())
                 .detail(Details.CODE_ID, authSession.getParentSession().getId())
                 .removeDetail(Details.AUTH_METHOD)

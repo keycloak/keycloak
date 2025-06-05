@@ -303,7 +303,6 @@ public class LinkedAccountsResource {
         logger.debugv("Social provider {0} removed successfully from user {1}", providerAlias, user.getUsername());
 
         event.event(EventType.REMOVE_FEDERATED_IDENTITY).client(auth.getClient()).user(auth.getUser())
-                .detail(Details.USERNAME, auth.getUser().getUsername())
                 .detail(Details.IDENTITY_PROVIDER, link.getIdentityProvider())
                 .detail(Details.IDENTITY_PROVIDER_USERNAME, link.getUserName())
                 .success();
