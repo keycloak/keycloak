@@ -18,6 +18,7 @@
 package org.keycloak.quarkus.runtime.logging;
 
 import io.quarkus.logging.LoggingFilter;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.common.util.MultiSiteUtils;
 
 import java.util.Objects;
@@ -32,7 +33,9 @@ import java.util.regex.Pattern;
 @LoggingFilter(name = "keycloak-filter")
 public final class KeycloakLogFilter implements Filter {
 
-    private static final Pattern ISPN000312_PATTERN = Pattern.compile("^\\[Context=[^]]+] ISPN000312: .*");
+    // avoid logging ISPN000312 for sessions, offlineSessions, clientSessions and offlineClientSessions caches only.
+    private static final Pattern ISPN000312_PATTERN = Pattern.compile(
+            "^\\[Context=(" + String.join("|", InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME, InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME) + ")] ISPN000312: .*");
 
     @Override
     public boolean isLoggable(LogRecord record) {
