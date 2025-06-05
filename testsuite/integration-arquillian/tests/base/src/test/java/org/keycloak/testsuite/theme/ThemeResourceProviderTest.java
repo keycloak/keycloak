@@ -168,8 +168,6 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
     @Test
     @EnableFeatures(@EnableFeature(Profile.Feature.ROLLING_UPDATES_V2))
     public void fetchResourceWithContentHashShouldHonorEtag() throws IOException {
-        final String resourcesVersion = testingClient.server().fetch(session -> Version.RESOURCES_VERSION, String.class);
-
         String resource = getResourceWithContentHash();
 
         // The first fetch should return an etag

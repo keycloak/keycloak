@@ -117,7 +117,7 @@ public class ThemeResource {
                 }
 
                 if (hasContentHash && Objects.equals(etag, Version.RESOURCES_VERSION)) {
-                    // We delivered this resource earlier, and it etag matches the resource version, so it has not changed
+                    // We delivered this resource earlier, and its etag matches the resource version, so it has not changed
                     return Response.notModified()
                             .header(HttpHeaders.ETAG, Version.RESOURCES_VERSION)
                             .cacheControl(CacheControlUtil.getDefaultCacheControl()).build();

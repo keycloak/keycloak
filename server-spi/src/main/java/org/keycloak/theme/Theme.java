@@ -88,7 +88,7 @@ public interface Theme {
      * Check if the given path contains a content hash.
      * If a resource is requested from this path, and it has a content hash, this guarantees that if the file
      * exists in two versions of the theme, it will contain the same contents.
-     * With this garantee, a different version of Keycloak can return the same contents even if a caller asks for
+     * With this guarantee, a different version of Keycloak can return the same contents even if a caller asks for
      * a different version of Keycloak.
      *
      * @param path path to check for a content hash
