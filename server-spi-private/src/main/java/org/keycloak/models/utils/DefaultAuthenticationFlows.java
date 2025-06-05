@@ -377,9 +377,30 @@ public class DefaultAuthenticationFlows {
         // otp processing
         execution = new AuthenticationExecutionModel();
         execution.setParentFlow(conditionalOTP.getId());
-        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
+        if (migrate && hasCredentialType(realm, RequiredCredentialModel.TOTP.getType())) {
+            execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+        }
         execution.setAuthenticator("auth-otp-form");
         execution.setPriority(20);
+        execution.setAuthenticatorFlow(false);
+        realm.addAuthenticatorExecution(execution);
+
+        // webauthn as disabled
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(conditionalOTP.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
+        execution.setAuthenticator("webauthn-authenticator");
+        execution.setPriority(30);
+        execution.setAuthenticatorFlow(false);
+        realm.addAuthenticatorExecution(execution);
+
+        // recovery-codes as disabled
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(conditionalOTP.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
+        execution.setAuthenticator("auth-recovery-authn-code-form");
+        execution.setPriority(40);
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
 
