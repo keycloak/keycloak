@@ -1,0 +1,3 @@
+= Restrict admin role mappings to server administrators
+
+To enhance security, only users with the `admin` role in the `master` realm (server admins) can assign admin roles. This ensures that critical permissions cannot be delegated by realm-level administrators.
