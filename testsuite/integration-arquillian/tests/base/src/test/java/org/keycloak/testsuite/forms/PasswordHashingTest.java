@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.forms;
 
+import jakarta.persistence.EntityManager;
 import jakarta.ws.rs.BadRequestException;
 import org.bouncycastle.crypto.generators.Argon2BytesGenerator;
 import org.jboss.arquillian.graphene.page.Page;
@@ -24,6 +25,7 @@ import org.junit.Assume;
 import org.junit.Test;
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.common.util.Base64;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.hash.PasswordHashProvider;
 import org.keycloak.credential.hash.PasswordHashProviderFactory;
@@ -36,8 +38,10 @@ import org.keycloak.crypto.hash.Argon2PasswordHashProviderFactory;
 import org.keycloak.exportimport.util.ExportUtils;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.credential.dto.PasswordCredentialData;
+import org.keycloak.models.jpa.entities.CredentialEntity;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -53,6 +57,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
+import java.nio.charset.StandardCharsets;
 import java.security.spec.KeySpec;
 import java.time.Duration;
 import java.util.List;
@@ -110,6 +115,42 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.open();
         loginPage.login(username, password);
+        appPage.assertCurrent();
+
+        credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
+
+        assertEquals(Pbkdf2PasswordHashProviderFactory.ID, credential.getPasswordCredentialData().getAlgorithm());
+        assertEncoded(credential, password, credential.getPasswordSecretData().getSalt(), "PBKDF2WithHmacSHA1", 1);
+    }
+
+    @Test
+    public void testPasswordRehashedOnAlgorithmChangedWithMigratedSalt() throws Exception {
+        setPasswordPolicy("hashAlgorithm(" + Pbkdf2Sha256PasswordHashProviderFactory.ID + ") and hashIterations(1)");
+
+        String username = "testPasswordRehashedOnAlgorithmChangedWithMigratedSalt";
+        final String password = createUser(username);
+
+        PasswordCredentialModel credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
+
+        assertEquals(Pbkdf2Sha256PasswordHashProviderFactory.ID, credential.getPasswordCredentialData().getAlgorithm());
+
+        assertEncoded(credential, password, credential.getPasswordSecretData().getSalt(), "PBKDF2WithHmacSHA256", 1);
+
+        setPasswordPolicy("hashAlgorithm(" + Pbkdf2PasswordHashProviderFactory.ID + ") and hashIterations(1)");
+
+        String credentialId = credential.getId();
+        testingClient.server().run(session -> {
+            EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+            CredentialEntity credentialEntity = em.find(CredentialEntity.class, credentialId);
+            // adding a dummy value to the salt column to trigger migration in JpaUserCredentialStore#toModel on next fetch of the credential
+            credentialEntity.setSalt("dummy".getBytes(StandardCharsets.UTF_8));
+            // Clearing the user cache as we updated the database directly
+            session.getProvider(UserCache.class).clear();
+        });
+
+        loginPage.open();
+        loginPage.login(username, password);
+        appPage.assertCurrent();
 
         credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
 
@@ -132,6 +173,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.open();
         loginPage.login(username, password);
+        appPage.assertCurrent();
 
         credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
 
@@ -153,6 +195,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.open();
         loginPage.login(username, password);
+        appPage.assertCurrent();
 
         credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
 
@@ -181,6 +224,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.open();
         loginPage.login(username, password);
+        appPage.assertCurrent();
 
         credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
 
@@ -193,6 +237,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.open();
         loginPage.login(username, password);
+        appPage.assertCurrent();
 
         credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
 
