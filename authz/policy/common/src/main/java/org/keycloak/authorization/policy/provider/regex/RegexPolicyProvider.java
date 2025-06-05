@@ -66,7 +66,7 @@ public class RegexPolicyProvider implements PolicyProvider {
 
         Pattern pattern = Pattern.compile(policy.getPattern());
         Matcher matcher = pattern.matcher(value);
-        if (matcher.matches()) {
+        if (matcher.find()) {
             evaluation.grant();
             logger.debugf("policy %s evaluated with status %s on identity %s and claim value %s", policy.getName(), evaluation.getEffect(), evaluation.getContext().getIdentity().getId(), getClaimValue(evaluation, policy));
         }
@@ -96,7 +96,7 @@ public class RegexPolicyProvider implements PolicyProvider {
             return null;
         }
 
-        return value.asString(0);
+        return String.join(",", value.getValues());
     }
 
     private String resolveJsonValue(Attributes attributes, String targetClaim) throws IOException {
