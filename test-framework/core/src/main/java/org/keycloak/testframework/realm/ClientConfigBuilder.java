@@ -1,5 +1,6 @@
 package org.keycloak.testframework.realm;
 
+import org.keycloak.representations.account.ConsentRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 
@@ -139,6 +140,11 @@ public class ClientConfigBuilder {
             rep.setProtocolMappers(new LinkedList<>());
         }
         rep.getProtocolMappers().addAll(mappers);
+        return this;
+    }
+
+    public ClientConfigBuilder consentRequired(boolean enabled) {
+        rep.setConsentRequired(enabled);
         return this;
     }
 
