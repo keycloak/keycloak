@@ -465,17 +465,20 @@ Security:
 Bootstrap Admin:
 
 --bootstrap-admin-client-id <client id>
-                     Client id for the temporary bootstrap admin service account. Used only when
-                       the master realm is created. Available only when bootstrap admin client
-                       secret is set. Default: temp-admin.
+                     Client id for the bootstrap admin service account. Used only when the master
+                       realm is created. Available only when bootstrap admin client secret is set.
+                       Default: temp-admin.
 --bootstrap-admin-client-secret <client secret>
-                     Client secret for the temporary bootstrap admin service account. Used only
-                       when the master realm is created. Use a non-CLI configuration option for
-                       this option if possible.
+                     Client secret for the bootstrap admin service account. Used only when the
+                       master realm is created. Use a non-CLI configuration option for this option
+                       if possible.
 --bootstrap-admin-password <password>
-                     Temporary bootstrap admin password. Used only when the master realm is
-                       created. Use a non-CLI configuration option for this option if possible.
+                     Bootstrap admin password. Used only when the master realm is created. Use a
+                       non-CLI configuration option for this option if possible.
+--bootstrap-admin-temporary <true|false>
+                     Indicates whether the admin user or service account is temporary. Used only
+                       when the master realm is created. Use a non-CLI configuration option for
+                       this option if possible. Default: true.
 --bootstrap-admin-username <username>
-                     Temporary bootstrap admin username. Used only when the master realm is
-                       created. Available only when bootstrap admin password is set. Default:
-                       temp-admin.
+                     Bootstrap admin username. Used only when the master realm is created.
+                       Available only when bootstrap admin password is set. Default: temp-admin.

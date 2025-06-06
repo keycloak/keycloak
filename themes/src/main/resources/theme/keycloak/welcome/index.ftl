@@ -50,13 +50,26 @@
           <main class="pf-v5-c-login__main">
             <header class="pf-v5-c-login__main-header">
               <#if localUser>
+                <#if isTemporaryAdmin == true>
                 <h1 class="pf-v5-c-title pf-m-2xl">Create a temporary administrative user</h1>
+                <#else>
+                  <h1 class="pf-v5-c-title pf-m-2xl">Create an administrative user</h1>
+                </#if>
                 <#if !successMessage?has_content>
+                  <#if isTemporaryAdmin == true>
                   <p class="pf-v5-c-login__main-header-desc">To get started with ${productName}, you first create a temporary administrative user.  Later, to harden security, create a new permanent administrative user and delete the temporary user that was created during this setup.</p>
+                  <#else>
+                    <p class="pf-v5-c-login__main-header-desc">To get started with ${productName}, you first create an administrative user.</p>
+                  </#if>
                 </#if>
               <#else>
+                <#if isTemporaryAdmin == true>
                 <h1 class="pf-v5-c-title pf-m-3xl">Local access required</h1>
                 <p class="pf-v5-c-login__main-header-desc">You will need local access to create the temporary administrative user.</p>
+                <#else>
+                  <h1 class="pf-v5-c-title pf-m-3xl">Local access required</h1>
+                  <p class="pf-v5-c-login__main-header-desc">You will need local access to create the administrative user.</p>
+                </#if>
               </#if>
             </header>
             <div class="pf-v5-c-login__main-body">
@@ -132,7 +145,11 @@
                     </div>
                   </form>
                 <#else>
+                  <#if isTemporaryAdmin == true>
                   <p>To create the temporary administrative user, access the Administration Console over localhost, or use a <code>bootstrap-admin</code> command.</p>
+                  <#else>
+                    <p>To create the administrative user, access the Administration Console over localhost, or use a <code>bootstrap-admin</code> command.</p>
+                  </#if>
                 </#if>
               </#if>
             </div>

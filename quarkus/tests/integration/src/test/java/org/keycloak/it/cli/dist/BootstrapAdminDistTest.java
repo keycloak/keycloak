@@ -50,6 +50,7 @@ public class BootstrapAdminDistTest {
                 () -> "The Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
     }*/
 
+
     @Test
     @Launch({ "bootstrap-admin", "user", "--db=dev-file", "--username=admin", "--password:env=MY_PASSWORD" })
     void failEnvNotSet(LaunchResult result) {
@@ -60,15 +61,16 @@ public class BootstrapAdminDistTest {
     @Test
     @WithEnvVars({"MY_PASSWORD", "admin123"})
     @Launch({ "bootstrap-admin", "user", "--db=dev-file", "--username=admin", "--password:env=MY_PASSWORD" })
-    void createAdmin(LaunchResult result) {
+    void createTemporaryAdmin(LaunchResult result) {
         assertTrue(result.getErrorOutput().isEmpty(), result.getErrorOutput());
+        assertTrue(result.getOutput().contains("Created temporary admin user with username admin"));
     }
 
     @Test
     @Launch({ "start-dev", "--bootstrap-admin-password=MY_PASSWORD" })
     void createAdminWithCliOptions(LaunchResult result) {
         assertTrue(result.getErrorOutput().isEmpty(), result.getErrorOutput());
-        result.getOutput().contains("Created temporary admin user with username temp-admin");
+        assertTrue(result.getOutput().contains("Created temporary admin user with username temp-admin"));
     }
 
     @Test
@@ -76,6 +78,22 @@ public class BootstrapAdminDistTest {
     void failServiceAccountNoSecret(LaunchResult result) {
         assertTrue(result.getErrorOutput().contains("No client secret provided"),
                 () -> "The Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
+    }
+
+    @Test
+    @WithEnvVars({"MY_SECRET", "admin123"})
+    @Launch({ "bootstrap-admin", "service", "--client-secret:env=MY_SECRET", "--is-temporary=false"})
+    void createAdminService(LaunchResult result) {
+        assertTrue(result.getErrorOutput().isEmpty(), result.getErrorOutput());
+        assertTrue(result.getOutput().contains("Created admin service account with client id temp-admin"));
+    }
+
+    @Test
+    @WithEnvVars({"MY_PASSWORD", "admin123"})
+    @Launch({ "bootstrap-admin", "user", "--db=dev-file", "--username=admin", "--password:env=MY_PASSWORD", "--is-temporary=false" })
+    void createAdmin(LaunchResult result) {
+        assertTrue(result.getErrorOutput().isEmpty(), result.getErrorOutput());
+        assertTrue(result.getOutput().contains("Created admin user with username admin"));
     }
 
     @Test

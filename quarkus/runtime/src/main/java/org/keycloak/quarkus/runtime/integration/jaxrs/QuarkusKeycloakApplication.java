@@ -63,7 +63,8 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
 
     @Override
     protected void loadConfig() {
-        // no need to load config provider because we force quarkus impl
+        var isTemporary = Boolean.parseBoolean(Configuration.getOptionalKcValue(BootstrapAdminOptions.IS_TEMPORARY.getKey()).orElse("true"));
+        BootstrapAdminOptions.setTemporaryRuntimeAdmin(isTemporary);
     }
 
     @Override
@@ -76,10 +77,10 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
 
         try {
             //Integer expiration = Configuration.getOptionalKcValue(BootstrapAdminOptions.EXPIRATION.getKey()).map(Integer::valueOf).orElse(null);
-            if (StringUtil.isNotBlank(adminPassword) && !createTemporaryMasterRealmAdminUser(adminUsername, adminPassword, /*expiration,*/ session)) {
+            if (StringUtil.isNotBlank(adminPassword) && !createTemporaryMasterRealmAdminUser(adminUsername, adminPassword, BootstrapAdminOptions.isTemporaryRuntimeAdmin(), /*expiration,*/ session)) {
                 throw new RuntimeException("Aborting startup and the creation of the master realm, because the temporary admin user account could not be created.");
             }
-            if (StringUtil.isNotBlank(clientSecret) && !createTemporaryMasterRealmAdminService(clientId, clientSecret, /*expiration,*/ session)) {
+            if (StringUtil.isNotBlank(clientSecret) && !createTemporaryMasterRealmAdminService(clientId, clientSecret, BootstrapAdminOptions.isTemporaryRuntimeAdmin(), /*expiration,*/ session)) {
                 throw new RuntimeException("Aborting startup and the creation of the master realm, because the temporary admin service account could not be created.");
             }
         } catch (NumberFormatException e) {
@@ -102,12 +103,12 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
         }
     }
 
-    public boolean createTemporaryMasterRealmAdminUser(String adminUserName, String adminPassword, /*Integer adminExpiration,*/ KeycloakSession session) {
-        return new ApplianceBootstrap(session).createTemporaryMasterRealmAdminUser(adminUserName, adminPassword /*, adminExpiration*/, false);
+    public boolean createTemporaryMasterRealmAdminUser(String adminUserName, String adminPassword, boolean isTemporary, /*Integer adminExpiration,*/ KeycloakSession session) {
+        return new ApplianceBootstrap(session).createMasterRealmAdminUser(adminUserName, adminPassword, isTemporary /*, adminExpiration*/, false);
     }
 
-    public boolean createTemporaryMasterRealmAdminService(String clientId, String clientSecret, /*Integer adminExpiration,*/ KeycloakSession session) {
-        return new ApplianceBootstrap(session).createTemporaryMasterRealmAdminService(clientId, clientSecret /*, adminExpiration*/);
+    public boolean createTemporaryMasterRealmAdminService(String clientId, String clientSecret, boolean isTemporary, /*Integer adminExpiration,*/ KeycloakSession session) {
+        return new ApplianceBootstrap(session).createMasterRealmAdminService(clientId, clientSecret, isTemporary /*, adminExpiration*/);
     }
 
 }

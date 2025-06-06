@@ -95,6 +95,13 @@ The `--no-prompt` parameter can be useful if the username or client ID should be
 
 This creates a temporary admin user with the default username without prompting for confirmation. For more information, see the <<Default values>> section above.
 
+== Treating the temporary admin account as a permanent one
+
+Both `bootstrap-admin user` and `bootstrap-admin service` commands support the `--is-temporary` parameter. This parameter allows you to treat the created admin account as a permanent one, meaning it will not be marked as temporary and will not be subject to the temporary account restrictions.
+
+A temporary admin account can also be created with the Welcome Screen that is displayed at the first start of {project_name}. In this case, the temporary account behavior is controlled by the `--bootstrap-admin-temporary` parameter. If the variable or setting is not defined, the account will be created as a temporary one.
+
+At the moment, a temporary account is reflected only in a form of visual warnings when using it, it does not actually expire the account. This might change with a future release.
 == Environment variables
 
 For the `bootstrap-admin user` command, both username and password can be optionally set as environment variables:
