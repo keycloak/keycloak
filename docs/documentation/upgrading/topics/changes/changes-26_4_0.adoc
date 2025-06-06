@@ -177,6 +177,11 @@ Configuration of the default cache configurations in `conf/cache-ispn.xml`, or i
 
 In a future major release, the start-up will fail if default cache configurations are stated in those files and the option is not specified.
 
+
+=== Welcome Page changes
+
+The Welcome Page creates regular Admin users instead of temporary ones.
+
 // ------------------------ Removed features ------------------------ //
 == Removed features
 
