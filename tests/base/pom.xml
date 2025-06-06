@@ -89,11 +89,6 @@
             <artifactId>keycloak-test-framework-remote</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.keycloak.testframework</groupId>
-            <artifactId>keycloak-test-framework-clustering</artifactId>
-            <version>999.0.0-SNAPSHOT</version>
-        </dependency>
-        <dependency>
             <groupId>org.keycloak.tests</groupId>
             <artifactId>keycloak-tests-utils</artifactId>
             <version>${project.version}</version>
@@ -135,17 +130,5 @@
             </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>mixed-cluster</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <properties>
-                <kc.test.server>cluster</kc.test.server>
-            </properties>
-        </profile>
-    </profiles>
 
 </project>
