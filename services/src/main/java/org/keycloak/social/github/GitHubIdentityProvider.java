@@ -65,6 +65,8 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
     protected static final String BASE_URL_KEY = "baseUrl";
     /** API URL key in config map. */
     protected static final String API_URL_KEY = "apiUrl";
+    /** API URL key in config map. */
+    protected static final String GITHUB_JSON_FORMAT_KEY = "githubJsonFormat";
     /** Email URL key in config map. */
     protected static final String EMAIL_URL_KEY = "emailUrl";
 
@@ -72,6 +74,7 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
     private final String tokenUrl;
     private final String profileUrl;
     private final String emailUrl;
+    private final boolean githubJsonFormat;
 
     public GitHubIdentityProvider(KeycloakSession session, OAuth2IdentityProviderConfig config) {
         super(session, config);
@@ -88,6 +91,7 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
         config.setTokenUrl(tokenUrl);
         config.setUserInfoUrl(profileUrl);
         config.getConfig().put(EMAIL_URL_KEY, emailUrl);
+        githubJsonFormat = Boolean.parseBoolean(config.getConfig().getOrDefault(GITHUB_JSON_FORMAT_KEY, "false"));
     }
 
     /**
@@ -119,7 +123,16 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
 		return profileUrl;
 	}
 
-	@Override
+    @Override
+    public SimpleHttp authenticateTokenRequest(SimpleHttp tokenRequest) {
+        SimpleHttp simpleHttp = super.authenticateTokenRequest(tokenRequest);
+        if (githubJsonFormat) {
+            simpleHttp.acceptJson();
+        }
+        return simpleHttp;
+    }
+
+    @Override
 	protected BrokeredIdentityContext extractIdentityFromProfile(EventBuilder event, JsonNode profile) {
 		BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "id"), getConfig());
 
