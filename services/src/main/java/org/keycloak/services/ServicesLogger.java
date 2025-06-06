@@ -469,4 +469,8 @@ public interface ServicesLogger extends BasicLogger {
     @Message(id=110, value="Environment variable '%s' is deprecated, use '%s' instead")
     void usingDeprecatedEnvironmentVariable(String deprecated, String supported);
 
+    @LogMessage(level = INFO)
+    @Message(id=111, value="Created initial admin user with username %s")
+    void createdInitialAdminUser(String userName);
+
 }
