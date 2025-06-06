@@ -5,6 +5,7 @@ public class BootstrapAdminOptions {
     public static final String DEFAULT_TEMP_ADMIN_USERNAME = "temp-admin";
     public static final String DEFAULT_TEMP_ADMIN_SERVICE = DEFAULT_TEMP_ADMIN_USERNAME;
     public static final int DEFAULT_TEMP_ADMIN_EXPIRATION = 120;
+    public static final boolean DEFAULT_TEMP_ADMIN_IS_TEMPORARY = true;
     private static final String USED_ONLY_WHEN = " Used only when the master realm is created.";
     private static final String NON_CLI = " Use a non-CLI configuration option for this option if possible.";
 
@@ -34,6 +35,12 @@ public class BootstrapAdminOptions {
     public static final Option<String> CLIENT_SECRET = new OptionBuilder<>("bootstrap-admin-client-secret", String.class)
             .category(OptionCategory.BOOTSTRAP_ADMIN)
             .description("Client secret for the temporary bootstrap admin service account." + USED_ONLY_WHEN + NON_CLI)
+            .build();
+
+    public static final Option<Boolean> IS_TEMPORARY = new OptionBuilder<>("bootstrap-admin-temporary", Boolean.class)
+            .category(OptionCategory.BOOTSTRAP_ADMIN)
+            .description("Indicates whether this admin account is temporary." + USED_ONLY_WHEN + NON_CLI)
+            .defaultValue(DEFAULT_TEMP_ADMIN_IS_TEMPORARY)
             .build();
 
 }

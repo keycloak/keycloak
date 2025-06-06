@@ -54,6 +54,12 @@ public class BootstrapAdminUser extends AbstractNonServerCommand {
     @Option(paramLabel = "PASSWORD", names = { "--password:env" }, description = "Environment variable name for the admin user password")
     String passwordEnv;
 
+    @Option(paramLabel = "IS_TEMPORARY", names = { "--is-temporary" }, description = "Indicates whether this admin account is temporary, defaults to true", defaultValue = "true")
+    boolean isTemporary;
+
+    @Option(paramLabel = "is_temporary", names = { "--is-temporary:env" }, description = "Environment variable name for whether the admin account is temporary")
+    String isTemporaryEnv;
+
     String password;
     String username;
 
@@ -90,6 +96,10 @@ public class BootstrapAdminUser extends AbstractNonServerCommand {
         } else {
             password = getFromEnv(passwordEnv);
         }
+
+        if (isTemporaryEnv != null) {
+            isTemporary = Boolean.parseBoolean(getFromEnv(isTemporaryEnv));
+        }
     }
 
     private String getFromEnv(String envVar) {
@@ -105,7 +115,7 @@ public class BootstrapAdminUser extends AbstractNonServerCommand {
         //BootstrapAdmin bootstrap = spec.commandLine().getParent().getCommand();
         KeycloakSessionFactory sessionFactory = KeycloakApplication.getSessionFactory();
         KeycloakModelUtils.runJobInTransaction(sessionFactory, session -> application
-                .createTemporaryMasterRealmAdminUser(username, password, /* bootstrap.expiration, */ session));
+                .createTemporaryMasterRealmAdminUser(username, password, isTemporary, /* bootstrap.expiration, */ session));
     }
 
     @Override

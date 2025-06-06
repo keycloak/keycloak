@@ -121,7 +121,7 @@ public class ApplianceBootstrap {
      * @param initialUser if true only create the user if no other users exist
      * @return false if the user could not be created
      */
-    public boolean createTemporaryMasterRealmAdminUser(String username, String password, /*Integer expriationMinutes,*/ boolean initialUser) {
+    public boolean createTemporaryMasterRealmAdminUser(String username, String password, boolean isTemporary, /*Integer expriationMinutes,*/ boolean initialUser) {
         RealmModel realm = session.realms().getRealmByName(Config.getAdminRealm());
         session.getContext().setRealm(realm);
 
@@ -136,8 +136,10 @@ public class ApplianceBootstrap {
         try {
             UserModel adminUser = session.users().addUser(realm, username);
             adminUser.setEnabled(true);
-            adminUser.setSingleAttribute(IS_TEMP_ADMIN_ATTR_NAME, Boolean.TRUE.toString());
-            // also set the expiration - could be relative to a creation timestamp, or computed
+            if (isTemporary) {
+                adminUser.setSingleAttribute(IS_TEMP_ADMIN_ATTR_NAME, Boolean.TRUE.toString());
+                // also set the expiration - could be relative to a creation timestamp, or computed
+            }
 
             UserCredentialModel usrCredModel = UserCredentialModel.password(password);
             adminUser.credentialManager().updateCredential(usrCredModel);
@@ -155,11 +157,13 @@ public class ApplianceBootstrap {
 
     /**
      * Create a temporary admin service account
-     * @param clientId the client ID
+     *
+     * @param clientId     the client ID
      * @param clientSecret the client secret
+     * @param isTemporary
      * @return false if the service account could not be created
      */
-    public boolean createTemporaryMasterRealmAdminService(String clientId, String clientSecret /*, Integer expriationMinutes*/) {
+    public boolean createTemporaryMasterRealmAdminService(String clientId, String clientSecret, boolean isTemporary/*, Integer expriationMinutes*/) {
         RealmModel realm = session.realms().getRealmByName(Config.getAdminRealm());
         session.getContext().setRealm(realm);
 
@@ -183,8 +187,10 @@ public class ApplianceBootstrap {
             serviceAccount.grantRole(adminRole);
 
             adminClientModel.setAttribute(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED, Boolean.TRUE.toString());
-            adminClientModel.setAttribute(IS_TEMP_ADMIN_ATTR_NAME, Boolean.TRUE.toString());
-            // also set the expiration - could be relative to a creation timestamp, or computed
+            if (isTemporary) {
+                adminClientModel.setAttribute(IS_TEMP_ADMIN_ATTR_NAME, Boolean.TRUE.toString());
+                // also set the expiration - could be relative to a creation timestamp, or computed
+            }
 
             ServicesLogger.LOGGER.createdTemporaryAdminService(clientId);
         } catch (ModelDuplicateException e) {
@@ -194,8 +200,8 @@ public class ApplianceBootstrap {
         return true;
     }
 
-    public void createMasterRealmUser(String username, String password) {
-        createTemporaryMasterRealmAdminUser(username, password, true);
+    public void createMasterRealmUser(String username, String password, boolean isTemporary) {
+        createTemporaryMasterRealmAdminUser(username, password, isTemporary, true);
     }
 
 }
