@@ -232,10 +232,8 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
 
     public static class BaseSoapBindingBuilder {
         protected Document document;
-        protected BaseSAML2BindingBuilder builder;
 
         public BaseSoapBindingBuilder(BaseSAML2BindingBuilder builder, Document document) throws ProcessingException {
-            this.builder = builder;
             this.document = document;
             if (builder.signAssertions) {
                 builder.signAssertion(document);
