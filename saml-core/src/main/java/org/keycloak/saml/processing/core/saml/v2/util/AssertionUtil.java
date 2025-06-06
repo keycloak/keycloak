@@ -71,6 +71,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * Utility to deal with assertions
@@ -584,18 +586,19 @@ public class AssertionUtil {
     }
 
     public static Element decryptAssertion(ResponseType responseType, PrivateKey privateKey) throws ParsingException, ProcessingException, ConfigurationException {
-        return decryptAssertion(responseType, encryptedData -> Collections.singletonList(privateKey));
+//        return decryptAssertion(responseType, encryptedData -> Collections.singletonList(privateKey));
+        return null;
     }
 
     /**
      * This method modifies the given responseType, and replaces the encrypted assertion with a decrypted version.
      *
      * @param responseType a response containing an encrypted assertion
-     * @param decryptionKeyLocator locator of keys suitable for decrypting encrypted element
+//     * @param decryptionKeyLocator locator of keys suitable for decrypting encrypted element
      *
      * @return the assertion element as it was decrypted. This can be used in signature verification.
      */
-    public static Element decryptAssertion(ResponseType responseType, XMLEncryptionUtil.DecryptionKeyLocator decryptionKeyLocator) throws ParsingException, ProcessingException, ConfigurationException {
+    public static Element decryptAssertion(ResponseType responseType, Function<Document, Element> decryptor) throws ParsingException, ProcessingException, ConfigurationException {
         Element enc = responseType.getAssertions().stream()
                 .map(ResponseType.RTChoiceType::getEncryptedAssertion)
                 .filter(Objects::nonNull)
@@ -608,7 +611,7 @@ public class AssertionUtil {
         Node importedNode = newDoc.importNode(enc, true);
         newDoc.appendChild(importedNode);
 
-        Element decryptedDocumentElement = XMLEncryptionUtil.decryptElementInDocument(newDoc, decryptionKeyLocator);
+        Element decryptedDocumentElement = decryptor.apply(newDoc);
         SAMLParser parser = SAMLParser.getInstance();
 
         JAXPValidationUtil.checkSchemaValidation(decryptedDocumentElement);

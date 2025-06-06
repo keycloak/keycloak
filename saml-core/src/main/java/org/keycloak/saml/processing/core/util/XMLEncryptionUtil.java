@@ -24,6 +24,7 @@ import org.apache.xml.security.encryption.XMLEncryptionException;
 import org.apache.xml.security.exceptions.XMLSecurityException;
 import org.apache.xml.security.utils.EncryptionConstants;
 
+import org.keycloak.saml.processing.core.saml.v2.util.DecryptionException;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.exceptions.ProcessingException;
@@ -245,7 +246,7 @@ public class XMLEncryptionUtil {
      * @throws ProcessingException when decrypting was not successful
      */
     public static Element decryptElementInDocument(Document documentWithEncryptedElement, DecryptionKeyLocator decryptionKeyLocator)
-            throws ProcessingException {
+            throws DecryptionException {
         if (documentWithEncryptedElement == null)
             throw logger.nullArgumentError("Input document is null");
 
@@ -274,7 +275,7 @@ public class XMLEncryptionUtil {
                 encryptedData.getKeyInfo().add(encryptedKey);
             }
         } catch (XMLSecurityException e1) {
-            throw logger.processingError(e1);
+            throw new DecryptionException(e1);
         }
 
         Document decryptedDoc = null;
@@ -321,7 +322,7 @@ public class XMLEncryptionUtil {
             }
 
             if (!success) {
-                throw logger.processingError(enclosingThrowable);
+                throw new DecryptionException(enclosingThrowable);
             }
         }
 
