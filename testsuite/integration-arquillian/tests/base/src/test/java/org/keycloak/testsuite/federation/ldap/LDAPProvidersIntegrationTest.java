@@ -156,47 +156,57 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
     @Test
     public void testSyncRegistrationWithCreateDNRelativeToBaseDN() {
-        testingClient.server().run(session -> {
-            LDAPTestContext ctx = LDAPTestContext.init(session);
-            // use a broader DN to fetch users from - should still fetch all users if search scope is set to subtree
-            ctx.getLdapModel().put(LDAPConstants.USERS_DN, "dc=keycloak,dc=org");
-            ctx.getLdapModel().put(LDAPConstants.SEARCH_SCOPE, String.valueOf(SearchControls.SUBTREE_SCOPE));
-            // use a relative DN to store the users - final DN should be this DN + the users DN set above
-            ctx.getLdapModel().put(LDAPConstants.RELATIVE_CREATE_DN, "ou=People");
-            ctx.getRealm().updateComponent(ctx.getLdapModel());
-        });
+        try {
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                // use a broader DN to fetch users from - should still fetch all users if search scope is set to subtree
+                ctx.getLdapModel().put(LDAPConstants.USERS_DN, "dc=keycloak,dc=org");
+                // ou=People2,dc=keycloak,dc=org
+                ctx.getLdapModel().put(LDAPConstants.SEARCH_SCOPE, String.valueOf(SearchControls.SUBTREE_SCOPE));
+                // use a relative DN to store the users - final DN should be this DN + the users DN set above
+                ctx.getLdapModel().put(LDAPConstants.RELATIVE_CREATE_DN, "ou=People");
+                ctx.getRealm().updateComponent(ctx.getLdapModel());
+            });
 
-        // ensure users are still found when searching using a broader DN with subtree scope
-        Integer count = testingClient.server().fetch(session -> {
-            LDAPTestContext ctx = LDAPTestContext.init(session);
-            return ctx.getLdapProvider().searchForUserStream(ctx.getRealm(), Map.of(), -1, -1).count();
-        }, Integer.class);
-        MatcherAssert.assertThat(count, Matchers.greaterThan(0));
+            // ensure users are still found when searching using a broader DN with subtree scope
+            Integer count = testingClient.server().fetch(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                return ctx.getLdapProvider().searchForUserStream(ctx.getRealm(), Map.of(), -1, -1).count();
+            }, Integer.class);
+            MatcherAssert.assertThat(count, Matchers.greaterThan(0));
 
-        // register a new user and check it was added to the right DN
-        UserRepresentation newUser = AbstractAuthTest.createUserRepresentation("newuser0", "newuser0@email.com", "New", "User0", true);
-        String userId;
-        try (Response resp = testRealm().users().create(newUser)) {
-            userId = ApiUtil.getCreatedId(resp);
+            // register a new user and check it was added to the right DN
+            UserRepresentation newUser = AbstractAuthTest.createUserRepresentation("newuser0", "newuser0@email.com", "New", "User0", true);
+            String userId;
+            try (Response resp = testRealm().users().create(newUser)) {
+                userId = ApiUtil.getCreatedId(resp);
+            }
+            newUser = testRealm().users().get(userId).toRepresentation();
+            assertFederatedUserLink(newUser);
+            MatcherAssert.assertThat(newUser, Matchers.notNullValue());
+            MatcherAssert.assertThat(newUser.firstAttribute(LDAPConstants.LDAP_ENTRY_DN), Matchers.containsStringIgnoringCase("=newuser0,ou=People,dc=keycloak,dc=org"));
+
+            // remove the created user
+            try (Response resp = testRealm().users().delete(userId)) {
+                Assert.assertEquals(Response.Status.NO_CONTENT.getStatusCode(), resp.getStatus());
+            }
+
+            // revert changes to the LDAP storage provider
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                ctx.getLdapModel().put(LDAPConstants.USERS_DN, "ou=People,dc=keycloak,dc=org");
+                ctx.getLdapModel().getConfig().remove(LDAPConstants.SEARCH_SCOPE);
+                ctx.getLdapModel().getConfig().remove(LDAPConstants.RELATIVE_CREATE_DN);
+                ctx.getRealm().updateComponent(ctx.getLdapModel());
+            });
+        } finally {
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                ctx.getLdapModel().put(LDAPConstants.USERS_DN, "ou=People2,dc=keycloak,dc=org");
+                ctx.getLdapModel().getConfig().remove(LDAPConstants.RELATIVE_CREATE_DN);
+                ctx.getRealm().updateComponent(ctx.getLdapModel());
+            });
         }
-        newUser = testRealm().users().get(userId).toRepresentation();
-        assertFederatedUserLink(newUser);
-        MatcherAssert.assertThat(newUser, Matchers.notNullValue());
-        MatcherAssert.assertThat(newUser.firstAttribute(LDAPConstants.LDAP_ENTRY_DN), Matchers.containsString("=newuser0,ou=People,dc=keycloak,dc=org"));
-
-        // remove the created user
-        try (Response resp = testRealm().users().delete(userId)) {
-            Assert.assertEquals(Response.Status.NO_CONTENT.getStatusCode(), resp.getStatus());
-        }
-
-        // revert changes to the LDAP storage provider
-        testingClient.server().run(session -> {
-            LDAPTestContext ctx = LDAPTestContext.init(session);
-            ctx.getLdapModel().put(LDAPConstants.USERS_DN, "ou=People,dc=keycloak,dc=org");
-            ctx.getLdapModel().getConfig().remove(LDAPConstants.SEARCH_SCOPE);
-            ctx.getLdapModel().getConfig().remove(LDAPConstants.RELATIVE_CREATE_DN);
-            ctx.getRealm().updateComponent(ctx.getLdapModel());
-        });
     }
 
     @Test
@@ -567,7 +577,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
     // KEYCLOAK-12340
     @Test
     public void ldapPasswordChangeWithAdminEndpointAndRequiredAction() throws Exception {
-        String username = "admin-endpoint-req-act";
+        String username = "newuser";
         String email = username + "@email.cz";
 
         // Register new LDAP user with password, logout user
@@ -704,13 +714,14 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
-        registerPage.register("firstName", "lastName", "email2@check.cz", "register-user-success2", "Password1", "Password1");
+        String username = "newuser2";
+        registerPage.register("firstName", "lastName", "email2@check.cz", username, "Password1", "Password1");
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        UserRepresentation user = ApiUtil.findUserByUsername(testRealm(),"register-user-success2");
+        UserRepresentation user = ApiUtil.findUserByUsername(testRealm(), username);
         Assert.assertNotNull(user);
         assertFederatedUserLink(user);
-        Assert.assertEquals("register-user-success2", user.getUsername());
+        Assert.assertEquals(username, user.getUsername());
         Assert.assertEquals("firstName", user.getFirstName());
         Assert.assertEquals("lastName", user.getLastName());
         Assert.assertTrue(user.isEnabled());
@@ -1031,17 +1042,18 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
     @Test
     public void testRemoveFederatedUser() {
-        UserRepresentation user = ApiUtil.findUserByUsername(testRealm(), "register-user-success2");
+        String username = "newuser2";
+        UserRepresentation user = ApiUtil.findUserByUsername(testRealm(), username);
 
         // Case when this test was executed "alone" (User "registerusersuccess2" is registered inside registerUserLdapSuccess)
         if (user == null) {
             registerUserLdapSuccess();
-            user = ApiUtil.findUserByUsername(testRealm(), "register-user-success2");
+            user = ApiUtil.findUserByUsername(testRealm(), username);
         }
 
         assertFederatedUserLink(user);
         testRealm().users().get(user.getId()).remove();
-        user = ApiUtil.findUserByUsername(testRealm(), "register-user-success2");
+        user = ApiUtil.findUserByUsername(testRealm(), username);
         Assert.assertNull(user);
     }
 
