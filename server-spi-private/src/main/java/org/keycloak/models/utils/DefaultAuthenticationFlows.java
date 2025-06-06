@@ -351,8 +351,8 @@ public class DefaultAuthenticationFlows {
         AuthenticationFlowModel conditionalOTP = new AuthenticationFlowModel();
         conditionalOTP.setTopLevel(false);
         conditionalOTP.setBuiltIn(true);
-        conditionalOTP.setAlias("Browser - Conditional OTP");
-        conditionalOTP.setDescription("Flow to determine if the OTP is required for the authentication");
+        conditionalOTP.setAlias("Browser - Conditional 2FA");
+        conditionalOTP.setDescription("Flow to determine if any 2FA is required for the authentication");
         conditionalOTP.setProviderId("basic-flow");
         conditionalOTP = realm.addAuthenticationFlow(conditionalOTP);
         execution = new AuthenticationExecutionModel();
