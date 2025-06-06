@@ -31,12 +31,15 @@ import java.time.Duration;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 @QuarkusTest
 public class KeycloakServicesTest extends BaseOperatorTest {
     @Test
     public void testMainServiceDurability() {
         var kc = getTestKeycloakDeployment(true);
+        kc.getSpec().getHttpSpec().setLabels(Map.of("foo","bar"));
         K8sUtils.deployKeycloak(k8sclient, kc, true);
         String serviceName = KeycloakServiceDependentResource.getServiceName(kc);
         var serviceSelector = k8sclient.services().inNamespace(namespace).withName(serviceName);
@@ -71,11 +74,66 @@ public class KeycloakServicesTest extends BaseOperatorTest {
                 .untilAsserted(() -> {
                     var s = serviceSelector.get();
                     assertThat(s.getMetadata().getLabels().entrySet().containsAll(labels.entrySet())).isTrue(); // additional labels should not be overwritten
+                    assertEquals("bar", s.getMetadata().getLabels().get("foo"));
                     // ignoring assigned IP/s and generated config
                     s.getSpec().setClusterIP(null);
                     s.getSpec().setClusterIPs(null);
                     s.getSpec().setSessionAffinityConfig(null);
                     assertThat(s.getSpec()).isEqualTo(origSpecs); // managed spec fields should be reconciled back to original values
+                });
+    }
+
+    @Test
+    public void testCustomServiceAnnotations() {
+        var kc = getTestKeycloakDeployment(true);
+
+        // set 'a'
+        kc.getSpec().getHttpSpec().setAnnotations(Map.of("a", "b"));
+        K8sUtils.deployKeycloak(k8sclient, kc, true);
+
+        String serviceName = KeycloakServiceDependentResource.getServiceName(kc);
+        var serviceSelector = k8sclient.services().inNamespace(namespace).withName(serviceName);
+
+        Awaitility.await()
+                .ignoreExceptions()
+                .untilAsserted(() -> {
+                    var s = serviceSelector.get();
+                    assertEquals("b", s.getMetadata().getAnnotations().get("a"));
+                });
+
+        // update 'a'
+        kc.getSpec().getHttpSpec().setAnnotations(Map.of("a", "bb"));
+        K8sUtils.deployKeycloak(k8sclient, kc, true);
+
+        Awaitility.await()
+                .ignoreExceptions()
+                .untilAsserted(() -> {
+                    var s = serviceSelector.get();
+                    assertEquals("bb", s.getMetadata().getAnnotations().get("a"));
+                });
+
+        // remove 'a' and add 'c'
+        kc.getSpec().getHttpSpec().setAnnotations(Map.of("c", "d"));
+        K8sUtils.deployKeycloak(k8sclient, kc, true);
+
+        Awaitility.await()
+                .ignoreExceptions()
+                .untilAsserted(() -> {
+                    var s = serviceSelector.get();
+                    assertFalse(s.getMetadata().getAnnotations().containsKey("a"));
+                    assertEquals("d", s.getMetadata().getAnnotations().get("c"));
+                });
+
+        // remove all
+        kc.getSpec().getHttpSpec().setAnnotations(null);
+        K8sUtils.deployKeycloak(k8sclient, kc, true);
+
+        Awaitility.await()
+                .ignoreExceptions()
+                .untilAsserted(() -> {
+                    var s = serviceSelector.get();
+                    assertFalse(s.getMetadata().getAnnotations().containsKey("a"));
+                    assertFalse(s.getMetadata().getAnnotations().containsKey("c"));
                 });
     }
 
