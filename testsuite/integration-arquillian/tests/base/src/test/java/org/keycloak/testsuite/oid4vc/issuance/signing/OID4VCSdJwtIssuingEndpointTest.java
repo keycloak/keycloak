@@ -152,7 +152,9 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
     @Test
     public void testProofOfPossessionWithMissingAudience() throws Throwable {
         try {
-            String token = getBearerToken(oauth);
+            String token = getBearerToken(oauth, client, sdJwtTypeCredentialClientScope.getName());
+            final String clientScopeString = toJsonString(sdJwtTypeCredentialClientScope);
+
             withCausePropagation(() -> testingClient
                     .server(TEST_REALM_NAME)
                     .run((session -> {
@@ -164,7 +166,9 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                                                                          nonceEndpoint));
                         Proof proof = new JwtProof().setJwt(generateJwtProof(getCredentialIssuer(session), cNonce));
 
-                        testRequestTestCredential(session, token, proof);
+                        ClientScopeRepresentation clientScope = fromJsonString(clientScopeString,
+                                                                               ClientScopeRepresentation.class);
+                        testRequestTestCredential(session, clientScope, token, proof);
                     })));
             Assert.fail("Should have thrown an exception");
         } catch (BadRequestException ex) {
@@ -179,7 +183,9 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
     @Test
     public void testProofOfPossessionWithIllegalSourceEndpoint() throws Throwable {
         try {
-            String token = getBearerToken(oauth);
+            String token = getBearerToken(oauth, client, sdJwtTypeCredentialClientScope.getName());
+            final String clientScopeString = toJsonString(sdJwtTypeCredentialClientScope);
+
             withCausePropagation(() -> testingClient
                     .server(TEST_REALM_NAME)
                     .run((session -> {
@@ -190,7 +196,9 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                         String cNonce = cNonceHandler.buildCNonce(List.of(credentialsEndpoint), null);
                         Proof proof = new JwtProof().setJwt(generateJwtProof(getCredentialIssuer(session), cNonce));
 
-                        testRequestTestCredential(session, token, proof);
+                        ClientScopeRepresentation clientScope = fromJsonString(clientScopeString,
+                                                                               ClientScopeRepresentation.class);
+                        testRequestTestCredential(session, clientScope, token, proof);
                     })));
             Assert.fail("Should have thrown an exception");
         } catch (BadRequestException ex) {
@@ -205,7 +213,9 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
     @Test
     public void testProofOfPossessionWithExpiredState() throws Throwable {
         try {
-            String token = getBearerToken(oauth);
+            String token = getBearerToken(oauth, client, sdJwtTypeCredentialClientScope.getName());
+            final String clientScopeString = toJsonString(sdJwtTypeCredentialClientScope);
+
             withCausePropagation(() -> testingClient
                     .server(TEST_REALM_NAME)
                     .run((session -> {
@@ -220,7 +230,9 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                                                                       Map.of(JwtCNonceHandler.SOURCE_ENDPOINT, nonceEndpoint));
                             Proof proof = new JwtProof().setJwt(generateJwtProof(getCredentialIssuer(session), cNonce));
 
-                            testRequestTestCredential(session, token, proof);
+                            ClientScopeRepresentation clientScope = fromJsonString(clientScopeString,
+                                                                                   ClientScopeRepresentation.class);
+                            testRequestTestCredential(session, clientScope, token, proof);
                         } finally {
                             // make sure other tests are not affected by the changed realm-attribute
                             session.getContext().getRealm().removeAttribute(Oid4VciConstants.C_NONCE_LIFETIME_IN_SECONDS);
