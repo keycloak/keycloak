@@ -12,13 +12,11 @@ import java.util.Map;
 public abstract class AbstractContainerTestDatabase implements TestDatabase {
 
     protected boolean reuse;
-    protected boolean internal;
 
     protected JdbcDatabaseContainer<?> container;
 
     public AbstractContainerTestDatabase() {
         reuse = Config.getValueTypeConfig(TestDatabase.class, "reuse", false, Boolean.class);
-        internal = Config.getValueTypeConfig(TestDatabase.class, "internal", false, Boolean.class);
     }
 
     public void start() {
@@ -55,9 +53,13 @@ public abstract class AbstractContainerTestDatabase implements TestDatabase {
 
     @Override
     public Map<String, String> serverConfig() {
+        return serverConfig(false);
+    }
+
+    public Map<String, String> serverConfig(boolean internal) {
         return Map.of(
                 "db", getDatabaseVendor(),
-                "db-url", getJdbcUrl(),
+                "db-url", getJdbcUrl(internal),
                 "db-username", getUsername(),
                 "db-password", getPassword()
         );
@@ -81,7 +83,7 @@ public abstract class AbstractContainerTestDatabase implements TestDatabase {
         return "keycloak";
     }
 
-    public String getJdbcUrl() {
+    public String getJdbcUrl(boolean internal) {
         var url = container.getJdbcUrl();
         if (internal) {
             var ip = container.getContainerInfo().getNetworkSettings().getNetworks().values().iterator().next().getIpAddress();
