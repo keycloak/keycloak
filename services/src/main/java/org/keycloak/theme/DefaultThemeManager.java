@@ -162,17 +162,27 @@ public class DefaultThemeManager implements ThemeManager {
 
     private static class ExtendingTheme implements Theme {
 
-        private List<Theme> themes;
-        private Set<ThemeResourceProvider> themeResourceProviders;
+        private final List<Theme> themes;
+        private final Set<ThemeResourceProvider> themeResourceProviders;
 
         private Properties properties;
 
-        private ConcurrentHashMap<String, ConcurrentHashMap<Locale, Map<Locale, Properties>>> messages =
+        private final ConcurrentHashMap<String, ConcurrentHashMap<Locale, Map<Locale, Properties>>> messages =
                 new ConcurrentHashMap<>();
+
+        private Pattern compiledContentHashPattern;
 
         public ExtendingTheme(List<Theme> themes, Set<ThemeResourceProvider> themeResourceProviders) {
             this.themes = themes;
             this.themeResourceProviders = themeResourceProviders;
+            try {
+                Object contentHashPattern = getProperties().get(CONTENT_HASH_PATTERN);
+                if (contentHashPattern != null) {
+                    compiledContentHashPattern = Pattern.compile(contentHashPattern.toString());
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         @Override
@@ -248,6 +258,11 @@ public class DefaultThemeManager implements ThemeManager {
         public Properties getEnhancedMessages(RealmModel realm, Locale locale) throws IOException {
             Map<Locale, Properties> messagesByLocale = getMessagesByLocale("messages", locale);
             return LocaleUtil.enhancePropertiesWithRealmLocalizationTexts(realm, locale, messagesByLocale);
+        }
+
+        @Override
+        public boolean hasContentHash(String path) throws IOException {
+            return compiledContentHashPattern != null && compiledContentHashPattern.matcher(path).matches();
         }
 
         private Map<Locale, Properties> getMessagesByLocale(String baseBundlename, Locale locale) throws IOException {
