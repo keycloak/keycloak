@@ -17,22 +17,17 @@
 
 package org.keycloak.migration.migrators;
 
-import java.lang.invoke.MethodHandles;
-import org.jboss.logging.Logger;
 import org.keycloak.migration.MigrationProvider;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.representations.idm.RealmRepresentation;
 
 /**
  *
  * @author rmartinc
  */
-public class MigrateTo26_1_0 implements Migration {
+public class MigrateTo26_1_0 extends RealmMigration {
 public static final ModelVersion VERSION = new ModelVersion("26.1.0");
-
-    private static final Logger LOG = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
     @Override
     public ModelVersion getVersion() {
@@ -40,16 +35,7 @@ public static final ModelVersion VERSION = new ModelVersion("26.1.0");
     }
 
     @Override
-    public void migrate(KeycloakSession session) {
-        session.realms().getRealmsStream().forEach(realm -> migrateRealm(session, realm));
-    }
-
-    @Override
-    public void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
-        migrateRealm(session, realm);
-    }
-
-    private void migrateRealm(KeycloakSession session, RealmModel realm) {
+    public void migrateRealm(KeycloakSession session, RealmModel realm) {
         // add the new service_account scope to the realm
         MigrationProvider migrationProvider = session.getProvider(MigrationProvider.class);
         migrationProvider.addOIDCServiceAccountClientScope(realm);
