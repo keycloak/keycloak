@@ -58,6 +58,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.MemberRepresentation;
+import org.keycloak.representations.idm.MembershipRepresentation;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.services.ErrorResponse;
@@ -241,14 +242,14 @@ public class OrganizationMemberResource {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = OrganizationRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "400", description = "Bad Request")
     })
-    public Stream<OrganizationRepresentation> getOrganizations(@PathParam("member-id") String memberId) {
+    public Stream<MembershipRepresentation> getOrganizations(@PathParam("member-id") String memberId) {
         if (StringUtil.isBlank(memberId)) {
             throw ErrorResponse.error("id cannot be null", Status.BAD_REQUEST);
         }
 
         UserModel member = getUser(memberId);
 
-        return provider.getByMember(member).map(ModelToRepresentation::toRepresentation);
+        return provider.getByMember(member).map(o -> toRepresentation(o, member));
     }
 
     @Path("count")
@@ -286,6 +287,12 @@ public class OrganizationMemberResource {
 
     private MemberRepresentation toRepresentation(UserModel member) {
         MemberRepresentation result = new MemberRepresentation(ModelToRepresentation.toRepresentation(session, realm, member));
+        result.setMembershipType(provider.isManagedMember(organization, member) ? MembershipType.MANAGED : MembershipType.UNMANAGED);
+        return result;
+    }
+
+    private MembershipRepresentation toRepresentation(OrganizationModel organization, UserModel member) {
+        MembershipRepresentation result = new MembershipRepresentation(ModelToRepresentation.toRepresentation(organization));
         result.setMembershipType(provider.isManagedMember(organization, member) ? MembershipType.MANAGED : MembershipType.UNMANAGED);
         return result;
     }

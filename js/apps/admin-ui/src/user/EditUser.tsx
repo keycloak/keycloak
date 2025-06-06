@@ -404,7 +404,7 @@ export default function EditUser() {
                   title={<TabTitleText>{t("organizations")}</TabTitleText>}
                   {...organizationsTab}
                 >
-                  <Organizations user={user} />
+                  <Organizations />
                 </Tab>
               )}
               <Tab

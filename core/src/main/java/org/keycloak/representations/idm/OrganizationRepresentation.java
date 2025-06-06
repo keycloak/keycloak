@@ -38,6 +38,22 @@ public class OrganizationRepresentation {
     private List<MemberRepresentation> members;
     private List<IdentityProviderRepresentation> identityProviders;
 
+    public OrganizationRepresentation() {
+    }
+
+    public OrganizationRepresentation(OrganizationRepresentation rep) {
+        this.id = rep.getId();
+        this.name = rep.getName();
+        this.alias = rep.getAlias();
+        this.enabled = rep.isEnabled();
+        this.description = rep.getDescription();
+        this.redirectUrl = rep.getRedirectUrl();
+        this.attributes = rep.getAttributes();
+        this.domains = rep.getDomains();
+        this.members = rep.getMembers();
+        this.identityProviders = rep.getIdentityProviders();
+    }
+
     public String getId() {
         return id;
     }

@@ -26,7 +26,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.keycloak.representations.idm.MemberRepresentation;
-import org.keycloak.representations.idm.OrganizationRepresentation;
+import org.keycloak.representations.idm.MembershipRepresentation;
 
 public interface OrganizationMemberResource {
 
@@ -46,5 +46,5 @@ public interface OrganizationMemberResource {
     @Path("organizations")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    List<OrganizationRepresentation> getOrganizations();
+    List<MembershipRepresentation> getOrganizations();
 }
