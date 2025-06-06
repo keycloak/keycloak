@@ -304,10 +304,13 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         }
         logger.trace("return getUserById");
         return ofNullable(getUserById(realm, userId))
+                // Validate for cases where the cached elements are not in sync.
+                // This might happen to changes in a federated store where caching is enabled and different items expire at different times,
+                // for example when they are evicted due to the limited size of the cache
                 .filter((u) -> username.equalsIgnoreCase(u.getUsername()))
                 .orElseGet(() -> {
                     registerInvalidation(cacheKey);
-                    return null;
+                    return getDelegate().getUserByUsername(realm, username);
                 });
     }
 
@@ -427,10 +430,13 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
 
         }
         return ofNullable(getUserById(realm, userId))
+                // Validate for cases where the cached elements are not in sync.
+                // This might happen to changes in a federated store where caching is enabled and different items expire at different times,
+                // for example when they are evicted due to the limited size of the cache
                 .filter((u) -> email.equalsIgnoreCase(u.getEmail()))
                 .orElseGet(() -> {
                     registerInvalidation(cacheKey);
-                    return null;
+                    return getDelegate().getUserByEmail(realm, email);
                 });
     }
 
