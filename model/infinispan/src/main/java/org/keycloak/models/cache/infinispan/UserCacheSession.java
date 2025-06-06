@@ -290,7 +290,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             UserModel adapter = getUserAdapter(realm, userId, loaded, model);
             if (adapter instanceof UserAdapter) { // this was cached, so we can cache query too
                 query = new UserListQuery(loaded, cacheKey, realm, model.getId());
-                cache.addRevisioned(query, startupRevision);
+                cache.addRevisioned(query, startupRevision, getLifespan(realm, userId));
             }
             managedUsers.put(userId, adapter);
             return adapter;
@@ -312,6 +312,31 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
                     registerInvalidation(cacheKey);
                     return getDelegate().getUserByUsername(realm, username);
                 });
+    }
+
+    private long getLifespan(RealmModel realm, String userId) {
+                StorageId storageId = new StorageId(userId);
+        if (storageId.isLocal()) {
+            return -1; // cache infinite
+        } else {
+            ComponentModel component = realm.getComponent(storageId.getProviderId());
+            UserStorageProviderModel model = new UserStorageProviderModel(component);
+            if (model.isEnabled()) {
+                UserStorageProviderModel.CachePolicy policy = model.getCachePolicy();
+                if (policy != null && policy != UserStorageProviderModel.CachePolicy.NO_CACHE) {
+                    long lifespan = model.getLifespan();
+                    if (lifespan > 0) {
+                        return lifespan;
+                    } else {
+                        return -1; // cache infinite
+                    }
+                } else {
+                    return 0; // do not cache
+                }
+            } else {
+                return 0; // do not cache
+            }
+        }
     }
 
     protected UserModel getUserAdapter(RealmModel realm, String userId, Long loaded, UserModel delegate) {
@@ -365,8 +390,9 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             if (!model.isEnabled()) {
                 return new ReadOnlyUserModelDelegate(delegate, false);
             }
-            UserStorageProviderModel.CachePolicy policy = model.getCachePolicy();
-            if (policy != null && policy == UserStorageProviderModel.CachePolicy.NO_CACHE) {
+
+            long lifespan = getLifespan(realm, delegate.getId());
+            if (lifespan == 0) {
                 return delegate;
             }
 
@@ -374,12 +400,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             adapter = new UserAdapter(cached, this, session, realm);
             onCache(realm, adapter, delegate);
 
-            long lifespan = model.getLifespan();
-            if (lifespan > 0) {
-                cache.addRevisioned(cached, startupRevision, lifespan);
-            } else {
-                cache.addRevisioned(cached, startupRevision);
-            }
+            cache.addRevisioned(cached, startupRevision, lifespan);
         } else {
             cached = new CachedUser(revision, realm, delegate, notBefore);
             adapter = new UserAdapter(cached, this, session, realm);
@@ -418,7 +439,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             UserModel adapter = getUserAdapter(realm, userId, loaded, model);
             if (adapter instanceof UserAdapter) {
                 query = new UserListQuery(loaded, cacheKey, realm, model.getId());
-                cache.addRevisioned(query, startupRevision);
+                cache.addRevisioned(query, startupRevision, getLifespan(realm, userId));
             }
             managedUsers.put(userId, adapter);
             return adapter;
@@ -471,7 +492,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             UserModel adapter = getUserAdapter(realm, userId, loaded, model);
             if (adapter instanceof UserAdapter) {
                 query = new UserListQuery(loaded, cacheKey, realm, model.getId());
-                cache.addRevisioned(query, startupRevision);
+                cache.addRevisioned(query, startupRevision, getLifespan(realm, userId));
             }
 
             managedUsers.put(userId, adapter);
@@ -558,7 +579,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             UserModel adapter = getUserAdapter(realm, userId, loaded, model);
             if (adapter instanceof UserAdapter) { // this was cached, so we can cache query too
                 query = new UserListQuery(loaded, cacheKey, realm, model.getId());
-                cache.addRevisioned(query, startupRevision);
+                cache.addRevisioned(query, startupRevision, getLifespan(realm, userId));
             }
             managedUsers.put(userId, adapter);
             return adapter;
@@ -668,7 +689,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             Set<FederatedIdentityModel> federatedIdentities = getDelegate().getFederatedIdentitiesStream(realm, user)
                     .collect(Collectors.toSet());
             cachedLinks = new CachedFederatedIdentityLinks(loaded, cacheKey, realm, federatedIdentities);
-            cache.addRevisioned(cachedLinks, startupRevision);
+            cache.addRevisioned(cachedLinks, startupRevision); // this is Keycloak's internal store, cache indefinitely
             return federatedIdentities.stream();
         } else {
             return cachedLinks.getFederatedIdentities().stream();
@@ -740,7 +761,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
 
             Long loaded = cache.getCurrentRevision(cacheKey);
             cached = new CachedUserConsents(loaded, cacheKey, realm, consents, false);
-            cache.addRevisioned(cached, startupRevision);
+            cache.addRevisioned(cached, startupRevision); // this is from Keycloak's internal store, cache indefinitely
         }
 
         Map<String, CachedUserConsent> consents = cached.getConsents();
@@ -781,7 +802,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             Long loaded = cache.getCurrentRevision(cacheKey);
             List<UserConsentModel> consents = getDelegate().getConsentsStream(realm, userId).collect(Collectors.toList());
             cached = new CachedUserConsents(loaded, cacheKey, realm, consents.stream().map(CachedUserConsent::new).collect(Collectors.toList()));
-            cache.addRevisioned(cached, startupRevision);
+            cache.addRevisioned(cached, startupRevision); // this is from Keycloak's internal store, cache indefinitely
             return consents.stream();
         } else {
             return cached.getConsents().values().stream().map(cachedConsent -> toConsentModel(realm, cachedConsent))
