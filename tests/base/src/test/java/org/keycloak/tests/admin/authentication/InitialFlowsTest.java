@@ -141,7 +141,7 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
         addExecInfo(execs, "Organization Identity-First Login", "organization", true, 2, 1, ALTERNATIVE, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 20);
         addExecInfo(execs, "forms", null, false, 0, 4, ALTERNATIVE, true, new String[]{REQUIRED, ALTERNATIVE, DISABLED, CONDITIONAL}, 30);
         addExecInfo(execs, "Username Password Form", "auth-username-password-form", false, 1, 0, REQUIRED, null, new String[]{REQUIRED}, 10);
-        addExecInfo(execs, "Browser - Conditional OTP", null, false, 1, 1, CONDITIONAL, true, new String[]{REQUIRED, ALTERNATIVE, DISABLED, CONDITIONAL}, 20);
+        addExecInfo(execs, "Browser - Conditional 2FA", null, false, 1, 1, CONDITIONAL, true, new String[]{REQUIRED, ALTERNATIVE, DISABLED, CONDITIONAL}, 20);
         addExecInfo(execs, "Condition - user configured", "conditional-user-configured", false, 2, 0, REQUIRED, null, new String[]{REQUIRED, DISABLED}, 10);
         addExecInfo(execs, "OTP Form", "auth-otp-form", false, 2, 1, ALTERNATIVE, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 20);
         addExecInfo(execs, "WebAuthn Authenticator", "webauthn-authenticator", false, 2, 2, DISABLED, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 30);
