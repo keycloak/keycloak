@@ -39,8 +39,10 @@ import org.keycloak.common.Version;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MimeTypeUtil;
 import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.common.util.SystemEnvProperties;
 import org.keycloak.cookie.CookieProvider;
 import org.keycloak.cookie.CookieType;
+import org.keycloak.deployment.DefaultDeployedConfigurationsProvider;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
@@ -60,6 +62,7 @@ import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -135,7 +138,7 @@ public class WelcomeResource {
 
             try {
                 ApplianceBootstrap applianceBootstrap = new ApplianceBootstrap(session);
-                applianceBootstrap.createMasterRealmUser(username, password);
+                applianceBootstrap.createMasterRealmUser(username, password, createsTemporaryAdminUser());
             } catch (ModelException e) {
                 session.getTransactionManager().rollback();
                 logger.error("Error creating the administrative user", e);
@@ -302,4 +305,14 @@ public class WelcomeResource {
         }
     }
 
+    private boolean createsTemporaryAdminUser() {
+        try {
+            String themeProperty = "kcBootstrapAdminIsTemporary";
+            String envVar = "env.KC_BOOTSTRAP_ADMIN_IS_TEMPORARY";
+            return Boolean.parseBoolean(getTheme().getProperties().getProperty(themeProperty, SystemEnvProperties.UNFILTERED.getProperty(envVar, "true")));
+        } catch (IOException e) {
+            logger.warn("Error reading theme properties for temporary admin user creation", e);
+        }
+        return true;
+    }
 }

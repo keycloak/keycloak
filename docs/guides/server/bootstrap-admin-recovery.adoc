@@ -95,6 +95,12 @@ The `--no-prompt` parameter can be useful if the username or client ID should be
 
 This creates a temporary admin user with the default username without prompting for confirmation. For more information, see the <<Default values>> section above.
 
+== Treating the temporary admin account as a permanent one
+
+Both `bootstrap-admin user` and `bootstrap-admin service` commands support the `--is-temporary` parameter. This parameter allows you to treat the created admin account as a permanent one, meaning it will not be marked as temporary and will not be subject to the temporary account restrictions.
+
+A temporary admin account can also be created with the Welcome Screen that is displayed at the first start of {project_name}. In this case, the temporary account behavior is controlled either by the `KC_BOOTSTRAP_ADMIN_IS_TEMPORARY` environment variable or by the `kcBootstrapAdminIsTemporary` setting in `theme.properties`. If the variable or setting is not defined, the account will be created as a temporary one.
+
 == Environment variables
 
 For the `bootstrap-admin user` command, both username and password can be optionally set as environment variables:
@@ -104,5 +110,7 @@ For the `bootstrap-admin user` command, both username and password can be option
 For the `bootstrap-admin service` command, the client ID is optional and defaults to `temp-admin`, while the client secret is required to be set as an environment variable:
 
 <@kc.bootstrapadmin parameters="service --client-id:env <YourClientIdEnv> --client-secret:env <YourSecretEnv>"/>
+
+Both commands also support using the `--is-temporary:env` parameter and enables using a different environment variable to control whether the created account is temporary or permanent.
 
 </@tmpl.guide>

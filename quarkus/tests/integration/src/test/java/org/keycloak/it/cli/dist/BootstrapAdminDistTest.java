@@ -50,6 +50,7 @@ public class BootstrapAdminDistTest {
                 () -> "The Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
     }*/
 
+
     @Test
     @Launch({ "bootstrap-admin", "user", "--db=dev-file", "--username=admin", "--password:env=MY_PASSWORD" })
     void failEnvNotSet(LaunchResult result) {
@@ -76,6 +77,22 @@ public class BootstrapAdminDistTest {
     void failServiceAccountNoSecret(LaunchResult result) {
         assertTrue(result.getErrorOutput().contains("No client secret provided"),
                 () -> "The Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
+    }
+
+    @Test
+    @WithEnvVars({"MY_SECRET", "admin123"})
+    @Launch({ "bootstrap-admin", "service", "--client-secret:env=MY_SECRET", "--is-temporary=false"})
+    void createNonTemporaryAdminService(LaunchResult result) {
+        assertTrue(result.getErrorOutput().isEmpty(), result.getErrorOutput());
+        result.getOutput().contains("Created temporary admin user with username temp-admin");
+    }
+
+    @Test
+    @WithEnvVars({"MY_PASSWORD", "admin123"})
+    @Launch({ "bootstrap-admin", "user", "--db=dev-file", "--username=admin", "--password:env=MY_PASSWORD", "--is-temporary=false" })
+    void createNonTemporaryAdmin(LaunchResult result) {
+        assertTrue(result.getErrorOutput().isEmpty(), result.getErrorOutput());
+        result.getOutput().contains("Created temporary admin user with username temp-admin");
     }
 
     @Test
