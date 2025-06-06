@@ -113,6 +113,12 @@ public class LDAPUtils {
                 .collect(Collectors.toSet());
         mandatoryAttrs.add(ldapConfig.getRdnLdapAttribute());
 
+        String passwordModifiedTimeAttributeName = ldapStore.getPasswordModificationTimeAttributeName();
+        String passwordModifiedTime = user.getFirstAttribute(passwordModifiedTimeAttributeName);
+        if (passwordModifiedTime != null) {
+            ldapUser.setSingleAttribute(passwordModifiedTimeAttributeName, passwordModifiedTime);
+        }
+
         ldapUser.executeOnMandatoryAttributesComplete(mandatoryAttrs, ldapObject -> {
             LDAPUtils.computeAndSetDn(ldapConfig, ldapObject);
             ldapStore.add(ldapObject);

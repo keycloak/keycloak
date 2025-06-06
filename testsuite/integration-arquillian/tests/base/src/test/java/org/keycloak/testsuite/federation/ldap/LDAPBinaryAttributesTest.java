@@ -246,7 +246,7 @@ public class LDAPBinaryAttributesTest extends AbstractLDAPTest {
                 } else if (UserModel.USERNAME.equals(name)) {
                     return username;
                 }
-                return super.getFirstAttribute(name);
+                return null;
             }
 
             @Override
