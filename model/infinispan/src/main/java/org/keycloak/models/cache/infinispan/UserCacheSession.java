@@ -353,6 +353,16 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             return null;
         }
 
+        /*
+
+        // The assumption "Infinispan has no guarantees when the user will be evicted" is wrong.
+        // Infinispan will check the lifetime of the object upon reading. It will never return an expired item.
+        // In addition to that, there is a cyclic cleanup running in Infinispan that will remove items even if they are not read.
+
+        // Another aspect: If anything changes in the provider, which changes the realm, everything in the realm will be evicted from the caches.
+
+        // This is actually simple to test as Infinispan in Keycloak honors the time offset.
+
         StorageId storageId = cached.getFederationLink() != null ?
                 new StorageId(cached.getFederationLink(), cached.getId()) : new StorageId(cached.getId());
 
@@ -370,6 +380,9 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
                 return supplier.get();
             }
         }
+
+
+         */
 
         return new UserAdapter(cached, this, session, realm);
     }
