@@ -14,6 +14,7 @@ import org.keycloak.util.JsonSerialization;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,7 +79,13 @@ public class AdminEventAssertion {
     }
 
     public AdminEventAssertion resourcePath(String... expectedResourcePath) {
-        Assertions.assertEquals(String.join("/", expectedResourcePath), event.getResourcePath());
+        if (expectedResourcePath.length == 0) {
+            Assertions.assertEquals(null, event.getResourcePath());
+        } else if (expectedResourcePath.length == 1) {
+            Assertions.assertEquals(expectedResourcePath[0], event.getResourcePath());
+        } else {
+            Assertions.assertEquals(String.join("/", expectedResourcePath), event.getResourcePath());
+        }
         return this;
     }
 

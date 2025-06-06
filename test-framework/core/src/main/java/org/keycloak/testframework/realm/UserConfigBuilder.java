@@ -1,6 +1,10 @@
 package org.keycloak.testframework.realm;
 
+import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.models.utils.HmacOTP;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import java.util.HashMap;
@@ -84,6 +88,31 @@ public class UserConfigBuilder {
 
     public UserConfigBuilder attribute(String key, String... value) {
         rep.setAttributes(Collections.combine(rep.getAttributes(), key, value));
+        return this;
+    }
+
+    public UserConfigBuilder federatedLink(String identityProvider, String federatedUserId, String federatedUsername) {
+        if (rep.getFederatedIdentities() == null) {
+            rep.setFederatedIdentities(new LinkedList<>());
+        }
+        FederatedIdentityRepresentation federatedIdentity = new FederatedIdentityRepresentation();
+        federatedIdentity.setUserId(federatedUserId);
+        federatedIdentity.setUserName(federatedUsername);
+        federatedIdentity.setIdentityProvider(identityProvider);
+
+        rep.getFederatedIdentities().add(federatedIdentity);
+        return this;
+    }
+
+    public UserConfigBuilder totpSecret(String totpSecret) {
+        CredentialRepresentation credential = ModelToRepresentation.toRepresentation(
+                OTPCredentialModel.createTOTP(totpSecret, 6, 30, HmacOTP.HMAC_SHA1));
+        if (rep.getCredentials() == null) {
+            rep.setCredentials(new LinkedList<>());
+        }
+
+        rep.getCredentials().add(credential);
+        rep.setTotp(true);
         return this;
     }
 
