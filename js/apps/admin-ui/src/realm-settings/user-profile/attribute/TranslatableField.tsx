@@ -1,6 +1,6 @@
 import KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import { FormErrorText } from "@keycloak/keycloak-ui-shared";
+import { FormErrorText, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   Alert,
   Button,
@@ -19,6 +19,7 @@ import { i18n } from "../../../i18n/i18n";
 import { beerify, debeerify } from "../../../util";
 import useToggle from "../../../utils/useToggle";
 import { AddTranslationsDialog } from "./AddTranslationsDialog";
+import { useAdminClient } from "../../../admin-client";
 
 export type TranslationForm = {
   locale: string;
@@ -86,8 +87,9 @@ export const TranslatableField = ({
   prefix,
   fieldName,
 }: TranslatableFieldProps) => {
+  const { adminClient } = useAdminClient();
   const { t } = useTranslation();
-  const { realmRepresentation: realm } = useRealm();
+  const { realmRepresentation: realm, realm: realmName } = useRealm();
   const { register, control, getFieldState, setValue } = useFormContext();
   const [open, toggle] = useToggle();
 
@@ -96,6 +98,23 @@ export const TranslatableField = ({
   const key = `${prefix}.${value}`;
   const translationPrefix = `translation.${beerify(key)}`;
   const requiredTranslationName = `${translationPrefix}.0.value`;
+
+  useFetch(
+    async () => {
+      return adminClient.realms.getRealmLocalizationTexts({
+        realm: realmName,
+        selectedLocale: realm?.defaultLocale || "en",
+      });
+    },
+    (texts) => {
+      const value = Object.entries(texts).find(
+        ([transKey]) => transKey === key,
+      );
+      setValue(requiredTranslationName, value?.[1]);
+      setValue(`${translationPrefix}.0.locale`, realm?.defaultLocale || "en");
+    },
+    [],
+  );
 
   useEffect(() => {
     if (isTranslationRequired(value, t, realm)) {
@@ -115,7 +134,7 @@ export const TranslatableField = ({
       {open && (
         <AddTranslationsDialog
           orgKey={value}
-          translationKey={`${prefix}.${value}`}
+          translationKey={key}
           fieldName={fieldName}
           toggleDialog={toggle}
         />

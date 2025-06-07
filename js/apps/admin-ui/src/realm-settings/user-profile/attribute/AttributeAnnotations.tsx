@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { FormAccess } from "../../../components/form/FormAccess";
 import { KeyValueInput } from "../../../components/key-value-form/KeyValueInput";
 import { KeySelect } from "./KeySelect";
+import { TranslatableField } from "./TranslatableField";
 import { ValueSelect } from "./ValueSelect";
 
 import "../../realm-settings-section.css";
@@ -76,39 +77,52 @@ export const AttributeAnnotations = () => {
                   ]}
                 />
               )}
-              ValueComponent={(props) =>
-                props.keyValue === "inputType" ? (
-                  <ValueSelect
-                    selectItems={[
-                      "text",
-                      "textarea",
-                      "select",
-                      "select-radiobuttons",
-                      "multiselect",
-                      "multiselect-checkboxes",
-                      "html5-email",
-                      "html5-tel",
-                      "html5-url",
-                      "html5-number",
-                      "html5-range",
-                      "html5-datetime-local",
-                      "html5-date",
-                      "html5-month",
-                      "html5-week",
-                      "html5-time",
-                    ]}
-                    rules={{ required: true }}
-                    {...props}
-                  />
-                ) : (
-                  <TextInput
-                    aria-label={t("customValue")}
-                    data-testid={props.name}
-                    {...props}
-                    {...register(props.name)}
-                  />
-                )
-              }
+              ValueComponent={(props) => {
+                switch (props.keyValue) {
+                  case "inputHelperTextBefore":
+                  case "inputHelperTextAfter":
+                    return (
+                      <TranslatableField
+                        attributeName="name"
+                        prefix={`profile.attributes.${props.keyValue}`}
+                        fieldName={props.keyValue}
+                      />
+                    );
+                  case "inputType":
+                    return (
+                      <ValueSelect
+                        selectItems={[
+                          "text",
+                          "textarea",
+                          "select",
+                          "select-radiobuttons",
+                          "multiselect",
+                          "multiselect-checkboxes",
+                          "html5-email",
+                          "html5-tel",
+                          "html5-url",
+                          "html5-number",
+                          "html5-range",
+                          "html5-datetime-local",
+                          "html5-date",
+                          "html5-month",
+                          "html5-week",
+                          "html5-time",
+                        ]}
+                        rules={{ required: true }}
+                        {...props}
+                      />
+                    );
+                  default:
+                    return (
+                      <TextInput
+                        aria-label={t("customValue")}
+                        data-testid={props.name}
+                        {...register(props.name)}
+                      />
+                    );
+                }
+              }}
             />
           </GridItem>
         </Grid>
