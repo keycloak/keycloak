@@ -126,8 +126,8 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
         realm.setBrowserFlow("browser");
         testRealmResource().update(realm);
 
-        updateRequirement("browser", Requirement.REQUIRED, (authExec) -> authExec.getDisplayName().equals("Browser - Conditional OTP"));
-        updateRequirement("Browser - Conditional OTP", OTPFormAuthenticatorFactory.PROVIDER_ID, Requirement.REQUIRED);
+        updateRequirement("browser", Requirement.REQUIRED, (authExec) -> authExec.getDisplayName().equals("Browser - Conditional 2FA"));
+        updateRequirement("Browser - Conditional 2FA", OTPFormAuthenticatorFactory.PROVIDER_ID, Requirement.REQUIRED);
         oauth.openLoginForm();
         testRealmLoginPage.form().login(testUser);
         assertTrue(loginConfigTotpPage.isCurrent());
@@ -161,8 +161,8 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
             realm.setBrowserFlow("browser");
             testRealmResource().update(realm);
 
-            updateRequirement("browser", Requirement.REQUIRED, (authExec) -> authExec.getDisplayName().equals("Browser - Conditional OTP"));
-            updateRequirement("Browser - Conditional OTP", OTPFormAuthenticatorFactory.PROVIDER_ID, Requirement.REQUIRED);
+            updateRequirement("browser", Requirement.REQUIRED, (authExec) -> authExec.getDisplayName().equals("Browser - Conditional 2FA"));
+            updateRequirement("Browser - Conditional 2FA", OTPFormAuthenticatorFactory.PROVIDER_ID, Requirement.REQUIRED);
             oauth.openLoginForm();
             testRealmLoginPage.form().login(testUser);
             assertTrue(loginConfigTotpPage.isCurrent());
@@ -565,7 +565,7 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
         data.put("provider", provider);
         getAuthMgmtResource().addExecution(flowAlias, data);
         
-        //set Conditional OTP requirement to required
+        //set Conditional 2FA requirement to required
         updateRequirement(flowAlias, provider, Requirement.REQUIRED);
         
         //update realm browser flow
