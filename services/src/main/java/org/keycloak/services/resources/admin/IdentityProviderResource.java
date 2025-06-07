@@ -293,9 +293,7 @@ public class IdentityProviderResource {
                     rep.setCategory(mapper.getDisplayCategory());
                     rep.setName(mapper.getDisplayType());
                     rep.setHelpText(mapper.getHelpText());
-                    rep.setProperties(mapper.getConfigProperties().stream()
-                            .map(ModelToRepresentation::toRepresentation)
-                            .collect(Collectors.toList()));
+                    rep.setProperties(ModelToRepresentation.toRepresentation(mapper.getConfigProperties()));
                     return rep;
                 })
                 .collect(Collectors.toMap(IdentityProviderMapperTypeRepresentation::getId, Function.identity()));
