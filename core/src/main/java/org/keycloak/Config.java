@@ -210,10 +210,7 @@ public class Config {
 
     }
 
-    /**
-     * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
-     */
-    public static interface Scope {
+    public static interface BaseScope {
 
         String get(String key);
 
@@ -232,9 +229,24 @@ public class Config {
         Boolean getBoolean(String key);
 
         Boolean getBoolean(String key, Boolean defaultValue);
+    }
+
+    /**
+     * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+     */
+    public static interface Scope extends BaseScope {
+
+        /**
+         * @deprecated to be removed
+         */
+        @Deprecated
+        Set<String> getPropertyNames();
 
         Scope scope(String... scope);
 
-        Set<String> getPropertyNames();
+        default BaseScope root() {
+            throw new UnsupportedOperationException("Not implemented");
+        }
+
     }
 }
