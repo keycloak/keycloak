@@ -170,6 +170,7 @@ public class UserStorageTest extends AbstractAuthTest {
 
         UserProfileResource userProfileRes = testRealmResource().users().userProfile();
         UserProfileUtil.enableUnmanagedAttributes(userProfileRes);
+        testingClient.testing().setTestingInfinispanTimeService();
     }
 
     @After
@@ -191,6 +192,8 @@ public class UserStorageTest extends AbstractAuthTest {
             Assert.assertNotNull(userMapStorageFactory);
             userMapStorageFactory.clear();
         });
+        resetTimeOffset();
+        testingClient.testing().revertTestingInfinispanTimeService();
     }
 
     protected ComponentRepresentation newPropProviderRW() {

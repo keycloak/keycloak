@@ -422,7 +422,11 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     public UserModel getUserByUsername(RealmModel realm, String username) {
         UserModel user = localStorage().getUserByUsername(realm, username);
         if (user != null) {
-            return importValidation(realm, user);
+            user = importValidation(realm, user);
+            // Case when username was changed directly in the userStorage and doesn't correspond anymore to the username from local DB
+            if (user != null && username.equalsIgnoreCase(user.getUsername())) {
+                return user;
+            }
         }
 
         return mapEnabledStorageProvidersWithTimeout(realm, UserLookupProvider.class,

@@ -329,7 +329,13 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
 
         if (model.isEnabled()) {
             UserStorageProviderModel.CachePolicy policy = model.getCachePolicy();
-            if (policy != null && policy != UserStorageProviderModel.CachePolicy.NO_CACHE) {
+
+            if (policy == null) {
+                // no policy set, cache entries by default
+                return -1;
+            }
+
+            if (!UserStorageProviderModel.CachePolicy.NO_CACHE.equals(policy)) {
                 long lifespan = model.getLifespan();
                 return lifespan > 0 ? lifespan : -1;
             }
