@@ -446,6 +446,16 @@ public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
         ).toString();
         updateProfiles(json);
 
+        // register policies with empty scopes
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "test", Boolean.TRUE)
+                        .addCondition(ClientScopesConditionFactory.PROVIDER_ID,
+                                createClientScopesConditionConfig(ClientScopesConditionFactory.ANY, null))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
         // register policies
         json = (new ClientPoliciesBuilder()).addPolicy(
                 (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "test", Boolean.TRUE)
