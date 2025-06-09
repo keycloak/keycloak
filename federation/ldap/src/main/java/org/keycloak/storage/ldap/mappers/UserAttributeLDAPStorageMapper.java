@@ -288,6 +288,22 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                     super.setEmailVerified(verified);
                 }
 
+                @Override
+                public String getUsername() {
+                    if (UserModel.USERNAME.equals(userModelAttrName)) {
+                        return ldapUser.getAttributeAsString(ldapAttrName);
+                    }
+                    return super.getUsername();
+                }
+
+                @Override
+                public String getEmail() {
+                    if (UserModel.EMAIL.equals(userModelAttrName)) {
+                        return ldapUser.getAttributeAsString(ldapAttrName);
+                    }
+                    return super.getEmail();
+                }
+
                 protected boolean setLDAPAttribute(String modelAttrName, Object value) {
                     if (modelAttrName.equalsIgnoreCase(userModelAttrName)) {
                         if (UserAttributeLDAPStorageMapper.logger.isTraceEnabled()) {
