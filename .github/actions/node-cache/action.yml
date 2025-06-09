@@ -13,6 +13,7 @@ runs:
 
     # Downloading Node.js often fails due to network issues, therefore we cache the artifacts downloaded by the frontend plugin.
     - uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+      if: runner.os != 'Windows'
       id: cache-binaries
       name: Cache Node.js and PNPM binaries
       with:
@@ -21,7 +22,17 @@ runs:
           ~/.m2/repository/com/github/eirslett/pnpm
         key: ${{ runner.os }}-frontend-plugin-artifacts-${{ steps.tooling-versions.outputs.node }}-${{ steps.tooling-versions.outputs.pnpm }}
 
+    - uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+      if: runner.os == 'Windows'
+      id: cache-binaries-windows
+      name: Cache Node.js and PNPM binaries
+      with:
+        path: |
+          D:/.m2/repository/com/github/eirslett/node
+          D:/.m2/repository/com/github/eirslett/pnpm
+        key: ${{ runner.os }}-frontend-plugin-artifacts-${{ steps.tooling-versions.outputs.node }}-${{ steps.tooling-versions.outputs.pnpm }}
+
     - name: Download Node.js and PNPM
-      if: steps.cache-binaries.outputs.cache-hit != 'true'
+      if: steps.cache-binaries.outputs.cache-hit != 'true' && steps.cache-binaries-windows.outputs.cache-hit != 'true'
       shell: bash
-      run: ./.github/scripts/download-node-tooling.sh ${{ steps.tooling-versions.outputs.node }} ${{ steps.tooling-versions.outputs.pnpm }}
+      run: ./.github/scripts/download-node-tooling.sh ${{ steps.tooling-versions.outputs.node }} ${{ steps.tooling-versions.outputs.pnpm }} ${{ runner.os }}
