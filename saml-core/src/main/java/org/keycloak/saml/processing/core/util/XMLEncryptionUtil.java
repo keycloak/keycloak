@@ -94,12 +94,10 @@ public class XMLEncryptionUtil {
      * </p>
      *
      * @param document
-     * @param keyToBeEncrypted Symmetric Key (SecretKey)
+     * @param keyToBeEncrypted          Symmetric Key (SecretKey)
      * @param keyUsedToEncryptSecretKey Asymmetric Key (Public Key)
-     * @param keySize Length of the key
-     *
+     * @param keySize                   Length of the key
      * @return
-     *
      * @throws org.keycloak.saml.common.exceptions.ProcessingException
      */
     private static EncryptedKey encryptKey(Document document, SecretKey keyToBeEncrypted, PublicKey keyUsedToEncryptSecretKey,
@@ -134,17 +132,16 @@ public class XMLEncryptionUtil {
      * Given an element in a Document, encrypt the element and replace the element in the document with the encrypted
      * data
      *
-     * @param elementQName QName of the element that we like to encrypt
-     * @param document The document with the element to encrypt
-     * @param publicKey The public Key to wrap the secret key
-     * @param secretKey The secret key to use for encryption
-     * @param keySize The size of the public key
-     * @param wrappingElementQName A QName of an element that will wrap the encrypted element
-     * @param addEncryptedKeyInKeyInfo Need for the EncryptedKey to be placed in ds:KeyInfo
-     * @param keyEncryptionAlgorithm The wrap algorithm for the secret key (can be null, default is used depending the publicKey type)
+     * @param elementQName              QName of the element that we like to encrypt
+     * @param document                  The document with the element to encrypt
+     * @param publicKey                 The public Key to wrap the secret key
+     * @param secretKey                 The secret key to use for encryption
+     * @param keySize                   The size of the public key
+     * @param wrappingElementQName      A QName of an element that will wrap the encrypted element
+     * @param addEncryptedKeyInKeyInfo  Need for the EncryptedKey to be placed in ds:KeyInfo
+     * @param keyEncryptionAlgorithm    The wrap algorithm for the secret key (can be null, default is used depending the publicKey type)
      * @param keyEncryptionDigestMethod An optional digestMethod to use (can be null)
      * @param keyEncryptionMgfAlgorithm The xenc11 MGF Algorithm to use (can be null)
-     *
      * @throws ProcessingException
      */
     public static void encryptElement(QName elementQName, Document document, PublicKey publicKey, SecretKey secretKey,
@@ -199,7 +196,7 @@ public class XMLEncryptionUtil {
         // Create the wrapping element and set its attribute NS
         Element wrappingElement = encryptedDoc.createElementNS(wrappingElementQName.getNamespaceURI(), wrappingElementName);
 
-        if (! StringUtil.isNullOrEmpty(wrappingElementPrefix)) {
+        if (!StringUtil.isNullOrEmpty(wrappingElementPrefix)) {
             wrappingElement.setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:" + wrappingElementPrefix, wrappingElementQName.getNamespaceURI());
         }
 
@@ -239,10 +236,8 @@ public class XMLEncryptionUtil {
      * succeed it throws {@link ProcessingException}.
      *
      * @param documentWithEncryptedElement document containing encrypted element
-     * @param decryptionKeyLocator decryption key locator
-     *
+     * @param decryptionKeyLocator         decryption key locator
      * @return the document with the encrypted element replaced by the data element
-     *
      * @throws ProcessingException when decrypting was not successful
      */
     public static Element decryptElementInDocument(Document documentWithEncryptedElement, DecryptionKeyLocator decryptionKeyLocator)
@@ -293,29 +288,13 @@ public class XMLEncryptionUtil {
                     AmazonKMS amazonKMS = new AmazonKMS(System.getenv("AWS_KMS_KEY_ID"));
                     amazonKMS.setClient();
 
-                    byte[] encryptedBytes = Base64.decodeBase64(encryptedKey.getCipherData().getCipherValue().getValue());
-                    byte[] decryptedKey = amazonKMS.unwrapKey(encryptedKey.getEncryptionMethod().getAlgorithm(), encryptedBytes);
-
-                    SecretKey encryptionKey = new SecretKeySpec(decryptedKey, 0, decryptedKey.length, "AES");
-
-                    cipher = XMLCipher.getInstance();
-                    cipher.init(XMLCipher.DECRYPT_MODE, encryptionKey);
-
-                    decryptedDoc = cipher.doFinal(documentWithEncryptedElement, encDataElement);
+                    decryptedDoc = decryptUsingHsm(encryptedKey, documentWithEncryptedElement, encDataElement, amazonKMS);
                     success = true;
                 } else if (System.getenv("AZURE_VAULT_KEY_ID") != null) {
                     AzureKeyVault azureKeyVault = new AzureKeyVault(System.getenv("AZURE_VAULT_KEY_ID"));
                     azureKeyVault.setClient();
 
-                    byte[] encryptedBytes = Base64.decodeBase64(encryptedKey.getCipherData().getCipherValue().getValue());
-                    byte[] decryptedKey = azureKeyVault.unwrapKey(encryptedKey.getEncryptionMethod().getAlgorithm(), encryptedBytes);
-
-                    SecretKey encryptionKey = new SecretKeySpec(decryptedKey, 0, decryptedKey.length, "AES");
-
-                    cipher = XMLCipher.getInstance();
-                    cipher.init(XMLCipher.DECRYPT_MODE, encryptionKey);
-
-                    decryptedDoc = cipher.doFinal(documentWithEncryptedElement, encDataElement);
+                    decryptedDoc = decryptUsingHsm(encryptedKey, documentWithEncryptedElement, encDataElement, azureKeyVault);
                     success = true;
                 } else {
                     for (PrivateKey privateKey : encryptionKeys) {
@@ -382,7 +361,6 @@ public class XMLEncryptionUtil {
      *
      * @param publicKeyAlgo
      * @param keySize
-     *
      * @return
      */
     private static String getXMLEncryptionURLForKeyUnwrap(String publicKeyAlgo, int keySize) {
@@ -404,7 +382,7 @@ public class XMLEncryptionUtil {
     /**
      * From the secret key, get the W3C XML Encryption URL
      *
-     * @param secretKey
+     * @param algo
      * @param keySize
      *
      * @return
@@ -435,5 +413,16 @@ public class XMLEncryptionUtil {
             node = node.getNextSibling();
         }
         return null;
+    }
+
+    private static Document decryptUsingHsm(EncryptedKey encryptedKey, Document documentWithEncryptedElement, Element encDataElement, HSM<?> hsm) throws Exception {
+        var encryptedBytes = Base64.decodeBase64(encryptedKey.getCipherData().getCipherValue().getValue());
+        var decryptedKey = hsm.unwrapKey(encryptedKey.getEncryptionMethod().getAlgorithm(), encryptedBytes);
+
+        var encryptionKey = new SecretKeySpec(decryptedKey, 0, decryptedKey.length, "AES");
+        var cipher = XMLCipher.getInstance();
+        cipher.init(XMLCipher.DECRYPT_MODE, encryptionKey);
+
+        return cipher.doFinal(documentWithEncryptedElement, encDataElement);
     }
 }
