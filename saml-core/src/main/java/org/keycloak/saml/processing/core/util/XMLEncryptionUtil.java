@@ -289,12 +289,26 @@ public class XMLEncryptionUtil {
             try {
                 String encAlgoURL = encryptedData.getEncryptionMethod().getAlgorithm();
 
-                if (encryptionKeys == null || encryptionKeys.isEmpty()) {
-                    AmazonKMS amazonKMS = new AmazonKMS(System.getenv("AWS_DEV_KEY_ID"));
+                if (System.getenv("AWS_KMS_KEY_ID") != null) {
+                    AmazonKMS amazonKMS = new AmazonKMS(System.getenv("AWS_KMS_KEY_ID"));
                     amazonKMS.setClient();
 
                     byte[] encryptedBytes = Base64.decodeBase64(encryptedKey.getCipherData().getCipherValue().getValue());
                     byte[] decryptedKey = amazonKMS.unwrapKey(encryptedKey.getEncryptionMethod().getAlgorithm(), encryptedBytes);
+
+                    SecretKey encryptionKey = new SecretKeySpec(decryptedKey, 0, decryptedKey.length, "AES");
+
+                    cipher = XMLCipher.getInstance();
+                    cipher.init(XMLCipher.DECRYPT_MODE, encryptionKey);
+
+                    decryptedDoc = cipher.doFinal(documentWithEncryptedElement, encDataElement);
+                    success = true;
+                } else if (System.getenv("AZURE_VAULT_KEY_ID") != null) {
+                    AzureKeyVault azureKeyVault = new AzureKeyVault(System.getenv("AZURE_VAULT_KEY_ID"));
+                    azureKeyVault.setClient();
+
+                    byte[] encryptedBytes = Base64.decodeBase64(encryptedKey.getCipherData().getCipherValue().getValue());
+                    byte[] decryptedKey = azureKeyVault.unwrapKey(encryptedKey.getEncryptionMethod().getAlgorithm(), encryptedBytes);
 
                     SecretKey encryptionKey = new SecretKeySpec(decryptedKey, 0, decryptedKey.length, "AES");
 
