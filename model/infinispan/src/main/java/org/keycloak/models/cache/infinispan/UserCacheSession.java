@@ -58,7 +58,6 @@ import org.keycloak.models.cache.infinispan.events.UserUpdatedEvent;
 import org.keycloak.models.cache.infinispan.stream.InIdentityProviderPredicate;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
-import org.keycloak.storage.CacheableStorageProviderModel;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.StoreManagers;
 import org.keycloak.storage.OnCreateComponent;
@@ -290,7 +289,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             UserModel adapter = getUserAdapter(realm, userId, loaded, model);
             if (adapter instanceof UserAdapter) { // this was cached, so we can cache query too
                 query = new UserListQuery(loaded, cacheKey, realm, model.getId());
-                cache.addRevisioned(query, startupRevision, getLifespan(realm, userId));
+                cache.addRevisioned(query, startupRevision, getLifespan(realm, adapter));
             }
             managedUsers.put(userId, adapter);
             return adapter;
@@ -314,29 +313,29 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
                 });
     }
 
-    private long getLifespan(RealmModel realm, String userId) {
-                StorageId storageId = new StorageId(userId);
-        if (storageId.isLocal()) {
+    private long getLifespan(RealmModel realm, UserModel user) {
+        if (!user.isFederated()) {
             return -1; // cache infinite
-        } else {
-            ComponentModel component = realm.getComponent(storageId.getProviderId());
-            UserStorageProviderModel model = new UserStorageProviderModel(component);
-            if (model.isEnabled()) {
-                UserStorageProviderModel.CachePolicy policy = model.getCachePolicy();
-                if (policy != null && policy != UserStorageProviderModel.CachePolicy.NO_CACHE) {
-                    long lifespan = model.getLifespan();
-                    if (lifespan > 0) {
-                        return lifespan;
-                    } else {
-                        return -1; // cache infinite
-                    }
-                } else {
-                    return 0; // do not cache
-                }
-            } else {
-                return 0; // do not cache
+        }
+
+        String providerId = user.getFederationLink();
+
+        if (providerId == null) {
+            providerId = StorageId.providerId(user.getId());
+        }
+
+        ComponentModel component = realm.getComponent(providerId);
+        UserStorageProviderModel model = new UserStorageProviderModel(component);
+
+        if (model.isEnabled()) {
+            UserStorageProviderModel.CachePolicy policy = model.getCachePolicy();
+            if (policy != null && policy != UserStorageProviderModel.CachePolicy.NO_CACHE) {
+                long lifespan = model.getLifespan();
+                return lifespan > 0 ? lifespan : -1;
             }
         }
+
+        return 0; // do not cache
     }
 
     protected UserModel getUserAdapter(RealmModel realm, String userId, Long loaded, UserModel delegate) {
@@ -352,38 +351,6 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         if (!realm.getId().equals(cached.getRealm())) {
             return null;
         }
-
-        /*
-
-        // The assumption "Infinispan has no guarantees when the user will be evicted" is wrong.
-        // Infinispan will check the lifetime of the object upon reading. It will never return an expired item.
-        // In addition to that, there is a cyclic cleanup running in Infinispan that will remove items even if they are not read.
-
-        // Another aspect: If anything changes in the provider, which changes the realm, everything in the realm will be evicted from the caches.
-
-        // This is actually simple to test as Infinispan in Keycloak honors the time offset.
-
-        StorageId storageId = cached.getFederationLink() != null ?
-                new StorageId(cached.getFederationLink(), cached.getId()) : new StorageId(cached.getId());
-
-        if (!storageId.isLocal()) {
-            ComponentModel component = realm.getComponent(storageId.getProviderId());
-            if (component == null) {
-                return null;
-            }
-            CacheableStorageProviderModel model = new CacheableStorageProviderModel(component);
-
-            // although we do set a timeout, Infinispan has no guarantees when the user will be evicted
-            // its also hard to test stuff
-            if (model.shouldInvalidate(cached)) {
-                registerUserInvalidation(cached);
-                return supplier.get();
-            }
-        }
-
-
-         */
-
         return new UserAdapter(cached, this, session, realm);
     }
 
@@ -404,7 +371,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
                 return new ReadOnlyUserModelDelegate(delegate, false);
             }
 
-            long lifespan = getLifespan(realm, delegate.getId());
+            long lifespan = getLifespan(realm, delegate);
             if (lifespan == 0) {
                 return delegate;
             }
@@ -452,7 +419,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             UserModel adapter = getUserAdapter(realm, userId, loaded, model);
             if (adapter instanceof UserAdapter) {
                 query = new UserListQuery(loaded, cacheKey, realm, model.getId());
-                cache.addRevisioned(query, startupRevision, getLifespan(realm, userId));
+                cache.addRevisioned(query, startupRevision, getLifespan(realm, adapter));
             }
             managedUsers.put(userId, adapter);
             return adapter;
@@ -505,7 +472,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             UserModel adapter = getUserAdapter(realm, userId, loaded, model);
             if (adapter instanceof UserAdapter) {
                 query = new UserListQuery(loaded, cacheKey, realm, model.getId());
-                cache.addRevisioned(query, startupRevision, getLifespan(realm, userId));
+                cache.addRevisioned(query, startupRevision, getLifespan(realm, adapter));
             }
 
             managedUsers.put(userId, adapter);
@@ -592,7 +559,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             UserModel adapter = getUserAdapter(realm, userId, loaded, model);
             if (adapter instanceof UserAdapter) { // this was cached, so we can cache query too
                 query = new UserListQuery(loaded, cacheKey, realm, model.getId());
-                cache.addRevisioned(query, startupRevision, getLifespan(realm, userId));
+                cache.addRevisioned(query, startupRevision, getLifespan(realm, adapter));
             }
             managedUsers.put(userId, adapter);
             return adapter;
