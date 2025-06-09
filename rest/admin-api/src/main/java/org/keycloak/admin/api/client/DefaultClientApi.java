@@ -26,8 +26,8 @@ public class DefaultClientApi implements ClientApi {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Override
-    public ClientRepresentation getClient(@QueryParam("runtime") Boolean isRuntime) {
-        return clientService.getClient(realm, clientId, isRuntime)
+    public ClientRepresentation getClient() {
+        return clientService.getClient(realm, clientId, null)
                 .orElseThrow(() -> new NotFoundException("Cannot find the specified client"));
     }
 }

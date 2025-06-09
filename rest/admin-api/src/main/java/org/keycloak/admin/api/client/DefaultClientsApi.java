@@ -36,9 +36,10 @@ public class DefaultClientsApi implements ClientsApi {
     @Produces(MediaType.APPLICATION_JSON)
     @Override
     public Stream<ClientRepresentation> getClients() {
-        return clientService.getClients(realm);
+        return clientService.getClients(realm, null, null, null);
     }
 
+    @Override
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
@@ -52,6 +53,7 @@ public class DefaultClientsApi implements ClientsApi {
         }
     }
 
+    @Override
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
