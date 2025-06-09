@@ -83,7 +83,7 @@ public class ClientScopesConditionFactory extends AbstractClientPolicyConditionP
     public void validateConfiguration(KeycloakSession session, RealmModel realm, ClientPolicyConditionRepresentation conditionRepresentation) throws ClientPolicyException {
         ClientScopesCondition.Configuration configuration = JsonSerialization.mapper.convertValue(conditionRepresentation.getConfiguration(), ClientScopesCondition.Configuration.class);
 
-        if (!realm.getClientScopesStream().map(ClientScopeModel::getName).toList().containsAll(configuration.getScopes())) {
+        if (configuration.getScopes() != null && !realm.getClientScopesStream().map(ClientScopeModel::getName).toList().containsAll(configuration.getScopes())) {
             throw new ClientPolicyException("Client scopes not allowed: " +  configuration.getScopes());
         }
     }
