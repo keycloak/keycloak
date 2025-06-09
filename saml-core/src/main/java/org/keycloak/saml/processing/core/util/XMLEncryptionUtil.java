@@ -291,7 +291,9 @@ public class XMLEncryptionUtil {
                     decryptedDoc = decryptUsingHsm(encryptedKey, documentWithEncryptedElement, encDataElement, amazonKMS);
                     success = true;
                 } else if (System.getenv("AZURE_VAULT_KEY_ID") != null) {
-                    AzureKeyVault azureKeyVault = new AzureKeyVault(System.getenv("AZURE_VAULT_KEY_ID"));
+//                    AzureKeyVault  azureKeyVault = new AzureKeyVault(System.getenv("AZURE_VAULT_KEY_ID"));
+                    AzureKeyVault azureKeyVault = new AzureKeyVault(System.getenv("AZURE_VAULT_KEY_ID"), System.getenv("AZURE_VAULT_CLIENT_ID"), System.getenv("AZURE_VAULT_CLIENT_SECRET"), System.getenv("AZURE_VAULT_TENANT_ID"));
+
                     azureKeyVault.setClient();
 
                     decryptedDoc = decryptUsingHsm(encryptedKey, documentWithEncryptedElement, encDataElement, azureKeyVault);
@@ -384,7 +386,6 @@ public class XMLEncryptionUtil {
      *
      * @param algo
      * @param keySize
-     *
      * @return
      */
     private static String getXMLEncryptionURL(String algo, int keySize) {
