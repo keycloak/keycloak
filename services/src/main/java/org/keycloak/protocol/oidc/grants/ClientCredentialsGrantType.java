@@ -136,7 +136,9 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
             event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
             event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
             event.error(cpe.getError());
-            throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+            if (!cpe.isPermissiveMode()) {
+                throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+            }
         }
 
         updateUserSessionFromClientAuth(userSession);
@@ -170,7 +172,9 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
             event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
             event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
             event.error(cpe.getError());
-            throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+            if (!cpe.isPermissiveMode()) {
+                throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+            }
         }
 
         // TODO : do the same as codeToToken()
