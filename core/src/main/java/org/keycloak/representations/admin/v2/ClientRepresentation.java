@@ -4,10 +4,13 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
+import java.util.LinkedHashSet;
 import java.util.Set;
 
-@JsonInclude(JsonInclude.Include.NON_EMPTY)
+@JsonInclude(JsonInclude.Include.NON_ABSENT)
 public class ClientRepresentation {
+
+    public static final String OIDC = "openid-connect";
 
     @JsonProperty(required = true)
     @JsonPropertyDescription("ID uniquely identifying this client")
@@ -19,8 +22,9 @@ public class ClientRepresentation {
     @JsonPropertyDescription("Human readable description of the client")
     private String description;
 
+    @JsonProperty(defaultValue = OIDC)
     @JsonPropertyDescription("The protocol used to communicate with the client")
-    private String protocol;
+    private String protocol = OIDC;
 
     @JsonPropertyDescription("Whether this client is enabled")
     private Boolean enabled;
@@ -28,21 +32,26 @@ public class ClientRepresentation {
     @JsonPropertyDescription("URL to the application's homepage that is represented by this client")
     private String appUrl;
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @JsonPropertyDescription("URLs that the browser can redirect to after login")
-    private Set<String> appRedirectUrls;
+    private Set<String> appRedirectUrls = new LinkedHashSet<String>();
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @JsonPropertyDescription("Login flows that are enabled for this client")
-    private Set<String> loginFlows;
+    private Set<String> loginFlows = new LinkedHashSet<String>();
 
     @JsonPropertyDescription("Authentication configuration for this client")
     private Auth auth;
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @JsonPropertyDescription("Web origins that are allowed to make requests to this client")
-    private Set<String> webOrigins;
+    private Set<String> webOrigins = new LinkedHashSet<String>();
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @JsonPropertyDescription("Roles associated with this client")
-    private Set<String> roles;
+    private Set<String> roles = new LinkedHashSet<String>();
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @JsonPropertyDescription("Service account configuration for this client")
     private ServiceAccount serviceAccount;
 
@@ -148,7 +157,7 @@ public class ClientRepresentation {
         this.serviceAccount = serviceAccount;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @JsonInclude(JsonInclude.Include.NON_ABSENT)
     public static class Auth {
 
         @JsonPropertyDescription("Whether authentication is enabled for this client")
@@ -196,14 +205,15 @@ public class ClientRepresentation {
         }
     }
 
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @JsonInclude(JsonInclude.Include.NON_ABSENT)
     public static class ServiceAccount {
 
         @JsonPropertyDescription("Whether the service account is enabled")
         private Boolean enabled;
 
+        @JsonInclude(JsonInclude.Include.NON_EMPTY)
         @JsonPropertyDescription("Roles assigned to the service account")
-        private Set<String> roles;
+        private Set<String> roles = new LinkedHashSet<String>();
 
         public Boolean getEnabled() {
             return enabled;
