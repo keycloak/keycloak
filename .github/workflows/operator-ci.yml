@@ -180,7 +180,7 @@ jobs:
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
           github token: ${{ secrets.GITHUB_TOKEN }}
           driver: docker
-          start args: --memory=${{ env.MINIKUBE_MEMORY }}
+          start args: --memory=${{ env.MINIKUBE_MEMORY }} --addons=registry --insecure-registry=192.168.49.0/24
 
       - name: Install OPM
         uses: redhat-actions/openshift-tools-installer@v1
@@ -205,8 +205,9 @@ jobs:
       - name: Arrange OLM test installation
         working-directory: operator
         run: |
+          echo "Minikube IP $(minikube ip)"
           eval $(minikube -p minikube docker-env)
-          ./scripts/olm-testing.sh ${GITHUB_SHA::6}
+          REGISTRY=$(minikube ip):5000 ./scripts/olm-testing.sh ${GITHUB_SHA::6}
 
       - name: Deploy an example Keycloak and wait for it to be ready
         working-directory: operator
