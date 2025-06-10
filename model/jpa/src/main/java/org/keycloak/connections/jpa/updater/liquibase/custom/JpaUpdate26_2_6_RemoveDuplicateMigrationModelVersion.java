@@ -33,8 +33,6 @@ public class JpaUpdate26_2_6_RemoveDuplicateMigrationModelVersion extends Custom
         final String colVersion = database.correctObjectName("VERSION", Column.class);
         final String colUpdateTime = database.correctObjectName("UPDATE_TIME", Column.class);
 
-        database.getConcatSql();
-
         //noinspection SqlSourceToSinkFlow
         try (PreparedStatement ps = connection.prepareStatement(getOlderDuplicatedRecords(tableName, colId, colVersion, colUpdateTime))) {
             ResultSet resultSet = ps.executeQuery();
