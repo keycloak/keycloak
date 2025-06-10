@@ -48,8 +48,10 @@ runs:
       # On Windows, the .m2 folder is in different location, so move all the contents to the right folder here.
       # Also, not using the C: drive will speed up the build, see https://github.com/actions/runner-images/issues/8755
       run: |
-        mkdir -p ../../../.m2/repository
+        mkdir -p ..\..\..\.m2
+        mkdir -p D:\.m2\repository
         cmd /c mklink /d $HOME\.m2\repository D:\.m2\repository
+        cmd /c mklink /d $PWD\..\..\..\.m2\repository D:\.m2\repository
 
     - id: restore-maven-repository
       name: Maven cache
