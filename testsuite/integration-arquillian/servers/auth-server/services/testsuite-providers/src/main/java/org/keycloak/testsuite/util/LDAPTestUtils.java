@@ -138,7 +138,7 @@ public class LDAPTestUtils {
                 } else if (otherAttrs.containsKey(name)) {
                     return otherAttrs.getFirst(name);
                 }
-                return super.getFirstAttribute(name);
+                return null;
             }
 
             @Override
