@@ -16,6 +16,8 @@ The default count of users per file and per transaction is fifty, but you may us
 The `import` and `export` commands are essentially server launches that exit before bringing up the full server. They are not currently designed to be run from the same machine as another server instance, which may result in port or other conflicts.
 ====
 
+It is recommended that all {project_name} nodes are stopped prior to using the `kc.[sh|bat] export` command. This ensures that the resulting operations will have no consistency issues with concurrent requests.
+
 == Providing options for database connection parameters
 
 When using the `export` and the `import` commands below, {project_name} needs to know how to connect to the database where the information about realms, clients, users and other entities is stored.
