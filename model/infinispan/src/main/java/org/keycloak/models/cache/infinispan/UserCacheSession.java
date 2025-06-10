@@ -58,6 +58,7 @@ import org.keycloak.models.cache.infinispan.events.UserUpdatedEvent;
 import org.keycloak.models.cache.infinispan.stream.InIdentityProviderPredicate;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
+import org.keycloak.storage.CacheableStorageProviderModel;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.StoreManagers;
 import org.keycloak.storage.OnCreateComponent;
@@ -357,6 +358,23 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         if (!realm.getId().equals(cached.getRealm())) {
             return null;
         }
+
+        StorageId storageId = cached.getFederationLink() != null ?
+                new StorageId(cached.getFederationLink(), cached.getId()) : new StorageId(cached.getId());
+
+        if (!storageId.isLocal()) {
+            ComponentModel component = realm.getComponent(storageId.getProviderId());
+            if (component == null) {
+                return null;
+            }
+            CacheableStorageProviderModel model = new CacheableStorageProviderModel(component);
+
+            if (model.shouldInvalidate(cached)) {
+                registerUserInvalidation(cached);
+                return supplier.get();
+            }
+        }
+
         return new UserAdapter(cached, this, session, realm);
     }
 
