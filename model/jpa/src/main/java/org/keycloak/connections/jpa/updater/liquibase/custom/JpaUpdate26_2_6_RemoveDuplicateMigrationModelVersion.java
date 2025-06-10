@@ -31,20 +31,12 @@ public class JpaUpdate26_2_6_RemoveDuplicateMigrationModelVersion extends Custom
         final String tableName = getTableName(MIGRATION_MODEL_TABLE);
         final String colId = database.correctObjectName("ID", Column.class);
         final String colVersion = database.correctObjectName("VERSION", Column.class);
+        final String colUpdateTime = database.correctObjectName("UPDATE_TIME", Column.class);
 
         database.getConcatSql();
 
-        final String GET_OLDER_DUPLICATED_RECORDS = """
-                SELECT m1.%s
-                FROM %s m1
-                WHERE EXISTS (
-                    SELECT m2.%s
-                    FROM %s m2
-                    WHERE m2.%s = m1.%s AND m2.%s > m1.%s
-                )
-                """.formatted(colId, tableName, colId, tableName, colVersion, colVersion, colId, colId);
-
-        try (PreparedStatement ps = connection.prepareStatement(GET_OLDER_DUPLICATED_RECORDS)) {
+        //noinspection SqlSourceToSinkFlow
+        try (PreparedStatement ps = connection.prepareStatement(getOlderDuplicatedRecords(tableName, colId, colVersion, colUpdateTime))) {
             ResultSet resultSet = ps.executeQuery();
             while (resultSet.next()) {
                 idsToDelete.add(resultSet.getString(1));
@@ -63,6 +55,39 @@ public class JpaUpdate26_2_6_RemoveDuplicateMigrationModelVersion extends Custom
                         .addWhereParameters(ids.toArray())
                 )
                 .forEach(statements::add);
+    }
+
+    /**
+     * Get duplicated records
+     * <p>
+     * If there is VERSION duplication, choose:
+     * <p>
+     * - If UPDATE_TIME is: different -> pick more recent
+     * <p>
+     * - If UPDATE_TIME is: equal -> pick some random
+     */
+    private String getOlderDuplicatedRecords(String tableName, String colId, String colVersion, String colUpdateTime) {
+        return """
+                SELECT m1.%s
+                FROM %s m1
+                WHERE EXISTS (
+                    SELECT m2.%s
+                    FROM %s m2
+                    WHERE m2.%s = m1.%s
+                    AND (
+                        m2.%s > m1.%s
+                        OR (m2.%s = m1.%s AND m2.%s > m1.%s)
+                    )
+                )
+                """.formatted(
+                colId,                  // SELECT m1.%s         => SELECT m1.ID
+                tableName,              // FROM %s m1           => FROM MIGRATION_MODEL m1
+                colId,                  // SELECT m2.%s         => SELECT m2.ID
+                tableName,              // FROM %s              => FROM MIGRATION_MODEL m2
+                colVersion, colVersion, // WHERE m2.%s = m1.%s  => WHERE m2.VERSION = m1.VERSION
+                colUpdateTime, colUpdateTime, // m2.%s > m1.%s  => m2.UPDATE_TIME > m1.UPDATE_TIME
+                // OR (m2.%s = m1.%s AND m2.%s > m1.%s)         => OR (m2.UPDATE_TIME = m1.UPDATE_TIME AND m2.ID > m1.ID)
+                colUpdateTime, colUpdateTime, colId, colId);
     }
 
 }
