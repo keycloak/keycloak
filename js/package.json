@@ -27,7 +27,7 @@
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-lodash": "^8.0.0",
     "eslint-plugin-playwright": "^2.2.0",
-    "eslint-plugin-prettier": "^5.4.0",
+    "eslint-plugin-prettier": "^5.4.1",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-compiler": "19.0.0-beta-714736e-20250131",
     "eslint-plugin-react-hooks": "~5.2.0",
