@@ -94,10 +94,12 @@ public class XMLEncryptionUtil {
      * </p>
      *
      * @param document
-     * @param keyToBeEncrypted          Symmetric Key (SecretKey)
+     * @param keyToBeEncrypted Symmetric Key (SecretKey)
      * @param keyUsedToEncryptSecretKey Asymmetric Key (Public Key)
-     * @param keySize                   Length of the key
+     * @param keySize Length of the key
+     *
      * @return
+     *
      * @throws org.keycloak.saml.common.exceptions.ProcessingException
      */
     private static EncryptedKey encryptKey(Document document, SecretKey keyToBeEncrypted, PublicKey keyUsedToEncryptSecretKey,
@@ -132,16 +134,17 @@ public class XMLEncryptionUtil {
      * Given an element in a Document, encrypt the element and replace the element in the document with the encrypted
      * data
      *
-     * @param elementQName              QName of the element that we like to encrypt
-     * @param document                  The document with the element to encrypt
-     * @param publicKey                 The public Key to wrap the secret key
-     * @param secretKey                 The secret key to use for encryption
-     * @param keySize                   The size of the public key
-     * @param wrappingElementQName      A QName of an element that will wrap the encrypted element
-     * @param addEncryptedKeyInKeyInfo  Need for the EncryptedKey to be placed in ds:KeyInfo
-     * @param keyEncryptionAlgorithm    The wrap algorithm for the secret key (can be null, default is used depending the publicKey type)
+     * @param elementQName QName of the element that we like to encrypt
+     * @param document The document with the element to encrypt
+     * @param publicKey The public Key to wrap the secret key
+     * @param secretKey The secret key to use for encryption
+     * @param keySize The size of the public key
+     * @param wrappingElementQName A QName of an element that will wrap the encrypted element
+     * @param addEncryptedKeyInKeyInfo Need for the EncryptedKey to be placed in ds:KeyInfo
+     * @param keyEncryptionAlgorithm The wrap algorithm for the secret key (can be null, default is used depending the publicKey type)
      * @param keyEncryptionDigestMethod An optional digestMethod to use (can be null)
      * @param keyEncryptionMgfAlgorithm The xenc11 MGF Algorithm to use (can be null)
+     *
      * @throws ProcessingException
      */
     public static void encryptElement(QName elementQName, Document document, PublicKey publicKey, SecretKey secretKey,
@@ -196,7 +199,7 @@ public class XMLEncryptionUtil {
         // Create the wrapping element and set its attribute NS
         Element wrappingElement = encryptedDoc.createElementNS(wrappingElementQName.getNamespaceURI(), wrappingElementName);
 
-        if (!StringUtil.isNullOrEmpty(wrappingElementPrefix)) {
+        if (! StringUtil.isNullOrEmpty(wrappingElementPrefix)) {
             wrappingElement.setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:" + wrappingElementPrefix, wrappingElementQName.getNamespaceURI());
         }
 
@@ -236,8 +239,10 @@ public class XMLEncryptionUtil {
      * succeed it throws {@link ProcessingException}.
      *
      * @param documentWithEncryptedElement document containing encrypted element
-     * @param decryptionKeyLocator         decryption key locator
+     * @param decryptionKeyLocator decryption key locator
+     *
      * @return the document with the encrypted element replaced by the data element
+     *
      * @throws ProcessingException when decrypting was not successful
      */
     public static Element decryptElementInDocument(Document documentWithEncryptedElement, DecryptionKeyLocator decryptionKeyLocator)
@@ -341,6 +346,7 @@ public class XMLEncryptionUtil {
      * A exception is thrown if not found.
      *
      * @param encDataElement The EncryptedData element found
+     *
      * @return The EncryptedKey element
      */
     private static Element locateEncryptedKeyElement(Element encDataElement) {
@@ -363,6 +369,7 @@ public class XMLEncryptionUtil {
      *
      * @param publicKeyAlgo
      * @param keySize
+     *
      * @return
      */
     private static String getXMLEncryptionURLForKeyUnwrap(String publicKeyAlgo, int keySize) {
@@ -386,6 +393,7 @@ public class XMLEncryptionUtil {
      *
      * @param algo
      * @param keySize
+     *
      * @return
      */
     private static String getXMLEncryptionURL(String algo, int keySize) {
