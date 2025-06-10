@@ -591,7 +591,7 @@ public class AssertionUtil {
      * This method modifies the given responseType, and replaces the encrypted assertion with a decrypted version.
      *
      * @param responseType a response containing an encrypted assertion
-    //     * @param decryptionKeyLocator locator of keys suitable for decrypting encrypted element
+         * @param decryptionKeyLocator locator of keys suitable for decrypting encrypted element
      *
      * @return the assertion element as it was decrypted. This can be used in signature verification.
      */
@@ -609,39 +609,6 @@ public class AssertionUtil {
         newDoc.appendChild(importedNode);
 
         Element decryptedDocumentElement = XMLEncryptionUtil.decryptElementInDocument(newDoc, decryptionKeyLocator);
-        SAMLParser parser = SAMLParser.getInstance();
-
-        JAXPValidationUtil.checkSchemaValidation(decryptedDocumentElement);
-        AssertionType assertion = (AssertionType) parser.parse(parser.createEventReader(DocumentUtil
-                .getNodeAsStream(decryptedDocumentElement)));
-
-        responseType.replaceAssertion(oldID, new ResponseType.RTChoiceType(assertion));
-
-        return decryptedDocumentElement;
-    }
-
-    /**
-     * This method modifies the given responseType, and replaces the encrypted assertion with a decrypted version.
-     *
-     * @param responseType a response containing an encrypted assertion
-//     * @param decryptionKeyLocator locator of keys suitable for decrypting encrypted element
-     *
-     * @return the assertion element as it was decrypted. This can be used in signature verification.
-     */
-    public static Element decryptSamlAssertion(ResponseType responseType, Function<Document, Element> decryptor) throws ParsingException, ProcessingException, ConfigurationException {
-        Element enc = responseType.getAssertions().stream()
-                .map(ResponseType.RTChoiceType::getEncryptedAssertion)
-                .filter(Objects::nonNull)
-                .findFirst()
-                .map(EncryptedElementType::getEncryptedElement)
-                .orElseThrow(() -> new ProcessingException("No encrypted assertion found."));
-
-        String oldID = enc.getAttribute(JBossSAMLConstants.ID.get());
-        Document newDoc = DocumentUtil.createDocument();
-        Node importedNode = newDoc.importNode(enc, true);
-        newDoc.appendChild(importedNode);
-
-        Element decryptedDocumentElement = decryptor.apply(newDoc);
         SAMLParser parser = SAMLParser.getInstance();
 
         JAXPValidationUtil.checkSchemaValidation(decryptedDocumentElement);
