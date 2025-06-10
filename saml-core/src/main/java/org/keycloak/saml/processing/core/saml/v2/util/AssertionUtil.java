@@ -591,7 +591,7 @@ public class AssertionUtil {
      * This method modifies the given responseType, and replaces the encrypted assertion with a decrypted version.
      *
      * @param responseType a response containing an encrypted assertion
-         * @param decryptionKeyLocator locator of keys suitable for decrypting encrypted element
+     * @param decryptionKeyLocator locator of keys suitable for decrypting encrypted element
      *
      * @return the assertion element as it was decrypted. This can be used in signature verification.
      */
