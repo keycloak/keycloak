@@ -407,7 +407,7 @@ public final class PropertyMappers {
                 operation.accept(to, mapper);
                 if (to.startsWith(KC_SPI_PREFIX)) {
                     if (!mapper.getTo().contains("--")) {
-                        throw new IllegalStateException("Mapper should use the new form of the spi option: " + to);
+                        throw new IllegalStateException("Mapper should use the new form of the SPI option with the `--` separator: " + to);
                     }
                     String legacyTo = mapper.getTo().replace("--", "-");
                     operation.accept(legacyTo, mapper);

@@ -86,12 +86,15 @@ status on federated user accounts depending on the use cases and the demand from
 
 === Buildtime SPI Options
 
-SPI options ending in -enabled, -provider-default, or -provider were previously treated as buildtime. However in some instances this was not correct as a provider could have a configuration property ending in one of those suffixes as well.
+SPI options ending in `-enabled`, `-provider-default`, or `-provider` were previously treated as buildtime. However in some instances this was not correct as a provider could have a configuration property ending in one of those suffixes as well.
 
-To resolve this ambiguity, and any potential ambiguity involving SPI and provider names, a new SPI option format was introduced where the scopes and suffix are separated by -- instead of -. 
+To resolve this ambiguity, and any potential ambiguity involving SPI and provider names, a new SPI option format was introduced where the scopes and suffix are separated by `--`(double dash) instead of `-`(dash). 
 
-An SPI property ending in -enabled, -provider-default, or -provider will only be treated as buildtime if it is using the new format, e.g. `spi-<spi-name>--<provider-name>--enabled` will be recognized as a buildtime option. 
-Options using the legacy format and ending in ending in -enabled, -provider-default, or -provider will instead be treated as runtime and a warning will be emitted.   
+An SPI property ending in `-enabled`, `-provider-default`, or `-provider` will only be treated as buildtime if it is using the new format, e.g. `spi-<spi-name>--<provider-name>--enabled` will be recognized as a buildtime option.
+
+For instance, the correct way to reference your custom email template is: `--spi-email-template--mycustomprovider--enabled` (not `--spi-email-template-mycustomprovider-enabled`).
+
+Options using the legacy format and ending in `-enabled`, `-provider-default`, or `-provider` will instead be treated as runtime and a warning will be emitted.   
 
 == Notable changes
 
