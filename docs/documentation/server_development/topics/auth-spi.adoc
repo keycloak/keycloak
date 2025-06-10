@@ -66,7 +66,7 @@ Cookie - ALTERNATIVE
 Kerberos - ALTERNATIVE
 Forms subflow - ALTERNATIVE
            Username/Password Form - REQUIRED
-           Conditional OTP subflow - CONDITIONAL
+           Conditional 2FA subflow - CONDITIONAL
                       Condition - User Configured - REQUIRED
                       OTP Form - REQUIRED
 ----
@@ -115,14 +115,14 @@ Let's walk through the steps from when a client first redirects to keycloak to a
   A failureChallenge() means that there is a challenge, but that the flow should log this as an error in the error log.
   This error log can be used to lock accounts or IP Addresses that have had too many login failures.
   If the username and password is valid, the provider associated the UserModel with the AuthenticationSessionModel and returns a status of success().
-. The next execution is a subflow called Conditional OTP. The executions for this subflow are loaded and the same processing logic occurs. Its Requirement is
+. The next execution is a subflow called Conditional 2FA. The executions for this subflow are loaded and the same processing logic occurs. Its Requirement is
   Conditional. This means that the flow will first evaluate all conditional executors that it contains. Conditional executors are authenticators that
   implement `ConditionalAuthenticator`, and must implement the method `boolean matchCondition(AuthenticationFlowContext context)`. A conditional subflow will
   call the `matchCondition` method of all conditional executions it contains, and if all of them evaluate to true, it will act as if it was a required subflow. If
   not, it will act as if it was a disabled subflow. Conditional authenticators are only used for this purpose, and are not used as authenticators.
   This means that even if the conditional authenticator evaluates to "true", then this will not mark a flow or subflow as successful. For example,
   a flow containing only a Conditional subflow with only a conditional authenticator will never allow a user to log in.
-. The first execution of the Conditional OTP subflow is the Condition - User Configured.
+. The first execution of the Conditional 2FA subflow is the Condition - User Configured.
   This provider requires that a user has been associated with the flow.
   This requirement is satisfied because the UsernamePassword provider already associated the user with the flow.
   This provider's `matchCondition` method will evaluate the `configuredFor` method for all other Authenticators in its current subflow. If the subflow contains
@@ -134,7 +134,7 @@ Let's walk through the steps from when a client first redirects to keycloak to a
   Since a user is required for this provider, the provider is also asked if the user is configured to use this provider.
   If user is not configured, then the flow will then set up a required action that the user must perform after authentication is complete.
   For OTP, this means the OTP setup page. If the user is configured, he will be asked to enter his otp code. In our scenario, because of the conditional
-  sub-flow, the user will never see the OTP login page, unless the Conditional OTP subflow is set to Required.
+  sub-flow, the user will never see the OTP login page, unless the Conditional 2FA subflow is set to Required.
 . After the flow is complete, the authentication processor creates a UserSessionModel and associates it with the AuthenticationSessionModel.
   It then checks to see if the user is required to complete any required actions before logging in.
 . First, each required action's evaluateTriggers() method is called.
