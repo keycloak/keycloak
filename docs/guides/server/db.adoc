@@ -271,6 +271,18 @@ show server_encoding;
 create database keycloak with encoding 'UTF8';
 ----
 
+== Preparing for PostgreSQL
+
+When running PostgreSQL reader and writer instances, {project_name} needs to always connect to the writer instance to do its work.
+When using the original PostgreSQL driver, {project_name} sets the `targetServerType` property of the PostgreSQL JDBC driver to `primary` to ensure that it always connects to a writable primary instance and never connects to a secondary reader instance in failover or switchover scenarios.
+
+You can override this behavior by setting your own value for `targetServerType` in the DB URL or additional properties.
+
+[NOTE]
+====
+The `targetServerType` is only applied automatically to the primary datasource, as requirements might be different for additional datasources.
+====
+
 [[preparing-keycloak-for-amazon-aurora-postgresql]]
 == Preparing for Amazon Aurora PostgreSQL
 
@@ -295,6 +307,8 @@ See the <@links.server id="containers" /> {section} for details on how to build 
 . Configure {project_name} to run with the following parameters:
 `db-url`:: Insert `aws-wrapper` to the regular PostgreSQL JDBC URL resulting in a URL like `+jdbc:aws-wrapper:postgresql://...+`.
 `db-driver`:: Set to `software.amazon.jdbc.Driver` to use the AWS JDBC wrapper.
+
+NOTE: When overriding the `wrapperPlugins` option of the AWS JDBC Driver, always include the `failover` or `failover2` plugin to ensure that {project_name} always connects to the writer instance even in failover or switchover scenarios.
 
 == Preparing for MySQL server
 
