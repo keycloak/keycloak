@@ -346,7 +346,6 @@ public class XMLEncryptionUtil {
      * A exception is thrown if not found.
      *
      * @param encDataElement The EncryptedData element found
-     *
      * @return The EncryptedKey element
      */
     private static Element locateEncryptedKeyElement(Element encDataElement) {
