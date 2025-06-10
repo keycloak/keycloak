@@ -476,6 +476,30 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
     }
 
     @Test
+    public void testRedirectToIdentityProviderAssociatedWithOrganizationDomainCaseInsensitive() {
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
+        idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, "neworg.org");
+        testRealm().identityProviders().get(bc.getIDPAlias()).update(idp);
+        idp.setAlias("second-idp");
+        idp.setInternalId(null);
+        idp.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+        testRealm().identityProviders().create(idp).close();
+        getCleanup().addCleanup(testRealm().identityProviders().get("second-idp")::remove);
+        organization.identityProviders().addIdentityProvider(idp.getAlias()).close();
+
+        openIdentityFirstLoginPage(bc.getUserEmail().toUpperCase(), true, idp.getAlias(), false, false);
+
+        loginOrgIdp(bc.getUserEmail().toUpperCase(), bc.getUserEmail().toUpperCase(),true, true);
+
+        assertIsMember(bc.getUserEmail().toUpperCase(), organization);
+        UserRepresentation user = testRealm().users().search(bc.getUserEmail().toUpperCase()).get(0);
+        List<FederatedIdentityRepresentation> federatedIdentities = testRealm().users().get(user.getId()).getFederatedIdentity();
+        assertEquals(1, federatedIdentities.size());
+        assertEquals(bc.getIDPAlias(), federatedIdentities.get(0).getIdentityProvider());
+    }
+
+    @Test
     public void testRedirectToIdentityProviderAssociatedWithOrganizationDomainUsingAnyMatch() {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();

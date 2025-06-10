@@ -54,7 +54,7 @@ public abstract class AbstractUpdatesCommand extends AbstractCommand implements 
     @Override
     public void run() {
         Environment.updateProfile(true);
-        if (!Profile.isFeatureEnabled(Profile.Feature.ROLLING_UPDATES_V1)) {
+        if (!Profile.isAnyVersionOfFeatureEnabled(Profile.Feature.ROLLING_UPDATES_V1)) {
             printFeatureDisabled();
             picocli.exit(FEATURE_DISABLED_EXIT_CODE);
             return;
@@ -94,13 +94,13 @@ public abstract class AbstractUpdatesCommand extends AbstractCommand implements 
     }
 
     private void printPreviewWarning() {
-        if (Profile.Feature.ROLLING_UPDATES_V1.getType() == Profile.Feature.Type.PREVIEW) {
-            printError("Warning! This command is '" + Profile.Feature.ROLLING_UPDATES_V1.getType() + "' and is not recommended for use in production. It may change or be removed at a future release.");
+        if (Profile.isFeatureEnabled(Profile.Feature.ROLLING_UPDATES_V2) && (Profile.Feature.ROLLING_UPDATES_V2.getType() == Profile.Feature.Type.PREVIEW || Profile.Feature.ROLLING_UPDATES_V2.getType() == Profile.Feature.Type.EXPERIMENTAL)) {
+            printError("Warning! This command is '" + Profile.Feature.ROLLING_UPDATES_V2.getType() + "' and is not recommended for use in production. It may change or be removed at a future release.");
         }
     }
 
     void printFeatureDisabled() {
-        printError("Unable to use this command. The feature '" + Profile.Feature.ROLLING_UPDATES_V1.getVersionedKey() + "' is not enabled.");
+        printError("Unable to use this command. None of the versions of the feature '" + Profile.Feature.ROLLING_UPDATES_V1.getUnversionedKey() + "' is enabled.");
     }
 
     static Map<String, CompatibilityMetadataProvider> loadAllProviders() {

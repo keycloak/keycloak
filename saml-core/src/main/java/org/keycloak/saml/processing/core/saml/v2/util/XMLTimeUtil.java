@@ -190,7 +190,7 @@ public class XMLTimeUtil {
             if (timeValue.startsWith("P")) {
                 return factory.newDuration(timeValue);
             } else {
-                return factory.newDuration(Long.valueOf(timeValue));
+                return factory.newDuration(Long.parseLong(timeValue));
             }
         } catch (Exception e) {
             throw logger.samlMetaDataFailedToCreateCacheDuration(timeValue);

@@ -66,14 +66,6 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
     @Before
     public void setOTPAuthRequired() {
-        adminClient.realm("test").flows().getExecutions("browser")
-                .stream()
-                .filter(execution -> execution.getDisplayName().equals("Browser - Conditional OTP"))
-                .forEach(execution -> {
-                        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED.name());
-                        adminClient.realm("test").flows().updateExecutions("browser", execution);
-                });
-
         ApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
         UserRepresentation user = UserBuilder.create().enabled(true)
                 .username("test-user@localhost")
@@ -133,7 +125,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         try {
             // Emulate former (pre KEYCLOAK-11745 change) OPTIONAL requirement by:
             // * Disabling the CONFIGURE_TOTP required action on realm
-            // * Marking "Browser - Conditional OTP" authenticator as CONDITIONAL
+            // * Marking "Browser - Conditional 2FA" authenticator as CONDITIONAL
             // * Marking "Condition - user configured" authenticator as DISABLED, and
             // * Marking "OTP Form" authenticator as ALTERNATIVE
             preConfigureRealmForCancelSetupTotpTest();
@@ -153,7 +145,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         // Disable CONFIGURE_TOTP required action
         configureRealmEnableRequiredActionByAlias("CONFIGURE_TOTP", false);
         // Set "Browser - Conditional OTP" execution requirement to CONDITIONAL
-        configureRealmSetExecutionRequirementByDisplayName("browser", "Browser - Conditional OTP", AuthenticationExecutionModel.Requirement.CONDITIONAL);
+        configureRealmSetExecutionRequirementByDisplayName("browser", "Browser - Conditional 2FA", AuthenticationExecutionModel.Requirement.CONDITIONAL);
         // Set "Condition - user configured" execution requirement to DISABLED
         configureRealmSetExecutionRequirementByDisplayName("browser", "Condition - user configured", AuthenticationExecutionModel.Requirement.DISABLED);
         // Set "OTP Form" execution requirement to ALTERNATIVE
@@ -165,9 +157,9 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         // Enable CONFIGURE_TOTP required action back (the default)
         configureRealmEnableRequiredActionByAlias("CONFIGURE_TOTP", true);
 
-        // Set requirement of "Browser - Conditional OTP", "Condition - user configured",
+        // Set requirement of "Browser - Conditional 2FA", "Condition - user configured",
         // and "OTP Form" browser flow executions back to REQUIRED (the default)
-        List<String> executionDisplayNames = Arrays.asList("Browser - Conditional OTP", "Condition - user configured", "OTP Form");
+        List<String> executionDisplayNames = Arrays.asList("Browser - Conditional 2FA", "Condition - user configured", "OTP Form");
         executionDisplayNames.stream().forEach(name -> configureRealmSetExecutionRequirementByDisplayName("browser", name, AuthenticationExecutionModel.Requirement.REQUIRED));
     }
 

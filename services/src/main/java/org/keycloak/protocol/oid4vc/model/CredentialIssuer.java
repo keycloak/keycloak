@@ -39,11 +39,11 @@ public class CredentialIssuer {
     @JsonProperty("credential_endpoint")
     private String credentialEndpoint;
 
+    @JsonProperty("nonce_endpoint")
+    private String nonceEndpoint;
+
     @JsonProperty("authorization_servers")
     private List<String> authorizationServers;
-
-    @JsonProperty("batch_credential_endpoint")
-    private String batchCredentialEndpoint;
 
     @JsonProperty("notification_endpoint")
     private String notificationEndpoint;
@@ -71,12 +71,12 @@ public class CredentialIssuer {
         return this;
     }
 
-    public String getBatchCredentialEndpoint() {
-        return batchCredentialEndpoint;
+    public String getNonceEndpoint() {
+        return nonceEndpoint;
     }
 
-    public CredentialIssuer setBatchCredentialEndpoint(String batchCredentialEndpoint) {
-        this.batchCredentialEndpoint = batchCredentialEndpoint;
+    public CredentialIssuer setNonceEndpoint(String nonceEndpoint) {
+        this.nonceEndpoint = nonceEndpoint;
         return this;
     }
 

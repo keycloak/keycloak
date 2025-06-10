@@ -373,6 +373,29 @@ public class ClientTest {
     }
 
     @Test
+    public void removeClientWithDependentCompositeRoles() {
+        ClientRepresentation clientRep = ClientConfigBuilder.create().clientId("my-app").build();
+        String id = ApiUtil.getCreatedId(managedRealm.admin().clients().create(clientRep));
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientResourcePath(id), clientRep, ResourceType.CLIENT);
+        ClientResource clientRsc = managedRealm.admin().clients().get(id);
+
+        RoleRepresentation roleB = RoleBuilder.create().name("role-b").build();
+        clientRsc.roles().create(roleB);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(id, "role-b"), roleB, ResourceType.CLIENT_ROLE);
+
+        RoleRepresentation roleA = RoleBuilder.create().name("role-a").build();
+         clientRsc.roles().create(roleA);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(id, "role-a"), roleA, ResourceType.CLIENT_ROLE);
+
+        List<RoleRepresentation> composites = List.of( clientRsc.roles().get("role-b").toRepresentation());
+        clientRsc.roles().get("role-a").addComposites(composites);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientRoleResourceCompositesPath(id, "role-a"), composites, ResourceType.CLIENT_ROLE);
+
+        clientRsc.remove();
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE, AdminEventPaths.clientResourcePath(id), ResourceType.CLIENT);
+    }
+
+    @Test
     public void removeInternalClientExpectingBadRequestException() {
         final String testRealmClientId = ApiUtil.findClientByClientId(managedMasterRealm.admin(), managedRealm.getName() + "-realm")
                 .toRepresentation().getId();

@@ -18,17 +18,25 @@
 package org.keycloak.quarkus.runtime.logging;
 
 import io.quarkus.logging.LoggingFilter;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.common.util.MultiSiteUtils;
 
 import java.util.Objects;
 import java.util.logging.Filter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import java.util.regex.Pattern;
 
 /**
  * @author Alexander Schwartz
  */
 @LoggingFilter(name = "keycloak-filter")
 public final class KeycloakLogFilter implements Filter {
+
+    // avoid logging ISPN000312 for sessions, offlineSessions, clientSessions and offlineClientSessions caches only.
+    private static final Pattern ISPN000312_PATTERN = Pattern.compile(
+            "^\\[Context=(" + String.join("|", InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME, InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME) + ")] ISPN000312: .*");
+
     @Override
     public boolean isLoggable(LogRecord record) {
         // The ARJUNA012125 messages are logged and then thrown.
@@ -37,6 +45,15 @@ public final class KeycloakLogFilter implements Filter {
         if (Objects.equals(record.getLevel(), Level.WARNING) && record.getLoggerName().equals("com.arjuna.ats.arjuna") && record.getMessage().startsWith("ARJUNA012125:")) {
             return false;
         }
+
+        if (MultiSiteUtils.isPersistentSessionsEnabled()) {
+            // Suppress messages for ISPN000312 as there shouldn't be a warning as this is expected as user and client sessions have only a single owner.
+            // https://github.com/keycloak/keycloak/issues/39816
+            if (Objects.equals(record.getLevel(), Level.WARNING) && record.getLoggerName().equals("org.infinispan.CLUSTER") && ISPN000312_PATTERN.matcher(record.getMessage()).matches()) {
+                return false;
+            }
+        }
+
         return true;
     }
 }

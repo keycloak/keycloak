@@ -824,6 +824,7 @@ public class Picocli {
                     optBuilder.defaultValue(Option.getDefaultValueString(mapper.getDefaultValue().get()));
                 }
 
+                optBuilder.arity("1"); // everything requires a value to match configargs parsing
                 if (mapper.getType() != null) {
                     optBuilder.type(mapper.getType());
                     if (mapper.isList()) {

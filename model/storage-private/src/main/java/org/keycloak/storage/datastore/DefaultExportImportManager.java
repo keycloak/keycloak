@@ -361,7 +361,7 @@ public class DefaultExportImportManager implements ExportImportManager {
 
         Map<String, ClientScopeModel> clientScopes = new HashMap<>();
         if (rep.getClientScopes() != null) {
-            clientScopes = createClientScopes(session, rep.getClientScopes(), newRealm);
+            clientScopes = createClientScopes(rep.getClientScopes(), newRealm);
         }
         if (rep.getDefaultDefaultClientScopes() != null) {
             for (String clientScopeName : rep.getDefaultDefaultClientScopes()) {
@@ -584,10 +584,10 @@ public class DefaultExportImportManager implements ExportImportManager {
         return appMap;
     }
 
-    private static Map<String, ClientScopeModel> createClientScopes(KeycloakSession session, List<ClientScopeRepresentation> clientScopes, RealmModel realm) {
+    private static Map<String, ClientScopeModel> createClientScopes(List<ClientScopeRepresentation> clientScopes, RealmModel realm) {
         Map<String, ClientScopeModel> appMap = new HashMap<>();
         for (ClientScopeRepresentation resourceRep : clientScopes) {
-            ClientScopeModel app = RepresentationToModel.createClientScope(session, realm, resourceRep);
+            ClientScopeModel app = RepresentationToModel.createClientScope(realm, resourceRep);
             appMap.put(app.getName(), app);
         }
         return appMap;
@@ -891,8 +891,16 @@ public class DefaultExportImportManager implements ExportImportManager {
 
             Map<String, String> config = new HashMap<>(rep.getSmtpServer());
 
-            if(rep.getSmtpServer().containsKey("authType") && "basic".equals(rep.getSmtpServer().get("authType"))) {
-                if (rep.getSmtpServer().containsKey("password") && ComponentRepresentation.SECRET_VALUE.equals(rep.getSmtpServer().get("password"))) {
+            if (!Boolean.parseBoolean(config.get("auth"))) {
+                config.remove("authTokenUrl");
+                config.remove("authTokenScope");
+                config.remove("authTokenClientId");
+                config.remove("authTokenClientSecret");
+                config.remove("password");
+                config.remove("user");
+                config.remove("authType");
+            } else if (config.get("authType") == null || "basic".equals(config.get("authType"))) {
+                if (ComponentRepresentation.SECRET_VALUE.equals(config.get("password"))) {
                     String passwordValue = realm.getSmtpConfig() != null ? realm.getSmtpConfig().get("password") : null;
                     config.put("password", passwordValue);
                 }
@@ -900,10 +908,8 @@ public class DefaultExportImportManager implements ExportImportManager {
                 config.remove("authTokenScope");
                 config.remove("authTokenClientId");
                 config.remove("authTokenClientSecret");
-            }
-
-            if(rep.getSmtpServer().containsKey("authType") && "token".equals(rep.getSmtpServer().get("authType"))) {
-                if (rep.getSmtpServer().containsKey("authTokenClientSecret") && ComponentRepresentation.SECRET_VALUE.equals(rep.getSmtpServer().get("authTokenClientSecret"))) {
+            } else if ("token".equals(config.get("authType"))) {
+                if (ComponentRepresentation.SECRET_VALUE.equals(config.get("authTokenClientSecret"))) {
                     String authTokenClientSecretValue = realm.getSmtpConfig() != null ? realm.getSmtpConfig().get("authTokenClientSecret") : null;
                     config.put("authTokenClientSecret", authTokenClientSecretValue);
                 }
@@ -1356,6 +1362,9 @@ public class DefaultExportImportManager implements ExportImportManager {
 
         List<String> webAuthnPolicyExtraOrigins = rep.getWebAuthnPolicyPasswordlessExtraOrigins();
         if (webAuthnPolicyExtraOrigins != null) webAuthnPolicy.setExtraOrigins(webAuthnPolicyExtraOrigins);
+
+        Boolean webAuthnPolicyPasswordlessPasskeysEnabled = rep.getWebAuthnPolicyPasswordlessPasskeysEnabled();
+        if (webAuthnPolicyPasswordlessPasskeysEnabled != null) webAuthnPolicy.setPasskeysEnabled(webAuthnPolicyPasswordlessPasskeysEnabled);
 
         return webAuthnPolicy;
     }

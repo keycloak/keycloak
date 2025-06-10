@@ -88,4 +88,10 @@ public class PasswordLessRealmAttributeUpdater extends AbstractWebAuthnRealmUpda
         rep.setWebAuthnPolicyPasswordlessAcceptableAaguids(webAuthnPolicyAcceptableAaguids);
         return this;
     }
+
+    @Override
+    public PasswordLessRealmAttributeUpdater setWebAuthnPolicyPasskeysEnabled(Boolean webAuthnPolicyPasskeysEnabled) {
+        rep.setWebAuthnPolicyPasswordlessPasskeysEnabled(webAuthnPolicyPasskeysEnabled);
+        return this;
+    }
 }

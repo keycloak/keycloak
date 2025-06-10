@@ -33,7 +33,7 @@ import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.RealmAdminResource;
 import org.keycloak.services.resources.admin.UserProfileResource;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.storage.UserStorageProviderModel;
 
 import jakarta.ws.rs.Consumes;

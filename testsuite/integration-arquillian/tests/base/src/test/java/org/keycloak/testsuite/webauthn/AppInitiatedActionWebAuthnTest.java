@@ -207,8 +207,8 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
         final int credentialsCount = getCredentialCount.get();
 
         webAuthnRegisterPage.assertCurrent();
-        if (!logoutOtherSessions) {
-            webAuthnRegisterPage.uncheckLogoutSessions();
+        if (logoutOtherSessions) {
+            webAuthnRegisterPage.checkLogoutSessions();
         }
         assertThat(webAuthnRegisterPage.isLogoutSessionsChecked(), is(logoutOtherSessions));
         webAuthnRegisterPage.clickRegister();

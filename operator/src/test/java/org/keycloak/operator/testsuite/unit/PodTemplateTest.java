@@ -22,6 +22,7 @@ import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.IntOrString;
+import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.PodTemplateSpecBuilder;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
@@ -33,6 +34,7 @@ import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetSpec;
+import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -48,6 +50,7 @@ import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
 import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
 import org.keycloak.operator.controllers.KeycloakDistConfigurator;
+import org.keycloak.operator.controllers.KeycloakUpdateJobDependentResource;
 import org.keycloak.operator.controllers.WatchedResources;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakBuilder;
@@ -59,6 +62,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
 import org.mockito.Mockito;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -68,6 +72,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.operator.ContextUtils.DIST_CONFIGURATOR_KEY;
+import static org.keycloak.operator.ContextUtils.NEW_DEPLOYMENT_KEY;
 import static org.keycloak.operator.ContextUtils.OLD_DEPLOYMENT_KEY;
 import static org.keycloak.operator.ContextUtils.OPERATOR_CONFIG_KEY;
 import static org.keycloak.operator.ContextUtils.WATCHED_RESOURCES_KEY;
@@ -86,17 +91,28 @@ public class PodTemplateTest {
 
     KeycloakDeploymentDependentResource deployment;
 
+    @Inject
+    KeycloakUpdateJobDependentResource jobResource;
+
     @BeforeEach
     protected void setup() {
         this.deployment = new KeycloakDeploymentDependentResource();
     }
 
     private StatefulSet getDeployment(PodTemplateSpec podTemplate, StatefulSet existingDeployment, Consumer<KeycloakSpecBuilder> additionalSpec) {
-        var kc = new KeycloakBuilder().withNewMetadata().withName("instance").withNamespace("keycloak-ns").endMetadata().build();
-        existingDeployment = new StatefulSetBuilder(existingDeployment).editOrNewSpec().editOrNewSelector()
+        var kc = createKeycloak(podTemplate, additionalSpec);
+
+        existingDeployment = new StatefulSetBuilder(existingDeployment).editOrNewMetadata().endMetadata().editOrNewSpec().editOrNewSelector()
                 .withMatchLabels(Utils.allInstanceLabels(kc))
                 .endSelector().endSpec().build();
 
+        //noinspection unchecked
+        Context<Keycloak> context = mockContext(existingDeployment);
+        return deployment.desired(kc, context);
+    }
+
+    private Keycloak createKeycloak(PodTemplateSpec podTemplate, Consumer<KeycloakSpecBuilder> additionalSpec) {
+        var kc = new KeycloakBuilder().withNewMetadata().withName("instance").withNamespace("keycloak-ns").endMetadata().build();
         var httpSpec = new HttpSpecBuilder().withTlsSecret("example-tls-secret").build();
         var hostnameSpec = new HostnameSpecBuilder().withHostname("example.com").build();
 
@@ -110,8 +126,10 @@ public class PodTemplateTest {
         }
 
         kc.setSpec(keycloakSpecBuilder.build());
+        return kc;
+    }
 
-        //noinspection unchecked
+    private Context<Keycloak> mockContext(StatefulSet existingDeployment) {
         Context<Keycloak> context = Mockito.mock(Context.class);
         ManagedWorkflowAndDependentResourceContext managedWorkflowAndDependentResourceContext = Mockito.mock(ManagedWorkflowAndDependentResourceContext.class);
         Mockito.when(context.managedWorkflowAndDependentResourceContext()).thenReturn(managedWorkflowAndDependentResourceContext);
@@ -120,7 +138,7 @@ public class PodTemplateTest {
         Mockito.when(managedWorkflowAndDependentResourceContext.getMandatory(WATCHED_RESOURCES_KEY, WatchedResources.class)).thenReturn(watchedResources);
         Mockito.when(managedWorkflowAndDependentResourceContext.getMandatory(DIST_CONFIGURATOR_KEY, KeycloakDistConfigurator.class)).thenReturn(distConfigurator);
         Mockito.when(context.getClient()).thenReturn(Mockito.mock(KubernetesClient.class));
-        return deployment.desired(kc, context);
+        return context;
     }
 
     private StatefulSet getDeployment(PodTemplateSpec podTemplate, StatefulSet existingDeployment) {
@@ -228,8 +246,8 @@ public class PodTemplateTest {
         // Assert
         assertEquals(1, podTemplate.getSpec().getContainers().get(0).getCommand().size());
         assertEquals(command, podTemplate.getSpec().getContainers().get(0).getCommand().get(0));
-        assertEquals(3, podTemplate.getSpec().getContainers().get(0).getArgs().size());
-        assertEquals(arg, podTemplate.getSpec().getContainers().get(0).getArgs().get(2));
+        assertEquals(2, podTemplate.getSpec().getContainers().get(0).getArgs().size());
+        assertEquals(arg, podTemplate.getSpec().getContainers().get(0).getArgs().get(1));
     }
 
     @Test
@@ -640,6 +658,38 @@ public class PodTemplateTest {
 
         // Assert
         assertThat(podTemplate.getSpec().getAffinity()).isNotEqualTo(affinity);
+    }
+
+    private Job getUpdateJob(Consumer<KeycloakSpecBuilder> newSpec, Consumer<KeycloakSpecBuilder> oldSpec, Consumer<StatefulSetBuilder> existingModifier) {
+        // create an existing from the old spec and modifier
+        StatefulSetBuilder existingBuilder = getDeployment(null, null, oldSpec).toBuilder();
+        existingModifier.accept(existingBuilder);
+        StatefulSet existingStatefulSet = existingBuilder.build();
+
+        // determine the desired statefulset state
+        StatefulSetBuilder desired = getDeployment(null, existingStatefulSet, newSpec).toBuilder();
+
+        // setup the mock context
+        Context<Keycloak> context = mockContext(existingStatefulSet);
+        var managedWorkflowAndDependentResourceContext = context.managedWorkflowAndDependentResourceContext();
+        Mockito.when(managedWorkflowAndDependentResourceContext.get(OLD_DEPLOYMENT_KEY, StatefulSet.class)).thenReturn(Optional.of(existingStatefulSet));
+        Mockito.when(managedWorkflowAndDependentResourceContext.getMandatory(NEW_DEPLOYMENT_KEY, StatefulSet.class)).thenReturn(desired.build());
+
+        return jobResource.desired(createKeycloak(null, newSpec), context);
+    }
+
+    @Test
+    public void testUpdateJobSecretHandling() {
+        Job job = getUpdateJob(builder -> {}, builder -> {}, builder -> {});
+        assertEquals(List.of(), job.getSpec().getTemplate().getSpec().getImagePullSecrets());
+
+        LocalObjectReference secret = new LocalObjectReference("secret");
+        Consumer<StatefulSetBuilder> addSecret = builder -> builder.editSpec().editTemplate().editSpec().addToImagePullSecrets(secret).endSpec().endTemplate().endSpec();
+        job = getUpdateJob(builder -> {}, builder -> {}, addSecret);
+        assertEquals(List.of(new LocalObjectReference("secret")), job.getSpec().getTemplate().getSpec().getImagePullSecrets());
+
+        job = getUpdateJob(builder -> builder.addToImagePullSecrets(new LocalObjectReference("new-secret")), builder -> {}, addSecret);
+        assertEquals(List.of(new LocalObjectReference("new-secret"), new LocalObjectReference("secret")), job.getSpec().getTemplate().getSpec().getImagePullSecrets());
     }
 
 }

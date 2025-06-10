@@ -38,7 +38,7 @@ import java.util.stream.Stream;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.authorization.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.AuthorizationProviderFactory;
 import org.keycloak.authorization.model.PermissionTicket;
@@ -702,7 +702,7 @@ public class RepresentationToModel {
     // CLIENT SCOPES
 
 
-    public static ClientScopeModel createClientScope(KeycloakSession session, RealmModel realm, ClientScopeRepresentation resourceRep) {
+    public static ClientScopeModel createClientScope(RealmModel realm, ClientScopeRepresentation resourceRep) {
         logger.debugv("Create client scope: {0}", resourceRep.getName());
 
         ClientScopeModel clientScope = resourceRep.getId() != null ? realm.addClientScope(resourceRep.getId(), resourceRep.getName()) : realm.addClientScope(resourceRep.getName());
@@ -724,7 +724,6 @@ public class RepresentationToModel {
                 clientScope.setAttribute(entry.getKey(), entry.getValue());
             }
         }
-
 
         return clientScope;
     }

@@ -13,7 +13,7 @@ jobs:
     permissions:
       issues: write # Required to add labels to Issues
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           sparse-checkout: .github/scripts
       - name: Add release labels on merge
@@ -41,7 +41,7 @@ jobs:
           fi
           
           echo "Label:      $LABEL"
-          echo "**Label:** [$LABEL](https://github.com/$GITHUB_REPOSITORY/labels/$LABEL" >> $GITHUB_STEP_SUMMARY
+          echo "**Label:** [$LABEL](https://github.com/$GITHUB_REPOSITORY/labels/$LABEL)" >> $GITHUB_STEP_SUMMARY
           
           gh api "/repos/$GITHUB_REPOSITORY/labels/$LABEL" --silent 2>/dev/null || gh label create -R "$GITHUB_REPOSITORY" "$LABEL" -c "0E8A16"
           

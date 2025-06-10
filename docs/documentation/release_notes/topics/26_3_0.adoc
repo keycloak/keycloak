@@ -33,3 +33,27 @@ In this release, the *Recovery Codes* two-factor authentication is promoted from
 = New AIA action parameter `skip_if_exists` for WebAuthn register
 
 Both WebAuthn Register actions (`webauthn-register` and `webauthn-register-passwordless`) now support a parameter `skip_if_exists` when initiated by the application (AIA). The parameter allows to skip the action if the user already has a credential of that type. For more information, see the link:{adminguide_link}#_webauthn_aia[Registering WebAuthn credentials using AIA] chapter in the {adminguide_name}.
+
+= Experimental support for rolling updates for patch releases
+
+In the previous release, the Keycloak Operator was enhanced to support performing rolling updates of the Keycloak image if both images contain the same version.
+This is useful, for example, when switching to an optimized image, changing a theme or a provider source code.
+
+In this release, we extended this to perform rolling update when the new image contains a future patch release from the same `major.minor` release stream.
+Read more in https://www.keycloak.org/server/update-compatibility#rolling-updates-for-patch-releases[Update Compatibility Tool]
+
+= Brokering a OAuth v2 compliant authorization server
+
+In this release, a new broker is available to integrate with any OAuth2 compliant Authorization Server. For more information, see the link:{adminguide_link}#_identity_broker_oauth[OAuth v2 identity providers] chapter in the {adminguide_name}.
+
+= Trusting email verification when brokering OpenID Connect Providers
+
+In this release, the OpenID Connect broker was updated to trust email verification from OpenID Providers based on the `email_verified` claim when
+the `Trust email` setting is enabled. If this claim is set to `true`, the federated user account will have their email marked as verified depending on the value from this claim. The same is true in case the OpenID Provider returns the `email_verified` claim set to `false`, in this case the federated
+user account will have their email marked as unverified.
+
+The `email_verified` claim is a standard claim as defined by the https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims[OpenID Connect Core Specification].
+
+= Restrict admin role mappings to server administrators
+
+To enhance security, only users with the `admin` role in the `master` realm (server admins) can assign admin roles. This ensures that critical permissions cannot be delegated by realm-level administrators.

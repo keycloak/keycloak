@@ -138,7 +138,7 @@ public class KeycloakOIDCIdentityProvider extends OIDCIdentityProvider {
     }
 
     @Override
-    protected BrokeredIdentityContext exchangeExternalImpl(EventBuilder event, MultivaluedMap<String, String> params) {
+    protected BrokeredIdentityContext exchangeExternalTokenV1Impl(EventBuilder event, MultivaluedMap<String, String> params) {
         String subjectToken = params.getFirst(OAuth2Constants.SUBJECT_TOKEN);
         if (subjectToken == null) {
             event.detail(Details.REASON, OAuth2Constants.SUBJECT_TOKEN + " param unset");

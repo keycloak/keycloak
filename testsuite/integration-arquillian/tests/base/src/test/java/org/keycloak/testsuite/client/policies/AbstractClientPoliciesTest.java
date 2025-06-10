@@ -593,6 +593,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         // Set required signature for request_uri
         // use and set jwks_url
         ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
+        assert clientResource != null;
         ClientRepresentation clientRep = clientResource.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectSignatureAlg(sigAlg);
         OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(true);
@@ -1091,6 +1092,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     private void assertExpectedEmptyConfig(String executorProviderId, ClientProfileRepresentation profileRep) {
         JsonNode config = getConfigOfExecutor(executorProviderId, profileRep);
+        assert config != null;
         Assert.assertTrue("Expected empty configuration for provider " + executorProviderId, config.isEmpty());
     }
 
@@ -1101,6 +1103,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
         // use and set jwks_url
         ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(oauth.getRealm()), oauth.getClientId());
+        assert clientResource != null;
         ClientRepresentation clientRep = clientResource.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(true);
         OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(TestApplicationResourceUrls.clientJwksUri());

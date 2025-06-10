@@ -45,12 +45,7 @@ export const ExtendedHeader = ({
     messageKey: t("removeImportedUsersMessage"),
     continueButtonLabel: "remove",
     onConfirm: async () => {
-      try {
-        removeImportedUsers();
-        addAlert(t("removeImportedUsersSuccess"), AlertVariant.success);
-      } catch (error) {
-        addError("removeImportedUsersError", error);
-      }
+      await removeImportedUsers();
     },
   });
 
@@ -58,8 +53,8 @@ export const ExtendedHeader = ({
     try {
       if (id) {
         await adminClient.userStorageProvider.removeImportedUsers({ id });
+        addAlert(t("removeImportedUsersSuccess"), AlertVariant.success);
       }
-      addAlert(t("removeImportedUsersSuccess"), AlertVariant.success);
     } catch (error) {
       addError("removeImportedUsersError", error);
     }

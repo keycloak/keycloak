@@ -248,7 +248,9 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         updatePasswordPage.assertCurrent();
 
         if(userAuthenticated) {
-            updatePasswordPage.uncheckLogoutSessions();
+            assertFalse("Logout other sessions was ticked", updatePasswordPage.isLogoutSessionsChecked());
+        } else {
+            updatePasswordPage.checkLogoutSessions();
         }
 
         updatePasswordPage.changePassword("resetPassword", "resetPassword");
