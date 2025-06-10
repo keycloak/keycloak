@@ -11,12 +11,12 @@ public class BootstrapAdminOptions {
 
     public static final Option<String> PASSWORD = new OptionBuilder<>("bootstrap-admin-password", String.class)
             .category(OptionCategory.BOOTSTRAP_ADMIN)
-            .description("Temporary bootstrap admin password." + USED_ONLY_WHEN + NON_CLI)
+            .description("Bootstrap admin password." + USED_ONLY_WHEN + NON_CLI)
             .build();
 
     public static final Option<String> USERNAME = new OptionBuilder<>("bootstrap-admin-username", String.class)
             .category(OptionCategory.BOOTSTRAP_ADMIN)
-            .description("Temporary bootstrap admin username." + USED_ONLY_WHEN)
+            .description("Bootstrap admin username." + USED_ONLY_WHEN)
             .defaultValue(DEFAULT_TEMP_ADMIN_USERNAME)
             .build();
 
@@ -28,13 +28,13 @@ public class BootstrapAdminOptions {
 
     public static final Option<String> CLIENT_ID = new OptionBuilder<>("bootstrap-admin-client-id", String.class)
             .category(OptionCategory.BOOTSTRAP_ADMIN)
-            .description("Client id for the temporary bootstrap admin service account." + USED_ONLY_WHEN)
+            .description("Client id for the bootstrap admin service account." + USED_ONLY_WHEN)
             .defaultValue(DEFAULT_TEMP_ADMIN_SERVICE)
             .build();
 
     public static final Option<String> CLIENT_SECRET = new OptionBuilder<>("bootstrap-admin-client-secret", String.class)
             .category(OptionCategory.BOOTSTRAP_ADMIN)
-            .description("Client secret for the temporary bootstrap admin service account." + USED_ONLY_WHEN + NON_CLI)
+            .description("Client secret for the bootstrap admin service account." + USED_ONLY_WHEN + NON_CLI)
             .build();
 
     public static final Option<Boolean> IS_TEMPORARY = new OptionBuilder<>("bootstrap-admin-temporary", Boolean.class)

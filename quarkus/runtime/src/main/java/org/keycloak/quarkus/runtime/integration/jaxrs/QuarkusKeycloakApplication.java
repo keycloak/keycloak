@@ -112,11 +112,11 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
     }
 
     public boolean createTemporaryMasterRealmAdminUser(String adminUserName, String adminPassword, boolean isTemporary, /*Integer adminExpiration,*/ KeycloakSession session) {
-        return new ApplianceBootstrap(session).createTemporaryMasterRealmAdminUser(adminUserName, adminPassword, isTemporary /*, adminExpiration*/, false);
+        return new ApplianceBootstrap(session).createMasterRealmAdminUser(adminUserName, adminPassword, isTemporary /*, adminExpiration*/, false);
     }
 
     public boolean createTemporaryMasterRealmAdminService(String clientId, String clientSecret, boolean isTemporary, /*Integer adminExpiration,*/ KeycloakSession session) {
-        return new ApplianceBootstrap(session).createTemporaryMasterRealmAdminService(clientId, clientSecret, isTemporary /*, adminExpiration*/);
+        return new ApplianceBootstrap(session).createMasterRealmAdminService(clientId, clientSecret, isTemporary /*, adminExpiration*/);
     }
 
 }

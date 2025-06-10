@@ -57,9 +57,6 @@ public class BootstrapAdminUser extends AbstractNonServerCommand {
     @Option(paramLabel = "IS_TEMPORARY", names = { "--is-temporary" }, description = "Indicates whether this admin account is temporary, defaults to true", defaultValue = "true")
     boolean isTemporary;
 
-    @Option(paramLabel = "is_temporary", names = { "--is-temporary:env" }, description = "Environment variable name for whether the admin account is temporary")
-    String isTemporaryEnv;
-
     String password;
     String username;
 
@@ -95,10 +92,6 @@ public class BootstrapAdminUser extends AbstractNonServerCommand {
             }
         } else {
             password = getFromEnv(passwordEnv);
-        }
-
-        if (isTemporaryEnv != null) {
-            isTemporary = Boolean.parseBoolean(getFromEnv(isTemporaryEnv));
         }
     }
 
