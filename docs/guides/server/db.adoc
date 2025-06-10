@@ -271,6 +271,21 @@ show server_encoding;
 create database keycloak with encoding 'UTF8';
 ----
 
+== Preparing for PostgreSQL
+
+When running PostgreSQL reader and writer instances, {project_name} needs to connect always to the writer instance to do its work.
+Setting the `targetServerType` property of the PostgreSQL JDBC driver to `primary` ensures that {project_name} always connects to a writable primary instance and never connects to a secondary reader instance in failover or switchover scenarios.
+
+If you specify only a database host and no properties, {project_name} adds the property automatically.
+
+If you specify a full URL or additional properties, {project_name} does not add it automatically and warns you if you do not add it explicitly.
+
+.Example with a JDBC URL setting `targetServerType` explicitly
+<@kc.start parameters="--db postgres --db-url jdbc:postgresql://mypostgres/mydatabase?targetServerType=primary"/>
+
+.Example with the database URL properties setting `targetServerType` explicitly
+<@kc.start parameters="--db postgres --db-url-properties '?targetServerType=primary&...' --db-url-host ..."/>
+
 [[preparing-keycloak-for-amazon-aurora-postgresql]]
 == Preparing for Amazon Aurora PostgreSQL
 

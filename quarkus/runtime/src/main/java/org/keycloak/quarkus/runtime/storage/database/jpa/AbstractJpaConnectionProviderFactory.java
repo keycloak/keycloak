@@ -75,6 +75,14 @@ public abstract class AbstractJpaConnectionProviderFactory implements JpaConnect
     @Override
     public void postInit(KeycloakSessionFactory factory) {
         entityManagerFactory = getEntityManagerFactory();
+        try (Connection connection = getConnection()) {
+            String url = connection.getMetaData().getURL();
+            if (url != null && url.startsWith("jdbc:postgresql://") && !url.contains("targetServerType=")) {
+                logger.warn("When connecting to a PostgreSQL database, add the URL property 'targetServerType=primary' to ensure that Keycloak connects to a writer instance and never a reader instance. Current URL in use: " + url);
+            }
+        } catch (SQLException cause) {
+            throw new RuntimeException("Failed to check JDBC URL.", cause);
+        }
     }
 
     @Override
