@@ -18,6 +18,6 @@
     "commander": "^14.0.0",
     "fs-extra": "^11.3.0",
     "mustache": "^4.2.0",
-    "simple-git": "^3.27.0"
+    "simple-git": "^3.28.0"
   }
 }
