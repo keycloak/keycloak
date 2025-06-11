@@ -12,9 +12,9 @@ By default, the welcome theme is only used to create the initial temporary admin
 
 Since the welcome theme is not associated with a realm, it cannot be selected in the admin console like other themes.
 
-To change the welcome theme, create and deploy a new welcome theme as described in <<_creating-a-theme,Creating a theme>>.  Then, start the {project_name} server using the `spi-theme-welcome-theme` option.
+To change the welcome theme, create and deploy a new welcome theme as described in <<_creating-a-theme,Creating a theme>>.  Then, start the {project_name} server using the `spi-theme--welcome-theme` option.
 [source,bash]
 ----
-bin/kc.[sh|bat] start --spi-theme-welcome-theme=custom-theme
+bin/kc.[sh|bat] start --spi-theme--welcome-theme=custom-theme
 ----
 </@tmpl.guide>

@@ -1,11 +1,9 @@
 package org.keycloak.guides.maven;
 
-import static org.aesh.readline.terminal.Key.r;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.toDashCase;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.keycloak.config.ConfigSupportLevel;
 import org.keycloak.config.DeprecatedMetadata;
 import org.keycloak.config.OptionCategory;
@@ -14,7 +12,6 @@ import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.ProviderManager;
 import org.keycloak.provider.Spi;
 import org.keycloak.quarkus.runtime.Providers;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.utils.StringUtil;
 
@@ -63,6 +60,10 @@ public class Options {
                 .flatMap(Collection::stream)
                 .forEach(option -> option.description = option.description.replaceAll("'([^ ]*)'", "`$1`"));
 
+        ArrayList<String> booleanValues = new ArrayList<>();
+        booleanValues.add("true");
+        booleanValues.add("false");
+
         for (Spi loadSpi : providerManager.loadSpis().stream().sorted(Comparator.comparing(Spi::getName)).toList()) {
             for (ProviderFactory<?> providerFactory : providerManager.load(loadSpi).stream().sorted(Comparator.comparing(ProviderFactory::getId)).toList()) {
                 List<ProviderConfigProperty> configMetadata = providerFactory.getConfigMetadata();
@@ -71,9 +72,11 @@ public class Options {
                     continue;
                 }
 
-                String optionPrefix = NS_KEYCLOAK_PREFIX + String.join(OPTION_PART_SEPARATOR, ArrayUtils.insert(0, new String[] {loadSpi.getName(), providerFactory.getId()}, "spi"));
+                String spiKey = toDashCase(loadSpi.getName());
+                String providerKey = toDashCase(providerFactory.getId());
+                String optionPrefix = NS_KEYCLOAK_PREFIX + "spi" + OPTION_PART_SEPARATOR + spiKey + OPTION_PART_SEPARATOR + OPTION_PART_SEPARATOR + providerKey + OPTION_PART_SEPARATOR + OPTION_PART_SEPARATOR;
                 List<Option> options = configMetadata.stream()
-                        .map(m -> new Option(Configuration.toDashCase(optionPrefix.concat("-") + m.getName()), OptionCategory.GENERAL, false,
+                        .map(m -> new Option(optionPrefix + toDashCase(m.getName()), OptionCategory.GENERAL, false,
                                 m.getType(),
                                 m.getHelpText(),
                                 m.getDefaultValue() == null ? null : m.getDefaultValue().toString(),
@@ -83,9 +86,6 @@ public class Options {
                                 null))
                         .sorted(Comparator.comparing(Option::getKey)).collect(Collectors.toList());
 
-                ArrayList<String> booleanValues = new ArrayList<>();
-                booleanValues.add("true");
-                booleanValues.add("false");
                 options.forEach(option -> {
                     if (option.type.equals("boolean")) {
                         option.expectedValues = booleanValues;
@@ -94,7 +94,7 @@ public class Options {
                 });
 
                 if (!options.isEmpty()) {
-                    providerOptions.computeIfAbsent(toDashCase(loadSpi.getName()), k -> new LinkedHashMap<>()).put(toDashCase(providerFactory.getId()), options);
+                    providerOptions.computeIfAbsent(spiKey, k -> new LinkedHashMap<>()).put(providerKey, options);
                 }
             }
         }
@@ -261,7 +261,9 @@ public class Options {
         }
 
         public String getEnabledWhen() {
-            if (StringUtil.isBlank(enabledWhen)) return null;
+            if (StringUtil.isBlank(enabledWhen)) {
+                return null;
+            }
             return enabledWhen;
         }
 
