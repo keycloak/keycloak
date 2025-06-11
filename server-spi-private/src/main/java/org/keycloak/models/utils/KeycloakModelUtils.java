@@ -218,7 +218,7 @@ public final class KeycloakModelUtils {
     }
 
     public static CertificateRepresentation generateKeyPairCertificate(String subject) {
-        KeyPair keyPair = KeyUtils.generateRsaKeyPair(2048);
+        KeyPair keyPair = KeyUtils.generateRsaKeyPair(4096);
         X509Certificate certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, subject);
 
         String privateKeyPem = PemUtils.encodeKey(keyPair.getPrivate());
