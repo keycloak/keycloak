@@ -19,10 +19,13 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 import org.keycloak.config.HealthOptions;
 import org.keycloak.config.HttpOptions;
 import org.keycloak.config.ManagementOptions;
+import org.keycloak.config.ManagementOptions.Scheme;
 import org.keycloak.config.MetricsOptions;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
+
+import io.smallrye.config.ConfigSourceInterceptorContext;
 
 import static org.keycloak.config.ManagementOptions.LEGACY_OBSERVABILITY_INTERFACE;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.isTrue;
@@ -56,59 +59,66 @@ public class ManagementPropertyMappers {
                         .paramLabel("host")
                         .build(),
                 // HTTPS
+                fromOption(ManagementOptions.HTTP_MANAGEMENT_SCHEME)
+                        .paramLabel("scheme")
+                        .build(),
                 fromOption(ManagementOptions.HTTPS_MANAGEMENT_CLIENT_AUTH)
                         .mapFrom(HttpOptions.HTTPS_CLIENT_AUTH)
                         .to("quarkus.management.ssl.client-auth")
                         .paramLabel("auth")
                         .build(),
                 fromOption(ManagementOptions.HTTPS_MANAGEMENT_CIPHER_SUITES)
-                        .mapFrom(HttpOptions.HTTPS_CIPHER_SUITES)
+                        .mapFrom(HttpOptions.HTTPS_CIPHER_SUITES, ManagementPropertyMappers::useIfAuto)
                         .to("quarkus.management.ssl.cipher-suites")
                         .paramLabel("ciphers")
                         .build(),
                 fromOption(ManagementOptions.HTTPS_MANAGEMENT_PROTOCOLS)
-                        .mapFrom(HttpOptions.HTTPS_PROTOCOLS)
+                        .mapFrom(HttpOptions.HTTPS_PROTOCOLS, ManagementPropertyMappers::useIfAuto)
                         .to("quarkus.management.ssl.protocols")
                         .paramLabel("protocols")
                         .build(),
                 fromOption(ManagementOptions.HTTPS_MANAGEMENT_CERTIFICATES_RELOAD_PERIOD)
-                        .mapFrom(HttpOptions.HTTPS_CERTIFICATES_RELOAD_PERIOD)
+                        .mapFrom(HttpOptions.HTTPS_CERTIFICATES_RELOAD_PERIOD, ManagementPropertyMappers::useIfAuto)
                         .to("quarkus.management.ssl.certificate.reload-period")
                         // -1 means no reload
                         .transformer((value, context) -> "-1".equals(value) ? null : value)
                         .paramLabel("reload period")
                         .build(),
                 fromOption(ManagementOptions.HTTPS_MANAGEMENT_CERTIFICATE_FILE)
-                        .mapFrom(HttpOptions.HTTPS_CERTIFICATE_FILE)
+                        .mapFrom(HttpOptions.HTTPS_CERTIFICATE_FILE, ManagementPropertyMappers::useIfAuto)
                         .to("quarkus.management.ssl.certificate.files")
                         .validator(value -> validateTlsProperties())
                         .paramLabel("file")
                         .build(),
                 fromOption(ManagementOptions.HTTPS_MANAGEMENT_CERTIFICATE_KEY_FILE)
-                        .mapFrom(HttpOptions.HTTPS_CERTIFICATE_KEY_FILE)
+                        .mapFrom(HttpOptions.HTTPS_CERTIFICATE_KEY_FILE, ManagementPropertyMappers::useIfAuto)
                         .to("quarkus.management.ssl.certificate.key-files")
                         .validator(value -> validateTlsProperties())
                         .paramLabel("file")
                         .build(),
                 fromOption(ManagementOptions.HTTPS_MANAGEMENT_KEY_STORE_FILE)
-                        .mapFrom(HttpOptions.HTTPS_KEY_STORE_FILE)
+                        .mapFrom(HttpOptions.HTTPS_KEY_STORE_FILE, ManagementPropertyMappers::useIfAuto)
                         .to("quarkus.management.ssl.certificate.key-store-file")
                         .validator(value -> validateTlsProperties())
                         .paramLabel("file")
                         .build(),
                 fromOption(ManagementOptions.HTTPS_MANAGEMENT_KEY_STORE_PASSWORD)
-                        .mapFrom(HttpOptions.HTTPS_KEY_STORE_PASSWORD)
+                        .mapFrom(HttpOptions.HTTPS_KEY_STORE_PASSWORD, ManagementPropertyMappers::useIfAuto)
                         .to("quarkus.management.ssl.certificate.key-store-password")
                         .validator(value -> validateTlsProperties())
                         .paramLabel("password")
                         .isMasked(true)
                         .build(),
                 fromOption(ManagementOptions.HTTPS_MANAGEMENT_KEY_STORE_TYPE)
-                        .mapFrom(HttpOptions.HTTPS_KEY_STORE_TYPE)
+                        .mapFrom(HttpOptions.HTTPS_KEY_STORE_TYPE, ManagementPropertyMappers::useIfAuto)
                         .to("quarkus.management.ssl.certificate.key-store-file-type")
                         .paramLabel("type")
                         .build(),
         };
+    }
+
+    private static String useIfAuto(String value, ConfigSourceInterceptorContext context) {
+        return isAutoScheme() ? value : null;
     }
 
     public static boolean isManagementEnabled() {
@@ -123,15 +133,25 @@ public class ManagementPropertyMappers {
         return Boolean.toString(isManagementEnabled());
     }
 
-    public static boolean isManagementTlsEnabled() {
-        var key = Configuration.getOptionalKcValue(ManagementOptions.HTTPS_MANAGEMENT_CERTIFICATE_KEY_FILE.getKey());
-        var cert = Configuration.getOptionalKcValue(ManagementOptions.HTTPS_MANAGEMENT_CERTIFICATE_FILE.getKey());
-        if (key.isPresent() && cert.isPresent()) return true;
-
-        var keystore = Configuration.getOptionalKcValue(ManagementOptions.HTTPS_MANAGEMENT_KEY_STORE_FILE.getKey());
-        return keystore.isPresent();
+    public static boolean isAutoScheme() {
+        return !Scheme.http.name().equals(
+                Configuration.getOptionalKcValue(ManagementOptions.HTTP_MANAGEMENT_SCHEME.getKey()).orElse(null));
     }
 
+    public static boolean isManagementTlsEnabled() {
+        if (isAutoScheme()) {
+            var key = Configuration.getOptionalKcValue(ManagementOptions.HTTPS_MANAGEMENT_CERTIFICATE_KEY_FILE.getKey());
+            var cert = Configuration.getOptionalKcValue(ManagementOptions.HTTPS_MANAGEMENT_CERTIFICATE_FILE.getKey());
+            if (key.isPresent() && cert.isPresent()) {
+                return true;
+            }
+
+            var keystore = Configuration.getOptionalKcValue(ManagementOptions.HTTPS_MANAGEMENT_KEY_STORE_FILE.getKey());
+            return keystore.isPresent();
+        }
+        return false;
+    }
+    
     private static void validateTlsProperties() {
         var isHttpEnabled = Configuration.isTrue(HttpOptions.HTTP_ENABLED);
         if (!isHttpEnabled && !isManagementTlsEnabled()) {
