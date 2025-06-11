@@ -17,26 +17,51 @@
 package org.keycloak.testsuite.actions;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.userprofile.UserProfileConstants.ROLE_USER;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPAttributeRequired;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
+import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.validate.validators.LengthValidator;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.support.FindBy;
 
 public class AppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActionUpdateEmailTest {
+
+    @FindBy(id = "update-email-btn")
+    private WebElement updateEmailBtn;
+
+    @After
+    public void after() {
+        // update email required action max auth age back to default
+        Optional<RequiredActionProviderRepresentation> updateEmailAction = testRealm().flows().getRequiredActions()
+                .stream()
+                .filter(requiredAction -> requiredAction.getProviderId().equals(UserModel.RequiredAction.UPDATE_EMAIL.name()))
+                .findFirst();
+        if (updateEmailAction.isPresent()) {
+            updateEmailAction.get().getConfig().remove(Constants.MAX_AUTH_AGE_KEY);
+            testRealm().flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_EMAIL.name(), updateEmailAction.get());
+        }
+    }
 
     @Test
     public void updateEmail() throws Exception {
@@ -103,5 +128,55 @@ public class AppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActio
         assertTrue(emailUpdatePage.isCancelDisplayed());
 
         emailUpdatePage.changeEmail(newEmail);
+    }
+
+    @Test
+    // only for firefox as it needs to go to the account console
+
+    @IgnoreBrowserDriver(value={FirefoxDriver.class}, negate=true)
+    public void updateEmailReAuthentication() {
+        appPage.open();
+        appPage.openAccount();
+
+        loginPage.login("test-user@localhost", "password");
+
+        setTimeOffset(50);
+
+        UIUtils.clickLink(updateEmailBtn);
+
+        loginPage.assertCurrent();
+        loginPage.login("password");
+
+        emailUpdatePage.assertCurrent();
+        emailUpdatePage.changeEmail("test-user2@localhost");
+    }
+
+    @Test
+    // only for firefox as it needs to go to the account console
+    // chrome doesn't work due to "change password popup"
+    @IgnoreBrowserDriver(value={FirefoxDriver.class}, negate=true)
+    public void updateEmailCustomMaxAgeReAuthentication() {
+        RequiredActionProviderRepresentation updateEmailAction = testRealm().flows().getRequiredActions()
+                .stream()
+                .filter(requiredAction -> requiredAction.getProviderId().equals(UserModel.RequiredAction.UPDATE_EMAIL.name()))
+                .findFirst()
+                .orElseThrow();
+
+        // this custom config should be ignored and re-authentication should be always required
+        updateEmailAction.getConfig().put(Constants.MAX_AUTH_AGE_KEY, "300");
+        testRealm().flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_EMAIL.name(), updateEmailAction);
+
+        appPage.open();
+        appPage.openAccount();
+
+        loginPage.login("test-user@localhost", "password");
+
+        UIUtils.clickLink(updateEmailBtn);
+
+        loginPage.assertCurrent();
+        loginPage.login("password");
+
+        emailUpdatePage.assertCurrent();
+        emailUpdatePage.changeEmail("test-user2@localhost");
     }
 }

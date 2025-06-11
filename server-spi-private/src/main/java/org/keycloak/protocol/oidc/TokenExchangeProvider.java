@@ -44,4 +44,10 @@ public interface TokenExchangeProvider extends Provider {
      */
     Response exchange(TokenExchangeContext context);
 
+    /**
+     * @return version of the token-exchange provider. Could be useful by various components (like for example identity-providers), which need to interact with the token-exchange provider
+     * to doublecheck if it should have a "legacy" behaviour (for older version of token-exchange provider) or a "new" behaviour
+     */
+    int getVersion();
+
 }

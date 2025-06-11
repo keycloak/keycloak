@@ -444,11 +444,8 @@ public class AssertEvents implements TestRule {
                 Assert.assertNotNull(actual.getDetails());
                 for (Map.Entry<String, Matcher<? super String>> d : details.entrySet()) {
                     String actualValue = actual.getDetails().get(d.getKey());
-                    if (!actual.getDetails().containsKey(d.getKey())) {
-                        Assert.fail(d.getKey() + " missing");
-                    }
 
-                    assertThat("Unexpected value for " + d.getKey(), actualValue, is(d.getValue()));
+                    assertThat("Unexpected value for " + d.getKey(), actualValue, d.getValue());
                 }
                 /*
                 for (String k : actual.getDetails().keySet()) {

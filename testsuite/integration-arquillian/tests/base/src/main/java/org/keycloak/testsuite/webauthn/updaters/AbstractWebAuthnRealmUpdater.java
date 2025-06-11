@@ -51,6 +51,8 @@ public abstract class AbstractWebAuthnRealmUpdater<T extends AbstractWebAuthnRea
 
     public abstract T setWebAuthnPolicyAcceptableAaguids(List<String> webAuthnPolicyAcceptableAaguids);
 
+    public abstract T setWebAuthnPolicyPasskeysEnabled(Boolean webAuthnPolicyPasskeysEnabled);
+
     @Override
     @SuppressWarnings("unchecked")
     public AbstractWebAuthnRealmUpdater<T> update() {

@@ -12,11 +12,10 @@ import {
   ReactElement,
   isValidElement,
 } from "react";
-import { useTranslation } from "react-i18next";
 import {
   Path,
   generatePath,
-  matchRoutes,
+  matchPath,
   useHref,
   useLocation,
   useParams,
@@ -24,8 +23,8 @@ import {
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { PageHandler } from "../../page/PageHandler";
 import { TAB_PROVIDER } from "../../page/constants";
-import { routes } from "../../routes";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
+import { useTranslation } from "react-i18next";
 
 // TODO: Remove the custom 'children' props and type once the following issue has been resolved:
 // https://github.com/patternfly/patternfly-react/issues/6766
@@ -53,42 +52,27 @@ export const RoutableTabs = ({
   const isFeatureEnabled = useIsFeatureEnabled();
   const { t } = useTranslation();
 
+  const matchedTabs = tabs
+    .filter((tab) => matchPath({ path: tab.metadata.path }, pathname))
+    .map((t) => ({
+      ...t,
+      pathname: generatePath(t.metadata.path, {
+        ...params,
+        ...t.metadata.params,
+      }),
+    }));
+  // Extract all keys from matchedTabs
+  const matchedTabsKeys = matchedTabs.map((t) => t.pathname);
+
   // Extract event keys from children
   const eventKeys = Children.toArray(children)
     .filter((child): child is ChildElement => isValidElement(child))
     .map((child) => child.props.eventKey.toString());
 
-  const keyLength = eventKeys[0]?.split("/").length;
-
-  const matchedPaths = (matchRoutes(routes, pathname) || []).map(
-    (match) => match.route.path,
-  );
-
-  // To render a dynamic tab we need to be on the right route, but also have the right number of path segments.
-  // Otherwise we might render this tab on a sub tab, which is not what we want.
-  const matchedTabs = tabs
-    .filter((tab) => {
-      const tabPath = tab.metadata.path;
-      return (
-        matchedPaths.includes(tabPath) &&
-        tabPath.split("/").length === keyLength
-      );
-    })
-    .map((tab) => {
-      const tabPath = tab.metadata.path;
-      const generateTabPath = generatePath(tabPath, {
-        ...params,
-        ...tab.metadata.params,
-      });
-      eventKeys.push(generateTabPath);
-      return {
-        ...tab,
-        pathname: generateTabPath,
-      };
-    });
+  const allKeys = [...eventKeys, ...matchedTabsKeys];
 
   // Determine if there is an exact match.
-  const exactMatch = eventKeys.find(
+  const exactMatch = allKeys.find(
     (eventKey) => eventKey === decodeURI(pathname),
   );
 

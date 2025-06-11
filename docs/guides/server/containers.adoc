@@ -120,6 +120,28 @@ This approach uses a chroot, `+/mnt/rootfs+`, so that only the packages you spec
 
 WARNING: Some packages have a large tree of dependencies. By installing new RPMs you may unintentionally increase the container's attack surface. Check the list of installed packages carefully.
 
+=== Custom ENTRYPOINT shell scripts
+
+If you use a custom entry point script, start {project_name} with `exec` so it can receive termination signals that are essential for a graceful shutdown.
+
+.Correct approach for an ENTRYPOINT shell script
+[source,bash]
+----
+#!/bin/bash
+
+# (add your custom logic here)
+
+# Run the 'exec' command as the last step of the script.
+# As it replaces the current shell process, no additional shell commands will run after the 'exec' command.
+exec /opt/keycloak/bin/kc.sh start "$@"
+----
+
+[WARNING]
+====
+Without `exec`, the shell script remains PID 1 in the container and blocks signals like `SIGTERM` from reaching {project_name}.
+This prevents a graceful shutdown and can lead to cache inconsistencies or data loss.
+====
+
 === Building the container image
 To build the actual container image, run the following command from the directory containing your Containerfile:
 
@@ -154,7 +176,7 @@ Opening up `https://localhost:9000/metrics` leads to a page containing operation
 
 === Known issues with Docker
 
-* If a `RUN dnf install` command seems to be taking an excessive amount of time, then likely your Docker systemd service has the file limit setting `LimitNOFILE` configured incorrectly. 
+* If a `RUN dnf install` command seems to be taking an excessive amount of time, then likely your Docker systemd service has the file limit setting `LimitNOFILE` configured incorrectly.
 Either update the service configuration to use a better value, such as 1024000, or directly use `ulimit` in the RUN command:
 
 [source, dockerfile]
@@ -164,10 +186,10 @@ RUN ulimit -n 1024000 && dnf install --installroot ...
 ...
 ----
 
-* If you are including provider JARs and your container fails a `start --optimized` with a notification that a provider JAR has changed, this is due to Docker truncating 
+* If you are including provider JARs and your container fails a `start --optimized` with a notification that a provider JAR has changed, this is due to Docker truncating
 or otherwise modifying file modification timestamps from what the `build` command recorded to what is seen at runtime.
   In this case you will need to force the image to use a known timestamp of your choosing with a `touch` command prior to running a `build`:
-  
+
 [source, dockerfile]
 ----
 ...

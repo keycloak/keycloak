@@ -20,6 +20,7 @@ package org.keycloak.spi.infinispan.impl.embedded;
 import java.lang.invoke.MethodHandles;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -32,6 +33,7 @@ import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.jboss.logging.Logger;
 import org.jgroups.conf.ClassConfigurator;
 import org.jgroups.conf.ProtocolConfiguration;
+import org.jgroups.protocols.TCP;
 import org.jgroups.protocols.TCP_NIO2;
 import org.jgroups.protocols.UDP;
 import org.jgroups.stack.Protocol;
@@ -43,6 +45,7 @@ import org.keycloak.connections.infinispan.InfinispanConnectionSpi;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
 import org.keycloak.connections.jpa.util.JpaUtils;
+import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.jgroups.protocol.KEYCLOAK_JDBC_PING2;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.spi.infinispan.JGroupsCertificateProvider;
@@ -63,9 +66,6 @@ public final class JGroupsConfigurator {
     private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
     private static final String TLS_PROTOCOL_VERSION = "TLSv1.3";
     private static final String TLS_PROTOCOL = "TLS";
-
-    private static final String KUBERNETES_STACK = "kubernetes";
-    private static final String KUBERNETES_PATCHED_STACK = "kubernetes-patched";
 
     private JGroupsConfigurator() {
     }
@@ -91,25 +91,6 @@ public final class JGroupsConfigurator {
         configureDiscovery(holder, session);
         configureTls(holder, session);
         warnDeprecatedStack(holder);
-        patchKubernetesStack(holder);
-    }
-
-    /**
-     * Patch for <a href="https://github.com/keycloak/keycloak/issues/39023">GHI#39023</a> and <a
-     * href="https://github.com/keycloak/keycloak/issues/39454">GHI#39454</a>
-     */
-    private static void patchKubernetesStack(ConfigurationBuilderHolder holder) {
-        var stackXmlAttribute = transportStackOf(holder);
-        if (!Objects.equals(KUBERNETES_STACK, stackXmlAttribute.get())) {
-            // not the kubernetes stack
-            return;
-        }
-        logger.info("[PATCH] Patching kubernetes stack.");
-        // patch port range
-        var attributes = Map.of("port_range", "0");
-        var patch = List.of(new ProtocolConfiguration("TCP", attributes));
-        holder.addJGroupsStack(new EmbeddedJGroupsChannelConfigurator(KUBERNETES_PATCHED_STACK, patch, null), KUBERNETES_STACK);
-        transportOf(holder).stack(KUBERNETES_PATCHED_STACK);
     }
 
     /**
@@ -193,7 +174,7 @@ public final class JGroupsConfigurator {
         var stackName = transportStackOf(holder).get();
         var isUdp = stackName.endsWith("udp");
         var tableName = JpaUtils.getTableNameForNativeQuery("JGROUPS_PING", em);
-        var stack = getProtocolConfigurations(tableName, isUdp ? "PING" : "MPING");
+        var stack = getProtocolConfigurations(tableName, isUdp);
         var connectionFactory = (JpaConnectionProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(JpaConnectionProvider.class);
         holder.addJGroupsStack(new JpaFactoryAwareJGroupsChannelConfigurator(stackName, stack, connectionFactory, isUdp), null);
 
@@ -201,22 +182,29 @@ public final class JGroupsConfigurator {
         JGroupsConfigurator.logger.info("JGroups JDBC_PING discovery enabled.");
     }
 
-    private static List<ProtocolConfiguration> getProtocolConfigurations(String tableName, String discoveryProtocol) {
-        var attributes = Map.of(
-                // Leave initialize_sql blank as table is already created by Keycloak
-                "initialize_sql", "",
-                // Explicitly specify clear and select_all SQL to ensure "cluster_name" column is used, as the default
-                // "cluster" cannot be used with Oracle DB as it's a reserved word.
-                "clear_sql", String.format("DELETE from %s WHERE cluster_name=?", tableName),
-                "delete_single_sql", String.format("DELETE from %s WHERE address=?", tableName),
-                "insert_single_sql", String.format("INSERT INTO %s values (?, ?, ?, ?, ?)", tableName),
-                "select_all_pingdata_sql", String.format("SELECT address, name, ip, coord FROM %s WHERE cluster_name=?", tableName),
-                "remove_all_data_on_view_change", "true",
-                "register_shutdown_hook", "false",
-                "stack.combine", "REPLACE",
-                "stack.position", discoveryProtocol
+    private static List<ProtocolConfiguration> getProtocolConfigurations(String tableName, boolean udp) {
+        var list = new ArrayList<ProtocolConfiguration>(udp ? 1 : 2);
+        list.add(new ProtocolConfiguration(KEYCLOAK_JDBC_PING2.class.getName(),
+              Map.of(
+                    // Leave initialize_sql blank as table is already created by Keycloak
+                    "initialize_sql", "",
+                    // Explicitly specify clear and select_all SQL to ensure "cluster_name" column is used, as the default
+                    // "cluster" cannot be used with Oracle DB as it's a reserved word.
+                    "clear_sql", String.format("DELETE from %s WHERE cluster_name=?", tableName),
+                    "delete_single_sql", String.format("DELETE from %s WHERE address=?", tableName),
+                    "insert_single_sql", String.format("INSERT INTO %s values (?, ?, ?, ?, ?)", tableName),
+                    "select_all_pingdata_sql", String.format("SELECT address, name, ip, coord FROM %s WHERE cluster_name=?", tableName),
+                    "remove_all_data_on_view_change", "true",
+                    "register_shutdown_hook", "false",
+                    "stack.combine", "REPLACE",
+                    "stack.position", udp ? "PING" : "MPING"
+              ))
         );
-        return List.of(new ProtocolConfiguration(KEYCLOAK_JDBC_PING2.class.getName(), attributes));
+
+        if (!udp && InfinispanUtils.isVirtualThreadsEnabled())
+            list.add(new ProtocolConfiguration(TCP.class.getSimpleName(), Map.of("bundler_type", "per-destination")));
+
+        return list;
     }
 
     private static void warnDeprecatedStack(ConfigurationBuilderHolder holder) {

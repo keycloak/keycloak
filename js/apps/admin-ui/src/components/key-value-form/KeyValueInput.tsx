@@ -12,7 +12,7 @@ import {
   TextInput,
 } from "@patternfly/react-core";
 import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
-import { Fragment } from "react";
+import { Fragment, FunctionComponent, PropsWithChildren } from "react";
 import {
   FieldValues,
   useFieldArray,
@@ -21,27 +21,34 @@ import {
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { KeySelect } from "./KeySelect";
-import { ValueSelect } from "./ValueSelect";
-
 export type DefaultValue = {
   key: string;
   values?: string[];
   label: string;
 };
 
-type KeyValueInputProps = {
+type Field = {
+  name: string;
+};
+
+type ValueField = Field & {
+  keyValue: string;
+};
+
+type KeyValueInputProps = PropsWithChildren & {
   name: string;
   label?: string;
-  defaultKeyValue?: DefaultValue[];
   isDisabled?: boolean;
+  KeyComponent?: FunctionComponent<Field>;
+  ValueComponent?: FunctionComponent<ValueField>;
 };
 
 export const KeyValueInput = ({
   name,
   label = "attributes",
-  defaultKeyValue,
   isDisabled = false,
+  KeyComponent,
+  ValueComponent,
 }: KeyValueInputProps) => {
   const { t } = useTranslation();
   const {
@@ -80,12 +87,8 @@ export const KeyValueInput = ({
           return (
             <Fragment key={attribute.id}>
               <GridItem span={5}>
-                {defaultKeyValue ? (
-                  <KeySelect
-                    name={`${name}.${index}.key`}
-                    selectItems={defaultKeyValue}
-                    rules={{ required: true }}
-                  />
+                {KeyComponent ? (
+                  <KeyComponent name={`${name}.${index}.key`} />
                 ) : (
                   <TextInput
                     placeholder={t("keyPlaceholder")}
@@ -106,12 +109,10 @@ export const KeyValueInput = ({
                 )}
               </GridItem>
               <GridItem span={5}>
-                {defaultKeyValue ? (
-                  <ValueSelect
+                {ValueComponent ? (
+                  <ValueComponent
                     name={`${name}.${index}.value`}
                     keyValue={values[index]?.key}
-                    selectItems={defaultKeyValue}
-                    rules={{ required: true }}
                   />
                 ) : (
                   <TextInput

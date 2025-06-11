@@ -1,5 +1,20 @@
 import { base64url } from "rfc4648";
 
+// singleton
+let abortController = undefined;
+
+export function signal() {
+    if (abortController) {
+        // abort the previous call
+        const abortError = new Error("Cancelling pending WebAuthn call");
+        abortError.name = "AbortError";
+        abortController.abort(abortError);
+    }
+
+    abortController = new AbortController();
+    return abortController.signal;
+}
+
 export async function authenticateByWebAuthn(input) {
     if (!input.isUserIdentified) {
         try {
@@ -62,7 +77,10 @@ function doAuthenticate(allowCredentials, challenge, userVerification, rpId, cre
         publicKey.userVerification = userVerification;
     }
 
-    return navigator.credentials.get({publicKey});
+    return navigator.credentials.get({
+        publicKey: publicKey,
+        signal: signal()
+    });
 }
 
 export function returnSuccess(result) {

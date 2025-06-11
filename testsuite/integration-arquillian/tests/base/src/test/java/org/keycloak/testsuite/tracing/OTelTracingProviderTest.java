@@ -43,7 +43,6 @@ import java.io.Serializable;
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -110,8 +109,9 @@ public class OTelTracingProviderTest extends AbstractTestRealmKeycloakTest {
 
             assertThat(current instanceof ReadableSpan, is(true));
             ReadableSpan readableSpan = (ReadableSpan) current;
-            assertThat(readableSpan.getAttribute(AttributeKey.stringKey("server.address")), is("localhost"));
-            assertThat(readableSpan.getAttribute(AttributeKey.stringKey("url.path")), containsString("run-on-server"));
+            assertThat(readableSpan.getAttribute(AttributeKey.stringKey("code.function")), is("runOnServer"));
+            assertThat(readableSpan.getAttribute(AttributeKey.stringKey("code.namespace")), is("org.keycloak.testsuite.rest.TestingResourceProvider"));
+            assertThat(readableSpan.getName(), is("TestingResourceProvider.runOnServer"));
         });
     }
 

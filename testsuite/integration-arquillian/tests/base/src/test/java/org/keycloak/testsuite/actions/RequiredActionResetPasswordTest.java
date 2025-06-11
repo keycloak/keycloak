@@ -164,9 +164,9 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
         loginPage.login("test-user@localhost", "password");
         changePasswordPage.assertCurrent();
         assertTrue(changePasswordPage.isLogoutSessionDisplayed());
-        assertTrue(changePasswordPage.isLogoutSessionsChecked());
-        if (!logoutOtherSessions) {
-            changePasswordPage.uncheckLogoutSessions();
+        assertFalse(changePasswordPage.isLogoutSessionsChecked());
+        if (logoutOtherSessions) {
+            changePasswordPage.checkLogoutSessions();
         }
         changePasswordPage.changePassword("All Right Then, Keep Your Secrets", "All Right Then, Keep Your Secrets");
 

@@ -1228,20 +1228,16 @@ public class LDAPStorageProvider implements UserStorageProvider,
     }
 
     private long getPasswordChangedTime(LDAPObject ldapObject) {
-        String value = ldapObject.getAttributeAsString(getAttributeName());
+        String attributeName = getLdapIdentityStore().getPasswordModificationTimeAttributeName();
+        String value = ldapObject.getAttributeAsString(attributeName);
 
         if (StringUtil.isBlank(value)) {
             return -1L;
         }
 
-        if (LDAPConstants.PWD_LAST_SET.equals(getAttributeName())) {
+        if (LDAPConstants.PWD_LAST_SET.equals(attributeName)) {
             return (Long.parseLong(value) / 10000L) - 11644473600000L;
         }
         return LDAPUtils.generalizedTimeToDate(value).getTime();
-    }
-
-    private String getAttributeName() {
-        LDAPConfig config = getLdapIdentityStore().getConfig();
-        return config.isActiveDirectory() ? LDAPConstants.PWD_LAST_SET : LDAPConstants.PWD_CHANGED_TIME;
     }
 }

@@ -30,7 +30,7 @@ public class Argon2PasswordHashProviderFactory implements PasswordHashProviderFa
      * When we run more, this only leads to an increased memory usage and to throttling of the process in containerized environments
      * when a CPU limit is imposed. The throttling would have a negative impact on other concurrent non-hashing activities of Keycloak.
      */
-    private Semaphore cpuCoreSempahore;
+    private Semaphore cpuCoreSemaphore;
 
     private String version;
     private String type;
@@ -41,18 +41,18 @@ public class Argon2PasswordHashProviderFactory implements PasswordHashProviderFa
 
     @Override
     public PasswordHashProvider create(KeycloakSession session) {
-        return new Argon2PasswordHashProvider(version, type, hashLength, memory, iterations, parallelism, cpuCoreSempahore);
+        return new Argon2PasswordHashProvider(version, type, hashLength, memory, iterations, parallelism, cpuCoreSemaphore);
     }
 
     @Override
     public void init(Config.Scope config) {
         version = config.get(VERSION_KEY, Argon2Parameters.DEFAULT_VERSION);
-        type = config.get(VERSION_KEY, Argon2Parameters.DEFAULT_TYPE);
+        type = config.get(TYPE_KEY, Argon2Parameters.DEFAULT_TYPE);
         hashLength = config.getInt(HASH_LENGTH_KEY, Argon2Parameters.DEFAULT_HASH_LENGTH);
         memory = config.getInt(MEMORY_KEY, Argon2Parameters.DEFAULT_MEMORY);
         iterations = config.getInt(ITERATIONS_KEY, Argon2Parameters.DEFAULT_ITERATIONS);
         parallelism = config.getInt(PARALLELISM_KEY, Argon2Parameters.DEFAULT_PARALLELISM);
-        cpuCoreSempahore = new Semaphore(config.getInt(CPU_CORES_KEY, Runtime.getRuntime().availableProcessors()));
+        cpuCoreSemaphore = new Semaphore(config.getInt(CPU_CORES_KEY, Runtime.getRuntime().availableProcessors()));
     }
 
     @Override
@@ -89,7 +89,7 @@ public class Argon2PasswordHashProviderFactory implements PasswordHashProviderFa
                 .add();
 
         builder.property()
-                .name(TYPE_KEY)
+                .name(HASH_LENGTH_KEY)
                 .type("int")
                 .helpText("Hash length")
                 .defaultValue(Argon2Parameters.DEFAULT_HASH_LENGTH)

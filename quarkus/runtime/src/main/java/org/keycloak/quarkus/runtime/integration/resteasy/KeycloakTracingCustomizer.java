@@ -22,6 +22,7 @@ import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
+import io.opentelemetry.context.Scope;
 import jakarta.enterprise.inject.spi.CDI;
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.resteasy.reactive.common.model.ResourceClass;
@@ -60,17 +61,23 @@ public final class KeycloakTracingCustomizer implements HandlerChainCustomizer {
             spanBuilder.setAttribute("code.namespace", className);
             Span span = spanBuilder.startSpan();
             requestContext.setProperty("span", span);
+            requestContext.setProperty("scope", span.makeCurrent());
         }
     }
 
     private static class EndHandler implements ServerRestHandler {
         @Override
         public void handle(ResteasyReactiveRequestContext requestContext) {
+            Scope scope = (Scope) requestContext.getProperty("scope");
+            if (scope != null) {
+                scope.close();
+                requestContext.removeProperty("scope");
+            }
             Span span = (Span) requestContext.getProperty("span");
             if (span != null) {
                 span.end();
+                requestContext.removeProperty("span");
             }
-            requestContext.removeProperty("span");
         }
     }
 

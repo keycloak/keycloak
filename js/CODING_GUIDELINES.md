@@ -18,7 +18,34 @@ If you submit a pull request that changes the dependencies, make sure that you a
 
 Since this project relies greatly on [PNPM workspaces](https://pnpm.io/workspaces) it is recommended you familiarize yourself with features such as [`--filter`](https://pnpm.io/filtering).
 
+## Running
+
+We run the UI in dev mode and configure keycloak to proxy the request this can be done by adding `KC_ADMIN_VITE_URL=http://localhost:5174` as environment variable to the startup of keycloak or by using the start script:
+
+```bash
+pnpm --filter keycloak-server start --admin-dev
+```
+
+This script will download the nightly version of keycloak and start it with the added environment variable.
+Afterwards one needs to start the dev server with:
+
+```bash
+pnpm --filter keycloak-admin-ui run dev
+```
+
+Now when viewing the admin ui in the browser this is the local version and any changes made to the ui code base will automatically be reflected no reload needed.
+See [README.md](apps/keycloak-server/README.md) for more information.
+
 ## Code-style
+
+### Frameworks used
+
+We try and keep the use of frameworks to a minium, but we do use a couple:
+  1. [Patternfly](https://www.patternfly.org/) a component library
+  1. [React router](https://reactrouter.com/) for routing
+  1. [React hook form](https://react-hook-form.com/) with so many forms this is to keep state
+  1. [Playwright](https://playwright.dev/) for testing
+
 
 ### Linting
 
@@ -72,10 +99,6 @@ setUser(newUser);
 
 
 ```
-
-### useReducers
-
-When using reducers make sure you specify the [return type and not use inference](https://react-typescript-cheatsheet.netlify.app/docs/basic/getting-started/hooks#usereducer).
 
 ### useEffect
 
@@ -229,4 +252,7 @@ switch (titleStatus) {
 ## Resources
 
 - [PatternFly Docs](https://www.patternfly.org/)
+- [React hook form](https://react-hook-form.com/)
 - [Learn React](https://react.dev/learn)
+- [Typescript](https://www.typescriptlang.org/docs/handbook/intro.html)
+- [Playwright](https://playwright.dev/)

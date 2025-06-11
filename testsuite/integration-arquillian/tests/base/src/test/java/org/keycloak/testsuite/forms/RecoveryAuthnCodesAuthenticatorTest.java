@@ -170,8 +170,8 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
         loginPage.open();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
         setupRecoveryAuthnCodesPage.assertCurrent();
-        if (!logoutOtherSessions) {
-            setupRecoveryAuthnCodesPage.uncheckLogoutSessions();
+        if (logoutOtherSessions) {
+            setupRecoveryAuthnCodesPage.checkLogoutSessions();
         }
         Assert.assertEquals(logoutOtherSessions, setupRecoveryAuthnCodesPage.isLogoutSessionsChecked());
         setupRecoveryAuthnCodesPage.clickSaveRecoveryAuthnCodesButton();

@@ -288,7 +288,7 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
             event.error(Errors.NOT_ALLOWED);
             throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
         }
-        BrokeredIdentityContext context = externalExchangeContext.provider().exchangeExternal(event, formParams);
+        BrokeredIdentityContext context = externalExchangeContext.provider().exchangeExternal(this, this.context);
         if (context == null) {
             event.error(Errors.INVALID_ISSUER);
             throw new CorsErrorResponseException(cors, Errors.INVALID_ISSUER, "Invalid " + OAuth2Constants.SUBJECT_ISSUER + " parameter", Response.Status.BAD_REQUEST);

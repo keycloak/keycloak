@@ -17,6 +17,8 @@
 
 package org.keycloak.authentication;
 
+import java.util.Collections;
+import java.util.Set;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.provider.ConfiguredProvider;
 
@@ -44,6 +46,15 @@ public interface ConfigurableAuthenticatorFactory extends ConfiguredProvider {
      * @return null if not a referenceable category
      */
     String getReferenceCategory();
+
+    /**
+     * Optional categories that this authenticator can have (for example passkeys in username/form).
+     * Optional categories are not taken into account by LoA.
+     * @return Set of extra optional categories, empty by default
+     */
+    default Set<String> getOptionalReferenceCategories() {
+        return Collections.emptySet();
+    }
 
     /**
      * Is this authenticator configurable?

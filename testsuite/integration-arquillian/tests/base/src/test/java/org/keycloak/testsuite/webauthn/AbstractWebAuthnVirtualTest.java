@@ -27,6 +27,7 @@ import org.keycloak.authentication.authenticators.browser.WebAuthnPasswordlessAu
 import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
@@ -53,6 +54,7 @@ import org.keycloak.testsuite.webauthn.pages.WebAuthnRegisterPage;
 import org.keycloak.testsuite.webauthn.updaters.AbstractWebAuthnRealmUpdater;
 import org.keycloak.testsuite.webauthn.updaters.PasswordLessRealmAttributeUpdater;
 import org.keycloak.testsuite.webauthn.updaters.WebAuthnRealmAttributeUpdater;
+import org.keycloak.testsuite.webauthn.utils.WebAuthnRealmData;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
@@ -349,6 +351,37 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractChangeImported
         webAuthnPasswordlessProvider.setDefaultAction(true);
     }
 
+    /**
+     * Changes the flow "browser-webauthn-forms" to use the passed authenticator as required.
+     * @param realm The realm representation
+     * @param providerId The provider Id to set as required
+     */
+    protected void switchExecutionInBrowserFormToProvider(RealmRepresentation realm, String providerId) {
+        List<AuthenticationFlowRepresentation> flows = realm.getAuthenticationFlows();
+        assertThat(flows, notNullValue());
+
+        AuthenticationFlowRepresentation browserForm = flows.stream()
+                .filter(f -> f.getAlias().equals("browser-webauthn-forms"))
+                .findFirst()
+                .orElse(null);
+        assertThat("Cannot find 'browser-webauthn-forms' flow", browserForm, notNullValue());
+
+        flows.removeIf(f -> f.getAlias().equals(browserForm.getAlias()));
+
+        // set just one authenticator with the passkeys conditional UI
+        AuthenticationExecutionExportRepresentation passkeysConditionalUI = new AuthenticationExecutionExportRepresentation();
+        passkeysConditionalUI.setAuthenticator(providerId);
+        passkeysConditionalUI.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED.name());
+        passkeysConditionalUI.setPriority(10);
+        passkeysConditionalUI.setAuthenticatorFlow(false);
+        passkeysConditionalUI.setUserSetupAllowed(false);
+
+        browserForm.setAuthenticationExecutions(List.of(passkeysConditionalUI));
+        flows.add(browserForm);
+
+        realm.setAuthenticationFlows(flows);
+    }
+
     // Switch WebAuthn authenticator with Passwordless authenticator in browser flow
     protected void switchExecutionInBrowserFormToPasswordless(RealmRepresentation realm) {
         List<AuthenticationFlowRepresentation> flows = realm.getAuthenticationFlows();
@@ -411,5 +444,13 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractChangeImported
         map.put(ChromeDriver.class, chromeMessage);
 
         return getExpectedMessageByDriver(map);
+    }
+
+    protected void checkWebAuthnConfiguration(String residentKey, String userVerification) {
+        WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
+        assertThat(realmData, notNullValue());
+        assertThat(realmData.getRpEntityName(), is("localhost"));
+        assertThat(realmData.getRequireResidentKey(), is(residentKey));
+        assertThat(realmData.getUserVerificationRequirement(), is(userVerification));
     }
 }

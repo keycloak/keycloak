@@ -421,7 +421,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         doAIA();
 
         changePasswordPage.assertCurrent();
-        assertTrue("Logout sessions is checked by default", changePasswordPage.isLogoutSessionsChecked());
+        changePasswordPage.checkLogoutSessions();
         changePasswordPage.changePassword("All Right Then, Keep Your Secrets", "All Right Then, Keep Your Secrets");
         events.expectLogout(event2.getSessionId()).detail(Details.LOGOUT_TRIGGERED_BY_REQUIRED_ACTION, UserModel.RequiredAction.UPDATE_PASSWORD.name()).assertEvent();
         events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
@@ -450,7 +450,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         doAIA();
 
         changePasswordPage.assertCurrent();
-        changePasswordPage.uncheckLogoutSessions();
+        assertFalse("Logout other sessions was ticked", changePasswordPage.isLogoutSessionsChecked());
         changePasswordPage.changePassword("All Right Then, Keep Your Secrets", "All Right Then, Keep Your Secrets");
         events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
         events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();

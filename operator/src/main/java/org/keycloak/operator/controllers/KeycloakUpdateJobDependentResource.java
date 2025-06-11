@@ -20,11 +20,13 @@ package org.keycloak.operator.controllers;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.ContextUtils;
 import org.keycloak.operator.Utils;
@@ -84,7 +86,7 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
     }
 
     @Override
-    protected Job desired(Keycloak primary, Context<Keycloak> context) {
+    public Job desired(Keycloak primary, Context<Keycloak> context) {
         var builder = new JobBuilder();
         builder.withMetadata(createMetadata(jobName(primary), primary));
         var specBuilder = builder.withNewSpec();
@@ -142,11 +144,11 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
         // if there is some corner case we are not considering that would leave the upgrade job unscheduable, we'll address that later
 
         // mix in the existing state
-        var desiredPullSecrets = builder.buildImagePullSecrets();
+        var desiredPullSecrets = Optional.ofNullable(builder.buildImagePullSecrets()).orElse(List.of());
         current.getSpec().getTemplate().getSpec().getImagePullSecrets().stream().filter(s -> !desiredPullSecrets.contains(s)).forEach(builder::addToImagePullSecrets);
         // TODO: if the name is the same, but the volume has changed this merging behavior will be inconsistent / incorrect. For example is someone changes which
         // configmap the cache config is using
-        var desiredVolumes = builder.buildVolumes().stream().map(Volume::getName).collect(Collectors.toSet());
+        var desiredVolumes = Optional.ofNullable(builder.buildVolumes()).orElse(List.of()).stream().map(Volume::getName).collect(Collectors.toSet());
         current.getSpec().getTemplate().getSpec().getVolumes().stream().filter(v -> !desiredVolumes.contains(v.getName())).forEach(builder::addToVolumes);
         // TODO: what else should get merged - there could be additional stuff from the unsupported PodTemplate
 

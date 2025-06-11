@@ -65,6 +65,9 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
     public static final Set<String> PASSWORD_UPDATE_MSAD_ERROR_CODES = Set.of("52D");
 
     private final Function<LDAPObject, UserAccountControl> GET_USER_ACCOUNT_CONTROL = ldapUser -> {
+        if (ldapUser == null) {
+            return UserAccountControl.empty();
+        }
         String userAccountControl = ldapUser.getAttributeAsString(LDAPConstants.USER_ACCOUNT_CONTROL);
         return UserAccountControl.of(userAccountControl);
     };
