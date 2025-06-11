@@ -1,6 +1,7 @@
 package org.keycloak.infinispan.module.factory;
 
 import io.opentelemetry.api.OpenTelemetry;
+import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.CDI;
 import org.infinispan.factories.AbstractComponentFactory;
 import org.infinispan.factories.AutoInstantiableFactory;
@@ -16,11 +17,11 @@ public class InfinispanTelemetryFactory extends AbstractComponentFactory impleme
 
     @Override
     public Object construct(String componentName) {
-        OpenTelemetry openTelemetry = CDI.current().select(OpenTelemetry.class).get();
-        if (openTelemetry == null) {
+        Instance<OpenTelemetry> selector = CDI.current().select(OpenTelemetry.class);
+        if (!selector.isResolvable()) {
             return new DisabledInfinispanTelemetry();
         } else {
-            return new OpenTelemetryService(openTelemetry);
+            return new OpenTelemetryService(selector.get());
         }
     }
 }
