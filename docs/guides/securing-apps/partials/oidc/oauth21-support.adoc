@@ -3,7 +3,7 @@
 
 {project_name} makes it easier for administrators to make sure that their clients are compliant with these specifications:
 
-* https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-10[The OAuth 2.1 Authorization Framework - draft specification]
+* https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-13[The OAuth 2.1 Authorization Framework - draft specification]
 
 This compliance means that the {project_name} server will verify the requirements
 for the authorization server, which are mentioned in the specifications. {project_name} adapters do not have any specific support for the OAuth 2.1, hence the required validations on the client (application)
