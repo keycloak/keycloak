@@ -3,7 +3,7 @@
         <div class="${properties.kcFormOptionsWrapperClass!}">
             <div class="checkbox">
                 <label>
-                    <input type="checkbox" id="logout-sessions" name="logout-sessions" value="on" checked>
+                    <input type="checkbox" id="logout-sessions" name="logout-sessions" value="on">
                     ${msg("logoutOtherSessions")}
                 </label>
             </div>

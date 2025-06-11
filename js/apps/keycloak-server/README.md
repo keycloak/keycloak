@@ -51,7 +51,4 @@ KC_FEATURES=login:v2,account:v3,admin-fine-grained-authz,transient-users,oid4vc-
 
 **All other arguments will be passed through to the underlying Keycloak server.**
 
-In order for the development version of the Admin UI to work you will have to import a custom client to the Keycloak server. This is only required during development as the development server for the Admin UI runs on a different port. This client will be imported automatically under the name `security-admin-console-v2` when the Keycloak server starts.
-
-This client only allows redirects from/to "localhost:8080" so be sure either modify the client json in `./scripts` or only attempt to authenticate and redirect from that address
 

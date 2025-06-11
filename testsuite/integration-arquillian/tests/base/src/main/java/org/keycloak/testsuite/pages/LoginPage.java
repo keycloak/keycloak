@@ -146,6 +146,10 @@ public class LoginPage extends LanguageComboboxAwarePage {
         return usernameInput.isEnabled();
     }
 
+    public String getUsernameAutocomplete() {
+        return usernameInput.getDomAttribute("autocomplete");
+    }
+
     public boolean isUsernameInputPresent() {
         return !driver.findElements(By.id("username")).isEmpty();
     }

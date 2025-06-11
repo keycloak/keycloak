@@ -95,6 +95,25 @@ public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBroker
         assertExternalToInternalExchange(bc.getIDPAlias(), true, false);
     }
 
+    // Tests token-exchange works when user is already linked to the IDP
+    @Test
+    public void testExternalInternalTokenExchangeWithExistingUser() throws Exception {
+        assertExternalToInternalExchange(bc.getIDPAlias(), true, false);
+
+        ClientRepresentation brokerApp = realmsResouce().realm(bc.providerRealmName())
+                .clients()
+                .findByClientId("brokerapp").get(0);
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.realm(bc.providerRealmName()).client(brokerApp.getClientId(), brokerApp.getSecret()).doPasswordGrantRequest(bc.getUserLogin(), bc.getUserPassword());
+        assertThat(tokenResponse.getIdToken(), notNullValue());
+
+        try (Client httpClient = AdminClientUtil.createResteasyClient()) {
+            WebTarget exchangeUrl = getConsumerTokenEndpoint(httpClient);
+            try (Response response = sendExternalInternalTokenExchangeRequest(exchangeUrl, tokenResponse.getIdToken(), OAuth2Constants.ID_TOKEN_TYPE)) {
+                assertThat(response.getStatus(), equalTo(200));
+            }
+        }
+    }
+
     @Test
     public void testExternalInternalTokenExchangeUsingIssuer() throws Exception {
         RealmResource consumerRealm = realmsResouce().realm(bc.consumerRealmName());
@@ -135,6 +154,9 @@ public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBroker
         if (!representation.getConfig().get("issuer").startsWith(ServerURLs.getAuthServerContextRoot())) {
             representation.getConfig().put("issuer", ServerURLs.getAuthServerContextRoot() + "/auth/realms/provider");
         }
+        if (userInfo) {
+            representation.getConfig().put("userInfoUrl", ServerURLs.getAuthServerContextRoot() + "/auth/realms/provider/protocol/openid-connect/userinfo");
+        }
         identityProviderResource.update(representation);
 
         identityProviderResource.addMapper(hardCodedSessionNoteMapper).close();
@@ -147,24 +169,12 @@ public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBroker
         ClientRepresentation client = consumerRealm.clients().findByClientId("test-app").get(0);
 
         try (Client httpClient = AdminClientUtil.createResteasyClient()) {
-            WebTarget exchangeUrl = httpClient.target(ServerURLs.getAuthServerContextRoot() + "/auth")
-                    .path("/realms")
-                    .path(bc.consumerRealmName())
-                    .path("protocol/openid-connect/token");
+            WebTarget exchangeUrl = getConsumerTokenEndpoint(httpClient);
             // test user info validation.
             AccessTokenResponse externalToInternalTokenResponse;
-            try (Response response = exchangeUrl.request()
-                    .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader(
-                            client.getClientId(), client.getSecret()))
-                    .post(Entity.form(
-                            new Form()
-                                    .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
-                                    .param(OAuth2Constants.SUBJECT_TOKEN, idToken ? tokenResponse.getIdToken() : tokenResponse.getAccessToken())
-                                    .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, idToken ? OAuth2Constants.ID_TOKEN_TYPE : OAuth2Constants.ACCESS_TOKEN_TYPE)
-                                    .param(OAuth2Constants.SUBJECT_ISSUER, subjectIssuer)
-                                    .param(OAuth2Constants.SCOPE, OAuth2Constants.SCOPE_OPENID)
-
-                    ))) {
+            String subjectToken = idToken ? tokenResponse.getIdToken() : tokenResponse.getAccessToken();
+            String subjectTokenType = idToken ? OAuth2Constants.ID_TOKEN_TYPE : OAuth2Constants.ACCESS_TOKEN_TYPE;
+            try (Response response = sendExternalInternalTokenExchangeRequest(exchangeUrl, subjectToken, subjectTokenType)) {
                 assertThat(response.getStatus(), equalTo(200));
                 externalToInternalTokenResponse = response.readEntity(AccessTokenResponse.class);
                 UserRepresentation user = consumerRealm.users().search(bc.getUserLogin()).get(0);
@@ -287,23 +297,9 @@ public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBroker
 
         Client httpClient = AdminClientUtil.createResteasyClient();
         try {
-            WebTarget exchangeUrl = httpClient.target(OAuthClient.AUTH_SERVER_ROOT)
-                    .path("/realms")
-                    .path(bc.consumerRealmName())
-                    .path("protocol/openid-connect/token");
+            WebTarget exchangeUrl = getConsumerTokenEndpoint(httpClient);
             // test user info validation.
-            try (Response response = exchangeUrl.request()
-                    .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader(
-                            "test-app", "secret"))
-                    .post(Entity.form(
-                            new Form()
-                                    .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
-                                    .param(OAuth2Constants.SUBJECT_TOKEN, logoutToken)
-                                    .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.JWT_TOKEN_TYPE)
-                                    .param(OAuth2Constants.SUBJECT_ISSUER, bc.getIDPAlias())
-                                    .param(OAuth2Constants.SCOPE, OAuth2Constants.SCOPE_OPENID)
-
-                    ))) {
+            try (Response response = sendExternalInternalTokenExchangeRequest(exchangeUrl, logoutToken, OAuth2Constants.JWT_TOKEN_TYPE)) {
                 assertThat(response.getStatus(), equalTo(Status.BAD_REQUEST.getStatusCode()));
             }
         } finally {
@@ -325,6 +321,10 @@ public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBroker
         IdentityProviderRepresentation idpRep = identityProviderResource.toRepresentation();
         idpRep.getConfig().put("disableUserInfo", "true");
         idpRep.getConfig().put("disableTypeClaimCheck", "true");
+        // if auth.server.host != auth.server.host2 we need to update the issuer in the IDP config
+        if (!idpRep.getConfig().get("issuer").startsWith(ServerURLs.getAuthServerContextRoot())) {
+            idpRep.getConfig().put("issuer", ServerURLs.getAuthServerContextRoot() + "/auth/realms/provider");
+        }
         identityProviderResource.update(idpRep);
         getCleanup().addCleanup(() -> {
             idpRep.getConfig().put("disableUserInfo", "false");
@@ -343,23 +343,9 @@ public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBroker
 
         Client httpClient = AdminClientUtil.createResteasyClient();
         try {
-            WebTarget exchangeUrl = httpClient.target(OAuthClient.AUTH_SERVER_ROOT)
-                    .path("/realms")
-                    .path(bc.consumerRealmName())
-                    .path("protocol/openid-connect/token");
+            WebTarget exchangeUrl = getConsumerTokenEndpoint(httpClient);
             // test user info validation.
-            try (Response response = exchangeUrl.request()
-                    .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader(
-                            "test-app", "secret"))
-                    .post(Entity.form(
-                            new Form()
-                                    .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
-                                    .param(OAuth2Constants.SUBJECT_TOKEN, logoutToken)
-                                    .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.JWT_TOKEN_TYPE)
-                                    .param(OAuth2Constants.SUBJECT_ISSUER, bc.getIDPAlias())
-                                    .param(OAuth2Constants.SCOPE, OAuth2Constants.SCOPE_OPENID)
-
-                    ))) {
+            try (Response response = sendExternalInternalTokenExchangeRequest(exchangeUrl, logoutToken, OAuth2Constants.JWT_TOKEN_TYPE)) {
                 assertThat(response.getStatus(), equalTo(Status.OK.getStatusCode()));
             }
         } finally {
@@ -444,6 +430,28 @@ public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBroker
         assertThat(tokenResponse.getAccessToken(), notNullValue());
 
         exchangeToIdP(brokerApp, tokenResponse.getAccessToken(), expires);
+    }
+
+    private WebTarget getConsumerTokenEndpoint(Client httpClient) {
+        return httpClient.target(OAuthClient.AUTH_SERVER_ROOT)
+                .path("/realms")
+                .path(bc.consumerRealmName())
+                .path("protocol/openid-connect/token");
+    }
+
+    private Response sendExternalInternalTokenExchangeRequest(WebTarget exchangeUrl, String subjectToken, String subjectTokenType) {
+        return exchangeUrl.request()
+                .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader(
+                        "test-app", "secret"))
+                .post(Entity.form(
+                        new Form()
+                                .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
+                                .param(OAuth2Constants.SUBJECT_TOKEN, subjectToken)
+                                .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, subjectTokenType)
+                                .param(OAuth2Constants.SUBJECT_ISSUER, bc.getIDPAlias())
+                                .param(OAuth2Constants.SCOPE, OAuth2Constants.SCOPE_OPENID)
+
+                ));
     }
 
     private void exchangeToIdP(ClientRepresentation brokerApp, String subjectToken, long expires) {

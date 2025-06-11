@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.forms;
 
+import jakarta.persistence.EntityManager;
 import jakarta.ws.rs.BadRequestException;
 import org.bouncycastle.crypto.generators.Argon2BytesGenerator;
 import org.jboss.arquillian.graphene.page.Page;
@@ -24,6 +25,7 @@ import org.junit.Assume;
 import org.junit.Test;
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.common.util.Base64;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.hash.PasswordHashProvider;
 import org.keycloak.credential.hash.PasswordHashProviderFactory;
@@ -33,10 +35,13 @@ import org.keycloak.credential.hash.Pbkdf2Sha256PasswordHashProviderFactory;
 import org.keycloak.credential.hash.Pbkdf2Sha512PasswordHashProviderFactory;
 import org.keycloak.crypto.hash.Argon2Parameters;
 import org.keycloak.crypto.hash.Argon2PasswordHashProviderFactory;
+import org.keycloak.exportimport.util.ExportUtils;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.credential.dto.PasswordCredentialData;
+import org.keycloak.models.jpa.entities.CredentialEntity;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -52,6 +57,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
+import java.nio.charset.StandardCharsets;
 import java.security.spec.KeySpec;
 import java.time.Duration;
 import java.util.List;
@@ -109,6 +115,42 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.open();
         loginPage.login(username, password);
+        appPage.assertCurrent();
+
+        credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
+
+        assertEquals(Pbkdf2PasswordHashProviderFactory.ID, credential.getPasswordCredentialData().getAlgorithm());
+        assertEncoded(credential, password, credential.getPasswordSecretData().getSalt(), "PBKDF2WithHmacSHA1", 1);
+    }
+
+    @Test
+    public void testPasswordRehashedOnAlgorithmChangedWithMigratedSalt() throws Exception {
+        setPasswordPolicy("hashAlgorithm(" + Pbkdf2Sha256PasswordHashProviderFactory.ID + ") and hashIterations(1)");
+
+        String username = "testPasswordRehashedOnAlgorithmChangedWithMigratedSalt";
+        final String password = createUser(username);
+
+        PasswordCredentialModel credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
+
+        assertEquals(Pbkdf2Sha256PasswordHashProviderFactory.ID, credential.getPasswordCredentialData().getAlgorithm());
+
+        assertEncoded(credential, password, credential.getPasswordSecretData().getSalt(), "PBKDF2WithHmacSHA256", 1);
+
+        setPasswordPolicy("hashAlgorithm(" + Pbkdf2PasswordHashProviderFactory.ID + ") and hashIterations(1)");
+
+        String credentialId = credential.getId();
+        testingClient.server().run(session -> {
+            EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+            CredentialEntity credentialEntity = em.find(CredentialEntity.class, credentialId);
+            // adding a dummy value to the salt column to trigger migration in JpaUserCredentialStore#toModel on next fetch of the credential
+            credentialEntity.setSalt("dummy".getBytes(StandardCharsets.UTF_8));
+            // Clearing the user cache as we updated the database directly
+            session.getProvider(UserCache.class).clear();
+        });
+
+        loginPage.open();
+        loginPage.login(username, password);
+        appPage.assertCurrent();
 
         credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
 
@@ -131,6 +173,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.open();
         loginPage.login(username, password);
+        appPage.assertCurrent();
 
         credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
 
@@ -152,6 +195,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.open();
         loginPage.login(username, password);
+        appPage.assertCurrent();
 
         credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
 
@@ -180,6 +224,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.open();
         loginPage.login(username, password);
+        appPage.assertCurrent();
 
         credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
 
@@ -192,6 +237,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.open();
         loginPage.login(username, password);
+        appPage.assertCurrent();
 
         credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
 
@@ -206,23 +252,26 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
         String username = "testPasswordRehashedWhenCredentialImportedWithDifferentKeySize";
         String password = generatePassword();
 
-        // Encode with a specific key size ( 256 instead of default: 512)
+        // Encode with a specific key size (256 instead of default: 512)
         Pbkdf2PasswordHashProvider specificKeySizeHashProvider = new Pbkdf2PasswordHashProvider(Pbkdf2Sha512PasswordHashProviderFactory.ID,
                 Pbkdf2Sha512PasswordHashProviderFactory.PBKDF2_ALGORITHM,
                 Pbkdf2Sha512PasswordHashProviderFactory.DEFAULT_ITERATIONS,
                 0,
                 256);
-        String encodedPassword = specificKeySizeHashProvider.encodedCredential(password, -1).getPasswordSecretData().getValue();
+        PasswordCredentialModel passwordCredentialModel = specificKeySizeHashProvider.encodedCredential(password, -1);
 
         // Create a user with the encoded password, simulating a user import from a different system using a specific key size
-        UserRepresentation user = UserBuilder.create().username(username).password(encodedPassword).build();
+        UserRepresentation user = UserBuilder.create().username(username).build();
+        user.setCredentials(List.of(ExportUtils.exportCredential(passwordCredentialModel)));
         ApiUtil.createUserWithAdminClient(adminClient.realm("test"), user);
 
         loginPage.open();
         loginPage.login(username, password);
+        appPage.assertCurrent();
 
         PasswordCredentialModel postLoginCredentials = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
-        assertEquals(encodedPassword.length() * 2, postLoginCredentials.getPasswordSecretData().getValue().length());
+        // Check that the password was rehashed and the secret string is now twice the size as before
+        assertEquals(passwordCredentialModel.getPasswordSecretData().getValue().length() * 2, postLoginCredentials.getPasswordSecretData().getValue().length());
 
     }
 

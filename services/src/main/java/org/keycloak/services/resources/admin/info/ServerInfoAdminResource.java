@@ -52,6 +52,7 @@ import org.keycloak.representations.idm.PasswordPolicyTypeRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperTypeRepresentation;
 import org.keycloak.representations.info.ClientInstallationRepresentation;
+import org.keycloak.representations.info.CpuInfoRepresentation;
 import org.keycloak.representations.info.CryptoInfoRepresentation;
 import org.keycloak.representations.info.FeatureRepresentation;
 import org.keycloak.representations.info.FeatureType;
@@ -110,6 +111,7 @@ public class ServerInfoAdminResource {
     public ServerInfoRepresentation getInfo() {
         ServerInfoRepresentation info = new ServerInfoRepresentation();
         info.setSystemInfo(SystemInfoRepresentation.create(session.getKeycloakSessionFactory().getServerStartupTimestamp(), Version.VERSION));
+        info.setCpuInfo(CpuInfoRepresentation.create());
         info.setMemoryInfo(MemoryInfoRepresentation.create());
         info.setProfileInfo(createProfileInfo());
         info.setFeatures(createFeatureRepresentations());

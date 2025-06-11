@@ -5,12 +5,18 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
+import org.hamcrest.CoreMatchers;
+import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.platform.Platform;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeatures;
 import org.keycloak.theme.Theme;
 
 import java.io.File;
@@ -19,6 +25,8 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
 import static org.junit.Assert.assertEquals;
@@ -134,12 +142,114 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
         assertNotFound(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + resourcesVersion + "/invalid-theme-type/keycloak/css/welcome.css");
     }
 
+    @Test
+    @EnableFeatures(@EnableFeature(Profile.Feature.ROLLING_UPDATES_V2))
+    public void fetchStaticResourceShouldRedirectOnUnknownVersion() throws IOException {
+        final String resourcesVersion = testingClient.server().fetch(session -> Version.RESOURCES_VERSION, String.class);
+        assertFound(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + resourcesVersion + "/login/keycloak.v2/css/styles.css");
+        assertRedirect(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + "unknown" + "/login/keycloak.v2/css/styles.css");
+    }
+
+
+    @Test
+    @EnableFeatures(@EnableFeature(Profile.Feature.ROLLING_UPDATES_V2))
+    public void fetchResourceWithContentHashShouldReturnContentIfVersionIsUnknown() throws IOException {
+        final String resourcesVersion = testingClient.server().fetch(session -> Version.RESOURCES_VERSION, String.class);
+
+        String resource = getResourceWithContentHash();
+
+        // The original resource should be accessible.
+        assertNoRedirect(suiteContext.getAuthServerInfo().getContextRoot().toString() + resource);
+
+        // The unknown resource should be accessible without a redirect.
+        assertNoRedirect(suiteContext.getAuthServerInfo().getContextRoot().toString() + resource.replaceAll(Pattern.quote(resourcesVersion), "unknown"));
+    }
+
+    @Test
+    @EnableFeatures(@EnableFeature(Profile.Feature.ROLLING_UPDATES_V2))
+    public void fetchResourceWithContentHashShouldHonorEtag() throws IOException {
+        String resource = getResourceWithContentHash();
+
+        // The first fetch should return an etag
+        String etag = fetchEtag(suiteContext.getAuthServerInfo().getContextRoot().toString() + resource);
+
+        // The second fetch with the etag should return not modified
+        assertEtagHonored(suiteContext.getAuthServerInfo().getContextRoot().toString() + resource, etag);
+    }
+
+    private String getResourceWithContentHash() throws IOException {
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+            HttpGet get = new HttpGet(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/admin/" + TEST_REALM_NAME + "/console/");
+            try (CloseableHttpResponse response = httpClient.execute(get)) {
+                assertEquals(200, response.getStatusLine().getStatusCode());
+                String body = EntityUtils.toString(response.getEntity());
+                Matcher matcher = Pattern.compile("<link rel=\"stylesheet\" href=\"([^\"]*)\">").matcher(body);
+                if (matcher.find()) {
+                    return matcher.group(1);
+                } else {
+                    throw new AssertionError("unable to find resource in body");
+                }
+            }
+        }
+    }
+
     private void assertNotFound(String url) throws IOException {
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
             HttpGet get = new HttpGet(url);
             try (CloseableHttpResponse response = httpClient.execute(get)) {
                 assertEquals(404, response.getStatusLine().getStatusCode());
             }
+        }
+    }
+
+    private void assertFound(String url) throws IOException {
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+            HttpGet get = new HttpGet(url);
+            CloseableHttpResponse response = httpClient.execute(get);
+
+            MatcherAssert.assertThat(response.getStatusLine().getStatusCode(), CoreMatchers.equalTo(200));
+        }
+    }
+
+    private String fetchEtag(String url) throws IOException {
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+            HttpGet get = new HttpGet(url);
+            CloseableHttpResponse response = httpClient.execute(get);
+
+            MatcherAssert.assertThat(response.getStatusLine().getStatusCode(), CoreMatchers.equalTo(200));
+
+            return response.getFirstHeader("ETag").getValue();
+        }
+    }
+
+    private void assertRedirect(String url) throws IOException {
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().disableRedirectHandling().build()) {
+            HttpGet get = new HttpGet(url);
+            CloseableHttpResponse response = httpClient.execute(get);
+
+            MatcherAssert.assertThat(response.getStatusLine().getStatusCode(), CoreMatchers.equalTo(307));
+
+            assertFound(url);
+        }
+    }
+
+    private void assertEtagHonored(String url, String etag) throws IOException {
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().disableRedirectHandling().build()) {
+            HttpGet get = new HttpGet(url);
+            get.addHeader("If-None-Match", etag);
+
+            CloseableHttpResponse response = httpClient.execute(get);
+
+            MatcherAssert.assertThat(response.getStatusLine().getStatusCode(), CoreMatchers.equalTo(304));
+        }
+    }
+
+    private void assertNoRedirect(String url) throws IOException {
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().disableRedirectHandling().build()) {
+            HttpGet get = new HttpGet(url);
+            CloseableHttpResponse response = httpClient.execute(get);
+
+            MatcherAssert.assertThat(response.getStatusLine().getStatusCode(), CoreMatchers.equalTo(200));
         }
     }
 

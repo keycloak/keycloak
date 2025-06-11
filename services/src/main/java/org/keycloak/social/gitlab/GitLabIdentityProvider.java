@@ -90,7 +90,7 @@ public class GitLabIdentityProvider extends OIDCIdentityProvider  implements Soc
 
 
 	@Override
-	protected BrokeredIdentityContext exchangeExternalImpl(EventBuilder event, MultivaluedMap<String, String> params) {
+	protected BrokeredIdentityContext exchangeExternalTokenV1Impl(EventBuilder event, MultivaluedMap<String, String> params) {
 		return exchangeExternalUserInfoValidationOnly(event, params);
 	}
 

@@ -195,7 +195,7 @@ test.describe("User Federation LDAP tests", () => {
     test("Update connection and authentication settings and save", async ({
       page,
     }) => {
-      fillLdapForm(page, {
+      await fillLdapForm(page, {
         name: updatedLdapName,
         config: {
           connectionUrl: [connectionUrlValid],

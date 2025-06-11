@@ -16,11 +16,13 @@
  */
 package org.keycloak.broker.provider;
 
+import org.jboss.logging.Logger;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -30,6 +32,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
+
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -41,6 +44,14 @@ import java.util.UUID;
  * @author Pedro Igor
  */
 public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> implements IdentityProvider<C> {
+
+    protected static final Logger logger = Logger.getLogger(AbstractIdentityProvider.class);
+
+    // The clientSession note flag to indicate that email provided by identityProvider was changed on updateProfile page
+    public static final String UPDATE_PROFILE_EMAIL_CHANGED = "UPDATE_PROFILE_EMAIL_CHANGED";
+
+    // clientSession.note flag specifies if we imported new user to keycloak (true) or we just linked to an existing keycloak user (false)
+    public static final String BROKER_REGISTERED_NEW_USER = "BROKER_REGISTERED_NEW_USER";
 
     public static final String ACCOUNT_LINK_URL = "account-link-url";
     protected final KeycloakSession session;
@@ -159,7 +170,44 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
 
     @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, BrokeredIdentityContext context) {
+        updateEmail(user, context);
+    }
 
+    protected void updateEmail(UserModel user, BrokeredIdentityContext context) {
+        AuthenticationSessionModel authSession = context.getAuthenticationSession();
+        // Could be the case during external-internal token exchange
+        if (authSession == null) return;
+
+        boolean isNewUser = Boolean.parseBoolean(authSession.getAuthNote(BROKER_REGISTERED_NEW_USER));
+
+        if (isNewUser || IdentityProviderSyncMode.FORCE.equals(getConfig().getSyncMode())) {
+            if (Boolean.parseBoolean(authSession.getAuthNote(UPDATE_PROFILE_EMAIL_CHANGED))) {
+                // user updated the email and needs verification
+                user.setEmailVerified(false);
+                return;
+            }
+
+            setEmailVerified(user, context);
+            user.setEmail(context.getEmail());
+        }
+    }
+
+    protected void setEmailVerified(UserModel user, BrokeredIdentityContext context) {
+        AuthenticationSessionModel authSession = context.getAuthenticationSession();
+        boolean isNewUser = Boolean.parseBoolean(authSession.getAuthNote(BROKER_REGISTERED_NEW_USER));
+        String federatedEmail = context.getEmail();
+        String localEmail = user.getEmail();
+
+        if (isNewUser || federatedEmail != null && !federatedEmail.equalsIgnoreCase(localEmail)) {
+            IdentityProviderModel config = context.getIdpConfig();
+            boolean trustEmail = config.isTrustEmail();
+
+            if (logger.isTraceEnabled()) {
+                logger.tracef("Email %s verified automatically after updating user '%s' through Identity provider '%s' ", trustEmail ? "" : "not", user.getUsername(), config.getAlias());
+            }
+
+            user.setEmailVerified(trustEmail);
+        }
     }
 
     @Override

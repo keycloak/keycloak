@@ -68,6 +68,18 @@ user profile settings defined for the realm.
 It might happen that attributes in user representations are no longer available depending on the
 user profile configuration.
 
+=== Email verification is now automatically set when using a OpenID Connect broker with `Trust email` is enabled and `Sync Mode` is `FORCE`
+
+Until now, the OpenID Connect broker did not support the standard `email_verified` claim available from the ID Tokens issued by
+OpenID Connect Providers.
+
+In this release, the broker was updated to respect the value from this claim to set the email verification status for the federated (local) user account.
+Whenever users are federated for the first time or re-authenticating, if the `Trust email` setting is enabled and `Sync Mode` is set to `FORCE`,
+the user account will be updated to (un)mark the email as verified.
+
+In the future, we might evaluate changing this specific configuration to avoid automatic updates on the email verification
+status on federated user accounts depending on the use cases and the demand from the community.
+
 == Notable changes
 
 Notable changes where an internal behavior changed to prevent common misconfigurations, fix bugs or simplify running {project_name}.
@@ -88,11 +100,19 @@ Consider one of the following cases and recommended migration steps:
 * With the feature `persistent-user-session` feature enabled, the remote store configuration is ignored and {project_name} will print a warning.
 ====
 
+=== Kubernetes cache stack has been deprecated
+
+The `kubernetes` cache stack has been deprecated and will be removed in a future release. Users should transition to the `jdbc-ping` stack.
+
+Consequently, the Keycloak Operator now uses the `jdbc-ping` cache stack by default.
+
+=== Signing out from other devices now disabled by default
+
+Previously, when a user updated their credentials, like changing their password or adding another factor like an OTP or Passkey, they had a checkbox *Sign out from other devices* which was checked by default. Since this release, {project_name} displays the checkbox *Sign out from other devices* not checked by default. This checkbox should now be intentionally enabled by the user to logout all the other related sessions associated to the same user.
+
 === Signing out from other devices will log out offline sessions
 
-When a user updates their credentials, like changing their password or adding another factor like an OTP or Passkey, they have a checkbox *Sign out from other devices* which is checked by default.
-
-In previous versions, this logged out only regular sessions.
+Related to the previous point, in previous versions, the *Sign out from other devices* checkbox logged out only regular sessions.
 Starting with this release, it logs out also offline sessions as this is what users would expect to happen given the current screen design.
 
 To revert to the old behavior, enable the deprecated feature `logout-all-sessions:v1`.
@@ -120,3 +140,11 @@ a new parameter `subGroupsCount` was introduced to the following endpoints:
 
 With this parameter, clients can decide whether the count should be returned to each individual group returned. To not break existing deployments,
 this parameter defaults to `true` so that the count is returned if the parameter is not set.
+
+=== Upgrade procedure changed for the distribution
+
+If you are upgrading {project_name} by downloading the distribution, the upgrade procedure has been changed. Previously it recommended copying over the contents from the `conf/` folder from the old to the new installation.
+The new procedure recommends to re-apply any changes to `cache-ispn.xml` or a custom cache configuration based on the file included in the new version.
+
+This prevents accidentally downgrading functionality, for example, by using an old `cache-ispn.xml` file from a previous version.
+
