@@ -26,6 +26,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.cache.infinispan.LazyModel;
 import org.keycloak.organization.OrganizationProvider;
 
 public class OrganizationAdapter implements OrganizationModel {
@@ -43,7 +44,7 @@ public class OrganizationAdapter implements OrganizationModel {
         this.cached = cached;
         this.delegate = delegate;
         this.organizationCache = organizationCache;
-        this.modelSupplier = this::getOrganizationModel;
+        this.modelSupplier = new LazyModel<>(this::getOrganizationModel);
     }
 
     void invalidate() {

@@ -78,7 +78,7 @@ public class RealmAdapter implements CachedRealmModel {
         this.cached = cached;
         this.cacheSession = cacheSession;
         this.session = session;
-        this.modelSupplier = this::getRealm;
+        this.modelSupplier = new LazyModel<>(this::getRealm);
     }
 
     @Override
