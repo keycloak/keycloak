@@ -179,7 +179,7 @@ public final class JGroupsConfigurator {
         var stackName = transportStackOf(holder).get();
         var isUdp = stackName.endsWith("udp");
         var tableName = JpaUtils.getTableNameForNativeQuery("JGROUPS_PING", em);
-        var stack = getProtocolConfigurations(tableName, isUdp);
+        var stack = getProtocolConfigurations(tableName, isUdp, tracingEnabled);
         var connectionFactory = (JpaConnectionProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(JpaConnectionProvider.class);
         holder.addJGroupsStack(new JpaFactoryAwareJGroupsChannelConfigurator(stackName, stack, connectionFactory, isUdp), null);
 
@@ -187,7 +187,7 @@ public final class JGroupsConfigurator {
         JGroupsConfigurator.logger.info("JGroups JDBC_PING discovery enabled.");
     }
 
-    private static List<ProtocolConfiguration> getProtocolConfigurations(String tableName, boolean udp) {
+    private static List<ProtocolConfiguration> getProtocolConfigurations(String tableName, boolean udp, boolean tracingEnabled) {
         var list = new ArrayList<ProtocolConfiguration>(udp ? 1 : 2);
         list.add(new ProtocolConfiguration(KEYCLOAK_JDBC_PING2.class.getName(),
               Map.of(
@@ -209,16 +209,13 @@ public final class JGroupsConfigurator {
         if (!udp && InfinispanUtils.isVirtualThreadsEnabled())
             list.add(new ProtocolConfiguration(TCP.class.getSimpleName(), Map.of("bundler_type", "per-destination")));
 
-        return list;
-        List<ProtocolConfiguration> protocolConfigurations = new ArrayList<>();
-        protocolConfigurations.add(new ProtocolConfiguration(KEYCLOAK_JDBC_PING2.class.getName(), attributes));
         if (tracingEnabled) {
-            protocolConfigurations.add(new ProtocolConfiguration(OPEN_TELEMETRY.class.getName(), Map.of(
+            list.add(new ProtocolConfiguration(OPEN_TELEMETRY.class.getName(), Map.of(
                     "stack.combine", "INSERT_ABOVE",
-                    "stack.position", transportProtocol
+                    "stack.position", udp ? "UDP" : "TCP"
             )));
         }
-        return protocolConfigurations;
+        return list;
     }
 
     private static void warnDeprecatedStack(ConfigurationBuilderHolder holder) {
