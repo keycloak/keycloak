@@ -17,6 +17,9 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -29,18 +32,37 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CredentialResponse {
 
-    // concrete type depends on the format
-    private Object credential;
+    @JsonProperty("credentials")
+    private List<Credential> credentials;
+
+    @JsonProperty("transaction_id")
+    private String transactionId;
 
     @JsonProperty("notification_id")
     private String notificationId;
 
-    public Object getCredential() {
-        return credential;
+    public List<Credential> getCredentials() {
+        return credentials;
     }
 
-    public CredentialResponse setCredential(Object credential) {
-        this.credential = credential;
+    public CredentialResponse setCredentials(List<Credential> credentials) {
+        this.credentials = credentials;
+        return this;
+    }
+
+    public void addCredential(Object credential) {
+        if (this.credentials == null) {
+            this.credentials = new ArrayList<>();
+        }
+        this.credentials.add(new Credential().setCredential(credential));
+    }
+
+    public String getTransactionId() {
+        return transactionId;
+    }
+
+    public CredentialResponse setTransactionId(String transactionId) {
+        this.transactionId = transactionId;
         return this;
     }
 
@@ -51,5 +73,23 @@ public class CredentialResponse {
     public CredentialResponse setNotificationId(String notificationId) {
         this.notificationId = notificationId;
         return this;
+    }
+
+    /**
+     * Inner class to represent a single credential object within the credentials array.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class Credential {
+        @JsonProperty("credential")
+        private Object credential;
+
+        public Object getCredential() {
+            return credential;
+        }
+
+        public Credential setCredential(Object credential) {
+            this.credential = credential;
+            return this;
+        }
     }
 }

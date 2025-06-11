@@ -143,7 +143,8 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         CredentialResponse credentialResponseVO = JsonSerialization.mapper.convertValue(credentialResponse.getEntity(), CredentialResponse.class);
         new TestCredentialResponseHandler(vct).handleCredentialResponse(credentialResponseVO);
 
-        return SdJwtVP.of(credentialResponseVO.getCredential().toString());
+        // Get the credential from the credentials array
+        return SdJwtVP.of(credentialResponseVO.getCredentials().get(0).getCredential().toString());
     }
 
     // Tests the complete flow from
@@ -351,7 +352,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         @Override
         protected void handleCredentialResponse(CredentialResponse credentialResponse) throws VerificationException {
             // SDJWT have a special format.
-            SdJwtVP sdJwtVP = SdJwtVP.of(credentialResponse.getCredential().toString());
+            SdJwtVP sdJwtVP = SdJwtVP.of(credentialResponse.getCredentials().get(0).getCredential().toString());
             JsonWebToken jsonWebToken = TokenVerifier.create(sdJwtVP.getIssuerSignedJWT().toJws(), JsonWebToken.class).getToken();
 
             assertNotNull("A valid credential string should have been responded", jsonWebToken);
