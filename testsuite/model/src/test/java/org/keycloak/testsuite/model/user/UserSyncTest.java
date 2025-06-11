@@ -55,6 +55,7 @@ import java.util.stream.IntStream;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -270,17 +271,15 @@ public class UserSyncTest extends KeycloakModelTest {
         });
 
         // import user
-        withRealm(realmId, (session, realm) -> {
+        String oldUserId = withRealm(realmId, (session, realm) -> {
             UserModel user1 = session.users().getUserByUsername(realm, "user1");
             user1.setSingleAttribute("LDAP_ID", "WRONG");
-            return user1;
+            return user1.getId();
         });
 
-        // validate imported user
+        // validate imported user, user will be deleted and re-created
         withRealm(realmId, (session, realm) -> {
-            assertThat(session.users().getUserByUsername(realm, "user1"), is(nullValue()));;
-            UserModel deletedUser = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(realm, "user1");
-            assertThat(deletedUser, is(nullValue()));
+            assertThat(session.users().getUserByUsername(realm, "user1"), not(equalTo(oldUserId)));
             return null;
         });
     }
