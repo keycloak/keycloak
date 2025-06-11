@@ -1,17 +1,18 @@
 package org.keycloak.admin.api.client;
 
+import java.util.stream.Stream;
+
+import org.keycloak.admin.api.FieldValidation;
+import org.keycloak.provider.Provider;
+import org.keycloak.representations.admin.v2.ClientRepresentation;
+
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
-import org.keycloak.provider.Provider;
-import org.keycloak.representations.admin.v2.ClientRepresentation;
-
-import java.util.stream.Stream;
 
 public interface ClientsApi extends Provider {
 
@@ -20,15 +21,10 @@ public interface ClientsApi extends Provider {
     @Consumes(MediaType.APPLICATION_JSON)
     Stream<ClientRepresentation> getClients();
 
-    @PUT
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    ClientRepresentation createOrUpdateClient(ClientRepresentation client);
-
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    ClientRepresentation createClient(ClientRepresentation client);
+    ClientRepresentation createClient(ClientRepresentation client, @PathParam("fieldValidation") FieldValidation fieldValidation);
 
     @Path("{id}")
     ClientApi client(@PathParam("id") String id);

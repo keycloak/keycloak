@@ -3,16 +3,16 @@ package org.keycloak.representations.admin.v2;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-@JsonInclude(JsonInclude.Include.NON_ABSENT)
-public class ClientRepresentation {
+public class ClientRepresentation extends BaseRepresentation {
 
     public static final String OIDC = "openid-connect";
 
-    @JsonProperty(required = true)
     @JsonPropertyDescription("ID uniquely identifying this client")
     private String clientId;
 
@@ -24,7 +24,7 @@ public class ClientRepresentation {
 
     @JsonProperty(defaultValue = OIDC)
     @JsonPropertyDescription("The protocol used to communicate with the client")
-    private String protocol = OIDC;
+    private String protocol;
 
     @JsonPropertyDescription("Whether this client is enabled")
     private Boolean enabled;
@@ -230,6 +230,17 @@ public class ClientRepresentation {
         public void setRoles(Set<String> roles) {
             this.roles = roles;
         }
+    }
+
+    public static void main(String[] args) throws JsonProcessingException {
+        ClientRepresentation rep = new ClientRepresentation();
+        rep.setAuth(new Auth());
+        ObjectMapper mapper = new ObjectMapper();
+        var reader = mapper.readerForUpdating(rep);
+        ClientRepresentation patch = new ClientRepresentation();
+        patch.getAdditionalFields().put("auth", null);
+        Object result = reader.readValue(mapper.writeValueAsString(patch));
+        System.out.println(mapper.writeValueAsString(result));
     }
 }
 
