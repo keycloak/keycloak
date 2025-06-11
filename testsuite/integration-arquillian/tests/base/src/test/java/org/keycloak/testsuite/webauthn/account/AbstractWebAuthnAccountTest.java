@@ -42,6 +42,7 @@ import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions;
 import org.keycloak.testsuite.webauthn.authenticators.UseVirtualAuthenticators;
 import org.keycloak.testsuite.webauthn.authenticators.VirtualAuthenticatorManager;
+import org.keycloak.testsuite.webauthn.pages.WebAuthnErrorPage;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnLoginPage;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnRegisterPage;
 import org.openqa.selenium.Dimension;
@@ -64,6 +65,9 @@ public abstract class AbstractWebAuthnAccountTest extends AbstractAuthTest imple
 
     @Page
     protected WebAuthnRegisterPage webAuthnRegisterPage;
+
+    @Page
+    protected WebAuthnErrorPage webAuthnErrorPage;
 
     @Page
     protected WebAuthnLoginPage webAuthnLoginPage;
