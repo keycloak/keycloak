@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.keycloak.component.ComponentModel;
+import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -94,6 +95,14 @@ public class ClientScopesClientRegistrationPolicyFactory extends AbstractClientR
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
         return getConfigProperties(null);
+    }
+
+    @Override
+    public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel config) throws ComponentValidationException {
+        List<String> allowedScopesConfig = config.getConfig().getList(ClientScopesClientRegistrationPolicyFactory.ALLOWED_CLIENT_SCOPES);
+        if (!getClientScopes(session).containsAll(allowedScopesConfig)) {
+            throw new ComponentValidationException("Client scopes not allowed: " + allowedScopesConfig);
+        }
     }
 
     @Override

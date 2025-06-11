@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import jakarta.ws.rs.BadRequestException;
 import org.junit.After;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -32,6 +33,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.FullNameMapper;
@@ -47,6 +49,7 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ComponentTypeRepresentation;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
@@ -713,6 +716,30 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         ApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
         protocolMapperPolicyRep.getConfig().get(ProtocolMappersClientRegistrationPolicyFactory.ALLOWED_PROTOCOL_MAPPER_TYPES).remove(HardcodedRole.PROVIDER_ID);
         realmResource().components().component(protocolMapperPolicyRep.getId()).update(protocolMapperPolicyRep);
+    }
+
+    @Test
+    public void testRegisterFakeClientScope() {
+        //create
+        ComponentRepresentation rep = new ComponentRepresentation();
+        rep.setName("Clients scopes not allowed");
+        rep.setParentId(adminClient.realm(REALM_NAME).toRepresentation().getId());
+        rep.setProviderId(ClientScopesClientRegistrationPolicyFactory.PROVIDER_ID);
+        rep.setProviderType(ClientRegistrationPolicy.class.getName());
+        rep.setSubType(getPolicyAnon());
+        rep.setConfig(new MultivaluedHashMap<>());
+        rep.getConfig().putSingle(ClientScopesClientRegistrationPolicyFactory.ALLOWED_CLIENT_SCOPES, "foo1");
+        Response response = realmResource().components().add(rep);
+        ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+        Assert.assertEquals("Client scopes not allowed: [foo1]", error.getErrorMessage());
+
+        //update
+        ComponentRepresentation clientScopesPolicyRep = findPolicyByProviderAndAuth(ClientScopesClientRegistrationPolicyFactory.PROVIDER_ID, getPolicyAnon());
+        clientScopesPolicyRep.getConfig().putSingle(ClientScopesClientRegistrationPolicyFactory.ALLOWED_CLIENT_SCOPES, "foo2");
+        BadRequestException e = Assert.assertThrows(BadRequestException.class,
+                () -> realmResource().components().component(clientScopesPolicyRep.getId()).update(clientScopesPolicyRep));
+        error = e.getResponse().readEntity(ErrorRepresentation.class);
+        Assert.assertEquals("Client scopes not allowed: [foo2]", error.getErrorMessage());
     }
 
     // HELPER METHODS
