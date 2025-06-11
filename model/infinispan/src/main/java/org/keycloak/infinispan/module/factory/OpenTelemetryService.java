@@ -12,7 +12,6 @@ import org.infinispan.telemetry.InfinispanSpanAttributes;
 import org.infinispan.telemetry.InfinispanSpanContext;
 import org.infinispan.telemetry.InfinispanTelemetry;
 import org.infinispan.telemetry.impl.DisabledInfinispanSpan;
-import org.keycloak.jgroups.protocol.OPEN_TELEMETRY;
 
 public class OpenTelemetryService implements InfinispanTelemetry, TextMapGetter<InfinispanSpanContext> {
 
