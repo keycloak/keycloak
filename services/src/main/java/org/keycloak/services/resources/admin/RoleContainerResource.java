@@ -414,10 +414,10 @@ public class RoleContainerResource extends RoleResource {
      * Get client-level roles for the client that are in the role's composite
      *
      * @param roleName role's name (not id!)
-     * @param clientUuid
+     * @param clientUuid client UUID for the composite roles to be returned
      * @return
      */
-    @Path("{role-name}/composites/clients/{client-uuid}")
+    @Path("{role-name}/composites/clients/{child-client-uuid}")
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
@@ -429,7 +429,7 @@ public class RoleContainerResource extends RoleResource {
         @APIResponse(responseCode = "404", description = "Not Found")
     })
     public Stream<RoleRepresentation> getClientRoleComposites(final @Parameter(description = "role's name (not id!)") @PathParam("role-name") String roleName,
-                                                                final @PathParam("client-uuid") String clientUuid) {
+                                                                final @PathParam("child-client-uuid") String clientUuid) {
         auth.roles().requireView(roleContainer);
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {

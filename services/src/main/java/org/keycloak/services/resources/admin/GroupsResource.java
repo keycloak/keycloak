@@ -90,12 +90,12 @@ public class GroupsResource {
     @Operation( summary = "Get group hierarchy.  Only `name` and `id` are returned.  `subGroups` are only returned when using the `search` or `q` parameter. If none of these parameters is provided, the top-level groups are returned without `subGroups` being filled.")
     public Stream<GroupRepresentation> getGroups(@QueryParam("search") String search,
                                                  @QueryParam("q") String searchQuery,
-                                                 @QueryParam("exact") @DefaultValue("false") Boolean exact,
+                                                 @QueryParam("exact") @DefaultValue("false") boolean exact,
                                                  @QueryParam("first") Integer firstResult,
                                                  @QueryParam("max") Integer maxResults,
                                                  @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation,
                                                  @QueryParam("populateHierarchy") @DefaultValue("true") boolean populateHierarchy,
-                                                 @Parameter(description = "Boolean which defines whether to return the count of subgroups for each group (default: true") @QueryParam("subGroupsCount") @DefaultValue("true") Boolean subGroupsCount) {
+                                                 @Parameter(description = "Boolean which defines whether to return the count of subgroups for each group (default: true") @QueryParam("subGroupsCount") @DefaultValue("true") boolean subGroupsCount) {
         GroupPermissionEvaluator groupsEvaluator = auth.groups();
         groupsEvaluator.requireList();
 
