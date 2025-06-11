@@ -87,7 +87,9 @@ public class OrganizationMemberResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Adds the user with the specified id as a member of the organization", description = "Adds, or associates, " +
             "an existing user with the organization. If no user is found, or if it is already associated with the organization, " +
-            "an error response is returned")
+            "an error response is returned",
+            operationId = "addMember"
+    )
     @RequestBody(description = "Payload should contain only id of the user to be added to the organization (UUID with or without quotes). " +
             "Surrounding whitespace characters will be trimmed.", required = true)
     @APIResponses(value = {
@@ -126,7 +128,9 @@ public class OrganizationMemberResource {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Invites an existing user or sends a registration link to a new user, based on the provided e-mail address.",
-            description = "If the user with the given e-mail address exists, it sends an invitation link, otherwise it sends a registration link.")
+            description = "If the user with the given e-mail address exists, it sends an invitation link, otherwise it sends a registration link.",
+            operationId = "inviteUser"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "400", description = "Bad Request"),
@@ -143,7 +147,10 @@ public class OrganizationMemberResource {
     @Path("invite-existing-user")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
-    @Operation(summary = "Invites an existing user to the organization, using the specified user id")
+    @Operation(
+            summary = "Invites an existing user to the organization, using the specified user id",
+            operationId = "inviteExistingUser"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "400", description = "Bad Request"),
@@ -157,7 +164,10 @@ public class OrganizationMemberResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
-    @Operation( summary = "Returns a paginated list of organization members filtered according to the specified parameters")
+    @Operation(
+            summary = "Returns a paginated list of organization members filtered according to the specified parameters",
+            operationId = "searchMember"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = MemberRepresentation.class, type = SchemaType.ARRAY)))
     })
@@ -188,7 +198,9 @@ public class OrganizationMemberResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation( summary = "Returns the member of the organization with the specified id", description = "Searches for a" +
             "user with the given id. If one is found, and is currently a member of the organization, returns it. Otherwise," +
-            "an error response with status NOT_FOUND is returned")
+            "an error response with status NOT_FOUND is returned",
+            operationId = "getMember"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = MemberRepresentation.class))),
         @APIResponse(responseCode = "400", description = "Bad Request")
@@ -206,7 +218,9 @@ public class OrganizationMemberResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Removes the user with the specified id from the organization", description = "Breaks the association " +
             "between the user and organization. The user itself is deleted in case the membership is managed, otherwise the user is not deleted. " +
-            "If no user is found, or if they are not a member of the organization, an error response is returned")
+            "If no user is found, or if they are not a member of the organization, an error response is returned",
+            operationId = "deleteMember"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "400", description = "Bad Request")
@@ -236,7 +250,10 @@ public class OrganizationMemberResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
-    @Operation(summary = "Returns the organizations associated with the user that has the specified id")
+    @Operation(
+            summary = "Returns the organizations associated with the user that has the specified id",
+            operationId = "getOrganizations"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = OrganizationRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "400", description = "Bad Request")
@@ -256,7 +273,7 @@ public class OrganizationMemberResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
-    @Operation( summary = "Returns number of members in the organization.")
+    @Operation(summary = "Returns number of members in the organization.", operationId = "countMembers")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = Long.class)))
     })

@@ -97,7 +97,10 @@ public class IdentityProvidersResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
-    @Operation( summary = "Get the identity provider factory for that provider id")
+    @Operation(
+            summary = "Get the identity provider factory for that provider id",
+            operationId = "getIdentityProviderFactory"
+    )
     public IdentityProviderFactory getIdentityProviderFactory(@Parameter(description = "The provider id to get the factory") @PathParam("provider_id") String providerId) {
         this.auth.realm().requireViewIdentityProviders();
         IdentityProviderFactory providerFactory = getProviderFactoryById(providerId);
@@ -115,7 +118,10 @@ public class IdentityProvidersResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
-    @Operation( description = "Import identity provider from uploaded JSON file")
+    @Operation(
+            description = "Import identity provider from uploaded JSON file",
+            operationId = "importFrom"
+    )
     public Map<String, String> importFrom() throws IOException {
         this.auth.realm().requireManageIdentityProviders();
         MultivaluedMap<String, FormPartValue> formDataMap = session.getContext().getHttpRequest().getMultiPartFormParameters();
@@ -145,7 +151,10 @@ public class IdentityProvidersResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
-    @Operation( summary = "Import identity provider from JSON body")
+    @Operation(
+            summary = "Import identity provider from JSON body",
+            operationId = "importFrom"
+    )
     public Map<String, String> importFrom(@Parameter(description = "JSON body") Map<String, Object> data) throws IOException {
         this.auth.realm().requireManageIdentityProviders();
         if (data == null || !(data.containsKey("providerId") && data.containsKey("fromUrl"))) {
@@ -178,7 +187,7 @@ public class IdentityProvidersResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
-    @Operation(summary = "List identity providers")
+    @Operation(summary = "List identity providers", operationId = "getIdentityProviders")
     public Stream<IdentityProviderRepresentation> getIdentityProviders(
             @Parameter(description = "Filter specific providers by name. Search can be prefix (name*), contains (*name*) or exact (\"name\"). Default prefixed.") @QueryParam("search") String search,
             @Parameter(description = "Boolean which defines whether brief representations are returned (default: false)") @QueryParam("briefRepresentation") Boolean briefRepresentation,
@@ -217,7 +226,7 @@ public class IdentityProvidersResource {
     @Path("instances")
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
-    @Operation( summary = "Create a new identity provider")
+    @Operation(summary = "Create a new identity provider", operationId = "createIdentityProvider")
     public Response create(@Parameter(description = "JSON body") IdentityProviderRepresentation representation) {
         this.auth.realm().requireManageIdentityProviders();
 
