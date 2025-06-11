@@ -1,16 +1,16 @@
 import { base64url } from "rfc4648";
-import { returnSuccess, returnFailure } from "./webauthnAuthenticate.js";
+import { returnSuccess, signal } from "./webauthnAuthenticate.js";
 
-export function initAuthenticate(input) {
+export function initAuthenticate(input, availableCallback = (available) => {}) {
     // Check if WebAuthn is supported by this browser
     if (!window.PublicKeyCredential) {
         // Fail silently as WebAuthn Conditional UI is not required
         return;
     }
     if (input.isUserIdentified || typeof PublicKeyCredential.isConditionalMediationAvailable === "undefined") {
-        document.getElementById("kc-form-passkey-button").style.display = 'block';
+        availableCallback(false);
     } else {
-        tryAutoFillUI(input);
+        tryAutoFillUI(input, availableCallback);
     }
 }
 
@@ -38,14 +38,15 @@ function doAuthenticate(input) {
 
     return navigator.credentials.get({
         publicKey: publicKey,
+        signal: signal(),
         ...input.additionalOptions
     });
 }
 
-async function tryAutoFillUI(input) {
+async function tryAutoFillUI(input, availableCallback = (available) => {}) {
     const isConditionalMediationAvailable = await PublicKeyCredential.isConditionalMediationAvailable();
     if (isConditionalMediationAvailable) {
-        document.getElementById("kc-form-login").style.display = "block";
+        availableCallback(true);
         input.additionalOptions = { mediation: 'conditional'};
         try {
             const result = await doAuthenticate(input);
@@ -54,7 +55,7 @@ async function tryAutoFillUI(input) {
             // Fail silently as WebAuthn Conditional UI is not required
         }
     } else {
-        document.getElementById("kc-form-passkey-button").style.display = 'block';
+        availableCallback(false);
     }
 }
 

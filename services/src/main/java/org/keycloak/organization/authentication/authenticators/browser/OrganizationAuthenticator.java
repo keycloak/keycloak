@@ -259,10 +259,10 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             return false;
         }
 
-        // first look for an IDP that matches exactly the specified domain
+        // first look for an IDP that matches exactly the specified domain (case-insensitive)
         IdentityProviderModel idp = organization.getIdentityProviders()
                 .filter(broker -> IdentityProviderRedirectMode.EMAIL_MATCH.isSet(broker) &&
-                    domain.equals(broker.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE))).findFirst().orElse(null);
+                    domain.equalsIgnoreCase(broker.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE))).findFirst().orElse(null);
 
         if (idp != null) {
             // redirect the user using the broker that matches the specified domain

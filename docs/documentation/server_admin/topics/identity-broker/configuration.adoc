@@ -54,6 +54,10 @@ Although each type of identity provider has its configuration options, all share
 
 |Trust Email
 |When *ON*, {project_name} trusts email addresses from the identity provider. If the realm requires email validation, users that log in from this identity provider do not need to perform the email verification process.
+If the target identity provider supports email verification and advertises this information when returning the user profile information, the email of the federated user will be (un)marked as verified.
+For instance, an OpenID Connect Provider returning a `email_verified` claim in their ID Tokens.
+Note that this setting will set the email as verified when the user is federated for the first time and on subsequent logins
+through the broker if the sync mode is set to `FORCE`.
 
 |GUI Order
 |The sort order of the available identity providers on the login page.

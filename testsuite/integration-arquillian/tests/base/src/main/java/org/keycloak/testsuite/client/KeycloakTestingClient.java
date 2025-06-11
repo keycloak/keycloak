@@ -117,7 +117,7 @@ public class KeycloakTestingClient implements AutoCloseable {
         String featureString;
         if (Profile.getFeatureVersions(feature.getUnversionedKey()).size() > 1) {
             featureString = feature.getVersionedKey();
-            Profile.Feature featureVersionHighestPriority = Profile.getFeatureVersions(feature.getKey()).iterator().next();
+            Profile.Feature featureVersionHighestPriority = Profile.getFeatureVersions(feature.getUnversionedKey()).iterator().next();
             if (featureVersionHighestPriority.getType().equals(Profile.Feature.Type.DEFAULT)) {
                 enableFeature(featureVersionHighestPriority);
             }

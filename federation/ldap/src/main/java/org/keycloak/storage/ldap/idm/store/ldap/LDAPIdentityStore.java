@@ -524,6 +524,13 @@ public class LDAPIdentityStore implements IdentityStore {
                 .map(String::toLowerCase)
                 .collect(Collectors.toSet());
 
+        if (!isCreate) {
+            // for updates, assume the PWD_CHANGED_TIME attribute is an operational attribute and read-only
+            // otherwise, updates will fail when trying to modify the attribute
+            // vendors like AD, support the same type of attribute differently and using a mapper
+            ldapObject.addReadOnlyAttributeName(LDAPConstants.PWD_CHANGED_TIME);
+        }
+
         for (Map.Entry<String, Set<String>> attrEntry : ldapObject.getAttributes().entrySet()) {
             String attrName = attrEntry.getKey();
             Set<String> attrValue = attrEntry.getValue();
@@ -600,6 +607,10 @@ public class LDAPIdentityStore implements IdentityStore {
         }
 
         return attr;
+    }
+
+    public String getPasswordModificationTimeAttributeName() {
+        return getConfig().isActiveDirectory() ? LDAPConstants.PWD_LAST_SET : LDAPConstants.PWD_CHANGED_TIME;
     }
 
 }

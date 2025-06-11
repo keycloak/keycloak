@@ -90,6 +90,21 @@ class VerifyMessagePropertiesTest {
     }
 
     @Test
+    void verifyNoUnbalancedCurlyBraces() throws MojoExecutionException {
+        List<String> verify = getFile("unbalancedCurlyBracesOne_en.properties").withValidateMessageFormatQuotes(true).verify();
+        MatcherAssert.assertThat(verify, Matchers.hasItem(Matchers.containsString("Unbalanced curly braces")));
+
+        verify = getFile("unbalancedCurlyBracesOneEnd_en.properties").withValidateMessageFormatQuotes(true).verify();
+        MatcherAssert.assertThat(verify, Matchers.hasItem(Matchers.containsString("Unbalanced curly braces")));
+
+        verify = getFile("unbalancedCurlyBracesTwo_en.properties").withValidateMessageFormatQuotes(true).verify();
+        MatcherAssert.assertThat(verify, Matchers.hasItem(Matchers.containsString("Unbalanced curly braces")));
+
+        verify = getFile("unbalancedCurlyBracesTwoStart_en.properties").withValidateMessageFormatQuotes(true).verify();
+        MatcherAssert.assertThat(verify, Matchers.hasItem(Matchers.containsString("Unbalanced curly braces")));
+    }
+
+    @Test
     void verifyNoDoubleQuoteForUIMessages() throws MojoExecutionException {
         List<String> verify = getFile("doubleSingleQuotes_en.properties").withValidateMessageFormatQuotes(false).verify();
         MatcherAssert.assertThat(verify, Matchers.hasItem(Matchers.containsString("Double single quotes are not allowed")));

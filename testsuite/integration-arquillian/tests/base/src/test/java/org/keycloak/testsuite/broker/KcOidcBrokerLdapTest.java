@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.broker;
 
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import jakarta.ws.rs.core.Response;
 import org.junit.Assert;
@@ -55,7 +54,6 @@ public final class KcOidcBrokerLdapTest extends AbstractInitializedBaseBrokerTes
 
     @Test
     public void testUpdateProfileOnFirstLogin() {
-        driver.manage().timeouts().pageLoadTimeout(1, TimeUnit.DAYS);
         updateExecutions(AbstractBrokerTest::enableUpdateProfileOnFirstLogin);
         oauth.clientId("broker-app");
         loginPage.open(bc.consumerRealmName());
