@@ -241,14 +241,18 @@ public class OrganizationMemberResource {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = OrganizationRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "400", description = "Bad Request")
     })
-    public Stream<OrganizationRepresentation> getOrganizations(@PathParam("member-id") String memberId) {
+    public Stream<OrganizationRepresentation> getOrganizations(
+            @PathParam("member-id") String memberId,
+            @Parameter(description = "if false, return the full representation. Otherwise, only the basic fields are returned.")
+            @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         if (StringUtil.isBlank(memberId)) {
             throw ErrorResponse.error("id cannot be null", Status.BAD_REQUEST);
         }
 
         UserModel member = getUser(memberId);
 
-        return provider.getByMember(member).map(ModelToRepresentation::toRepresentation);
+        return provider.getByMember(member)
+                .map(model -> ModelToRepresentation.toRepresentation(model, briefRepresentation));
     }
 
     @Path("count")
