@@ -76,9 +76,6 @@ public abstract class AbstractWebAuthnAccountTest extends AbstractAuthTest imple
     @Page
     private DeleteCredentialPage deleteCredentialPage;
 
-    @Page
-    protected WebAuthnErrorPage webAuthnErrorPage;
-
     private VirtualAuthenticatorManager webAuthnManager;
     protected SigningInPage.CredentialType webAuthnCredentialType;
     protected SigningInPage.CredentialType webAuthnPwdlessCredentialType;
