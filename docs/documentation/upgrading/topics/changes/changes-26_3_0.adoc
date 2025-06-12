@@ -127,7 +127,7 @@ It has been a while since discussions started about any activity around the Inst
 and any objection from the community about deprecating it for removal. For more details, see
 https://github.com/keycloak/keycloak/issues/37967[Deprecate for removal the Instagram social broker].
 
-=== local admin deprecated for removal
+=== Local admin deprecated for removal
 
 `UrlType.LOCAL_ADMIN` and the corresponding welcome theme variable `localAdminUrl` have been deprecated for eventual removal. The default welcome resource will now simply mention localhost rather than providing a URL when an admin user has yet to be created.
 
