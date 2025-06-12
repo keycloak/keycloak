@@ -198,7 +198,8 @@ Create a JSON file (e.g., `client-scopes.json`) with the following content:
     "vc.sd_jwt.number_of_decoys": "2",
     "vc.credential_build_config.sd_jwt.visible_claims": "iat,jti,nbf,exp,given_name",
     "vc.credential_build_config.hash_algorithm": "SHA-256",
-    "vc.credential_build_config.token_jws_type": "JWS"
+    "vc.credential_build_config.token_jws_type": "JWS",
+    "vc.include_in_metadata": "true"
   },
   "protocolMappers": [
     {
@@ -344,6 +345,11 @@ _Default_: `JWS`
 | optional
 | Credential expiration time in seconds. +
 _Default_: `31536000` (one year)
+
+| `vc.include_in_metadata`
+| optional
+| If this claim should be listed in the credentials metadata. +
+_Default_: `true` but depends on the mapper-type. Claims like `jti`, `nbf`, `exp`, etc. are set to `false` by default.
 |===
 
 ==== Attribute Breakdown - ProtocolMappers

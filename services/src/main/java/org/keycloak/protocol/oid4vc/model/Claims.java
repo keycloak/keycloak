@@ -23,6 +23,7 @@ import org.keycloak.util.JsonSerialization;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Optional;
 
 /**
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
@@ -32,10 +33,8 @@ public class Claims extends ArrayList<Claim> {
     public static Claims parse(KeycloakSession keycloakSession, CredentialScopeModel credentialScope) {
         Claims claims = new Claims();
         credentialScope.getOid4vcProtocolMappersStream().forEach(protocolMapper -> {
-            Claim claim = Claim.parse(keycloakSession, credentialScope.getFormat(), protocolMapper);
-            if (claim != null) {
-                claims.add(claim);
-            }
+            Optional<Claim> claim = Claim.parse(keycloakSession, credentialScope.getFormat(), protocolMapper);
+            claim.ifPresent(claims::add);
         });
         return claims;
     }
