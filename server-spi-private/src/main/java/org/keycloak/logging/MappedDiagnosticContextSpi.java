@@ -9,7 +9,7 @@ import org.keycloak.provider.Spi;
  *
  * @author <a href="mailto:b.eicki@gmx.net">Björn Eickvonder</a>
  */
-public class MdcDefinitionSpi implements Spi {
+public class MappedDiagnosticContextSpi implements Spi {
 
     @Override
     public boolean isInternal() {
@@ -18,16 +18,16 @@ public class MdcDefinitionSpi implements Spi {
 
     @Override
     public String getName() {
-        return "mdcDefinition";
+        return "mappedDiagnosticContext";
     }
 
     @Override
     public Class<? extends Provider> getProviderClass() {
-        return MdcDefinitionProvider.class;
+        return MappedDiagnosticContextProvider.class;
     }
 
     @Override
     public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return MdcDefinitionProviderFactory.class;
+        return MappedDiagnosticContextProviderFactory.class;
     }
 }

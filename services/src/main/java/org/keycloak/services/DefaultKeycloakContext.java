@@ -24,6 +24,8 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.locale.LocaleSelectorProvider;
+import org.keycloak.logging.MappedDiagnosticContextProvider;
+import org.keycloak.logging.MappedDiagnosticContextUtil;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -119,6 +121,7 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
         this.realm = realm;
         this.uriInfo = null;
         trace(this.realm);
+        mdc().update(this, this.realm);
     }
 
     @Override
@@ -135,6 +138,7 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     public void setClient(ClientModel client) {
         this.client = client;
         trace(this.client);
+        mdc().update(this, this.client);
     }
 
     @Override
@@ -145,6 +149,7 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     @Override
     public void setOrganization(OrganizationModel organization) {
         this.organization = organization;
+        mdc().update(this, this.organization);
     }
 
     @Override
@@ -175,6 +180,7 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     public void setAuthenticationSession(AuthenticationSessionModel authenticationSession) {
         this.authenticationSession = authenticationSession;
         trace(this.authenticationSession);
+        mdc().update(this, this.authenticationSession);
     }
 
     @Override
@@ -231,6 +237,7 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     public void setUserSession(UserSessionModel userSession) {
         this.userSession = userSession;
         trace(this.userSession);
+        mdc().update(this, this.userSession);
     }
 
     // Tracing
@@ -308,5 +315,9 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
         }
 
         return user;
+    }
+
+    private MappedDiagnosticContextProvider mdc() {
+        return MappedDiagnosticContextUtil.getMappedDiagnosticContextProvider(session);
     }
 }
