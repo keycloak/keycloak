@@ -159,6 +159,47 @@ public class MigrationModelTest extends KeycloakModelTest {
         });
     }
 
+    @Test
+    public void duplicatedUpdateTime() {
+        inComittedTransaction(1, (session, i) -> {
+            String currentVersion = new ModelVersion(Version.VERSION).toString();
+            EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+
+            List<MigrationModelEntity> entities = getMigrationEntities(em);
+            assertThat(entities.size(), is(1));
+            assertMigrationModelEntity(entities.get(0), currentVersion);
+
+            MigrationModel m = session.getProvider(DeploymentStateProvider.class).getMigrationModel();
+            assertThat(m.getStoredVersion(), is(currentVersion));
+            assertThat(entities.get(0).getId(), is(m.getResourcesTag()));
+
+            try {
+                setTimeOffset(-60000);
+                session.getProvider(DeploymentStateProvider.class).getMigrationModel().setStoredVersion("26.2.4");
+                em.flush();
+
+                session.getProvider(DeploymentStateProvider.class).getMigrationModel().setStoredVersion("26.2.5");
+                // added at the same time - exception thrown by the unique constraint
+                assertThrows(ModelDuplicateException.class, em::flush);
+
+                setTimeOffset(0);
+
+                entities = getMigrationEntities(em);
+                assertThat(entities.size(), is(2));
+
+                logger.info("MigrationModelEntity entries: ");
+                entities.forEach(entity -> log.infof("--id: %s; %s; %s", entity.getId(), entity.getVersion(), entity.getUpdateTime()));
+
+                assertMigrationModelEntity(entities.get(0), currentVersion);
+                assertMigrationModelEntity(entities.get(1), "26.2.4");
+            } finally {
+                em.remove(entities.get(1));
+            }
+
+            return null;
+        });
+    }
+
     private void assertMigrationModelEntity(MigrationModelEntity model, String expectedVersion) {
         assertThat(model, notNullValue());
         assertTrue(model.getId().matches("[\\da-z]{5}"));
