@@ -17,12 +17,17 @@
 package org.keycloak.services.resources;
 
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.OPTIONS;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.CacheControl;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.UriBuilder;
+import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.MimeTypeUtil;
 import org.keycloak.encoding.ResourceEncodingHelper;
@@ -46,6 +51,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
@@ -76,15 +82,48 @@ public class ThemeResource {
      */
     @GET
     @Path("/{version}/{themeType}/{themeName}/{path:.*}")
-    public Response getResource(@PathParam("version") String version, @PathParam("themeType") String themeType, @PathParam("themeName") String themeName, @PathParam("path") String path) {
+    public Response getResource(@PathParam("version") String version, @PathParam("themeType") String themeType, @PathParam("themeName") String themeName, @PathParam("path") String path, @HeaderParam(HttpHeaders.IF_NONE_MATCH) String etag) {
         final Optional<Theme.Type> type = getThemeType(themeType);
-        if (!version.equals(Version.RESOURCES_VERSION) || type.isEmpty()) {
+
+        if (!version.equals(Version.RESOURCES_VERSION) && !Profile.isFeatureEnabled(Profile.Feature.ROLLING_UPDATES_V2)) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+
+        if (type.isEmpty()) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
 
         try {
             String contentType = MimeTypeUtil.getContentType(path);
             Theme theme = session.theme().getTheme(themeName, type.get());
+
+            boolean hasContentHash = theme.hasContentHash(path);
+
+            if (Profile.isFeatureEnabled(Profile.Feature.ROLLING_UPDATES_V2)) {
+                if (!version.equals(Version.RESOURCES_VERSION) && !hasContentHash) {
+                    // If it is not the right version, and it does not have a content hash, redirect.
+                    // If it is not the right version, but it has a content hash, continue to see if it exists.
+
+                    // The redirect will lead the browser to a resource that it then (when retrieved successfully) can cache again.
+                    // This assumes that it is better to try to some content even if it is outdated or too new, instead of returning a 404.
+                    // This should usually work for images, CSS or (simple) JavaScript referenced in the login theme that needs to be
+                    // loaded while the rolling restart is progressing.
+                    return Response.temporaryRedirect(
+                            UriBuilder.fromResource(ThemeResource.class)
+                                    .path("/{version}/{themeType}/{themeName}/{path}")
+                                    // The 'path' can contain slashes, so encoding of slashes is set to false
+                                    .build(new Object[]{Version.RESOURCES_VERSION, themeType, themeName, path}, false)
+                    ).build();
+                }
+
+                if (hasContentHash && Objects.equals(etag, Version.RESOURCES_VERSION)) {
+                    // We delivered this resource earlier, and its etag matches the resource version, so it has not changed
+                    return Response.notModified()
+                            .header(HttpHeaders.ETAG, Version.RESOURCES_VERSION)
+                            .cacheControl(CacheControlUtil.getDefaultCacheControl()).build();
+                }
+            }
+
             ResourceEncodingProvider encodingProvider = session.theme().isCacheEnabled() ? ResourceEncodingHelper.getResourceEncodingProvider(session, contentType) : null;
 
             InputStream resource;
@@ -96,6 +135,13 @@ public class ThemeResource {
 
             if (resource != null) {
                 Response.ResponseBuilder rb = Response.ok(resource).type(contentType).cacheControl(CacheControlUtil.getDefaultCacheControl());
+
+                if (Profile.isFeatureEnabled(Profile.Feature.ROLLING_UPDATES_V2)){
+                    if (hasContentHash) {
+                        // All items with a content hash receive an etag, so we can then provide a not-modified response later
+                        rb.header(HttpHeaders.ETAG, Version.RESOURCES_VERSION);
+                    }
+                }
                 if (encodingProvider != null) {
                     rb.encoding(encodingProvider.getEncoding());
                 }

@@ -123,11 +123,14 @@ It can be useful for instance if you redeployed custom providers or custom theme
 
 Theme properties are set in the file `<THEME TYPE>/theme.properties` in the theme directory.
 
-* parent - Parent theme to extend
-* import - Import resources from another theme
-* common - Override the common resource path. The default value is `common/keycloak` when not specified. This value would be used as value of suffix of `${url.resourcesCommonPath}`, which is used typically in freemarker templates (prefix of `${url.resoucesCommonPath}` value is theme root uri).
-* styles - Space-separated list of styles to include
-* locales - Comma-separated list of supported locales
+`parent`:: Parent theme to extend
+`import`:: Import resources from another theme
+`common`:: Override the common resource path. The default value is `common/keycloak` when not specified. This value would be used as value of suffix of `${url.resourcesCommonPath}`, which is used typically in freemarker templates (prefix of `${url.resoucesCommonPath}` value is theme root uri).
+`styles`:: Space-separated list of styles to include
+`locales`:: Comma-separated list of supported locales
+`contentHashPattern`:: Regex pattern of a file path in the theme where files have a content hash as part of their file name.
+A content hash is usually an abbreviated hash of the file's contents. The hash will change when the contents of the file have changed, and is usually created using the bundling process of the JavaScript application bundling.
+When the preview feature `rolling-updates:v2` is enabled, this allows for a more seamless rolling upgrade.
 
 There are a list of properties that can be used to change the css class used for certain element types. For a list of these properties look at the theme.properties
 file in the corresponding type of the keycloak theme (`themes/keycloak/<THEME TYPE>/theme.properties`).

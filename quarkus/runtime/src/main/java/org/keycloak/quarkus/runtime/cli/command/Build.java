@@ -75,11 +75,12 @@ public final class Build extends AbstractCommand implements Runnable {
         }
         checkProfileAndDb();
 
-        System.setProperty("quarkus.launch.rebuild", "true");
+        // validate before setting that we're rebuilding so that runtime options are still seen
         PersistedConfigSource.getInstance().runWithDisabled(() -> {
             validateConfig();
             return null;
         });
+        System.setProperty("quarkus.launch.rebuild", "true");
 
         println(spec.commandLine(), "Updating the configuration and installing your custom providers, if any. Please wait.");
 

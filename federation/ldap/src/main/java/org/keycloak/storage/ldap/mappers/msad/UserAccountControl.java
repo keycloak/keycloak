@@ -49,9 +49,13 @@ public class UserAccountControl {
 
     private static final UserAccountControl EMPTY = new UserAccountControl(0);
 
+    public static UserAccountControl empty() {
+        return EMPTY;
+    }
+
     public static UserAccountControl of(String userAccountControl) {
         if (userAccountControl == null) {
-            return EMPTY;
+            return empty();
         }
         return new UserAccountControl(Long.parseLong(userAccountControl));
     }

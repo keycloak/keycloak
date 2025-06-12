@@ -38,17 +38,21 @@ import java.util.List;
  */
 public interface RequiredActionFactory extends ProviderFactory<RequiredActionProvider> {
 
-    List<ProviderConfigProperty> MAX_AUTH_AGE_CONFIG_PROPERTIES = ProviderConfigurationBuilder.create()
-            .property()
-            .name(Constants.MAX_AUTH_AGE_KEY)
-            .label("Maximum Age of Authentication")
-            .helpText("Configures the duration in seconds this action can be used after the last authentication before the user is required to re-authenticate. " +
-                    "This parameter is used just in the context of AIA when the kc_action parameter is available in the request, which is for instance when user " +
-                    "himself updates his password in the account console.")
-            .type(ProviderConfigProperty.STRING_TYPE)
-            .defaultValue(MaxAuthAgePasswordPolicyProviderFactory.DEFAULT_MAX_AUTH_AGE)
-            .add()
-            .build();
+    List<ProviderConfigProperty> MAX_AUTH_AGE_CONFIG_PROPERTIES = getMaxAuthAgePropertyConfig();
+
+    static List<ProviderConfigProperty> getMaxAuthAgePropertyConfig() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name(Constants.MAX_AUTH_AGE_KEY)
+                .label("Maximum Age of Authentication")
+                .helpText("Configures the duration in seconds this action can be used after the last authentication before the user is required to re-authenticate. " +
+                        "This parameter is used just in the context of AIA when the kc_action parameter is available in the request, which is for instance when user " +
+                        "himself updates his password in the account console.")
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .defaultValue(MaxAuthAgePasswordPolicyProviderFactory.DEFAULT_MAX_AUTH_AGE)
+                .add()
+                .build();
+    }
 
     /**
      * Display text used in admin console to reference this required action

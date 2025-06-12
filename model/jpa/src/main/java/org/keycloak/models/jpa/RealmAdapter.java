@@ -1012,6 +1012,9 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
             extraOrigins = Arrays.asList(extraOriginsString.split(","));
         policy.setExtraOrigins(extraOrigins);
 
+        String passkeysEnabled = getAttribute(RealmAttributes.WEBAUTHN_POLICY_PASSKEYS_ENABLED + attributePrefix);
+        if (passkeysEnabled != null) policy.setPasskeysEnabled(Boolean.parseBoolean(passkeysEnabled));
+
         return policy;
     }
 
@@ -1062,6 +1065,13 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
             setAttribute(RealmAttributes.WEBAUTHN_POLICY_EXTRA_ORIGINS + attributePrefix, extraOriginsString);
         } else {
             removeAttribute(RealmAttributes.WEBAUTHN_POLICY_EXTRA_ORIGINS + attributePrefix);
+        }
+
+        Boolean passkeysEnabled = policy.isPasskeysEnabled();
+        if (passkeysEnabled != null) {
+            setAttribute(RealmAttributes.WEBAUTHN_POLICY_PASSKEYS_ENABLED + attributePrefix, passkeysEnabled.toString());
+        } else {
+            removeAttribute(RealmAttributes.WEBAUTHN_POLICY_PASSKEYS_ENABLED + attributePrefix);
         }
     }
 
