@@ -34,6 +34,7 @@ import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentati
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.page.AbstractPatternFlyAlert;
 import org.keycloak.testsuite.webauthn.pages.SigningInPage;
+import org.keycloak.testsuite.webauthn.pages.WebAuthnErrorPage;
 import org.keycloak.testsuite.webauthn.utils.SigningInPageUtils;
 import org.keycloak.testsuite.pages.DeleteCredentialPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
@@ -42,6 +43,7 @@ import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions;
 import org.keycloak.testsuite.webauthn.authenticators.UseVirtualAuthenticators;
 import org.keycloak.testsuite.webauthn.authenticators.VirtualAuthenticatorManager;
+import org.keycloak.testsuite.webauthn.pages.WebAuthnErrorPage;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnLoginPage;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnRegisterPage;
 import org.openqa.selenium.Dimension;
@@ -66,10 +68,16 @@ public abstract class AbstractWebAuthnAccountTest extends AbstractAuthTest imple
     protected WebAuthnRegisterPage webAuthnRegisterPage;
 
     @Page
+    protected WebAuthnErrorPage webAuthnErrorPage;
+
+    @Page
     protected WebAuthnLoginPage webAuthnLoginPage;
 
     @Page
     private DeleteCredentialPage deleteCredentialPage;
+
+    @Page
+    protected WebAuthnErrorPage webAuthnErrorPage;
 
     private VirtualAuthenticatorManager webAuthnManager;
     protected SigningInPage.CredentialType webAuthnCredentialType;

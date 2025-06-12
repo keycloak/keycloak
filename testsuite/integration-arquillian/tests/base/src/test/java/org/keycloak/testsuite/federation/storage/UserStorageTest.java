@@ -979,7 +979,7 @@ public class UserStorageTest extends AbstractAuthTest {
 
     @Test
     @ModelTest
-    public void testCredentialCRUD(KeycloakSession session) throws Exception {
+    public void testCredentialCRUD(KeycloakSession session) {
         AtomicReference<String> passwordId = new AtomicReference<>();
         AtomicReference<String> otp1Id = new AtomicReference<>();
         AtomicReference<String> otp2Id = new AtomicReference<>();
@@ -1000,8 +1000,8 @@ public class UserStorageTest extends AbstractAuthTest {
             passwordId.set(passwordCred.getId());
 
             // Create Password and 2 OTP credentials (password was already created)
-            CredentialModel otp1 = OTPCredentialModel.createFromPolicy(realm, "secret1");
-            CredentialModel otp2 = OTPCredentialModel.createFromPolicy(realm, "secret2");
+            CredentialModel otp1 = OTPCredentialModel.createFromPolicy(realm, "secret1", "label1");
+            CredentialModel otp2 = OTPCredentialModel.createFromPolicy(realm, "secret2", "label2");
             otp1 = user.credentialManager().createStoredCredential(otp1);
             otp2 = user.credentialManager().createStoredCredential(otp2);
             otp1Id.set(otp1.getId());
