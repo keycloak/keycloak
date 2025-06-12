@@ -113,5 +113,30 @@ The `message` field explains why this strategy was chosen.
 
 |===
 
+[[operator-rolling-updates-for-patch-releases]]
+== Rolling updates for patch releases
+
+WARNING: This behavior is currently in an experimental mode, and it is not recommended for use in production.
+
+It is possible to enable automatic rolling updates when upgrading to a newer patch version in the same `+major.minor+` release stream.
+
+To enable this behavior, enable feature `rolling-updates:v2` as shown in the following example:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  features:
+  enabled:
+    - rolling-updates:v2
+  update:
+    strategy: Auto
+----
+
+Read more about rolling updates for patch releases in the <@links.server id="update-compatibility" anchor="rolling-updates-for-patch-releases" /> {section}.
+
 </@tmpl.guide>
 

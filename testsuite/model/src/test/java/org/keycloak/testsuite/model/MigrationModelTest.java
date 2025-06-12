@@ -19,7 +19,6 @@ package org.keycloak.testsuite.model;
 import java.util.List;
 import jakarta.persistence.EntityManager;
 import org.jboss.logging.Logger;
-import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.common.Version;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
@@ -28,16 +27,25 @@ import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.ClientProvider;
 import org.keycloak.models.ClientScopeProvider;
 import org.keycloak.models.Constants;
+import org.keycloak.models.DeploymentStateProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.jpa.entities.MigrationModelEntity;
-import org.keycloak.models.DeploymentStateProvider;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 @RequireProvider(value=RealmProvider.class, only="jpa")
 @RequireProvider(value=ClientProvider.class, only="jpa")
 @RequireProvider(value=ClientScopeProvider.class, only="jpa")
 public class MigrationModelTest extends KeycloakModelTest {
+
+    private static final Logger logger = Logger.getLogger(MigrationModelTest.class);
 
     private String realmId;
 
@@ -57,47 +65,107 @@ public class MigrationModelTest extends KeycloakModelTest {
     }
 
     @Test
-    public void test() {
+    public void multipleEntities() {
         inComittedTransaction(1, (session , i) -> {
-
             String currentVersion = new ModelVersion(Version.VERSION).toString();
+            EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
 
-            JpaConnectionProvider p = session.getProvider(JpaConnectionProvider.class);
-            EntityManager em = p.getEntityManager();
-
-            List<MigrationModelEntity> l = em.createQuery("select m from MigrationModelEntity m ORDER BY m.updatedTime DESC", MigrationModelEntity.class).getResultList();
-            Assert.assertEquals(1, l.size());
-            Assert.assertTrue(l.get(0).getId().matches("[\\da-z]{5}"));
-            Assert.assertEquals(currentVersion, l.get(0).getVersion());
+            List<MigrationModelEntity> entities = getMigrationEntities(em);
+            assertThat(entities.size(), is(1));
+            assertMigrationModelEntity(entities.get(0), currentVersion);
 
             MigrationModel m = session.getProvider(DeploymentStateProvider.class).getMigrationModel();
-            Assert.assertEquals(currentVersion, m.getStoredVersion());
-            Assert.assertEquals(m.getResourcesTag(), l.get(0).getId());
+            assertThat(m.getStoredVersion(), is(currentVersion));
+            assertThat(entities.get(0).getId(), is(m.getResourcesTag()));
 
             setTimeOffset(-60000);
 
-            session.getProvider(DeploymentStateProvider.class).getMigrationModel().setStoredVersion("6.0.0");
-            em.flush();
+            try {
+                session.getProvider(DeploymentStateProvider.class).getMigrationModel().setStoredVersion("6.0.0");
+                em.flush();
 
-            setTimeOffset(0);
+                setTimeOffset(0);
 
-            l = em.createQuery("select m from MigrationModelEntity m ORDER BY m.updatedTime DESC", MigrationModelEntity.class).getResultList();
-            Assert.assertEquals(2, l.size());
-            Logger.getLogger(MigrationModelTest.class).info("MigrationModelEntity entries: ");
-            Logger.getLogger(MigrationModelTest.class).info("--id: " + l.get(0).getId() + "; " + l.get(0).getVersion() + "; " + l.get(0).getUpdateTime());
-            Logger.getLogger(MigrationModelTest.class).info("--id: " + l.get(1).getId() + "; " + l.get(1).getVersion() + "; " + l.get(1).getUpdateTime());
-            Assert.assertTrue(l.get(0).getId().matches("[\\da-z]{5}"));
-            Assert.assertEquals(currentVersion, l.get(0).getVersion());
-            Assert.assertTrue(l.get(1).getId().matches("[\\da-z]{5}"));
-            Assert.assertEquals("6.0.0", l.get(1).getVersion());
+                entities = getMigrationEntities(em);
+                assertThat(entities.size(), is(2));
 
-            m = session.getProvider(DeploymentStateProvider.class).getMigrationModel();
-            Assert.assertEquals(l.get(0).getId(), m.getResourcesTag());
-            Assert.assertEquals(currentVersion, m.getStoredVersion());
+                logger.info("MigrationModelEntity entries: ");
+                entities.forEach(entity -> log.infof("--id: %s; %s; %s", entity.getId(), entity.getVersion(), entity.getUpdateTime()));
 
-            em.remove(l.get(1));
+                assertMigrationModelEntity(entities.get(0), currentVersion);
+                assertMigrationModelEntity(entities.get(1), "6.0.0");
+
+                m = session.getProvider(DeploymentStateProvider.class).getMigrationModel();
+                assertThat(m.getStoredVersion(), is(currentVersion));
+                assertThat(entities.get(0).getId(), is(m.getResourcesTag()));
+            } finally {
+                em.remove(entities.get(1));
+            }
 
             return null;
         });
+    }
+
+    @Test
+    public void duplicates() {
+        inComittedTransaction(1, (session, i) -> {
+            String currentVersion = new ModelVersion(Version.VERSION).toString();
+            EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+
+            List<MigrationModelEntity> entities = getMigrationEntities(em);
+            assertThat(entities.size(), is(1));
+            assertMigrationModelEntity(entities.get(0), currentVersion);
+
+            MigrationModel m = session.getProvider(DeploymentStateProvider.class).getMigrationModel();
+            assertThat(m.getStoredVersion(), is(currentVersion));
+            assertThat(entities.get(0).getId(), is(m.getResourcesTag()));
+
+            try {
+                setTimeOffset(-60000);
+                session.getProvider(DeploymentStateProvider.class).getMigrationModel().setStoredVersion("26.2.4");
+                em.flush();
+
+                setTimeOffset(-30000);
+                session.getProvider(DeploymentStateProvider.class).getMigrationModel().setStoredVersion("26.2.5");
+                em.flush();
+
+                setTimeOffset(0);
+
+                entities = getMigrationEntities(em);
+                assertThat(entities.size(), is(3));
+
+                logger.info("MigrationModelEntity entries: ");
+                entities.forEach(entity -> log.infof("--id: %s; %s; %s", entity.getId(), entity.getVersion(), entity.getUpdateTime()));
+
+                assertMigrationModelEntity(entities.get(0), currentVersion);
+                assertMigrationModelEntity(entities.get(1), "26.2.5");
+                assertMigrationModelEntity(entities.get(2), "26.2.4");
+
+                setTimeOffset(-29999);
+                session.getProvider(DeploymentStateProvider.class).getMigrationModel().setStoredVersion("26.2.5");
+                assertThrows(ModelDuplicateException.class, em::flush);
+
+                entities = getMigrationEntities(em);
+                assertThat(entities.size(), is(3));
+
+                assertThat(m.getStoredVersion(), is(currentVersion));
+                assertThat(entities.get(0).getId(), is(m.getResourcesTag()));
+            } finally {
+                em.remove(entities.get(1));
+                em.remove(entities.get(2));
+            }
+
+            return null;
+        });
+    }
+
+    private void assertMigrationModelEntity(MigrationModelEntity model, String expectedVersion) {
+        assertThat(model, notNullValue());
+        assertTrue(model.getId().matches("[\\da-z]{5}"));
+        assertThat(model.getVersion(), is(expectedVersion));
+    }
+
+    private List<MigrationModelEntity> getMigrationEntities(EntityManager em) {
+        return em.createQuery("select m from MigrationModelEntity m ORDER BY m.updatedTime DESC", MigrationModelEntity.class).getResultList();
     }
 }

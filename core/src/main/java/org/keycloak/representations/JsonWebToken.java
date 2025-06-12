@@ -41,6 +41,7 @@ import java.util.Map;
  */
 public class JsonWebToken implements Serializable, Token {
     public static final String AZP = "azp";
+    public static final String AUD = "aud";
     public static final String SUBJECT = "sub";
 
     @JsonProperty("jti")
@@ -52,7 +53,7 @@ public class JsonWebToken implements Serializable, Token {
 
     @JsonProperty("iss")
     protected String issuer;
-    @JsonProperty("aud")
+    @JsonProperty(AUD)
     @JsonSerialize(using = StringOrArraySerializer.class)
     @JsonDeserialize(using = StringOrArrayDeserializer.class)
     protected String[] audience;

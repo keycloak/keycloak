@@ -9,7 +9,7 @@ import { useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
-import { KeySelect } from "../key-value-form/KeySelect";
+import { KeySelect } from "../../realm-settings/user-profile/attribute/KeySelect";
 import type { ComponentProps } from "./components";
 
 export const UserProfileAttributeListComponent = ({
@@ -40,7 +40,7 @@ export const UserProfileAttributeListComponent = ({
 
     return config.attributes.map((option) => ({
       key: option.name!,
-      label: option.name!,
+      value: option.name!,
     }));
   };
 

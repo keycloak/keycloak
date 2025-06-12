@@ -239,6 +239,19 @@ const Dashboard = () => {
                         </DescriptionListGroup>
                       </DescriptionList>
                     </CardBody>
+                    <CardTitle>{t("cpu")}</CardTitle>
+                    <CardBody>
+                      <DescriptionList>
+                        <DescriptionListGroup>
+                          <DescriptionListTerm>
+                            {t("processorCount")}
+                          </DescriptionListTerm>
+                          <DescriptionListDescription>
+                            {serverInfo.cpuInfo?.processorCount}
+                          </DescriptionListDescription>
+                        </DescriptionListGroup>
+                      </DescriptionList>
+                    </CardBody>
                     <CardTitle>{t("memory")}</CardTitle>
                     <CardBody>
                       <DescriptionList>

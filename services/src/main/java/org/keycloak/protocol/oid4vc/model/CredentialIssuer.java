@@ -39,6 +39,9 @@ public class CredentialIssuer {
     @JsonProperty("credential_endpoint")
     private String credentialEndpoint;
 
+    @JsonProperty("nonce_endpoint")
+    private String nonceEndpoint;
+
     @JsonProperty("authorization_servers")
     private List<String> authorizationServers;
 
@@ -65,6 +68,15 @@ public class CredentialIssuer {
 
     public CredentialIssuer setCredentialEndpoint(String credentialEndpoint) {
         this.credentialEndpoint = credentialEndpoint;
+        return this;
+    }
+
+    public String getNonceEndpoint() {
+        return nonceEndpoint;
+    }
+
+    public CredentialIssuer setNonceEndpoint(String nonceEndpoint) {
+        this.nonceEndpoint = nonceEndpoint;
         return this;
     }
 

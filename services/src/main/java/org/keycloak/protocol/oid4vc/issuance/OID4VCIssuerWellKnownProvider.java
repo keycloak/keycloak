@@ -71,9 +71,9 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         return new CredentialIssuer()
                 .setCredentialIssuer(getIssuer(keycloakSession.getContext()))
                 .setCredentialEndpoint(getCredentialsEndpoint(keycloakSession.getContext()))
+                .setNonceEndpoint(getNonceEndpoint(keycloakSession.getContext()))
                 .setCredentialsSupported(getSupportedCredentials(keycloakSession))
                 .setAuthorizationServers(List.of(getIssuer(keycloakSession.getContext())));
-
     }
 
     /**
@@ -127,6 +127,14 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         return Urls.realmIssuer(frontendUriInfo.getBaseUri(),
                 context.getRealm().getName());
 
+    }
+
+    /**
+     * Return the nonce endpoint address
+     */
+    public static String getNonceEndpoint(KeycloakContext context) {
+        return getIssuer(context) + "/protocol/" + OID4VCLoginProtocolFactory.PROTOCOL_ID + "/" +
+                OID4VCIssuerEndpoint.NONCE_PATH;
     }
 
     /**

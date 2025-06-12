@@ -307,4 +307,8 @@ public class LDAPRule extends ExternalResource {
             STARTTLS
         }
     }
+
+    public boolean isEmbeddedServer() {
+        return ldapTestConfiguration.isStartEmbeddedLdapServer();
+    }
 }

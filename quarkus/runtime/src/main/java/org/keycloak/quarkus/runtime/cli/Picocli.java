@@ -522,7 +522,12 @@ public class Picocli {
             return;
         }
 
-        mapper.validate(configValue);
+        PropertyMappingInterceptor.enable();
+        try {
+            mapper.validate(configValue);
+        } finally {
+            PropertyMappingInterceptor.disable();
+        }
 
         mapper.getDeprecatedMetadata().ifPresent(metadata -> handleDeprecated(deprecatedInUse, mapper, configValueStr, metadata));
     }
@@ -824,6 +829,7 @@ public class Picocli {
                     optBuilder.defaultValue(Option.getDefaultValueString(mapper.getDefaultValue().get()));
                 }
 
+                optBuilder.arity("1"); // everything requires a value to match configargs parsing
                 if (mapper.getType() != null) {
                     optBuilder.type(mapper.getType());
                     if (mapper.isList()) {

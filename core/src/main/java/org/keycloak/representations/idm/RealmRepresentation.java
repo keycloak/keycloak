@@ -156,6 +156,7 @@ public class RealmRepresentation {
     protected Boolean webAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister;
     protected List<String> webAuthnPolicyPasswordlessAcceptableAaguids;
     protected List<String> webAuthnPolicyPasswordlessExtraOrigins;
+    protected Boolean webAuthnPolicyPasswordlessPasskeysEnabled;
 
     // Client Policies/Profiles
 
@@ -1261,6 +1262,14 @@ public class RealmRepresentation {
 
     public void setWebAuthnPolicyPasswordlessExtraOrigins(List<String> extraOrigins) {
         this.webAuthnPolicyPasswordlessExtraOrigins = extraOrigins;
+    }
+
+    public Boolean getWebAuthnPolicyPasswordlessPasskeysEnabled(){
+        return webAuthnPolicyPasswordlessPasskeysEnabled;
+    }
+
+    public void setWebAuthnPolicyPasswordlessPasskeysEnabled(Boolean webAuthnPolicyPasswordlessPasskeysEnabled) {
+        this.webAuthnPolicyPasswordlessPasskeysEnabled = webAuthnPolicyPasswordlessPasskeysEnabled;
     }
 
     // Client Policies/Profiles

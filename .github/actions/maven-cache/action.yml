@@ -19,7 +19,7 @@ runs:
 
     - id: cache-maven-repository
       name: Maven cache
-      uses: actions/cache@v4
+      uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
       if: inputs.create-cache-if-it-doesnt-exist == 'true'
       with:
         # Two asterisks are needed to make the follow-up exclusion work
@@ -39,12 +39,14 @@ runs:
       # On Windows, the .m2 folder is in different location, so move all the contents to the right folder here.
       # Also, not using the C: drive will speed up the build, see https://github.com/actions/runner-images/issues/8755
       run: |
-        mkdir -p ../../../.m2/repository
+        mkdir -p ..\..\..\.m2
+        mkdir -p D:\.m2\repository
         cmd /c mklink /d $HOME\.m2\repository D:\.m2\repository
+        cmd /c mklink /d $PWD\..\..\..\.m2\repository D:\.m2\repository
 
     - id: restore-maven-repository
       name: Maven cache
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
       if: inputs.create-cache-if-it-doesnt-exist == 'false'
       with:
         # This needs to repeat the same path pattern as above to find the matching cache

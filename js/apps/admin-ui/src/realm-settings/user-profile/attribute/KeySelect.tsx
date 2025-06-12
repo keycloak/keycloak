@@ -1,4 +1,7 @@
-import { KeycloakSelect } from "@keycloak/keycloak-ui-shared";
+import {
+  KeycloakSelect,
+  SelectControlOption,
+} from "@keycloak/keycloak-ui-shared";
 import {
   Grid,
   GridItem,
@@ -8,11 +11,10 @@ import {
 import { useState } from "react";
 import { UseControllerProps, useController } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import useToggle from "../../utils/useToggle";
-import { DefaultValue } from "./KeyValueInput";
+import useToggle from "../../../utils/useToggle";
 
 type KeySelectProp = UseControllerProps & {
-  selectItems: DefaultValue[];
+  selectItems: SelectControlOption[];
 };
 
 export const KeySelect = ({ selectItems, ...rest }: KeySelectProp) => {
@@ -44,7 +46,7 @@ export const KeySelect = ({ selectItems, ...rest }: KeySelectProp) => {
             </SelectOption>,
             ...selectItems.map((item) => (
               <SelectOption key={item.key} value={item.key}>
-                {item.label}
+                {item.value}
               </SelectOption>
             )),
           ]}
