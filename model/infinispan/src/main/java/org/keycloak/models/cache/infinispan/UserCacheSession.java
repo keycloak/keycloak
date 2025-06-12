@@ -231,7 +231,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         } else {
             adapter = validateCache(realm, cached, () -> getDelegate().getUserById(realm, id));
         }
-        addManagedUser(adapter);
+        addManagedUser(id, adapter);
         return adapter;
     }
 
@@ -293,7 +293,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
                 query = new UserListQuery(loaded, cacheKey, realm, model.getId());
                 cache.addRevisioned(query, startupRevision, getLifespan(realm, adapter));
             }
-            addManagedUser(adapter);
+            addManagedUser(userId, adapter);
             return adapter;
         }
 
@@ -446,7 +446,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
                 query = new UserListQuery(loaded, cacheKey, realm, model.getId());
                 cache.addRevisioned(query, startupRevision, getLifespan(realm, adapter));
             }
-            addManagedUser(adapter);
+            addManagedUser(userId, adapter);
             return adapter;
         }
 
@@ -500,7 +500,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
                 cache.addRevisioned(query, startupRevision, getLifespan(realm, adapter));
             }
 
-            addManagedUser(adapter);
+            addManagedUser(userId, adapter);
             return adapter;
         } else {
             userId = query.getUsers().iterator().next();
@@ -586,7 +586,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
                 query = new UserListQuery(loaded, cacheKey, realm, model.getId());
                 cache.addRevisioned(query, startupRevision, getLifespan(realm, adapter));
             }
-            addManagedUser(adapter);
+            addManagedUser(userId, adapter);
             return adapter;
         } else {
             userId = query.getUsers().iterator().next();
@@ -871,15 +871,15 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         UserModel user = getDelegate().addUser(realm, id, username, addDefaultRoles, addDefaultRequiredActions);
         // just in case the transaction is rolled back you need to invalidate the user and all cache queries for that user
         fullyInvalidateUser(realm, user);
-        addManagedUser(user);
+        addManagedUser(user.getId(), user);
         return user;
     }
 
-    private void addManagedUser(UserModel user) {
+    private void addManagedUser(String id, UserModel user) {
         if (EntityManagers.isBatchMode()) {
             return;
         }
-        managedUsers.put(user.getId(), user);
+        managedUsers.put(id, user);
     }
 
     @Override
@@ -887,7 +887,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         UserModel user = getDelegate().addUser(realm, username);
         // just in case the transaction is rolled back you need to invalidate the user and all cache queries for that user
         fullyInvalidateUser(realm, user);
-        addManagedUser(user);
+        addManagedUser(user.getId(), user);
         return user;
     }
 
