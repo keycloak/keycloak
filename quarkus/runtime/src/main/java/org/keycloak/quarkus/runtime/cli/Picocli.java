@@ -529,7 +529,12 @@ public class Picocli {
             return;
         }
 
-        mapper.validate(configValue);
+        PropertyMappingInterceptor.enable();
+        try {
+            mapper.validate(configValue);
+        } finally {
+            PropertyMappingInterceptor.disable();
+        }
 
         mapper.getDeprecatedMetadata().ifPresent(metadata -> handleDeprecated(deprecatedInUse, mapper, configValueStr, metadata));
     }
