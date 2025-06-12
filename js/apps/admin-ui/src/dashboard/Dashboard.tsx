@@ -86,8 +86,17 @@ const FeatureItem = ({ feature }: FeatureItemProps) => {
       {feature.type === FeatureType.Preview && (
         <Label color="blue">{t("preview")}</Label>
       )}
+      {feature.type === FeatureType.PreviewDisabledByDefault && (
+        <Label color="blue">{t("preview")}</Label>
+      )}
       {feature.type === FeatureType.Default && (
         <Label color="green">{t("supported")}</Label>
+      )}
+      {feature.type === FeatureType.DisabledByDefault && (
+        <Label color="green">{t("supported")}</Label>
+      )}
+      {feature.type === FeatureType.Deprecated && (
+        <Label color="grey">{t("deprecated")}</Label>
       )}
     </ListItem>
   );
