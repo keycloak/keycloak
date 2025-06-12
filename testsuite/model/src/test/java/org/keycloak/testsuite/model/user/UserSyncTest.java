@@ -279,7 +279,7 @@ public class UserSyncTest extends KeycloakModelTest {
 
         // validate imported user, user will be deleted and re-created
         withRealm(realmId, (session, realm) -> {
-            assertThat(session.users().getUserByUsername(realm, "user1"), not(equalTo(oldUserId)));
+            assertThat(session.users().getUserByUsername(realm, "user1").getId(), not(equalTo(oldUserId)));
             return null;
         });
     }
