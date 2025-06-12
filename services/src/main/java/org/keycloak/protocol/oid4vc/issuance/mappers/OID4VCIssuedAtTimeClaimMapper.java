@@ -16,6 +16,7 @@
  */
 package org.keycloak.protocol.oid4vc.issuance.mappers;
 
+import org.keycloak.models.CredentialScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapper;
@@ -90,6 +91,16 @@ public class OID4VCIssuedAtTimeClaimMapper extends OID4VCMapper {
     @Override
     protected List<ProviderConfigProperty> getIndividualConfigProperties() {
         return CONFIG_PROPERTIES;
+    }
+
+    /**
+     * this claim is not added by default to the metadata
+     */
+    @Override
+    public boolean includeInMetadata() {
+        return Optional.ofNullable(mapperModel.getConfig().get(CredentialScopeModel.INCLUDE_IN_METADATA))
+                       .map(Boolean::parseBoolean)
+                       .orElse(false);
     }
 
     public void setClaimsForCredential(VerifiableCredential verifiableCredential,

@@ -299,7 +299,14 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                     Claim claim = actualClaims.stream()
                                               .filter(c -> c.getPath().equals(mapper.getMetadataAttributePath()))
                                               .findFirst().orElse(null);
-                    Assert.assertNotNull("There should be a claim matching the protocol-mappers config!", claim);
+                    if (mapper.includeInMetadata()) {
+                        Assert.assertNotNull("There should be a claim matching the protocol-mappers config!", claim);
+                    }
+                    else {
+                        Assert.assertNull("This claim should not be included in the metadata-config!", claim);
+                        // no other checks to do for this claim
+                        continue;
+                    }
                     Assert.assertEquals(claim.isMandatory(),
                                         Optional.ofNullable(protocolMapper.getConfig()
                                                                           .get(Oid4vcProtocolMapperModel.MANDATORY))

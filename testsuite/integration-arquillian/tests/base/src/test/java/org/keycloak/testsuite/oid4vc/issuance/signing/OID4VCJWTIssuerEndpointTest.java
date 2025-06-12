@@ -36,15 +36,22 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.models.CredentialScopeModel;
+import org.keycloak.oid4vci.Oid4VciConstants;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
+import org.keycloak.protocol.oid4vc.model.Claim;
+import org.keycloak.protocol.oid4vc.model.ClaimDisplay;
+import org.keycloak.protocol.oid4vc.model.Claims;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
+import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.OfferUriType;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
+import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
@@ -67,6 +74,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -344,8 +352,10 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                             JsonSerialization.mapper.convertValue(jsonWebToken.getOtherClaims().get("vc"),
                                                                   VerifiableCredential.class);
                     assertTrue("The static claim should be set.",
-                               credential.getCredentialSubject().getClaims()
-                                         .containsKey(scopeName));
+                               credential.getCredentialSubject().getClaims().containsKey("scope-name"));
+                    assertEquals("The static claim should be set.",
+                                 scopeName,
+                                 credential.getCredentialSubject().getClaims().get("scope-name"));
                     assertFalse("Only mappers supported for the requested type should have been evaluated.",
                                 credential.getCredentialSubject().getClaims().containsKey("AnotherCredentialType"));
                 }));
@@ -588,5 +598,162 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
             CredentialResponse credentialResponse2 = JsonSerialization.mapper.convertValue(response2.getEntity(), CredentialResponse.class);
             assertNotEquals("Notification IDs should be unique", credentialResponse1.getNotificationId(), credentialResponse2.getNotificationId());
         });
+    }
+
+    /**
+     * This is testing the configuration exposed by OID4VCIssuerWellKnownProvider based on the client and signing config setup here.
+     */
+    @Test
+    public void testGetJwtVcConfigFromMetadata() {
+        final String scopeName = jwtTypeCredentialClientScope.getName();
+        final String credentialConfigurationId = jwtTypeCredentialClientScope.getAttributes()
+                                                                               .get(CredentialScopeModel.CONFIGURATION_ID);
+        final String verifiableCredentialType = jwtTypeCredentialClientScope.getAttributes()
+                                                                              .get(CredentialScopeModel.VCT);
+        String expectedIssuer = suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/" + TEST_REALM_NAME;
+        String expectedCredentialsEndpoint = expectedIssuer + "/protocol/oid4vc/credential";
+        String expectedNonceEndpoint = expectedIssuer + "/protocol/oid4vc/" + OID4VCIssuerEndpoint.NONCE_PATH;
+        final String expectedAuthorizationServer = expectedIssuer;
+        testingClient
+                .server(TEST_REALM_NAME)
+                .run((session -> {
+                    OID4VCIssuerWellKnownProvider oid4VCIssuerWellKnownProvider = new OID4VCIssuerWellKnownProvider(session);
+                    Object issuerConfig = oid4VCIssuerWellKnownProvider.getConfig();
+                    assertTrue("Valid credential-issuer metadata should be returned.", issuerConfig instanceof CredentialIssuer);
+                    CredentialIssuer credentialIssuer = (CredentialIssuer) issuerConfig;
+                    assertEquals("The correct issuer should be included.", expectedIssuer, credentialIssuer.getCredentialIssuer());
+                    assertEquals("The correct credentials endpoint should be included.", expectedCredentialsEndpoint, credentialIssuer.getCredentialEndpoint());
+                    assertEquals("The correct nonce endpoint should be included.",
+                                 expectedNonceEndpoint,
+                                 credentialIssuer.getNonceEndpoint());
+                    assertEquals("Since the authorization server is equal to the issuer, just 1 should be returned.", 1, credentialIssuer.getAuthorizationServers().size());
+                    assertEquals("The expected server should have been returned.", expectedAuthorizationServer, credentialIssuer.getAuthorizationServers().get(0));
+
+                    assertTrue("The jwt_vc-credential should be supported.",
+                               credentialIssuer.getCredentialsSupported()
+                                               .containsKey(credentialConfigurationId));
+
+                    SupportedCredentialConfiguration jwtVcConfig =
+                            credentialIssuer.getCredentialsSupported().get(credentialConfigurationId);
+                    assertEquals("The jwt_vc-credential should offer type test-credential",
+                                 scopeName,
+                                 jwtVcConfig.getScope());
+                    assertEquals("The jwt_vc-credential should be offered in the jwt_vc format.",
+                                 Format.JWT_VC,
+                                 jwtVcConfig.getFormat());
+
+                    Claims jwtVcClaims = jwtVcConfig.getClaims();
+                    assertNotNull("The jwt_vc-credential can optionally provide a claims claim.",
+                                  jwtVcClaims);
+
+                    assertEquals(5,  jwtVcClaims.size());
+                    {
+                        Claim claim = jwtVcClaims.get(0);
+                        assertEquals("The jwt_vc-credential claim credentialSubject.given_name is present.",
+                                     Oid4VciConstants.CREDENTIAL_SUBJECT,
+                                     claim.getPath().get(0));
+                        assertEquals("The jwt_vc-credential claim credentialSubject.given_name is present.",
+                                     "given_name",
+                                     claim.getPath().get(1));
+                        assertFalse("The jwt_vc-credential claim credentialSubject.given_name is not mandatory.",
+                                    claim.isMandatory());
+                        assertNotNull("The jwt_vc-credential claim credentialSubject.given_name has display configured",
+                                      claim.getDisplay());
+                        assertEquals(15, claim.getDisplay().size());
+                        for (ClaimDisplay givenNameDisplay : claim.getDisplay()) {
+                            assertNotNull(givenNameDisplay.getName());
+                            assertNotNull(givenNameDisplay.getLocale());
+                        }
+                    }
+                    {
+                        Claim claim = jwtVcClaims.get(1);
+                        assertEquals("The jwt_vc-credential claim credentialSubject.family_name is present.",
+                                     Oid4VciConstants.CREDENTIAL_SUBJECT,
+                                     claim.getPath().get(0));
+                        assertEquals("The jwt_vc-credential claim credentialSubject.family_name is present.",
+                                     "family_name",
+                                     claim.getPath().get(1));
+                        assertFalse("The jwt_vc-credential claim credentialSubject.family_name is not mandatory.",
+                                    claim.isMandatory());
+                        assertNotNull("The jwt_vc-credential claim credentialSubject.family_name has display configured",
+                                      claim.getDisplay());
+                        assertEquals(15, claim.getDisplay().size());
+                        for (ClaimDisplay familyNameDisplay : claim.getDisplay()) {
+                            assertNotNull(familyNameDisplay.getName());
+                            assertNotNull(familyNameDisplay.getLocale());
+                        }
+                    }
+                    {
+                        Claim claim = jwtVcClaims.get(2);
+                        assertEquals("The jwt_vc-credential claim credentialSubject.birthdate is present.",
+                                     Oid4VciConstants.CREDENTIAL_SUBJECT,
+                                     claim.getPath().get(0));
+                        assertEquals("The jwt_vc-credential claim credentialSubject.birthdate is present.",
+                                     "birthdate",
+                                     claim.getPath().get(1));
+                        assertFalse("The jwt_vc-credential claim credentialSubject.birthdate is not mandatory.",
+                                    claim.isMandatory());
+                        assertNotNull("The jwt_vc-credential claim credentialSubject.birthdate has display configured",
+                                      claim.getDisplay());
+                        assertEquals(15, claim.getDisplay().size());
+                        for (ClaimDisplay birthDateDisplay : claim.getDisplay()) {
+                            assertNotNull(birthDateDisplay.getName());
+                            assertNotNull(birthDateDisplay.getLocale());
+                        }
+                    }
+                    {
+                        Claim claim = jwtVcClaims.get(3);
+                        assertEquals("The jwt_vc-credential claim credentialSubject.email is present.",
+                                     Oid4VciConstants.CREDENTIAL_SUBJECT,
+                                     claim.getPath().get(0));
+                        assertEquals("The jwt_vc-credential claim credentialSubject.email is present.",
+                                     "email",
+                                     claim.getPath().get(1));
+                        assertFalse("The jwt_vc-credential claim credentialSubject.email is not mandatory.",
+                                    claim.isMandatory());
+                        assertNotNull("The jwt_vc-credential claim credentialSubject.email has display configured",
+                                      claim.getDisplay());
+                        assertEquals(15, claim.getDisplay().size());
+                        for (ClaimDisplay birthDateDisplay : claim.getDisplay()) {
+                            assertNotNull(birthDateDisplay.getName());
+                            assertNotNull(birthDateDisplay.getLocale());
+                        }
+                    }
+                    {
+                        Claim claim = jwtVcClaims.get(4);
+                        assertEquals("The jwt_vc-credential claim credentialSubject.scope-name is present.",
+                                     Oid4VciConstants.CREDENTIAL_SUBJECT,
+                                     claim.getPath().get(0));
+                        assertEquals("The jwt_vc-credential claim credentialSubject.scope-name is present.",
+                                     "scope-name",
+                                     claim.getPath().get(1));
+                        assertFalse("The jwt_vc-credential claim credentialSubject.scope-name is not mandatory.",
+                                    claim.isMandatory());
+                        assertNull("The jwt_vc-credential claim credentialSubject.scope-name has no display configured",
+                                      claim.getDisplay());
+                    }
+
+                    assertEquals("The jwt_vc-credential should offer vct",
+                                 verifiableCredentialType,
+                                 jwtVcConfig.getVct());
+
+                    // We are offering key binding only for identity credential
+                    assertTrue("The jwt_vc-credential should contain a cryptographic binding method supported named jwk",
+                               jwtVcConfig.getCryptographicBindingMethodsSupported()
+                                          .contains(CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT));
+                    assertTrue("The jwt_vc-credential should contain a credential signing algorithm named RS256",
+                               jwtVcConfig.getCredentialSigningAlgValuesSupported().contains("RS256"));
+                    assertTrue("The jwt_vc-credential should support a proof of type jwt with signing algorithm RS256",
+                               credentialIssuer.getCredentialsSupported()
+                                               .get(credentialConfigurationId)
+                                               .getProofTypesSupported()
+                                               .getSupportedProofTypes()
+                                               .get("jwt")
+                                               .getSigningAlgorithmsSupported()
+                                               .contains("RS256"));
+                    assertEquals("The jwt_vc-credential should display as Test Credential",
+                                 credentialConfigurationId,
+                                 jwtVcConfig.getDisplay().get(0).getName());
+                }));
     }
 }

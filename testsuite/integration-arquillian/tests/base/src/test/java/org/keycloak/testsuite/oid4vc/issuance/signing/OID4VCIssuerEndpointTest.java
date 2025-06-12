@@ -502,7 +502,10 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
             assertEquals(URI.create("did:web:test.org"), credential.getIssuer());
             assertEquals("john@email.cz", credential.getCredentialSubject().getClaims().get("email"));
             assertTrue("The static claim should be set.",
-                       credential.getCredentialSubject().getClaims().containsKey(clientScope.getName()));
+                       credential.getCredentialSubject().getClaims().containsKey("scope-name"));
+            assertEquals("The static claim should be set.",
+                       clientScope.getName(),
+                       credential.getCredentialSubject().getClaims().get("scope-name"));
             assertFalse("Only mappers supported for the requested type should have been evaluated.",
                         credential.getCredentialSubject().getClaims().containsKey("AnotherCredentialType"));
         }

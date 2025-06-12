@@ -105,6 +105,12 @@ public class CredentialScopeModel implements ClientScopeModel {
      */
     public static final String TOKEN_JWS_TYPE = "vc.credential_build_config.token_jws_type";
 
+    /**
+     * this configuration property can be used to enforce specific claims to be included in the metadata, if they
+     * would normally not and vice versa
+     */
+    public static final String INCLUDE_IN_METADATA = "vc.include_in_metadata";
+
 
     /**
      * the actual object that is represented by this scope

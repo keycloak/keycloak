@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.Test;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.oid4vci.Oid4VciConstants;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.JwtCredentialBody;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.JwtCredentialBuilder;
@@ -84,7 +85,7 @@ public class JwtCredentialBuilderTest extends CredentialBuilderTest {
 
     private JsonNode parseCredentialSubject(JWSInput jwsInput) throws JWSInputException {
         JsonNode payload = jwsInput.readJsonContent(JsonNode.class);
-        return payload.get("vc").get("credentialSubject");
+        return payload.get("vc").get(Oid4VciConstants.CREDENTIAL_SUBJECT);
     }
 
     private Map<String, Object> exampleCredentialClaims() {

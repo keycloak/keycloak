@@ -53,7 +53,8 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
     public static final String VC_KEY = "vc";
 
     private static final Logger LOGGER = Logger.getLogger(OID4VCIssuerWellKnownProvider.class);
-    private final KeycloakSession keycloakSession;
+
+    protected final KeycloakSession keycloakSession;
 
     public OID4VCIssuerWellKnownProvider(KeycloakSession keycloakSession) {
         this.keycloakSession = keycloakSession;

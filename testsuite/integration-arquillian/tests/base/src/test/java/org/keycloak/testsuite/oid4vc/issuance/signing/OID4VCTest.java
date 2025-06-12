@@ -307,15 +307,15 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
         return protocolMapperRepresentation;
     }
 
-    public static ProtocolMapperRepresentation getStaticClaimMapper(String scope) {
+    public static ProtocolMapperRepresentation getStaticClaimMapper(String scopeName) {
         ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
         protocolMapperRepresentation.setName(UUID.randomUUID().toString());
         protocolMapperRepresentation.setProtocol(CredentialScopeModel.OID4VC_PROTOCOL);
         protocolMapperRepresentation.setId(UUID.randomUUID().toString());
         protocolMapperRepresentation.setProtocolMapper("oid4vc-static-claim-mapper");
         protocolMapperRepresentation.setConfig(
-                Map.of("claim.name", scope,
-                       "staticValue", "true")
+                Map.of("claim.name", "scope-name",
+                       "staticValue", scopeName)
         );
         return protocolMapperRepresentation;
     }

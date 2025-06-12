@@ -62,24 +62,25 @@ public class Claim {
     @JsonProperty("display")
     private List<ClaimDisplay> display;
 
-    public static Claim parse(KeycloakSession keycloakSession,
-                              String credentialFormat,
-                              Oid4vcProtocolMapperModel protocolMapper) {
+    public static Optional<Claim> parse(KeycloakSession keycloakSession,
+                                        String credentialFormat,
+                                        Oid4vcProtocolMapperModel protocolMapper) {
         try {
             Claim claim = new Claim();
             ProtocolMapper protocolMapperImpl = keycloakSession.getProvider(ProtocolMapper.class,
                                                                             protocolMapper.getProtocolMapper());
             if (!(protocolMapperImpl instanceof OID4VCMapper)) {
-                return null;
+                return Optional.empty();
             }
             OID4VCMapper mapper = (OID4VCMapper) protocolMapperImpl;
             mapper.setMapperModel(protocolMapper, credentialFormat);
 
+            if (!mapper.includeInMetadata()) {
+                return Optional.empty();
+            }
+
             claim.setName(String.join(".", mapper.getMetadataAttributePath()));
 
-            // TODO the first-path-attribute might need to be added by the credentialScope. This is for example the
-            //      the case if the credentialScope represents a VerifiableCredential. In that case the first element
-            //      in the path must be: "credentialSubject". Other claim types might not have the parent-attribute.
             claim.setPath(mapper.getMetadataAttributePath());
             claim.setMandatory(protocolMapper.isMandatory());
 
@@ -90,7 +91,7 @@ public class Claim {
                 claim.setDisplay(claimDisplayList);
             }
 
-            return claim;
+            return Optional.of(claim);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
