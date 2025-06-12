@@ -93,16 +93,18 @@ public class CredentialIssuer {
     }
 
     /**
-     * Represents the credential_response_encryption metadata as per OID4VCI spec
+     * Represents the credential_response_encryption metadata
      * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#section-11.2.2}
      */
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class CredentialResponseEncryption {
         @JsonProperty("alg_values_supported")
         private List<String> algValuesSupported;
 
         @JsonProperty("enc_values_supported")
         private List<String> encValuesSupported;
+
+        @JsonProperty("encryption_required")
+        private Boolean encryptionRequired;
 
         public List<String> getAlgValuesSupported() {
             return algValuesSupported;
@@ -119,6 +121,15 @@ public class CredentialIssuer {
 
         public CredentialResponseEncryption setEncValuesSupported(List<String> encValuesSupported) {
             this.encValuesSupported = encValuesSupported;
+            return this;
+        }
+
+        public Boolean getEncryptionRequired() {
+            return encryptionRequired;
+        }
+
+        public CredentialResponseEncryption setEncryptionRequired(Boolean encryptionRequired) {
+            this.encryptionRequired = encryptionRequired;
             return this;
         }
     }

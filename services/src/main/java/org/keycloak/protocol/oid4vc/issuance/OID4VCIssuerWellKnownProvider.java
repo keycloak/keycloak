@@ -76,7 +76,8 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                 .setAuthorizationServers(List.of(getIssuer(keycloakSession.getContext())))
                 .setCredentialResponseEncryption(new CredentialIssuer.CredentialResponseEncryption()
                         .setAlgValuesSupported(List.of("RSA-OAEP"))
-                        .setEncValuesSupported(List.of("A256GCM")));
+                        .setEncValuesSupported(List.of("A256GCM"))
+                        .setEncryptionRequired(false));
     }
 
     /**

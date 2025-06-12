@@ -22,8 +22,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
-import java.util.Map;
-
 /**
  * Represents a CredentialRequest according to OID4VCI
  * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-request}
@@ -54,8 +52,6 @@ public class CredentialRequest {
     @JsonProperty("credential_definition")
     private CredentialDefinition credentialDefinition;
 
-    // Adding support for credential_response_encryption as per OID4VCI spec
-    // {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-request}
     @JsonProperty("credential_response_encryption")
     private CredentialResponseEncryption credentialResponseEncryption;
 
@@ -113,41 +109,4 @@ public class CredentialRequest {
         return this;
     }
 
-    /**
-     * Represents the credential_response_encryption object as per OID4VCI spec
-     * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-request}
-     */
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class CredentialResponseEncryption {
-        private String alg;
-        private String enc;
-        private Map<String, Object> jwk;
-
-        public String getAlg() {
-            return alg;
-        }
-
-        public CredentialResponseEncryption setAlg(String alg) {
-            this.alg = alg;
-            return this;
-        }
-
-        public String getEnc() {
-            return enc;
-        }
-
-        public CredentialResponseEncryption setEnc(String enc) {
-            this.enc = enc;
-            return this;
-        }
-
-        public Map<String, Object> getJwk() {
-            return jwk;
-        }
-
-        public CredentialResponseEncryption setJwk(Map<String, Object> jwk) {
-            this.jwk = jwk;
-            return this;
-        }
-    }
 }
