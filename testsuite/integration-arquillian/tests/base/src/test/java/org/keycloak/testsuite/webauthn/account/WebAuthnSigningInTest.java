@@ -19,7 +19,6 @@ package org.keycloak.testsuite.webauthn.account;
 
 import org.hamcrest.Matchers;
 import org.junit.Test;
-import org.junit.Ignore;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
@@ -29,6 +28,9 @@ import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.webauthn.pages.SigningInPage;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnAuthenticatorsList;
+import org.keycloak.testsuite.webauthn.updaters.AbstractWebAuthnRealmUpdater;
+import org.keycloak.testsuite.webauthn.updaters.PasswordLessRealmAttributeUpdater;
+import org.keycloak.testsuite.webauthn.updaters.WebAuthnRealmAttributeUpdater;
 import org.keycloak.theme.DateTimeFormatterUtil;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
@@ -45,6 +47,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -170,6 +173,18 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
 
         assertThat(webAuthnCredentialType.getUserCredentialsCount(), is(4));
         assertThat(webAuthnPwdlessCredentialType.getUserCredentialsCount(), is(4));
+    }
+
+    @Test
+    @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
+    public void avoidSameAuthenticatorRegister() throws IOException {
+        avoidSameAuthenticatorRegister(new WebAuthnRealmAttributeUpdater(testRealmResource()), webAuthnCredentialType);
+    }
+
+    @Test
+    @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
+    public void avoidSameAuthenticatorRegisterPasswordless() throws IOException {
+        avoidSameAuthenticatorRegister(new PasswordLessRealmAttributeUpdater(testRealmResource()), webAuthnPwdlessCredentialType);
     }
 
     @Test
@@ -393,6 +408,22 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
     @Test
     public void cancelPasswordlessRegistration() {
         checkCancelRegistration(true);
+    }
+
+    private void avoidSameAuthenticatorRegister(AbstractWebAuthnRealmUpdater updater, SigningInPage.CredentialType type) throws IOException {
+        try (Closeable c = updater.setWebAuthnPolicyAvoidSameAuthenticatorRegister(Boolean.TRUE).update()) {
+            // register first credential successfully
+            addWebAuthnCredential("label1", type.getType().equals(WebAuthnCredentialModel.TYPE_PASSWORDLESS));
+            assertThat(type.getUserCredentialsCount(), is(1));
+            // register the second credential and expect the error
+            type.clickSetUpLink();
+            webAuthnRegisterPage.assertCurrent();
+            webAuthnRegisterPage.clickRegister();
+            waitForPageToLoad();
+            webAuthnErrorPage.assertCurrent();
+            assertThat(webAuthnErrorPage.getError(), containsString(
+                    "The user attempted to register an authenticator that contains one of the credentials already registered with the relying party."));
+        }
     }
 
     private void checkCancelRegistration(boolean passwordless) {
