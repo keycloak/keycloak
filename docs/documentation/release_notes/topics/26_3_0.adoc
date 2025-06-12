@@ -16,6 +16,7 @@ used for client initiated account linking is deprecated now. For more informatio
 = Recovery Codes supported
 
 The Recovery Codes two-factor authentication is promoted from preview to supported feature. For more information about the 2FA method, see the link:{adminguide_link}#_recovery-codes[Recovery Codes] chapter in the {adminguide_name}.
+For newly created realms, the browser flow now includes the Recovery Authentication Code Form as _Disabled__, and it can be switched to _Alternative_ by admins if they want to use this feature.
 
 = New AIA action parameter `skip_if_exists` for WebAuthn register
 

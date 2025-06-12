@@ -77,6 +77,12 @@ The new procedure recommends to re-apply any changes to `cache-ispn.xml` or a cu
 
 This prevents accidentally downgrading functionality, for example, by using an old `cache-ispn.xml` file from a previous version.
 
+=== Default browser flow changes 2FA to include WebAuthn and Recovery Codes
+
+Previously the default *browser* flow had a *Browser - Conditional OTP* conditional sub-flow that enabled One-Time Password (OTP) as a 2nd Factor Authentication (2FA). Starting with this version, the sub-flow is renamed to *Browser - Conditional 2FA*, the *OTP Form* is _Alternative_, and includes two more 2FA methods: *WebAuthn Authenticator* and *Recovery Authentication Code Form*. Both new executions are _Disabled_ by default, but they can be set to _Alternative_ to include them into the flow.
+
+Upgraded realms will not be changed. The updated flow will only be available for new realms. Take this change into consideration if you have automated the realm creation.
+
 == Deprecated features
 
 The following sections provide details on deprecated features.
@@ -165,8 +171,3 @@ Consider one of the following cases and recommended migration steps:
 * With the feature `persistent-user-session` feature enabled, the remote store configuration is ignored and {project_name} will print a warning.
 ====
 
-=== Default browser flow changes 2FA to include WebAuthn and Recovery Codes
-
-Previously the default *browser* flow had a *Browser - Conditional OTP* conditional sub-flow that enabled One-Time Password (OTP) as a 2nd Factor Authentication (2FA). Starting with this version, the sub-flow is renamed to *Browser - Conditional 2FA*, the *OTP Form* is _Alternative_, and includes two more 2FA methods: *WebAuthn Authenticator* and *Recovery Authentication Code Form*. Both new executions are _Disabled_ by default, but they can be set to _Alternative_ to include them into the flow.
-
-Upgraded realms will not be changed. The updated flow will only be available for new realms. Take this change into consideration if you have automated the realm creation.
