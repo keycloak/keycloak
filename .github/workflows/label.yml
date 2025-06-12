@@ -41,7 +41,7 @@ jobs:
           fi
           
           echo "Label:      $LABEL"
-          echo "**Label:** [$LABEL](https://github.com/$GITHUB_REPOSITORY/labels/$LABEL" >> $GITHUB_STEP_SUMMARY
+          echo "**Label:** [$LABEL](https://github.com/$GITHUB_REPOSITORY/labels/$LABEL)" >> $GITHUB_STEP_SUMMARY
           
           gh api "/repos/$GITHUB_REPOSITORY/labels/$LABEL" --silent 2>/dev/null || gh label create -R "$GITHUB_REPOSITORY" "$LABEL" -c "0E8A16"
           
