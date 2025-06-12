@@ -618,6 +618,13 @@ public class PicocliTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void testAmbiguousSpiOptionBuild() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("build", "--db=dev-file", "--spi-x-y-enabled=true");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), containsString("The following spi options are using the legacy format and are not being treated as build time options. Please use the new format with the appropriate -- separators to resolve this ambiguity: kc.spi-x-y-enabled"));
+    }
+
+    @Test
     public void testDerivedShowConfig() {
         NonRunningPicocli nonRunningPicocli = build("build", "--metrics-enabled=true", "--features=user-event-metrics", "--event-metrics-user-enabled=true", "--db=dev-file");
 
@@ -754,5 +761,17 @@ public class PicocliTest extends AbstractConfigurationTest {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev","--db-kind-<default>=postgres");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString("Unknown option: '--db-kind-<default>'"));
+    }
+
+    @Test
+    public void errorSpiBuildtimeChanged() {
+        putEnvVar("KC_SPI_EVENTS_LISTENER__PROVIDER", "jboss-logging");
+        build("build", "--db=dev-file");
+
+        putEnvVar("KC_SPI_EVENTS_LISTENER__PROVIDER", "new-jboss-logging");
+
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--optimized", "--http-enabled=true", "--hostname-strict=false");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.spi-events-listener--provider"));
     }
 }

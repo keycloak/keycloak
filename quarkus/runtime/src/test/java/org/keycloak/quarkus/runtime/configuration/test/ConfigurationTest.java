@@ -66,6 +66,14 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void testCamelCaseNewFormat() {
+        putEnvVar("KC_SPI_CAMEL_CASE_SCOPE__CAMEL_CASE_PROP", "foobar");
+        initConfig();
+        String value = Config.scope("camelCaseScope").get("camelCaseProp");
+        assertEquals(value, "foobar");
+    }
+
+    @Test
     public void testEnvVarPriorityOverPropertiesFile() {
         putEnvVar("KC_SPI_HOSTNAME_DEFAULT_FRONTEND_URL", "http://envvar.unittest");
         assertEquals("http://envvar.unittest", initConfig("hostname", "default").get("frontendUrl"));

@@ -81,7 +81,7 @@ public class StartCommandDistTest {
     }
 
     @DryRun
-    @WithEnvVars({"KC_SPI_EVENTS_LISTENER_JBOSS_LOGGING_ENABLED", "false"})
+    @WithEnvVars({"KC_SPI_EVENTS_LISTENER__JBOSS_LOGGING__ENABLED", "false"})
     @Test
     @RawDistOnly(reason = "Containers are immutable")
     void noErrorSpiBuildtimeNotChanged(KeycloakDistribution dist) {
