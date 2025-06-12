@@ -56,29 +56,29 @@ public class KcEnvConfigSource extends PropertiesConfigSource {
             String value = entry.getValue();
             String transformedKey = null;
 
-            if (key.startsWith(kcPrefix)) {
-                String baseKey = key.substring(kcPrefix.length());
-
-                String actualKey = env.get(KCKEY_PREFIX + baseKey);
-                if (actualKey != null) {
-                    transformedKey = NS_KEYCLOAK_PREFIX + actualKey;
-                } else {
-                    transformedKey = NS_KEYCLOAK_PREFIX + baseKey.toLowerCase().replace("_", "-");
-
-                    PropertyMapper<?> mapper = PropertyMappers.getMapper(transformedKey);
-
-                    if (mapper != null && mapper.hasWildcard()) {
-                        // special case - wildcards don't follow the default conversion rule
-                        WildcardPropertyMapper<?> wildcardPropertyMapper = (WildcardPropertyMapper<?>) mapper;
-
-                        transformedKey = wildcardPropertyMapper.getKcKeyForEnvKey(key, transformedKey)
-                                .orElseThrow();
-                    }
-                }
-            } else {
+            if (!key.startsWith(kcPrefix)) {
                 continue;
             }
+            String baseKey = key.substring(kcPrefix.length());
 
+            String actualKey = env.get(KCKEY_PREFIX + baseKey);
+            if (actualKey != null) {
+                // use the explicit mapping
+                transformedKey = NS_KEYCLOAK_PREFIX + actualKey;
+            } else {
+                // determine the mapping by convention / wildcard handling
+                transformedKey = NS_KEYCLOAK_PREFIX + baseKey.toLowerCase().replace("_", "-");
+
+                PropertyMapper<?> mapper = PropertyMappers.getMapper(transformedKey);
+
+                if (mapper != null && mapper.hasWildcard()) {
+                    // special case - wildcards don't follow the default conversion rule
+                    WildcardPropertyMapper<?> wildcardPropertyMapper = (WildcardPropertyMapper<?>) mapper;
+
+                    transformedKey = wildcardPropertyMapper.getKcKeyForEnvKey(key, transformedKey)
+                            .orElseThrow();
+                }
+            }
             properties.put(transformedKey, value);
         }
 
