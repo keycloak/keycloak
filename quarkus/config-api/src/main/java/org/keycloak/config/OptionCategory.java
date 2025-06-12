@@ -21,6 +21,7 @@ public enum OptionCategory {
     SECURITY("Security", 120, ConfigSupportLevel.SUPPORTED),
     EXPORT("Export", 130, ConfigSupportLevel.SUPPORTED),
     IMPORT("Import", 140, ConfigSupportLevel.SUPPORTED),
+    OPENAPI_SWAGGER("OpenAPI Swagger", 150, ConfigSupportLevel.EXPERIMENTAL),
     BOOTSTRAP_ADMIN("Bootstrap Admin", 998, ConfigSupportLevel.SUPPORTED),
     GENERAL("General", 999, ConfigSupportLevel.SUPPORTED);
 
