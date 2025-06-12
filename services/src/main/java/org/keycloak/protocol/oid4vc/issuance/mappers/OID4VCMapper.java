@@ -19,9 +19,11 @@ package org.keycloak.protocol.oid4vc.issuance.mappers;
 
 import org.apache.commons.collections4.ListUtils;
 import org.keycloak.Config;
+import org.keycloak.models.CredentialScopeModel;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.oid4vci.Oid4VciConstants;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oid4vc.OID4VCEnvironmentProviderFactory;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
@@ -45,11 +47,9 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
 
     public static final String CLAIM_NAME = "claim.name";
     public static final String USER_ATTRIBUTE_KEY = "userAttribute";
-
+    private static final List<ProviderConfigProperty> OID4VC_CONFIG_PROPERTIES = new ArrayList<>();
     protected ProtocolMapperModel mapperModel;
     protected String format;
-
-    private static final List<ProviderConfigProperty> OID4VC_CONFIG_PROPERTIES = new ArrayList<>();
 
     protected abstract List<ProviderConfigProperty> getIndividualConfigProperties();
 
@@ -62,6 +62,17 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
         this.mapperModel = mapperModel;
         this.format = format;
         return this;
+    }
+
+    /**
+     * some specific claims should not be added into the metadata. Examples are jti, sub, iss etc. Since we have the
+     * possibility to add these credentials with specific claims we should also be able to exclude these specific
+     * attributes from the metadata
+     */
+    public boolean includeInMetadata() {
+        return Optional.ofNullable(mapperModel.getConfig().get(CredentialScopeModel.INCLUDE_IN_METADATA))
+                       .map(Boolean::parseBoolean)
+                       .orElse(true);
     }
 
     /**
@@ -79,7 +90,7 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
 
     protected List<String> getAttributePrefix() {
         return switch (Optional.ofNullable(format).orElse("")) {
-            case Format.JWT_VC, Format.LDP_VC -> List.of("credentialSubject");
+            case Format.JWT_VC, Format.LDP_VC -> List.of(Oid4VciConstants.CREDENTIAL_SUBJECT);
             default -> Collections.emptyList();
         };
     }

@@ -46,8 +46,6 @@ import java.util.stream.Collectors;
  */
 public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
 
-    public static final String VC_KEY = "vc";
-
     protected final KeycloakSession keycloakSession;
 
     public OID4VCIssuerWellKnownProvider(KeycloakSession keycloakSession) {
