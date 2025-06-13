@@ -70,6 +70,7 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.operator.ContextUtils.DIST_CONFIGURATOR_KEY;
 import static org.keycloak.operator.ContextUtils.NEW_DEPLOYMENT_KEY;
@@ -737,6 +738,18 @@ public class PodTemplateTest {
 
         job = getUpdateJob(builder -> builder.addToImagePullSecrets(new LocalObjectReference("new-secret")), builder -> {}, addSecret);
         assertEquals(List.of(new LocalObjectReference("new-secret"), new LocalObjectReference("secret")), job.getSpec().getTemplate().getSpec().getImagePullSecrets());
+    }
+
+    @Test
+    public void testFieldRemovalForInitContainer() {
+        Job job = getUpdateJob(builder -> {
+        }, builder -> builder.withNewUnsupported().withNewPodTemplate().withNewSpec().addNewContainer()
+                .withRestartPolicy("OnFailure")
+                .withNewLifecycle().withNewPostStart().withNewExec().withCommand("hello").endExec().endPostStart()
+                .endLifecycle().endContainer().endSpec().endPodTemplate().endUnsupported(), builder -> {
+                });
+        assertNull(job.getSpec().getTemplate().getSpec().getInitContainers().get(0).getLifecycle());
+        assertNull(job.getSpec().getTemplate().getSpec().getInitContainers().get(0).getRestartPolicy());
     }
 
 }
