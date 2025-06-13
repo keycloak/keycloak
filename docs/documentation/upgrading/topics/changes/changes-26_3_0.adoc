@@ -31,6 +31,12 @@ user profile configuration where too much information was returned in the past.
 
 Notable changes where an internal behavior changed to prevent common misconfigurations, fix bugs or simplify running {project_name}.
 
+=== Different credentials of a user need to have different names
+
+When adding an OTP, WebAuthn or any other 2FA credentials, the name the user assigns to this credential needs to be unique for the given user.
+This allows the user to distinguish between those credentials, and either update or delete them later.
+If a user tries to create a credential with an already existing name, there is an error message and the user is asked to change the name of the new credential.
+
 === Restrict admin role mappings to server administrators
 
 To enhance security, only users with the `admin` role in the `master` realm (server admins) can assign admin roles. This ensures that critical permissions cannot be delegated by realm-level administrators.
@@ -82,8 +88,8 @@ Instead of caching the count, a query will be executed every time to obtain the 
 Most of the time, this change will not impact clients querying the API to fetch the subgroups of a group. However, if not the case,
 a new parameter `subGroupsCount` was introduced to the following endpoints:
 
-* `/realms/{realm}/groups/{id}/children`
-* `/realms/{realm}/groups`
+* `+/realms/{realm}/groups/{id}/children+`
+* `+/realms/{realm}/groups+`
 
 With this parameter, clients can decide whether the count should be returned to each individual group returned. To not break existing deployments,
 this parameter defaults to `true` so that the count is returned if the parameter is not set.
@@ -143,9 +149,10 @@ https://github.com/keycloak/keycloak/issues/37967[Deprecate for removal the Inst
 If you are using the Instagram Identity Broker and want to re-enable it, you can do it by enabling the `instagram-broker`
 feature using the `features` server option:
 
-```
+[source]
+----
 --features=instagram-broker
-```
+----
 
 It has been a while since discussions started about any activity around the Instagram Identity Broker
 and any objection from the community about deprecating it for removal. For more details, see
