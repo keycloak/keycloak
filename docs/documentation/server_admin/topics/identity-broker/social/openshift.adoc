@@ -5,7 +5,19 @@
 . A {project_name} server configured in order to use the truststore. For more information, see the https://www.keycloak.org/server/keycloak-truststore[Configuring a Truststore] {section}.
 
 .Procedure
-. Click *Identity Providers* in the menu.
+. Locate the Openshift 4 instance's API URL by using this command:
++
+[source,bash,subs=+attributes]
+----
+oc cluster-info
+----
+. Look for the URL in a line that has this format:
++
+[source,bash,subs=+attributes]
+----
+Kubernetes master is running at https://api.<your-openshift-domain>:6443
+----
+. In the Admin Console, click *Identity Providers* in the menu.
 . From the *Add provider* list, select *Openshift v4*.
 . Enter the *Client ID* and *Client Secret* and in the *Base URL* field, enter the API URL of your OpenShift 4 instance. Additionally, you can copy the *Redirect URI* to your clipboard.
 +
