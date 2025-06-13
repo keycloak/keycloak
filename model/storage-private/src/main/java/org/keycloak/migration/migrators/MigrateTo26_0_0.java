@@ -18,23 +18,16 @@
 package org.keycloak.migration.migrators;
 
 
-import java.lang.invoke.MethodHandles;
-
-import org.jboss.logging.Logger;
-import org.keycloak.Config;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionProvider;
-import org.keycloak.representations.idm.RealmRepresentation;
 
-public class MigrateTo26_0_0 implements Migration {
+public class MigrateTo26_0_0 extends RealmMigration {
 
     public static final ModelVersion VERSION = new ModelVersion("26.0.0");
-
-    private static final Logger LOG = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
     @Override
     public ModelVersion getVersion() {
@@ -49,15 +42,11 @@ public class MigrateTo26_0_0 implements Migration {
             userSessions.migrate(VERSION.toString());
         }
 
-        session.realms().getRealmsStream().forEach(realm -> migrateRealm(session, realm));
+        super.migrate(session);
     }
 
     @Override
-    public void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
-        migrateRealm(session, realm);
-    }
-
-    private void migrateRealm(KeycloakSession session, RealmModel realm) {
+    public void migrateRealm(KeycloakSession session, RealmModel realm) {
         ClientModel adminConsoleClient = realm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
         if (adminConsoleClient != null) {
             adminConsoleClient.setFullScopeAllowed(true);
