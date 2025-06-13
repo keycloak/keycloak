@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.quarkus.runtime.configuration.test;
+package org.keycloak.quarkus.runtime.configuration;
 
 import org.junit.Test;
 import org.keycloak.common.Profile.Feature;

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.quarkus.runtime.configuration.test;
+package org.keycloak.quarkus.runtime.configuration;
 
 import io.quarkus.opentelemetry.runtime.config.build.SamplerType;
 import org.junit.Test;
