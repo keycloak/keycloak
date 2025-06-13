@@ -62,7 +62,7 @@ public class UserAdapter implements CachedUserModel {
         this.userProviderCache = userProvider;
         this.keycloakSession = keycloakSession;
         this.realm = realm;
-        this.modelSupplier = this::getUserModel;
+        this.modelSupplier = new LazyModel<>(this::getUserModel);
     }
 
     @Override
