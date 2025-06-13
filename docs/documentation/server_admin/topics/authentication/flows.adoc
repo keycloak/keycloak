@@ -45,7 +45,7 @@ The final execution is the *OTP Form*. {project_name} marks this execution as _a
 The default *browser* flow contains two more executions inside the *Browser - Conditional 2FA*, *WebAuthn Authenticator* and *Recovery Authentication Code Form*. These executions are _Disabled_ by default and they are the other 2FA methods that can be added to the flow. Change the requirement from _Disabled_ to _Alternative_ to make them available if the respective credential has been configured for the user. If the user has configured all alternative credential types, the credential with the highest priority is displayed by default. However, the *Try Another Way* option will appear so that the user has the alternative methods to log in.
 
 ===== Requirement
-A set of radio buttons that control the execution of an action executes.
+A drop-down menu that controls the execution of an action.
 
 [[_execution-requirements]]
 ====== Required
