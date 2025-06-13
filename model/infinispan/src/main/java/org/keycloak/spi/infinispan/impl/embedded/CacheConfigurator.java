@@ -221,10 +221,7 @@ public final class CacheConfigurator {
                 throw cacheNotFound(name);
             }
             if (builder.memory().maxCount() != -1) {
-                logger.warnf("Persistent user sessions disabled and memory limit found in configuration for cache %s. This might be a misconfiguration! Update your Infinispan configuration to remove this message.", name);
-            }
-            if (builder.memory().maxCount() == 10000 && (name.equals(USER_SESSION_CACHE_NAME) || name.equals(CLIENT_SESSION_CACHE_NAME))) {
-                logger.warnf("Persistent user sessions disabled and memory limit is set to default value 10000. Ignoring cache limits to avoid losing sessions for cache %s.", name);
+                logger.warnf("Persistent user sessions disabled and memory limit is set. Ignoring cache limits to avoid losing sessions for cache %s.", name);
                 builder.memory().maxCount(-1);
             }
             if (builder.clustering().hash().attributes().attribute(HashConfiguration.NUM_OWNERS).get() == 1 && builder.persistence().stores().isEmpty()) {
