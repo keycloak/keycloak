@@ -176,11 +176,17 @@ public final class Configuration {
     }
 
     public static String toDashCase(String key) {
+        if (key == null) {
+            return null;
+        }
         StringBuilder sb = new StringBuilder(key.length());
         boolean l = false;
 
         for (int i = 0; i < key.length(); i++) {
             char c = key.charAt(i);
+            if (c == ',') {
+                c = '-'; // should not happen, but was allowed by the previous logic
+            }
             if (l && Character.isUpperCase(c)) {
                 sb.append('-');
                 c = Character.toLowerCase(c);

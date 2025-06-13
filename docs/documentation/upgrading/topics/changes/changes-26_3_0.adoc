@@ -3,6 +3,18 @@
 Breaking changes are identified as requiring changes from existing users to their configurations.
 In minor or patch releases we will only do breaking changes to fix bugs.
 
+=== Buildtime SPI Options
+
+SPI options ending in `-enabled`, `-provider-default`, or `-provider` were previously treated as buildtime. However in some instances this was not correct as a provider could have a configuration property ending in one of those suffixes as well.
+
+To resolve this ambiguity, and any potential ambiguity involving SPI and provider names, a new SPI option format was introduced where the scopes and suffix are separated by `--`(double dash) instead of `-`(dash). 
+
+An SPI property ending in `-enabled`, `-provider-default`, or `-provider` will only be treated as buildtime if it is using the new format, e.g. `spi-<spi-name>--<provider-name>--enabled` will be recognized as a buildtime option.
+
+For instance, the correct way to reference your custom email template is: `--spi-email-template--mycustomprovider--enabled` (not `--spi-email-template-mycustomprovider-enabled`).
+
+Options using the legacy format and ending in `-enabled`, `-provider-default`, or `-provider` will instead be treated as runtime and a warning will be emitted.   
+
 === Reading information about temporarily locked users
 
 In previous releases there was an inconsistency in the REST endpoint result of getting a user (`+GET /admin/realms/{realm}/users/{user-id}+`) and searching for a user (`+GET /admin/realms/{realm}/users+`). When BruteForce is enabled and a user was temporarily locked out the former endpoint would return `enabled=false` while the latter would return `enabled=true`. If the user was updated and enabled was false due to temporary lockout then the user would be disabled permanently. Both endpoints now return `enabled=true` when a user is temporarily locked out. To check whether a user is temporarily locked out the BruteForceUserResource endpoint should be utilised (`+GET /admin/realms/{realm}/attack-detection/brute-force/users/{userId}+`).
@@ -136,6 +148,10 @@ https://github.com/keycloak/keycloak/issues/37967[Deprecate for removal the Inst
 In relation to supported Recovery codes, we deprecated the password policy `Recovery Codes Warning Threshold`. This password policy might be removed in the future major version of {project_name}.
 This password policy was not related to passwords at all, but was related to recovery codes, and hence using password policy is not appropriate way for the configuration of the threshold. It is
 recommended to use the configuration option *Warning Threshold* of the *Recovery Authentication Codes* required action instead of using password policy. For more details, see the link:{adminguide_link}#_recovery-codes[Recovery codes documentation].
+
+=== Scope.getPropertyNames deprecated for removal
+
+The `org.keycloak.Config.Scope.getPropertyNames` method has been deprecated for removal.
 
 == Removed features
 

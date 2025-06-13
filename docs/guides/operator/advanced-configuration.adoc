@@ -91,11 +91,11 @@ metadata:
 spec:
   ...
   additionalOptions:
-    - name: spi-connections-http-client-default-connection-pool-size
+    - name: spi-connections-http-client--default--connection-pool-size
       secret: # Secret reference
         name: http-client-secret # name of the Secret
         key: poolSize # name of the Key in the Secret
-    - name: spi-email-template-mycustomprovider-enabled
+    - name: spi-email-template--mycustomprovider--enabled
       value: true # plain text value
 ----
 NOTE:  The name format of options defined in this way is identical to the key format of options specified in the configuration file.
