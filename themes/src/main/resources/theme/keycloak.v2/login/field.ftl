@@ -87,20 +87,21 @@
   </@group>
 </#macro>
 
-<#macro checkbox name label value=false required=false>
-  <div class="${properties.kcCheckboxClass}">
-    <label for="${name}" class="${properties.kcCheckboxClass}">
-      <input
-        class="${properties.kcCheckboxInputClass}"
-        type="checkbox"
-        id="${name}"
-        name="${name}"
-        <#if value>checked</#if>
-      />
-      <span class="${properties.kcCheckboxLabelClass}">${label}</span>
-      <#if required>
-        <span class="${properties.kcCheckboxLabelRequiredClass}" aria-hidden="true">&#42;</span>
-      </#if>
-    </label>
-  </div>
+<#macro checkbox name label value=false required=false description="">
+    <div class="${properties.kcCheckboxClass}">
+        <input
+                class="${properties.kcCheckboxInputClass}"
+                type="checkbox"
+                id="${name}"
+                name="${name}"
+                <#if value>checked</#if>
+        />
+        <label for="${name}" class="${properties.kcCheckboxLabelClass}">${label}<#if required><span
+                class="${properties.kcCheckboxLabelRequiredClass}" aria-hidden="true">&#42;</span>
+            </#if>
+        </label>
+        <#if description?has_content>
+            <span class="${properties.kcCheckboxDescriptionClass}">${description}</span>
+        </#if>
+    </div>
 </#macro>
