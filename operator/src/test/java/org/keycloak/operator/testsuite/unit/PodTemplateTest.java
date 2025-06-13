@@ -515,6 +515,22 @@ public class PodTemplateTest {
     }
 
     @Test
+    public void testAdditionalOptionEnvKey() {
+        // Arrange
+        PodTemplateSpec additionalPodTemplate = null;
+
+        // Act
+        var podTemplate = getDeployment(additionalPodTemplate, null,
+                s -> s.addToAdditionalOptions(new ValueOrSecret("log-level-org.package.some_class", "debug")))
+                .getSpec().getTemplate();
+
+        // Assert
+        assertThat(podTemplate.getSpec().getContainers().get(0).getEnv().stream())
+                .anyMatch(envVar -> envVar.getName().equals("KCKEY_LOG_LEVEL_ORG_PACKAGE_SOME_CLASS")
+                        && envVar.getValue().equals("log-level-org.package.some_class"));
+    }
+
+    @Test
     public void testImageForceOptimized() {
         // Arrange
         PodTemplateSpec additionalPodTemplate = null;

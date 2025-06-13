@@ -57,6 +57,7 @@ import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericB
 @ApplicationScoped
 public class KeycloakDistConfigurator {
 
+    public static final String KC_PREFIX = "KC_";
     /**
      * Specify first-class citizens fields which should not be added as general server configuration property
      */
@@ -204,7 +205,7 @@ public class KeycloakDistConfigurator {
 
     public static String getKeycloakOptionEnvVarName(String kcConfigName) {
         // TODO make this use impl from Quarkus dist (Configuration.toEnvVarFormat)
-        return "KC_" + replaceNonAlphanumericByUnderscores(kcConfigName).toUpperCase();
+        return KC_PREFIX + replaceNonAlphanumericByUnderscores(kcConfigName).toUpperCase();
     }
 
     private <T> OptionMapper<T> optionMapper(Function<Keycloak, T> optionSpec) {
@@ -262,7 +263,9 @@ public class KeycloakDistConfigurator {
         protected <R extends Collection<?>> OptionMapper<T> mapOptionFromCollection(String optionName, Function<T, R> optionValueSupplier) {
             return mapOption(optionName, s -> {
                 var value = optionValueSupplier.apply(s);
-                if (value == null) return null;
+                if (value == null) {
+                    return null;
+                }
                 return value.stream().filter(Objects::nonNull).map(String::valueOf).collect(Collectors.joining(","));
             });
         }

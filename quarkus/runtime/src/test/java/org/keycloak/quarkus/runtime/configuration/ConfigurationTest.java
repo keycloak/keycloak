@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.quarkus.runtime.configuration.test;
+package org.keycloak.quarkus.runtime.configuration;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -159,7 +159,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertEquals("false", config.getConfigValue("MY_EXPRESSION").getValue());
 
         // without the env variable set, the expression should use the missing env variable
-        putEnvVar("KC_HOSTNAME_STRICT", null);
+        removeEnvVar("KC_HOSTNAME_STRICT");
         ConfigArgsConfigSource.setCliArgs("");
         config = createConfig();
         // check that we get the mapped default value
@@ -590,5 +590,5 @@ public class ConfigurationTest extends AbstractConfigurationTest {
 
     private static Config.Scope cacheEmbeddedConfiguration() {
         return initConfig(CacheEmbeddedConfigProviderSpi.SPI_NAME, DefaultCacheEmbeddedConfigProviderFactory.PROVIDER_ID);
-    } 
+    }
 }

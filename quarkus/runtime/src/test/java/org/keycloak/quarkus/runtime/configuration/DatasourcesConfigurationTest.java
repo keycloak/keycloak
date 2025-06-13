@@ -1,4 +1,4 @@
-package org.keycloak.quarkus.runtime.configuration.test;
+package org.keycloak.quarkus.runtime.configuration;
 
 import io.smallrye.config.Expressions;
 import io.smallrye.config.SmallRyeConfig;
