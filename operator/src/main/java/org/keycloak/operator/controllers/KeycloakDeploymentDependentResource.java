@@ -48,6 +48,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.CacheSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProbeSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.SchedulingSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.Truststore;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TruststoreSource;
@@ -327,6 +328,9 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         // probes
         var protocol = isTlsConfigured(keycloakCR) ? "HTTPS" : "HTTP";
         var port = HttpManagementSpec.managementPort(keycloakCR);
+        var readinessOptionalSpec = Optional.ofNullable(keycloakCR.getSpec().getReadinessProbeSpec());
+        var livenessOptionalSpec = Optional.ofNullable(keycloakCR.getSpec().getLivenessProbeSpec());
+        var startupOptionalSpec = Optional.ofNullable(keycloakCR.getSpec().getStartupProbeSpec());
         var relativePath = readConfigurationValue(Constants.KEYCLOAK_HTTP_MANAGEMENT_RELATIVE_PATH_KEY, keycloakCR, context)
                 .or(() -> readConfigurationValue(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY, keycloakCR, context))
                 .map(path -> !path.endsWith("/") ? path + "/" : path)
@@ -334,8 +338,8 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         if (!containerBuilder.hasReadinessProbe()) {
             containerBuilder.withNewReadinessProbe()
-                .withPeriodSeconds(10)
-                .withFailureThreshold(3)
+                .withPeriodSeconds(readinessOptionalSpec.map(ProbeSpec::getProbePeriodSeconds).orElse(10))
+                .withFailureThreshold(readinessOptionalSpec.map(ProbeSpec::getProbeFailureThreshold).orElse(3))
                 .withNewHttpGet()
                 .withScheme(protocol)
                 .withNewPort(port)
@@ -345,8 +349,8 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         }
         if (!containerBuilder.hasLivenessProbe()) {
             containerBuilder.withNewLivenessProbe()
-                .withPeriodSeconds(10)
-                .withFailureThreshold(3)
+                .withPeriodSeconds(livenessOptionalSpec.map(ProbeSpec::getProbePeriodSeconds).orElse(10))
+                .withFailureThreshold(livenessOptionalSpec.map(ProbeSpec::getProbeFailureThreshold).orElse(3))
                 .withNewHttpGet()
                 .withScheme(protocol)
                 .withNewPort(port)
@@ -356,8 +360,8 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         }
         if (!containerBuilder.hasStartupProbe()) {
             containerBuilder.withNewStartupProbe()
-                .withPeriodSeconds(1)
-                .withFailureThreshold(600)
+                .withPeriodSeconds(startupOptionalSpec.map(ProbeSpec::getProbePeriodSeconds).orElse(1))
+                .withFailureThreshold(startupOptionalSpec.map(ProbeSpec::getProbeFailureThreshold).orElse(600))
                 .withNewHttpGet()
                 .withScheme(protocol)
                 .withNewPort(port)
