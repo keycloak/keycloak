@@ -223,7 +223,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
                 String newLastLine = splitted[splitted.length - 1];
 
                 retry -= 1;
-                stableOutput = lastLine.equals(newLastLine) | (retry <= 0);
+                stableOutput = lastLine.equals(newLastLine) || (retry <= 0);
                 lastLine = newLastLine;
             } else {
                 stableOutput = true;
@@ -273,7 +273,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
                 };
                 parallelReaperExecutor.execute(reaper);
             } catch (Exception cause) {
-                throw new RuntimeException("Failed to schecdule the removal of the container", cause);
+                throw new RuntimeException("Failed to schedule the removal of the container", cause);
             }
         }
     }
@@ -342,6 +342,10 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
     }
 
     public int getMappedPort(int port) {
+        if (keycloakContainer == null || !keycloakContainer.isRunning()) {
+            throw new IllegalStateException("KeycloakContainer is not running.");
+        }
+
         return keycloakContainer.getMappedPort(port);
     }
 
