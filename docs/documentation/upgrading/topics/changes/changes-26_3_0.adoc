@@ -83,6 +83,12 @@ Previously the default *browser* flow had a *Browser - Conditional OTP* conditio
 
 Upgraded realms will not be changed. The updated flow will only be available for new realms. Take this change into consideration if you have automated the realm creation.
 
+=== Volatile Session Cache Defaults
+
+If the `persistent-user-sessions` feature is disabled, i.e. volatile sessions are configured, {project_name} now prevents
+`num_owners=1` being configured unless a shared persistent store is also configured. This is to prevent data loss on cache
+rebalances.
+
 == Deprecated features
 
 The following sections provide details on deprecated features.
