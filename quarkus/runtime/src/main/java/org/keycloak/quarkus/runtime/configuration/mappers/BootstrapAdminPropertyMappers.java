@@ -53,6 +53,9 @@ public final class BootstrapAdminPropertyMappers {
                         .paramLabel("client secret")
                         .isMasked(true)
                         .build(),
+                fromOption(BootstrapAdminOptions.IS_TEMPORARY)
+                        .paramLabel("is temporary")
+                        .build()
         };
     }
 
