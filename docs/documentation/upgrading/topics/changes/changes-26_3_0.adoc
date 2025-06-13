@@ -7,13 +7,13 @@ In minor or patch releases we will only do breaking changes to fix bugs.
 
 SPI options ending in `-enabled`, `-provider-default`, or `-provider` were previously treated as buildtime. However in some instances this was not correct as a provider could have a configuration property ending in one of those suffixes as well.
 
-To resolve this ambiguity, and any potential ambiguity involving SPI and provider names, a new SPI option format was introduced where the scopes and suffix are separated by `--`(double dash) instead of `-`(dash). 
+To resolve this ambiguity, and any potential ambiguity involving SPI and provider names, a new SPI option format was introduced where the scopes and suffix are separated by `--`(double dash) instead of `-`(dash).
 
 An SPI property ending in `-enabled`, `-provider-default`, or `-provider` will only be treated as buildtime if it is using the new format, e.g. `spi-<spi-name>--<provider-name>--enabled` will be recognized as a buildtime option.
 
 For instance, the correct way to reference your custom email template is: `--spi-email-template--mycustomprovider--enabled` (not `--spi-email-template-mycustomprovider-enabled`).
 
-Options using the legacy format and ending in `-enabled`, `-provider-default`, or `-provider` will instead be treated as runtime and a warning will be emitted.   
+Options using the legacy format and ending in `-enabled`, `-provider-default`, or `-provider` will instead be treated as runtime and a warning will be emitted.
 
 === Reading information about temporarily locked users
 
@@ -30,6 +30,12 @@ user profile configuration where too much information was returned in the past.
 == Notable changes
 
 Notable changes where an internal behavior changed to prevent common misconfigurations, fix bugs or simplify running {project_name}.
+
+=== Different credentials of a user need to have different names
+
+When adding an OTP, WebAuthn or any other 2FA credentials, the name the user assigns to this credential needs to be unique for the given user.
+This allows the user to distinguish between those credentials, and either update or delete them later.
+If a user tries to create a credential with an already existing name, there is an error message and the user is asked to change the name of the new credential.
 
 === Restrict admin role mappings to server administrators
 
@@ -76,8 +82,8 @@ Instead of caching the count, a query will be executed every time to obtain the 
 Most of the time, this change will not impact clients querying the API to fetch the subgroups of a group. However, if not the case,
 a new parameter `subGroupsCount` was introduced to the following endpoints:
 
-* `/realms/{realm}/groups/{id}/children`
-* `/realms/{realm}/groups`
+* `+/realms/{realm}/groups/{id}/children+`
+* `+/realms/{realm}/groups+`
 
 With this parameter, clients can decide whether the count should be returned to each individual group returned. To not break existing deployments,
 this parameter defaults to `true` so that the count is returned if the parameter is not set.
@@ -131,9 +137,10 @@ https://github.com/keycloak/keycloak/issues/37967[Deprecate for removal the Inst
 If you are using the Instagram Identity Broker and want to re-enable it, you can do it by enabling the `instagram-broker`
 feature using the `features` server option:
 
-```
+[source]
+----
 --features=instagram-broker
-```
+----
 
 It has been a while since discussions started about any activity around the Instagram Identity Broker
 and any objection from the community about deprecating it for removal. For more details, see
