@@ -60,7 +60,7 @@ import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
 
-public class UpdateEmail implements RequiredActionProvider, RequiredActionFactory, EnvironmentDependentProviderFactory {
+public class UpdateEmail implements RequiredActionProvider, RequiredActionFactory {
 
     private static final Logger logger = Logger.getLogger(UpdateEmail.class);
 
@@ -212,8 +212,8 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
         return Collections.emptyList();
     }
 
-    @Override
-    public boolean isSupported(Config.Scope config) {
-        return Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL);
-    }
+//    @Override
+//    public boolean isSupported(Config.Scope config) {
+//        return Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL);
+//    }
 }
