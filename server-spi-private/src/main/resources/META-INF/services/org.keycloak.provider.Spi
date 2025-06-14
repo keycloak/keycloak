@@ -104,3 +104,4 @@ org.keycloak.health.LoadBalancerCheckSpi
 org.keycloak.cookie.CookieSpi
 org.keycloak.organization.OrganizationSpi
 org.keycloak.securityprofile.SecurityProfileSpi
+org.keycloak.logging.MappedDiagnosticContextSpi
