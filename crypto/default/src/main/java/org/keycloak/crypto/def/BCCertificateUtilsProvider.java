@@ -162,7 +162,7 @@ public class BCCertificateUtilsProvider implements CertificateUtilsProvider {
 
     public X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject, BigInteger serialNumber) {
         Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.YEAR, 10);
+        calendar.add(Calendar.YEAR, 3);
         return generateV1SelfSignedCertificate(caKeyPair, subject, serialNumber, calendar.getTime());
     }
 
