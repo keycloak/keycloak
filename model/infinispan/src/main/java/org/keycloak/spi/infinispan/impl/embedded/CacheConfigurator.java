@@ -24,6 +24,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.infinispan.commons.dataconversion.MediaType;
+import org.infinispan.configuration.cache.AbstractStoreConfiguration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.cache.HashConfiguration;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
@@ -227,8 +228,11 @@ public final class CacheConfigurator {
                 logger.warnf("Persistent user sessions disabled and memory limit is set to default value 10000. Ignoring cache limits to avoid losing sessions for cache %s.", name);
                 builder.memory().maxCount(-1);
             }
-            if (builder.clustering().hash().attributes().attribute(HashConfiguration.NUM_OWNERS).get() == 1 && builder.persistence().stores().isEmpty()) {
-                logger.warnf("Number of owners is one for cache %s, and no persistence is configured. This might be a misconfiguration as you will lose data when a single node is restarted!", name);
+            if (builder.clustering().hash().attributes().attribute(HashConfiguration.NUM_OWNERS).get() == 1 &&
+                  builder.persistence().stores().stream().noneMatch(p -> p.attributes().attribute(AbstractStoreConfiguration.SHARED).get())
+            ) {
+                logger.warnf("Persistent user sessions disabled with number of owners set to default value 1 for cache %s and no shared persistence store configured. Setting num_owners=2 to avoid data loss.", name);
+                builder.clustering().hash().numOwners(2);
             }
         }
     }
