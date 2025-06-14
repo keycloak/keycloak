@@ -127,6 +127,8 @@ public class RealmRepresentation {
     protected Integer otpPolicyPeriod;
     protected Boolean otpPolicyCodeReusable;
     protected List<String> otpSupportedApplications;
+    protected Boolean otpPolicyUseEmail;
+    protected String otpPolicyIssuerOverride;
     protected Map<String, Map<String, String>> localizationTexts;
 
     // WebAuthn 2-factor properties below
@@ -1081,6 +1083,22 @@ public class RealmRepresentation {
 
     public void setOtpPolicyCodeReusable(Boolean isCodeReusable) {
         this.otpPolicyCodeReusable = isCodeReusable;
+    }
+
+    public Boolean isOtpPolicyUseEmail() {
+        return otpPolicyUseEmail;
+    }
+
+    public void setOtpPolicyUseEmail(Boolean isUseEmail) {
+        this.otpPolicyUseEmail = isUseEmail;
+    }
+
+    public String getOtpPolicyIssuerOverride() {
+        return otpPolicyIssuerOverride;
+    }
+
+    public void setOtpPolicyIssuerOverride(String otpPolicyIssuerOverride) {
+        this.otpPolicyIssuerOverride = otpPolicyIssuerOverride;
     }
 
     // WebAuthn 2-factor properties below
