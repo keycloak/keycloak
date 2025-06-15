@@ -25,7 +25,7 @@ export const ImageUpload = ({ name, onChange }: ImageUploadProps) => {
     });
 
   if (file) {
-    fileToDataUri(file).then((dataUri) => {
+    void fileToDataUri(file).then((dataUri) => {
       setDataUri(dataUri);
       onChange?.(dataUri);
     });
@@ -35,7 +35,7 @@ export const ImageUpload = ({ name, onChange }: ImageUploadProps) => {
   useEffect(() => {
     (() => {
       if (loadedFile) {
-        fileToDataUri(loadedFile).then((dataUri) => {
+        void fileToDataUri(loadedFile).then((dataUri) => {
           setDataUri(dataUri);
         });
       }
