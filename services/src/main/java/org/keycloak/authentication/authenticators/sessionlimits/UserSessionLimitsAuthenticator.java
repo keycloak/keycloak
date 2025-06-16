@@ -79,7 +79,16 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
                 logger.infof("Too many session in this realm for the current user. Session count: %s", userSessionCountForRealm);
                 String eventDetails = String.format("Realm session limit exceeded. Realm: %s, Realm limit: %s. Session count: %s, User id: %s",
                         context.getRealm().getName(), userRealmLimit, userSessionCountForRealm, context.getUser().getId());
-                handleLimitExceeded(context, userSessionsForRealm, eventDetails, userRealmLimit);
+
+                var removedClientSessions = handleLimitExceeded(context, userSessionsForClient, eventDetails, userClientLimit);
+                if (exceedsLimit(userSessionCountForRealm - removedClientSessions.size(), userRealmLimit))
+                {
+                    List<UserSessionModel> remainingSessionsToBeRemoved = userSessionsForRealm
+                            .stream()
+                            .filter(userSessionModel -> !removedClientSessions.contains(userSessionModel))
+                            .collect(Collectors.toList());
+                    handleLimitExceeded(context, remainingSessionsToBeRemoved, eventDetails, userRealmLimit);
+                }
             } // otherwise if the user is still allowed to create a new session in the realm, check if this applies for this specific client as well.
             else if (newClientSession && exceedsLimit(userSessionCountForClient, userClientLimit)) {
                 logger.infof("Too many sessions related to the current client for this user. Session count: %s", userSessionCountForClient);
@@ -148,7 +157,10 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
 
     }
 
-    private void handleLimitExceeded(AuthenticationFlowContext context, List<UserSessionModel> userSessions, String eventDetails, long limit) {
+    /**
+     * @return A list of logged-out user sessions, if any.
+     */
+    private List<UserSessionModel> handleLimitExceeded(AuthenticationFlowContext context, List<UserSessionModel> userSessions, String eventDetails, long limit) {
         switch (behavior) {
             case UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION:
                 logger.info("Denying new session");
@@ -160,17 +172,22 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
                 context.getEvent().error(Errors.GENERIC_AUTHENTICATION_ERROR);
                 Response challenge = context.form().setError(errorMessage).createErrorPage(Response.Status.FORBIDDEN);
                 context.failure(AuthenticationFlowError.GENERIC_AUTHENTICATION_ERROR, challenge, eventDetails, errorMessage);
-                break;
+                return Collections.emptyList();
 
             case UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION:
                 logger.info("Terminating oldest session");
-                logoutOldestSessions(userSessions, limit);
+                var removedSessions = logoutOldestSessions(userSessions, limit);
                 context.success();
-                break;
+                return removedSessions;
         }
+
+        return Collections.emptyList();
     }
 
-    private void logoutOldestSessions(List<UserSessionModel> userSessions, long limit) {
+    /**
+     * @return A list of logged-out user sessions, if any.
+     */
+    private List<UserSessionModel> logoutOldestSessions(List<UserSessionModel> userSessions, long limit) {
         long numberOfSessionsThatNeedToBeLoggedOut = getNumberOfSessionsThatNeedToBeLoggedOut(userSessions.size(), limit);
         if (numberOfSessionsThatNeedToBeLoggedOut == 1) {
             logger.info("Logging out oldest session");
@@ -178,10 +195,16 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
             logger.infof("Logging out oldest %s sessions", numberOfSessionsThatNeedToBeLoggedOut);
         }
 
-        userSessions
+        List<UserSessionModel> userSessionsToBeRemoved = userSessions
             .stream()
             .sorted(Comparator.comparingInt(UserSessionModel::getLastSessionRefresh))
             .limit(numberOfSessionsThatNeedToBeLoggedOut)
-            .forEach(userSession -> AuthenticationManager.backchannelLogout(session, userSession, true));
+            .toList();
+
+        for (UserSessionModel userSession : userSessionsToBeRemoved) {
+            AuthenticationManager.backchannelLogout(session, userSession, true);
+        }
+
+        return userSessionsToBeRemoved;
     }
 }
