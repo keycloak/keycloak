@@ -78,3 +78,18 @@ Read more on how to enable this feature in https://www.keycloak.org/server/updat
 = Deprecation of the Passkeys Conditional UI Authenticator
 
 The preview feature *Passkeys* recently introduced a new *Passkeys Conditional UI Authenticator* that you can use to integrate the passkey auto-fill or conditional UI feature in your login flow. Passkeys are now being seamlessly integrated into {project_name} inside the default username forms. Therefore, the old authenticator is invalid and it is deprecated in this release. The factory and implementation classes will be removed when *Passkeys* are supported in {project_name}.
+
+= Organization invitation management
+
+Organization administrators can now manage organization invitations through both the Admin Console and REST API:
+
+* View all sent invitations with their current status (Pending, Expired)
+* Resend pending invitations to recipients
+* Delete invitation records from the system
+* Filter invitations by status for easier management
+
+All invitations are now persistently stored in the database, providing better tracking and management capabilities.
+
+The invitation management features are available in the *Invitations* tab when managing an organization in the Admin Console, and through the Organizations REST API endpoints under `/admin/realms/{realm}/orgs/{orgId}/invitations`.
+
+For more information, see the link:{adminguide_link}#managing-organization-members_[Managing organization members] chapter in the {adminguide_name}.
