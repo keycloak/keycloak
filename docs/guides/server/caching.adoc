@@ -138,10 +138,15 @@ Since all the sessions in this setup are stored in-memory, there are two side ef
 * Losing sessions when all {project_name} nodes restart.
 * Increased memory consumption.
 
-Using volatile user sessions also disables an improved handling of offline sessions, where only a limited number of offline sessions needs to be loaded into memory.
-Due to this, it is not recommended to use volatile user sessions when using offline sessions extensively. apply the settings below not only to the regular session caches but also the offline session caches.
+When using volatile user sessions, the cache is the source of truth for user and client sessions.
+Therefore, it is necessary to not define an upper limit on the total number of entries that can be stored via the setting `max-count`.
+Similarly, it's crucial that we replicate each entry to two nodes to prevent data loss on node failures and rolling restarts.
 
-When using volatile user sessions, the cache is the source of truth for user and client sessions. Therefore, it is necessary to not define an upper limit on the total number of entries that can be stored. Similarly, it's crucial that we replicate each entry to at least two nodes to prevent data loss on node failures and rolling restarts.
+[WARNING]
+====
+When using volatile user sessions, you must not use a `max-count` setting for the offline session caches as this leads to a loss of data due to the current implementation even though the session data is saved in the database.
+It is not recommended to use volatile user sessions when using offline sessions extensively due the high memory usage.
+====
 
 Follow these steps to enable this setup:
 
