@@ -521,6 +521,12 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
         if (ldapAttrValue == null) {
             userModelProperty.setValue(user, null);
         } else {
+            Object currentValue = userModelProperty.getValue(user);
+
+            if (ldapAttrValue.equals(currentValue)) {
+                return;
+            }
+
             Class<Object> clazz = userModelProperty.getJavaClass();
 
             if (String.class.equals(clazz)) {

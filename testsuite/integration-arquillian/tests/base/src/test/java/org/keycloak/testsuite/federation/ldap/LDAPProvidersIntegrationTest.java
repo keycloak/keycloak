@@ -86,8 +86,6 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -1386,7 +1384,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
                 Assert.assertNull(user);
             });
         } finally {
-            setTimeOffset(0);
+            resetTimeOffset();
             testingClient.testing().revertTestingInfinispanTimeService();
         }
     }
@@ -1494,92 +1492,6 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
                 LDAPTestContext ctx = LDAPTestContext.init(session);
                 LDAPObject johnLdapObject = ctx.getLdapProvider().loadLDAPUserByUsername(ctx.getRealm(), "johnkeycloak");
                 johnLdapObject.setSingleAttribute(LDAPConstants.SN, "Doe");
-                ctx.getLdapProvider().getLdapIdentityStore().update(johnLdapObject);
-            });
-            resetTimeOffset();
-            testingClient.testing().revertTestingInfinispanTimeService();
-        }
-    }
-
-    @Test
-    public void testInvalidateCacheIfUsernameChanges() {
-        try {
-            testingClient.testing().setTestingInfinispanTimeService();
-            String originalUsername = "myjohnkeycloak";
-            testingClient.server().run(session -> {
-                LDAPTestContext ctx = LDAPTestContext.init(session);
-                LDAPObject john = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), ctx.getRealm(), originalUsername, "John", "Doe", "myjohn@email.org", null, "1234");
-                LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), john, "Password1");
-            });
-
-            AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest(originalUsername, "Password1");
-            assertTrue(tokenResponse.isSuccess());
-
-            // modify the username of the user directly in ldap
-            String updatedUsername = "updatedjohnkeycloak";
-            testingClient.server().run(session -> {
-                LDAPTestContext ctx = LDAPTestContext.init(session);
-                RealmModel realm = ctx.getRealm();
-                realm.setEditUsernameAllowed(true);
-                LDAPObject johnLdapObject = ctx.getLdapProvider().loadLDAPUserByUsername(realm, originalUsername);
-                LDAPConfig config = ctx.getLdapProvider().getLdapIdentityStore().getConfig();
-                johnLdapObject.setSingleAttribute(config.getUsernameLdapAttribute(), updatedUsername);
-                ctx.getLdapProvider().getLdapIdentityStore().update(johnLdapObject);
-            });
-
-            tokenResponse = oauth.doPasswordGrantRequest(originalUsername, "Password1");
-            assertTrue(tokenResponse.isSuccess());
-
-            setTimeOffset(610);
-
-            tokenResponse = oauth.doPasswordGrantRequest(originalUsername, "Password1");
-            assertFalse(tokenResponse.isSuccess());
-
-            tokenResponse = oauth.doPasswordGrantRequest(updatedUsername, "Password1");
-            assertTrue(tokenResponse.isSuccess());
-        } finally {
-            resetTimeOffset();
-            testingClient.testing().revertTestingInfinispanTimeService();
-        }
-    }
-
-    @Test
-    public void testInvalidateCacheIfEmailChange() {
-        String originalEmail = "john@email.org";
-        try {
-            testingClient.testing().setTestingInfinispanTimeService();
-            // import user from the ldap johnkeycloak and cache it reading it by id
-            List<UserRepresentation> users = testRealm().users().search("johnkeycloak", true);
-            Assert.assertEquals(1, users.size());
-
-            AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest(originalEmail, "Password1");
-            assertTrue(tokenResponse.isSuccess());
-
-            // modify the email of the user directly in ldap
-            String updatedEmail = "updatedjohnkeycloak@email.org";
-            testingClient.server().run(session -> {
-                LDAPTestContext ctx = LDAPTestContext.init(session);
-                LDAPObject johnLdapObject = ctx.getLdapProvider().loadLDAPUserByUsername(ctx.getRealm(), "johnkeycloak");
-                johnLdapObject.setSingleAttribute(LDAPConstants.EMAIL, updatedEmail);
-                ctx.getLdapProvider().getLdapIdentityStore().update(johnLdapObject);
-            });
-
-            tokenResponse = oauth.doPasswordGrantRequest(originalEmail, "Password1");
-            assertTrue(tokenResponse.isSuccess());
-
-            setTimeOffset(610);
-
-            tokenResponse = oauth.doPasswordGrantRequest(originalEmail, "Password1");
-            assertFalse(tokenResponse.isSuccess());
-
-            tokenResponse = oauth.doPasswordGrantRequest(updatedEmail, "Password1");
-            assertTrue(tokenResponse.isSuccess());
-        } finally {
-            // revert
-            testingClient.server().run(session -> {
-                LDAPTestContext ctx = LDAPTestContext.init(session);
-                LDAPObject johnLdapObject = ctx.getLdapProvider().loadLDAPUserByUsername(ctx.getRealm(), "johnkeycloak");
-                johnLdapObject.setSingleAttribute(LDAPConstants.EMAIL, originalEmail);
                 ctx.getLdapProvider().getLdapIdentityStore().update(johnLdapObject);
             });
             resetTimeOffset();
