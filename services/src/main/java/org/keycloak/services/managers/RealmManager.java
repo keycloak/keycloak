@@ -70,6 +70,9 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.utils.StringUtil;
 
@@ -257,21 +260,26 @@ public class RealmManager {
         realm.setBrowserSecurityHeaders(BrowserSecurityHeaders.realmDefaultHeaders);
 
         // brute force
-        realm.setBruteForceProtected(false); // default settings off for now todo set it on
-        realm.setPermanentLockout(false);
-        realm.setMaxTemporaryLockouts(0);
-        realm.setBruteForceStrategy(RealmRepresentation.BruteForceStrategy.MULTIPLE);
-        realm.setMaxFailureWaitSeconds(900);
-        realm.setMinimumQuickLoginWaitSeconds(60);
-        realm.setWaitIncrementSeconds(60);
-        realm.setQuickLoginCheckMilliSeconds(1000);
-        realm.setMaxDeltaTimeSeconds(60 * 60 * 12); // 12 hours
-        realm.setFailureFactor(30);
-        realm.setSslRequired(SslRequired.EXTERNAL);
-        realm.setOTPPolicy(OTPPolicy.DEFAULT_POLICY);
+        realm.setBruteForceProtected(realm.isBruteForceProtected()); // default settings off for now todo set it on
+        realm.setPermanentLockout(realm.isPermanentLockout());
+        realm.setMaxTemporaryLockouts(realm.getMaxTemporaryLockouts() == 0 ? 0 : realm.getMaxTemporaryLockouts());
+        realm.setBruteForceStrategy(Optional.ofNullable(realm.getBruteForceStrategy())
+                                            .orElse(RealmRepresentation.BruteForceStrategy.MULTIPLE));
+        realm.setMaxFailureWaitSeconds(realm.getMaxFailureWaitSeconds() == 0 ? 900 : realm.getMaxFailureWaitSeconds());
+        realm.setMinimumQuickLoginWaitSeconds(realm.getMinimumQuickLoginWaitSeconds() == 0 ? 60 :
+                                                      realm.getMinimumQuickLoginWaitSeconds());
+        realm.setWaitIncrementSeconds(realm.getWaitIncrementSeconds() == 0 ? 60 : realm.getWaitIncrementSeconds());
+        realm.setQuickLoginCheckMilliSeconds(realm.getQuickLoginCheckMilliSeconds() == 0 ? 1000 :
+                                                     realm.getQuickLoginCheckMilliSeconds());
+        int twelveHours = 60 * 60 * 12;
+        realm.setMaxDeltaTimeSeconds(realm.getMaxDeltaTimeSeconds() == 0 ? twelveHours : realm.getMaxDeltaTimeSeconds());
+        realm.setFailureFactor(realm.getFailureFactor() == 0 ? 30 : realm.getFailureFactor());
+        realm.setSslRequired(Optional.ofNullable(realm.getSslRequired()).orElse(SslRequired.EXTERNAL));
+        realm.setOTPPolicy(Optional.ofNullable(realm.getOTPPolicy()).orElse(OTPPolicy.DEFAULT_POLICY));
         realm.setLoginWithEmailAllowed(true);
 
-        realm.setEventsListeners(Collections.singleton("jboss-logging"));
+        realm.setEventsListeners(Stream.concat(Stream.of("jboss-logging"), realm.getEventsListenersStream())
+                                       .collect(Collectors.toSet()));
     }
 
     public boolean removeRealm(RealmModel realm) {
