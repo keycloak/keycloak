@@ -198,7 +198,7 @@ public final class Database {
                 "org.postgresql.Driver",
                 "org.hibernate.dialect.PostgreSQLDialect",
                 "jdbc:postgresql://${kc.db-url-host:localhost}:${kc.db-url-port:5432}/${kc.db-url-database:keycloak}${kc.db-url-properties:}",
-                asList("liquibase.database.core.PostgresDatabase", "org.keycloak.connections.jpa.updater.liquibase.PostgresPlusDatabase"),
+                asList("org.keycloak.connections.jpa.updater.liquibase.UpdatedPostgresDatabase", "org.keycloak.connections.jpa.updater.liquibase.PostgresPlusDatabase"),
                 "postgres"
         ),
         MSSQL("mssql",
