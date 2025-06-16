@@ -44,16 +44,14 @@ public class DefaultClientService implements ClientService {
             if (!allowUpdate) {
                 throw new ServiceException("Client already exists", Response.Status.CONFLICT);
             }
-            // TODO: make sure that removal is the best way to do this
-            realm.removeClient(client.getClientId());
         } else {
+            model = realm.addClient(client.getClientId());
             created = true;
         }
-        model = realm.addClient(client.getClientId());
-
-        mapper.toModel(model, client, realm);
 
         // TODO: defaulting, validation, canonicalization
+
+        mapper.toModel(model, client, realm);
 
         var updated = mapper.fromModel(model);
 

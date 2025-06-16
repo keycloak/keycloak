@@ -2,6 +2,7 @@ package org.keycloak.admin.api.client;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -23,7 +24,7 @@ public interface ClientApi {
     @Produces(MediaType.APPLICATION_JSON)
     ClientRepresentation createOrUpdateClient(ClientRepresentation client, @PathParam("fieldValidation") FieldValidation fieldValidation);
 
-    @PUT
+    @PATCH
     @Consumes("application/merge-patch+json")
     @Produces(MediaType.APPLICATION_JSON)
     ClientRepresentation patchClient(JsonNode patch, @PathParam("fieldValidation") FieldValidation fieldValidation);
