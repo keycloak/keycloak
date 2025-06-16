@@ -268,6 +268,9 @@ public class ModelToRepresentation {
             }
         }
 
+        rep.setGroups(user.getGroupsStream()
+            .map(ModelToRepresentation::buildGroupPath).toList());
+
         return rep;
     }
 
