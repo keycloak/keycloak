@@ -169,7 +169,7 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
         assertNoRedirect(suiteContext.getAuthServerInfo().getContextRoot().toString() + resource);
 
         // The unknown resource should be accessible without a redirect.
-        assertNoRedirect(suiteContext.getAuthServerInfo().getContextRoot().toString() + resource.replaceAll(Pattern.quote(resourcesVersion), "unknown"));
+        assertNoRedirect(suiteContext.getAuthServerInfo().getContextRoot().toString() + resource.replaceAll(Pattern.quote(resourcesVersion), "unkno"));
     }
 
     @Test
