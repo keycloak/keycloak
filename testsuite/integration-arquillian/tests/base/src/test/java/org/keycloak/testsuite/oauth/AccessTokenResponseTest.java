@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.oauth;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
 import java.util.Collections;
@@ -12,10 +13,14 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.ClientSessionNoteMapper;
 import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
+import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
@@ -62,9 +67,19 @@ public class AccessTokenResponseTest extends AbstractKeycloakTest {
         config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN_RESPONSE, "true");
         customClaimHardcodedMapper.setConfig(config);
 
+        ProtocolMapperRepresentation customClaimClientSessionNoteMapper = new ProtocolMapperRepresentation();
+        customClaimClientSessionNoteMapper.setName("client-session-note-mapper");
+        customClaimClientSessionNoteMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        customClaimClientSessionNoteMapper.setProtocolMapper(ClientSessionNoteMapper.PROVIDER_ID);
+        customClaimClientSessionNoteMapper.setConfig(Map.of(
+                OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "client_session_note_startedAt",
+                ProtocolMapperUtils.CLIENT_SESSION_NOTE, AuthenticatedClientSessionModel.STARTED_AT_NOTE,
+                OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN_RESPONSE, "true"
+        ));
+
         realm.getClients().stream().filter(clientRepresentation -> "test-app".equals(clientRepresentation.getClientId()))
                 .forEach(clientRepresentation -> {
-                    clientRepresentation.setProtocolMappers(Collections.singletonList(customClaimHardcodedMapper));
+                    clientRepresentation.setProtocolMappers(List.of(customClaimHardcodedMapper, customClaimClientSessionNoteMapper));
                     clientRepresentation.setFullScopeAllowed(false);
                 });
 
@@ -81,5 +96,6 @@ public class AccessTokenResponseTest extends AbstractKeycloakTest {
         assertEquals(200, response.getStatusCode());
 
         assertEquals("custom_claim", response.getOtherClaims().get("custom_hardcoded_claim"));
+        assertNotNull(response.getOtherClaims().get("client_session_note_startedAt"));
     }
 }
