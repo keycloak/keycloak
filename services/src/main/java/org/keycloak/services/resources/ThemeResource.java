@@ -143,9 +143,8 @@ public class ThemeResource {
                     // This assumes that it is better to try to some content even if it is outdated or too new, instead of returning a 404.
                     // This should usually work for images, CSS or (simple) JavaScript referenced in the login theme that needs to be
                     // loaded while the rolling restart is progressing.
-                    return Response.temporaryRedirect(
-                            redirectUri
-                    ).build();
+                    return Response.temporaryRedirect(redirectUri)
+                            .build();
                 }
 
                 if (hasContentHash && Objects.equals(etag, Version.RESOURCES_VERSION)) {
