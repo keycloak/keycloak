@@ -144,9 +144,9 @@ Similarly, it's crucial that we replicate each entry to two nodes to prevent dat
 
 [WARNING]
 ====
-When using volatile user sessions, you must not use a `max-count` setting for the offline session caches as this leads to a loss of data due to the current implementation even though the session data is saved in the database. Therefore {project_name} ignores this setting if volatile user sessions are enabled, and prints a warning.
+When using volatile user sessions, the `max-count` setting for the offline session is ignored.
 
-It is not recommended to use volatile user sessions when using offline sessions extensively due the high memory usage.
+It is not recommended to use volatile user sessions when using offline sessions extensively due to potentially high memory usage.
 ====
 
 Follow these steps to enable this setup:
