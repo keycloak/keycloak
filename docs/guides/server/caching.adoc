@@ -132,7 +132,6 @@ The `actionTokens` distributed cache is used to track metadata about action toke
 By default, regular user sessions are stored in the database and loaded on-demand to the cache.
 It is possible to configure {project_name} to store regular user sessions in the cache only and minimize calls to the database.
 
-
 Since all the sessions in this setup are stored in-memory, there are two side effects related to this:
 
 * Losing sessions when all {project_name} nodes restart.
@@ -147,6 +146,7 @@ Similarly, it's crucial that we replicate each entry to two nodes to prevent dat
 When using volatile user sessions, the `max-count` setting for the offline session is ignored.
 
 It is not recommended to use volatile user sessions when using offline sessions extensively due to potentially high memory usage.
+For volatile sessions, the time offline sessions are cached in memory can be limited with the SPI options `spi-user-sessions--infinispan--offline-client-session-cache-entry-lifespan-override` and `spi-user-sessions--infinispan--offline-session-cache-entry-lifespan-override`.
 ====
 
 Follow these steps to enable this setup:
