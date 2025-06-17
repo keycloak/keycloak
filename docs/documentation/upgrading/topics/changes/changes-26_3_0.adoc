@@ -1,11 +1,14 @@
 == Breaking changes
 
 Breaking changes are identified as requiring changes from existing users to their configurations.
-In minor or patch releases we will only do breaking changes to fix bugs.
+In minor or patch releases, we will only do breaking changes to fix important bugs.
 
-=== Buildtime SPI Options
+=== SPI Options naming
 
-SPI options ending in `-enabled`, `-provider-default`, or `-provider` were previously treated as buildtime. However in some instances this was not correct as a provider could have a configuration property ending in one of those suffixes as well.
+If you were relying upon SPI properties ending in `-enabled`, `-provider`, `-provider-default` being seen as build time options for either triggering an auto-build or producing an error when a build is needed, then this is a breaking change.
+For everyone else, this is a notable change, and you should update any used SPI option to the new format eventually.
+
+SPI options ending in `-enabled`, `-provider-default`, or `-provider` were previously treated as buildtime. However, in some instances, this was not correct as a provider could have a configuration property ending in one of those suffixes as well.
 
 To resolve this ambiguity, and any potential ambiguity involving SPI and provider names, a new SPI option format was introduced where the scopes and suffix are separated by `--`(double dash) instead of `-`(dash).
 
