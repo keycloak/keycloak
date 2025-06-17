@@ -122,7 +122,7 @@ When starting the server, you can include TRACE level in the startup command. Fo
 
 [source,bash,subs=+attributes]
 ----
-(--log-level=INFO,org.keycloak.common.crypto.CryptoIntegration:TRACE),
+--log-level=INFO,org.keycloak.common.crypto.CryptoIntegration:TRACE
 ----
 
 By using TRACE level, you can check that the startup log contains `KC` provider with the note about `Approved Mode` such as the following:
