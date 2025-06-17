@@ -1264,8 +1264,6 @@ public class RealmCacheSession implements CacheRealmProvider {
             }
             ClientStorageProviderModel model = new ClientStorageProviderModel(component);
 
-            // although we do set a timeout, Infinispan has no guarantees when the user will be evicted
-            // its also hard to test stuff
             if (model.shouldInvalidate(cached)) {
                 registerClientInvalidation(cached.getId(), cached.getClientId(), realm.getId());
                 return getClientDelegate().getClientById(realm, cached.getId());
