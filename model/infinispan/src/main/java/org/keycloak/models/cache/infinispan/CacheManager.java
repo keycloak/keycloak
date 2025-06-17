@@ -200,7 +200,7 @@ public abstract class CacheManager {
     private void put(String id, Revisioned object, long lifespan) {
         if (lifespan < 0) {
             cache.putForExternalRead(id, object);
-        } else {
+        } else if (lifespan > 0) {
             cache.putForExternalRead(id, object, lifespan, TimeUnit.MILLISECONDS);
         }
     }
