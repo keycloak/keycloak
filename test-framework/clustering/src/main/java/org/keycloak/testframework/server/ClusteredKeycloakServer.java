@@ -17,15 +17,12 @@
 
 package org.keycloak.testframework.server;
 
-import java.net.URISyntaxException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Objects;
 
-import io.quarkus.bootstrap.utils.BuildToolHelper;
 import org.jboss.logging.Logger;
 import org.keycloak.it.utils.DockerKeycloakDistribution;
+import org.keycloak.testframework.clustering.LoadBalancer;
 import org.keycloak.testframework.database.JBossLogConsumer;
 import org.testcontainers.images.RemoteDockerImage;
 import org.testcontainers.utility.DockerImageName;
@@ -122,7 +119,7 @@ public class ClusteredKeycloakServer implements KeycloakServer {
 
     @Override
     public String getBaseUrl() {
-        return getBaseUrl(0);
+        return LoadBalancer.HOSTNAME;
     }
 
     @Override
@@ -130,8 +127,12 @@ public class ClusteredKeycloakServer implements KeycloakServer {
         return getManagementBaseUrl(0);
     }
 
+    public int getBasePort(int index) {
+        return containers[index].getMappedPort(REQUEST_PORT);
+    }
+
     public String getBaseUrl(int index) {
-        return "http://localhost:%d".formatted(containers[index].getMappedPort(REQUEST_PORT));
+        return "http://localhost:%d".formatted(getBasePort(index));
     }
 
     public String getManagementBaseUrl(int index) {

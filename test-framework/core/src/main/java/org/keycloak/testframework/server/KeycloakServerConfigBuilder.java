@@ -24,6 +24,7 @@ public class KeycloakServerConfigBuilder {
 
     private final String command;
     private final Map<String, String> options = new HashMap<>();
+    private final Map<String, String> properties = new HashMap<>();
     private final Set<String> features = new HashSet<>();
     private final Set<String> featuresDisabled = new HashSet<>();
     private final LogBuilder log = new LogBuilder();
@@ -73,6 +74,16 @@ public class KeycloakServerConfigBuilder {
 
     public KeycloakServerConfigBuilder option(String key, String value) {
         options.put(key, value);
+        return this;
+    }
+
+    public KeycloakServerConfigBuilder properties(Map<String, String> properties) {
+        this.properties.putAll(properties);
+        return this;
+    }
+
+    public KeycloakServerConfigBuilder property(String key, String value) {
+        this.properties.put(key, value);
         return this;
     }
 
@@ -192,6 +203,9 @@ public class KeycloakServerConfigBuilder {
         for (Map.Entry<String, String> e : options.entrySet()) {
             args.add("--" + e.getKey() + "=" + e.getValue());
         }
+
+        properties.forEach((key, value) -> args.add("-D" + key + "=" + value));
+
         if (!features.isEmpty()) {
             args.add("--features=" + String.join(",", features));
         }
