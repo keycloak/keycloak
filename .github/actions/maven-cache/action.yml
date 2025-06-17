@@ -42,7 +42,7 @@ runs:
         mkdir -p ..\..\..\.m2
         mkdir -p D:\.m2\repository
         cmd /c mklink /d $HOME\.m2\repository D:\.m2\repository
-        cmd /c mklink /d $PWD\..\..\..\.m2\repository D:\.m2\repository
+        cmd /c "rmdir /s /q $PWD\..\..\..\.m2\repository & mklink /d $PWD\..\..\..\.m2\repository D:\.m2\repository"
 
     - id: restore-maven-repository
       name: Maven cache
