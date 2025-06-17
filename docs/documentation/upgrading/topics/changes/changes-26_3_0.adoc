@@ -52,6 +52,7 @@ OpenID Connect Providers.
 In this release, the broker was updated to respect the value from this claim to set the email verification status for the federated (local) user account.
 Whenever users are federated for the first time or re-authenticating, if the `Trust email` setting is enabled and `Sync Mode` is set to `FORCE`,
 the user account will be updated to (un)mark the email as verified.
+If the provider does not send the claim, it defaults to the original behavior and sets the email as verified.
 
 In the future, we might evaluate changing this specific configuration to avoid automatic updates on the email verification
 status on federated user accounts depending on the use cases and the demand from the community.
