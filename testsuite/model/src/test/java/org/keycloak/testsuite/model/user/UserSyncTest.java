@@ -380,7 +380,7 @@ public class UserSyncTest extends KeycloakModelTest {
             return null;
         });
 
-        // email changed, user can not be resolved
+        // user id changed, user cannot be resolved
         withRealm(realmId, (session, realm) -> {
             assertThat(session.users().getUserByUsername(realm, "user1"), nullValue());
             return null;
