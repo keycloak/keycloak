@@ -205,13 +205,19 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
 
     public void afterAll() {
         logger.logAfterAll();
-        List<InstanceContext<?, ?>> destroy = deployedInstances.stream().filter(i -> i.getLifeCycle().equals(LifeCycle.CLASS)).toList();
+        List<InstanceContext<?, ?>> destroy = deployedInstances.stream()
+              .filter(i -> i.getLifeCycle().equals(LifeCycle.CLASS))
+              .sorted(InstanceContextComparator.INSTANCE.reversed())
+              .toList();
         destroy.forEach(this::destroy);
     }
 
     public void afterEach() {
         logger.logAfterEach();
-        List<InstanceContext<?, ?>> destroy = deployedInstances.stream().filter(i -> i.getLifeCycle().equals(LifeCycle.METHOD)).toList();
+        List<InstanceContext<?, ?>> destroy = deployedInstances.stream()
+              .filter(i -> i.getLifeCycle().equals(LifeCycle.METHOD))
+              .sorted(InstanceContextComparator.INSTANCE.reversed())
+              .toList();
         destroy.forEach(this::destroy);
 
         List<InstanceContext<?, ?>> cleanup = deployedInstances.stream().filter(i -> i.getValue() instanceof ManagedTestResource).toList();
