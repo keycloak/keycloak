@@ -350,6 +350,7 @@ m|jgroups.fd.port-offset
 |Failure detection by protocol `FD_SOCK2`.
 It listens to the abrupt closing of a socket to suspect a {project_name} server failure.
 The `jgroups.fd.port-offset` property defines the offset from the `jgroups.bind.port`.
+By default, the offset is set to 50000, making the failure detection port 57800.
 
 |===
 
