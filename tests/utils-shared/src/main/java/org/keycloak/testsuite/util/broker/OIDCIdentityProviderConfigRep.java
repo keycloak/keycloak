@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.broker;
+package org.keycloak.testsuite.util.broker;
 
 import java.util.Map;
 
