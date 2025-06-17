@@ -252,7 +252,7 @@ public enum JBossSAMLConstants {
                 String key = c.get();
                 if ((old = m.put(key, c)) != null) {
 //                    System.out.println("WARNING: " + old);
-                    if (old != null && c.getAsQName().equals(old.getAsQName())) {
+                    if (c.getAsQName().equals(old.getAsQName())) {
                         throw new IllegalStateException("Same name " + key + " used for two distinct constants: " + c + ", " + old);
                     }
                     m.put(key, null);
