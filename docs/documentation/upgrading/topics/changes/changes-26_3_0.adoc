@@ -7,13 +7,13 @@ In minor or patch releases we will only do breaking changes to fix bugs.
 
 SPI options ending in `-enabled`, `-provider-default`, or `-provider` were previously treated as buildtime. However in some instances this was not correct as a provider could have a configuration property ending in one of those suffixes as well.
 
-To resolve this ambiguity, and any potential ambiguity involving SPI and provider names, a new SPI option format was introduced where the scopes and suffix are separated by `--`(double dash) instead of `-`(dash). 
+To resolve this ambiguity, and any potential ambiguity involving SPI and provider names, a new SPI option format was introduced where the scopes and suffix are separated by `--`(double dash) instead of `-`(dash).
 
 An SPI property ending in `-enabled`, `-provider-default`, or `-provider` will only be treated as buildtime if it is using the new format, e.g. `spi-<spi-name>--<provider-name>--enabled` will be recognized as a buildtime option.
 
 For instance, the correct way to reference your custom email template is: `--spi-email-template--mycustomprovider--enabled` (not `--spi-email-template-mycustomprovider-enabled`).
 
-Options using the legacy format and ending in `-enabled`, `-provider-default`, or `-provider` will instead be treated as runtime and a warning will be emitted.   
+Options using the legacy format and ending in `-enabled`, `-provider-default`, or `-provider` will instead be treated as runtime and a warning will be emitted.
 
 === Reading information about temporarily locked users
 
@@ -34,6 +34,12 @@ Notable changes where an internal behavior changed to prevent common misconfigur
 === Restrict admin role mappings to server administrators
 
 To enhance security, only users with the `admin` role in the `master` realm (server admins) can assign admin roles. This ensures that critical permissions cannot be delegated by realm-level administrators.
+
+=== Problematic cache configurations ignored
+
+Previous versions {project_name} warned about problematic configurations, for example, if a wrong number of owners was configured or a cache size was set when it should not have been set when enabling volatile user sessions.
+The current version will still warn about those settings, but will also ignore them to ensure a correct behavior and to avoid data loss.
+
 
 === Email verification is now automatically set when using a OpenID Connect broker with `Trust email` is enabled and `Sync Mode` is `FORCE`
 
