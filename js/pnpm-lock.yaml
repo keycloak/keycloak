@@ -148,8 +148,8 @@ importers:
   apps/admin-ui:
     dependencies:
       '@dagrejs/dagre':
-        specifier: ^1.1.4
-        version: 1.1.4
+        specifier: ^1.1.5
+        version: 1.1.5
       '@keycloak/keycloak-admin-client':
         specifier: workspace:*
         version: link:../../libs/keycloak-admin-client
@@ -722,8 +722,8 @@ packages:
     resolution: {integrity: sha512-UJnjoFsmxfKUdNYdWgOB0mWUypuLvAfQPH1+pyvRJs6euowbFkFC6P13w1l8mJyi3vxYMxc9kld5jZEGRQs6bw==}
     engines: {node: '>=18'}
 
-  '@dagrejs/dagre@1.1.4':
-    resolution: {integrity: sha512-QUTc54Cg/wvmlEUxB+uvoPVKFazM1H18kVHBQNmK2NbrDR5ihOCR6CXLnDSZzMcSQKJtabPUWridBOlJM3WkDg==}
+  '@dagrejs/dagre@1.1.5':
+    resolution: {integrity: sha512-Ghgrh08s12DCL5SeiR6AoyE80mQELTWhJBRmXfFoqDiFkR458vPEdgTbbjA0T+9ETNxUblnD0QW55tfdvi5pjQ==}
 
   '@dagrejs/graphlib@2.2.4':
     resolution: {integrity: sha512-mepCf/e9+SKYy1d02/UkvSy6+6MoyXhVxP8lLDfA7BPE1X1d4dR0sZznmbM8/XVJ1GPM+Svnx7Xj6ZweByWUkw==}
@@ -4916,7 +4916,7 @@ snapshots:
 
   '@csstools/css-tokenizer@3.0.3': {}
 
-  '@dagrejs/dagre@1.1.4':
+  '@dagrejs/dagre@1.1.5':
     dependencies:
       '@dagrejs/graphlib': 2.2.4
 
@@ -5173,7 +5173,7 @@ snapshots:
 
   '@keycloak/keycloak-admin-ui@file:apps/admin-ui(@babel/runtime@7.27.3)(@types/react@18.3.18)(typescript@5.8.3)':
     dependencies:
-      '@dagrejs/dagre': 1.1.4
+      '@dagrejs/dagre': 1.1.5
       '@keycloak/keycloak-admin-client': link:libs/keycloak-admin-client
       '@keycloak/keycloak-ui-shared': link:libs/ui-shared
       '@patternfly/patternfly': 5.4.2
