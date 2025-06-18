@@ -42,7 +42,6 @@ if "%KEY%" == "--debug" (
     ) else (
         rem IPv4 or IPv6 address with optional port
         (echo %2 | findstr /R "[0-9].*\." >nul || echo %2 | findstr /R "\[.*:.*\]" >nul) && (
-            set DEBUG_ADDRESS=%2:%DEBUG_PORT_VAR%
             (echo %2 | findstr /R "]:[0-9][0-9]*" >nul || echo %2 | findstr /R "^[0-9].*:[0-9][0-9]*" >nul) && (
                 set DEBUG_ADDRESS=%2
             ) || (
