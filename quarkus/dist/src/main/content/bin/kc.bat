@@ -23,6 +23,7 @@ set SERVER_OPTS=-Djava.util.logging.manager=org.jboss.logmanager.LogManager -Dqu
 
 set DEBUG_MODE=false
 set DEBUG_PORT_VAR=8787
+set DEBUG_ADDRESS=0.0.0.0:%DEBUG_PORT_VAR%
 set DEBUG_SUSPEND_VAR=n
 set CONFIG_ARGS=
 
@@ -35,10 +36,20 @@ if "%KEY%" == "" (
 if "%KEY%" == "--debug" (
     set DEBUG_MODE=true
     if 1%2 EQU +1%2 (
-        set DEBUG_PORT_VAR=%2
+        rem Plain port
+        set DEBUG_ADDRESS=0.0.0.0:%2
         shift
     ) else (
-        set DEBUG_PORT_VAR=8787
+        rem IPv4 or IPv6 address with optional port
+        (echo %2 | findstr /R "[0-9].*\." >nul || echo %2 | findstr /R "\[.*:.*\]" >nul) && (
+            set DEBUG_ADDRESS=%2:%DEBUG_PORT_VAR%
+            (echo %2 | findstr /R "]:[0-9][0-9]*" >nul || echo %2 | findstr /R "^[0-9].*:[0-9][0-9]*" >nul) && (
+                set DEBUG_ADDRESS=%2
+            ) || (
+                set DEBUG_ADDRESS=%2:%DEBUG_PORT_VAR%
+            )
+            shift
+        )
     )
     shift
     goto READ-ARGS
@@ -146,7 +157,7 @@ rem Set debug settings if not already set
 if "%DEBUG_MODE%" == "true" (
     echo "%JAVA_OPTS%" | findstr /I "\-agentlib:jdwp" > nul
     if errorlevel == 1 (
-        set JAVA_OPTS=%JAVA_OPTS% -agentlib:jdwp=transport=dt_socket,address=%DEBUG_PORT_VAR%,server=y,suspend=%DEBUG_SUSPEND_VAR%
+        set JAVA_OPTS=%JAVA_OPTS% -agentlib:jdwp=transport=dt_socket,address=%DEBUG_ADDRESS%,server=y,suspend=%DEBUG_SUSPEND_VAR%
     ) else (
         echo Debug already enabled in JAVA_OPTS, ignoring --debug argument
     )
