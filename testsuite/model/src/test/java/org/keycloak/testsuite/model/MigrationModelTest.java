@@ -159,6 +159,47 @@ public class MigrationModelTest extends KeycloakModelTest {
         });
     }
 
+    @Test
+    public void duplicatedUpdateTime() {
+        inComittedTransaction(1, (session, i) -> {
+            String currentVersion = new ModelVersion(Version.VERSION).toString();
+            EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+
+            List<MigrationModelEntity> entities = getMigrationEntities(em);
+            assertThat(entities.size(), is(1));
+            assertMigrationModelEntity(entities.get(0), currentVersion);
+
+            MigrationModel m = session.getProvider(DeploymentStateProvider.class).getMigrationModel();
+            assertThat(m.getStoredVersion(), is(currentVersion));
+            assertThat(entities.get(0).getId(), is(m.getResourcesTag()));
+
+            try {
+                MigrationModelEntity mm1 = new MigrationModelEntity();
+                mm1.setId("a");
+                mm1.setUpdatedTime(0);
+                mm1.setVersion("26.0.0");
+                em.persist(mm1);
+
+                em.flush();
+
+                // Same time, everything different - testing for the constraint to be present
+                MigrationModelEntity mm2 = new MigrationModelEntity();
+                mm2.setId("b");
+                mm2.setUpdatedTime(0);
+                mm2.setVersion("26.0.1");
+                em.persist(mm2);
+
+                // added at the same time - exception thrown by the unique constraint
+                assertThrows(ModelDuplicateException.class, em::flush);
+
+            } finally {
+                em.remove(em.find(MigrationModelEntity.class, "a"));
+            }
+
+            return null;
+        });
+    }
+
     private void assertMigrationModelEntity(MigrationModelEntity model, String expectedVersion) {
         assertThat(model, notNullValue());
         assertTrue(model.getId().matches("[\\da-z]{5}"));
