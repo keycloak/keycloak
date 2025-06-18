@@ -19,7 +19,7 @@ mkdir -p $SCRIPT_DIR/../olm/catalog/test-catalog
     --output yaml > test-catalog/operator.yaml
 
   opm render $BUNDLE_IMAGE:$VERSION \
-    --output=yaml >> test-catalog/operator.yaml
+    --output=yaml --skip-tls >> test-catalog/operator.yaml
 
   cat << EOF >> test-catalog/operator.yaml
 ---

@@ -67,6 +67,11 @@ import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME
 public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     private static final Logger logger = Logger.getLogger(OIDCLoginProtocolFactory.class);
 
+    /**
+     * determines the order in which the login protocols are displayed in the dropdown boxes in the UI
+     */
+    public static final int UI_ORDER = 100;
+
     public static final String USERNAME = "username";
     public static final String EMAIL = "email";
     public static final String EMAIL_VERIFIED = "email verified";
@@ -542,4 +547,11 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         }
     }
 
+    /**
+     * defines the option-order in the admin-ui
+     */
+    @Override
+    public int order() {
+        return UI_ORDER;
+    }
 }

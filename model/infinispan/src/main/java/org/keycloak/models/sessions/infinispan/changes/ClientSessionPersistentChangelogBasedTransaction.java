@@ -24,6 +24,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.PersistentUserSessionProvider;
 import org.keycloak.models.sessions.infinispan.SessionFunction;
@@ -31,8 +32,8 @@ import org.keycloak.models.sessions.infinispan.UserSessionAdapter;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionStore;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
-import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -156,12 +157,16 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
             entity.setTimestamp(userSession.getLastSessionRefresh());
         }
 
-        if (getMaxIdleMsLoader(offline).apply(realm, client, entity) == SessionTimeouts.ENTRY_EXPIRED_FLAG
-                || getLifespanMsLoader(offline).apply(realm, client, entity) == SessionTimeouts.ENTRY_EXPIRED_FLAG) {
+        final UUID clientSessionId = entity.getId();
+
+        SessionEntityWrapper<AuthenticatedClientSessionEntity> wrapper = new SessionEntityWrapper<>(entity);
+        Map<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> imported = ((PersistentUserSessionProvider) kcSession.getProvider(UserSessionProvider.class)).importSessionsWithExpiration(Map.of(clientSessionId, wrapper), getCache(offline),
+                getLifespanMsLoader(offline),
+                getMaxIdleMsLoader(offline));
+
+        if (imported.isEmpty()) {
             return null;
         }
-
-        final UUID clientSessionId = entity.getId();
 
         SessionUpdateTask<AuthenticatedClientSessionEntity> createClientSessionTask = Tasks.addIfAbsentSync();
         this.addTask(entity.getId(), createClientSessionTask, entity, UserSessionModel.SessionPersistenceState.PERSISTENT);
@@ -174,10 +179,10 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
         AuthenticatedClientSessionStore clientSessions = sessionToImportInto.getEntity().getAuthenticatedClientSessions();
         clientSessions.put(client.getId(), clientSessionId);
 
-        SessionUpdateTask registerClientSessionTask = new RegisterClientSessionTask(client.getId(), clientSessionId, offline);
+        SessionUpdateTask<UserSessionEntity> registerClientSessionTask = new RegisterClientSessionTask(client.getId(), clientSessionId, offline);
         userSessionTx.addTask(sessionToImportInto.getId(), registerClientSessionTask);
 
-        return new SessionEntityWrapper<>(entity);
+        return wrapper;
     }
 
     public static class RegisterClientSessionTask implements PersistentSessionUpdateTask<UserSessionEntity> {

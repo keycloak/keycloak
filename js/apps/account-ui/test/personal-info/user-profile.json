@@ -4,14 +4,8 @@
       "name": "username",
       "displayName": "${username}",
       "permissions": {
-        "view": [
-          "admin",
-          "user"
-        ],
-        "edit": [
-          "admin",
-          "user"
-        ]
+        "view": ["admin", "user"],
+        "edit": ["admin", "user"]
       },
       "validations": {
         "length": {
@@ -26,19 +20,11 @@
       "name": "email",
       "displayName": "${email}",
       "required": {
-        "roles": [
-          "user"
-        ]
+        "roles": ["user"]
       },
       "permissions": {
-        "view": [
-          "admin",
-          "user"
-        ],
-        "edit": [
-          "admin",
-          "user"
-        ]
+        "view": ["admin", "user"],
+        "edit": ["admin", "user"]
       },
       "validations": {
         "email": {},
@@ -51,19 +37,11 @@
       "name": "firstName",
       "displayName": "${firstName}",
       "required": {
-        "roles": [
-          "user"
-        ]
+        "roles": ["user"]
       },
       "permissions": {
-        "view": [
-          "admin",
-          "user"
-        ],
-        "edit": [
-          "admin",
-          "user"
-        ]
+        "view": ["admin", "user"],
+        "edit": ["admin", "user"]
       },
       "validations": {
         "length": {
@@ -76,19 +54,11 @@
       "name": "lastName",
       "displayName": "${lastName}",
       "required": {
-        "roles": [
-          "user"
-        ]
+        "roles": ["user"]
       },
       "permissions": {
-        "view": [
-          "admin",
-          "user"
-        ],
-        "edit": [
-          "admin",
-          "user"
-        ]
+        "view": ["admin", "user"],
+        "edit": ["admin", "user"]
       },
       "validations": {
         "length": {
@@ -115,12 +85,8 @@
         ]
       },
       "permissions": {
-        "edit": [
-          "user"
-        ],
-        "view": [
-          "user"
-        ]
+        "edit": ["user"],
+        "view": ["user"]
       },
       "annotations": {
         "inputType": "select",
@@ -128,11 +94,7 @@
       },
       "validations": {
         "options": {
-          "options": [
-            "one",
-            "two",
-            "three"
-          ]
+          "options": ["one", "two", "three"]
         }
       }
     },
@@ -154,14 +116,8 @@
         ]
       },
       "permissions": {
-        "edit": [
-          "user",
-          "admin"
-        ],
-        "view": [
-          "user",
-          "admin"
-        ]
+        "edit": ["user", "admin"],
+        "view": ["user", "admin"]
       },
       "annotations": {
         "inputType": "textarea"
@@ -173,9 +129,7 @@
       "name": "email2",
       "displayName": "Alternative email",
       "required": {
-        "roles": [
-          "user"
-        ],
+        "roles": ["user"],
         "scopes": [
           "roles",
           "offline_access",
@@ -204,14 +158,8 @@
         ]
       },
       "permissions": {
-        "edit": [
-          "admin",
-          "user"
-        ],
-        "view": [
-          "admin",
-          "user"
-        ]
+        "edit": ["admin", "user"],
+        "view": ["admin", "user"]
       },
       "annotations": {
         "inputType": "html5-email",
@@ -277,6 +225,7 @@
           "pl": "${locale_pl}",
           "pt": "${locale_pt}",
           "ru": "${locale_ru}",
+          "ky": "${locale_ky}",
           "sk": "${locale_sk}",
           "sv": "${locale_sv}",
           "th": "${locale_th}",
@@ -284,7 +233,7 @@
           "uk": "${locale_uk}",
           "zh": "${locale_zh}",
           "fi": "${locale_fi}"
-       }
+        }
       },
       "permissions": { "view": ["admin", "user"], "edit": ["admin", "user"] },
       "group": "group"

@@ -29,9 +29,6 @@ import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.broker.provider.IdentityProviderMapperSyncModeDelegate;
 import org.keycloak.common.ClientConnection;
-import org.keycloak.common.Profile;
-import org.keycloak.common.constants.ServiceAccountConstants;
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -39,7 +36,6 @@ import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -49,26 +45,15 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.light.LightweightUserAdapter;
-import org.keycloak.protocol.LoginProtocol;
-import org.keycloak.protocol.LoginProtocolFactory;
-import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.protocol.oidc.TokenExchangeProvider;
 import org.keycloak.protocol.oidc.TokenManager;
-import org.keycloak.protocol.oidc.endpoints.TokenEndpoint.TokenExchangeSamlProtocol;
-import org.keycloak.protocol.saml.SamlClient;
-import org.keycloak.protocol.saml.SamlProtocol;
-import org.keycloak.protocol.saml.SamlService;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.Urls;
 import org.keycloak.services.cors.Cors;
-import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.IdentityBrokerService;
@@ -76,14 +61,10 @@ import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
-import org.keycloak.util.TokenUtil;
 
 import static org.keycloak.authentication.authenticators.util.AuthenticatorUtils.getDisabledByBruteForceEventError;
-import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_CLIENT;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -91,7 +72,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
@@ -206,22 +186,7 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
 
     }
 
-    protected String getRequestedTokenType() {
-        String requestedTokenType = formParams.getFirst(OAuth2Constants.REQUESTED_TOKEN_TYPE);
-        if (requestedTokenType == null) {
-            requestedTokenType = OAuth2Constants.REFRESH_TOKEN_TYPE;
-            return requestedTokenType;
-        }
-        if (requestedTokenType.equals(OAuth2Constants.ACCESS_TOKEN_TYPE)
-                || requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)
-                || requestedTokenType.equals(OAuth2Constants.SAML2_TOKEN_TYPE)) {
-            return requestedTokenType;
-        }
-
-        event.detail(Details.REASON, "requested_token_type unsupported");
-        event.error(Errors.INVALID_REQUEST);
-        throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "requested_token_type unsupported", Response.Status.BAD_REQUEST);
-    }
+    protected abstract String getRequestedTokenType();
 
     protected List<ClientModel> getTargetAudienceClients() {
         List<String> audienceParams = params.getAudience();
@@ -246,44 +211,7 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
         return targetAudienceClients;
     }
 
-    protected void validateAudience(AccessToken token, boolean disallowOnHolderOfTokenMismatch, List<ClientModel> targetAudienceClients) {
-        ClientModel tokenHolder = token == null ? null : realm.getClientByClientId(token.getIssuedFor());
-        for (ClientModel targetClient : targetAudienceClients) {
-            if (targetClient.isConsentRequired()) {
-                event.detail(Details.REASON, "audience requires consent");
-                event.detail(Details.AUDIENCE, targetClient.getClientId());
-                event.error(Errors.CONSENT_DENIED);
-                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Client requires user consent", Response.Status.BAD_REQUEST);
-            }
-            if (!targetClient.isEnabled()) {
-                event.detail(Details.REASON, "audience client disabled");
-                event.detail(Details.AUDIENCE, targetClient.getClientId());
-                event.error(Errors.CLIENT_DISABLED);
-                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Client disabled", Response.Status.BAD_REQUEST);
-            }
-            boolean isClientTheAudience = targetClient.equals(client);
-            if (isClientTheAudience) {
-                if (client.isPublicClient()) {
-                    // public clients can only exchange on to themselves if they are the token holder
-                    forbiddenIfClientIsNotTokenHolder(disallowOnHolderOfTokenMismatch, tokenHolder);
-                } else if (!client.equals(tokenHolder)) {
-                    // confidential clients can only exchange to themselves if they are within the token audience
-                    forbiddenIfClientIsNotWithinTokenAudience(token);
-                }
-            } else {
-                if (client.isPublicClient()) {
-                    // public clients can not exchange tokens from other client
-                    forbiddenIfClientIsNotTokenHolder(disallowOnHolderOfTokenMismatch, tokenHolder);
-                }
-                if (!AdminPermissions.management(session, realm).clients().canExchangeTo(client, targetClient, token)) {
-                    event.detail(Details.REASON, "client not allowed to exchange to audience");
-                    event.detail(Details.AUDIENCE, targetClient.getClientId());
-                    event.error(Errors.NOT_ALLOWED);
-                    throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
-                }
-            }
-        }
-    }
+    protected abstract void validateAudience(AccessToken token, boolean disallowOnHolderOfTokenMismatch, List<ClientModel> targetAudienceClients);
 
     protected Response exchangeClientToClient(UserModel targetUser, UserSessionModel targetUserSession,
             AccessToken token, boolean disallowOnHolderOfTokenMismatch) {
@@ -324,9 +252,7 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
         }
     }
 
-    protected List<String> getSupportedOAuthResponseTokenTypes() {
-        return Arrays.asList(OAuth2Constants.ACCESS_TOKEN_TYPE, OAuth2Constants.REFRESH_TOKEN_TYPE);
-    }
+    protected abstract List<String> getSupportedOAuthResponseTokenTypes();
 
     protected AuthenticationSessionModel createSessionModel(UserSessionModel targetUserSession, RootAuthenticationSessionModel rootAuthSession, UserModel targetUser, ClientModel client, String scope) {
         AuthenticationSessionModel authSession = rootAuthSession.createAuthenticationSession(client);
@@ -337,163 +263,17 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
         return authSession;
     }
 
-    protected String getRequestedScope(AccessToken token, List<ClientModel> targetAudienceClients) {
-        ClientModel targetClient = targetAudienceClients.get(0);
-        // TODO Remove once more audiences are properly supported
-        if (targetAudienceClients.size() > 1) {
-            logger.warnf("Only one value of audience parameter currently supported for token exchange. Using audience '%s' and ignoring the other audiences provided", targetClient.getClientId());
-        }
-
-        String scope = formParams.getFirst(OAuth2Constants.SCOPE);
-        if (token != null && token.getScope() != null && scope == null) {
-            scope = token.getScope();
-
-            Set<String> targetClientScopes = new HashSet<String>();
-            targetClientScopes.addAll(targetClient.getClientScopes(true).keySet());
-            targetClientScopes.addAll(targetClient.getClientScopes(false).keySet());
-            //from return scope remove scopes that are not default or optional scopes for targetClient
-            scope = Arrays.stream(scope.split(" ")).filter(s -> "openid".equals(s) || (targetClientScopes.contains(Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES) ? s.split(":")[0] : s))).collect(Collectors.joining(" "));
-        } else if (token != null && token.getScope() != null) {
-            String subjectTokenScopes = token.getScope();
-            if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
-                Set<String> subjectTokenScopesSet = Arrays.stream(subjectTokenScopes.split(" ")).map(s -> s.split(":")[0]).collect(Collectors.toSet());
-                scope = Arrays.stream(scope.split(" ")).filter(sc -> subjectTokenScopesSet.contains(sc.split(":")[0])).collect(Collectors.joining(" "));
-            } else {
-                Set<String> subjectTokenScopesSet = Arrays.stream(subjectTokenScopes.split(" ")).collect(Collectors.toSet());
-                scope = Arrays.stream(scope.split(" ")).filter(sc -> subjectTokenScopesSet.contains(sc)).collect(Collectors.joining(" "));
-            }
-
-            Set<String> targetClientScopes = new HashSet<String>();
-            targetClientScopes.addAll(targetClient.getClientScopes(true).keySet());
-            targetClientScopes.addAll(targetClient.getClientScopes(false).keySet());
-            //from return scope remove scopes that are not default or optional scopes for targetClient
-            scope = Arrays.stream(scope.split(" ")).filter(s -> "openid".equals(s) || (targetClientScopes.contains(Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES) ? s.split(":")[0] : s))).collect(Collectors.joining(" "));
-        }
-        return scope;
-    }
+    protected abstract String getRequestedScope(AccessToken token, List<ClientModel> targetAudienceClients);
 
     protected void setClientToContext(List<ClientModel> targetAudienceClients) {
-        ClientModel targetClient = getTargetClient(targetAudienceClients);
-        session.getContext().setClient(targetClient);
+        // The client requesting exchange is set in the context
+        session.getContext().setClient(client);
     }
 
-    protected ClientModel getTargetClient(List<ClientModel> targetAudienceClients) {
-        // Make just first client into consideration TODO: Move this method to V1 only as V2 will properly support more audiences
-        return targetAudienceClients.get(0);
-    }
+    protected abstract Response exchangeClientToOIDCClient(UserModel targetUser, UserSessionModel targetUserSession, String requestedTokenType,
+                                                  List<ClientModel> targetAudienceClients, String scope, AccessToken subjectToken);
 
-    protected Response exchangeClientToOIDCClient(UserModel targetUser, UserSessionModel targetUserSession, String requestedTokenType,
-                                                  List<ClientModel> targetAudienceClients, String scope, AccessToken subjectToken) {
-        ClientModel targetClient = getTargetClient(targetAudienceClients);
-        RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
-        AuthenticationSessionModel authSession = createSessionModel(targetUserSession, rootAuthSession, targetUser, targetClient, scope);
-
-        AuthenticationManager.setClientScopesInSession(session, authSession);
-        ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, targetUserSession, authSession);
-
-        if (!AuthenticationManager.isClientSessionValid(realm, client, targetUserSession, targetUserSession.getAuthenticatedClientSessionByClient(client.getId()))) {
-            // create the requester client session if needed
-            AuthenticationSessionModel clientAuthSession = createSessionModel(targetUserSession, rootAuthSession, targetUser, client, scope);
-            TokenManager.attachAuthenticationSession(this.session, targetUserSession, clientAuthSession);
-        }
-
-        updateUserSessionFromClientAuth(targetUserSession);
-
-        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, targetClient, event, this.session, targetUserSession, clientSessionCtx)
-                .generateAccessToken();
-        responseBuilder.getAccessToken().issuedFor(client.getClientId());
-
-        if (targetClient != null && !targetClient.equals(client)) {
-            responseBuilder.getAccessToken().addAudience(targetClient.getClientId());
-        }
-
-        if (formParams.containsKey(OAuth2Constants.REQUESTED_SUBJECT)) {
-            // if "impersonation", store the client that originated the impersonated user session
-            targetUserSession.setNote(IMPERSONATOR_CLIENT.toString(), client.getId());
-        }
-
-        if (targetUserSession.getPersistenceState() == UserSessionModel.SessionPersistenceState.TRANSIENT) {
-            responseBuilder.getAccessToken().setSessionId(null);
-        }
-
-        String issuedTokenType;
-        if (requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)
-                && OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken()
-                && targetUserSession.getPersistenceState() != UserSessionModel.SessionPersistenceState.TRANSIENT) {
-            responseBuilder.generateRefreshToken();
-            responseBuilder.getRefreshToken().issuedFor(client.getClientId());
-            issuedTokenType = OAuth2Constants.REFRESH_TOKEN_TYPE;
-        } else {
-            issuedTokenType = OAuth2Constants.ACCESS_TOKEN_TYPE;
-        }
-
-        String scopeParam = clientSessionCtx.getClientSession().getNote(OAuth2Constants.SCOPE);
-        if (TokenUtil.isOIDCRequest(scopeParam)) {
-            responseBuilder.generateIDToken().generateAccessTokenHash();
-        }
-
-        AccessTokenResponse res = responseBuilder.build();
-        res.setOtherClaims(OAuth2Constants.ISSUED_TOKEN_TYPE, issuedTokenType);
-
-        event.detail(Details.AUDIENCE, targetClient.getClientId())
-            .user(targetUser);
-
-        event.success();
-
-        return cors.add(Response.ok(res, MediaType.APPLICATION_JSON_TYPE));
-    }
-
-    protected Response exchangeClientToSAML2Client(UserModel targetUser, UserSessionModel targetUserSession, String requestedTokenType, List<ClientModel> targetAudienceClients) {
-        ClientModel targetClient = getTargetClient(targetAudienceClients);
-
-        // Create authSession with target SAML 2.0 client and authenticated user
-        LoginProtocolFactory factory = (LoginProtocolFactory) session.getKeycloakSessionFactory()
-                .getProviderFactory(LoginProtocol.class, SamlProtocol.LOGIN_PROTOCOL);
-        SamlService samlService = (SamlService) factory.createProtocolEndpoint(session, event);
-        AuthenticationSessionModel authSession = samlService.getOrCreateLoginSessionForIdpInitiatedSso(session, realm,
-                targetClient, null);
-        if (authSession == null) {
-            logger.error("SAML assertion consumer url not set up");
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Client requires assertion consumer url set up", Response.Status.BAD_REQUEST);
-        }
-
-        authSession.setAuthenticatedUser(targetUser);
-
-        event.session(targetUserSession);
-
-        AuthenticationManager.setClientScopesInSession(session, authSession);
-        ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, targetUserSession,
-                authSession);
-
-        updateUserSessionFromClientAuth(targetUserSession);
-
-        // Create SAML 2.0 Assertion Response
-        SamlClient samlClient = new SamlClient(targetClient);
-        SamlProtocol samlProtocol = new TokenExchangeSamlProtocol(samlClient).setEventBuilder(event).setHttpHeaders(headers).setRealm(realm)
-                .setSession(session).setUriInfo(session.getContext().getUri());
-
-        Response samlAssertion = samlProtocol.authenticated(authSession, targetUserSession, clientSessionCtx);
-        if (samlAssertion.getStatus() != 200) {
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Can not get SAML 2.0 token", Response.Status.BAD_REQUEST);
-        }
-        String xmlString = (String) samlAssertion.getEntity();
-        String encodedXML = Base64Url.encode(xmlString.getBytes(GeneralConstants.SAML_CHARSET));
-
-        int assertionLifespan = samlClient.getAssertionLifespan();
-
-        AccessTokenResponse res = new AccessTokenResponse();
-        res.setToken(encodedXML);
-        res.setTokenType("Bearer");
-        res.setExpiresIn(assertionLifespan <= 0 ? realm.getAccessCodeLifespan() : assertionLifespan);
-        res.setOtherClaims(OAuth2Constants.ISSUED_TOKEN_TYPE, requestedTokenType);
-
-        event.detail(Details.AUDIENCE, targetClient.getClientId())
-            .user(targetUser);
-
-        event.success();
-
-        return cors.add(Response.ok(res, MediaType.APPLICATION_JSON_TYPE));
-    }
+    protected abstract Response exchangeClientToSAML2Client(UserModel targetUser, UserSessionModel targetUserSession, String requestedTokenType, List<ClientModel> targetAudienceClients);
 
     protected Response exchangeExternalToken(String subjectIssuer, String subjectToken) {
         // try to find the IDP whose alias matches the issuer or the subject issuer in the form params.
@@ -508,7 +288,7 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
             event.error(Errors.NOT_ALLOWED);
             throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
         }
-        BrokeredIdentityContext context = externalExchangeContext.provider().exchangeExternal(event, formParams);
+        BrokeredIdentityContext context = externalExchangeContext.provider().exchangeExternal(this, this.context);
         if (context == null) {
             event.error(Errors.INVALID_ISSUER);
             throw new CorsErrorResponseException(cors, Errors.INVALID_ISSUER, "Invalid " + OAuth2Constants.SUBJECT_ISSUER + " parameter", Response.Status.BAD_REQUEST);

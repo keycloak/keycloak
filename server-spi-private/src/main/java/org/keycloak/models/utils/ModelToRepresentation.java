@@ -119,6 +119,7 @@ public class ModelToRepresentation {
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyCreateTimeoutPasswordless");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAvoidSameAuthenticatorRegisterPasswordless");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAcceptableAaguidsPasswordless");
+        REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyPasskeysEnabledPasswordless");
 
         REALM_EXCLUDED_ATTRIBUTES.add(Constants.CLIENT_POLICIES);
         REALM_EXCLUDED_ATTRIBUTES.add(Constants.CLIENT_PROFILES);
@@ -241,7 +242,9 @@ public class ModelToRepresentation {
         if (setUserAttributes) {
             rep.setEmail(user.getEmail());
         }
-        rep.setEnabled(user.isEnabled());
+        if (rep.isEnabled() == null) {
+            rep.setEnabled(user.isEnabled());
+        }
         rep.setEmailVerified(user.isEmailVerified());
         rep.setTotp(user.credentialManager().isConfiguredFor(OTPCredentialModel.TYPE));
         rep.setDisableableCredentialTypes(user.credentialManager()
@@ -289,7 +292,9 @@ public class ModelToRepresentation {
         if (setUserAttributes) {
             rep.setEmail(user.getEmail());
         }
-        rep.setEnabled(user.isEnabled());
+        if (rep.isEnabled() == null) {
+            rep.setEnabled(user.isEnabled());
+        }
         rep.setEmailVerified(user.isEmailVerified());
         rep.setFederationLink(user.getFederationLink());
         addAttributeToBriefRep(user, rep, IS_TEMP_ADMIN_ATTR_NAME);
@@ -510,6 +515,7 @@ public class ModelToRepresentation {
         rep.setWebAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister(webAuthnPolicy.isAvoidSameAuthenticatorRegister());
         rep.setWebAuthnPolicyPasswordlessAcceptableAaguids(webAuthnPolicy.getAcceptableAaguids());
         rep.setWebAuthnPolicyPasswordlessExtraOrigins(webAuthnPolicy.getExtraOrigins());
+        rep.setWebAuthnPolicyPasswordlessPasskeysEnabled(webAuthnPolicy.isPasskeysEnabled());
 
         CibaConfig cibaPolicy = realm.getCibaPolicy();
         Map<String, String> attrMap = ofNullable(rep.getAttributes()).orElse(new HashMap<>());
@@ -564,7 +570,10 @@ public class ModelToRepresentation {
         }
 
         rep.setInternationalizationEnabled(realm.isInternationalizationEnabled());
-        rep.setSupportedLocales(realm.getSupportedLocalesStream().collect(Collectors.toSet()));
+        Set<String> supportedLocales = realm.getSupportedLocalesStream().collect(Collectors.toSet());
+        if (!supportedLocales.isEmpty()) {
+            rep.setSupportedLocales(supportedLocales);
+        }
         rep.setDefaultLocale(realm.getDefaultLocale());
         if (internal) {
             exportAuthenticationFlows(session, realm, rep);

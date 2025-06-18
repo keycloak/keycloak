@@ -2022,6 +2022,74 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     }
 
     @Test
+    public void testIntrospectRPTCreatedFromOfflineTokenDifferentClient() throws Exception {
+        ClientResource publicClient = getClient(getRealm(), PUBLIC_TEST_CLIENT);
+
+        ProtocolMapperRepresentation customClaimMapper = new ProtocolMapperRepresentation();
+
+        customClaimMapper.setName("custom_claim");
+        customClaimMapper.setProtocolMapper(HardcodedClaim.PROVIDER_ID);
+        customClaimMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        Map<String, String> config = new HashMap<>();
+        config.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "custom_claim");
+        config.put(HardcodedClaim.CLAIM_VALUE, PUBLIC_TEST_CLIENT);
+        config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+        customClaimMapper.setConfig(config);
+
+        publicClient.getProtocolMappers().createMapper(customClaimMapper);
+
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+
+        config.put(HardcodedClaim.CLAIM_VALUE, RESOURCE_SERVER_TEST);
+
+        client.getProtocolMappers().createMapper(customClaimMapper);
+
+        AuthorizationResource authorization = client.authorization();
+
+        JSPolicyRepresentation policy = new JSPolicyRepresentation();
+
+        policy.setName(KeycloakModelUtils.generateId());
+        policy.setType("script-scripts/default-policy.js");
+
+        authorization.policies().js().create(policy).close();
+
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName("Sensors");
+
+        try (Response response = authorization.resources().create(resource)) {
+            resource = response.readEntity(ResourceRepresentation.class);
+        }
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+
+        permission.setName("View Sensor");
+        permission.addResource(resource.getName());
+        permission.addPolicy(policy.getName());
+
+        authorization.permissions().resource().create(permission).close();
+
+        oauth.realm("authz-test");
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.clientId(PUBLIC_TEST_CLIENT);
+        oauth.doLogin("offlineuser", "password");
+
+        // Token request
+        String code = oauth.parseLoginResponse().getCode();
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doAccessTokenRequest(code);
+
+        AuthorizationRequest request = new AuthorizationRequest();
+        request.addPermission("Sensors");
+        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+        AuthorizationResponse authorizationResponse = authzClient.authorization(response.getAccessToken()).authorize(request);
+        AccessToken token = toAccessToken(authorizationResponse.getToken());
+        assertEquals(PUBLIC_TEST_CLIENT, token.getIssuedFor());
+
+        TokenIntrospectionResponse introspectionResponse = authzClient.protection().introspectRequestingPartyToken(authorizationResponse.getToken());
+        assertNotNull(introspectionResponse.getPermissions());
+    }
+
+    @Test
     public void testRefreshTokenFromClientOtherThanAudience() throws Exception {
         oauth.realm("authz-test");
         oauth.client(PUBLIC_TEST_CLIENT);

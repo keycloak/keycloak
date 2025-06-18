@@ -126,7 +126,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         user.setUsername("create-clients");
         user.setCredentials(credentials);
         user.setClientRoles(Collections.singletonMap(Constants.REALM_MANAGEMENT_CLIENT_ID, Collections.singletonList(AdminRoles.CREATE_CLIENT)));
-        user.setGroups(Arrays.asList("topGroup")); // defined in testrealm.json
+        user.setGroups(List.of("topGroup")); // defined in testrealm.json
 
         users.add(user);
 
@@ -163,7 +163,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
     }
 
     @Test
-    public void testExtendedClientPolicyIntefacesForClientRegistrationPolicyMigrationCreate() throws Exception {
+    public void testExtendedClientPolicyInterfacesForClientRegistrationPolicyMigrationCreate() throws Exception {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
@@ -197,9 +197,9 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
     }
 
     @Test
-    public void testExtendedClientPolicyIntefacesForClientRegistrationPolicyMigrationUpdate() throws Exception {
+    public void testExtendedClientPolicyInterfacesForClientRegistrationPolicyMigrationUpdate() throws Exception {
         String clientName = "ByAdmin-App" + KeycloakModelUtils.generateId().substring(0, 7);
-        String clientId = null;
+        String clientId;
 
         clientId = createClientByAdmin(clientName, (ClientRepresentation clientRep) -> {});
         assertEquals(true, getClientByAdmin(clientId).isEnabled());
@@ -224,9 +224,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         updatePolicies(json);
 
         try {
-            updateClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
-                clientRep.setEnabled(false);
-            });
+            updateClientByAdmin(clientId, (ClientRepresentation clientRep) -> clientRep.setEnabled(false));
             fail();
         } catch (ClientPolicyException cpe) {
             assertEquals(ClientPolicyEvent.UPDATED.toString(), cpe.getError());
@@ -245,12 +243,12 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
     }
 
     @Test
-    public void testExtendedClientPolicyIntefacesForDeviceAuthorizationRequest() throws Exception {
+    public void testExtendedClientPolicyInterfacesForDeviceAuthorizationRequest() throws Exception {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
                         .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
-                                createTestRaiseExeptionExecutorConfig(Arrays.asList(ClientPolicyEvent.DEVICE_AUTHORIZATION_REQUEST)))
+                                createTestRaiseExeptionExecutorConfig(List.of(ClientPolicyEvent.DEVICE_AUTHORIZATION_REQUEST)))
                         .toRepresentation()
         ).toString();
         updateProfiles(json);
@@ -274,7 +272,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
     }
 
     @Test
-    public void testExtendedClientPolicyIntefacesForDeviceTokenRequest() throws Exception {
+    public void testExtendedClientPolicyInterfacesForDeviceTokenRequest() throws Exception {
         // Device Authorization Request from device
         oauth.realm(REALM_NAME);
         oauth.client(DEVICE_APP, "secret");
@@ -307,7 +305,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
                         .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
-                                createTestRaiseExeptionExecutorConfig(Arrays.asList(ClientPolicyEvent.DEVICE_TOKEN_REQUEST)))
+                                createTestRaiseExeptionExecutorConfig(List.of(ClientPolicyEvent.DEVICE_TOKEN_REQUEST)))
                         .toRepresentation()
         ).toString();
         updateProfiles(json);
@@ -329,7 +327,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
     }
 
     @Test
-    public void testExtendedClientPolicyIntefacesForDeviceTokenResponse() throws Exception {
+    public void testExtendedClientPolicyInterfacesForDeviceTokenResponse() throws Exception {
         // Device Authorization Request from device
         oauth.realm(REALM_NAME);
         oauth.client(DEVICE_APP, "secret");
@@ -362,7 +360,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
                         .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
-                                createTestRaiseExeptionExecutorConfig(Arrays.asList(ClientPolicyEvent.DEVICE_TOKEN_RESPONSE)))
+                                createTestRaiseExeptionExecutorConfig(List.of(ClientPolicyEvent.DEVICE_TOKEN_RESPONSE)))
                         .toRepresentation()
         ).toString();
         updateProfiles(json);
@@ -384,7 +382,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
     }
 
     @Test
-    public void testExtendedClientPolicyIntefacesForTokenResponse() throws Exception {
+    public void testExtendedClientPolicyInterfacesForTokenResponse() throws Exception {
         // register a confidential client
         String clientId = generateSuffixedName(CLIENT_NAME);
         String clientSecret = "secret";
@@ -398,7 +396,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
                         .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
-                                createTestRaiseExeptionExecutorConfig(Arrays.asList(ClientPolicyEvent.TOKEN_RESPONSE)))
+                                createTestRaiseExeptionExecutorConfig(List.of(ClientPolicyEvent.TOKEN_RESPONSE)))
                         .toRepresentation()
         ).toString();
         updateProfiles(json);
@@ -407,7 +405,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         json = (new ClientPoliciesBuilder()).addPolicy(
                 (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Primera Plitica", Boolean.TRUE)
                         .addCondition(ClientAccessTypeConditionFactory.PROVIDER_ID,
-                                createClientAccessTypeConditionConfig(Arrays.asList(ClientAccessTypeConditionFactory.TYPE_CONFIDENTIAL)))
+                                createClientAccessTypeConditionConfig(List.of(ClientAccessTypeConditionFactory.TYPE_CONFIDENTIAL)))
                         .addProfile(PROFILE_NAME)
                         .toRepresentation()
         ).toString();
@@ -425,7 +423,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
     }
 
     @Test
-    public void testExtendedClientPolicyIntefacesForTokenRefreshResponse() throws Exception {
+    public void testExtendedClientPolicyInterfacesForTokenRefreshResponse() throws Exception {
         String clientId = generateSuffixedName(CLIENT_NAME);
         String clientSecret = "secret";
         String cid = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
@@ -460,7 +458,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         json = (new ClientPoliciesBuilder()).addPolicy(
                 (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Den Forste Politikken", Boolean.TRUE)
                         .addCondition(ClientRolesConditionFactory.PROVIDER_ID,
-                                createClientRolesConditionConfig(Arrays.asList(SAMPLE_CLIENT_ROLE)))
+                                createClientRolesConditionConfig(List.of(SAMPLE_CLIENT_ROLE)))
                         .addProfile(PROFILE_NAME)
                         .toRepresentation()
         ).toString();
@@ -469,12 +467,12 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         String refreshTokenString = res.getRefreshToken();
         AccessTokenResponse accessTokenResponseRefreshed = oauth.doRefreshTokenRequest(refreshTokenString);
         assertEquals(200, accessTokenResponseRefreshed.getStatusCode());
-        assertEquals(null, accessTokenResponseRefreshed.getRefreshToken());
+        assertNull(accessTokenResponseRefreshed.getRefreshToken());
 
         json = (new ClientPoliciesBuilder()).addPolicy(
                 (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Den Forste Politikken", Boolean.TRUE)
                         .addCondition(ClientRolesConditionFactory.PROVIDER_ID,
-                                createClientRolesConditionConfig(Arrays.asList("other" + SAMPLE_CLIENT_ROLE)))
+                                createClientRolesConditionConfig(List.of("other" + SAMPLE_CLIENT_ROLE)))
                         .addProfile(PROFILE_NAME)
                         .toRepresentation()
         ).toString();
@@ -483,13 +481,13 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         accessTokenResponseRefreshed = oauth.doRefreshTokenRequest(refreshTokenString);
         assertEquals(200, accessTokenResponseRefreshed.getStatusCode());
         RefreshToken refreshedRefreshToken = oauth.parseRefreshToken(accessTokenResponseRefreshed.getRefreshToken());
-        assertEquals(sessionId, refreshedRefreshToken.getSessionState());
-        assertEquals(sessionId, refreshedRefreshToken.getSessionState());
+        assertEquals(sessionId, refreshedRefreshToken.getSessionId());
+        assertEquals(sessionId, refreshedRefreshToken.getSessionId());
         assertEquals(findUserByUsername(adminClient.realm(REALM_NAME), TEST_USER_NAME).getId(), refreshedRefreshToken.getSubject());
     }
 
     @Test
-    public void testExtendedClientPolicyIntefacesForTokenRefreshResponseWithOffline() throws Exception {
+    public void testExtendedClientPolicyInterfacesForTokenRefreshResponseWithOffline() throws Exception {
         String clientId = generateSuffixedName(CLIENT_NAME);
         String clientSecret = "secret";
         String cid = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
@@ -504,7 +502,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         oauth.client(clientId, clientSecret);
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
-        EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
+        events.expectLogin().client(clientId).assertEvent();
         String code = oauth.parseLoginResponse().getCode();
 
         AccessTokenResponse res = oauth.doAccessTokenRequest(code);
@@ -525,13 +523,13 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         json = (new ClientPoliciesBuilder()).addPolicy(
                 (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Den Forste Politikken", Boolean.TRUE)
                         .addCondition(ClientRolesConditionFactory.PROVIDER_ID,
-                                createClientRolesConditionConfig(Arrays.asList(SAMPLE_CLIENT_ROLE)))
+                                createClientRolesConditionConfig(List.of(SAMPLE_CLIENT_ROLE)))
                         .addProfile(PROFILE_NAME)
                         .toRepresentation()
         ).toString();
         updatePolicies(json);
 
-        // now the online session should be removed as it's a offline first request
+        // now the online session should be removed as it's an offline first request
         NotFoundException nfe = Assert.assertThrows(NotFoundException.class,
                 () -> adminClient.realm(REALM_NAME).deleteSession(token.getSessionId(), false));
         Assert.assertEquals(404, nfe.getResponse().getStatus());
@@ -543,7 +541,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
     }
 
     @Test
-    public void testExtendedClientPolicyIntefacesForServiceAccountTokenRequeponse() throws Exception {
+    public void testExtendedClientPolicyInterfacesForServiceAccountTokenResponse() throws Exception {
         String clientId = "service-account-app";
         String clientSecret = "app-secret";
         createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
@@ -559,7 +557,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
                         .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
-                                createTestRaiseExeptionExecutorConfig(Arrays.asList(ClientPolicyEvent.SERVICE_ACCOUNT_TOKEN_RESPONSE)))
+                                createTestRaiseExeptionExecutorConfig(List.of(ClientPolicyEvent.SERVICE_ACCOUNT_TOKEN_RESPONSE)))
                         .toRepresentation()
         ).toString();
         updateProfiles(json);
@@ -584,7 +582,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
     }
 
     @Test
-    public void testExtendedClientPolicyIntefacesForResourceOwnerPasswordCredentialsResponse() throws Exception {
+    public void testExtendedClientPolicyInterfacesForResourceOwnerPasswordCredentialsResponse() throws Exception {
 
         String clientId = generateSuffixedName(CLIENT_NAME);
         String clientSecret = "secret";
@@ -600,7 +598,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
                         .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
-                                createTestRaiseExeptionExecutorConfig(Arrays.asList(ClientPolicyEvent.RESOURCE_OWNER_PASSWORD_CREDENTIALS_RESPONSE)))
+                                createTestRaiseExeptionExecutorConfig(List.of(ClientPolicyEvent.RESOURCE_OWNER_PASSWORD_CREDENTIALS_RESPONSE)))
                         .toRepresentation()
         ).toString();
         updateProfiles(json);
@@ -624,28 +622,26 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
     }
 
     @Test
-    public void testExtendedClientPolicyIntefacesForPreAuthorizationRequest() throws Exception {
+    public void testExtendedClientPolicyInterfacesForPreAuthorizationRequest() throws Exception {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
                         .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
-                                createTestRaiseExeptionExecutorConfig(Arrays.asList(ClientPolicyEvent.PRE_AUTHORIZATION_REQUEST)))
+                                createTestRaiseExeptionExecutorConfig(List.of(ClientPolicyEvent.PRE_AUTHORIZATION_REQUEST)))
                         .toRepresentation()
         ).toString();
         updateProfiles(json);
 
         String clientId = generateSuffixedName(CLIENT_NAME);
         String clientSecret = "secret";
-        String cid = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
-            clientRep.setSecret(clientSecret);
-        });
+        String cid = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> clientRep.setSecret(clientSecret));
         adminClient.realm(REALM_NAME).clients().get(cid).roles().create(RoleBuilder.create().name(SAMPLE_CLIENT_ROLE).build());
 
         // register policies
         json = (new ClientPoliciesBuilder()).addPolicy(
                 (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Dei Eischt Politik", Boolean.TRUE)
                         .addCondition(ClientRolesConditionFactory.PROVIDER_ID,
-                                createClientRolesConditionConfig(Arrays.asList(SAMPLE_CLIENT_ROLE)))
+                                createClientRolesConditionConfig(List.of(SAMPLE_CLIENT_ROLE)))
                         .addProfile(PROFILE_NAME)
                         .toRepresentation()
         ).toString();
@@ -653,7 +649,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
 
         // Authorization Request
         oauth.realm(REALM_NAME);
-        oauth.clientId(clientId);
+        oauth.client(clientId);
         oauth.openLoginForm();
         assertTrue(errorPage.isCurrent());
         assertEquals("Exception thrown intentionally", errorPage.getError());
@@ -682,7 +678,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         json = (new ClientPoliciesBuilder()).addPolicy(
                 (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Primera Plitica", Boolean.TRUE)
                         .addCondition(ClientAccessTypeConditionFactory.PROVIDER_ID,
-                                createClientAccessTypeConditionConfig(Arrays.asList(ClientAccessTypeConditionFactory.TYPE_CONFIDENTIAL)))
+                                createClientAccessTypeConditionConfig(List.of(ClientAccessTypeConditionFactory.TYPE_CONFIDENTIAL)))
                         .addProfile(PROFILE_NAME)
                         .toRepresentation()
         ).toString();

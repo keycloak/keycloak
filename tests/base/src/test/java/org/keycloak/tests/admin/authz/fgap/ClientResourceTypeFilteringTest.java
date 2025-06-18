@@ -28,16 +28,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.resource.ClientsResource;
-import org.keycloak.admin.client.resource.ScopePermissionsResource;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
-import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -63,18 +59,6 @@ public class ClientResourceTypeFilteringTest extends AbstractPermissionTest {
 
             realm.admin().clients().create(client).close();
         }
-    }
-
-    @AfterEach
-    public void onAfterEach() {
-        ScopePermissionsResource permissions = getScopePermissionsResource(client);
-
-        for (ScopePermissionRepresentation permission : permissions.findAll(null, null, null, -1, -1)) {
-            permissions.findById(permission.getId()).remove();
-        }
-
-        ClientsResource clients = realm.admin().clients();
-        clients.findAll().stream().filter((c) -> c.getClientId().startsWith("client-")).forEach(group -> clients.get(group.getId()).remove());
     }
 
     @Test
