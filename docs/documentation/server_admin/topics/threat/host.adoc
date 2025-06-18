@@ -1,0 +1,8 @@
+
+=== Host
+
+{project_name} uses the public hostname in several ways, such as within token issuer fields and URLs in password reset emails.
+
+By default, the hostname derives from request headers. No validation exists to ensure a hostname is valid. If you are not using a load balancer, or proxy, with {project_name} to prevent invalid host headers, configure the acceptable hostnames.
+
+The hostname's Service Provider Interface (SPI) provides a way to configure the hostname for requests. You can use this built-in provider to set a fixed URL for frontend requests while allowing backend requests based on the request URI. If the built-in provider does not have the required capability, you can develop a customized provider.

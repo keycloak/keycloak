@@ -1,0 +1,32 @@
+[[_policy_user]]
+= User-based policy
+
+You can use this type of policy to define conditions for your permissions where a set of one or more users is permitted to access an object.
+
+To create a new user-based policy, select *User* in the item list in the upper right corner of the policy listing.
+
+.Add a User Policy
+image:images/policy/create-user.png[alt="Add User Policy"]
+
+== Configuration
+
+* *Name*
++
+A human-readable and unique string identifying the policy. A best practice is to use names that are closely related to your business and security requirements, so you
+can identify them more easily.
++
+* *Description*
++
+A string containing details about this policy.
++
+* *Users*
++
+Specifies which users are given access by this policy.
++
+* *Logic*
++
+The logic of this policy to apply after the other conditions have been evaluated.
+
+[role="_additional-resources"]
+.Additional resources
+* <<_policy_logic, Positive and negative logic>>

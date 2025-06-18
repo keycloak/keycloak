@@ -1,0 +1,17 @@
+// Module included in the following assemblies:
+//
+// server_admin/topics/users.adoc
+
+[id="proc-deleting-user_{context}"]
+= Deleting a user
+
+You can delete a user, who no longer needs access to applications. If a user is deleted, the user profile and data is also deleted.
+
+
+.Procedure
+. Click *Users* in the menu. The *Users* page is displayed.
+. Click *View all users* to find a user to delete.
++
+NOTE: Alternatively, you can use the search bar to find a user.
++
+. Click *Delete* from the action menu next to the user you want to remove and confirm deletion.

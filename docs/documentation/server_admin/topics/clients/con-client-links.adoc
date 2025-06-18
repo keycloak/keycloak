@@ -1,0 +1,15 @@
+
+[id="con-client-links_{context}"]
+= Client links
+[role="_abstract"]
+To link from one client to another, {project_name} provides a redirect endpoint: `/realms/realm_name/clients/\{client-id}/redirect`.
+
+If a client accesses this endpoint using a `HTTP GET` request, {project_name} returns the configured base URL for the provided Client and Realm in the form of an `HTTP 307` (Temporary Redirect) in the response's `Location` header. As a result of this, a client needs only to know the Realm name and the Client ID to link to them. This indirection avoids hard-coding client base URLs. 
+
+As an example, given the realm `master` and the client-id `account`: 
+
+[source,subs=+attributes]
+----
+http://host:port{kc_realms_path}/master/clients/account/redirect
+----               
+This URL temporarily redirects to: http://host:port{kc_realms_path}/master/account

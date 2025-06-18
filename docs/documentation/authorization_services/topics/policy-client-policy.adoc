@@ -1,0 +1,32 @@
+[[_policy_client]]
+= Client-based policy
+
+You can use this type of policy to define conditions for your permissions where a set of one or more clients is permitted to access an object.
+
+To create a new client-based policy, select *Client* from the policy type list.
+
+.Add a Client Policy
+image:images/policy/create-client.png[alt="Add a Client Policy"]
+
+== Configuration
+
+* *Name*
++
+A human-readable and unique string identifying the policy. A best practice is to use names that are closely related to your business and security requirements, so you
+can identify them more easily.
++
+* *Description*
++
+A string containing details about this policy.
++
+* *Clients*
++
+Specifies which clients have givenGroup-based policy access by this policy.
++
+* *Logic*
++
+The logic of this policy to apply after the other conditions have been evaluated.
+
+[role="_additional-resources"]
+.Additional resources
+* <<_policy_logic, Positive and negative logic>>

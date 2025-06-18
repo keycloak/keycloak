@@ -1,0 +1,32 @@
+[[_per_realm_admin_permissions]]
+
+=== Dedicated realm admin consoles
+
+Each realm has a dedicated Admin Console that can be accessed by going to the url `{kc_admins_path}/{realm-name}/console`.
+Users within that realm can be granted realm management permissions by assigning specific user role mappings.
+
+Each realm has a built-in client called `realm-management`.  You can view this client by going to the
+`Clients` left menu item of your realm.  This client defines client-level roles that specify permissions that can be granted to manage the realm.
+
+* create-client
+* impersonation
+* manage-authorization
+* manage-clients
+* manage-events
+* manage-identity-providers
+* manage-realm
+* manage-users
+* query-clients
+* query-groups
+* query-realms
+* query-users
+* realm-admin
+* view-authorization
+* view-clients
+* view-events
+* view-identity-providers
+* view-realm
+* view-users
+
+Assign the roles you want to your users and they will only be able to use that specific part of the administration console.
+

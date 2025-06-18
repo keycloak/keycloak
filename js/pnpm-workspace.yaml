@@ -1,0 +1,4 @@
+packages:
+  - apps/*
+  - libs/*
+  - themes-vendor

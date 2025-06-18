@@ -1,0 +1,10 @@
+[[_theme_selector]]
+=== Theme selector
+
+By default the theme configured for the realm is used, with the exception of clients being able to override the login
+theme. This behavior can be changed through the Theme Selector SPI.
+
+This could be used to select different themes for desktop and mobile devices by looking at the user agent
+header, for example.
+
+To create a custom theme selector you need to implement `ThemeSelectorProviderFactory` and `ThemeSelectorProvider`.

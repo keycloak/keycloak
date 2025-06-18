@@ -1,0 +1,70 @@
+{
+    "id": "tenant2",
+    "realm": "tenant2",
+    "enabled": true,
+    "accessTokenLifespan": 3000,
+    "accessCodeLifespan": 10,
+    "accessCodeLifespanUserAction": 6000,
+    "sslRequired": "external",
+    "registrationAllowed": false,
+    "requiredCredentials": [ "password" ],
+    "users" : [
+        {
+            "username" : "bburke@redhat.com",
+            "enabled": true,
+            "email" : "bburke@redhat.com",
+            "firstName": "Bill",
+            "lastName": "Burke",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "realmRoles": [ "user" ]
+        },
+        {
+            "username" : "user-tenant2",
+            "enabled": true,
+            "email" : "user-tenant2@redhat.com",
+            "firstName": "Bill",
+            "lastName": "Burke",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "user-tenant2" }
+            ],
+            "realmRoles": [ "user" ]
+        }
+    ],
+    "roles" : {
+        "realm" : [
+            {
+                "name": "user",
+                "description": "User privileges"
+            }
+        ]
+    },
+    "clients": [
+        {
+            "clientId": "multi-tenant",
+            "name": "multi-tenant",
+            "enabled": true,
+            "protocol": "saml",
+            "fullScopeAllowed": true,
+            "frontchannelLogout": true,
+            "baseUrl": "http://localhost:8080/multi-tenant-saml/",
+            "redirectUris": [
+                "http://localhost:8080/multi-tenant-saml/*"
+            ],
+            "attributes": {
+                "saml_assertion_consumer_url_post": "http://localhost:8080/multi-tenant-saml/saml?realm=tenant2",
+                "saml_assertion_consumer_url_redirect": "http://localhost:8080/multi-tenant-saml/saml?realm=tenant2",
+                "saml_single_logout_service_url_post": "http://localhost:8080/multi-tenant-saml/saml?realm=tenant2",
+                "saml_single_logout_service_url_redirect": "http://localhost:8080/multi-tenant-saml/saml?realm=tenant2",
+                "saml.server.signature": "true",
+                "saml.client.signature": "true",
+                "saml.signature.algorithm": "RSA_SHA256",
+                "saml.authnstatement": "true",
+                "saml.signing.certificate": "MIICyjCCAbKgAwIBAgIJAOkA5uO65md3MA0GCSqGSIb3DQEBCwUAMBIxEDAOBgNVBAMTB3RlbmFudDIwIBcNMjQwNjIyMTEwMDMwWhgPMjEyNDA1MjkxMTAwMzBaMBIxEDAOBgNVBAMTB3RlbmFudDIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC49cuUeXQwzokNkDIuUUHjIB0Fls31wqf0gti+9tiJ1y7U4zyLaZ9nZSc+FWhxgwy5hCFz2gJ8ZgZpKOpZmh6G230Q0/YOVKslHUscMXOTEw7p56JsvczVPlxbz/P7y4mYSlIyPdZHKsf9i/7CxuXVSCUpAV0y8KyQE6qXrl1aFBelqnc5b1DNOSxTRM4LDQAcvn80K5+8S3I1xzSuVCN/HiUs/vR1+OqePScSqFcixTWqAXrmFF9eJLdfV4EeXqC8WuNW1Dgs3ZCmWxHUMMd5S4LT2l8WvLYdHMCrnH8A90XAD0mdttQzGTzrmAVLxh5Dw6Fxt+ksOO991T+VDkuJAgMBAAGjITAfMB0GA1UdDgQWBBTvPZ8EspZglN6nLU9GzZxumLRKCTANBgkqhkiG9w0BAQsFAAOCAQEAHToey9cMwPf8HuYPQGZWM+XWPfWQL2eACZNKntDufg2fVFEjirPSGcdhT/83pkMd04mU73R9L1tM5XEJTR4PzhuGXTxoZcCriLp5St3iyK/VHnNvCY4ynvpc+YPZreE4ERYTi4NOCCTGIE7KKjzpO41ittR7C7UloLfET5PJG3IjxkX/eh68M7brRMruK7kgLZfj1uwv7rWM78u/cB6Kmp8/K3UbyqwhxNp2yIoGjT74OqKTLyNQnG4rjyQF8/v+eSJcDvAXX/wSLuYNQODjB0xz31H7lYITVmvzzxPNb1i78uIIrUmjkbxILHqDeaQz457Ia6chx9Ow609D1dz47w=="
+            }
+        }
+    ]
+}

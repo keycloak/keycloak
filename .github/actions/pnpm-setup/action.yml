@@ -1,0 +1,29 @@
+name: Setup PNPM
+description: Sets up Node.js and runs PNPM so dependencies are installed.
+
+inputs:
+  node-version:
+    description: Node.js version
+    required: false
+    default: "22"
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      with:
+        node-version: ${{ inputs.node-version }}
+        check-latest: true
+
+    - name: Enable Corepack
+      shell: bash
+      run: corepack enable
+
+    - name: PNPM store cache
+      uses: ./.github/actions/pnpm-store-cache
+
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --prefer-offline --frozen-lockfile
+      working-directory: js

@@ -1,0 +1,3 @@
+- hosts: localhost
+  connection: local
+  roles: [aws_ec2]

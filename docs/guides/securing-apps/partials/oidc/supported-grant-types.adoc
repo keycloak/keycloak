@@ -1,0 +1,119 @@
+== Supported Grant Types
+
+This section describes the different grant types available to relaying parties.
+
+=== Authorization code
+
+The Authorization Code flow redirects the user agent to {project_name}. Once the user has successfully authenticated with {project_name}, an
+Authorization Code is created and the user agent is redirected back to the application. The application then uses the authorization code along with its
+credentials to obtain an Access Token, Refresh Token and ID Token from {project_name}.
+
+The flow is targeted towards web applications, but is also recommended for native applications, including mobile applications, where it is possible to embed
+a user agent.
+
+For more details refer to the https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth[Authorization Code Flow] in the OpenID Connect specification.
+
+=== Implicit
+
+The Implicit flow works similarly to the Authorization Code flow, but instead of returning an Authorization Code, the Access Token and ID Token is
+returned. This approach reduces the need for the extra invocation to exchange the Authorization Code for an Access Token. However, it does not include a Refresh
+Token. This results in the need to permit Access Tokens with a long expiration; however, that approach is not practical because it is very hard to invalidate these tokens. Alternatively, you can
+require a new redirect to obtain a new Access Token once the initial Access Token has expired. The Implicit flow is useful if the application only wants to
+authenticate the user and deals with logout itself.
+
+You can instead use a Hybrid flow where both the Access Token and an Authorization Code are returned.
+
+One thing to note is that both the Implicit flow and Hybrid flow have potential security risks as the Access Token may be leaked through web server logs and
+browser history. You can somewhat mitigate this problem by using short expiration for Access Tokens.
+
+For more details, see the https://openid.net/specs/openid-connect-core-1_0.html#ImplicitFlowAuth[Implicit Flow] in the OpenID Connect specification.
+
+Per current https://datatracker.ietf.org/doc/html/rfc9700#name-implicit-grant[Best Current Practice for OAuth 2.0 Security (RFC 9700)], this flow SHOULD NOT be used.
+This flow is removed from the future https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-13[OAuth 2.1 specification].
+
+[[_resource_owner_password_credentials_flow]]
+=== Resource Owner Password Credentials
+
+Resource Owner Password Credentials, referred to as Direct Grant in {project_name}, allows exchanging user credentials for tokens.
+Per current https://datatracker.ietf.org/doc/html/rfc9700#name-resource-owner-password-cre[Best Current Practice for OAuth 2.0 Security (RFC 9700)],
+this flow MUST NOT be used, preferring alternative methods such as <<Device Authorization Grant>> or <<Authorization code>>.
+
+The limitations of using this flow include:
+
+* User credentials are exposed to the application
+* Applications need login pages
+* Application needs to be aware of the authentication scheme
+* Changes to authentication flow requires changes to application
+* No support for identity brokering or social login
+* Flows are not supported (user self-registration, required actions, and so on.)
+
+Security concerns with this flow include:
+
+* Involving more than {project_name} in handling of credentials
+* Increased vulnerable surface area where credential leaks can happen
+* Creating an ecosystem where users trust another application for entering their credentials and not {project_name}
+
+For a client to be permitted to use the Resource Owner Password Credentials grant, the client has to have the `Direct Access Grants Enabled` option enabled.
+
+This flow is not included in OpenID Connect, but is a part of the OAuth 2.0 specification.
+It is removed from the future https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-13[OAuth 2.1 specification].
+
+For more details, see the https://datatracker.ietf.org/doc/html/rfc6749#section-4.3[Resource Owner Password Credentials Grant] chapter in the OAuth 2.0 specification.
+
+==== Example using CURL
+
+The following example shows how to obtain an access token for a user in the realm `master` with username `user` and password `password`. The example is using
+the confidential client `myclient`:
+
+[source,bash,subs="attributes+"]
+----
+curl \
+  -d "client_id=myclient" \
+  -d "client_secret=40cc097b-2a57-4c17-b36a-8fdf3fc2d578" \
+  -d "username=user" \
+  -d "password=password" \
+  -d "grant_type=password" \
+  "http://localhost:8080{kc_realms_path}/master/protocol/openid-connect/token"
+----
+
+=== Client credentials
+
+Client Credentials are used when clients (applications and services) want to obtain access on behalf of themselves rather than on behalf of a user. For example, these credentials can
+ be useful for background services that apply changes to the system in general rather than for a specific user.
+
+{project_name} provides support for clients to authenticate either with a secret or with public/private keys.
+
+This flow is not included in OpenID Connect, but is a part of the OAuth 2.0 specification.
+
+For more details, see the https://datatracker.ietf.org/doc/html/rfc6749#section-4.4[Client Credentials Grant] chapter in the OAuth 2.0 specification.
+
+=== Device Authorization Grant
+
+Device Authorization Grant is used by clients running on internet-connected devices that have limited input capabilities or lack a suitable browser.
+
+. The application requests  that {project_name} provide a device code and a user code.
+. {project_name} creates a device code and a user code.
+. {project_name} returns a response including the device code and the user code to the application.
+. The application provides the user with the user code and the verification URI. The user accesses a verification URI to be authenticated by using another browser.
+. The application repeatedly polls {project_name} until {project_name} completes the user authorization.
+. If user authentication is complete, the application obtains the device code.
+. The application uses the device code along with its credentials to obtain an Access Token, Refresh Token and ID Token from {project_name}.
+
+For more details, see  the https://datatracker.ietf.org/doc/html/rfc8628[OAuth 2.0 Device Authorization Grant specification].
+
+[[_client_initiated_backchannel_authentication_grant]]
+=== Client Initiated Backchannel Authentication Grant
+
+Client Initiated Backchannel Authentication Grant is used by clients who want to initiate the authentication flow by communicating with the OpenID Provider directly without redirect through the user's browser like OAuth 2.0's authorization code grant.
+
+The client requests from {project_name} an auth_req_id that identifies the authentication request made by the client. {project_name} creates the auth_req_id.
+
+After receiving this auth_req_id, this client repeatedly needs to poll {project_name} to obtain an Access Token, Refresh Token, and ID Token from {project_name} in return for the auth_req_id until the user is authenticated.
+
+In case that client uses `ping` mode, it does not need to repeatedly poll the token endpoint, but it can wait for the notification sent by {project_name} to the specified Client Notification Endpoint.
+The Client Notification Endpoint can be configured in the {project_name} Admin Console. The details of the contract for Client Notification Endpoint are described in the CIBA specification.
+
+For more details, see https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html[OpenID Connect Client Initiated Backchannel Authentication Flow specification].
+
+Also refer to other places of {project_name} documentation such as <<_backchannel_authentication_endpoint,Backchannel Authentication Endpoint of this guide>> and link:{adminguide_link}#_client_initiated_backchannel_authentication_grant[Client Initiated Backchannel Authentication Grant section] of {adminguide_name}.
+For the details about FAPI CIBA compliance, see the <<_fapi-support,FAPI section of this guide>>.

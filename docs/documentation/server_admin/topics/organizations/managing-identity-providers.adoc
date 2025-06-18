@@ -1,0 +1,85 @@
+[id="managing-organization-identity-providers_{context}"]
+
+[[_managing_identity_provider_]]
+=  Managing identity providers
+[role="_abstract"]
+
+An organization might have its own identity provider as the single source of truth for their identities. In this case,
+you want to configure the organization to authenticate users using the organization's identity provider, federate their
+identities, and finally add them as a member of the organization.
+
+An organization can have one or more identity providers associated with it so that they can authenticate their users from
+different sources and enforce different constraints on each of them.
+
+Before you can link an identity provider to an organization, you create an organization at the realm level from the *Identity Providers*
+section in the menu. You can link any of the built-in social and identity providers available in the realm to an organization.
+
+== Linking an identity provider to an organization
+
+An identity provider can be linked to an organization from the *Identity providers* tab. If identity providers already exist, you see a list of them and options to search, edit, or unlink from the organization.
+
+.Organization identity providers
+image:images/organizations-identity-providers.png[alt="Organization identity providers"]
+
+.Procedure
+
+. Click *Link identity provider*
+. Select an *Identity provider*
+. Set the appropriate settings
+. Click *Save*
+
+.Linking identity provider
+image:images/organizations-link-identity-provider.png[alt="Linking identity provider"]
+
+An identity provider has the following settings:
+
+Identity provider::
+The identity provider you want to link to the organization. An identity provider can only be linked to a single organization.
+
+Domain::
+The domain from the organization that you want to link with the identity provider.
+
+Hide on login page::
+If this identity provider should be hidden in login pages when the user is authenticating in the scope of the organization.
+
+Redirect when email domain matches::
+If members should be automatically redirected to the identity provider when their email domain matches the domain set to the identity provider. If the domain is set to `Any`, members whose email domain matches *any* of the organization domains will be redirected to the identity provider.
+
+If the org is linked with multiple identity providers, the organization authenticator prioritizes the provider that matches the email domain of the user for automatic redirection. If none is found, it tries to locate one whose domain is set to `Any`.
+
+Once linked to an organization, the identity provider can be managed just like any other in a realm by accessing the *Identity Providers* section in the menu. However, the options herein described are only available when managing the identity provider in the scope of an organization. The only exception is the
+ *Hide on login page* option that is present here for convenience.
+
+== Editing a linked identity provider
+
+You can edit any of the organization-related settings of a linked identity provider at any time.
+
+.Procedure
+
+. In the menu, click *Organizations* and go to the *Identity providers* tab.
+. Locate the *identity provider* in the list.
++
+You can use the search option for this step.
+. Click the action button (three dots) at the end of the line.
+. Click *Edit*.
+. Make the necessary changes.
+. Click *Save*.
+
+.Editing linked identity provider
+image:images/organizations-edit-identity-provider.png[alt="Editing linked identity provider"]
+
+== Unlinking an identity provider from an organization
+
+When an identity provider is unlinked from an organization, it remains available as a realm-level provider that is no longer ssociated with an organization. To delete the unlinked provider, use the *Identity Providers* section in the menu.
+
+.Procedure
+
+. In the menu, click *Organizations* and go to the *Identity providers* tab.
+. Locate the *identity provider* in the list.
++
+You can use the search capabilities for this step.
+. Click the action button (three dots) at the end of the line.
+. Click *Unlink provider*.
+
+.Unlinking identity provider
+image:images/organizations-unlink-identity-provider.png[alt="Unlinking identity provider"]

@@ -1,0 +1,10 @@
+{
+  "themes": [
+    {
+      "name": "keycloak.v2",
+      "types": [
+        "admin"
+      ]
+    }
+  ]
+}

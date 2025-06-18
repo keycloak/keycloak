@@ -1,0 +1,162 @@
+{
+    "id": "demo",
+    "realm": "demo",
+    "enabled": true,
+    "sslRequired": "external",
+    "registrationAllowed": true,
+    "resetPasswordAllowed": true,
+    "requiredCredentials": [ "password" ],
+    "defaultRoles": [ "user" ],
+    "smtpServer": {
+        "from": "auto@keycloak.org",
+        "host": "localhost",
+        "port":"3025"
+    },
+    "users" : [
+        {
+            "username" : "bburke",
+            "enabled": true,
+            "email" : "bburke@redhat.com",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "attributes" : {
+                "phone": "617"
+            },
+            "realmRoles": ["manager", "user"],
+            "applicationRoles": {
+                "http://localhost:8580/employee-distributable/": [ "employee" ]
+            }
+        },
+        {
+            "username" : "unauthorized",
+            "enabled": true,
+            "email" : "unauthorized@redhat.com",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ]
+        },
+        {
+            "username" : "topGroupUser",
+            "enabled": true,
+            "email" : "top@redhat.com",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "groups": [
+                "/top"
+            ]
+        },
+        {
+            "username" : "level2GroupUser",
+            "enabled": true,
+            "email" : "level2@redhat.com",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "groups": [
+                "/top/level2"
+            ]
+        }
+    ],
+    "clients": [
+        {
+            "clientId": "http://localhost:8580/employee-distributable/",
+            "enabled": true,
+            "protocol": "saml",
+            "fullScopeAllowed": true,
+            "baseUrl": "http://localhost:8580/employee-distributable",
+            "redirectUris": [
+                "http://localhost:8580/employee-distributable/*"
+            ],
+            "attributes": {
+                "saml_assertion_consumer_url_post": "http://localhost:8580/employee-distributable/saml",
+                "saml_assertion_consumer_url_redirect": "http://localhost:8580/employee-distributable/saml",
+                "saml_single_logout_service_url_post": "http://localhost:8580/employee-distributable/saml",
+                "saml_single_logout_service_url_redirect": "http://localhost:8580/employee-distributable/saml",
+                "saml.authnstatement": "true"
+            },
+            "protocolMappers": [
+                {
+                    "name": "email",
+                    "protocol": "saml",
+                    "protocolMapper": "saml-user-property-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "user.attribute": "email",
+                        "friendly.name": "email",
+                        "attribute.name": "urn:oid:1.2.840.113549.1.9.1",
+                        "attribute.nameformat": "URI Reference"
+                    }
+                },
+                {
+                    "name": "phone",
+                    "protocol": "saml",
+                    "protocolMapper": "saml-user-attribute-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "user.attribute": "phone",
+                        "attribute.name": "phone",
+                        "attribute.nameformat": "Basic"
+                    }
+                },
+                {
+                    "name": "role-list",
+                    "protocol": "saml",
+                    "protocolMapper": "saml-role-list-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "attribute.name": "Role",
+                        "attribute.nameformat": "Basic",
+                        "single": "false"
+                    }
+                }
+            ]
+        }
+    ],
+    "groups" : [
+        {
+            "name": "top",
+            "attributes": {
+                "topAttribute": ["true"]
+
+            },
+            "realmRoles": ["manager"],
+            "subGroups": [
+                {
+                    "name": "level2",
+                    "realmRoles": ["user"],
+                    "attributes": {
+                        "level2Attribute": ["true"]
+
+                    }
+                }
+            ]
+        }
+    ],
+
+    "roles" : {
+        "realm" : [
+            {
+                "name": "manager",
+                "description": "Have Manager privileges"
+            },
+            {
+                "name": "user",
+                "description": "Have User privileges"
+            }
+        ],
+        "application" : {
+            "http://localhost:8580/employee-distributable/" : [
+                {
+                    "name": "employee",
+                    "description": "Have Employee privileges"
+                }
+            ]
+        }
+    }
+}

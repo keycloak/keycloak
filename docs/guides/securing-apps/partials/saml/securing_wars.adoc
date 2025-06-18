@@ -1,0 +1,82 @@
+
+=== Securing WARs using the {project_name} SAML Subsystem
+
+You do not have to open a WAR to secure it with {project_name}.
+Alternatively, you can externally secure it via the {project_name} SAML Adapter Subsystem.
+While you don't have to specify KEYCLOAK-SAML as an `auth-method`, you still have to define the `security-constraints` in `web.xml`.
+You do not, however, have to create a `WEB-INF/keycloak-saml.xml` file.
+This metadata is instead defined within the XML in your server's `domain.xml` or `standalone.xml` subsystem configuration section.
+
+[source,xml,subs="attributes+"]
+----
+
+<extensions>
+  <extension module="org.keycloak.keycloak-saml-adapter-subsystem"/>
+</extensions>
+
+<profile>
+  <subsystem xmlns="urn:jboss:domain:keycloak-saml:1.1">
+    <secure-deployment name="WAR MODULE NAME.war">
+      <SP entityID="APPLICATION URL">
+        ...
+      </SP>
+    </secure-deployment>
+  </subsystem>
+</profile>
+----
+
+The `secure-deployment` `name` attribute identifies the WAR you want to secure.
+Its value is the `module-name` defined in `web.xml` with `.war` appended.
+The rest of the configuration uses the same XML syntax as `keycloak-saml.xml` configuration defined in <<_saml-general-config,General Adapter Config>>.
+
+An example configuration:
+
+[source,xml,subs="attributes+"]
+----
+
+<subsystem xmlns="urn:jboss:domain:keycloak-saml:1.1">
+  <secure-deployment name="saml-post-encryption.war">
+    <SP entityID="http://localhost:8080/sales-post-enc/"
+        sslPolicy="EXTERNAL"
+        nameIDPolicyFormat="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
+        logoutPage="/logout.jsp"
+        forceAuthentication="false">
+      <Keys>
+        <Key signing="true" encryption="true">
+          <KeyStore resource="/WEB-INF/keystore.jks" password="store123">
+            <PrivateKey alias="http://localhost:8080/sales-post-enc/" password="test123"/>
+            <Certificate alias="http://localhost:8080/sales-post-enc/"/>
+          </KeyStore>
+        </Key>
+      </Keys>
+      <PrincipalNameMapping policy="FROM_NAME_ID"/>
+      <RoleIdentifiers>
+        <Attribute name="Role"/>
+      </RoleIdentifiers>
+      <IDP entityID="idp">
+        <SingleSignOnService signRequest="true"
+            validateResponseSignature="true"
+            requestBinding="POST"
+            bindingUrl="http://localhost:8080{kc_realms_path}/saml-demo/protocol/saml"/>
+
+        <SingleLogoutService
+            validateRequestSignature="true"
+            validateResponseSignature="true"
+            signRequest="true"
+            signResponse="true"
+            requestBinding="POST"
+            responseBinding="POST"
+            postBindingUrl="http://localhost:8080{kc_realms_path}/saml-demo/protocol/saml"
+            redirectBindingUrl="http://localhost:8080{kc_realms_path}/saml-demo/protocol/saml"/>
+        <Keys>
+          <Key signing="true" >
+            <KeyStore resource="/WEB-INF/keystore.jks" password="store123">
+              <Certificate alias="saml-demo"/>
+            </KeyStore>
+          </Key>
+        </Keys>
+      </IDP>
+    </SP>
+   </secure-deployment>
+</subsystem>
+----

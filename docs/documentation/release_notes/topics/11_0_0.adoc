@@ -1,0 +1,39 @@
+= Highlights
+
+== LDAPv3 password modify operation
+
+Support for LDAPv3 password modify operation was added. Also the ability in the admin console to request metadata from the configured
+LDAP server to see if it supports LDAPv3 password modify operation.
+
+Thanks to https://github.com/cachescrubber[cachescrubber]
+
+== Namespace support for LDAP group mapper
+
+Namespace support for LDAP group mapper allows you to map groups from LDAP under specified branch (namespace) of the Keycloak groups tree.
+Previously groups from LDAP were always added as the top level groups in Keycloak.
+
+Thanks to https://github.com/tjuerge[Torsten Juergeleit]
+
+
+== Upgrade to WildFly 20
+
+Keycloak server was upgraded to use WildFly 20.0.1.Final under the covers. For more details,
+please take a look at link:{upgradingguide_link_latest}[{upgradingguide_name}].
+
+
+== SAML POST binding is broken in the latest versions of browsers
+
+The `SameSite` value `None` for `JSESSIONID` cookie is necessary for correct behavior of the {project_name} SAML adapter.
+Usage of a different value is causing resetting of the container's session with each request to {project_name}, when
+the SAML POST binging is used. Refer to the following steps for
+link:{securing_apps_link}[Keycloak SAML Galleon feature pack for WildFly and EAP] guide to keep the correct behavior. Notice, that this
+workaround should be working also with the previous versions of the adapter.
+
+== Other improvements
+
+
+* Support for client offline session lifespan. Thanks to https://github.com/y-tabata[Yoshiyuki Tabata]
+* Czech translation. Thanks to https://github.com/jakubknejzlik[Jakub Knejzlík]
+* Possibility to fetch additional fields from the Facebook identity provider. Thanks to https://github.com/BartoszSiemienczuk[Bartosz Siemieńczuk]
+* Support for AES 192 and AES 256 algorithms used for signed and encrypted ID tokens. Thanks to https://github.com/tnorimat[Takashi Norimatsu]
+* Ability to specify signature algorithm in Signed JWT Client Authentication. Thanks to https://github.com/tnorimat[Takashi Norimatsu]

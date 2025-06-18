@@ -1,0 +1,10 @@
+<EntityDescriptor xmlns="urn:oasis:names:tc:SAML:2.0:metadata"
+                  xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"
+                  xmlns:ds="http://www.w3.org/2000/09/xmldsig#"
+                  xmlns:xenc="http://www.w3.org/2001/04/xmlenc#"
+                  entityID="https://IdentityProvider.com/SAML">
+    <ds:Signature>...</ds:Signature>
+    <PDPDescriptor ID="ID">
+
+    </PDPDescriptor>
+</EntityDescriptor>

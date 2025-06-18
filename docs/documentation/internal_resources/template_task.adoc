@@ -1,0 +1,59 @@
+[[task_module]]
+
+= Do One Task
+
+_Start title with verb form such as Creating. Use the gerund form (noun form of verb) for titles, not the imperative form._
+
+_Avoid using the word 'Configuring' over and over.  Other words might include:_
+
+* _Specifying_
+* _Adding_
+* _Constructing_
+* _Arranging_
+* _Building_
+* _Setting_
+* _Managing_
+* _Defining_
+* _Customizing_
+* _Or instead of using synonyms (which becomes obvious) 'verb-alize' a word and refactor the heading - limiting (instead of 'setting resource limits')_
+
+_The standard for all Red Hat documentation is title case for all headings and titles._
+
+_A task module is a procedure written with numbered steps -- what a customer needs to do to accomplish a goal successfully._
+
+This paragraph explains why the user performs the task, sets the context of the task, and may explain or list special considerations specific to this task. Keep the information brief and focused on what is needed for this specific task. Suggested length is 1 to 3 sentences, can be longer if needed.
+
+
+.Prerequisites _(if needed)_
+
+* Sentence or a bulleted list of prerequisites that must be in place or done before the user starts this task. 
+
+* Delete section title and bullets if the task has no required prerequisites.
+
+* Text can be a link to a prerequisite task that the user must do before starting this task.
+
+
+.Procedure
+
+_Start title with verb form such as Creating. Use the gerund form (noun form of verb) for titles, not the imperative form._
+
+_Put steps in a numbered list. The step sequence is important to a repeatable successful outcome._
+
+. Start each step with an active verb, because each step corresponds to one user action.
+
+. Include one command or action per step.
+
+. Format the step line as an unnumbered bullet if the procedure includes only 1 step (exception to numbering the steps).
+
+. Include one command or action per step.
+
+. Include one command or action per step.
+
+
+.Related Information _(if needed)_
+
+* Bulleted list of links to concepts, reference, or other tasks closely related to this task. 
+
+* Include only the most relevant items as links, not every possible related item.
+
+* Delete section title and bullets if no related information is needed.

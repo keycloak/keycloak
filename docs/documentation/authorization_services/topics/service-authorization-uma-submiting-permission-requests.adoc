@@ -1,0 +1,39 @@
+[[_service_authorization_aat]]
+= Submitting permission requests
+
+As part of the authorization process, clients need first to obtain a permission ticket from a UMA protected resource server in order
+to exchange it with an RPT at the {project_name} Token Endpoint.
+
+By default, {project_name} responds with a `403` HTTP status code and a `request_denied` error in case the client can not be issued with an RPT.
+
+.{project_name} denies the authorization request
+```bash
+HTTP/1.1 403 Forbidden
+Content-Type: application/json
+...
+{
+    "error": "access_denied",
+    "error_description": "request_denied"
+}
+```
+
+Such response implies that {project_name} could not issue an RPT with the permissions represented by a permission ticket.
+
+In some situations, client applications may want to start an asynchronous authorization flow and let the owner of the resources
+being requested decide whether or not access should be granted. For that, clients can use the `submit_request` request parameter along
+with an authorization request to the token endpoint:
+
+[source,bash,subs="attributes+"]
+----
+curl -X POST \
+  http://${host}:${port}{kc_realms_path}/${realm-name}/protocol/openid-connect/token \
+  -H "Authorization: Bearer ${access_token}" \
+  --data "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket" \
+  --data "ticket=${permission_ticket} \
+  --data "submit_request=true"
+----
+
+When using the `submit_request` parameter, {project_name} will persist a permission request for each resource to which access was denied.
+Once created, resource owners can check their account and manage their permissions requests.
+
+You can think about this functionality as a `Request Access` button in your application, where users can ask other users for access to their resources.

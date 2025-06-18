@@ -1,0 +1,88 @@
+{
+  "id" : "${name.realm.consumer}",
+  "realm" : "${name.realm.consumer}",
+  "enabled" : true,
+  "sslRequired" : "external",
+  "roles" : {
+    "client" : {
+      "${url.realm.consumer}/app/auth" : [ {
+        "name" : "manager"
+      } ]
+    }
+  },
+  "clients" : [ {
+    "clientId": "${url.realm.consumer}/app/auth",
+    "enabled": true,
+    "protocol": "saml",
+    "fullScopeAllowed": true,
+    "redirectUris": [
+      "${url.realm.consumer}/app/auth/*"
+    ],
+    "attributes": {
+      "saml.authnstatement": "true",
+      "saml.client.signature": "true",
+      "saml.encrypt": "false",
+      "saml.server.signature": "true",
+      "saml.signature.algorithm": "RSA_SHA512",
+      "saml.signing.certificate": "MIIDBjCCAe6gAwIBAgIJANPu/mvxOREdMA0GCSqGSIb3DQEBCwUAMDAxLjAsBgNVBAMTJWh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9zYWxlcy1wb3N0LWVuYy8wIBcNMjQwNjIxMTkzMTE3WhgPMjEyNDA1MjgxOTMxMTdaMDAxLjAsBgNVBAMTJWh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9zYWxlcy1wb3N0LWVuYy8wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDE5iKDNNW5XxHAF0ITErZcHDYZI68z7u68n7o4dsiywkfOWf7jVnw7PJVnMeDEtLWtTO6f0tRTqJ4OV5HYdJ9+mhPJtn+2UuvrepyYa2IsC1eFPH98ZEtYapsE6ObvhKBQMcu5G/tQrxkCFY2ssDa99unwBH5STLyX78UvqKiYnkPCvIhkiPIHy8ab7DQowc+EE9XhlE3b63A65rp4G9R87rwgJX5VTM3h81WcDuWLPOg7YRYLZoorWz2p38/qL9gXY5NxIRK16EHGfw2W1dPrX3GyMOJbXVyrBNZ6m5IL9Wn7lBEJ/Dl7ZFMFB5W36QkJ+3aaNLT/Tu/Gz+7f24inAgMBAAGjITAfMB0GA1UdDgQWBBSk7RegFbEBruVbt/VFl2gZhZ2IpDANBgkqhkiG9w0BAQsFAAOCAQEAGyH1sXVU3HDMhCzP2k5fsJBGA+1iKLMsyyiGcaD/22anQ1uVU7iWPZH8mSJGWqkvo/4oFb7RjB2KzO/50wP0q/P/tymGsYoznt+MEJKKxYEqAYmIns7SKRIgv3xEfF8yQy2jOuULC9FTq/Pb3gd9Om40jmeJtYccDSICjEC+A2fcGe56ScuRRLt+3WFyIZUFH7Y9FYZQ3EYQ88UZg//5F1ddAzGtdMSeTanMxLKow7rUIm/+Sx6cd+Vkwo/SYdk4hsD8xZCYx8Ln4i3NKh+SzyvbYykyWVI2fwjplqvM5Md/M+SNvPtU9tkOCUxQqVfz/bwtTiqfjdSaUJlasgGByg==",
+      "saml.signing.private.key": "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDE5iKDNNW5XxHAF0ITErZcHDYZI68z7u68n7o4dsiywkfOWf7jVnw7PJVnMeDEtLWtTO6f0tRTqJ4OV5HYdJ9+mhPJtn+2UuvrepyYa2IsC1eFPH98ZEtYapsE6ObvhKBQMcu5G/tQrxkCFY2ssDa99unwBH5STLyX78UvqKiYnkPCvIhkiPIHy8ab7DQowc+EE9XhlE3b63A65rp4G9R87rwgJX5VTM3h81WcDuWLPOg7YRYLZoorWz2p38/qL9gXY5NxIRK16EHGfw2W1dPrX3GyMOJbXVyrBNZ6m5IL9Wn7lBEJ/Dl7ZFMFB5W36QkJ+3aaNLT/Tu/Gz+7f24inAgMBAAECggEATiW0zvR6Ww9jgST6AY3suNQtmH60O915/X07sMtcTq6TR1AqvNoHho8+EO4X8ppyfOzKzL4lrWqACNsytIFdCCdo8ScwuxFgN167pjcAiNCblPL0+k7oJJhzHFi/x5KQ+iM5Yye68EP+nfgl+cMahvznzm5KIKn6NCdi0M6U07VRuPIep0v5geqwLOYRWMm8guis5V1p6tpPm6ejplea0QaNpkGxpNuzE2GDJotPRja1TNZUBDV0cKPVY+00BOeuqbiM90V+uk+zRMb9UeeRsuufx2fnLythff19NTgnukgzxWPfU9sSzHen1If1Ul5Xmv3VRG6XhwvOWsLm1TqVuQKBgQD4YgOkRMtpm6BFhOp6pjBcy/H1hN54cMqcTHtpL4w9X7bW+LoN9alfxZiHIRS8+HNATpRtjyKoo5yOQ09NH12/4lFpEIPdkQPzJQIb+kh//QMqqtGcRblCitNObHnlz/HhYDJ3C0nA9frfXhkv3doBAKEELytceGbS1fJ2PcIi2wKBgQDK7+9AmuWXe1qtDt/21j5ymsqhDFjuriPdT6LNvE9ep36h+XRHLe7XEKCKqyOsfYJvK7QI8QQbvB8Jto3pxJf41kBJxmzI9n4SnBKKhInoIICRXXQN4tTDoXVXQGun0idvyhrNEVL3ryW3XPX/UJHFy/Hfjab0sYJm6F50WcQtJQKBgGojUBURBK8zPnCWlLAmdgIhcFqPFZX39MyHbjELjWzoirQgAzlV4bO4Ny5/N2Js9KrlKU4L3S6dA5hTMP7uyVvmtQ0lboPupPZwuQ8Fi5eNoZ3I8ttJfBnwQs1/UzOeAWlidw4ht7mKI1Lx3edzcOX+w8+K7IeON7oejIZ0a5IDAoGAXDrpmIoNWGg2kLpW7V73aKyS9NigvnEkWZus2SYBSHqFIeY2g3cLunCTFhKrluQ/2HibTQkEnfpEfOyb2KeBjhUJiL4GiNsF9z05a/zKlFXZOLepW/pASlzh8HKVuuLXC4Zl4ddCxtCyKoC0SIH8jlGfLsO5IjJemph2/RgjAYUCgYEAkE98bIHsK9jPbt+wnPPs6kyDGHy1JrG9yBlcHOPxsnpxWLFXuxU+9D0qkpbfA28D4jAgehpePzlNPXkF4uIlgarYRDIKss/dX6QQXmmBKjY8UEu+doZYpJGO9SnSuUyih6eRlC/7x9zER/uPjJYia055u2VB0GqO51PKAgq/tqc=",
+      "saml_assertion_consumer_url_post" : "${url.realm.consumer}/app/auth",
+      "saml_idp_initiated_sso_url_name" : "sales"
+    },
+    "baseUrl": "${url.realm.consumer}/app/auth",
+    "adminUrl": "${url.realm.consumer}/app/auth"
+  }, {
+    "clientId": "${url.realm.consumer}/app/auth2",
+    "enabled": true,
+    "protocol": "saml",
+    "fullScopeAllowed": true,
+    "redirectUris": [
+      "${url.realm.consumer}/app/auth2/*"
+    ],
+    "attributes": {
+      "saml.authnstatement": "true",
+      "saml.client.signature": "true",
+      "saml.encrypt": "false",
+      "saml.server.signature": "true",
+      "saml.signature.algorithm": "RSA_SHA512",
+      "saml.signing.certificate": "MIIDBjCCAe6gAwIBAgIJANPu/mvxOREdMA0GCSqGSIb3DQEBCwUAMDAxLjAsBgNVBAMTJWh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9zYWxlcy1wb3N0LWVuYy8wIBcNMjQwNjIxMTkzMTE3WhgPMjEyNDA1MjgxOTMxMTdaMDAxLjAsBgNVBAMTJWh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9zYWxlcy1wb3N0LWVuYy8wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDE5iKDNNW5XxHAF0ITErZcHDYZI68z7u68n7o4dsiywkfOWf7jVnw7PJVnMeDEtLWtTO6f0tRTqJ4OV5HYdJ9+mhPJtn+2UuvrepyYa2IsC1eFPH98ZEtYapsE6ObvhKBQMcu5G/tQrxkCFY2ssDa99unwBH5STLyX78UvqKiYnkPCvIhkiPIHy8ab7DQowc+EE9XhlE3b63A65rp4G9R87rwgJX5VTM3h81WcDuWLPOg7YRYLZoorWz2p38/qL9gXY5NxIRK16EHGfw2W1dPrX3GyMOJbXVyrBNZ6m5IL9Wn7lBEJ/Dl7ZFMFB5W36QkJ+3aaNLT/Tu/Gz+7f24inAgMBAAGjITAfMB0GA1UdDgQWBBSk7RegFbEBruVbt/VFl2gZhZ2IpDANBgkqhkiG9w0BAQsFAAOCAQEAGyH1sXVU3HDMhCzP2k5fsJBGA+1iKLMsyyiGcaD/22anQ1uVU7iWPZH8mSJGWqkvo/4oFb7RjB2KzO/50wP0q/P/tymGsYoznt+MEJKKxYEqAYmIns7SKRIgv3xEfF8yQy2jOuULC9FTq/Pb3gd9Om40jmeJtYccDSICjEC+A2fcGe56ScuRRLt+3WFyIZUFH7Y9FYZQ3EYQ88UZg//5F1ddAzGtdMSeTanMxLKow7rUIm/+Sx6cd+Vkwo/SYdk4hsD8xZCYx8Ln4i3NKh+SzyvbYykyWVI2fwjplqvM5Md/M+SNvPtU9tkOCUxQqVfz/bwtTiqfjdSaUJlasgGByg==",
+      "saml.signing.private.key": "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDE5iKDNNW5XxHAF0ITErZcHDYZI68z7u68n7o4dsiywkfOWf7jVnw7PJVnMeDEtLWtTO6f0tRTqJ4OV5HYdJ9+mhPJtn+2UuvrepyYa2IsC1eFPH98ZEtYapsE6ObvhKBQMcu5G/tQrxkCFY2ssDa99unwBH5STLyX78UvqKiYnkPCvIhkiPIHy8ab7DQowc+EE9XhlE3b63A65rp4G9R87rwgJX5VTM3h81WcDuWLPOg7YRYLZoorWz2p38/qL9gXY5NxIRK16EHGfw2W1dPrX3GyMOJbXVyrBNZ6m5IL9Wn7lBEJ/Dl7ZFMFB5W36QkJ+3aaNLT/Tu/Gz+7f24inAgMBAAECggEATiW0zvR6Ww9jgST6AY3suNQtmH60O915/X07sMtcTq6TR1AqvNoHho8+EO4X8ppyfOzKzL4lrWqACNsytIFdCCdo8ScwuxFgN167pjcAiNCblPL0+k7oJJhzHFi/x5KQ+iM5Yye68EP+nfgl+cMahvznzm5KIKn6NCdi0M6U07VRuPIep0v5geqwLOYRWMm8guis5V1p6tpPm6ejplea0QaNpkGxpNuzE2GDJotPRja1TNZUBDV0cKPVY+00BOeuqbiM90V+uk+zRMb9UeeRsuufx2fnLythff19NTgnukgzxWPfU9sSzHen1If1Ul5Xmv3VRG6XhwvOWsLm1TqVuQKBgQD4YgOkRMtpm6BFhOp6pjBcy/H1hN54cMqcTHtpL4w9X7bW+LoN9alfxZiHIRS8+HNATpRtjyKoo5yOQ09NH12/4lFpEIPdkQPzJQIb+kh//QMqqtGcRblCitNObHnlz/HhYDJ3C0nA9frfXhkv3doBAKEELytceGbS1fJ2PcIi2wKBgQDK7+9AmuWXe1qtDt/21j5ymsqhDFjuriPdT6LNvE9ep36h+XRHLe7XEKCKqyOsfYJvK7QI8QQbvB8Jto3pxJf41kBJxmzI9n4SnBKKhInoIICRXXQN4tTDoXVXQGun0idvyhrNEVL3ryW3XPX/UJHFy/Hfjab0sYJm6F50WcQtJQKBgGojUBURBK8zPnCWlLAmdgIhcFqPFZX39MyHbjELjWzoirQgAzlV4bO4Ny5/N2Js9KrlKU4L3S6dA5hTMP7uyVvmtQ0lboPupPZwuQ8Fi5eNoZ3I8ttJfBnwQs1/UzOeAWlidw4ht7mKI1Lx3edzcOX+w8+K7IeON7oejIZ0a5IDAoGAXDrpmIoNWGg2kLpW7V73aKyS9NigvnEkWZus2SYBSHqFIeY2g3cLunCTFhKrluQ/2HibTQkEnfpEfOyb2KeBjhUJiL4GiNsF9z05a/zKlFXZOLepW/pASlzh8HKVuuLXC4Zl4ddCxtCyKoC0SIH8jlGfLsO5IjJemph2/RgjAYUCgYEAkE98bIHsK9jPbt+wnPPs6kyDGHy1JrG9yBlcHOPxsnpxWLFXuxU+9D0qkpbfA28D4jAgehpePzlNPXkF4uIlgarYRDIKss/dX6QQXmmBKjY8UEu+doZYpJGO9SnSuUyih6eRlC/7x9zER/uPjJYia055u2VB0GqO51PKAgq/tqc=",
+      "saml_assertion_consumer_url_post" : "${url.realm.consumer}/app/auth2/saml",
+      "saml_idp_initiated_sso_url_name" : "sales2"
+    },
+    "baseUrl": "${url.realm.consumer}/app/auth2",
+    "adminUrl": "${url.realm.consumer}/app/auth2"
+  } ],
+  "identityProviders" : [ {
+    "alias" : "saml-leaf",
+    "providerId" : "saml",
+    "enabled" : true,
+    "updateProfileFirstLoginMode" : "on",
+    "trustEmail" : false,
+    "storeToken" : false,
+    "addReadTokenRoleOnCreate" : false,
+    "authenticateByDefault" : false,
+    "firstBrokerLoginFlowAlias" : "first broker login",
+    "config" : {
+      "syncMode": "IMPORT",
+      "nameIDPolicyFormat" : "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent",
+      "postBindingAuthnRequest" : "true",
+      "postBindingResponse" : "true",
+      "singleLogoutServiceUrl" : "${url.realm.provider}/protocol/saml",
+      "singleSignOnServiceUrl" : "${url.realm.provider}/protocol/saml",
+      "validateSignature" : "false",
+      "wantAuthnRequestsSigned" : "false"
+    }
+  } ],
+  "identityProviderMappers" : [ {
+    "name" : "manager-role",
+    "identityProviderAlias" : "saml-leaf",
+    "identityProviderMapper" : "saml-role-idp-mapper",
+    "config" : {
+      "syncMode": "INHERIT",
+      "attribute.value" : "manager",
+      "role" : "${url.realm.consumer}/app/auth.manager",
+      "attribute.name" : "Role"
+    }
+  } ]
+}

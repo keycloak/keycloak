@@ -1,0 +1,67 @@
+name: Scheduled nightly workflows
+
+on: 
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  setup:
+    if: github.event_name != 'schedule' || github.repository == 'keycloak/keycloak'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write # Required to trigger workflows using gh
+    outputs:
+      latest-release-branch: ${{ steps.latest-release.outputs.branch }}
+    steps:
+      - id: latest-release
+        run: |
+          branch="release/$(gh api repos/keycloak/keycloak/branches | jq -r '.[].name' | sort -r | awk -F'/' '/[0-9.]+$/ {print $NF; exit}')"
+          echo "branch=$branch"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  run-default-branch:
+    name: Run default branch
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write # Required to trigger workflows using gh
+    needs: setup
+    strategy:
+      matrix:
+        workflow:
+        - ci.yml
+        - documentation.yml
+        - js-ci.yml
+        - operator-ci.yml
+        - codeql-analysis.yml
+        - snyk-analysis.yml
+        - trivy-analysis.yml
+
+    steps:
+      - name: Run workflow
+        run: gh workflow run -R ${{ github.repository }} ${{ matrix.workflow }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  run-latest-release-branch:
+    name: Run latest release branch
+    needs: setup
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write # Required to trigger workflows using gh
+    strategy:
+      matrix:
+        workflow:
+          - snyk-analysis.yml
+
+    steps:
+      - run: echo ${{ needs.setup.outputs.latest-release-branch }}
+      - name: Run workflow
+        run: gh workflow run -R ${{ github.repository }} ${{ matrix.workflow }} --ref ${{ needs.setup.outputs.latest-release-branch }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

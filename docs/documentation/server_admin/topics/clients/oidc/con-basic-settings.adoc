@@ -1,0 +1,109 @@
+[id="con-basic-settings_{context}"]
+= Basic configuration
+[role="_abstract"]
+
+The *Settings* tab includes many options to configure this client.
+
+.Settings tab
+image:images/client-settings-oidc.png[Settings tab]
+
+== General Settings
+
+*Client ID*:: The alphanumeric ID string that is used in OIDC requests and in the {project_name} database to identify the client.
+
+*Name*:: The name for the client in {project_name} UI screen. To localize
+the name, set up a replacement string value. For example, a string value such as $\{myapp}.  See the link:{developerguide_link}[{developerguide_name}] for more information.
+
+*Description*:: The description of the client.  This setting can also be localized.
+
+*Always Display in Console*:: Always list this client in the Account Console even if this user does not have an active session.
+
+== Access Settings
+
+*Root URL*:: If {project_name} uses any configured relative URLs, this value is prepended to them.
+
+*Home URL*:: Provides the default URL for when the auth server needs to redirect or link back to the client.
+
+*Valid Redirect URIs*:: Required field.  Enter a URL pattern and click *+* to add and *-* to remove existing URLs and click *Save*. Exact (case sensitive) string matching is used to compare valid redirect URIs.
++
+You can use wildcards at the end of the URL pattern. For example `$$http://host.com/path/*$$`. To avoid security issues, if the passed redirect URI contains the *userinfo* part or its *path* manages access to parent directory (`/../`) no wildcard comparison is performed but the standard and secure exact string matching.
++
+The full wildcard `$$*$$` valid redirect URI can also be configured to allow any *http* or *https* redirect URI. Please do not use it in production environments.
++
+Exclusive redirect URI patterns are typically more secure. See xref:unspecific-redirect-uris_{context}[Unspecific Redirect URIs] for more information.
+
+Web Origins:: Enter a URL pattern and click + to add and - to remove existing URLs. Click Save.
++
+This option handles link:https://fetch.spec.whatwg.org/[Cross-Origin Resource Sharing (CORS)].
+If browser JavaScript attempts an AJAX HTTP request to a server whose domain is different from the one that the
+JavaScript code came from, the request must use CORS. The server must handle CORS requests, otherwise the browser will not display or allow the request to be processed. This protocol protects against XSS, CSRF, and other JavaScript-based attacks.
++
+Domain URLs listed here are embedded within the access token sent to the client application. The client application uses this information to decide whether to allow a CORS request to be invoked on it. Only {project_name} client adapters support this feature. See link:{securing_apps_link}[{securing_apps_name}] for more information.
+
+[[_admin-url]]
+Admin URL:: Callback endpoint for a client. The server uses this URL to make callbacks like pushing revocation policies, performing backchannel logout, and other administrative operations. For {project_name} servlet adapters, this URL can be the root URL of the servlet application.
+For more information, see link:{securing_apps_link}[{securing_apps_name}].
+
+== Capability Config
+[[_access-type]]
+
+*Client authentication*:: The type of OIDC client.
+* _ON_
++
+For server-side clients that perform browser logins and require client secrets when making an Access Token Request. This setting should be used for server-side applications.
+
+* _OFF_
++
+For client-side clients that perform browser logins. As it is not possible to ensure that secrets can be kept safe with client-side clients, it is important to restrict access by configuring correct redirect URIs.
+
+*Authorization*:: Enables or disables fine-grained authorization support for this client.
+
+*Standard Flow*:: If enabled, this client can use the OIDC xref:_oidc-auth-flows-authorization[Authorization Code Flow].
+
+*Direct Access Grants*:: If enabled, this client can use the OIDC xref:_oidc-auth-flows-direct[Direct Access Grants].
+
+*Implicit Flow*:: If enabled, this client can use the OIDC xref:_oidc-auth-flows-implicit[Implicit Flow].
+
+*Service account roles*:: If enabled, this client can authenticate to {project_name} and retrieve access token dedicated to this client. In terms of OAuth2 specification, this enables support of `Client Credentials Grant` for this client.
+
+*Standard Token Exchange*:: If enabled, this client can use the link:{securing_apps_token_exchange_link}#_standard-token-exchange[Standard token exchange].
+
+*Auth 2.0 Device Authorization Grant*:: If enabled, this client can use the OIDC xref:con-oidc-auth-flows_server_administration_guide[Device Authorization Grant].
+
+*OIDC CIBA Grant*:: If enabled, this client can use the OIDC xref:con-oidc-auth-flows_{context}[Client Initiated Backchannel Authentication Grant].
+
+== Login settings
+
+*Login theme*:: A theme to use for login, OTP, grant registration, and forgotten password pages.
+
+*Consent required*:: If enabled, users have to consent to client access.
++
+For client-side clients that perform browser logins. As it is not possible to ensure that secrets can be kept safe with client-side clients, it is important to restrict access by configuring correct redirect URIs.
+
+*Display client on screen*:: This switch applies if *Consent Required* is *Off*.
+* _Off_
++
+The consent screen will contain only the consents corresponding to configured client scopes.
+
+* _On_
++
+There will be also one item on the consent screen about this client itself.
+
+*Client consent screen text*:: Applies if *Consent required* and *Display client on screen* are enabled. Contains the text that will be on the consent screen about permissions for this client.
+
+== Logout settings
+
+[[_front-channel-logout]]
+*Front channel logout*:: If *Front Channel Logout* is enabled, the application should be able to log out users through the front channel as per link:https://openid.net/specs/openid-connect-frontchannel-1_0.html[OpenID Connect Front-Channel Logout] specification. If enabled, you should also provide the `Front-Channel Logout URL`.
+
+*Front-channel logout URL*:: URL that will be used by {project_name} to send logout requests to clients through the front-channel. If not provided, it defaults to the Home URL. This option is applicable just if `Front channel logout` option is ON.
+
+*Front-channel logout session required*:: Specifies whether a sid (session ID) and iss (issuer) parameters are included in the Logout request when the Front-channel Logout URL is used.
+
+[[_back-channel-logout-url]]
+*Backchannel logout URL*:: URL that will cause the client to log itself out when a logout request is sent to this realm (via end_session_endpoint). The logout is done by sending logout token as specified in the OIDC Backchannel logout specification. If omitted, the logout request might be sent to the specified `Admin URL` (if configured) in the format specific to {project_name} adapters. If even `Admin URL` is not configured, no logout request will be sent to the client. This option is applicable just if `Front channel logout` option is OFF.
+
+*Backchannel logout session required*::
+Specifies whether a session ID Claim is included in the Logout Token when the *Backchannel Logout URL* is used.
+
+*Backchannel logout revoke offline sessions*:: Specifies whether a revoke_offline_access event is included in the Logout Token when the Backchannel Logout URL is used. {project_name} will revoke offline sessions when receiving a Logout Token with this event.

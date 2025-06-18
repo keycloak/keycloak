@@ -1,0 +1,15 @@
+[[_theme_resource]]
+=== Theme resources
+
+When implementing custom providers in {project_name} there may often be a need to add additional templates, resources and messages bundles.
+
+ifeval::[{project_community}==true]
+An example use-case would be a <<_auth_spi,custom authenticator>> that requires additional templates and resources.
+endif::[]
+
+The easiest way to load additional theme resources is to create a JAR with templates in `theme-resources/templates`
+resources in `theme-resources/resources` and messages bundles in `theme-resources/messages`.
+
+If you want a more flexible way to load templates and resources that can be achieved through the ThemeResourceSPI.
+By implementing `ThemeResourceProviderFactory` and `ThemeResourceProvider` you can decide exactly how to load templates
+and resources.

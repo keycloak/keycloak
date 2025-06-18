@@ -1,0 +1,64 @@
+name: Quarkus Next
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  # Only cancel jobs for PR updates
+  group: quarkus-next-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  
+jobs:
+  update-quarkus-next-branch:
+    name: Update quarkus-next branch
+    if: github.event_name != 'schedule' || github.repository == 'keycloak/keycloak'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Required to push changes to the repository
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+
+      - name: Cherry-pick additional commits in quarkus-next
+        run: |
+          ${GITHUB_WORKSPACE}/.github/scripts/prepare-quarkus-next.sh
+
+      - name: Push changes
+        run: |
+          git push -f origin HEAD:quarkus-next
+
+  run-matrix-with-quarkus-next:
+    name: Run workflow matrix with the quarkus-next branch
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write # Required to trigger workflows using gh
+    needs:
+      - update-quarkus-next-branch
+
+    strategy:
+      matrix:
+        workflow:
+          - ci.yml
+          - operator-ci.yml
+
+    steps:
+      - name: Run workflow with the nightly Quarkus release
+        run: gh workflow run -R ${{ github.repository }} ${{ matrix.workflow }} -r quarkus-next
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

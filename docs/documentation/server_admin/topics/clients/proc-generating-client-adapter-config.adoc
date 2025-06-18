@@ -1,0 +1,16 @@
+[id="proc-generating-client-adapter-config_{context}"]
+
+[[_client_installation]]
+
+= Generating client adapter config
+[role="_abstract"]
+
+{project_name} can generate configuration files that you can use to install a client adapter in your application's deployment environment. A number of adapter types are supported for OIDC and SAML.
+
+. Click on the _Action_ menu and select the *Download adapter config* option
++
+image:images/client-installation.png[]
++
+. Select the *Format Option* you want configuration generated for.  
+
+All {project_name} client adapters for OIDC and SAML are supported. The mod-auth-mellon Apache HTTPD adapter for SAML is supported as well as standard SAML entity descriptor files.

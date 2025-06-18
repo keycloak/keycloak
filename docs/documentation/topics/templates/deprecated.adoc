@@ -1,0 +1,12 @@
+ifeval::[{tech_feature_disabled}!=false]
+[NOTE]
+====
+{tech_feature_name} is *Deprecated* and will be removed in future releases. This feature is disabled by default.
+
+ifdef::tech_feature_id[]
+To enable start the server with
+`--features={tech_feature_id}`.
+endif::[]
+For more details see the https://www.keycloak.org/server/features[Enabling and disabling features] {section}.
+====
+endif::[]

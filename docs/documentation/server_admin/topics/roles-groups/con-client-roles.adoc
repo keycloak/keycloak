@@ -1,0 +1,5 @@
+[id="con-client-roles_{context}"]
+
+= Client roles
+[role="_abstract"]
+Client roles are namespaces dedicated to clients. Each client gets its own namespace. Client roles are managed under the *Roles* tab for each client. You interact with this UI the same way you do for realm-level roles.

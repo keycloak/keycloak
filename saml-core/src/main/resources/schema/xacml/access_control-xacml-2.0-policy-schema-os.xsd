@@ -1,0 +1,380 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xacml="urn:oasis:names:tc:xacml:2.0:policy:schema:os" xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="urn:oasis:names:tc:xacml:2.0:policy:schema:os" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<!-- -->
+	<xs:element name="PolicySet" type="xacml:PolicySetType"/>
+	<xs:complexType name="PolicySetType">
+		<xs:sequence>
+			<xs:element ref="xacml:Description" minOccurs="0"/>
+			<xs:element ref="xacml:PolicySetDefaults" minOccurs="0"/>
+			<xs:element ref="xacml:Target"/>
+			<xs:choice minOccurs="0" maxOccurs="unbounded">
+				<xs:element ref="xacml:PolicySet"/>
+				<xs:element ref="xacml:Policy"/>
+				<xs:element ref="xacml:PolicySetIdReference"/>
+				<xs:element ref="xacml:PolicyIdReference"/>
+				<xs:element ref="xacml:CombinerParameters"/>
+				<xs:element ref="xacml:PolicyCombinerParameters"/>
+				<xs:element ref="xacml:PolicySetCombinerParameters"/>
+			</xs:choice>
+			<xs:element ref="xacml:Obligations" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="PolicySetId" type="xs:anyURI" use="required"/>
+		<xs:attribute name="Version" type="xacml:VersionType" default="1.0"/>
+		<xs:attribute name="PolicyCombiningAlgId" type="xs:anyURI" use="required"/>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="CombinerParameters" type="xacml:CombinerParametersType"/>
+	<xs:complexType name="CombinerParametersType">
+		<xs:sequence>
+			<xs:element ref="xacml:CombinerParameter" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="CombinerParameter" type="xacml:CombinerParameterType"/>
+	<xs:complexType name="CombinerParameterType">
+		<xs:sequence>
+			<xs:element ref="xacml:AttributeValue"/>
+		</xs:sequence>
+		<xs:attribute name="ParameterName" type="xs:string" use="required"/>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="RuleCombinerParameters" type="xacml:RuleCombinerParametersType"/>
+	<xs:complexType name="RuleCombinerParametersType">
+		<xs:complexContent>
+			<xs:extension base="xacml:CombinerParametersType">
+				<xs:attribute name="RuleIdRef" type="xs:string" use="required"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="PolicyCombinerParameters" type="xacml:PolicyCombinerParametersType"/>
+	<xs:complexType name="PolicyCombinerParametersType">
+		<xs:complexContent>
+			<xs:extension base="xacml:CombinerParametersType">
+				<xs:attribute name="PolicyIdRef" type="xs:anyURI" use="required"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="PolicySetCombinerParameters" type="xacml:PolicySetCombinerParametersType"/>
+	<xs:complexType name="PolicySetCombinerParametersType">
+		<xs:complexContent>
+			<xs:extension base="xacml:CombinerParametersType">
+				<xs:attribute name="PolicySetIdRef" type="xs:anyURI" use="required"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="PolicySetIdReference" type="xacml:IdReferenceType"/>
+	<xs:element name="PolicyIdReference" type="xacml:IdReferenceType"/>
+	<!-- -->
+	<xs:element name="PolicySetDefaults" type="xacml:DefaultsType"/>
+	<xs:element name="PolicyDefaults" type="xacml:DefaultsType"/>
+	<xs:complexType name="DefaultsType">
+		<xs:sequence>
+			<xs:choice>
+				<xs:element ref="xacml:XPathVersion"/>
+			</xs:choice>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="XPathVersion" type="xs:anyURI"/>
+	<!-- -->
+	<xs:complexType name="IdReferenceType">
+		<xs:simpleContent>
+			<xs:extension base="xs:anyURI">
+				<xs:attribute name="Version" type="xacml:VersionMatchType" use="optional"/>
+				<xs:attribute name="EarliestVersion" type="xacml:VersionMatchType" use="optional"/>
+				<xs:attribute name="LatestVersion" type="xacml:VersionMatchType" use="optional"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<!-- -->
+	<xs:simpleType name="VersionType">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="(\d+\.)*\d+"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<!-- -->
+	<xs:simpleType name="VersionMatchType">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="((\d+|\*)\.)*(\d+|\*|\+)"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<!-- -->
+	<xs:element name="Policy" type="xacml:PolicyType"/>
+	<xs:complexType name="PolicyType">
+		<xs:sequence>
+			<xs:element ref="xacml:Description" minOccurs="0"/>
+			<xs:element ref="xacml:PolicyDefaults" minOccurs="0"/>
+			<xs:element ref="xacml:Target"/>
+			<xs:choice maxOccurs="unbounded">
+				<xs:element ref="xacml:CombinerParameters" minOccurs="0"/>
+				<xs:element ref="xacml:RuleCombinerParameters" minOccurs="0"/>
+				<xs:element ref="xacml:VariableDefinition"/>
+				<xs:element ref="xacml:Rule"/>
+			</xs:choice>
+			<xs:element ref="xacml:Obligations" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="PolicyId" type="xs:anyURI" use="required"/>
+		<xs:attribute name="Version" type="xacml:VersionType" default="1.0"/>
+		<xs:attribute name="RuleCombiningAlgId" type="xs:anyURI" use="required"/>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="Description" type="xs:string"/>
+	<!-- -->
+	<xs:element name="Rule" type="xacml:RuleType"/>
+	<xs:complexType name="RuleType">
+		<xs:sequence>
+			<xs:element ref="xacml:Description" minOccurs="0"/>
+			<xs:element ref="xacml:Target" minOccurs="0"/>
+			<xs:element ref="xacml:Condition" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="RuleId" type="xs:string" use="required"/>
+		<xs:attribute name="Effect" type="xacml:EffectType" use="required"/>
+	</xs:complexType>
+	<!-- -->
+	<xs:simpleType name="EffectType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Permit"/>
+			<xs:enumeration value="Deny"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<!-- -->
+	<xs:element name="Target" type="xacml:TargetType"/>
+	<xs:complexType name="TargetType">
+		<xs:sequence>
+			<xs:element ref="xacml:Subjects" minOccurs="0"/>
+			<xs:element ref="xacml:Resources" minOccurs="0"/>
+			<xs:element ref="xacml:Actions" minOccurs="0"/>
+			<xs:element ref="xacml:Environments" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="Subjects" type="xacml:SubjectsType"/>
+	<xs:complexType name="SubjectsType">
+		<xs:sequence>
+			<xs:element ref="xacml:Subject" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="Subject" type="xacml:SubjectType"/>
+	<xs:complexType name="SubjectType">
+		<xs:sequence>
+			<xs:element ref="xacml:SubjectMatch" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="Resources" type="xacml:ResourcesType"/>
+	<xs:complexType name="ResourcesType">
+		<xs:sequence>
+			<xs:element ref="xacml:Resource" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="Resource" type="xacml:ResourceType"/>
+	<xs:complexType name="ResourceType">
+		<xs:sequence>
+			<xs:element ref="xacml:ResourceMatch" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="Actions" type="xacml:ActionsType"/>
+	<xs:complexType name="ActionsType">
+		<xs:sequence>
+			<xs:element ref="xacml:Action" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="Action" type="xacml:ActionType"/>
+	<xs:complexType name="ActionType">
+		<xs:sequence>
+			<xs:element ref="xacml:ActionMatch" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="Environments" type="xacml:EnvironmentsType"/>
+	<xs:complexType name="EnvironmentsType">
+		<xs:sequence>
+			<xs:element ref="xacml:Environment" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="Environment" type="xacml:EnvironmentType"/>
+	<xs:complexType name="EnvironmentType">
+		<xs:sequence>
+			<xs:element ref="xacml:EnvironmentMatch" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="SubjectMatch" type="xacml:SubjectMatchType"/>
+	<xs:complexType name="SubjectMatchType">
+		<xs:sequence>
+			<xs:element ref="xacml:AttributeValue"/>
+			<xs:choice>
+				<xs:element ref="xacml:SubjectAttributeDesignator"/>
+				<xs:element ref="xacml:AttributeSelector"/>
+			</xs:choice>
+		</xs:sequence>
+		<xs:attribute name="MatchId" type="xs:anyURI" use="required"/>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="ResourceMatch" type="xacml:ResourceMatchType"/>
+	<xs:complexType name="ResourceMatchType">
+		<xs:sequence>
+			<xs:element ref="xacml:AttributeValue"/>
+			<xs:choice>
+				<xs:element ref="xacml:ResourceAttributeDesignator"/>
+				<xs:element ref="xacml:AttributeSelector"/>
+			</xs:choice>
+		</xs:sequence>
+		<xs:attribute name="MatchId" type="xs:anyURI" use="required"/>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="ActionMatch" type="xacml:ActionMatchType"/>
+	<xs:complexType name="ActionMatchType">
+		<xs:sequence>
+			<xs:element ref="xacml:AttributeValue"/>
+			<xs:choice>
+				<xs:element ref="xacml:ActionAttributeDesignator"/>
+				<xs:element ref="xacml:AttributeSelector"/>
+			</xs:choice>
+		</xs:sequence>
+		<xs:attribute name="MatchId" type="xs:anyURI" use="required"/>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="EnvironmentMatch" type="xacml:EnvironmentMatchType"/>
+	<xs:complexType name="EnvironmentMatchType">
+		<xs:sequence>
+			<xs:element ref="xacml:AttributeValue"/>
+			<xs:choice>
+				<xs:element ref="xacml:EnvironmentAttributeDesignator"/>
+				<xs:element ref="xacml:AttributeSelector"/>
+			</xs:choice>
+		</xs:sequence>
+		<xs:attribute name="MatchId" type="xs:anyURI" use="required"/>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="VariableDefinition" type="xacml:VariableDefinitionType"/>
+	<xs:complexType name="VariableDefinitionType">
+		<xs:sequence>
+			<xs:element ref="xacml:Expression"/>
+		</xs:sequence>
+		<xs:attribute name="VariableId" type="xs:string" use="required"/>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="Expression" type="xacml:ExpressionType" abstract="true"/>
+	<xs:complexType name="ExpressionType" abstract="true"/>
+	<!-- -->
+	<xs:element name="VariableReference" type="xacml:VariableReferenceType" substitutionGroup="xacml:Expression"/>
+	<xs:complexType name="VariableReferenceType">
+		<xs:complexContent>
+			<xs:extension base="xacml:ExpressionType">
+				<xs:attribute name="VariableId" type="xs:string" use="required"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="AttributeSelector" type="xacml:AttributeSelectorType" substitutionGroup="xacml:Expression"/>
+	<xs:complexType name="AttributeSelectorType">
+		<xs:complexContent>
+			<xs:extension base="xacml:ExpressionType">
+				<xs:attribute name="RequestContextPath" type="xs:string" use="required"/>
+				<xs:attribute name="DataType" type="xs:anyURI" use="required"/>
+				<xs:attribute name="MustBePresent" type="xs:boolean" use="optional" default="false"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="ResourceAttributeDesignator" type="xacml:AttributeDesignatorType" substitutionGroup="xacml:Expression"/>
+	<xs:element name="ActionAttributeDesignator" type="xacml:AttributeDesignatorType" substitutionGroup="xacml:Expression"/>
+	<xs:element name="EnvironmentAttributeDesignator" type="xacml:AttributeDesignatorType" substitutionGroup="xacml:Expression"/>
+	<!-- -->
+	<xs:complexType name="AttributeDesignatorType">
+		<xs:complexContent>
+			<xs:extension base="xacml:ExpressionType">
+				<xs:attribute name="AttributeId" type="xs:anyURI" use="required"/>
+				<xs:attribute name="DataType" type="xs:anyURI" use="required"/>
+				<xs:attribute name="Issuer" type="xs:string" use="optional"/>
+				<xs:attribute name="MustBePresent" type="xs:boolean" use="optional" default="false"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="SubjectAttributeDesignator" type="xacml:SubjectAttributeDesignatorType" substitutionGroup="xacml:Expression"/>
+	<xs:complexType name="SubjectAttributeDesignatorType">
+		<xs:complexContent>
+			<xs:extension base="xacml:AttributeDesignatorType">
+				<xs:attribute name="SubjectCategory" type="xs:anyURI" use="optional" default="urn:oasis:names:tc:xacml:1.0:subject-category:access-subject"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="AttributeValue" type="xacml:AttributeValueType" substitutionGroup="xacml:Expression"/>
+	<xs:complexType name="AttributeValueType" mixed="true">
+		<xs:complexContent mixed="true">
+			<xs:extension base="xacml:ExpressionType">
+				<xs:sequence>
+					<xs:any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+				</xs:sequence>
+				<xs:attribute name="DataType" type="xs:anyURI" use="required"/>
+				<xs:anyAttribute namespace="##any" processContents="lax"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="Function" type="xacml:FunctionType" substitutionGroup="xacml:Expression"/>
+	<xs:complexType name="FunctionType">
+		<xs:complexContent>
+			<xs:extension base="xacml:ExpressionType">
+				<xs:attribute name="FunctionId" type="xs:anyURI" use="required"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="Condition" type="xacml:ConditionType"/>
+	<xs:complexType name="ConditionType">
+		<xs:sequence>
+			<xs:element ref="xacml:Expression"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="Apply" type="xacml:ApplyType" substitutionGroup="xacml:Expression"/>
+	<xs:complexType name="ApplyType">
+		<xs:complexContent>
+			<xs:extension base="xacml:ExpressionType">
+				<xs:sequence>
+					<xs:element ref="xacml:Expression" minOccurs="0" maxOccurs="unbounded"/>
+				</xs:sequence>
+				<xs:attribute name="FunctionId" type="xs:anyURI" use="required"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="Obligations" type="xacml:ObligationsType"/>
+	<xs:complexType name="ObligationsType">
+		<xs:sequence>
+			<xs:element ref="xacml:Obligation" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="Obligation" type="xacml:ObligationType"/>
+	<xs:complexType name="ObligationType">
+		<xs:sequence>
+			<xs:element ref="xacml:AttributeAssignment" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="ObligationId" type="xs:anyURI" use="required"/>
+		<xs:attribute name="FulfillOn" type="xacml:EffectType" use="required"/>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="AttributeAssignment" type="xacml:AttributeAssignmentType"/>
+	<xs:complexType name="AttributeAssignmentType" mixed="true">
+		<xs:complexContent mixed="true">
+			<xs:extension base="xacml:AttributeValueType">
+				<xs:attribute name="AttributeId" type="xs:anyURI" use="required"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<!-- -->
+</xs:schema>
+

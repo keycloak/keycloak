@@ -1,0 +1,52 @@
+.keycloak__authentication__input_node,
+.keycloak__authentication__output_node {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--pf-v5-global--BackgroundColor--200);
+  border: 0;
+}
+
+.keycloak__authentication__conditional_node {
+  border: 1px solid #777;
+  width: 80px;
+  height: 80px;
+  transform: rotate(45deg);
+}
+
+.keycloak__authentication__conditional_node div {
+  transform: rotate(-45deg);
+}
+
+.keycloak__authentication__subflow_node {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--pf-v5-global--BackgroundColor--200);
+}
+
+.keycloak__authentication__input_node.selected,
+.keycloak__authentication__input_node:hover,
+.keycloak__authentication__output_node.selected,
+.keycloak__authentication__output_node:hover,
+.keycloak__authentication__subflow_node.selected,
+.keycloak__authentication__subflow_node:hover,
+.keycloak__authentication__conditional_node.selected,
+.keycloak__authentication__conditional_node:hover {
+  box-shadow: 0 0 0 0.5px #1a192b;
+}
+
+.edgebutton {
+  background-color: var(--pf-v5-global--BackgroundColor--200);
+  border: 1px solid var(--pf-v5-global--BackgroundColor--100);
+  border-radius: 50%;
+  cursor: pointer;
+  height: 33px;
+  width: 33px;
+}

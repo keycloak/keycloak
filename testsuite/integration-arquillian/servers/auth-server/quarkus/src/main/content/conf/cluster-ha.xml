@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2019 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<infinispan
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="urn:infinispan:config:11.0 http://www.infinispan.org/schemas/infinispan-config-11.0.xsd"
+        xmlns="urn:infinispan:config:11.0">
+
+    <!-- Distributed Cache Container Configuration -->
+    <cache-container name="keycloak">
+        <transport lock-timeout="60000" node-name="${jboss.node.name}" />
+        <local-cache name="realms">
+            <encoding>
+                <key media-type="application/x-java-object"/>
+                <value media-type="application/x-java-object"/>
+            </encoding>
+            <memory storage="HEAP" max-count="10000"/>
+        </local-cache>
+        <local-cache name="users">
+            <encoding>
+                <key media-type="application/x-java-object"/>
+                <value media-type="application/x-java-object"/>
+            </encoding>
+            <memory storage="HEAP" max-count="10000"/>
+        </local-cache>
+        <distributed-cache name="sessions" owners="${session.cache.owners}"/>
+        <distributed-cache name="authenticationSessions" owners="${session.cache.owners}"/>
+        <distributed-cache name="offlineSessions" owners="${offline.session.cache.owners}"/>
+        <distributed-cache name="clientSessions" owners="${session.cache.owners}"/>
+        <distributed-cache name="offlineClientSessions" owners="${offline.session.cache.owners}"/>
+        <distributed-cache name="loginFailures" owners="${login.failure.cache.owners}"/>
+        <local-cache name="authorization">
+            <encoding>
+                <key media-type="application/x-java-object"/>
+                <value media-type="application/x-java-object"/>
+            </encoding>
+            <memory storage="HEAP" max-count="10000"/>
+        </local-cache>
+        <replicated-cache name="work"/>
+        <local-cache name="keys">
+            <encoding>
+                <key media-type="application/x-java-object"/>
+                <value media-type="application/x-java-object"/>
+            </encoding>
+            <expiration max-idle="3600000"/>
+            <memory storage="HEAP" max-count="1000"/>
+        </local-cache>
+        <local-cache name="crl" simple-cache="true">
+            <encoding>
+                <key media-type="application/x-java-object"/>
+                <value media-type="application/x-java-object"/>
+            </encoding>
+            <expiration lifespan="-1"/>
+            <memory max-count="1000"/>
+        </local-cache>
+        <distributed-cache name="actionTokens" owners="2">
+            <encoding>
+                <key media-type="application/x-java-object"/>
+                <value media-type="application/x-java-object"/>
+            </encoding>
+            <expiration max-idle="-1" interval="300000"/>
+            <memory storage="HEAP" max-count="-1"/>
+        </distributed-cache>
+    </cache-container>
+</infinispan>

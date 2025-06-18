@@ -1,0 +1,72 @@
+[[_saml_multi_tenancy]]
+== Multi Tenancy
+
+SAML offers Multi Tenancy, meaning that a single target application (WAR) can be secured with multiple {project_name} realms. The realms can be located on the same {project_name} instance or on different instances.
+
+To do this, the application must have multiple `keycloak-saml.xml` adapter configuration files.
+
+While you could have multiple instances of your WAR with different adapter configuration files deployed to different context-paths, this may be inconvenient and you may also want to select the realm based on something other than context-path.
+
+{project_name} makes it possible to have a custom config resolver, so you can choose which adapter config is used for each request. In SAML, the configuration is only interesting in the login processing; once the user is logged in, the session is authenticated and it does not matter if the `keycloak-saml.xml` returned is different. For that reason, returning the same configuration for the same session is the correct way to go.
+
+To achieve this, create an implementation of `org.keycloak.adapters.saml.SamlConfigResolver`. The following example uses the `Host` header to locate the proper configuration and load it and the associated elements from the applications' Java classpath:
+
+[source,java]
+----
+package example;
+
+import java.io.InputStream;
+import org.keycloak.adapters.saml.SamlConfigResolver;
+import org.keycloak.adapters.saml.SamlDeployment;
+import org.keycloak.adapters.saml.config.parsers.DeploymentBuilder;
+import org.keycloak.adapters.saml.config.parsers.ResourceLoader;
+import org.keycloak.adapters.spi.HttpFacade;
+import org.keycloak.saml.common.exceptions.ParsingException;
+
+public class SamlMultiTenantResolver implements SamlConfigResolver {
+
+    @Override
+    public SamlDeployment resolve(HttpFacade.Request request) {
+        String host = request.getHeader("Host");
+        String realm = null;
+        if (host.contains("tenant1")) {
+            realm = "tenant1";
+        } else if (host.contains("tenant2")) {
+            realm = "tenant2";
+        } else {
+            throw new IllegalStateException("Not able to guess the keycloak-saml.xml to load");
+        }
+
+        InputStream is = getClass().getResourceAsStream("/" + realm + "-keycloak-saml.xml");
+        if (is == null) {
+            throw new IllegalStateException("Not able to find the file /" + realm + "-keycloak-saml.xml");
+        }
+
+        ResourceLoader loader = new ResourceLoader() {
+            @Override
+            public InputStream getResourceAsStream(String path) {
+                return getClass().getResourceAsStream(path);
+            }
+        };
+        
+        try {
+            return new DeploymentBuilder().build(is, loader);
+        } catch (ParsingException e) {
+            throw new IllegalStateException("Cannot load SAML deployment", e);
+        }
+    }
+}
+----
+
+You must also configure which `SamlConfigResolver` implementation to use with the `keycloak.config.resolver` context-param in your `web.xml`:
+
+[source,xml]
+----
+<web-app>
+    ...
+    <context-param>
+        <param-name>keycloak.config.resolver</param-name>
+        <param-value>example.SamlMultiTenantResolver</param-value>
+    </context-param>
+</web-app>
+----

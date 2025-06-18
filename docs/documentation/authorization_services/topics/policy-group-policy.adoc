@@ -1,0 +1,39 @@
+[[_policy_group]]
+= Group-based policy
+
+You can use this type of policy to define conditions for your permissions where a set of one or more groups (and their hierarchies) is permitted to access an object.
+
+To create a new group-based policy, select *Group* from the policy type list.
+
+.Group Policy
+image:images/policy/create-group.png[alt="Add Group Policy"]
+
+== Configuration
+
+* *Name*
++
+A human-readable and unique string describing the policy. A best practice is to use names that are closely related to your business and security requirements, so you
+can identify them more easily.
++
+* *Description*
++
+A string containing details about this policy.
++
+* *Groups Claim*
++
+Specifies the name of the claim in the token holding the group names and/or paths. Usually, authorization requests are processed based on an ID Token or Access Token
+previously issued to a client acting on behalf of some user. If defined, the token must include a claim from where this policy is going to obtain the groups
+the user is a member of. If not defined, user's groups are obtained from your realm configuration.
++
+* *Groups*
++
+Allows you to select the groups that should be enforced by this policy when evaluating permissions. After adding a group, you can extend access to children of the group
+by marking the checkbox *Extend to Children*. If left unmarked, access restrictions only apply to the selected group.
++
+* *Logic*
++
+The logic of this policy to apply after the other conditions have been evaluated.
+
+[role="_additional-resources"]
+.Additional resources
+* <<_policy_logic, Positive and negative logic>>

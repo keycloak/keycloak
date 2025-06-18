@@ -1,0 +1,44 @@
+= Highlights
+
+== Quarkus distribution preview
+
+Without comparison the biggest highlight of this release is all the improvements that have been made to the Quarkus distribution. So many in fact, that it will be hard to list them all.
+
+The CLI has been polished to hell and back, and we believe it now provides a very simple and convenient approach to configuring and running Keycloak. It's almost so simple that documentation shouldn't be needed.
+
+To get started, just unpack the distribution, then type `bin/kc.[sh|bat] -h` to discover awesomeness!
+
+That doesn't mean we don't plan to provide documentation for configuring Keycloak, but it didn't quite make it this time around. In lack of documentation expect a blog post to follow the release introducing all the changes to the Quarkus distribution, as well as an overview on how to use it.
+
+We are rapidly moving towards making the Quarkus distribution our default distribution, and will soon deprecate the WildFly distribution. With this in mind it is important that as many people as possible give it a test-run and provide us with feedback if you find any usability issues, are not able to configure something with it, or if you discover any bugs.
+
+We'd love to hear your thoughts and get your feedback in https://github.com/keycloak/keycloak/discussions/8654[GitHub Discussions]!
+
+== New Admin Console preview
+
+The new admin console is shaping up really nicely, and a preview is included in the main distribution. It is not quite feature complete yet, but there are still loads of things to try out.
+
+== WildFly update
+
+Upgrading from WildFly 23 to WildFly 25 has taken a lot longer than we would have liked. We're still working hard on this and are hoping to release Keycloak 16 as soon as possible with the upgrade, but as we wanted to get the updates to the Quarkus distribution out there we are doing this release in the meantime.
+
+== WildFly adapter deprecation
+
+In WildFly 25 there is now excellent native OpenID Connect support without the need for the Keycloak adapter. With this in mind we are deprecating our WildFly adapter and will not support WildFly 25, but it will be around for a while for older WildFly versions and Red Hat JBoss Enterprise Application Platform 7.y.
+
+== Spring Security and Boot adapter deprecation
+
+A long time ago, with Spring Security 5.0, there is now native support for OAuth 2.0 and OpenID Connect in Spring. With this in mind now is the time to start deprecating our Spring Boot and Security adapters.
+
+== OpenID Connect Front-Channel Logout Support
+
+{project_name} now supports https://openid.net/specs/openid-connect-frontchannel-1_0.html[OpenID Connect Front-Channel Logout 1.0].
+
+For more details, take a look at link:{adminguide_link}#_oidc-logout[{adminguide_name}].
+
+Thanks to https://github.com/rhyamada[Ronaldo Yamada] for the contribution.
+
+== Deprecated features in the {project_operator}
+
+With this release, we have deprecated and/or marked as unsupported some features in the {project_operator}. This
+concerns the Backup CRD and the operator managed Postgres Database.

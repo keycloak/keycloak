@@ -1,0 +1,38 @@
+[[_limit-authentication-sessions]]
+=== Limit Authentication Sessions
+
+<<_authentication-sessions, Authentication sessions>> track the state of the authentication. The text below is applicable regardless of the source flow.
+
+NOTE: This section describes deployments that use the {jdgserver_name} provider for authentication sessions.
+
+Authentication session is internally stored as `RootAuthenticationSessionEntity`. Each `RootAuthenticationSessionEntity` can have multiple authentication sub-sessions stored within the
+`RootAuthenticationSessionEntity` as a collection of `AuthenticationSessionEntity` objects. {project_name} stores authentication sessions in a dedicated {jdgserver_name} cache.
+The number of `AuthenticationSessionEntity` per `RootAuthenticationSessionEntity` contributes to the size of each cache entry. Total memory footprint of authentication session cache is determined by
+the number of stored `RootAuthenticationSessionEntity` and by the number of `AuthenticationSessionEntity` within each `RootAuthenticationSessionEntity`.
+
+The number of maintained `RootAuthenticationSessionEntity` objects corresponds to the number of unfinished login flows from the browser. To keep the number of `RootAuthenticationSessionEntity`
+under control, using an advanced firewall control to limit ingress network traffic is recommended.
+
+
+Higher memory usage may occur for deployments where there are many active `RootAuthenticationSessionEntity` with a lot of `AuthenticationSessionEntity`.
+If the load balancer does not support or is not configured for session stickiness, the load over network in a cluster can
+increase significantly. The reason for this load is that each request that lands on a node that does not own the appropriate authentication session needs to retrieve
+and update the authentication session record in the owner node which involves a separate network transmission for both the retrieval and the storage.
+
+The maximum number of `AuthenticationSessionEntity` per `RootAuthenticationSessionEntity` can be configured in `authenticationSessions` SPI by setting property `authSessionsLimit`. The default value is set to 300 `AuthenticationSessionEntity` per a `RootAuthenticationSessionEntity`. When this limit is reached, the oldest authentication sub-session will be removed after a new authentication session request.
+
+The following example shows how to limit the number of active `AuthenticationSessionEntity` per a `RootAuthenticationSessionEntity` to 100.
+
+[source,bash]
+----
+bin/kc.[sh|bat] start --spi-authentication-sessions--infinispan--auth-sessions-limit=100
+----
+
+ifeval::[{project_community}==true]
+The equivalent command for the new map storage:
+
+[source,bash]
+----
+bin/kc.[sh|bat] start --spi-authentication-sessions--map--auth-sessions-limit=100
+----
+endif::[]

@@ -1,0 +1,165 @@
+:toc: left
+:toclevels: 3
+:sectanchors:
+:linkattrs:
+
+include::topics/templates/document-attributes.adoc[]
+
+:release_notes:
+
+= {releasenotes_name}
+
+:release_header_guide: {releasenotes_name_short}
+:release_header_latest_link: {releasenotes_link_latest}
+include::topics/templates/release-header.adoc[]
+
+== {project_name_full} 26.3.0
+include::topics/26_3_0.adoc[leveloffset=2]
+
+== {project_name_full} 26.2.0
+include::topics/26_2_0.adoc[leveloffset=2]
+
+== {project_name_full} 26.1.3
+include::topics/26_1_3.adoc[leveloffset=2]
+
+== {project_name_full} 26.1.1
+include::topics/26_1_1.adoc[leveloffset=2]
+
+== {project_name_full} 26.1.0
+include::topics/26_1_0.adoc[leveloffset=2]
+
+== {project_name_full} 26.0.0
+include::topics/26_0_0.adoc[leveloffset=2]
+
+== {project_name_full} 25.0.0
+include::topics/25_0_0.adoc[leveloffset=2]
+
+== {project_name_full} 24.0.5
+include::topics/24_0_5.adoc[leveloffset=2]
+
+== {project_name_full} 24.0.4
+include::topics/24_0_4.adoc[leveloffset=2]
+
+== {project_name_full} 24.0.1
+include::topics/24_0_1.adoc[leveloffset=2]
+
+== {project_name_full} 24.0.0
+include::topics/24_0_0.adoc[leveloffset=2]
+
+== {project_name_full} 23.0.0
+include::topics/23_0_0.adoc[leveloffset=2]
+
+== {project_name_full} 22.0.3
+include::topics/22_0_3.adoc[leveloffset=2]
+
+== {project_name_full} 22.0.2
+include::topics/22_0_2.adoc[leveloffset=2]
+
+== {project_name_full} 22.0.0
+include::topics/22_0_0.adoc[leveloffset=2]
+
+== {project_name_full} 21.1.2
+include::topics/21_1_2.adoc[leveloffset=2]
+
+== {project_name_full} 21.1.0
+include::topics/21_1_0.adoc[leveloffset=2]
+
+== {project_name_full} 21.0.0
+include::topics/21_0_0.adoc[leveloffset=2]
+
+== {project_name_full} 20.0.0
+include::topics/20_0_0.adoc[leveloffset=2]
+
+== {project_name_full} 19.0.0
+include::topics/19_0_0.adoc[leveloffset=2]
+
+== {project_name_full} 18.0.0
+include::topics/18_0_0.adoc[leveloffset=2]
+
+== {project_name_full} 17.0.0
+include::topics/17_0_0.adoc[leveloffset=2]
+
+== {project_name_full} 16.1.0
+include::topics/16_1_0.adoc[leveloffset=2]
+
+== {project_name_full} 16.0.0
+include::topics/16_0_0.adoc[leveloffset=2]
+
+== {project_name_full} 15.1.0
+include::topics/15_1_0.adoc[leveloffset=2]
+
+== {project_name_full} 15.0.1
+include::topics/15_0_1.adoc[leveloffset=2]
+
+== {project_name_full} 15.0.0
+include::topics/15_0_0.adoc[leveloffset=2]
+
+== {project_name_full} 14.0.0
+include::topics/14_0_0.adoc[leveloffset=2]
+
+== {project_name_full} 13.0.0
+include::topics/13_0_0.adoc[leveloffset=2]
+
+== {project_name_full} 12.0.0
+include::topics/12_0_0.adoc[leveloffset=2]
+
+== {project_name_full} 11.0.0
+include::topics/11_0_0.adoc[leveloffset=2]
+
+== {project_name_full} 10.0.0
+include::topics/10_0_0.adoc[leveloffset=2]
+
+== {project_name_full} 9.0.1
+include::topics/9_0_1.adoc[leveloffset=2]
+
+== {project_name_full} 9.0.0
+include::topics/9_0_0.adoc[leveloffset=2]
+
+== {project_name_full} 8.0.2
+include::topics/8_0_2.adoc[leveloffset=2]
+
+== {project_name_full} 8.0.1
+include::topics/8_0_1.adoc[leveloffset=2]
+
+== {project_name_full} 8.0.0
+include::topics/8_0_0.adoc[leveloffset=2]
+
+== {project_name_full} 7.0.1
+include::topics/7_0_1.adoc[leveloffset=2]
+
+== {project_name_full} 7.0.0
+include::topics/7_0_0.adoc[leveloffset=2]
+
+== {project_name_full} 6.0.0
+include::topics/6_0_0.adoc[leveloffset=2]
+
+== {project_name_full} 5.0.0
+include::topics/5_0_0.adoc[leveloffset=2]
+
+== {project_name_full} 4.8.0.Final
+include::topics/4_8_0_final.adoc[leveloffset=2]
+
+== {project_name_full} 4.7.0.Final
+include::topics/4_7_0_final.adoc[leveloffset=2]
+
+== {project_name_full} 4.6.0.Final
+include::topics/4_6_0_final.adoc[leveloffset=2]
+
+== {project_name_full} 4.5.0.Final
+include::topics/4_5_0_final.adoc[leveloffset=2]
+
+== {project_name_full} 4.4.0.Final
+include::topics/4_4_0_final.adoc[leveloffset=2]
+
+== {project_name_full} 4.3.0.Final
+include::topics/4_3_0_final.adoc[leveloffset=2]
+
+== {project_name_full} 4.2.0.Final
+include::topics/4_2_0_final.adoc[leveloffset=2]
+
+== {project_name_full} 4.1.0.Final
+include::topics/4_1_0_final.adoc[leveloffset=2]
+
+== {project_name_full} 4.0.0.Final
+include::topics/4_0_0_final.adoc[leveloffset=2]
+include::topics/4_0_0_beta3.adoc[leveloffset=2]

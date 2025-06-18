@@ -1,0 +1,9 @@
+= Terms and Conditions user attribute migration
+
+The `terms_and_conditions` user attribute was accidentally changed in 21.0.0
+to uppercase. This version reverts the user attribute back to lowercase.
+The value of the attribute is set when accepting Terms and Conditions page.
+
+If any of your custom extensions relies on this attribute, you may need to
+adjust your code to check both attributes `terms_and_conditions` and
+`TERMS_AND_CONDITIONS`.

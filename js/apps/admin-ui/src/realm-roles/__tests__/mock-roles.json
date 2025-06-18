@@ -1,0 +1,81 @@
+[
+  {
+     "name":"Admin",
+     "composite":true,
+     "description": "Lorem ipsum dolor sit amet",
+     "attributes": {
+        "key input 1": "value input 1",
+        "key input 2": "value input 2"
+      }
+  },
+  {
+     "name":"Author",
+     "composite":false,
+     "description": "Lorem ipsum dolor sit amet"
+  },
+  {
+      "name":"Billing",
+      "composite":true,
+      "description": "Lorem ipsum dolor sit"
+   },
+   {
+      "name":"Contributor",
+      "composite":true,
+      "description": "Lorem ipsum dolor sit, consecte"
+   },
+   {
+      "name":"Editor",
+      "composite":true,
+      "description": "Lorem ipsum dolor sit amet"
+   },
+   {
+      "name":"Engineer",
+      "composite":true,
+      "description": "Lorem ipsum dolor sit amet"
+   },
+   {
+      "name":"Member",
+      "composite":false,
+      "description": "Lorem ipsum dolor sit amet"
+   },
+   {
+      "name":"Moderator",
+      "composite":true,
+      "description": "Lorem ipsum dolor sit amet"
+   },
+   {
+      "name":"Owner",
+      "composite":true,
+      "description": "Lorem ipsum dolor sit amet"
+   },
+   {
+      "name":"Reader",
+      "composite":true,
+      "description": "Lorem ipsum dolor sit amet"
+   },
+   {
+      "name":"Subscriber",
+      "composite":true,
+      "description": "Lorem ipsum dolor sit "
+   },
+   {
+      "name":"Teenager",
+      "composite":true,
+      "description": "Lorem ipsum dolor sit amet, consecte occaecat"
+   },
+   {
+      "name":"User",
+      "composite":true,
+      "description": "Lorem ipsum dolor sit amet, consecte"
+   },
+   {
+      "name":"Writer",
+      "composite":true,
+      "description": "Lorem ipsum dolor"
+   },
+   {
+      "name":"Zara",
+      "composite":true,
+      "description": "Lorem ipsum dolor sit amet"
+   }
+]

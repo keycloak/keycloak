@@ -1,0 +1,9 @@
+[id="configuring-authentication_{context}"]
+== Configuring authentication
+
+This chapter covers several authentication topics. These topics include:
+
+* Enforcing strict password and One Time Password (OTP) policies.
+* Managing different credential types.
+* Logging in with Kerberos.
+* Disabling and enabling built-in credential types.

@@ -1,0 +1,90 @@
+{
+  "id" : "${name.realm.provider}",
+  "realm" : "${name.realm.provider}",
+  "enabled" : true,
+  "sslRequired" : "external",
+  "roles" : {
+    "client" : {
+      "${url.realm.consumer}" : [ {
+        "name" : "manager"
+      } ]
+    }
+  },
+  "clients" : [ {
+    "clientId": "${url.realm.consumer}",
+    "enabled": true,
+    "protocol": "saml",
+    "fullScopeAllowed": true,
+    "redirectUris": [
+      "${url.realm.consumer}/broker/saml-leaf/endpoint"
+    ],
+    "attributes" : {
+      "saml.assertion.signature" : "false",
+      "saml.authnstatement" : "true",
+      "saml.client.signature" : "false",
+      "saml.encrypt" : "false",
+      "saml.force.post.binding" : "true",
+      "saml.server.signature" : "false",
+      "saml_assertion_consumer_url_post" : "${url.realm.consumer}/broker/saml-leaf/endpoint/clients/sales",
+      "saml_force_name_id_format" : "false",
+      "saml_name_id_format": "email",
+      "saml_single_logout_service_url_post" : "${url.realm.consumer}/broker/saml-leaf/endpoint"
+    }
+  }, {
+    "clientId": "${url.realm.consumer}/broker/saml-leaf/endpoint/clients/sales",
+    "enabled": true,
+    "protocol": "saml",
+    "fullScopeAllowed": true,
+    "redirectUris": [
+      "${url.realm.consumer}/broker/saml-leaf/endpoint"
+    ],
+    "attributes" : {
+      "saml_name_id_format": "email",
+      "saml.assertion.signature" : "false",
+      "saml.authnstatement" : "true",
+      "saml.client.signature" : "false",
+      "saml.encrypt" : "false",
+      "saml.force.post.binding" : "true",
+      "saml.server.signature" : "false",
+      "saml_assertion_consumer_url_post" : "${url.realm.consumer}/broker/saml-leaf/endpoint/clients/sales",
+      "saml_force_name_id_format" : "false",
+      "saml_idp_initiated_sso_url_name" : "samlbroker",
+      "saml_single_logout_service_url_post" : "${url.realm.consumer}/broker/saml-leaf/endpoint"
+    }
+  }, {
+    "clientId": "${url.realm.consumer}/broker/saml-leaf/endpoint/clients/sales2",
+    "enabled": true,
+    "protocol": "saml",
+    "fullScopeAllowed": true,
+    "redirectUris": [
+      "${url.realm.consumer}/broker/saml-leaf/endpoint"
+    ],
+    "attributes" : {
+      "saml_name_id_format": "email",
+      "saml.assertion.signature" : "false",
+      "saml.authnstatement" : "true",
+      "saml.client.signature" : "false",
+      "saml.encrypt" : "false",
+      "saml.force.post.binding" : "true",
+      "saml.server.signature" : "false",
+      "saml_assertion_consumer_url_post" : "${url.realm.consumer}/broker/saml-leaf/endpoint/clients/sales2",
+      "saml_force_name_id_format" : "false",
+      "saml_idp_initiated_sso_url_name" : "samlbroker-2",
+      "saml_single_logout_service_url_post" : "${url.realm.consumer}/broker/saml-leaf/endpoint"
+    }
+  } ],
+  "users" : [ {
+    "username" : "test",
+    "enabled" : true,
+    "email" : "a@localhost",
+    "firstName": "b",
+    "lastName": "c",
+    "credentials" : [ {
+      "type" : "password",
+      "value" : "test"
+    } ],
+    "clientRoles" : {
+      "${url.realm.consumer}" : [ "manager" ]
+    }
+  } ]
+}

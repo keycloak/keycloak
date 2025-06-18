@@ -1,0 +1,20 @@
+[[_resource_view]]
+= Viewing resources
+
+On the *Resource* page, you see a list of the resources associated with a resource server.
+
+.Resources
+image:images/resource/view.png[alt="Resources"]
+
+The resource list provides information about the protected resources, such as:
+
+* Type
+* Owner
+* URIs
+* Associated scopes, if any
+* Associated permissions
+
+From this list, you can also directly create a permission by clicking *Create Permission* for the resource for which you want to create the permission.
+
+[NOTE]
+Before creating permissions for your resources, be sure you have already defined the policies that you want to associate with the permission.

@@ -1,0 +1,113 @@
+<#import "/templates/guide.adoc" as tmpl>
+
+<@tmpl.guide
+title="Migrating to Quarkus distribution"
+summary="Migrate to the new Quarkus distribution from the legacy WildFly distribution">
+
+Starting with Keycloak 17 the default distribution is now powered by Quarkus, while the legacy WildFly powered distribution will still be around until June 2022 we highly recommend starting the migration as soon as possible.
+
+The new distribution introduces a number of breaking changes, including:
+
+* Configuring Keycloak has significantly changed
+* Quarkus is not an application server, but rather a framework to build applications
+* `/auth` removed from the default context path
+* Custom providers are packaged and deployed differently
+* A new operator and CRDs for Kubernetes and OpenShift
+
+Before undertaking the migration we highly recommend reading through the new https://www.keycloak.org/guides#server[Server Guides] to understand how to install and configure the new distribution.
+
+== Migrating configuration
+
+The WildFly distribution of Keycloak used complicated XML files for configuration, resulting in the need for a CLI tool (`jboss-cli`) to manipulate these files. These files also brought complication to upgrading, where an error-prone script was used to upgrade the config from a previous version.
+
+The new Quarkus powered distribution leverages a simple configuration file instead, with corresponding CLI arguments and environment variables as options, making it significantly easier to configure Keycloak. However, this results in the inability to automatically migrate the configuration from the previous distribution.
+
+To migrate to the new Quarkus powered distribution the first step is to understand what configuration changes you are applying to the legacy distribution, and apply those that are necessary to the new distribution by following the new https://www.keycloak.org/guides#server[Server Guides].
+
+One thing to note is the new distribution is a lot more opinionated when it comes to configuration. It aims to provide better defaults, with the need to configure less yourself. However, we may not always have the balance right, and there may be use-cases not covered.
+
+If you are unable to configure something that you need to tweak in the new distribution, please open a discussion in https://github.com/keycloak/keycloak/discussions/categories/keycloak-x-quarkus-distribution[GitHub Discussions].
+
+Until a new release is available it is possible to configure the new distribution by directly applying Quarkus level configuration through the `conf/quarkus.properties` file. We recommend you use this sparingly as you will be applying configuration untested and unsupported by the Keycloak team.
+
+== Quarkus is not an application server
+
+Unlike WildFly, Quarkus is not an application server. While an application server can dynamically deploy applications, and alter what is loaded into memory at runtime, this is not possible on Quarkus.
+
+Quarkus on the other hand brings immutability to containers, faster startup, and more predictability.
+
+While with the WildFly distribution you could hot-deploy custom providers, change the database vendor as a runtime configuration this is no longer supported.
+
+Instead, the Quarkus distribution provides a separate build step that optimises the runtime. One important thing to note here is that the build step does not actually build the Keycloak sources, but rather just optimises the runtime through an augmentation process, which is fairly fast and able to fully optimise what is loaded into the runtime.
+
+We recommend that you do this build step as a part of installing Keycloak, through CI, or by creating a custom container image that extends the base Keycloak image.
+
+However, there is also an auto build mode that makes Keycloak behave more or less the same as the WildFly distribution in this regard. This comes with a startup time penalty, but is still able to optimise the runtime better than the WildFly distribution could.
+
+== Setup of initial users
+
+The Keycloak Wildfly distribution contained scripts named `add-user-keycloak.sh` to add initial users to Keycloak.
+These are no longer included in the Quarkus distribution.
+
+To add the initial admin user, set the environment variables `KC_BOOTSTRAP_ADMIN_USERNAME` and `KC_BOOTSTRAP_ADMIN_PASSWORD` for the username and password of the user.
+Keycloak uses them at the first startup to create an initial user with administration rights.
+Once the first user with administrative rights exists, use the command line tool `kcadm.sh` (Linux) or `kcadm.bat` (Windows) to create additional users.
+
+== Default context path changed
+
+By default, the new Quarkus distribution removes `/auth` from the context-path. To re-introduce the `/auth` use the https://www.keycloak.org/server/all-config?q=http-relative-path&f=build[`http-relative-path`] build option. For example:
+
+[source,bash]
+----
+bin/kc.[sh|bat] start-dev --http-relative-path /auth
+----
+
+When the relative path is specified, it is still possible to be redirected from the root to the relative path.
+Specifically, when the user access `localhost:8080/`, the page is redirected to the `localhost:8080/auth`.
+
+== Migrating custom providers
+
+Similarly to the WildFly distribution custom providers are deployed to Keycloak by copying them to a deployment directory. In the new distribution you should copy your providers to the `providers` directory instead of `standalone/deployments`, which no longer exists. Additional dependencies are also copied to the `providers` directory.
+
+With the new distribution there is no longer a separate classpath for custom providers, so you may need to be more careful with what additional dependencies you include. In addition, the `EAR` packaging format, and `jboss-deployment-structure.xml` files, is no longer supported.
+
+While the WildFly distribution automatically discovered custom providers, even supported the ability to hot-deploy custom providers while Keycloak is running, this is no longer supported, and when you make a change to the providers or dependencies in the `providers` directory you have to do a build afterwards, or restart the server with the auto build feature.
+
+Depending on what APIs your providers use you may also need to make some changes to the providers. If you only leveraged classes from Keycloak SPIs you shouldn't need to, but if you used other APIs from WildFly you may need to make some changes. In addition, JavaEE APIs like session/stateless beans are no longer supported.
+
+
+== Migrating using the Operator
+
+To use the Quarkus distribution on Kubernetes and OpenShift you need to use the new Operator, the https://github.com/keycloak/keycloak-operator[old Operator] does not support the new distribution.
+
+There is no "direct" migration path, to install Keycloak using the new Operator you need to create a new Custom Resource (CR) to end up with a new Keycloak Deployment based on the Quarkus distribution.
+
+The old and new operator can co-exist even in the same namespace since they are using a different API Group and Version in the CRDs.
+
+For the old operator, the apiVersion is:
+[source,yaml]
+----
+apiVersion: keycloak.org/v1alpha1
+----
+
+For the new operator, the apiVersion is:
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+----
+
+When using `kubectl` commands, and the 2 CRDs are installed in the cluster, make sure to use fully qualified names including the API Group, e.g.:
+
+[source,bash]
+----
+$ kubectl get keycloaks.k8s.keycloak.org
+----
+
+The new operator doesn't support Client, User and Realm CRDs directly. Instead, it provides one CRD to perform a https://www.keycloak.org/operator/realm-import.html[Realm import].
+Using this new CR you can import Users, Clients and more through the wrapping Realm.
+
+== Priority of X-Forwarded-* Headers
+
+In Quarkus when using the Hostname V1 feature the X-Forwarded-Port header takes precedence over any port included in the X-Forwarded-Host. This differs from the WildFly distribution where a port included in X-Forwarded-Host had priority over X-Forwarded-Port.
+
+</@tmpl.guide>

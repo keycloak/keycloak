@@ -1,0 +1,37 @@
+<keycloak-saml-adapter>
+    <SP entityID="multi-tenant"
+        sslPolicy="EXTERNAL"
+        nameIDPolicyFormat="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
+        logoutPage="/logout.jsp?realm=tenant2"
+        forceAuthentication="false">
+        <Keys>
+            <Key signing="true">
+                <KeyStore resource="/keystore-tenant2.jks" password="changeit">
+                    <PrivateKey alias="tenant2" password="changeit"/>
+                    <Certificate alias="tenant2"/>
+                </KeyStore>
+            </Key>
+        </Keys>
+        <PrincipalNameMapping policy="FROM_NAME_ID"/>
+        <RoleIdentifiers>
+            <Attribute name="Role"/>
+        </RoleIdentifiers>
+        <IDP entityID="idp"
+             signatureAlgorithm="RSA_SHA256">
+            <SingleSignOnService signRequest="true"
+                                 validateResponseSignature="true"
+                                 validateAssertionSignature="false"
+                                 requestBinding="POST"
+                                 bindingUrl="http://localhost:8080/auth/realms/tenant2/protocol/saml"/>
+            <SingleLogoutService signRequest="true"
+                                 signResponse="true"
+                                 validateRequestSignature="true"
+                                 validateResponseSignature="true"
+                                 requestBinding="POST"
+                                 responseBinding="POST"
+                                 postBindingUrl="http://localhost:8080/auth/realms/tenant2/protocol/saml"
+                                 redirectBindingUrl="http://localhost:8080/auth/realms/tenant2/protocol/saml"/>
+            <HttpClient disableTrustManager="true"/>
+        </IDP>
+    </SP>
+</keycloak-saml-adapter>

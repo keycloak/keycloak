@@ -1,0 +1,38 @@
+name: Weblate Sync
+
+on:
+  # Update Weblate once a day, and if a translation file (source or target) changes.
+  # Using this workflow prevents Weblate to rebase its PRs on every commit in Keycloak's main branch.
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch: {}
+  push:
+    branches:
+      - main
+    paths:
+      - 'themes/**/messages_*.properties'
+      - 'js/**/messages_*.properties'
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  # Only cancel jobs for PR updates
+  group: weblate-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  
+jobs:
+  update-weblate:
+    name: Trigger Weblate to pull the latest changes
+    runs-on: ubuntu-latest
+
+    steps:
+      # language=bash
+      - run: |
+          if [ '${{ secrets.WEBLATE_TOKEN }}' != '' ]; then
+            curl --fail-with-body -d operation=pull -H "Authorization: Token ${{ secrets.WEBLATE_TOKEN }}" https://hosted.weblate.org/api/projects/keycloak/repository/
+          fi

@@ -1,0 +1,69 @@
+name: Keycloak Guides
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - dependabot/**
+      - quarkus-next
+  pull_request:
+  workflow_dispatch:
+
+env:
+  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
+
+concurrency:
+  # Only cancel jobs for PR updates
+  group: guides-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+permissions:
+  contents: read
+
+jobs:
+
+  conditional:
+    name: Check conditional workflows and jobs
+    runs-on: ubuntu-latest
+    outputs:
+      guides: ${{ steps.conditional.outputs.guides }}
+      ci: ${{ steps.conditional.outputs.ci }}
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - id: conditional
+        uses: ./.github/actions/conditional
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  build:
+    name: Build
+    # will only build the guides if the general CI doesn't run, which will also build the guides
+    if: ${{ needs.conditional.outputs.guides == 'true' && needs.conditional.outputs.ci != 'true' }}
+    runs-on: ubuntu-latest
+    needs: conditional
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Build Keycloak
+        uses: ./.github/actions/build-keycloak
+
+  check:
+    name: Status Check - Keycloak Guides
+    if: always()
+    needs:
+      - conditional
+      - build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: ./.github/actions/status-check
+        with:
+          jobs: ${{ toJSON(needs) }}

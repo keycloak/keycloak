@@ -1,0 +1,22 @@
+{
+  "alias" : "idpAlias",
+  "displayName" : "SAML_UPDATED",
+  "providerId" : "saml",
+  "enabled" : true,
+  "updateProfileFirstLoginMode" : "on",
+  "trustEmail" : false,
+  "storeToken" : false,
+  "addReadTokenRoleOnCreate" : false,
+  "authenticateByDefault" : false,
+  "linkOnly" : false,
+  "firstBrokerLoginFlowAlias" : "first broker login",
+  "config" : {
+    "syncMode": "IMPORT",
+    "nameIDPolicyFormat" : "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
+    "postBindingResponse" : "false",
+    "singleLogoutServiceUrl" : "https://saml.idp/saml",
+    "postBindingAuthnRequest" : "false",
+    "singleSignOnServiceUrl" : "https://saml.idp/saml",
+    "backchannelSupported" : "false"
+  }
+}

@@ -1,0 +1,259 @@
+
+[[password-guess-brute-force-attacks]]
+=== Brute force attacks
+
+A brute force attack attempts to guess a user's password by trying to log in multiple times. {project_name} has brute force detection capabilities and can permanently or temporarily disable a user account if the number of login failures exceeds a specified threshold.
+
+[NOTE]
+====
+When a user is locked and attempts to log in, {project_name} displays the default `Invalid username or password` error message. This message is the same error message as the message displayed for an invalid username or invalid password to ensure the attacker is unaware the account is disabled.
+====
+
+[WARNING]
+====
+Brute force detection is disabled by default. Enable this feature to protect against brute force attacks.
+====
+
+To enable this protection:
+
+. Click *Realm Settings* in the menu
+. Click the *Security Defenses* tab.
+. Click the *Brute Force Detection* tab.
+. Choose the *Brute Force Mode* which best fit to your requirements. 
++
+.Brute force detection
+image:images/brute-force.png[]
+
+==== Lockout permanently
+{project_name} disables a user account (blocking log in attempts) until an administrator re-enables it.
+
+.Lockout permanently
+image:images/brute-force-permanently.png[]
+
+*Permanent Lockout Parameters*
+
+|===
+|Name |Description |Default
+
+|Max Login Failures
+|The maximum number of login failures.
+|30 failures
+
+|Quick Login Check Milliseconds
+|The minimum time between login attempts.
+|1000 milliseconds
+
+|Minimum Quick Login Wait
+|The minimum time the user is disabled when login attempts are quicker than _Quick Login Check Milliseconds_.
+|1 minute
+
+|===
+
+*Permanent Lockout Flow*
+
+====
+. On successful login
+.. Reset `count`
+. On failed login
+.. Increment `count`
+.. If `count` is greater than or equals to `Max login failures`
+... locks the user
+.. Else if the time between this failure and the last failure is less than _Quick Login Check Milliseconds_
+... Locks the user for the time specified at _Minimum Quick Login Wait_
+====
+
+[NOTE]
+====
+Enabling an user account resets the `count`.
+====
+
+==== Lockout temporarily
+{project_name} disables a user account for a specific period of time. The time period that the account is disabled increases as the attack continues.
+
+.Lockout temporarily
+image:images/brute-force-temporarily.png[]
+
+*Temporary Lockout Parameters*
+
+|===
+|Name |Description |Default
+
+|Max Login Failures
+|The maximum number of login failures.
+|30 failures
+
+|Strategy to increase wait time
+|Strategy to increase the time a user will be temporarily disabled when the user's login attempts exceed _Max Login Failures_
+|Multiple
+
+|Wait Increment
+|The time added to the time a user is temporarily disabled when the user's login attempts exceed _Max Login Failures_.
+|1 minute
+
+|Max Wait
+|The maximum time a user is temporarily disabled.
+|15 minutes
+
+|Failure Reset Time
+|The time when the failure count resets. The timer runs from the last failed login. Make sure this number is always greater than `Max wait`; otherwise the effective
+wait time will never reach the value you have set to `Max wait`.
+|12 hours
+
+|Quick Login Check Milliseconds
+|The minimum time between login attempts.
+|1000 milliseconds
+
+|Minimum Quick Login Wait
+|The minimum time the user is disabled when login attempts are quicker than _Quick Login Check Milliseconds_.
+|1 minute
+
+|===
+
+*Temporary Lockout Algorithm*
+====
+. On successful login
+.. Reset `count`
+. On failed login
+.. If the time between this failure and the last failure is greater than _Failure Reset Time_
+... Reset `count`
+.. Increment `count`
+.. Calculate `wait` according the brute force strategy defined (see below Strategies to set Wait Time).
+.. If `wait` is less than or equals to 0 and the time between this failure and the last failure is less than _Quick Login Check Milliseconds_
+... set `wait` to _Minimum Quick Login Wait_
+.. if `wait` is greater than 0
+... Temporarily disable the user for the smallest of `wait` and _Max Wait_ seconds
+
+====
+
+[NOTE]
+====
+`count` does not increment when a temporarily disabled account commits a login failure.
+====
+
+*Strategies to set Wait Time*
+
+{project_name} provides two strategies to calculate wait time: By multiples or Linear. By multiples is the first strategy introduced by {project_name}, so that is the default one. 
+
+By multiples strategy, wait time is incremented when the number (or count) of failures are multiples of `Max Login Failure`. For instance, if you set `Max Login Failures` to `5` and a `Wait Increment` to `30` seconds, the effective time that an account is disabled after several failed authentication attempts will be:
+
+[cols="1,1,1,1"]
+|===
+|`Number of Failures` | `Wait Increment`  | `Max Login Failures` | `Effective Wait Time`
+|1 |30 | 5 | 0
+|2 |30 | 5 | 0
+|3 |30 | 5 | 0
+|4 |30 | 5 | 0
+|**5** |**30** | 5 | **30**
+|6 |30 | 5 | 30
+|7 |30 | 5 | 30
+|8 |30 | 5 | 30
+|9 |30 | 5 | 30
+|**10** |**30** | 5 | **60**
+|===
+
+At the fifth failed attempt, the account is disabled for `30` seconds. After reaching the next multiple of `Max Login Failures`, in this case `10`, the time increases from `30` to `60` seconds. 
+
+The By multiple strategy uses the following formula to calculate wait time: _Wait Increment in Seconds_ * (`count` / _Max Login Failures_). The division is an integer division rounded down to a whole number.
+
+For linear strategy, wait time is incremented when the `count` (or number) of failures is greater than or equals to `Max Login Failure`. For instance, if you have set `Max Login Failures` to `5` and a `Wait Increment` to`30` seconds, the effective time that an account is disabled after several failed authentication attempts will be:
+
+[cols="1,1,1,1"]
+|===
+|`Number of Failures` | `Wait Increment`  | `Max Login Failures` | `Effective Wait Time`
+|1 |30 | 5 | 0
+|2 |30 | 5 | 0
+|3 |30 | 5 | 0
+|4 |30 | 5 | 0
+|**5** |**30** | 5 | **30**
+|**6** |**30** | 5 | **60**
+|**7** |**30** | 5 | **90**
+|**8** |**30** | 5 | **120**
+|**9** |**30** | 5 | **150**
+|**10** |**30** | 5 | **180**
+|===
+
+At the fifth failed attempt, the account is disabled for `30` seconds. Each new failure increases wait time according value specified at `wait increment`.
+
+The linear strategy uses the following formula to calculate wait time: _Wait Increment in Seconds_ * (1 + `count` - _Max Login Failures_).
+
+==== Lockout permanently after temporary lockout
+Mixed mode. Locks user temporarily for specified number of times and then locks user permanently. 
+
+.Lockout permanently after temporary lockout
+image:images/brute-force-mixed.png[]
+
+*Permanent lockout after temporary lockouts Parameters*
+
+|===
+|Name |Description |Default
+
+|Max Login Failures
+|The maximum number of login failures.
+|30 failures
+
+|Maximum temporary Lockouts
+|The maximum number of temporary lockouts permitted before permanent lockout occurs.
+|1
+
+|Strategy to increase wait time
+|Strategy to increase the time a user will be temporarily disabled when the user's login attempts exceed _Max Login Failures_
+|Multiple
+
+|Wait Increment
+|The time added to the time a user is temporarily disabled when the user's login attempts exceed _Max Login Failures_.
+|1 minute
+
+|Max Wait
+|The maximum time a user is temporarily disabled.
+|15 minutes
+
+|Failure Reset Time
+|The time when the failure count resets. The timer runs from the last failed login. Make sure this number is always greater than `Max wait`; otherwise the effective
+wait time will never reach the value you have set to `Max wait`.
+|12 hours
+
+|Quick Login Check Milliseconds
+|The minimum time between login attempts.
+|1000 milliseconds
+
+|Minimum Quick Login Wait
+|The minimum time the user is disabled when login attempts are quicker than _Quick Login Check Milliseconds_.
+|1 minute
+
+|===
+
+*Permanent lockout after temporary lockouts Algorithm*
+====
+. On successful login
+.. Reset `count`
+.. Reset `temporary lockout` counter
+. On failed login
+.. If the time between this failure and the last failure is greater than _Failure Reset Time_
+... Reset `count`
+... Reset `temporary lockout` counter
+.. Increment `count`
+.. Calculate `wait` according the brute force strategy defined (see below Strategies to set Wait Time).
+.. If `wait` is less than or equals to 0 and the time between this failure and the last failure is less than _Quick Login Check Milliseconds_
+... set `wait` to _Minimum Quick Login Wait_
+... set `quick login failure` to `true``
+.. if `wait` and `Maximum temporary Lockouts` is greater than 0
+... set `wait` to the smallest of `wait` and _Max Wait_ seconds
+.. if `quick login failure` is `false`
+... Increment `temporary lockout` counter
+.. If `temporary lockout` counter exceeds `Maximum temporary lockouts`
+... Permanently locks the user
+.. Else
+... Temporarily blocks the user according `wait` value
+
+====
+
+[NOTE]
+====
+`count` does not increment when a temporarily disabled account commits a login failure.
+====
+
+==== Downside of {project_name} brute force detection
+
+The downside of {project_name} brute force detection is that the server becomes vulnerable to denial of service attacks. When implementing a denial of service attack, an attacker can attempt to log in by guessing passwords for any accounts it knows and eventually causing {project_name} to disable the accounts.
+
+Consider using intrusion prevention software (IPS). {project_name} logs every login failure and client IP address failure. You can point the IPS to the {project_name} server's log file, and the IPS can modify firewalls to block connections from these IP addresses.

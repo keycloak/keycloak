@@ -1,0 +1,18 @@
+[[_update-email-workflow]]
+
+== Update Email Workflow (UpdateEmail)
+
+With this workflow, users will have to use an UPDATE_EMAIL action to change their own email address.
+
+The action is associated with a single email input form. If the realm has email verification disabled, this action will allow to update the email without verification. If the realm has email verification enabled, the action will send an email update action token to the new email address without changing the account email. Only the action token triggering will complete the email update.
+
+Applications are able to send their users to the email update form by leveraging UPDATE_EMAIL as an <<con-aia_{context},AIA (Application Initiated Action)>>.
+
+:tech_feature_name: UpdateEmail
+:tech_feature_id: update-email
+include::../templates/techpreview.adoc[]
+
+[NOTE]
+====
+If you enable this feature and you are migrating from a previous version, enable the *Update Email* required action in your realms. Otherwise, users cannot update their email addresses.
+====

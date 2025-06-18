@@ -1,0 +1,34 @@
+[[_service_pushing_claims]]
+= Pushing claims
+
+When obtaining permissions from the server you can push arbitrary claims in order to have these
+claims available to your policies when evaluating permissions.
+
+If you are obtaining permissions from the server *without* using a permission ticket (UMA flow), you can send
+an authorization request to the token endpoint as follows:
+
+[source,bash,subs="attributes+"]
+----
+curl -X POST \
+  http://${host}:${port}{kc_realms_path}/${realm-name}/protocol/openid-connect/token \
+  --data "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket" \
+  --data "claim_token=ewogICAib3JnYW5pemF0aW9uIjogWyJhY21lIl0KfQ==" \
+  --data "claim_token_format=urn:ietf:params:oauth:token-type:jwt" \
+  --data "client_id={resource_server_client_id}" \
+  --data "client_secret={resource_server_client_secret}" \
+  --data "audience={resource_server_client_id}"
+----
+
+The `claim_token` parameter expects a BASE64 encoded JSON with a format similar to the example below:
+
+```json
+{
+    "organization" : ["acme"]
+}
+```
+
+The format expects one or more claims where the value for each claim must be an array of strings.
+
+== Pushing claims Using UMA
+
+For more details about how to push claims when using UMA and permission tickets, please take a look at <<_service_protection_permission_api_papi, Permission API>>

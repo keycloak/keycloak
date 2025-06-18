@@ -1,0 +1,35 @@
+name: Feature Request
+description: Request a new feature to be added to Keycloak
+labels: ["kind/feature", "status/triage"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Describe the feature at a high-level.
+    validations:
+      required: true
+  - type: input
+    id: discussion
+    attributes:
+      label: Discussion
+      description: |
+        If there has been a discussion around the feature, provide a link to the discussion.
+
+        Please note that all, except small requests, should be discussed through [GitHub Discussion](https://github.com/keycloak/keycloak/discussions/categories/ideas).
+    validations:
+      required: false
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Describe why the feature should be added.
+    validations:
+      required: false
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: Design ideas? Implementation ideas? Anything that will give us more context about the feature you are proposing!
+    validations:
+      required: false

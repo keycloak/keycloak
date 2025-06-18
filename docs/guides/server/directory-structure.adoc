@@ -1,0 +1,38 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+<#import "/templates/profile.adoc" as profile>
+
+<@tmpl.guide
+title="Directory Structure"
+summary="Understand the purpose of the directories under the installation root."
+includedOptions="">
+
+== Installation Locations
+
+If you are installing from a zip file then by default there will be an install root directory of `{archivebasename}-{version}`, which can be created anywhere you choose on your filesystem.
+
+<@profile.ifCommunity>
+`/opt/keycloak` is the root install location for the server in all containerized usage shown for {project_name} including <@links.server id="containers"/>, <@links.gettingstarted id="getting-started-docker"/>, <@links.gettingstarted id="getting-started-podman"/>, <@links.gettingstarted id="getting-started-kube"/>, and <@links.gettingstarted id="getting-started-openshift"/>.
+</@profile.ifCommunity>
+
+<@profile.ifProduct>
+`/opt/keycloak` is the root install location for the server in all containerized usage shown for {project_name}.
+</@profile.ifProduct>
+
+NOTE: In the rest of the documentation, relative paths are understood to be relative to the install root - for example, `conf/file.xml` means `<install root>/conf/file.xml`
+
+== Directory Structure
+
+Under the {project_name} install root there exists a number of folders:
+
+* *bin/* - contains all the shell scripts for the server, including `kc.sh|bat`, `kcadm.sh|bat`, and `kcreg.sh|bat`
+** *client/* - used internally
+* *conf/* - directory used for configuration files, including `keycloak.conf` - see <@links.server id="configuration"/>. Many options for specifying a configuration file expect paths relative to this directory.
+** *truststores/* - default path used by the `truststore-paths` option - see <@links.server id="keycloak-truststore"/>
+* *data/* - directory for the server to store runtime information, such as transaction logs
+** *logs/* - default directory for file logging - see <@links.server id="logging"/>
+* *lib/* - used internally
+* *providers/* - directory for user provided dependencies - see <@links.server id="configuration-provider"/> for extending the server and <@links.server id="db"/> for an example of adding a JDBC driver.
+* *themes/* - directory for customizations to the Admin Console - see https://www.keycloak.org/docs/latest/server_development/#_themes[Developing Themes]
+
+</@tmpl.guide>

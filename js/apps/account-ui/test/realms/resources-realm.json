@@ -1,0 +1,196 @@
+{
+  "realm": "photoz",
+  "accountTheme": "keycloak.v3",
+  "enabled": true,
+  "userManagedAccessAllowed": true,
+  "sslRequired": "external",
+  "privateKey": "MIICXAIBAAKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQABAoGAfmO8gVhyBxdqlxmIuglbz8bcjQbhXJLR2EoS8ngTXmN1bo2L90M0mUKSdc7qF10LgETBzqL8jYlQIbt+e6TH8fcEpKCjUlyq0Mf/vVbfZSNaVycY13nTzo27iPyWQHK5NLuJzn1xvxxrUeXI6A2WFpGEBLbHjwpx5WQG9A+2scECQQDvdn9NE75HPTVPxBqsEd2z10TKkl9CZxu10Qby3iQQmWLEJ9LNmy3acvKrE3gMiYNWb6xHPKiIqOR1as7L24aTAkEAtyvQOlCvr5kAjVqrEKXalj0Tzewjweuxc0pskvArTI2Oo070h65GpoIKLc9jf+UA69cRtquwP93aZKtW06U8dQJAF2Y44ks/mK5+eyDqik3koCI08qaC8HYq2wVl7G2QkJ6sbAaILtcvD92ToOvyGyeE0flvmDZxMYlvaZnaQ0lcSQJBAKZU6umJi3/xeEbkJqMfeLclD27XGEFoPeNrmdx0q10Azp4NfJAY+Z8KRyQCR2BEG+oNitBOZ+YXF9KCpH3cdmECQHEigJhYg+ykOvr1aiZUMFT72HU0jnmQe2FVekuG+LJUt2Tm7GtMjTFoGpf0JwrVuZN39fOYAlo+nTixgeW7X8Y=",
+  "publicKey": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB",
+  "requiredCredentials": [
+    "password"
+  ],
+  "users": [
+    {
+      "username": "alice",
+      "enabled": true,
+      "email": "alice@keycloak.org",
+      "firstName": "Alice",
+      "lastName": "In Chains",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "alice"
+        }
+      ],
+      "realmRoles": [
+        "user", "uma_authorization"
+      ],
+      "clientRoles": {
+        "photoz-restful-api": [
+          "manage-albums"
+        ],
+        "account": [
+          "manage-account"
+        ]
+      }
+    },
+    {
+      "username": "jdoe",
+      "enabled": true,
+      "email": "jdoe@keycloak.org",
+      "firstName": "John",
+      "lastName": "Doe",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "jdoe"
+        }
+      ],
+      "realmRoles": [
+        "user", "uma_authorization"
+      ],
+      "clientRoles": {
+        "photoz-restful-api": [
+          "manage-albums"
+        ],
+        "account": [
+          "manage-account"
+        ]
+      }
+    },
+    {
+      "username": "admin",
+      "enabled": true,
+      "email": "admin@admin.com",
+      "firstName": "Admin",
+      "lastName": "Istrator",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin"
+        }
+      ],
+      "realmRoles": [
+        "admin", "uma_authorization"
+      ],
+      "clientRoles": {
+        "realm-management": [
+          "realm-admin"
+        ],
+        "photoz-restful-api": [
+          "manage-albums"
+        ],
+        "account": [
+          "manage-account"
+        ]
+      }
+    },
+    {
+      "username": "service-account-photoz-restful-api",
+      "enabled": true,
+      "email": "service-account-photoz-restful-api@placeholder.org",
+      "serviceAccountClientId": "photoz-restful-api",
+      "clientRoles": {
+        "photoz-restful-api" : ["uma_protection"]
+      }
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "user",
+        "description": "User privileges"
+      },
+      {
+        "name": "admin",
+        "description": "Administrator privileges"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "photoz-html5-client",
+      "enabled": true,
+      "adminUrl": "http://localhost:8080/photoz-html5-client",
+      "baseUrl": "http://localhost:8080/photoz-html5-client",
+      "publicClient": true,
+      "consentRequired" : true,
+      "fullScopeAllowed" : true,
+      "redirectUris": [
+        "http://localhost:8080/photoz-html5-client/*"
+      ],
+      "webOrigins": ["http://localhost:8080"]
+    },
+    {
+      "clientId": "photoz-restful-api",
+      "secret": "secret",
+      "enabled": true,
+      "baseUrl": "http://localhost:8080/photoz-restful-api",
+      "authorizationServicesEnabled" : true,
+      "redirectUris": [
+        "http://localhost:8080/photoz-html5-client"
+      ],
+      "webOrigins" : ["http://localhost:8080"],
+      "authorizationSettings": {
+        "allowRemoteResourceManagement": true,
+        "policyEnforcementMode": "ENFORCING",
+        "resources": [
+          {
+            "name": "one",
+            "type": "http://photoz.com/album",
+            "owner": {
+              "name": "jdoe"
+            },
+            "ownerManagedAccess": true,
+            "attributes": {},
+            "_id": "3fba8c0d-c388-4177-8808-18f2b1917ec9",
+            "uris": [
+              "/album/20277be2-548b-49dd-9dbe-95fe1fe80830"
+            ],
+            "scopes": [
+              {
+                "name": "album:view"
+              },
+              {
+                "name": "album:delete"
+              }
+            ]
+          },
+          {
+            "name": "mine",
+            "type": "http://photoz.com/album",
+            "owner": {
+              "name": "alice"
+            },
+            "ownerManagedAccess": true,
+            "attributes": {},
+            "_id": "575da73f-cc0c-482f-ac2a-47c9dd70c390",
+            "uris": [
+              "/album/5fc8c73d-40e0-4682-b555-7b9f56ede273"
+            ],
+            "scopes": [
+              {
+                "name": "album:view"
+              },
+              {
+                "name": "album:delete"
+              }
+            ]
+          }
+        ],
+        "policies": [],
+        "scopes": [
+          {
+            "id": "0b4de4d2-b173-415f-9071-20f866e879ab",
+            "name": "album:view"
+          },
+          {
+            "id": "3b7cf7ed-46c7-4133-b15b-66d05b1f2afe",
+            "name": "album:delete"
+          }
+        ],
+        "decisionStrategy": "UNANIMOUS"
+      }
+    }
+  ]
+}

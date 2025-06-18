@@ -1,0 +1,5 @@
+{
+  "name":"lax",
+  "client-profiles":"keycloak-default-client-profiles",
+  "client-policies":null
+}

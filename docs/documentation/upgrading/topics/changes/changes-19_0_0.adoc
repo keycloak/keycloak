@@ -1,0 +1,353 @@
+= New Admin Console is now the default console
+
+The new admin console is now the default console in Keycloak. If you are not able to start using the new admin console it is possible to continue to use the old admin console by disabling the new console, by for example running:
+
+```
+bin/kc.sh start-dev --features-disabled=admin2
+```
+
+An alternative approach to continue using the old admin console is to set the theme for the master realm or any other realm to `keycloak`.
+
+As the new admin console is significantly different to the old admin console, is now based on React and uses a newer version of PatternFly, any custom themes will most likely have to be re-implemented from scratch. To create a custom theme for the new admin console the theme should extend `keycloak.v2` instead of `keycloak`.
+
+If you have explicitly set the admin console theme to `keycloak` for the master realm or any other realm, it will continue to use the old admin console. To update to the new admin console you need to change the theme to `keycloak.v2`.
+
+The old admin console will be removed in Keycloak 21.
+
+= Changes to the server configuration and startup
+
+Before this release, you would use the `--auto-build` when running the `start` command to tell the server to conditionally run
+a `build` if any build option has changed prior to starting the server.
+
+In this release, the `--auto-build` flag is *deprecated* and you no longer need to use it to indicate that you want to set build options when
+starting the server. Instead, the server is always going to run a `build` by default prior to starting the server if any build option has changed.
+The new behavior improves the overall experience when configuring and starting the server by making it optional, although highly recommended,
+to run a `build` command beforehand in order to achieve the best startup time and memory footprint.
+
+Now, in order to achieve the best startup time and memory footprint, set the `--optimized` option to disable the new default behavior.
+The `--optimized` flag tells the server that checking for and running a `build` directly as part of the startup is not needed:
+
+```
+kc.sh start --optimized
+```
+
+If you are already using a custom image to set build options and run an optimized Keycloak container, make sure you set the `--optimized` option when invoking the
+`start` command.
+
+For more details, please take a look at the https://www.keycloak.org/server/configuration[Configuration Guide] and the https://www.keycloak.org/server/containers[Containers Guide].
+
+= Potentially breaking changes to the health endpoints
+
+Before {project_name} 19.0.0, the quarkus based {project_name} distribution always enabled the following non-application endpoints unintentionally:
+
+* /q/health
+* /q/health/live
+* /q/health/ready
+* /q/metrics
+
+Starting in {project_name} 19.0.0, these endpoints are **disabled** and a request will result in a 404 HTTP status-code. If you are using the `/q/...` endpoints, make sure to change your probes and monitoring systems to use the intended health endpoints instead when upgrading to {project_name} 19.0.0.
+
+The intended health endpoints are:
+
+* /health
+* /health/live
+* /health/ready
+* /metrics
+
+Apart from disabling the /q/ endpoints, these are the other improvements made to the health endpoints:
+
+* The `health/live` endpoint used for liveness probes is now decoupled from the database connections health, to match current good practices and to not have the same behaviour as the `health/ready` endpoint. As a result, the database check is not shown in the `checks:` array anymore when calling `/health/live`, so when there is a database hiccup, the liveness probe will still return HTTP status-code 200 and a status of UP, so no pod restart may be triggered.
+
+* The `health/ready` endpoint used for readiness probes still checks for a working database connection. Make sure you have not only `health-enabled=true` but also `metrics-enabled=true` set in your configuration, to enable the database check, resulting in an effective readiness probe. It will return HTTP status-code 503 and a status of DOWN when the database connection is not in a healthy state.
+
+Expect more enhancements in this area in the future.
+For more information, see the https://www.keycloak.org/observability/health[Health guide]
+
+= Changes using GELF / centralized log management
+
+As stated in the release notes, Keycloak now supports gelf logging for centralized logging systems out of the box.
+
+When you added the gelf related quarkus jars yourself in a prior version, make sure to switch to the supported configuration options in the https://www.keycloak.org/server/logging[logging guide] and remove your jars from the `providers` folder.
+
+= Changes affecting developers
+
+{project_name} undergoes large refactoring, which impacts existing code.
+Some of these changes require updates to existing code.
+These are in more detailed described below.
+
+== Rationale for changes
+
+{project_name} has several limitations; for example, downtime is needed for upgrading a {project_name} cluster.
+To address the limitations, an in-depth refactor has been initiated.
+
+The changes in this version are mostly attached to storage refactoring and a preparation of a new storage, called map storage. This storage will eventually replace the current storage, which will be called a _legacy store_ with this version.
+The legacy store will still be available in {project_name} for several more versions.
+
+The new store imposes a strict separation of responsibility between the service and storage layers.
+For that reason, the service layer's visibility of an object's origin will be restricted, so it will not be able to discriminate between cached or non-cached objects, or objects originating from local or federated storage.
+
+User storage SPI will become deprecated.
+It will be supported for several more versions, but will be eventually replaced by the Map Storage SPI, which will offer the ability to create custom storages for any recognized area, such as users, roles, clients, or groups.
+
+Extensions that rely on the level of detail available to services in the legacy store will need adjustment to retain this ability for the full deprecation period of the legacy store.
+The following section describes how that adjustment is accomplished.
+
+Using a legacy and map store is mutually exclusive; one store cannot be used while the other is active.
+
+== Changes in the module structure
+
+As part of introducing the new storage functionality, several public APIs around storage functionality in `KeycloakSession` have been consolidated, and some have been deprecated and will be removed in one of the next versions.
+Three new modules have been introduced, and data-oriented code from `server-spi`, `server-spi-private`, and `services` modules have been moved there:
+
+`org.keycloak:keycloak-model-legacy`::
+Contains all public facing APIs from the legacy store, such as the User Storage API.
+
+`org.keycloak:keycloak-model-legacy-private`::
+Contains private implementations that relate to user storage management, such as storage `*Manager` classes.
+
+`org.keycloak:keycloak-model-legacy-services`::
+Contains all REST endpoints that directly operate on the legacy store, and have no meaning in the new store.
+
+These modules will be available as long as legacy stores will be supported.
+After that period, they will be removed.
+
+This change impacts deployments of existing user storage providers in the Wildfly distribution. If your
+user storage provider is deployed as a WAR archive, you need to add the `META-INF/jboss-deployment-structure.xml` file into that archive
+stating the modified dependencies as shown below:
+
+[source,xml,subs="+quotes"]
+----
+<jboss-deployment-structure xmlns="urn:jboss:deployment-structure:1.2">
+    <deployment>
+        <dependencies>
+            <module name="org.keycloak.keycloak-model-legacy" meta-inf="import"/>
+        </dependencies>
+    </deployment>
+</jboss-deployment-structure>
+----
+
+== Changes in `KeycloakSession`
+
+`KeycloakSession` has been simplified.
+Several methods have been deprecated in `KeycloakSession` and will be removed in a future version.
+
+`KeycloakSession` session contains several methods for obtaining a provider for a particular object type, such as for a `UserProvider` there are `users()`, `userLocalStorage()`, `userCache()`, `userStorageManager()`, and `userFederatedStorage()`.
+This situation may be confusing for the developer who has to understand the exact meaning of each method, and depends on current store layout.
+The new store does not distinguish federated from local storage.
+
+For those reasons, only the `users()` method will be kept in `KeycloakSession`, and should replace all other calls listed above.
+The rest of the methods are deprecated, and will eventually be removed.
+The same pattern of deprecation applies to methods of other object areas, such as `clients()` or `groups()`.
+All methods ending in `++*StorageManager()++` and `++*LocalStorage++()` now throw an exception when being called, as there is no direct replacement in the new store.
+The next section describes how to migrate those calls to the new API or use the legacy API while using the old store.
+
+The deprecated methods in KeycloakSession will be removed in a future release.
+The `keycloak-model-legacy-*` modules will be available for a longer time and will eventually be removed.
+
+=== Migrating existing providers that do not depend on the legacy store
+
+The existing providers need no migration if they do not call a deprecated method, which should be the case for most providers.
+
+If the provider uses deprecated methods, but does not rely on local versus non-local storage, changing a call from the now deprecated `userLocalStorage()` to the method `users()` is the best option.
+Be aware that the semantics change here as the new method involves a cache if that has been enabled in the local setup.
+
+.Before migration: accessing a deprecated API that now throws an exception
+[source,java,subs="+quotes"]
+----
+session**.userLocalStorage()**;
+----
+
+.After migration: accessing the new API caller does not depend on the legacy storage API
+[source,java,subs="+quotes"]
+----
+session**.users()**;
+----
+
+=== Migrating existing providers that depend on the legacy store
+
+In the rare case when a custom provider needs to distinguish between the mode of a particular provider, access to the deprecated objects is provided by using the `LegacyStoreManagers` data store provider.
+This option will be available only if the legacy modules are part of the deployment.
+
+.Before migration: accessing a deprecated API that now throws an exception
+[source,java,subs="+quotes"]
+----
+session**.userLocalStorage()**;
+----
+
+.After migration: accessing the old functionality via the LegacyStoreManagers API
+[source,java,subs="+quotes"]
+----
+((LegacyDatastoreProvider) session.getProvider(DatastoreProvider.class))**.userLocalStorage()**;
+----
+
+Some user storage related APIs have been wrapped in `org.keycloak.storage.UserStorageUtil` for convenience.
+
+=== Creating custom storage providers
+
+The API for creating a custom storage provider has not been fully stabilized yet, though it is available as a tech preview.
+See the `MapStorageProvider` SPI and its Javadoc for details.
+The availability of the new API is a priority for the next Keycloak version.
+
+== Changes to `RealmModel`
+
+The methods getUserStorageProviders`, `getUserStorageProvidersStream`, `getClientStorageProviders`, `getClientStorageProvidersStream`, `getRoleStorageProviders` and `getRoleStorageProvidersStream` have been removed.
+Code which depends on these methods and runs with the legacy storage enabled should cast the instance as follows:
+
+.Before migration: code will not compile due to the changed API
+[source,java,subs="+quotes"]
+----
+realm**.getClientStorageProvidersStream()**...;
+----
+
+.After migration: cast the instance to the legacy interface
+[source,java,subs="+quotes"]
+----
+((LegacyRealmModel) realm)**.getClientStorageProvidersStream()**...;
+----
+
+Similarly, code that used to implement the interface `RealmModel` and wants to provide these methods should implement the new interface `LegacyRealmModel`. This interface is a sub-interface of `RealmModel` and includes the old methods:
+
+.Before migration: code implements the old interface
+[source,java,subs="+quotes"]
+----
+public class MyClass extends RealmModel {
+    /* might not compile due to @Override annotations for methods no longer present
+       in the interface RealmModel. */
+    /* ... */
+}
+----
+
+.After migration: code implements the new interface
+[source,java,subs="+quotes"]
+----
+public class MyClass extends LegacyRealmModel {
+    /* ... */
+}
+----
+
+== Interface `UserCache` moved to the legacy module
+
+As the caching status of objects will be transparent to services, the interface `UserCache`
+has been moved to the module `keycloak-legacy`.
+Calls to `session.userCache()` will therefore return only a `UserProvider`, which is a breaking change.
+
+Code that depends on the legacy implementation should access the `UserCache` directly.
+While such calls might be necessary while caching with the legacy store is used, it will not be necessary when using the new map store, as that one handles caching transparently.
+
+.Before migration: code will not compile due to a changed return type
+[source,java,subs="+quotes"]
+----
+// session.userCache() might return null, null-check omitted for brevity.
+session**.userCache()**.evict(realm, user);
+----
+
+.After migration: use the API directly
+[source,java,subs="+quotes"]
+----
+// session.getProvider(UserCache.class) might return null, null-check omitted for brevity.
+session.**getProvider(UserCache.class)**.evict(realm, user);
+----
+
+To trigger the invalidation of a realm, instead of using the `UserCache` API, consider triggering an event:
+
+.Before migration: code will not compile due to a changed return type
+[source,java,subs="+quotes"]
+----
+UserCache cache = session.getProvider(UserCache.class);
+if (cache != null) cache.clear();
+----
+
+.After migration: use the invalidation API
+[source,java,subs="+quotes"]
+----
+session.invalidate(InvalidationHandler.ObjectType.REALM, realm.getId());
+----
+
+== Credential management for users
+
+Credentials for users were previously managed using `session.userCredentialManager()._method_(realm, user, \...)`.
+The new way is to leverage `user.credentialManager()._method_(\...)`.
+This form gets the credential functionality closer to the API of users, and does not rely on prior knowledge of the user credential's location in regard to realm and storage.
+
+The old APIs have been deprecated, and will only work when the legacy storage is enabled in the deployment.
+The new APIs will work with both old and new storages.
+
+.Before migration: accessing a deprecated API
+[source,java,subs="+quotes"]
+----
+session.userCredentialManager()**.createCredential**(realm, user, credentialModel)
+----
+
+.After migration: accessing the new API
+[source,java,subs="+quotes"]
+----
+user.credentialManager()**.createStoredCredential**(credentialModel)
+----
+
+For a custom `UserStorageProvider`, there is a new method `credentialManager()` that needs to be implemented when returning a `UserModel`.
+As those providers run in an environment with the legacy storage enabled, those must return an instance of the `LegacyUserCredentialManager`:
+
+.Before migration: code will not compile due to the new method `credentialManager()` required by `UserModel`
+[source,java,subs="+quotes"]
+----
+public class MyUserStorageProvider implements UserLookupProvider, ... {
+    /* ... */
+    protected UserModel createAdapter(RealmModel realm, String username) {
+        return new AbstractUserAdapter(session, realm, model) {
+            @Override
+            public String getUsername() {
+                return username;
+            }
+        };
+    }
+}
+----
+
+.After migration: implementation of the API `UserModel.credentialManager()` for the legacy store.
+[source,java,subs="+quotes"]
+----
+public class MyUserStorageProvider implements UserLookupProvider, ... {
+    /* ... */
+    protected UserModel createAdapter(RealmModel realm, String username) {
+        return new AbstractUserAdapter(session, realm, model) {
+            @Override
+            public String getUsername() {
+                return username;
+            }
+
+            @Override
+            public SubjectCredentialManager credentialManager() {
+                return new LegacyUserCredentialManager(session, realm, this);
+            }
+        };
+    }
+}
+----
+
+
+= Deprecated `podDisruptionBudget` in the legacy {project_operator}
+
+With this release, we have deprecated `podDisruptionBudget` field in the Keycloak CR of the https://github.com/keycloak/keycloak-operator[legacy {project_operator}].
+This optional field will be ignored when the Operator is deployed on Kubernetes version 1.25 and higher.
+
+As a workaround, you can manually create the Pod Disruption Budget in your cluster, for example:
+```yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    app: keycloak
+  name: keycloak
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      component: keycloak
+```
+See also the https://kubernetes.io/docs/tasks/run-application/configure-pdb/[Kubernetes Documentation].
+
+= Deployment changes in the new {project_operator}
+
+The new {project_operator} now uses `StatefulSet` instead of `Deployment` for Keycloak deployments. There's no automated
+migration in place given the Operator is a tech preview in this release. If you are using the new Operator with 18.0.z,
+please make sure to back up, delete and recreate your Keycloak CR after the upgrade to 19.0.0.

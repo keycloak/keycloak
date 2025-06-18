@@ -1,0 +1,35 @@
+.kc-attributes__table {
+  /* even though the table is borderless, make the border under the th transparent */
+  --pf-v5-c-table--border-width--base: 0;
+  --pf-v5-c-table--m-compact--cell--first-last-child--PaddingLeft: 0;
+}
+
+.kc-attributes__plus-icon {
+  /* shift the button left to adjust for table cell padding */
+  margin-left: calc(var(--pf-v5-global--spacer--md) * -1);
+}
+
+.pf-v5-c-button.kc-attributes__minus-icon {
+  /* shift the button left to adjust for table cell padding */
+  margin-left: calc(var(--pf-v5-global--spacer--md) * -1);
+  color: var(--pf-v5-c-button--m-plain--Color);
+}
+
+.kc-attributes__action-group {
+  /* subtract the padding at the bottom of the table from the action group margin */
+  --pf-v5-c-form__group--m-action--MarginTop: calc(
+    var(--pf-v5-global--spacer--2xl) - var(--pf-v5-global--spacer--sm)
+  );
+}
+
+.pf-v5-c-select.kc-attribute-key-selectable {
+  width: 400px;
+}
+
+.pf-v5-c-select.kc-attribute-value-selectable {
+  width: 400px;
+}
+
+.pf-v5-c-form-control.value-input {
+  width: 400px;
+}

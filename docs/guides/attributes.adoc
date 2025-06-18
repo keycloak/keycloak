@@ -1,0 +1,34 @@
+:project_name: Keycloak
+:project_images: keycloak-images
+:project_doc_base_url: https://www.keycloak.org/docs/latest
+:project_doc_base_url_latest: https://www.keycloak.org/docs/{version}
+:project_dirref: KEYCLOAK_HOME
+:project_openshift_product_name: Keycloak for OpenShift
+:archivebasename: keycloak
+:authorizationguide_name: Authorization Services Guide
+:authorizationguide_name_short: Authorization Services
+:authorizationguide_link: {project_doc_base_url}/authorization_services/
+:developerguide_name: Server Developer Guide
+:developerguide_link: {project_doc_base_url}/server_development/
+:section: guide
+:sections: guides
+:archivedownloadurl: https://github.com/keycloak/keycloak/releases/download/{version}/keycloak-{version}.zip
+:jdgserver_name: Infinispan
+:infinispan-operator-docs: https://infinispan.org/docs/infinispan-operator/main/operator.html
+:infinispan-xsite-docs: https://infinispan.org/docs/stable/titles/xsite/xsite.html
+:infinispan_embedding_docs: https://infinispan.org/docs/stable/titles/embedding/embedding.html
+:infinispan_configuring_docs: https://infinispan.org/docs/stable/titles/configuring/configuring.html
+:containerlabel: latest
+:project_product: false
+:project_community: true
+:apidocs_adminrest_link: https://www.keycloak.org/docs-api/{version}/rest-api/
+:adminguide_name: Server Administration Guide
+:adminguide_name_short: Server Administration
+:adminguide_link: {project_doc_base_url}/server_admin/
+:quickstartRepo_link: https://github.com/keycloak/keycloak-quickstarts
+:quickstartRepo_name: Keycloak Quickstarts Repository
+:quickstartRepo_dir: keycloak-quickstarts
+:securing_apps_link: https://www.keycloak.org/guides#securing-apps
+:upgrading_guide_link: {project_doc_base_url}/upgrading/
+:kc_js_path: /js
+:kc_realms_path: /realms

@@ -1,0 +1,13 @@
+[id="con-saml_{context}"]
+
+[[_saml]]
+
+=== SAML
+[role="_abstract"]
+link:https://saml.xml.org/saml-specifications[SAML 2.0] is a similar specification to OIDC but more mature.  It is descended from SOAP and web service messaging specifications so is generally more verbose than OIDC.  SAML 2.0 is an authentication protocol that exchanges XML documents between authentication servers and applications.  XML signatures and encryption are used to verify requests and responses.
+
+In general, SAML implements two use cases. 
+
+The first use case is an application that requests the {project_name} server authenticates a user.  Upon successful login, the application will receive an XML document. This document contains an SAML assertion that specifies user attributes. The realm digitally signs the document which contains access information (such as user role mappings) that applications use to determine the resources users are allowed to access in the application.
+
+The second use case is a client accessing remote services.  The client requests a SAML assertion from {project_name} to invoke on remote services on behalf of the user.

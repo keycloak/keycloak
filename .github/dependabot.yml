@@ -1,0 +1,37 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    open-pull-requests-limit: 999
+    rebase-strategy: disabled
+    schedule:
+      interval: daily
+      time: "00:00"
+      timezone: Etc/GMT
+    labels:
+      - area/dependencies
+      - area/ci
+  - package-ecosystem: npm
+    directory: js
+    schedule:
+      interval: daily
+      time: "00:00"
+      timezone: Etc/GMT
+    open-pull-requests-limit: 999
+    rebase-strategy: disabled
+    labels:
+      - area/dependencies
+      - team/ui
+    ignore:
+      - dependency-name: "@patternfly/*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: react
+        update-types: ["version-update:semver-major"]
+      - dependency-name: react-dom
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-router-dom"
+        update-types: ["version-update:semver-major"]

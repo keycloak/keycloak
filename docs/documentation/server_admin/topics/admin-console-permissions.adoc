@@ -1,0 +1,11 @@
+[[_admin_permissions]]
+
+== Managing access to realm resources
+
+Each realm created on the {project_name} has a dedicated Admin Console from which that realm can be managed.
+The `master` realm is a special realm that allows admins to manage more than one realm on the system.
+ifeval::[{project_community}==true]
+You can also
+define fine-grained access to users in different realms to manage the server.
+endif::[]
+This chapter goes over all the scenarios for this.

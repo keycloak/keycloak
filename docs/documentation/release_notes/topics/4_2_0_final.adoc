@@ -1,0 +1,17 @@
+= Browser tab support for Cordova
+
+We now have support for using browser tab and universal links in the JavaScript adapter for Cordova. This enables SSO
+between multiple applications as well as increases security.
+
+Thanks to https://github.com/gtudan[gtudan] for the contribution.
+
+
+= SAML adapter multitenancy support
+
+The SAML adapter can support multi-tenancy now just like the built-in adapter for OpenID Connect.
+
+
+= An option to create claims with dots (.) in them
+
+In previous versions, it was not possible to create claims in the token using a claim name containing a dot (.) character. Now it is
+possible to escape the dot character in the configuration, so a claim name with the dot character can be used.

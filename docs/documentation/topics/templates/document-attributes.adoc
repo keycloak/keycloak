@@ -1,0 +1,138 @@
+:project_name: Keycloak
+:project_name_full: Keycloak
+:project_community: true
+:project_product: false
+:project_version: DEV
+:project_versionMvn: 999.0.0-SNAPSHOT
+:project_versionNpm: 999.0.0-SNAPSHOT
+:project_versionDoc: DEV
+
+:archivebasename: keycloak
+:archivedownloadurl: https://github.com/keycloak/keycloak/releases/download/{project_version}/keycloak-{project_version}.zip
+
+:standalone:
+:api-management!:
+:on-prem:
+
+:project_images: keycloak-images
+:project_doc_base_url: https://www.keycloak.org/docs/{project_version}
+:project_doc_base_url_latest: https://www.keycloak.org/docs/latest
+:project_dirref: KEYCLOAK_HOME
+:project_openshift_product_name: Keycloak for OpenShift
+
+:project_operator: Keycloak Operator
+:operatorRepo_link: https://github.com/keycloak/keycloak-operator
+:application_monitoring_operator: Application Monitoring Operator
+:application_monitoring_operator_installation_link: https://github.com/integr8ly/application-monitoring-operator#installation
+:create_cmd: kubectl apply
+:create_cmd_brief: kubectl
+
+:kc_realms_path: /realms
+:kc_admins_path: /admin
+:kc_js_path: /js
+:kc_base_path:
+
+:quickstartRepo_link: https://github.com/keycloak/keycloak-quickstarts
+:quickstartRepo_name: Keycloak Quickstarts Repository
+:quickstartRepo_dir: keycloak-quickstarts
+
+:authorizationguide_name: Authorization Services Guide
+:authorizationguide_name_short: Authorization Services
+:authorizationguide_link: {project_doc_base_url}/authorization_services/
+:authorizationguide_link_latest: {project_doc_base_url_latest}/authorization_services/
+:adminguide_name: Server Administration Guide
+:adminguide_name_short: Server Administration
+:adminguide_link: {project_doc_base_url}/server_admin/
+:adminguide_link_latest: {project_doc_base_url_latest}/server_admin/
+:adminguide_bruteforce_name: Password guess: brute force attacks
+:adminguide_bruteforce_link: {adminguide_link}#password-guess-brute-force-attacks
+:adminguide_eventlistener_name: Event listener
+:adminguide_eventlistener_link: {adminguide_link}#event-listener
+:adminguide_finegrained_name: fine-grained admin permissions
+:adminguide_finegrained_link: {adminguide_link}#_fine_grained_permissions
+:adminguide_timeouts_name: Timeouts
+:adminguide_timeouts_link: {adminguide_link}#_timeouts
+:adminguide_clearcache_name: Clearing Server Caches
+:adminguide_clearcache_link: {adminguide_link}#_clear-cache
+:apidocs_name: API Documentation
+:apidocs_link: https://www.keycloak.org/docs/{project_version}/api_documentation/
+:adminguide_email_name: Configuring email for a realm
+:adminguide_email_link: {adminguide_link}#_email
+:bootstrapadminrecovery_name: Admin Bootstrap and Recovery
+:bootstrapadminrecovery_link: https://www.keycloak.org/server/bootstrap-admin-recovery
+:client_certificate_lookup_link: https://www.keycloak.org/server/reverseproxy#_enabling_client_certificate_lookup
+:developerguide_name: Server Developer Guide
+:developerguide_name_short: Server Developer
+:developerguide_link: {project_doc_base_url}/server_development/
+:developerguide_link_latest: {project_doc_base_url_latest}/server_development/
+:developerguide_deploying_themes: {developerguide_link}#deploying-themes
+:developerguide_actiontoken_name: Action Token Handler SPI
+:developerguide_actiontoken_link: {developerguide_link}#_action_token_handler_spi
+:developerguide_jsproviders_name: JavaScript Providers
+:developerguide_jsproviders_link: {developerguide_link}#_script_providers
+:gettingstarted_name: Getting Started Guide
+:gettingstarted_name_short: Getting Started
+:gettingstarted_link: https://www.keycloak.org/guides#getting-started
+:gettingstarted_link_latest: https://www.keycloak.org/guides#getting-started
+:grafanadashboards_link: https://www.keycloak.org/observability/grafana-dashboards
+:highavailabilityguide_name: High Availability Guide
+:highavailabilityguide_link: https://www.keycloak.org/guides#high-availability
+:observablitycategory_link: https://www.keycloak.org/guides#observability
+:tracingguide_name: Enabling Tracing
+:tracingguide_link: https://www.keycloak.org/observability/tracing
+:upgradingguide_name: Upgrading Guide
+:upgradingguide_name_short: Upgrading
+:upgradingguide_link: {project_doc_base_url}/upgrading/
+:upgradingguide_link_latest: {project_doc_base_url_latest}/upgrading/
+:upgradingclientlibs_link: https://www.keycloak.org/securing-apps/upgrading
+:upgradingclientlibs_name: Upgrading {project_name} Client libraries
+:releasenotes_name: Release Notes
+:releasenotes_name_short: {releasenotes_name}
+:releasenotes_link: {project_doc_base_url}/release_notes/
+:releasenotes_link_latest: {project_doc_base_url_latest}/release_notes/
+
+:apidocs_javadocs_name: JavaDocs Documentation
+:apidocs_javadocs_link: https://www.keycloak.org/docs-api/{project_version}/javadocs/
+:apidocs_adminrest_name: Administration REST API
+:apidocs_adminrest_link: https://www.keycloak.org/docs-api/{project_version}/rest-api/
+
+:appserver_name: WildFly
+:appserver_dirref: WILDFLY_HOME
+:appserver_version: 23
+
+:appserver_doc_base_url: http://docs.wildfly.org/{appserver_version}
+:appserver_socket_link: {appserver_doc_base_url}/Admin_Guide.html#Interfaces_and_ports
+:appserver_socket_name: {appserver_name} {appserver_version} Documentation
+:appserver_jgroups_link: {appserver_doc_base_url}/High_Availability_Guide.html#JGroups_Subsystem
+:appserver_jgroups_name: {appserver_name} {appserver_version} Documentation
+:appserver_jpa_link: {appserver_doc_base_url}/Developer_Guide.html#hibernate-properties
+:appserver_jpa_name: {appserver_name} {appserver_version} Development Guide
+:appserver_network_link: {appserver_doc_base_url}/Admin_Guide.html#Interfaces_and_ports
+:appserver_network_name: {appserver_name} {appserver_version} Documentation
+:appserver_datasource_link: {appserver_doc_base_url}/Admin_Guide.html#DataSource
+:appserver_datasource_name: {appserver_name} {appserver_version} Documentation
+:appserver_caching_link: {appserver_doc_base_url}/High_Availability_Guide.html#Infinispan_Subsystem
+:appserver_caching_name: {appserver_name} {appserver_version} Documentation
+:appserver_admindoc_link: {appserver_doc_base_url}/Admin_Guide.html
+:appserver_admindoc_name: {appserver_name} {appserver_version} Documentation
+:appserver_loadbalancer_link: {appserver_doc_base_url}/High_Availability_Guide.html
+:appserver_loadbalancer_name: {appserver_name} {appserver_version} Documentation
+
+:jdgserver_name: Infinispan
+:jdgserver_version: 9.4.19
+
+:subsystem_undertow_xml_urn: urn:jboss:domain:undertow:12.0
+:subsystem_infinispan_xml_urn: urn:jboss:domain:infinispan:12.0
+:subsystem_datasources_xml_urn: urn:jboss:domain:datasources:6.0
+:saml_adapter_xsd_urn: https://www.keycloak.org/schema/keycloak_saml_adapter_1_10.xsd
+
+:section: guide
+:sections: guides
+:securing_apps_name: Securing applications Guides
+:securing_apps_name_short: Securing applications
+:securing_apps_link: https://www.keycloak.org/guides#securing-apps
+:securing_apps_base_link: https://www.keycloak.org/securing-apps
+:securing_apps_java_policy_enforcer_link: {securing_apps_base_link}/policy-enforcer
+:securing_apps_java_policy_enforcer_name: Java Policy enforcer
+:securing_apps_token_exchange_link: {securing_apps_base_link}/token-exchange
+:securing_apps_token_exchange_name: Token exchange Documentation

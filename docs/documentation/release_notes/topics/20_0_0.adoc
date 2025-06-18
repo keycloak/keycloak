@@ -1,0 +1,93 @@
+= WildFly distribution removed
+
+In Keycloak 17.0.0 the new Quarkus based distribution of Keycloak, while the WildFly based distribution was deprecated.
+With this release the WildFly distribution has been removed, and is no longer supported.
+
+If you are still using the WildFly distribution we highly encourage migrating to the Quarkus distribution as soon as
+possible, see the https://www.keycloak.org/migration/migrating-to-quarkus[Migration Guide] for more details.
+
+= New Keycloak Operator upgrade
+
+We are happy to announce that the new Keycloak Operator for the Quarkus based distribution is no longer a preview
+feature. We added new functionality as well as a number of improvements, some which has resulted in breaking changes.
+
+== Realm Operator
+
+As the new Operator currently lacks some of the CRs (e.g. Client and User), we're introducing a temporary workaround in
+the form of a Realm Operator. Please see its https://github.com/keycloak/keycloak-realm-operator[GitHub Repository] for
+more details. See also https://www.keycloak.org/2022/09/operator-crs["The future of Keycloak Operator CRs" blogpost].
+
+= Supported OpenJDK versions
+
+Keycloak now supports OpenJDK 17 both for the server and adapters.
+
+With the removal of the WildFly based distribution there is no longer support for running the Keycloak server on OpenJDK 8.
+We also plan to remove support for Keycloak adapters on OpenJDK 8 in Keycloak 21.
+
+Starting with Keycloak 22 we plan to only support the latest OpenJDK LTS release and aiming to quickly also support the
+latest OpenJDK release. That means we will be also removing OpenJDK 11 support for the Keycloak server in Keycloak 22.
+
+= Hostname provider now supports configuring the complete base URL
+
+In this release, we are introducing two additional server options to set the base URL for frontend request and the Admin
+Console:
+
+* `hostname-url`
+* `hostname-admin-url`
+
+More details can be found at the https://www.keycloak.org/server/hostname[Configuring the Hostname] {section}.
+
+= Improvements to `kc.bat` when running Keycloak on Windows
+
+In this release, we are making important changes to `kc.bat` to give the same experience as when running on Linux.
+
+= Upgrade of embedded H2 database
+
+{project_name} ships for development purposes with an H2 database driver. As it is intended for development purposes
+only, it should never be used in a production environment.
+
+In this release, the H2 driver has been upgraded from version 1.x to version 2.x.
+
+= Feature guard for hosting the Keycloak JavaScript adapter
+
+Applications are able to load `keycloak.js` directly from the Keycloak server. As it's not considered a best-practice
+to load JavaScript libraries this way there is now a feature guard that allows disabling this ability.
+
+In Keycloak 21 we will deprecate this option, and in Keycloak 22 we plan to completely remove the ability to load
+`keycloak.js` from the Keycloak server.
+
+= OTP Application SPI
+
+In previous releases the list of OTP applications displayed to users was hard-coded in Keycloak. With the introduction of
+the OTP Application SPI it is now possible to disable built-in OTP applications, as well as adding custom OTP Applications.
+
+= Custom Identity Providers can now set an icon for the provider
+
+A custom identity provider can now set the icon used on the login pages. Thanks to https://github.com/klausbetz[Klaus Betz],
+who happens also to maintain
+https://github.com/klausbetz/apple-identity-provider-keycloak[an extension to Keycloak to support log in with AppleID].
+
+= FIPS 140-2 experimental support
+
+There is now experimental support for deploying Keycloak into a FIPS 140-2 enabled environment. There will be a blog post
+with the details shortly after the release with the details how you can try it. Feedback is welcome!
+
+Thanks to https://github.com/david-rh[David Anderson], who contributed parts of this feature. Also, thanks to
+https://github.com/sudeepd[Sudeep Das] and https://github.com/isaacjensen[Isaac Jensen] for their initial prototype
+ effort, which was used as an inspiration.
+
+= Search groups by attribute
+
+It is now possible to search groups by attribute through the Admin REST API. Thanks to
+https://github.com/alice-wondered[Alice] for this contribution.
+
+= View group membership in the account console
+
+It is now possible to allow users to view their group memberships in the account console. Thanks to
+https://github.com/cgeorgilakis[cgeorgilakis] for this contribution.
+
+= Deprecated methods from data providers and models were removed
+
+Several deprecated methods were removed from data providers and models. If not done already, their usage needs to be
+replaced with the corresponding replacement documented in Javadoc of Keycloak 19 release. See
+link:{upgradingguide_link}[{upgradingguide_name}] for more details.

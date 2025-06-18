@@ -1,0 +1,25 @@
+// Module included in the following assemblies:
+//
+// con-user-registration.adoc
+
+[id="proc-requiring-tac-agreement-at-registration_{context}"]
+= Requiring user to agree to terms and conditions during registration
+
+[role="_abstract"]
+For a user to register, you can require agreement to your terms and conditions.
+
+.Registration form with required terms and conditions agreement
+image:images/registration-form-with-required-tac.png[]
+
+.Prerequisite
+* User registration is enabled.
+* Terms and conditions required action is enabled.
+
+.Procedure
+. Click *Authentication* in the menu.
+Click the *Flows* tab.
+. Click the *registration* flow.
+. Select *Required* on the *Terms and Conditions* row.
++
+.Make the terms and conditions agreement required at registration
+image:images/require-tac-agreement-at-registration.png[]

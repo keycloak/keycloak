@@ -1,0 +1,36 @@
+- name: Update system packages on the remote hosts
+  when: update_system_packages
+  package:
+    name: "*"
+    state: latest
+
+- name: Install Java {{ java_version }} packages on the remote hosts
+  when: install_java
+  package:
+    name:
+      - "java-{{ java_version }}-openjdk"
+      - "java-{{ java_version }}-openjdk-devel"
+    state: present
+
+- name: Install dependencies on the remote hosts
+  package: name={{item}} state=present
+  with_items:
+    - unzip
+
+- name: Create Keycloak src dir
+  file:
+    path: "{{ kc_home }}"
+    state: directory
+
+- name: Install Keycloak src on the remote hosts
+  unarchive:
+    src: "{{ keycloak_src }}"
+    dest: "{{ kc_home }}"
+    owner: "{{ ansible_ssh_user }}"
+
+- name: Install Maven repository on the remote hosts
+  unarchive:
+    src: "{{ maven_archive }}"
+    creates: "{{ kc_home }}"
+    dest: "{{ kc_home }}"
+    owner: "{{ ansible_ssh_user }}"

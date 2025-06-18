@@ -1,0 +1,1522 @@
+{
+  "definitions" : [ {
+    "protopath" : "generated:/:KeycloakModelSchema.proto",
+    "def" : {
+      "enums" : [ {
+        "name" : "State",
+        "type_id" : 65536,
+        "enum_fields" : [ {
+          "name" : "LOGGED_IN"
+        }, {
+          "name" : "LOGGING_OUT",
+          "integer" : 1
+        }, {
+          "name" : "LOGGED_OUT",
+          "integer" : 2
+        }, {
+          "name" : "LOGGED_OUT_UNCONFIRMED",
+          "integer" : 3
+        } ]
+      }, {
+        "name" : "ExecutionStatus",
+        "type_id" : 65537,
+        "enum_fields" : [ {
+          "name" : "FAILED"
+        }, {
+          "name" : "SUCCESS",
+          "integer" : 1
+        }, {
+          "name" : "SETUP_REQUIRED",
+          "integer" : 2
+        }, {
+          "name" : "ATTEMPTED",
+          "integer" : 3
+        }, {
+          "name" : "SKIPPED",
+          "integer" : 4
+        }, {
+          "name" : "CHALLENGED",
+          "integer" : 5
+        }, {
+          "name" : "EVALUATED_TRUE",
+          "integer" : 6
+        }, {
+          "name" : "EVALUATED_FALSE",
+          "integer" : 7
+        } ]
+      }, {
+        "name" : "WrapperClusterEvent.SiteFilter",
+        "type_id" : 65544,
+        "enum_fields" : [ {
+          "name" : "ALL"
+        }, {
+          "name" : "LOCAL",
+          "integer" : 1
+        }, {
+          "name" : "REMOTE",
+          "integer" : 2
+        } ]
+      } ],
+      "messages" : [ {
+        "name" : "ClientSessionKey",
+        "type_id" : 65606,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "userSessionId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "clientId",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "GroupListPredicate",
+        "type_id" : 65568,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "realm",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "RemoveUserSessionsEvent",
+        "type_id" : 65564,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "realmId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "eventKey",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "resendingEvent",
+          "type" : "bool",
+          "optional" : true
+        }, {
+          "id" : 4,
+          "name" : "siteId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 5,
+          "name" : "nodeId",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "ResourceServerUpdatedEvent",
+        "type_id" : 65550,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "InitializerState",
+        "type_id" : 65554,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "realmId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "segmentsCount",
+          "type" : "int32",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "segments",
+          "type" : "org.infinispan.protostream.commons.BitSet",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "UserFederationLinkRemovedEvent",
+        "type_id" : 65591,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "realmId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "identityProviderId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 4,
+          "name" : "socialUserId",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "ScopeUpdatedEvent",
+        "type_id" : 65552,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "name",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "serverId",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "RealmUpdatedEvent",
+        "type_id" : 65584,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "realmName",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "RealmRemovedSessionEvent",
+        "type_id" : 65562,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "realmId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "eventKey",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "resendingEvent",
+          "type" : "bool",
+          "optional" : true
+        }, {
+          "id" : 4,
+          "name" : "siteId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 5,
+          "name" : "nodeId",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "SessionData",
+        "type_id" : 65558,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "realmId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "lastSessionRefresh",
+          "type" : "int32",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "LockEntryPredicate",
+        "type_id" : 65542,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "removedNodesAddresses",
+          "type" : "string",
+          "is_repeated" : true
+        } ]
+      }, {
+        "name" : "RemoteUserSessionEntity",
+        "type_id" : 65605,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "userSessionId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "authMethod",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "brokerSessionId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 4,
+          "name" : "brokerUserId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 5,
+          "name" : "ipAddress",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 6,
+          "name" : "lastSessionRefresh",
+          "type" : "int32",
+          "optional" : true
+        }, {
+          "id" : 7,
+          "name" : "loginUsername",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 9,
+          "name" : "realmId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 10,
+          "name" : "rememberMe",
+          "type" : "bool",
+          "optional" : true
+        }, {
+          "id" : 11,
+          "name" : "started",
+          "type" : "int32",
+          "optional" : true
+        }, {
+          "id" : 12,
+          "name" : "state",
+          "type" : "State",
+          "optional" : true
+        }, {
+          "id" : 13,
+          "name" : "userId",
+          "type" : "string",
+          "optional" : true
+        } ],
+        "maps" : [ {
+          "key_type" : "string",
+          "field" : {
+            "id" : 8,
+            "name" : "notes",
+            "type" : "string"
+          }
+        } ]
+      }, {
+        "name" : "ClientUpdatedEvent",
+        "type_id" : 65576,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "realmId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "clientId",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "UserStorageProviderModel",
+        "type_id" : 65539,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "name",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "providerId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 4,
+          "name" : "providerType",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 5,
+          "name" : "parentId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 6,
+          "name" : "subType",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 7,
+          "name" : "configProto",
+          "type" : "MultiMapEntry",
+          "is_repeated" : true
+        } ]
+      }, {
+        "name" : "LoginFailureEntity",
+        "type_id" : 65598,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "realmId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "userId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "failedLoginNotBefore",
+          "type" : "int32",
+          "optional" : true
+        }, {
+          "id" : 4,
+          "name" : "numFailures",
+          "type" : "int32",
+          "optional" : true
+        }, {
+          "id" : 5,
+          "name" : "numTemporaryLockouts",
+          "type" : "int32",
+          "optional" : true
+        }, {
+          "id" : 6,
+          "name" : "lastFailure",
+          "type" : "int64",
+          "optional" : true
+        }, {
+          "id" : 7,
+          "name" : "lastIPFailure",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "AuthenticationSessionEntity",
+        "type_id" : 65597,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "clientUUID",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "authUserId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "timestamp",
+          "type" : "int32",
+          "optional" : true
+        }, {
+          "id" : 4,
+          "name" : "redirectUri",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 5,
+          "name" : "action",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 6,
+          "name" : "clientScopes",
+          "type" : "string",
+          "is_repeated" : true
+        }, {
+          "id" : 8,
+          "name" : "protocol",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 10,
+          "name" : "requiredActions",
+          "type" : "string",
+          "is_repeated" : true
+        } ],
+        "maps" : [ {
+          "key_type" : "string",
+          "field" : {
+            "id" : 7,
+            "name" : "executionStatus",
+            "type" : "ExecutionStatus"
+          }
+        }, {
+          "key_type" : "string",
+          "field" : {
+            "id" : 9,
+            "name" : "clientNotes",
+            "type" : "string"
+          }
+        }, {
+          "key_type" : "string",
+          "field" : {
+            "id" : 11,
+            "name" : "userSessionNotes",
+            "type" : "string"
+          }
+        }, {
+          "key_type" : "string",
+          "field" : {
+            "id" : 12,
+            "name" : "authNotes",
+            "type" : "string"
+          }
+        } ]
+      }, {
+        "name" : "InScopePredicate",
+        "type_id" : 65561,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "scopeId",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "ScopeRemovedEvent",
+        "type_id" : 65553,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "name",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "serverId",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "SingleUseObjectValueEntity",
+        "type_id" : 65601,
+        "fields" : [ ],
+        "maps" : [ {
+          "key_type" : "string",
+          "field" : {
+            "id" : 1,
+            "name" : "notes",
+            "type" : "string"
+          }
+        } ]
+      }, {
+        "name" : "SessionPredicate",
+        "type_id" : 65565,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "realmId",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "RootAuthenticationSessionEntity",
+        "type_id" : 65600,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "realmId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "timestamp",
+          "type" : "int32",
+          "optional" : true
+        } ],
+        "maps" : [ {
+          "key_type" : "string",
+          "field" : {
+            "id" : 4,
+            "name" : "authenticationSessions",
+            "type" : "AuthenticationSessionEntity"
+          }
+        } ]
+      }, {
+        "name" : "UserFederationLinkUpdatedEvent",
+        "type_id" : 65592,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "PolicyRemovedEvent",
+        "type_id" : 65547,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "name",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "resources",
+          "type" : "string",
+          "is_repeated" : true
+        }, {
+          "id" : 4,
+          "name" : "resourceTypes",
+          "type" : "string",
+          "is_repeated" : true
+        }, {
+          "id" : 5,
+          "name" : "scopes",
+          "type" : "string",
+          "is_repeated" : true
+        }, {
+          "id" : 6,
+          "name" : "serverId",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "UserFullInvalidationEvent",
+        "type_id" : 65593,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "username",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "email",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 4,
+          "name" : "realmId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 5,
+          "name" : "identityFederationEnabled",
+          "type" : "bool",
+          "optional" : true
+        } ],
+        "maps" : [ {
+          "key_type" : "string",
+          "field" : {
+            "id" : 6,
+            "name" : "federatedIdentities",
+            "type" : "string"
+          }
+        } ]
+      }, {
+        "name" : "GroupUpdatedEvent",
+        "type_id" : 65583,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "InGroupPredicate",
+        "type_id" : 65571,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "group",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "AuthenticatedClientSessionEntity",
+        "type_id" : 65596,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "realmId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "authMethod",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "redirectUri",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 4,
+          "name" : "timestamp",
+          "type" : "int32",
+          "optional" : true
+        }, {
+          "id" : 5,
+          "name" : "action",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 7,
+          "name" : "id",
+          "type" : "org.infinispan.protostream.commons.UUID",
+          "optional" : true
+        } ],
+        "maps" : [ {
+          "key_type" : "string",
+          "field" : {
+            "id" : 6,
+            "name" : "notes",
+            "type" : "string"
+          }
+        } ]
+      }, {
+        "name" : "LoginFailureKey",
+        "type_id" : 65599,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "realmId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "userId",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "UserStorageProviderClusterEvent",
+        "type_id" : 65540,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "removed",
+          "type" : "bool",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "realmId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "storageProvider",
+          "type" : "UserStorageProviderModel",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "RemoveAllUserLoginFailuresEvent",
+        "type_id" : 65563,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "realmId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "eventKey",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "resendingEvent",
+          "type" : "bool",
+          "optional" : true
+        }, {
+          "id" : 4,
+          "name" : "siteId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 5,
+          "name" : "nodeId",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "LastSessionRefreshEvent",
+        "type_id" : 65557,
+        "fields" : [ ],
+        "maps" : [ {
+          "key_type" : "string",
+          "field" : {
+            "id" : 1,
+            "name" : "lastSessionRefreshes",
+            "type" : "SessionData"
+          }
+        } ]
+      }, {
+        "name" : "ResourceUpdatedEvent",
+        "type_id" : 65548,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "name",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "owner",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 4,
+          "name" : "serverId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 5,
+          "name" : "type",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 6,
+          "name" : "uris",
+          "type" : "string",
+          "is_repeated" : true
+        }, {
+          "id" : 7,
+          "name" : "scopes",
+          "type" : "string",
+          "is_repeated" : true
+        } ]
+      }, {
+        "name" : "AuthenticationSessionAuthNoteUpdateEvent",
+        "type_id" : 65574,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "authSessionId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "tabId",
+          "type" : "string",
+          "optional" : true
+        } ],
+        "maps" : [ {
+          "key_type" : "string",
+          "field" : {
+            "id" : 3,
+            "name" : "authNotesFragment",
+            "type" : "string"
+          }
+        } ]
+      }, {
+        "name" : "GroupMovedEvent",
+        "type_id" : 65581,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "newParentId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "oldParentId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 4,
+          "name" : "realmId",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "RoleRemovedEvent",
+        "type_id" : 65588,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "containerId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "roleName",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "InResourceServerPredicate",
+        "type_id" : 65560,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "serverId",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "InRealmPredicate",
+        "type_id" : 65573,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "realm",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "ClientAddedEvent",
+        "type_id" : 65575,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "realmId",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "UserConsentsUpdatedEvent",
+        "type_id" : 65590,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "ClientScopeRemovedEvent",
+        "type_id" : 65579,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "realmId",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "UserCacheRealmInvalidationEvent",
+        "type_id" : 65589,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "UserUpdatedEvent",
+        "type_id" : 65594,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "username",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "email",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 4,
+          "name" : "realmId",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "AuthenticatedClientSessionStore",
+        "type_id" : 65595,
+        "fields" : [ ],
+        "maps" : [ {
+          "key_type" : "string",
+          "field" : {
+            "id" : 1,
+            "name" : "authenticatedClientSessionIds",
+            "type" : "org.infinispan.protostream.commons.UUID"
+          }
+        } ]
+      }, {
+        "name" : "RoleUpdatedEvent",
+        "type_id" : 65587,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "containerId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "roleName",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "ResourceRemovedEvent",
+        "type_id" : 65549,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "name",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "owner",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 4,
+          "name" : "serverId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 5,
+          "name" : "type",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 6,
+          "name" : "uris",
+          "type" : "string",
+          "is_repeated" : true
+        }, {
+          "id" : 7,
+          "name" : "scopes",
+          "type" : "string",
+          "is_repeated" : true
+        } ]
+      }, {
+        "name" : "RoleAddedEvent",
+        "type_id" : 65586,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "containerId",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "GroupAddedEvent",
+        "type_id" : 65580,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "realmId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "parentId",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "UserSessionPredicate",
+        "type_id" : 65567,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "userId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "brokerSessionId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "brokerUserId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 4,
+          "name" : "realm",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 5,
+          "name" : "client",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "ReplaceFunction",
+        "type_id" : 65656,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "expectedVersion",
+          "type" : "org.infinispan.protostream.commons.UUID",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "newValue",
+          "type" : "SessionEntityWrapper",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "UserSessionEntity",
+        "type_id" : 65602,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "realmId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "user",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 4,
+          "name" : "loginUsername",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 5,
+          "name" : "ipAddress",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 6,
+          "name" : "authMethod",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 7,
+          "name" : "rememberMe",
+          "type" : "bool",
+          "optional" : true
+        }, {
+          "id" : 8,
+          "name" : "started",
+          "type" : "int32",
+          "optional" : true
+        }, {
+          "id" : 9,
+          "name" : "lastSessionRefresh",
+          "type" : "int32",
+          "optional" : true
+        }, {
+          "id" : 11,
+          "name" : "authenticatedClientSessions",
+          "type" : "AuthenticatedClientSessionStore",
+          "optional" : true
+        }, {
+          "id" : 12,
+          "name" : "state",
+          "type" : "State",
+          "optional" : true
+        }, {
+          "id" : 13,
+          "name" : "brokerSessionId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 14,
+          "name" : "brokerUserId",
+          "type" : "string",
+          "optional" : true
+        } ],
+        "maps" : [ {
+          "key_type" : "string",
+          "field" : {
+            "id" : 10,
+            "name" : "notes",
+            "type" : "string"
+          }
+        } ]
+      }, {
+        "name" : "RealmRemovedEvent",
+        "type_id" : 65585,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "realmName",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "MultiMapEntry",
+        "type_id" : 65538,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "key",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "value",
+          "type" : "string",
+          "is_repeated" : true
+        } ]
+      }, {
+        "name" : "ClearCacheEvent",
+        "type_id" : 65604,
+        "fields" : [ ]
+      }, {
+        "name" : "GroupRemovedEvent",
+        "type_id" : 65582,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "realmId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "parentId",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "CacheKeyInvalidatedEvent",
+        "type_id" : 65603,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "ClientScopeAddedEvent",
+        "type_id" : 65578,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "realmId",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "InIdentityProviderPredicate",
+        "type_id" : 65572,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "RemoteAuthenticatedClientSessionEntity",
+        "type_id" : 65607,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "clientId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "userId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "userSessionId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 4,
+          "name" : "realmId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 6,
+          "name" : "action",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 7,
+          "name" : "protocol",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 8,
+          "name" : "redirectUri",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 9,
+          "name" : "timestamp",
+          "type" : "int32",
+          "optional" : true
+        }, {
+          "id" : 10,
+          "name" : "started",
+          "type" : "int32",
+          "optional" : true
+        } ],
+        "maps" : [ {
+          "key_type" : "string",
+          "field" : {
+            "id" : 5,
+            "name" : "notes",
+            "type" : "string"
+          }
+        } ]
+      }, {
+        "name" : "InClientPredicate",
+        "type_id" : 65570,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "clientId",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "SessionEntityWrapper",
+        "type_id" : 65555,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "version",
+          "type" : "org.infinispan.protostream.commons.UUID",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "entityPS",
+          "type" : "org.infinispan.protostream.WrappedMessage",
+          "optional" : true
+        } ],
+        "maps" : [ {
+          "key_type" : "string",
+          "field" : {
+            "id" : 3,
+            "name" : "localMetadata",
+            "type" : "string"
+          }
+        } ]
+      }, {
+        "name" : "PolicyUpdatedEvent",
+        "type_id" : 65546,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "name",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "resources",
+          "type" : "string",
+          "is_repeated" : true
+        }, {
+          "id" : 4,
+          "name" : "resourceTypes",
+          "type" : "string",
+          "is_repeated" : true
+        }, {
+          "id" : 5,
+          "name" : "scopes",
+          "type" : "string",
+          "is_repeated" : true
+        }, {
+          "id" : 6,
+          "name" : "serverId",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "ResourceServerRemovedEvent",
+        "type_id" : 65551,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "LockEntry",
+        "type_id" : 65541,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "node",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "WrapperClusterEvent",
+        "type_id" : 65543,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "eventKey",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "senderAddress",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "senderSite",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 4,
+          "name" : "siteFilter",
+          "type" : "WrapperClusterEvent.SiteFilter",
+          "optional" : true
+        }, {
+          "id" : 5,
+          "name" : "eventPS",
+          "type" : "org.infinispan.protostream.WrappedMessage",
+          "is_repeated" : true
+        } ]
+      }, {
+        "name" : "SessionWrapperPredicate",
+        "type_id" : 65566,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "realmId",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "ClientRemovedEvent",
+        "type_id" : 65577,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "realmId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "clientId",
+          "type" : "string",
+          "optional" : true
+        } ],
+        "maps" : [ {
+          "key_type" : "string",
+          "field" : {
+            "id" : 4,
+            "name" : "clientRoles",
+            "type" : "string"
+          }
+        } ]
+      }, {
+        "name" : "HasRolePredicate",
+        "type_id" : 65569,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "role",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "PublicKeyStorageInvalidationEvent",
+        "type_id" : 65545,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "InResourcePredicate",
+        "type_id" : 65559,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "resourceId",
+          "type" : "string",
+          "optional" : true
+        } ]
+      } ],
+      "imports" : [ {
+        "path" : "org/infinispan/protostream/message-wrapping.proto"
+      }, {
+        "path" : "common-java-types.proto"
+      } ],
+      "package" : {
+        "name" : "keycloak"
+      }
+    }
+  } ]
+}

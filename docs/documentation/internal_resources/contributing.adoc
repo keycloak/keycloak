@@ -1,0 +1,85 @@
+[[contributing]]
+= Contributor's Guide
+
+This guide will help new contributors use `git` and GitHub for Keycloak documentation submissions and suggestions.
+
+Before you start,  check out our writing templates, which are contained in the link:https://github.com/keycloak/keycloak/tree/main/docs/documentation/internal_resources[internal resources directory], This directory also describes each template file and when to use that template. We are working to update our documentation to put procedural content, conceptual content, and reference content into separate .adoc files, and we request that new contributions use these templates.
+
+There are two ways to start. The first is the easiest, but it is less flexible. The second is more powerful, but requires setting up. For either method, you must already have a GitHub account, as described in link:https://github.com/join[Join GitHub].
+
+[[simple]]
+== Simple and Infrequent Contributions (Method One)
+
+This method is useful for quick fixes or simple additions.
+
+. Find the file you want to edit in the GitHub web interface.
+. Click the file name to open it in GitHub.
+. Click the edit icon near the top right of the page contents. The icon looks like a pencil.
+. Make your edits.
+. Enter a title and description of your changes in the *Commit Changes* section at the bottom of the page. Enter enough detail for reviewers to know what you have changed and why.
+. Select *Create a new branch for this commit and start a pull request*.
+. Click *Commit changes*.
+
+[[sustained]]
+== Larger and Sustained Contributions (Method Two)
+
+This method is useful for any type of contribution, but necessary for larger and more complex ones. If you expect to participate often, this is the recommended method.
+
+[[initialsetup]]
+=== Initial Setup
+
+You only need to perform these tasks once, when preparing to contribute.
+
+. Fork the link:https://github.com/keycloak/keycloak[Keycloak repository]. This will create your own version of the repository which you can find at `https://github.com/{yourusername}/keycloak` where `{yourusername}` is the username you created in GitHub.
+. Install `git` on your local machine. The procedure differs by operating system as described in link:https://git-scm.com/book/en/v2/Getting-Started-Installing-Git[Installing Git]. Follow up with initial Git setup tasks, as described in link:https://git-scm.com/book/en/v2/Getting-Started-First-Time-Git-Setup[First Time Git Setup].
+. Clone from your fork to create a copy on your local machine and then navigate to the new directory by entering the following from the command line on your local machine:
++
+[source,bash]
+----
+$ git clone https://github.com/{yourusername}/keycloak
+$ cd keycloak/docs/documentation
+----
++
+. Add a git remote to your local repository to link to the upstream version of the documentation. This makes it easier to update your fork and local version of the documentation.
++
+[source,bash]
+----
+$ git remote add upstream https://github.com/keycloak/keycloak
+----
++
+. Check your settings.
++
+[source,bash]
+----
+$ git remote -v
+origin	https://github.com/{yourusername}/keycloak.git (fetch)
+origin	https://github.com/{yourusername}/keycloak.git (push)
+upstream	https://github.com/keycloak/keycloak (fetch)
+upstream	https://github.com/keycloak/keycloak (push)
+----
++
+
+NOTE: It is possible to clone using SSH so you don't have to enter a username/password every time you push. Find instructions at link:https://help.github.com/articles/connecting-to-github-with-ssh/[Connecting to GitHub with SSH] and link:https://help.github.com/articles/which-remote-url-should-i-use/[Which Remote URL Should I Use]. When using SSH, the origin lines will appear like this:
+`git@github.com:{yourusername}/keycloak.git`
+
+[[workflow]]
+=== Typical Workflow for Keycloak Documentation Contributions
+
+When contributing, follow this procedure. Enter commands from the command line on your local machine in the  `keycloak` directory created earlier when cloning the repository.
+
+. Enter `git checkout main` to checkout the main branch locally.
+. Enter `git fetch upstream` to download the current files from the upstream repository.
+. Enter `git rebase upstream/main` to update your cloned branch on your local machine with the most current content from the upstream repository.
+. Enter `git push origin main` to update your fork in GitHub with the most current content from the upstream repository.
+. Enter `git checkout -b {branchname}` where you create a `{branchname}` that describes the work you are about to do.
+. Make your changes
+. (Optional) Enter `git status` now or at any time to see what branch you are on, what files you have changed, and whether those files are staged to be committed.
+. Enter `git add -A` to stage your changes to the commit you are about to make.
+.. Make sure your changes only affect docs/documentation directory, or you are sure about the changes outside of that package
+. Enter `git commit --signoff --message '<message>'` where message is build as described in link:https://github.com/keycloak/keycloak/blob/main/CONTRIBUTING.md#commit-messages-and-issue-linking[general contribution guide]
+. Follow the steps in the documentation link:https://github.com/keycloak/keycloak/blob/main/docs/documentation/README.md[README] to create a test build locally and confirm that your changes look correct. Make more changes and repeat steps to here, as needed.
+. Enter `git push origin {branchname}` to push your changes to your fork in GitHub.
+. Use the GitHub web interface to create a pull request. First, navigate to your branch in the web UI and click *Compare*. This will show you a diff of the changes. Examine them one more time. If necessary, make more changes locally and repeat the steps to here. When you are ready, click *Create a pull request*. Enter a title and a description with enough detail for reviewers to know what you have changed and why. Click *Submit*.
+. Wait. The documentation team will usually review pull requests within a few days. Often suggestions and changes are requested of you to help the contribution better fit within the style guidelines for the project or to fill in information that may have been missed. If this happens, repeat the steps from making your changes to `git push origin {branchname}`. No need to create another PR as the existing one will be updated automatically.
+
+Once the PR has been merged or rejected, you can remove your feature branch `{newbranchname}` from both the remote fork and your local machine. GitHub provides a button for removing from the fork in the UI of the PR once it is merged. Remove from your local machine with `git branch -d {branchname}`.

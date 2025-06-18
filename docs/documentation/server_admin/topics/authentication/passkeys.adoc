@@ -1,0 +1,91 @@
+
+[id="passkeys_{context}"]
+=== Passkeys
+
+{project_name} provides preview support for https://fidoalliance.org/passkeys/[Passkeys]. {project_name} works as a Passkeys Relying Party (RP).
+
+Passkey registration and authentication are realized by the features of xref:webauthn_{context}[WebAuthn].
+Therefore, users of {project_name} can do Passkey registration and authentication by existing xref:webauthn_{context}[WebAuthn registration and authentication].
+
+[NOTE]
+====
+Both synced Passkeys and device-bound Passkeys can be used for both Same-Device and Cross-Device Authentication (CDA).
+However, Passkeys operations success depends on the user's environment. Make sure which operations can succeed in https://passkeys.dev/device-support/[the environment].
+====
+
+[[_passkeys-conditional-ui]]
+==== Passkey Authentication with Conditional UI
+
+Passkey Authentication with Conditional UI can authenticate a user with its passkey in the same way as in xref:_webauthn_loginless[LoginLess WebAuthn].
+This authentication shows a user a list of passkeys stored on a device where the user runs a browser.
+Therefore, the user can select one of the passkeys in the list to authenticate them. Compared with xref:_webauthn_loginless[LoginLess WebAuthn], the authentication improves the user's experience of authentication.
+
+[NOTE]
+====
+This authentication uses the https://github.com/w3c/webauthn/wiki/Explainer:-WebAuthn-Conditional-UI/[WebAuthn Conditional UI].
+Therefore, this authentication success depends on the user's environment.
+If the environment does not support WebAuthn Conditional UI, this authentication falls back to xref:_webauthn_loginless[LoginLess WebAuthn].
+====
+
+:tech_feature_name: Passkey Authentication
+:tech_feature_setting: -Dkeycloak.profile.feature.passkeys=enabled
+:tech_feature_id: passkeys
+include::../templates/techpreview.adoc[]
+
+.Procedure
+===== Setup
+
+Set up Passkey Authentication with Conditional UI as follows:
+
+. (if not already present) Register a new required action for WebAuthn passwordless support. Use the steps described in <<_webauthn-register, Enable WebAuthn Authenticator Registration>>. Register the `Webauthn Register Passwordless` action.
+
+. Configure the `WebAuthn Passwordless Policy`. Perform the configuration in the Admin Console, `Authentication` section,  in the tab `Policies` ->  `WebAuthn Passwordless Policy`. Set *User Verification Requirement* to *required* and *Require discoverable credential* to *Yes* when you configure the policy for loginless scenario. Note that since there is no dedicated Loginless policy, it is impossible to mix authentication scenarios with user verification=no/discoverable credential=no and loginless scenarios (user verification=yes/discoverable credential=yes).
++
+NOTE: Storage capacity is usually very limited on hardware passkeys meaning that you cannot store many discoverable credentials on your passkey. However, this limitation may be mitigated for instance if you use an Android phone backed by a Google account as a passkey device or an iPhone backed by Bitwarden.
+
+. Configure the authentication flow. Create a new authentication flow, add the *Passkeys Conditional UI Authenticator* execution and set the Requirement setting of the execution to *Required*.
++
+The final configuration of the flow looks similar to this:
+image:images/passkey-conditional-ui-flow.png[Passkey Authentication with Conditional UI flow flow]
+
+. Bind the flow above as a *browser* authentication flow in the realm as described in the <<_webauthn-register, WebAuthn section above>>.
+
+The authentication flow above requires that user must already have passkey credential on his or her account to be able to log in. This requirement means that all users in the realm must have passkeys already set.
+That can be achieved for instance by enabling user registration as described below.
+
+===== Setup of the registration for passkeys conditional UI
+
+. Enable <<con-user-registration_{context}, registration>> for your realm
+
+. In the <<configuring-authentication_{context},authentication flows>> of the realm, select flow *registration* and switch the authenticator *Password validation* to *Disabled*.
+This means that newly registered users will not be required to create the passwords in this example setup. Users must always use passkeys instead of passwords.
+
+. Return to the *Required actions* sub-tab of the tab *Authentication* tab and find the `Webauthn Register Passwordless` action and mark it with *Set as default action*.
+This means that it would be added to all new users after their registration.
+
+The alternative to the registration flow setup is to add the required action `WebAuthn Register Passwordless` to a user who is already known to {project_name}. The user with the required action configured will have to authenticate (with a username/password for example) and will then be prompted to register a passkey to be used for loginless authentication.
+
+[NOTE]
+====
+We plan to improve the usability and allow integration of conditional passkeys with the existing authenticators and forms such as the default username / password form.
+====
+
+[NOTE]
+====
+From https://www.w3.org/TR/webauthn-3/[Web Authn Level 3], *Resident Key* was replaced with *Discoverable Credential*.
+====
+
+If a user's browser supports https://github.com/w3c/webauthn/wiki/Explainer:-WebAuthn-Conditional-UI/[WebAuthn Conditional UI], the following screen is shown.
+
+.Passkey Authentication with Conditional UI
+image:images/passkey-conditional-ui-authentication.png[Passkey Authentication with Conditional UI]
+
+When the user clicks the *Select your passkey* textbox, a list of passkeys stored on a device where the user runs a browse is shown as follows.
+
+.Passkey Authentication with Conditional UI Autofill
+image:images/passkey-conditional-ui-autofill.png[Passkey Authentication with Conditional UI Autofill]
+
+If a user's browser does not support https://github.com/w3c/webauthn/wiki/Explainer:-WebAuthn-Conditional-UI/[WebAuthn Conditional UI], the authentication falls back to the xref:_webauthn_loginless[LoginLess WebAuthn] as follows.
+
+.Passkey Authentication with Conditional UI falling back to LoginLess WebAuthn
+image:images/passkey-conditional-ui-fallback-authentication.png[Passkey Authentication with Conditional UI falling back to LoginLess WebAuthn]

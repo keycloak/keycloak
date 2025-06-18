@@ -1,0 +1,10 @@
+# Ignore false positives for https://securityscorecards.dev/viewer/?uri=github.com/keycloak/keycloak
+
+# Suppress TestNG alert:
+# - TestNG is brought in as a transitive dependency via groovy-testng.
+# - Test dependencies are not included in the server distribution.
+# - The latest groovy-testng version doesn't address the CVE.
+
+[[IgnoredVulns]]
+id = "GHSA-rc2q-x9mf-w3vf"
+reason = "suppressed because TestNG, a transitive dependency from groovy-testng, isn’t included in the server distribution."

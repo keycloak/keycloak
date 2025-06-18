@@ -1,0 +1,27 @@
+[[_ssl_modes]]
+
+= Configuring SSL for a realm
+
+Each realm has an associated SSL Mode, which defines the SSL/HTTPS requirements for interacting with the realm.
+Browsers and applications that interact with the realm honor the SSL/HTTPS requirements defined by the SSL Mode or they cannot interact with the server.
+
+
+.Procedure 
+
+. Click *Realm settings* in the menu.
+. Click the *General* tab.
++
+.General tab
+image:images/general-tab.png[General Tab]
+
+. Set *Require SSL* to one of the following SSL modes:
+
+* *External requests*
+  Users can interact with {project_name} without SSL so long as they stick to private IPv4 addresses such as `localhost`, `127.0.0.1`, `10.x.x.x`, `192.168.x.x`, `172.16.x.x` or IPv6 link-local and unique-local addresses.
+  If you try to access {project_name} without SSL from a non-private IP address, you will get an error.
+
+* *None*
+  {project_name} does not require SSL.  This choice applies only in development when you are experimenting and do not plan to support this deployment.
+
+* *All requests*
+  {project_name} requires SSL for all IP addresses.

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ * Copyright 2020 Red Hat, Inc. and/or its affiliates
+  ~ * and other contributors as indicated by the @author tags.
+  ~ *
+  ~ * Licensed under the Apache License, Version 2.0 (the "License");
+  ~ * you may not use this file except in compliance with the License.
+  ~ * You may obtain a copy of the License at
+  ~ *
+  ~ * http://www.apache.org/licenses/LICENSE-2.0
+  ~ *
+  ~ * Unless required by applicable law or agreed to in writing, software
+  ~ * distributed under the License is distributed on an "AS IS" BASIS,
+  ~ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ * See the License for the specific language governing permissions and
+  ~ * limitations under the License.
+  -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet author="keycloak" id="map-remove-ri">
+        <validCheckSum>7:578d0b92077eaf2ab95ad0ec087aa903</validCheckSum>
+        <dropForeignKeyConstraint baseTableName="REALM_DEFAULT_GROUPS" constraintName="FK_DEF_GROUPS_GROUP"/>
+        <dropForeignKeyConstraint baseTableName="REALM_DEFAULT_ROLES" constraintName="FK_H4WPD7W4HSOOLNI3H0SW7BTJE"/>
+        <dropForeignKeyConstraint baseTableName="CLIENT_SCOPE_ROLE_MAPPING" constraintName="FK_CL_SCOPE_RM_ROLE"/>
+        <dropForeignKeyConstraint baseTableName="GROUP_ROLE_MAPPING" constraintName="FK_GROUP_ROLE_ROLE"/>
+        <dropForeignKeyConstraint baseTableName="CLIENT_DEFAULT_ROLES" constraintName="FK_8AELWNIBJI49AVXSRTUF6XJOW"/>
+        <dropForeignKeyConstraint baseTableName="SCOPE_MAPPING" constraintName="FK_P3RH9GRKU11KQFRS4FLTT7RNQ"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="12.1.0-add-realm-localization-table">
+        <validCheckSum>7:c95abe90d962c57a09ecaee57972835d</validCheckSum>
+        <createTable tableName="REALM_LOCALIZATIONS">
+            <column name="REALM_ID" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="LOCALE" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="TEXTS" type="CLOB">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey columnNames="REALM_ID, LOCALE" tableName="REALM_LOCALIZATIONS"/>
+    </changeSet>
+
+</databaseChangeLog>

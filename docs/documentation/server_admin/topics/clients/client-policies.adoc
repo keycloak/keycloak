@@ -1,0 +1,189 @@
+
+[[_client_policies]]
+= Client Policies
+
+To make it easy to secure client applications, it is beneficial to realize the following points in a unified way.
+
+* Setting policies on what configuration a client can have
+* Validation of client configurations
+* Conformance to a required security standards and profiles such as Financial-grade API (FAPI) and OAuth 2.1
+
+To realize these points in a unified way, _Client Policies_ concept is introduced.
+
+== Use-cases
+
+Client Policies realize the following points mentioned as follows.
+
+Setting policies on what configuration a client can have::
+    Configuration settings on the client can be enforced by client policies during client creation/update, but also during OpenID Connect requests to {project_name} server, which are related to particular client.
+    {project_name} supports similar thing also through the *Client Registration Policies* described in the *Client registration service* in the link:{securing_apps_link}[Securing applications and Services guide].
+    However, Client Registration Policies can only cover OIDC Dynamic Client Registration. Client Policies cover not only what Client Registration Policies can do, but other client
+    registration and configuration ways. The current plans are for Client Registration to be replaced by Client Policies.
+
+Validation of client configurations::
+    {project_name} supports validation whether the client follows settings like Proof Key for Code Exchange,
+    Request Object Signing Algorithm, Holder-of-Key Token, and so on some endpoints like Authorization Endpoint, Token Endpoint, and so on.
+    These can be specified by each setting item (on Admin Console, switch, pull-down menu and so on). To make the client application secure, the administrator needs to set
+    many settings in the appropriate way, which makes it difficult for the administrator to secure the client application.
+    Client Policies can do these validation of client configurations mentioned just above and they can also be used to autoconfigure some client configuration switches to meet
+    the advanced security requirements. In the future, individual client configuration settings may be replaced by Client Policies directly performing required validations.
+
+Conformance to a required security standards and profiles such as FAPI and OAuth 2.1::
+    The _Global client profiles_ are client profiles pre-configured in {project_name} by default. They are pre-configured to be compliant with standard security profiles like *FAPI* and *OAuth 2.1*  in the link:{securing_apps_link}[securing apps] section,
+    which makes it easy for the administrator to secure their client application to be compliant with the particular security profile. At this moment, {project_name} has global
+    profiles for the support of FAPI and OAuth 2.1 specifications. The administrator will just need to configure the client policies to specify which clients should
+    be compliant with the FAPI and OAuth 2.1. The administrator can configure client profiles and client policies, so that {project_name} clients can be easily made compliant with various other
+    security profiles like SPA, Native App, Open Banking and so on.
+
+== Protocol
+
+The client policy concept is independent of any specific protocol. {project_name} currently supports especially client profiles for the link:{adminguide_link}#con-oidc_server_administration_guide[OpenID Connect (OIDC) protocol], but there is
+also a client profile available for the link:{adminguide_link}#_saml[SAML protocol].
+
+== Architecture
+
+Client Policies consists of the four building blocks: Condition, Executor, Profile and Policy.
+
+=== Condition
+
+A condition determines to which client a policy is adopted and when it is adopted. Some conditions are checked at the time of client create/update when some other conditions are
+checked during client requests (OIDC Authorization request, Token endpoint request and so on). The condition checks whether one specified criteria is satisfied. For example,
+some condition checks whether the access type of the client is confidential.
+
+The condition can not be used solely by itself. It can be used in a <<_client_policy_policy,policy>> that is described afterwards.
+
+A condition can be configurable the same as other configurable providers. What can be configured depends on each condition's nature.
+
+The following conditions are provided:
+
+The way of creating/updating a client::
+    * Dynamic Client Registration (Anonymous or Authenticated with Initial access token or Registration access token)
+    * Admin REST API (Admin Console and so on)
+
+So for example when creating a client, a condition can be configured to evaluate to true when this client is created by OIDC Dynamic Client Registration without initial
+access token (Anonymous Dynamic Client Registration). So this condition can be used for example to ensure that all clients registered through OIDC Dynamic Client Registration
+are FAPI or OAuth 2.1 compliant.
+
+Author of a client (Checked by presence to the particular role or group)::
+    On OpenID Connect dynamic client registration, an author of a client is the end user who was authenticated to get an access token for generating a new client, not Service
+    Account of the existing client that actually accesses the registration endpoint with the access token. On registration by Admin REST API, an author of a client is the end user
+    like the administrator of the {project_name}.
+
+Client Access Type (confidential, public, bearer-only)::
+    For example when a client sends an authorization request, a policy is adopted if this client is confidential. Confidential client has enabled client authentication when public client has disabled client authentication. Bearer-only is a deprecated client type.
+
+Client Scope::
+    Evaluates to true if the client has a particular client scope (either as default or as an optional scope used in current request). This can be used for example to ensure that
+    OIDC authorization requests with scope `fapi-example-scope` need to be FAPI compliant.
+
+Client Role::
+    Applies for clients with the client role of the specified name. Typically you can create a client role of specified name to requested clients and use it as a "marker role" to make
+    sure that specified client policy will be applied for requested clients.
+
+NOTE: A use-case often exists for requiring the application of a particular client policy for the specified clients such as `my-client-1` and `my-client-2`. The best way to achieve this result
+is to use a *Client Role* condition in your policy and then a create client role of specified name to requested clients. This client role can be used as a "marker role" used solely
+for marking that particular client policy for particular clients.
+
+Client Domain Name, Host or IP Address::
+    Applied for specific domain names of client. Or for the cases when the administrator registers/updates client from particular Host or IP Address.
+
+Client Attribute::
+    Applies to clients with the client attribute of the specified name and value. If you specify multiple client attributes, they will be evaluated using AND conditions.
+    If you want to evaluate using OR conditions, set this condition multiple times.
+
+Any Client::
+    This condition always evaluates to true. It can be used for example to ensure that all clients in the particular realm are FAPI compliant.
+
+ACR Condition::
+    Applied when an ACR value requested in the authentication request matches the value configured in the condition. For example, it can be used to select an authentication flow based on the requested ACR value. For more details, see the <<_client-policy-auth-flow, related documentation>> and the https://openid.net/specs/openid-connect-core-1_0.html#acrSemantics[official OIDC specification].
+
+Grant Type::
+    Evaluates to true when a specific grant type is used. For example, it can be used in combination with Client Scope to block a token exchange request when a specific client scope is requested.
+
+
+=== Executor
+
+An executor specifies what action is executed on a client to which a policy is adopted. The executor executes one or several specified actions. For example,
+some executor checks whether the value of the parameter `redirect_uri` in the authorization request matches exactly with one of the pre-registered redirect URIs on
+Authorization Endpoint and rejects this request if not.
+
+The executor can not be used solely by itself. It can be used in a <<_client_policy_profile,profile>> that is described afterwards.
+
+An executor can be configurable the same as other configurable providers. What can be configured depends on the nature of each executor.
+
+An executor acts on various events. An executor implementation can ignore certain types of events (For example, executor for checking OIDC `request` object acts just
+on the OIDC authorization request). Events are:
+
+* Creating a client (including creation through dynamic client registration)
+* Updating a client
+* Sending an authorization request
+* Sending a token request
+* Sending a token refresh request
+* Sending a token revocation request
+* Sending a token introspection request
+* Sending a userinfo request
+* Sending a logout request with a refresh token (note that logout with refresh token is proprietary {project_name} functionality unsupported by any specification. It is rather recommended to rely on the <<_oidc-logout,official OIDC logout>>).
+
+On each event, an executor can work in multiple phases. For example, on creating/updating a client, the executor can modify the client configuration by autoconfigure specific client
+settings. After that, the executor validates this configuration in validation phase.
+
+One of several purposes for this executor is to realize the security requirements of client conformance profiles like FAPI and OAuth 2.1. To do so, the following executors are needed:
+
+* Enforce secure <<_client-credentials,Client Authentication method>> is used for the client
+* Enforce <<_mtls-client-certificate-bound-tokens,Holder-of-key tokens>> are used
+* Enforce <<_proof-key-for-code-exchange,Proof Key for Code Exchange (PKCE)>> is used
+* Enforce secure signature algorithm for <<_client-credentials,Signed JWT client authentication (private-key-jwt)>> is used
+* Enforce HTTPS redirect URI and make sure that configured redirect URI does not contain wildcards
+* Enforce OIDC `request` object satisfying high security level
+* Enforce Response Type of OIDC Hybrid Flow including ID Token used as _detached signature_ as described in the FAPI 1 specification, which means that ID Token returned from Authorization response won't contain user profile data
+* Enforce more secure `state` and `nonce` parameters treatment for preventing CSRF
+* Enforce more secure signature algorithm when client registration
+* Enforce `binding_message` parameter is used for CIBA requests
+* Enforce <<_secret_rotation, Client Secret Rotation>>
+* Enforce Client Registration Access Token
+* Enforce checking if a client is the one to which an intent was issued in a use case where an intent is issued before starting an authorization code flow to get an access token like UK OpenBanking
+* Enforce prohibiting implicit and hybrid flow
+* Enforce checking if a PAR request includes necessary parameters included by an authorization request
+* Enforce <<_dpop-bound-tokens,DPoP-binding tokens>> is used (available when `dpop` feature is enabled)
+* Enforce <<_using_lightweight_access_token, using lightweight access token>>
+* Enforce that <<_refresh_token_rotation,refresh token rotation>> is skipped and there is no refresh token returned from the refresh token response
+* Enforce a valid redirect URI that the OAuth 2.1 specification requires
+* Enforce SAML Redirect binding cannot be used or SAML requests and assertions are signed
+
+Another available executor is the `auth-flow-enforce`, which can be used to enforce an authentication flow during an authentication request. For instance, it can be used to select a flow based on certain conditions, such as a specific scope or an ACR value. For more details, see the <<_client-policy-auth-flow, related documentation>>.
+
+[[_client_policy_profile]]
+=== Profile
+
+A profile consists of several executors, which can realize a security profile like FAPI and OAuth 2.1. Profile can be configured by the Admin REST API (Admin Console) together with its executors.
+Three _global profiles_ exist and they are configured in {project_name} by default with pre-configured executors compliant with the FAPI 1 Baseline, FAPI 1 Advanced, FAPI CIBA, FAPI 2 and OAuth 2.1 specifications.
+More details exist in the *FAPI* and *OAuth 2.1*  in the link:{securing_apps_link}[securing apps] section.
+
+[[_client_policy_policy]]
+=== Policy
+
+A policy consists of several conditions and profiles. The policy can be adopted to clients satisfying all conditions of this policy. The policy refers several profiles and all
+executors of these profiles execute their task against the client that this policy is adopted to.
+
+
+== Configuration
+
+Policies, profiles, conditions, executors can be configured by Admin REST API, which means also the Admin Console. To do so, there is a tab _Realm_ -> _Realm Settings_ -> _Client Policies_
+, which means the administrator can have client policies per realm.
+
+The _Global Client Profiles_ are automatically available in each realm. However there are no client policies
+configured by default. This means that the administrator is always required to create any client policy if they want for example the clients of his realm to be FAPI compliant. Global
+profiles cannot be updated, but the administrator can easily use them as a template and create their own profile if they want to do some slight changes in the global profile configurations.
+There is JSON Editor available in the Admin Console, which simplifies the creation of new profile based on some global profile.
+
+== Backward Compatibility
+
+Client Policies can replace Client Registration Policies described in the *Client registration service* from link:{securing_apps_link}[{securing_apps_name}].
+However, Client Registration Policies also still co-exist. This means that for example during a Dynamic Client Registration request to create/update a client, both client policies and
+client registration policies are applied.
+
+The current plans are for the Client Registration Policies feature to be removed and the existing client registration policies will be migrated into new client policies automatically.
+
+== Client Secret Rotation Example
+
+See an example configuration for <<_proc-secret-rotation,client secret rotation>>.

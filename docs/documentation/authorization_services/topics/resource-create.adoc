@@ -1,0 +1,61 @@
+[[_resource_create]]
+= Creating resources
+
+Creating a resource is straightforward and generic. Your main concern is the granularity of the resources you create. In other words, resources can
+be created to represent a set of one or more resources and the way you define them is crucial to managing permissions.
+
+To create a new resource, click *Create resource*.
+
+.Add resource
+image:images/resource/create.png[alt="Add resource"]
+
+In {project_name}, a resource defines a small set of information that is common to different types of resources, such as:
+
+* *Name*
++
+A human-readable and unique string describing this resource.
+
+[[_resource_create_type]]
+* *Type*
++
+A string uniquely identifying the type of a set of one or more resources. The type is a _string_ used to group different resource instances.
+For example, the default type for the default resource that is automatically created is `urn:resource-server-name:resources:default`
+
+[[_resource_create_uri]]
+* *URIS*
++
+URIS that provides the locations/addresses for the resource. For HTTP resources, the URIS
+are usually the relative paths used to serve these resources.
++
+* *Scopes*
++
+One or more scopes to associate with the resource.
+
+== Resource attributes
+
+Resources may have attributes associated with them. These attributes can be used to provide additional information about
+a resource and to provide additional information to policies when evaluating permissions associated with a resource.
+
+Each attribute is a key and value pair where the value can be a set of one or many strings. Multiple values can be defined for an attribute by separating each value with a comma.
+
+
+== Typed resources
+
+The type field of a resource can be used to group different resources together, so they can be protected using a common set of permissions.
+
+== Resource owners
+
+Resources also have an owner. By default, resources are owned by the resource server.
+
+However, resources can also be associated with users, so you can create permissions based on the resource owner. For example, only the resource owner is allowed to delete or update a given resource.
+
+== Managing resources remotely
+
+Resource management is also exposed through the <<_service_protection_api, Protection API>> to allow resource servers to remotely manage their resources.
+
+When using the Protection API, resource servers can be implemented to manage resources owned by their users. In this case, you can
+specify the user identifier to configure a resource as belonging to a specific user.
+
+[NOTE]
+{project_name} provides resource servers complete control over their resources. In the future, we should be able to
+allow users to control their own resources as well as approve authorization requests and manage permissions, especially when using the UMA protocol.

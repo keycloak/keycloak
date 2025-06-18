@@ -1,0 +1,294 @@
+name: Keycloak JavaScript CI
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - dependabot/**
+      - quarkus-next
+  pull_request:
+  workflow_dispatch:
+
+env:
+  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
+  RETRY_COUNT: 3
+
+concurrency:
+  # Only cancel jobs for PR updates
+  group: js-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+permissions:
+  contents: read
+
+jobs:
+  conditional:
+    name: Check conditional workflows and jobs
+    runs-on: ubuntu-latest
+    outputs:
+      js-ci: ${{ steps.conditional.outputs.js }}
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - id: conditional
+        uses: ./.github/actions/conditional
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  build-keycloak:
+    name: Build Keycloak
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Build Keycloak
+        uses: ./.github/actions/build-keycloak
+
+      - name: Prepare archive for upload
+        run: |
+          mv ./quarkus/dist/target/keycloak-999.0.0-SNAPSHOT.tar.gz ./keycloak-999.0.0-SNAPSHOT.tar.gz
+
+      - name: Upload Keycloak dist
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: keycloak
+          path: keycloak-999.0.0-SNAPSHOT.tar.gz
+
+  admin-client:
+    name: Admin Client
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: "@keycloak/keycloak-admin-client"
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: ./.github/actions/pnpm-setup
+
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} lint
+        working-directory: js
+
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} build
+        working-directory: js
+
+  ui-shared:
+    name: UI Shared
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: "@keycloak/keycloak-ui-shared"
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: ./.github/actions/pnpm-setup
+
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} lint
+        working-directory: js
+
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} build
+        working-directory: js
+
+  account-ui:
+    name: Account UI
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: "@keycloak/keycloak-account-ui"
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: ./.github/actions/pnpm-setup
+
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} lint
+        working-directory: js
+
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} build
+        working-directory: js
+
+  admin-ui:
+    name: Admin UI
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: keycloak-admin-ui
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: ./.github/actions/pnpm-setup
+
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} lint
+        working-directory: js
+
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test
+        working-directory: js
+
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} build
+        working-directory: js
+
+  account-ui-e2e:
+    name: Account UI E2E
+    needs:
+      - conditional
+      - build-keycloak
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: "@keycloak/keycloak-account-ui"
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: ./.github/actions/pnpm-setup
+
+      - name: Download Keycloak server
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: keycloak
+
+      - name: Setup Java
+        uses: ./.github/actions/java-setup
+
+      - name: Start Keycloak server
+        run: |
+          tar xfvz keycloak-999.0.0-SNAPSHOT.tar.gz
+          keycloak-999.0.0-SNAPSHOT/bin/kc.sh start-dev --features=transient-users,oid4vc-vci &> ~/server.log &
+        env:
+          KC_BOOTSTRAP_ADMIN_USERNAME: admin
+          KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+
+      - name: Install Playwright browsers
+        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} exec playwright install --with-deps
+        working-directory: js
+
+      - name: Run Playwright tests
+        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test:integration
+        working-directory: js
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: account-ui-playwright-report
+          path: js/apps/account-ui/playwright-report
+          retention-days: 30
+
+      - name: Upload server logs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: account-ui-server-log
+          path: ~/server.log
+
+
+  generate-test-seed:
+    name: Generate Test Seed
+    needs:
+      - conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      seed: ${{ steps.generate-random-number.outputs.value }}
+    steps:
+      - name: Generate random number
+        id: generate-random-number
+        shell: bash
+        run: |
+          echo "value=$(shuf -i 1-100 -n 1)" >> $GITHUB_OUTPUT
+
+  admin-ui-e2e:
+    name: Admin UI E2E
+    needs:
+      - conditional
+      - build-keycloak
+      - generate-test-seed
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: keycloak-admin-ui
+    strategy:
+      matrix:
+        browser: [chromium, firefox]
+        exclude:
+          # Only test with Firefox on scheduled runs
+          - browser: ${{ github.event_name != 'workflow_dispatch' && 'firefox' || '' }}
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: ./.github/actions/pnpm-setup
+
+      - name: Compile Admin Client
+        run: pnpm --fail-if-no-match --filter @keycloak/keycloak-admin-client build
+        working-directory: js
+
+      - name: Download Keycloak server
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: keycloak
+
+      - name: Setup Java
+        uses: ./.github/actions/java-setup
+
+      - name: Start Keycloak server
+        run: |
+          tar xfvz keycloak-999.0.0-SNAPSHOT.tar.gz
+          keycloak-999.0.0-SNAPSHOT/bin/kc.sh start-dev --features=admin-fine-grained-authz:v2,transient-users &> ~/server.log &
+        env:
+          KC_BOOTSTRAP_ADMIN_USERNAME: admin
+          KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+          KC_BOOTSTRAP_ADMIN_CLIENT_ID: temporary-admin-service
+          KC_BOOTSTRAP_ADMIN_CLIENT_SECRET: temporary-admin-service
+
+      - name: Install Playwright browsers
+        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} exec playwright install --with-deps
+        working-directory: js
+
+      - name: Run Playwright tests
+        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test:integration --project=${{ matrix.browser }}
+        working-directory: js
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: admin-ui-playwright-report-${{ matrix.browser }}
+          path: js/apps/admin-ui/playwright-report
+          retention-days: 30
+
+      - name: Upload server logs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: admin-ui-server-log-${{ matrix.browser }}
+          path: ~/server.log
+
+  check:
+    name: Status Check - Keycloak JavaScript CI
+    if: always()
+    needs:
+      - conditional
+      - build-keycloak
+      - admin-client
+      - ui-shared
+      - account-ui
+      - account-ui-e2e
+      - admin-ui
+      - admin-ui-e2e
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: ./.github/actions/status-check
+        with:
+          jobs: ${{ toJSON(needs) }}

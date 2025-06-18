@@ -1,0 +1,31 @@
+{
+  "keys": [
+    {
+      "kid": "doc-signer-05-25-2022",
+      "kty": "EC",
+      "d": "Ur2bNKuBPOrAaxsRnbSH6hIhmNTxSGXshDSUD1a1y7g",
+      "crv": "P-256",
+      "x": "b28d4MwZMjw8-00CG4xfnn9SLMVMM19SlqZpVb_uNtQ",
+      "y": "Xv5zWwuoaTgdS6hV43yI6gBwTnjukmFQQnJ_kCxzqk8"
+    },
+    {
+      "kty": "EC",
+      "crv": "P-256",
+      "kid": "J1FwJP87C6-QN_WSIOmJAQc6n5CQ_bZdaFJ5GDnW1Rk",
+      "x5c": [
+        "MIIBXTCCAQSgAwIBAgIGAYyR2cIZMAoGCCqGSM49BAMCMDYxNDAyBgNVBAMMK0oxRndKUDg3QzYtUU5fV1NJT21KQVFjNm41Q1FfYlpkYUZKNUdEblcxUmswHhcNMjMxMjIyMTQwNjU2WhcNMjQxMDE3MTQwNjU2WjA2MTQwMgYDVQQDDCtKMUZ3SlA4N0M2LVFOX1dTSU9tSkFRYzZuNUNRX2JaZGFGSjVHRG5XMVJrMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAopVeboJpYRycw1YKkkROXfCpKEKl9Y1YPFhOGj4xTg2UOunxTxSIVkT94qFVIuu1hkEoE2NxelZo3+yTFUODDAKBggqhkjOPQQDAgNHADBEAiBnFjScBcvERleLjMCu5NbxJKkNsa/gQhkXTfDmbq+T3gIgVazbsVdQvZgluc9nJYQxWlzXT9i6f+wgUKx0KCYbj3A="
+      ],
+      "x": "AopVeboJpYRycw1YKkkROXfCpKEKl9Y1YPFhOGj4xTg",
+      "y": "NlDrp8U8UiFZE_eKhVSLrtYZBKBNjcXpWaN_skxVDgw",
+      "alg": "ES256"
+    },
+    {
+      "kty": "EC",
+      "crv": "P-256",
+      "kid": "ZbAAKwhynrqBnYlHdEkBIvNJFZZH_bRg1KIopKfZ6O8",
+      "x": "eshMYyyoEsH_Eb85a7o76msXFPokfvNaeyY3u5qDm3M",
+      "y": "q0lGMn_UXiWJdgJtSCNzh9zPC6s7qKqQMo4V1i-69jA",
+      "alg": "ES256"
+    }
+  ]
+}

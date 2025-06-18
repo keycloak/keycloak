@@ -1,0 +1,213 @@
+package org.keycloak.quarkus.runtime.configuration.mappers;
+
+import io.quarkus.datasource.common.runtime.DatabaseKind;
+import io.smallrye.config.ConfigSourceInterceptorContext;
+import io.smallrye.config.ConfigValue;
+import org.jboss.logging.Logger;
+import org.keycloak.config.DatabaseOptions;
+import org.keycloak.config.Option;
+import org.keycloak.config.OptionBuilder;
+import org.keycloak.config.TransactionOptions;
+import org.keycloak.config.database.Database;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.utils.StringUtil;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
+import static org.keycloak.config.DatabaseOptions.OPTIONS_DATASOURCES;
+import static org.keycloak.config.DatabaseOptions.getDatasourceOption;
+import static org.keycloak.config.DatabaseOptions.getKeyForDatasource;
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
+
+final class DatabasePropertyMappers {
+    private static final Logger log = Logger.getLogger(DatabasePropertyMappers.class);
+
+    private DatabasePropertyMappers() {
+    }
+
+    public static PropertyMapper<?>[] getDatabasePropertyMappers() {
+        var mappers = new PropertyMapper<?>[]{
+                fromOption(DatabaseOptions.DB_DIALECT)
+                        .mapFrom(DatabaseOptions.DB, DatabasePropertyMappers::transformDialect)
+                        .build(),
+                fromOption(DatabaseOptions.DB_DRIVER)
+                        .mapFrom(DatabaseOptions.DB, DatabasePropertyMappers::getXaOrNonXaDriver)
+                        .to("quarkus.datasource.jdbc.driver")
+                        .paramLabel("driver")
+                        .build(),
+                fromOption(DatabaseOptions.DB)
+                        .to("quarkus.datasource.db-kind")
+                        .transformer(DatabasePropertyMappers::toDatabaseKind)
+                        .paramLabel("vendor")
+                        .build(),
+                fromOption(DatabaseOptions.DB_URL)
+                        .to("quarkus.datasource.jdbc.url")
+                        .mapFrom(DatabaseOptions.DB, DatabasePropertyMappers::getDatabaseUrl)
+                        .paramLabel("jdbc-url")
+                        .build(),
+                fromOption(DatabaseOptions.DB_URL_HOST)
+                        .paramLabel("hostname")
+                        .build(),
+                fromOption(DatabaseOptions.DB_URL_DATABASE)
+                        .paramLabel("dbname")
+                        .build(),
+                fromOption(DatabaseOptions.DB_URL_PORT)
+                        .paramLabel("port")
+                        .build(),
+                fromOption(DatabaseOptions.DB_URL_PROPERTIES)
+                        .paramLabel("properties")
+                        .build(),
+                fromOption(DatabaseOptions.DB_USERNAME)
+                        .to("quarkus.datasource.username")
+                        .paramLabel("username")
+                        .build(),
+                fromOption(DatabaseOptions.DB_PASSWORD)
+                        .to("quarkus.datasource.password")
+                        .paramLabel("password")
+                        .isMasked(true)
+                        .build(),
+                fromOption(DatabaseOptions.DB_SCHEMA)
+                        .paramLabel("schema")
+                        .build(),
+                fromOption(DatabaseOptions.DB_POOL_INITIAL_SIZE)
+                        .to("quarkus.datasource.jdbc.initial-size")
+                        .paramLabel("size")
+                        .build(),
+                fromOption(DatabaseOptions.DB_POOL_MIN_SIZE)
+                        .mapFrom(DatabaseOptions.DB, DatabasePropertyMappers::transformMinPoolSize)
+                        .to("quarkus.datasource.jdbc.min-size")
+                        .paramLabel("size")
+                        .build(),
+                fromOption(DatabaseOptions.DB_POOL_MAX_SIZE)
+                        .to("quarkus.datasource.jdbc.max-size")
+                        .paramLabel("size")
+                        .build(),
+                fromOption(DatabaseOptions.DB_SQL_JPA_DEBUG)
+                        .to("kc." + DatabaseOptions.DB_SQL_JPA_DEBUG.getKey())
+                        .build(),
+                fromOption(DatabaseOptions.DB_SQL_LOG_SLOW_QUERIES)
+                        .to("kc." + DatabaseOptions.DB_SQL_LOG_SLOW_QUERIES.getKey())
+                        .paramLabel("milliseconds")
+                        .build(),
+                fromOption(DatabaseOptions.DB_ACTIVE_DATASOURCE)
+                        .to("quarkus.datasource.\"<datasource>\".active")
+                        .build(),
+                fromOption(DB_URL_PATH)
+                        .build()
+        };
+
+        return appendDatasourceMappers(mappers, Map.of(
+                // Inherit options from the DB mappers
+                DatabaseOptions.DB_POOL_INITIAL_SIZE, mapper -> mapper.mapFrom(DatabaseOptions.DB_POOL_INITIAL_SIZE),
+                DatabaseOptions.DB_POOL_MAX_SIZE, mapper -> mapper.mapFrom(DatabaseOptions.DB_POOL_MAX_SIZE)
+        ));
+    }
+
+    private static final Option<String> DB_URL_PATH = new OptionBuilder<>("db-url-path", String.class)
+            .hidden()
+            .description("Used for internal purposes of H2 database.")
+            .build();
+
+    private static String getDatabaseUrl(String name, String value, ConfigSourceInterceptorContext c) {
+        return Database.getDefaultUrl(name, value).orElse(null);
+    }
+
+    private static String getXaOrNonXaDriver(String name, String value, ConfigSourceInterceptorContext context) {
+        var key = StringUtil.isNotBlank(name) ? TransactionOptions.getNamedTxXADatasource(name) : TransactionOptions.TRANSACTION_XA_ENABLED.getKey();
+        boolean isXaEnabled = Configuration.isKcPropertyTrue(key);
+        return Database.getDriver(value, isXaEnabled).orElse(null);
+    }
+
+    private static String toDatabaseKind(String db, ConfigSourceInterceptorContext context) {
+        return Database.getDatabaseKind(db).orElse(null);
+    }
+
+    private static boolean isDevModeDatabase(String database) {
+        return Database.getDatabaseKind(database).filter(DatabaseKind.H2::equals).isPresent();
+    }
+
+    private static String transformDialect(String db, ConfigSourceInterceptorContext context) {
+        return Database.getDialect(db).orElse(null);
+    }
+
+    /**
+     * For H2 databases we must ensure that the min-pool size is at least one so that the DB is not shutdown until the
+     * Agroal connection pool is closed on Keycloak shutdown.
+     */
+    private static String transformMinPoolSize(String database, ConfigSourceInterceptorContext context) {
+        Supplier<String> getParentPoolMinSize = () -> Optional.ofNullable(context.proceed(NS_KEYCLOAK_PREFIX + DatabaseOptions.DB_POOL_MIN_SIZE.getKey()))
+                .map(ConfigValue::getValue)
+                .orElse(null);
+        return isDevModeDatabase(database) ? "1" : getParentPoolMinSize.get();
+    }
+
+    // Datasources
+
+    /**
+     * Automatically create mappers for datasource options
+     */
+    private static PropertyMapper<?>[] appendDatasourceMappers(PropertyMapper<?>[] mappers, Map<Option<?>, Consumer<PropertyMapper.Builder<?>>> transformDatasourceMappers) {
+        List<PropertyMapper<?>> datasourceMappers = new ArrayList<>(OPTIONS_DATASOURCES.size() + mappers.length);
+
+        for (var parent : mappers) {
+            var parentOption = parent.getOption();
+
+            var datasourceOption = getDatasourceOption(parentOption);
+            if (datasourceOption.isEmpty()) {
+                log.debugf("No datasource option found for '%s'", parentOption.getKey());
+                continue;
+            }
+
+            var created = fromOption(datasourceOption.get())
+                    .isMasked(parent.isMask())
+                    .transformer(parent.getMapper());
+
+            if (parent.getMapFrom() != null) {
+                var wildcardMapFromOption = getKeyForDatasource(parent.getMapFrom())
+                        .orElseThrow(() -> new IllegalArgumentException("Option '%s' in mapFrom() method for mapper '%s' does not have any associated wildcard option".formatted(parent.getMapFrom(), datasourceOption.get().getKey())));
+                created.wildcardMapFrom(wildcardMapFromOption, parent.getParentMapper() != null ? (name, value, context) -> parent.getParentMapper().map(name, value, context) : null);
+            }
+
+            if (parent.getParamLabel() != null) {
+                created.paramLabel(parent.getParamLabel());
+            }
+
+            var transformedTo = transformDatasourceTo(parent.getTo());
+            if (transformedTo != null) {
+                created.to(transformedTo);
+            }
+
+            var customTransformer = transformDatasourceMappers.get(parent.getOption());
+            if (customTransformer != null) {
+                customTransformer.accept(created);
+            }
+
+            datasourceMappers.add(created.build());
+        }
+
+        datasourceMappers.addAll(List.of(mappers));
+
+        return datasourceMappers.toArray(new PropertyMapper[0]);
+    }
+
+    private static String transformDatasourceTo(String to) {
+        if (StringUtil.isBlank(to)) {
+            return null;
+        }
+
+        if (to.startsWith("quarkus.datasource.")) {
+            return to.replaceFirst("quarkus\\.datasource\\.", "quarkus.datasource.\"<datasource>\".");
+        } else if (to.startsWith("kc.db-")) {
+            return to.concat("-<datasource>");
+        } else {
+            log.warnf("Cannot determine how to map datasource option to '%s'", to);
+        }
+        return to;
+    }
+}

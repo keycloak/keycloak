@@ -1,0 +1,151 @@
+= OpenID Connect / OAuth 2.0
+
+== FAPI 2 drafts support
+
+{project_name} has new client profiles `fapi-2-security-profile` and `fapi-2-message-signing`, which ensure {project_name} enforces compliance with
+the latest FAPI 2 draft specifications when communicating with your clients.
+ifeval::[{project_community}==true]
+Thanks to https://github.com/tnorimat[Takashi Norimatsu] for the contribution.
+endif::[]
+
+== DPoP preview support
+
+{project_name} has preview for support for OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer (DPoP).
+ifeval::[{project_community}==true]
+Thanks to
+https://github.com/tnorimat[Takashi Norimatsu] and https://github.com/dteleguin[Dmitry Telegin] for their contributions.
+endif::[]
+
+== More flexibility for introspection endpoint
+
+In previous versions, introspection endpoint  automatically returned most claims, which were available in the access token. Now most of protocol mappers include a new
+ `Add to token introspection` switch . This addition allows more flexibility because an introspection endpoint can return different
+claims than an access token. This change is a first step towards "Lightweight access tokens" support because access tokens can omit lots of the claims, which would be still returned
+by the introspection endpoint. When migrating from previous versions, the introspection endpoint should return same claims, which are returned from access token,
+so the behavior should be effectively the same by default after the migration.
+ifeval::[{project_community}==true]
+Thanks to https://github.com/skabano[Shigeyuki Kabano] for the contribution.
+endif::[]
+
+== Feature flag for OAuth 2.0 device authorization grant flow
+
+The OAuth 2.0 device authorization grant flow now includes a feature flag, so you can easily disable this feature. This feature is still enabled by default.
+ifeval::[{project_community}==true]
+Thanks to https://github.com/thomasdarimont[Thomas Darimont] for the contribution.
+endif::[]
+
+= Authentication
+
+== Passkeys support
+
+{project_name} has preview support for https://fidoalliance.org/passkeys/[Passkeys].
+
+Passkey registration and authentication are realized by the features of WebAuthn.
+Therefore, users of {project_name} can do Passkey registration and authentication by existing WebAuthn registration and authentication.
+
+Both synced Passkeys and device-bound Passkeys can be used for both Same-Device and Cross-Device Authentication.
+However, Passkeys operations success depends on the user's environment. Make sure which operations can succeed in https://passkeys.dev/device-support/[the environment].
+ifeval::[{project_community}==true]
+Thanks to https://github.com/tnorimat[Takashi Norimatsu] for the contribution and thanks to https://github.com/thomasdarimont[Thomas Darimont] for the help with the
+ideas and testing of this feature.
+endif::[]
+
+== WebAuthn improvements
+
+WebAuthn policy includes a new field: `Extra Origins`.  It provides better interoperability with non-Web platforms (for example, native mobile applications).
+ifeval::[{project_community}==true]
+Thanks to https://github.com/akunzai[Charley Wu] for the contribution.
+endif::[]
+
+== You are already logged-in
+
+This release addresses an issue concerning when a user has a login page open in multiple browser tabs and authenticated in one browser tab. When the user tries to authenticate in another browser tab, a message appears: `You are already logged-in`. This is improved now as
+other browser tabs automatically authenticate the user after authentication in the first tab. However, more improvements are still needed. For example, when an authentication session expires and is restarted in one browser tab, other browser tabs do not follow automatically with the login.
+
+== Password policy for specify Maximum authentication time
+
+{project_name} supports a new password policy that allows you to specify the maximum age of an authentication with which a password may be changed by a user without re-authentication.
+When this password policy is set to 0, the user is required to re-authenticate to change the  password in the Account Console or by other means.
+You can also specify a lower or higher value than the default value of 5 minutes.
+ifeval::[{project_community}==true]
+Thanks to https://github.com/thomasdarimont[Thomas Darimont] for the contribution.
+endif::[]
+
+ifeval::[{project_community}==true]
+= Deployments
+
+== Preview support for multi-site active-passive deployments
+
+Deploying {project_name} to multiple independent sites is essential for some environments to provide high availability and a speedy recovery from failures.
+This release adds preview-support for active-passive deployments for {project_name}.
+
+A lot of work has gone into testing and verifying a setup which can sustain load and recover from the failure scenarios.
+To get started, use the link:{highavailabilityguide_link}[{highavailabilityguide_name}] which also includes a comprehensive blueprint to deploy a highly available {project_name} to a cloud environment.
+
+= Adapters
+
+== OpenID Connect WildFly and JBoss EAP
+
+OpenID Connect adapter for WildFly and JBoss EAP, which was deprecated in previous versions, has been removed in this release.
+It is being replaced by the Elytron OIDC adapter,which is included in WildFly, and provides a seamless migration from
+{project_name} adapters.
+
+== SAML WildFly and JBoss EAP
+
+The SAML adapter for WildFly and JBoss EAP is no longer distributed as a ZIP download, but rather a Galleon feature pack,
+making it easier and more seamless to install.
+
+See the link:{securing_apps_link}[{securing_apps_name}] for the details.
+
+endif::[]
+
+
+= Server distribution
+
+== Load Shedding support
+
+{project_name} now features `http-max-queued-requests` option to allow proper rejecting of incoming requests under high load.
+For details refer to the https://www.keycloak.org/server/configuration-production[production guide].
+
+== RESTEasy Reactive
+
+{project_name} has switched to RESTEasy Reactive. Applications using `quarkus-resteasy-reactive` should still benefit from a better startup time, runtime performance, and memory footprint, even though not using reactive style/semantics. SPIs that depend directly on JAX-RS API should be compatible with this change. SPIs that depend on RESTEasy Classic including `ResteasyClientBuilder` will not be compatible and will require an update.  This update will also be needed for other implementation of the JAX-RS API like Jersey.
+
+
+ifeval::[{project_community}==true]
+= User profile
+
+Declarative user profile is still a preview feature in this release, but we are working hard on promoting it to a supported feature. Feedback is welcome.
+If you find any issues or have any improvements in mind,  you are welcome to create https://github.com/keycloak/keycloak/issues/new/choose[Github issue],
+ideally with the label `area/user-profile`. It is also recommended to check the link:{upgradingguide_link}[{upgradingguide_name}]  with the migration changes for this
+release for some additional information related to the migration.
+
+endif::[]
+
+= Group scalability
+
+Performance around searching of groups is improved for the use-cases with many groups and subgroups. There are improvements, which allow
+paginated lookup of subgroups.
+ifeval::[{project_community}==true]
+Thanks to https://github.com/alice-wondered[Alice] for the contribution.
+endif::[]
+
+= Themes
+
+== Localization files for themes default to UTF-8 encoding
+
+Message properties files for themes are now read in UTF-8 encoding, with an automatic fallback to ISO-8859-1 encoding.
+
+See the migration guide for more details.
+
+ifeval::[{project_community}==true]
+
+= Storage
+
+== Removal of the Map Store
+
+The Map Store has been an experimental feature in previous releases.
+Starting with this release, it is removed and users should continue to use the current JPA store.
+See the migration guide for details.
+
+endif::[]

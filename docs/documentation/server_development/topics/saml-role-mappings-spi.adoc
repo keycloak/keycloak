@@ -1,0 +1,29 @@
+[[_saml_role_mappings_spi]]
+== SAML role mappings SPI
+
+{project_name} defines an SPI for mapping SAML roles into roles that exist in the SP environment. The roles returned by
+a third-party IDP might not always correspond to the roles that were defined for the SP application so there is a need for a
+mechanism that allows mapping the SAML roles into different roles. It is used by the SAML adapter after it extracts the roles
+from the SAML assertion to set up the container's security context.
+
+The `org.keycloak.adapters.saml.RoleMappingsProvider` SPI doesn't impose any restrictions on the mappings that can be performed.
+Implementations can not only map roles into other roles but also add or remove roles (and thus augment or reduce the set of
+roles assigned to the SAML principal) depending on the use case.
+
+For details about the configuration of the role mappings provider for the SAML adapter as well as a description of the default
+implementations available see the link:{securing_apps_link}[{securing_apps_name}].
+
+=== Implementing a custom role mappings provider
+
+To implement a custom role mappings provider one first needs to implement the `org.keycloak.adapters.saml.RoleMappingsProvider`
+interface. Then, a `META-INF/services/org.keycloak.adapters.saml.RoleMappingsProvider` file containing the fully qualified name
+of the custom implementation must be added to the archive that also contains the implementation class. This archive can be:
+
+* The SP application WAR file where the provider class is included in WEB-INF/classes;
+* A custom JAR file which will be added into WEB-INF/lib of the SP application WAR;
+* (WildFly/JBoss EAP only) A custom JAR file configured as a `jboss module` and referenced in `jboss-deployment-structure.xml`
+  of the SP application WAR.
+
+When the SP application is deployed, the role mappings provider that will be used is selected by the id that was set in
+`keycloak-saml.xml` or in the `keycloak-saml` subsystem. So to enable your custom provider simply make sure that its id is
+properly set in the adapter configuration.

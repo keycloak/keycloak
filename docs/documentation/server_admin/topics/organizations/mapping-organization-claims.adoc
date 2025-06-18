@@ -1,0 +1,43 @@
+[id="mapping-organization-claims_{context}"]
+
+[[_mapping_organization_claims_]]
+=  Mapping organization claims
+[role="_abstract"]
+To map organization-specific claims into tokens, a client needs to request the *organization* scope when sending
+authorization requests to the server. When authenticating in the context of an organization, clients can request the `organization` scope to map information
+about the organizations where the user is a member.
+
+As a result, the token will contain a claim as follows:
+
+```json
+"organization": {
+  "testcorp": {
+    "id": "42c3e46f-2477-44d7-a85b-d3b43f6b31fa",
+    "attr1": [
+      "value1"
+    ]
+  }
+}
+```
+
+The organization claim can be used by clients (for example, from ID Tokens) and resource servers (for example, from access tokens)
+to authorize access to protected resources based on the organization where the user is a member.
+
+The `organization` scope is a built-in optional client scope at the realm.  Therefore, this scope is added to any client created in the realm by default. It also defines the `Organization Membership` mapper that controls how the organization membership information is mapped to the tokens.
+
+NOTE: By default, the organization id and attributes are not included in the organization claim. To include them, edit the mapper and enable the *Add organization id* and *Add organization attributes* options, respectively.
+
+.Including attributes in the organization claim
+image:images/organizations-add-org-attrs-in-claim.png[alt="Including attributes in the organization claim"]
+
+The `organization` scope is requested using different formats:
+
+[cols="2*", options="header"]
+|===
+|Format
+|Description
+| `organization` | Maps to a single organization if the user is a member of a single organization.
+Otherwise, if a member of multiple organizations, the user will be prompted to select an organization when authenticating to the realm.
+| `organization:<alias>` | Maps to a single organization with the given alias.
+| `organization:*` | Maps to all organizations the user is a member of.
+|===

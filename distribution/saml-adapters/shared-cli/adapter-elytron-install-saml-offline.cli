@@ -1,0 +1,61 @@
+embed-server --server-config=${server.config:standalone.xml}
+
+if (outcome != success) of /extension=org.keycloak.keycloak-saml-adapter-subsystem:read-resource
+    /extension=org.keycloak.keycloak-saml-adapter-subsystem/:add(module=org.keycloak.keycloak-saml-adapter-subsystem)
+else
+    echo Keycloak SAML Extension already installed
+end-if
+
+if (outcome != success) of /subsystem=keycloak-saml:read-resource
+    /subsystem=keycloak-saml:add
+else
+    echo Keycloak SAML Subsystem already installed
+end-if
+
+if (outcome != success) of /subsystem=elytron/custom-realm=KeycloakSAMLRealm:read-resource
+    /subsystem=elytron/custom-realm=KeycloakSAMLRealm:add(class-name=org.keycloak.adapters.saml.elytron.KeycloakSecurityRealm, module=org.keycloak.keycloak-saml-wildfly-elytron-adapter)
+else
+    echo Keycloak SAML Realm already installed
+end-if
+
+if (outcome != success) of /subsystem=elytron/security-domain=KeycloakDomain:read-resource
+    /subsystem=elytron/security-domain=KeycloakDomain:add(default-realm=KeycloakSAMLRealm,permission-mapper=default-permission-mapper,security-event-listener=local-audit,realms=[{realm=KeycloakSAMLRealm}])
+else
+    echo Keycloak Security Domain already installed. Trying to install Keycloak SAML Realm.
+    /subsystem=elytron/security-domain=KeycloakDomain:list-add(name=realms, value={realm=KeycloakSAMLRealm})
+end-if
+
+if (outcome != success) of /subsystem=elytron/constant-realm-mapper=keycloak-saml-realm-mapper:read-resource
+    /subsystem=elytron/constant-realm-mapper=keycloak-saml-realm-mapper:add(realm-name=KeycloakSAMLRealm)
+else
+    echo Keycloak SAML Realm Mapper already installed
+end-if
+
+if (outcome != success) of /subsystem=elytron/service-loader-http-server-mechanism-factory=keycloak-saml-http-server-mechanism-factory:read-resource
+    /subsystem=elytron/service-loader-http-server-mechanism-factory=keycloak-saml-http-server-mechanism-factory:add(module=org.keycloak.keycloak-saml-wildfly-elytron-adapter)
+else
+    echo Keycloak SAML HTTP Mechanism Factory already installed
+end-if
+
+if (outcome != success) of /subsystem=elytron/aggregate-http-server-mechanism-factory=keycloak-http-server-mechanism-factory:read-resource
+    /subsystem=elytron/aggregate-http-server-mechanism-factory=keycloak-http-server-mechanism-factory:add(http-server-mechanism-factories=[keycloak-saml-http-server-mechanism-factory, global])
+else
+    echo Keycloak HTTP Mechanism Factory already installed. Trying to install Keycloak SAML HTTP Mechanism Factory.
+    /subsystem=elytron/aggregate-http-server-mechanism-factory=keycloak-http-server-mechanism-factory:list-add(name=http-server-mechanism-factories, value=keycloak-saml-http-server-mechanism-factory)
+end-if
+
+if (outcome != success) of /subsystem=elytron/http-authentication-factory=keycloak-http-authentication:read-resource
+    /subsystem=elytron/http-authentication-factory=keycloak-http-authentication:add(security-domain=KeycloakDomain,http-server-mechanism-factory=keycloak-http-server-mechanism-factory,mechanism-configurations=[{mechanism-name=KEYCLOAK-SAML,mechanism-realm-configurations=[{realm-name=KeycloakSAMLCRealm,realm-mapper=keycloak-saml-realm-mapper}]}])
+else
+    echo Keycloak HTTP Authentication Factory already installed. Trying to install Keycloak SAML Mechanism Configuration
+    /subsystem=elytron/http-authentication-factory=keycloak-http-authentication:list-add(name=mechanism-configurations, value={mechanism-name=KEYCLOAK-SAML,mechanism-realm-configurations=[{realm-name=KeycloakSAMLRealm,realm-mapper=keycloak-saml-realm-mapper}]})
+end-if
+
+if (outcome != success) of /subsystem=undertow/application-security-domain=other:read-resource
+    /subsystem=undertow/application-security-domain=other:add(http-authentication-factory=keycloak-http-authentication)
+else
+    batch
+    /subsystem=undertow/application-security-domain=other:undefine-attribute(name=security-domain)
+    /subsystem=undertow/application-security-domain=other:write-attribute(name=http-authentication-factory,value=keycloak-http-authentication)
+    run-batch
+end-if

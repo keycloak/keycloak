@@ -1,0 +1,92 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Self-provided metrics"
+summary="Learn about the key metrics that {project_name} provides."
+tileVisible="false"
+>
+
+<#include "partials/prerequisites-metrics-troubleshooting.adoc" />
+
+== Metrics
+
+=== User Event Metrics
+
+User event metrics are disabled by default. See <@links.observability id="event-metrics"/> on how to enable them and how to configure which tags are recorded.
+
+|===
+|Metric |Description
+
+m| keycloak_user_events_total
+| Counting the occurrence of user events.
+
+|===
+
+====
+*Tags*
+
+The tags `client_id` and `idp` are disabled by default to avoid a too high cardinality.
+
+`realm`:: Realm
+`client_id`:: Client ID
+`idp`:: Identity Provider
+`event`:: User event, for example `login` or `logout`. See the {adminguide_link}#event-types[{adminguide_name} on event types] for an overview of the available events.
+`error`:: Error specific to the event, for example `invalid_user_credentials` for the event `login`. Empty string if no error occurred.
+====
+
+The snippet below is an example of a response provided by the metric endpoint:
+
+[source]
+----
+# HELP keycloak_user_events_total Keycloak user events
+# TYPE keycloak_user_events_total counter
+keycloak_user_events_total{client_id="security-admin-console",error="",event="code_to_token",idp="",realm="master",} 1.0
+keycloak_user_events_total{client_id="security-admin-console",error="",event="login",idp="",realm="master",} 1.0
+keycloak_user_events_total{client_id="security-admin-console",error="",event="logout",idp="",realm="master",} 1.0
+keycloak_user_events_total{client_id="security-admin-console",error="invalid_user_credentials",event="login",idp="",realm="master",} 1.0
+----
+
+=== Password hashing
+
+|===
+|Metric |Description
+
+m| keycloak_credentials_password_hashing_validations_total
+| Counting password hashes validations.
+
+|===
+
+====
+*Tags*
+
+`realm`:: Realm
+`algorithm`:: Algorithm used for hashing password, for example `argon2`
+`hashing_strength`:: String denoting strength of hashing algorithm, for example, number of iterations depending on the algorithm. For example, `Argon2id-1.3[m=7168,t=5,p=1]`
+`outcome`:: Outcome of password validation.
+Possible values:
++
+--
+`valid`:: Password correct
+`invalid`:: Password incorrect
+`error`:: Error when creating the hash of the password
+--
+====
+
+To configure what tags are available provide a comma-separated list of tag names to the following option `spi-credential--keycloak-password--validations-counter-tags`.
+By default, all tags are enabled.
+
+The snippet below is an example of a response provided by the metric endpoint:
+
+[source]
+----
+# HELP keycloak_credentials_password_hashing_validations_total Password validations
+# TYPE keycloak_credentials_password_hashing_validations_total counter
+keycloak_credentials_password_hashing_validations_total{algorithm="argon2",hashing_strength="Argon2id-1.3[m=7168,t=5,p=1]",outcome="valid",realm="realm-0",} 39949.0
+----
+
+== Next steps
+
+Return back to the <@links.observability id="metrics-for-troubleshooting"/> or proceed to <@links.observability id="metrics-for-troubleshooting-jvm"/>.
+
+</@tmpl.guide>

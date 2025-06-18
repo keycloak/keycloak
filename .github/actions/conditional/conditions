@@ -1,0 +1,57 @@
+# File patterns used to decide what workflows/jobs to execute for a given PR
+#
+# To test a pattern run '.github/actions/conditional/conditional.sh <remote name> <branch>'
+
+.github/actions/                            ci ci-quarkus ci-store ci-sssd operator js codeql-java codeql-javascript codeql-typescript guides documentation
+.github/fake_fips/                          ci
+.github/scripts/                            ci ci-quarkus ci-sssd
+.github/scripts/ansible/                    ci-store
+.github/scripts/aws/                        ci-store
+
+.github/workflows/ci.yml                    ci ci-quarkus ci-store ci-sssd ci-webauthn
+.github/workflows/operator-ci.yml           operator
+.github/workflows/js-ci.yml                 js
+.github/workflows/codeql-analysis.yml       codeql-java codeql-javascript codeql-typescript
+.github/workflows/guides.yml                guides
+.github/workflows/documentation.yml         documentation
+
+.mvn/                                       ci ci-quarkus ci-store ci-sssd ci-webauthn operator js codeql-java codeql-javascript codeql-typescript guides documentation
+mvnw                                        ci ci-quarkus ci-store ci-sssd ci-webauthn operator js codeql-java codeql-javascript codeql-typescript guides documentation
+mvnw.cmd                                    ci ci-quarkus ci-store ci-sssd ci-webauthn operator js codeql-java codeql-javascript codeql-typescript guides documentation
+
+*/src/main/                                 ci ci-webauthn operator
+*/src/test/                                 ci ci-webauthn operator
+pom.xml                                     ci ci-quarkus ci-store ci-webauthn operator
+federation/sssd/                            ci ci-sssd
+
+quarkus/                                    ci-quarkus guides
+
+model/                                      ci-store
+testsuite/model/                            ci-store
+operator/                                   operator
+
+docs/guides/                                guides
+docs/documentation/                         documentation
+
+js/                                         js
+rest/admin-ui-ext/                          js
+services/                                   js
+themes/                                     js
+js/apps/account-ui/                         ci ci-webauthn
+js/libs/ui-shared/                          ci ci-webauthn
+
+# The sections below contain a sub-set of files existing in the project which are supported languages by CodeQL.
+# See: https://codeql.github.com/docs/codeql-overview/supported-languages-and-frameworks/
+
+## CodeQL Java
+*.java                                      codeql-java
+
+## CodeQL JavaScript
+*.js                                        codeql-javascript
+*.html                                      codeql-javascript
+
+## CodeQL TypeScript
+*.ts                                        codeql-typescript
+*.tsx                                       codeql-typescript
+
+testsuite::database-suite                   ci-store

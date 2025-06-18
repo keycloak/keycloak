@@ -1,0 +1,101 @@
+
+[[_timeouts]]
+=== Session and token timeouts
+[role="_abstract"]
+
+{project_name} includes control of the session, cookie, and token timeouts through the *Sessions* and *Tokens* tabs in the *Realm settings* menu.
+
+.Sessions tab
+image:images/sessions-tab.png[Sessions Tab]
+
+|===
+|Configuration|Description
+
+|SSO Session Idle
+|This setting is for OIDC clients only. If a user is inactive for longer than this timeout, the user session is invalidated. This timeout value resets when clients request authentication or send a refresh token request. {project_name} adds a window of time to the idle timeout before the session invalidation takes effect. See the <<_idle_timeouts_note, note>> later in this section.
+
+|SSO Session Max
+|The maximum time before a user session expires.
+
+|SSO Session Idle Remember Me
+|This setting is similar to the standard SSO Session Idle configuration but specific to logins with *Remember Me* enabled. Users can specify longer session idle timeouts when they click *Remember Me* when logging in. This setting is an optional configuration and, if its value is not greater than zero, it uses the same idle timeout as the SSO Session Idle configuration.
+
+|SSO Session Max Remember Me
+|This setting is similar to the standard SSO Session Max but specific to *Remember Me* logins. Users can specify longer sessions when they click *Remember Me* when logging in. This setting is an optional configuration and, if its value is not greater than zero, it uses the same session lifespan as the SSO Session Max configuration.
+
+|Client Session Idle
+|Idle timeout for the client session. If the user is inactive for longer than this timeout, the client session is invalidated and the refresh token requests bump the idle timeout. This setting never affects the general SSO user session, which is unique. Note the SSO user session is the parent of zero or more client sessions, one client session is created for every different client app the user logs in. This value should specify a shorter idle timeout than the *SSO Session Idle*. Users can override it for individual clients in the *Advanced Settings* client tab. This setting is an optional configuration and, when set to zero, uses the same idle timeout in the SSO Session Idle configuration.
+
+|Client Session Max
+|The maximum time for a client session and before a refresh token expires and invalidates. As in the previous option, this setting never affects the SSO user session and should specify a shorter value than the *SSO Session Max*. Users can override it for individual clients in the *Advanced Settings* client tab. This setting is an optional configuration and, when set to zero, uses the same max timeout in the SSO Session Max configuration.
+
+[[_offline-session-idle]]
+|Offline Session Idle
+|This setting is for <<_offline-access, offline access>>. The amount of time the session remains idle before {project_name} revokes its offline token. {project_name} adds a window of time to the idle timeout before the session invalidation takes effect. See the <<_idle_timeouts_note, note>> later in this section.
+
+[[_offline-session-max-limited]]
+|Offline Session Max Limited
+|This setting is for <<_offline-access, offline access>>. If this flag is *Enabled*, Offline Session Max can control the maximum time the offline token remains active, regardless of user activity. If the flag is *Disabled*, offline sessions never expire by lifespan, only by idle. Once this option is activated, the <<_offline-session-max, Offline Session Max>> (global option at realm level) and *Client Offline Session Max* (specific client level option in the *Advanced Settings* tab) can be configured.
+
+[[_offline-session-max]]
+|Offline Session Max
+|This setting is for <<_offline-access, offline access>>, and it is the maximum time before {project_name} revokes the corresponding offline token. This option controls the maximum amount of time the offline token remains active, regardless of user activity.
+
+|Login timeout
+|The total time a logging in must take. If authentication takes longer than this time, the user must start the authentication process again.
+
+|Login action timeout
+|The Maximum time users can spend on any one page during the authentication process.
+|===
+
+.Tokens tab
+image:images/tokens-tab.png[Tokens Tab]
+
+|===
+|Configuration|Description
+
+|Default Signature Algorithm
+|The default algorithm used to assign tokens for the realm.
+
+[[_revoke-refresh-token]]
+|Revoke Refresh Token
+|When *Enabled*, {project_name} revokes refresh tokens and issues another token that the client must use. This action applies to OIDC clients performing the refresh token flow.
+
+|Access Token Lifespan
+|When {project_name} creates an OIDC access token, this value controls the lifetime of the token.
+
+|Access Token Lifespan For Implicit Flow
+|With the Implicit Flow, {project_name} does not provide a refresh token. A separate timeout exists for access tokens created by the Implicit Flow.
+
+|Client login timeout
+|The maximum time before clients must finish the Authorization Code Flow in OIDC.
+
+|User-Initiated Action Lifespan
+|The maximum time before a user's action permission expires. Keep this value short because users generally react to self-created actions quickly.
+
+|Default Admin-Initiated Action Lifespan
+|The maximum time before an action permission sent to a user by an administrator expires. Keep this value long to allow administrators to send e-mails to offline users. An administrator can override the default timeout before issuing the token.
+
+|Email Verification
+| Specifies independent timeout for email verification.
+
+|IdP account email verification
+| Specifies independent timeout for IdP account email verification.
+
+|Forgot password
+| Specifies independent timeout for forgot password.
+
+|Execute actions
+| Specifies independent timeout for execute actions.
+|===
+
+[[_idle_timeouts_note]]
+
+[NOTE]
+====
+The following logic is only applied if persistent user sessions are not active:
+
+For idle timeouts, a two-minute window of time exists that the session is active. For example, when you have the timeout set to 30 minutes, it will be 32 minutes before the session expires.
+
+This action is necessary for some scenarios in cluster and cross-data center environments where the token refreshes on one cluster node a short time before the expiration and the other cluster nodes incorrectly consider the session as expired because they have not yet received the message about a successful refresh from the refreshing node.
+====

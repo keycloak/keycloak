@@ -1,0 +1,76 @@
+[[_overview_terminology]]
+= Terminology
+
+Before going further, it is important to understand these terms and concepts introduced by {project_name} Authorization Services.
+
+[[_overview_terminology_resource_server]]
+== Resource Server
+
+Per OAuth2 terminology, a resource server is the server hosting the protected resources and capable of accepting and responding to protected resource requests.
+
+Resource servers usually rely on some kind of information to decide whether access to a protected resource should be granted. For RESTful-based resource servers,
+that information is usually carried in a security token, typically sent as a bearer token along with every request to the server. Web applications that rely on a session to
+authenticate users usually store that information in the user's session and retrieve it from there for each request.
+
+In {project_name}, any *confidential* client application can act as a resource server. This client's resources and their respective scopes are protected and governed by a set of authorization policies.
+
+== Resource
+
+A resource is part of the assets of an application and the organization. It can be a set of one or more endpoints, a classic web resource such as an HTML page, and so on.
+In authorization policy terminology, a resource is the _object_ being protected.
+
+Every resource has a unique identifier that can represent a single resource or a set of resources. For instance, you can manage a _Banking Account Resource_ that represents and defines a set of authorization policies for all banking accounts. But you can also have a different resource named _Alice's Banking Account_, which represents a single resource owned by a single customer, which can have its own set of authorization policies.
+
+== Scope
+
+A resource's scope is a bounded extent of access that is possible to perform on a resource. In authorization policy terminology, a scope is one of the potentially many _verbs_ that can logically apply to a resource.
+
+It usually indicates what can be done with a given resource. Examples of scopes are view, edit, delete, and so on. However, scope can also be related to specific information provided by a resource. In this case, you can have a project resource and a cost scope, where the cost scope is used to define specific policies and permissions for users to access a project's cost.
+
+== Permission
+
+Consider this simple and very common permission:
+
+A permission associates the object being protected with the policies that must be evaluated to determine whether access is granted.
+
+* *X* CAN DO *Y* ON RESOURCE *Z*
+** where ...
+*** *X* represents one or more users, roles, or groups, or a combination of them. You can also use claims and context here.
+*** *Y* represents an action to be performed, for example, write, view, and so on.
+*** *Z* represents a protected resource, for example, "/accounts".
+
+{project_name} provides a rich platform for building a range of permission strategies ranging from simple to very complex, rule-based dynamic permissions. It provides flexibility and helps to:
+
+* Reduce code refactoring and permission management costs
+* Support a more flexible security model, helping you to easily adapt to changes in your security requirements
+* Make changes at runtime; applications are only concerned about the resources and scopes being protected and not how they are protected.
+
+== Policy
+
+A policy defines the conditions that must be satisfied to grant access to an object. Unlike permissions, you do not specify the object being protected
+but rather the conditions that must be satisfied for access to a given object (for example, resource, scope, or both).
+Policies are strongly related to the different access control mechanisms (ACMs) that you can use to protect your resources.
+With policies, you can implement strategies for attribute-based access control (ABAC), role-based access control (RBAC), context-based access control, or any combination of these.
+
+{project_name} leverages the concept of policies and how you define them by providing the concept of aggregated policies, where you can build a "policy of policies" and still control the behavior of the evaluation.
+Instead of writing one large policy with all the conditions that must be satisfied for access to a given resource, the policies implementation in {project_name} Authorization Services follows the divide-and-conquer technique.
+That is, you can create individual policies, then reuse them with different permissions and build more complex policies by combining individual policies.
+
+== Policy provider
+
+Policy providers are implementations of specific policy types. {project_name} provides built-in policies, backed by their corresponding
+policy providers, and you can create your own policy types to support your specific requirements.
+
+{project_name} provides an SPI (Service Provider Interface) that you can use to plug in your own policy provider implementations.
+
+[[_overview_terminology_permission_ticket]]
+== Permission ticket
+
+A permission ticket is a special type of token defined by the User-Managed Access (UMA) specification that provides an opaque structure whose form is determined by the authorization server. This
+structure represents the resources and/or scopes being requested by a client, the access context, as well as the policies that must be applied to a request for authorization data (requesting party token [RPT]).
+
+In UMA, permission tickets are crucial to support person-to-person sharing and also person-to-organization sharing. Using permission tickets for authorization workflows enables a range of scenarios from simple to complex, where resource owners and resource servers have complete control over their resources based on fine-grained policies that govern the access to these resources.
+
+In the UMA workflow, permission tickets are issued by the authorization server to a resource server, which returns the permission ticket to the client trying to access a protected resource. Once the client receives the ticket, it can make a request for an RPT (a final token holding authorization data) by sending the ticket back to the authorization server.
+
+For more information on permission tickets, see <<_service_user_managed_access, User-Managed Access>> and the https://docs.kantarainitiative.org/uma/wg/oauth-uma-grant-2.0-09.html[UMA] specification.

@@ -1,0 +1,42 @@
+[[_service_authorization_my_resources]]
+= Managing access to users resources
+
+Users can manage access to their resources using the {project_name} Account Console. To enable
+this functionality, you must first enable User-Managed Access for your realm.
+
+.Procedure
+
+. Log into the Admin Console.
+
+. Click *Realm Settings* in the menu.
+
+. Toggle *User-Managed Access* to *ON*.
+
+. Click the user name at the top right of the Admin Console and select *Manage Account*.
++
+image:images/service/account-my-resource.png[alt="My Resources"]
+
+. Click *My Resources* in the menu option. A page displays with the following options.
+* Manage *My resources*
++
+This section contains a list of all resources owned by the user. Users can click on a resource for more details
+and share the resource with others.
+When permission requests are awaiting approval, an icon is put next to the name of the resource.
+These requests are connected to the parties (users) requesting access to a particular resource.
+Users are allowed to approve or deny these requests. You can do so by clicking the icon
++
+image:images/service/account-my-resource-detail.png[alt="Resource Detail"]
++
+* Manage *Resources shared with me*
++
+This section contains a list of all resources shared with the user.
++
+
+* Manage *People with access to this resource*
++
+This section contains a list of people with access to this resource. Users are allowed to revoke access by clicking
+on the `Revoke` button or by removing a specific `Permission`.
++
+* Share the resource with others
++
+By typing the username or e-mail of another user, the user is able to share the resource and select the permissions he wants to grant access.

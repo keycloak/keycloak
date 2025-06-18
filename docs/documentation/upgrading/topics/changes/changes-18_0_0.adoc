@@ -1,0 +1,132 @@
+= Step-up authentication
+
+Step-up authentication is a new feature. This feature provides the `acr` client scope, which contains a protocol mapper that is supposed to add the `acr`
+claim in the token. The `acr` claim is not added automatically now as it was before this version, but it is added with the usage
+of this client scope and protocol mapper.
+
+The client scope is added as a realm "default" client scope and hence will be added to all newly created clients. For performance reasons,
+the client scope is not automatically added to all existing clients during migration. The clients will not have an `acr` claim by default after
+the migration. Consider these possible actions:
+
+- If you do not plan to use step-up authentication feature, but you rely on the `acr` claim in the token, you can disable `step_up_authentication`
+  feature. The claim will be added with the value `1` in case of normal authentication and `0` in case of SSO authentication.
+- Add `acr` client scope to your clients manually by admin REST API or admin console. This is needed especially if you want to use step-up authentication.
+  If you have a large number of clients in the realm and want to use `acr` claim for all of them, you can trigger some SQL similar to this against your DB.
+  However, remember to clear the cache or restart the server if {project_name} is already started:
+
+```
+insert into CLIENT_SCOPE_CLIENT (CLIENT_ID, SCOPE_ID, DEFAULT_SCOPE) select CLIENT.ID as CLIENT_ID, CLIENT_SCOPE.ID as SCOPE_ID, true as DEFAULT_SCOPE
+from CLIENT_SCOPE, CLIENT where CLIENT_SCOPE.REALM_ID='test' and CLIENT_SCOPE.NAME='acr' and CLIENT.REALM_ID='test' and CLIENT.PROTOCOL='openid-connect';
+```
+
+= OpenID Connect Logout
+
+Previous versions of {project_name} had supported automatic logout of the user and redirecting to the application by opening logout endpoint URL such as
+`http(s)://example-host/auth/realms/my-realm-name/protocol/openid-connect/logout?redirect_uri=encodedRedirectUri`. While that implementation was easy to use, it had potentially negative impact
+on performance and security. The new version has better support for logout based on the OpenID Connect RP-Initiated Logout specification. The parameter `redirect_uri` is no longer supported; also,
+in the new version, the user needs to confirm the logout. It is possible to omit the confirmation and do automatic redirect to the application when you include parameter `post_logout_redirect_uri`
+together with the parameter `id_token_hint` with the ID Token used for login.
+
+The existing deployments are affected in the following ways:
+
+- If your application directly uses links to logout endpoint with the `redirect_uri` parameter, you may be required to change this as described above.
+  Consider either removing the `redirect_uri` parameter entirely or replacing it with the `id_token_hint` and `post_logout_redirect_uri` parameters.
+- If you use java adapters and your application does logout by call `httpServletRequest.logout()`, you are not affected because this call uses the backchannel variant of the logout endpoint
+  and that one was not changed.
+- If you use the latest javascript adapter, you are also not affected. However if your application uses an older version of the JavaScript adapter, you are affected as this
+  adapter uses the variant of the logout endpoint with the deprecated `redirect_uri` parameter. In this case, you may need to upgrade to the latest version of the JavaScript adapter.
+- For the Node.js adapter, the same guideline applies as for the JavaScript adapter. You are encouraged to update to the latest version as the older version of the adapter uses the deprecated `redirect_uri` parameter.
+  With the latest Node.js adapter, you are not affected as long as you use the logout based on the `/logout` URL as described in the documentation or in the Node.js adapter example. However, in the case
+  when your application directly uses the method `keycloak.logoutUrl`, you can consider adding `idTokenHint` as the second argument to this method. The possibility to add `idTokenHint` as second argument was newly
+  added in this version. The `idTokenHint` needs to be a valid ID Token that was obtained during the login. Adding `idTokenHint` is optional, but if you omit it, your users will need to confirm the logout screen as
+  described earlier. Also they will not be redirected back to the application after logout.
+
+There is a backwards compatibility option, which allows your application to still use the old format of the `redirect_uri` parameter.
+
+You can enable this parameter when you start the server by entering the following command:
+
+```
+bin/kc.[sh|bat] --spi-login-protocol-openid-connect-legacy-logout-redirect-uri=true start
+```
+
+With this configuration, you can still use the format with the `redirect_uri` parameter. Note the confirmation screen will be needed if the `id_token_hint` is omitted.
+
+WARNING: The backwards compatibility switch will be removed in some future version - probably Keycloak 23. You are encouraged to update your clients as soon as possible
+as described above rather than rely on this switch.
+
+= Removal of the `upload-scripts` feature
+
+Previous versions of {project_name} had supported managing JavaScript code through the management interfaces like the administrations console and REST API. Starting from this version
+this is no longer possible, and you should now deploy your scripts to the server in order to configure the following providers:
+
+* OpenID Connect Script Mapper
+* Script Authenticator (Authentication Execution)
+* JavaScript Policies
+
+More details about how to deploy scripts to the server are available in the https://www.keycloak.org/docs/latest/server_development/#_script_providers[documentation]. Note that to use scripts, you are still
+required to enable the `scripts` technology preview feature.
+
+```
+kc.[sh|bat] start --auto-build --features=preview
+```
+
+When deploying scripts, the server is going to automatically create their corresponding providers so that you can select them when configuring authentication flows, mappers, and authorization policies.
+
+In general, the steps to update your realms are the following:
+
+* Before upgrading, remove any script provider you are using.
+* After the upgrade, deploy your scripts following the instructions in the https://www.keycloak.org/docs/latest/server_development/#_script_providers[documentation].
+* Update your authentication flows, mappers, and the client authorization settings to use the providers created from the scripts deployed to the server.
+
+= Account console Patternfly upgrade
+
+The Patternfly (PF) React libraries have been updated, `@patternfly/react-core` from v3.153.3 to v4.147.0, `@patternfly/react-icons` from v3.15.16 to v 4.11.8, and `@patternfly/react-styles` from v3.7.14 to v4.11.8. Several minor UI updates were made to bring the account console into alignment with PF design standards.
+
+Custom developed account UIs might not be compatible with these updates due to the breaking changes in PF. Most breaking changes should be resolvable by updating props on PF components.
+
+Resources:
+
+- [Patternfly docs](https://www.patternfly.org)
+
+
+Components known to have breaking changes:
+
+- Alert
+
+  - `action` prop changed to `actionClose`
+
+- Expandable
+
+  - renamed to `ExpandableSection`
+
+- Title
+
+  - size attr now uses `TitleSizes`
+
+- DataListContent
+
+  - `noPadding` changed to `hasNoPadding`
+
+- Grid, Stack, Level, Gallery
+
+  - `gutter` attr changed to `hasGutter`
+
+- Modal
+
+  - sizing control changed from, e.g. `isLarge`, to use `ModalVariant`, e.g. `variant={ModalVariant.large}`
+
+- Select
+
+  - `ariaLabelTypeAhead` to `typeAheadAriaLabel`
+
+  - `isExpanded` to `isOpen`
+
+  - `ariaLabelledBy` to `aria-labelledby`
+
+- DataListContent
+
+  - `noPadding` to `hasNoPadding`
+
+= Quarkus distribution: Split metrics-enabled option into health-enabled and metrics-enabled
+
+The `metrics-enabled` option now only enables the metrics for {project_name}. To enable the readiness and liveness health endpoints, there's a new boolean option `health-enabled`. This allows more fine-grained usage of these options, e.g. enabling metrics but not enabling readiness/liveness probes for on-premise use cases. In order to keep the same behaviour as before when `metrics-enabled=true` was set, you need to additionally set `health-enabled=true` when building {project_name}.

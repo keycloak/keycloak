@@ -1,0 +1,21 @@
+[role="_abstract"]
+When integrating with a third party like a customer or business partner, you might want to manage their identities
+separately from others and build a unified and secure experience throughout your business ecosystem when they interact
+with a realm.
+
+In a realm, an *organization* represents these third parties so that a realm or an organization administrator can manage
+the entire lifecycle of its members and how they authenticate and authorize to a realm, on a per-organization basis.
+
+The organization is the entry point to start using the IAM capabilities of {project_name} to also address Business-to-Business (B2B) use cases.
+It enables multi-tenancy within a realm so that users can have access to protected resources from a realm but with a more restricted
+and controlled context, that context being the organization to which they belong.
+
+{project_name} Organizations is a feature that enables support for organizations in {project_name}. For now, it provides
+some of the core capabilities needed to manage organizations such as:
+
+* Manage members
+* Onboard organization members using invitation links
+* Onboard organization members by federating their identities through identity brokering
+* Identity-first login and organization-specific steps when authenticating in the scope of an organization
+* Propagate organization-specific claims to applications through tokens for authorization purposes
+

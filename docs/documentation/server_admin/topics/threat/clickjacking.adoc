@@ -1,0 +1,19 @@
+
+=== Clickjacking
+
+Clickjacking is a technique of tricking users into clicking on a user interface element different from what users perceive. A malicious site loads the target site in a transparent iFrame, overlaid on top of a set of dummy buttons placed directly under important buttons on the target site. When a user clicks a visible button, they are clicking a button on the hidden page. An attacker can steal a user's authentication credentials and access their resources by using this method.
+
+By default, every response by {project_name} sets some specific HTTP headers that can prevent this from happening.
+Specifically, it sets https://datatracker.ietf.org/doc/html/rfc7034[X-Frame-Options] and https://www.w3.org/TR/CSP/[Content-Security-Policy].
+You should take a look at the definition of both of these headers as there is a lot of fine-grain browser access you can control.
+
+.Procedure
+In the Admin Console, you can specify the values of the X-Frame-Options and Content-Security-Policy headers.
+
+. Click the *Realm Settings* menu item.
+. Click the *Security Defenses* tab.
++
+.Security Defenses
+image:images/security-headers.png[Security Defenses]
+
+By default, {project_name} only sets up a _same-origin_ policy for iframes.

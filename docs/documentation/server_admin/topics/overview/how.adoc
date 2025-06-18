@@ -1,0 +1,12 @@
+
+=== Basic {project_name} operations
+
+{project_name} is a separate server that you manage on your network.  Applications are configured to point to and
+be secured by this server.  {project_name} uses open protocol standards like link:https://openid.net/developers/how-connect-works/[OpenID Connect]
+or link:https://saml.xml.org/saml-specifications[SAML 2.0] to secure
+your applications.  Browser applications redirect a user's browser from the application to the {project_name} authentication
+server where they enter their credentials.  This redirection is important because users are completely isolated from applications and
+applications never see a user's credentials.  Applications instead are given an identity token or assertion that is cryptographically
+signed.  These tokens can have identity information like username, address, email, and other profile data.  They can also
+hold permission data so that applications can make authorization decisions.  These tokens can also be used to make secure
+invocations on REST-based services.

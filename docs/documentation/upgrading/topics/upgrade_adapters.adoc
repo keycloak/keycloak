@@ -1,0 +1,51 @@
+= Upgrading {project_name} adapters
+
+[[_upgrade_adapters]]
+
+After you upgrade the {project_name} server, you can upgrade the adapters. Earlier versions of the
+adapter might work with later versions of the {project_name} server, but earlier versions of the {project_name} server might not
+work with later versions of the adapter.
+
+[[_compatibility_with_older_adapters]]
+== Compatibility with older adapters
+
+Newer versions of the {project_name} server potentially work with older versions of the adapters.
+However, some fixes of the {project_name} server may break compatibility with older versions
+of the adapters. For example, a new implementation of the OpenID Connect specification may not match older client adapter versions.
+
+For this situation, you can use Compatibility modes. For OpenID Connect clients, the Admin Console includes *OpenID Connect Compatibility Modes* on the page with client details. With this option, you can disable some new aspects of the {project_name} server
+to preserve compatibility with older client adapters. For more details, see the tool tips of individual switches.
+
+[[_upgrade_eap_adapter]]
+== Upgrading the EAP adapter
+
+To upgrade the {appserver_name} adapter, complete the following steps:
+
+.Procedure
+. Download the new adapter archive.
+. Remove the previous adapter modules by deleting the `{appserver_dirref}/modules/system/add-ons/keycloak/` directory.
+. Unzip the downloaded archive into `{appserver_dirref}`.
+
+[[_upgrade_js_adapter]]
+== Upgrading the JavaScript adapter
+ifeval::[{project_community}==true]
+To upgrade the JavaScript adapter, install the latest version https://www.npmjs.com/package/keycloak-js[from NPM].
+
+.Procedure
+. `npm install keycloak-js@latest`
+endif::[]
+
+ifeval::[{project_product}==true]
+To upgrade the JavaScript adapter, install the latest version {securing_apps_link}/#javascript-adapter-installation[from NPM]. 
+endif::[]
+
+[[_upgrade_nodejs_adapter]]
+== Upgrading the `Node.js` adapter
+
+ifeval::[{project_community}==true]
+To upgrade the `Node.js` adapter, see the {securing_apps_base_link}/nodejs-adapter#_upgrade_nodejs_adapter[`Node.js adapter` documentation].
+endif::[]
+
+ifeval::[{project_product}==true]
+To upgrade the `Node.js` adapter, see the {securing_apps_link}/nodejs-adapter-_upgrade_nodejs_adapter[`Node.js adapter` documentation].
+endif::[]

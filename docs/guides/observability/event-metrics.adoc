@@ -1,0 +1,46 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/options.adoc" as opts>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Monitoring user activities with event metrics"
+summary="Event metrics provide an aggregated view of user activities in a {project_name} instance."
+includedOptions="metrics-enabled event-metrics-user-*">
+
+For now, only metrics for user events are captured.
+For example, you can monitor the number of logins, login failures, or token refreshes performed.
+
+The metrics are exposed using the standard metrics endpoint, and you can use it in your own metrics collection system to create dashboards and alerts.
+
+The metrics are reported as counters per {project_name} instance.
+The counters are reset on the restart of the instance.
+If you have multiple instances running in a cluster, you will need to collect the metrics from all instances and aggregate them to get per a cluster view.
+
+== Enable event metrics
+
+To start collecting event metrics, enable metrics and enable the metrics for user events.
+
+The following shows the required startup parameters:
+
+<@kc.start parameters="--metrics-enabled=true --event-metrics-user-enabled=true ..."/>
+
+By default, there is a separate metric for each realm.
+To break down the metric by client and identity provider, you can add those metrics dimension using the configuration option `event-metrics-user-tags`.
+This can be useful on installations with a small number of clients and IDPs.
+This is not recommended for installations with a large number of clients or IDPs as it will increase the memory usage of {project_name} and as it will increase the load on your monitoring system.
+
+The following shows how to configure {project_name} to break down the metrics by all three metrics dimensions:
+
+<@kc.start parameters="... --event-metrics-user-tags=realm,idp,clientId ..."/>
+
+You can limit the events for which {project_name} will expose metrics.
+See the {adminguide_link}#event-types[{adminguide_name} on event types] for an overview of the available events.
+
+The following example limits the events collected to `LOGIN` and `LOGOUT` events:
+
+<@kc.start parameters="... --event-metrics-user-events=login,logout ..."/>
+
+See <@links.observability id="metrics-for-troubleshooting-keycloak"/> for a description of the metrics collected.
+
+</@tmpl.guide>

@@ -1,0 +1,52 @@
+###################################################################################################
+# Overview
+#
+# Pattern used to match files follows most of the same rules as used in gitignore files. Order is
+# important; the last matching pattern takes precendence.
+#
+# For more info see:
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+###################################################################################################
+
+
+###################################################################################################
+# Global (@keycloak/maintainers)
+###################################################################################################
+
+*                                                           @keycloak/maintainers
+
+###################################################################################################
+# Testsuite
+###################################################################################################
+
+/testsuite/                                                 @keycloak/core-clients-maintainers @keycloak/core-iam-maintainers @keycloak/cloud-native-maintainers @keycloak/maintainers
+
+###################################################################################################
+# Core (@keycloak/core-maintainers)
+###################################################################################################
+
+
+###################################################################################################
+# Core Clients (@keycloak/core-clients-maintainers)
+###################################################################################################
+
+
+###################################################################################################
+# Cloud Native (@keycloak/cloud-native-maintainers)
+###################################################################################################
+
+/operator/                                                  @keycloak/cloud-native-maintainers @keycloak/maintainers
+/quarkus/                                                   @keycloak/cloud-native-maintainers @keycloak/maintainers
+/docs/guides/server/                                        @keycloak/cloud-native-maintainers @keycloak/maintainers
+/docs/guides/operator/                                      @keycloak/cloud-native-maintainers @keycloak/maintainers
+/integration/client-cli/admin-cli/                          @keycloak/cloud-native-maintainers @keycloak/maintainers
+
+###################################################################################################
+# UI (@keycloak/ui-maintainers)
+###################################################################################################
+
+/themes/                                                    @keycloak/ui-maintainers @keycloak/maintainers
+/js/                                                        @keycloak/ui-maintainers
+/js/**/messages_*.properties                                @keycloak/ui-maintainers @keycloak/maintainers
+/adapters/oidc/js/                                          @keycloak/ui-maintainers
+/rest/admin-ui-ext/                                         @keycloak/ui-maintainers

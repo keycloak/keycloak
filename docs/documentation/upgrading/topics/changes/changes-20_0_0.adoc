@@ -1,0 +1,177 @@
+= RESTEasy Version Update
+
+Updated the RESTEasy version of Keycloak Admin REST Client to the next major version.
+
+= H2 Version Update
+
+{project_name} ships for development purposes with an H2 database driver.
+As it is intended for development purposes only, it should never be used in a production environment.
+
+In this release, the H2 driver has been upgraded from version 1.x to version 2.x.
+This change might require changes to the H2 JDBC URL or migration of the H2 database files in an existing Keycloak setup.
+
+== Changes to the H2 JDBC URL
+
+For Keycloak to run with its JPA legacy store with H2 version 2.x, the JDBC URL requires the attribute `NON_KEYWORDS=VALUE`.
+
+In a setup where H2 is initialized by Keycloak without extra parameters, Keycloak will append the attribute automatically.
+This is the default for development setups.
+
+If an H2 JDBC URL is provided on the command line or in a configuration file, and it already contains the `NON_KEYWORDS=` attribute in the JDBC URL, this attribute needs to be amended with the `VALUE` keyword.
+
+If the connection factory for the H2 database is initialized outside Keycloak, that initialization needs to take care of adding the `NON_KEYWORDS` attribute.
+
+See the H2 documentation http://www.h2database.com/html/commands.html#set_non_keywords[on the `NON_KEYWORDS` attribute] for details.
+
+== Upgrade of H2 database files
+
+H2 database base files created with H2 version 1.x should not be used with version 2.x.
+
+Purge existing H2 database files to start with an empty database, export and import the realms using Keycloak's export and import functionality, or refer to the http://www.h2database.com/html/migration-to-v2.html[migration notes on the H2 database project's website] for details on how to migrate H2 database contents.
+
+= Breaking changes in the new version of Keycloak Operator
+
+NOTE: In order to use the newest version of the Keycloak Operator, the manual reinstallation and upgrade of your CRs are required. There’s no automated migration.
+
+This release contains the following breaking changes in Keycloak CRs:
+
+== serverConfiguration free-form field was renamed
+
+From now on it’s called `additionalOptions`. The idea behind this decision is to align it more with the Keycloak Quarkus distribution and achieve/preserve a naming consistency.
+`serverConfiguration` can be still used for configuring options that haven’t got a declared alternative in Keycloak custom resources (CRs). A good example of such use can be service providers.
+
+== Ingress options were refined
+
+In the past, it used to be defined via the `disableDefaultIngress` property. We decided to clarify it a bit, thus from now on you can use the following structure to control your ingress settings:
+
+```yaml
+spec:
+    ...
+    ingress:
+      enabled: false
+```
+
+== HTTP options were added
+
+Similarly, like with ingress, you can define multiple HTTP options in a better structural manner:
+
+```yaml
+spec:
+    ...
+  http:
+    httpEnabled: true
+    httpPort: 80
+    httpsPort: 443
+    tlsSecret: my-tls-secret
+```
+
+== Hostname options were added
+
+Last but not least, the hostname options were also changed:
+
+```yaml
+spec:
+    ...
+  hostname:
+    hostname: [keycloak-server-hostname]
+    admin: [admin-console-hostname]
+    adminUrl: [admin-console-base-url]
+    strict: [true|false]
+    strictBackchannel: [true|false]
+```
+
+== Some fields are no longer required
+
+The `hostname` and `tlsSecret` fields are now optional to align with the Quarkus distribution configuration. With that we also removed the possibility to set `INSECURE-DISABLE` special value to those fields. In order to disable hostname checks and enable HTTP, please follow the same approach as with the Quarkus distribution, i.e. set `strict: false`, `strictBackchannel: false` and `httpEnabled: true` fields.
+
+
+= OLM channel was changed to fast
+
+The default channel of Keycloak Operator Lifecycle Manager was changed to `fast`.
+
+
+= Deprecated methods from data providers and models were removed
+
+Prior to Keycloak 15, there was a clean-up of provider and model interfaces
+where we deprecated some methods. Javadoc of these methods contained
+a corresponding replacement method (see Javadoc of Keycloak 19 release).
+In this release the methods were removed. The following is a list of all
+changed classes.
+
+The most common patterns for deprecating and removing the methods are
+the following.
+
+* Streamification - interfaces now contain only Stream-based methods.
++
+For example in https://github.com/keycloak/keycloak/blob/19.0.3/server-spi/src/main/java/org/keycloak/models/GroupProvider.java[`GroupProvider`] interface
++
+[source,java]
+----
+@Deprecated
+List<GroupModel> getGroups(RealmModel realm);
+----
+was replaced by
++
+[source,java]
+----
+Stream<GroupModel> getGroupsStream(RealmModel realm);
+----
++
+More details on streamification work can be found in
+https://issues.redhat.com/browse/KEYCLOAK-14011[KEYCLOAK-14011].
+
+* Consistent parameter ordering - methods now have strict parameter
+ordering where `RealmModel` is always the first parameter.
++
+For example in https://github.com/keycloak/keycloak/blob/19.0.3/server-spi/src/main/java/org/keycloak/storage/user/UserLookupProvider.java[`UserLookupProvider`] interface
++
+[source,java]
+----
+@Deprecated
+UserModel getUserById(String id, RealmModel realm);
+----
+was replaced by
++
+[source,java]
+----
+UserModel getUserById(RealmModel realm, String id)
+----
+
+== List of changed interfaces
+
+(`o.k.` stands for `org.keycloak.` package)
+
+* `server-spi` module
+** `o.k.credential.CredentialInputUpdater`
+** `o.k.credential.UserCredentialStore`
+** `o.k.models.ClientProvider`
+** `o.k.models.ClientSessionContext`
+** `o.k.models.GroupModel`
+** `o.k.models.GroupProvider`
+** `o.k.models.KeyManager`
+** `o.k.models.KeycloakSessionFactory`
+** `o.k.models.ProtocolMapperContainerModel`
+** `o.k.models.RealmModel`
+** `o.k.models.RealmProvider`
+** `o.k.models.RoleContainerModel`
+** `o.k.models.RoleMapperModel`
+** `o.k.models.RoleModel`
+** `o.k.models.RoleProvider`
+** `o.k.models.ScopeContainerModel`
+** `o.k.models.UserCredentialManager`
+** `o.k.models.UserModel`
+** `o.k.models.UserProvider`
+** `o.k.models.UserSessionProvider`
+** `o.k.models.utils.RoleUtils`
+** `o.k.sessions.AuthenticationSessionProvider`
+** `o.k.storage.client.ClientLookupProvider`
+** `o.k.storage.group.GroupLookupProvider`
+** `o.k.storage.user.UserLookupProvider`
+** `o.k.storage.user.UserQueryProvider`
+* `server-spi-private` module
+** `o.k.events.EventQuery`
+** `o.k.events.admin.AdminEventQuery`
+** `o.k.keys.KeyProvider`
+
+All changes are linked to the following https://github.com/keycloak/keycloak/issues/14720[issue].
+

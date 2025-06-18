@@ -1,0 +1,533 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+~ and other contributors as indicated by the @author tags.
+~
+~ Licensed under the Apache License, Version 2.0 (the "License");
+~ you may not use this file except in compliance with the License.
+~ You may obtain a copy of the License at
+~
+~ http://www.apache.org/licenses/LICENSE-2.0
+~
+~ Unless required by applicable law or agreed to in writing, software
+~ distributed under the License is distributed on an "AS IS" BASIS,
+~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+~ See the License for the specific language governing permissions and
+~ limitations under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.keycloak</groupId>
+        <artifactId>keycloak-testsuite-pom</artifactId>
+        <version>999.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    
+    <groupId>org.keycloak.testsuite</groupId>
+    <artifactId>integration-arquillian</artifactId>
+    <packaging>pom</packaging>
+
+    <name>Keycloak Arquillian Integration TestSuite</name>
+
+    <properties>
+
+        <containers.home>${project.build.directory}/containers</containers.home>
+        <auth.server.java.home>${java.home}</auth.server.java.home>
+        <app.server.java.home>${java.home}</app.server.java.home>
+        <app.server>disabled</app.server>
+        <cache.server.java.home>${java.home}</cache.server.java.home>
+
+        <!--component versions-->
+        <arquillian-core.version>1.9.3.Final</arquillian-core.version>
+        <arquillian.protocol.servlet.jakarta.version>10.0.0.Final</arquillian.protocol.servlet.jakarta.version>
+        <!--the version of shrinkwrap_resolver should align with the version in arquillian-bom-->
+        <shrinkwrap-resolver.version>3.2.1</shrinkwrap-resolver.version>
+        <selenium.version>4.28.1</selenium.version>
+        <selenium.htmlunit3.version>4.28.0</selenium.htmlunit3.version>
+        <arquillian-drone.version>3.0.0-alpha.8</arquillian-drone.version>
+        <arquillian-graphene.version>3.0.0-alpha.4</arquillian-graphene.version>
+        <arquillian-wildfly-container.version>3.0.1.Final</arquillian-wildfly-container.version>
+        <arquillian-wls-container.version>1.0.1.Final</arquillian-wls-container.version>
+        <arquillian-infinispan-container.version>1.2.0.Beta3</arquillian-infinispan-container.version>
+        <undertow.version>${undertow-jakarta.version}</undertow.version>
+        <undertow-embedded.version>1.0.0.Final</undertow-embedded.version>
+        <version.org.wildfly.extras.creaper>2.0.3</version.org.wildfly.extras.creaper>
+        <jakarta.persistence-legacy.version>2.2.3</jakarta.persistence-legacy.version>
+        <smallrye.jandex.version>3.0.5</smallrye.jandex.version>
+        <commons.validator.version>1.8.0</commons.validator.version>
+        <byte-buddy.version>1.14.13</byte-buddy.version>
+
+        <!--migration properties-->
+        <migration.70.version>1.9.8.Final</migration.70.version>
+        <migration.71.version>2.5.5.Final</migration.71.version>
+        <migration.72.version>3.4.3.Final</migration.72.version>
+        <migration.73.version>4.8.3.Final</migration.73.version>
+
+        <!-- By default, skip docker-maven-plugin when running base tests-->
+        <docker.infinispan.skip>true</docker.infinispan.skip>
+        <docker.database.skip>true</docker.database.skip>
+        <docker.database.postStart>/bin/true</docker.database.postStart>
+        <docker.database.wait-for-log-regex>NEVER-MATCHING-REGEX</docker.database.wait-for-log-regex>
+        <docker.database.cmd>NEVER-USED-CMD</docker.database.cmd>
+        <docker.database.shmsize>67108864</docker.database.shmsize>
+
+        <jdbc.mvn.groupId>com.h2database</jdbc.mvn.groupId>
+        <jdbc.mvn.artifactId>h2</jdbc.mvn.artifactId>
+        <jdbc.mvn.version>${h2.version}</jdbc.mvn.version>
+
+        <keycloak.connectionsJpa.schema>DEFAULT</keycloak.connectionsJpa.schema>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-parent</artifactId>
+                <version>${project.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- Selenium Server -->
+            <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>selenium-server</artifactId>
+                <version>${selenium.version}</version>
+            </dependency>
+
+            <!-- Selenium dependencies -->
+            <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>selenium-api</artifactId>
+                <version>${selenium.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>selenium-java</artifactId>
+                <version>${selenium.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>selenium-support</artifactId>
+                <version>${selenium.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>selenium-leg-rc</artifactId>
+                <version>${selenium.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>lift</artifactId>
+                <version>${selenium.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>selenium-manager</artifactId>
+                <version>${selenium.version}</version>
+            </dependency>
+
+            <!-- Drivers -->
+            <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>selenium-chrome-driver</artifactId>
+                <version>${selenium.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>selenium-firefox-driver</artifactId>
+                <version>${selenium.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>selenium-remote-driver</artifactId>
+                <version>${selenium.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>htmlunit3-driver</artifactId>
+                <version>${selenium.htmlunit3.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-validator</groupId>
+                <artifactId>commons-validator</artifactId>
+                <version>${commons.validator.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.jboss.arquillian</groupId>
+                <artifactId>arquillian-bom</artifactId>
+                <version>${arquillian-core.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.shrinkwrap.resolver</groupId>
+                <artifactId>shrinkwrap-resolver-bom</artifactId>
+                <version>${shrinkwrap-resolver.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.arquillian.extension</groupId>
+                <artifactId>arquillian-drone-bom</artifactId>
+                <version>${arquillian-drone.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan.arquillian.container</groupId>
+                <artifactId>infinispan-arquillian-impl</artifactId>
+                <version>${arquillian-infinispan-container.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.arquillian</groupId>
+                <artifactId>wildfly-arquillian-container-managed</artifactId>
+                <version>${arquillian-wildfly-container.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.arquillian</groupId>
+                <artifactId>wildfly-arquillian-container-remote</artifactId>
+                <version>${arquillian-wildfly-container.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.arquillian</groupId>
+                <artifactId>wildfly-arquillian-container-domain-managed</artifactId>
+                <version>${arquillian-wildfly-container.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.arquillian.container</groupId>
+                <artifactId>arquillian-wls-remote-12.1.x</artifactId>
+                <version>${arquillian-wls-container.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.arquillian.container</groupId>
+                <artifactId>undertow-embedded</artifactId>
+                <version>${undertow-embedded.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-rest-admin-ui-ext</artifactId>
+            </dependency>
+
+        </dependencies>
+    </dependencyManagement>
+    
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <configuration>
+                        <failIfNoTests>false</failIfNoTests>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>xml-maven-plugin</artifactId>
+                    <version>1.0.1</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>3.0.1</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.commonjava.maven.plugins</groupId>
+                    <artifactId>directory-maven-plugin</artifactId>
+                    <version>0.3.1</version>
+                </plugin>
+                <plugin>
+                    <groupId>com.googlecode.maven-download-plugin</groupId>
+                    <artifactId>download-maven-plugin</artifactId>
+                    <version>1.4.1</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>keytool-maven-plugin</artifactId>
+                    <version>1.5</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>${version.enforcer.plugin}</version>
+                <executions>
+                    <execution>
+                        <id>enforce-maven</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <version>3.5.4</version>
+                                </requireMavenVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>enforce-maven-for-deploy-phase</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <phase>deploy</phase>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <version>3.6.0</version>
+                                </requireMavenVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+    
+    <modules>
+        <module>test-apps</module>
+        <module>servers</module>
+        <module>tests</module>
+        <module>util</module>
+    </modules>
+    
+    <profiles>
+        <profile>
+            <id>test-70-migration</id>
+            <properties>
+                <migrated.auth.server.version>${migration.70.version}</migrated.auth.server.version>
+            </properties>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <artifactId>maven-surefire-plugin</artifactId>
+                            <configuration>
+                                <systemPropertyVariables>
+                                    <migrated.auth.server.version>${migrated.auth.server.version}</migrated.auth.server.version>
+                                </systemPropertyVariables>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+        <profile>
+            <id>test-71-migration</id>
+            <properties>
+                <migrated.auth.server.version>${migration.71.version}</migrated.auth.server.version>
+            </properties>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <artifactId>maven-surefire-plugin</artifactId>
+                            <configuration>
+                                <systemPropertyVariables>
+                                    <migrated.auth.server.version>${migrated.auth.server.version}</migrated.auth.server.version>
+                                </systemPropertyVariables>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+        <profile>
+            <id>test-72-migration</id>
+            <properties>
+                <migrated.auth.server.version>${migration.72.version}</migrated.auth.server.version>
+            </properties>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <artifactId>maven-surefire-plugin</artifactId>
+                            <configuration>
+                                <systemPropertyVariables>
+                                    <migrated.auth.server.version>${migrated.auth.server.version}</migrated.auth.server.version>
+                                </systemPropertyVariables>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+        <profile>
+            <id>test-73-migration</id>
+            <properties>
+                <migrated.auth.server.version>${migration.73.version}</migrated.auth.server.version>
+            </properties>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <artifactId>maven-surefire-plugin</artifactId>
+                            <configuration>
+                                <systemPropertyVariables>
+                                    <migrated.auth.server.version>${migrated.auth.server.version}</migrated.auth.server.version>
+                                </systemPropertyVariables>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+        <!-- Specifies default DB properties, which are used for test with embedded H2. Those are overriden when testing with any docker container
+             profile like "db-mysql". Also those can be manually overriden when running the test from CMD -->
+        <profile>
+            <id>db-default-properties</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <keycloak.connectionsJpa.driver>org.h2.Driver</keycloak.connectionsJpa.driver>
+                <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
+                <keycloak.connectionsJpa.user>sa</keycloak.connectionsJpa.user>
+                <keycloak.connectionsJpa.password/>
+                <keycloak.connectionsJpa.url>jdbc:h2:mem:test;DB_CLOSE_DELAY=-1</keycloak.connectionsJpa.url>
+            </properties>
+        </profile>
+        <profile>
+            <id>db-mysql</id>
+            <properties>
+                <keycloak.storage.connections.vendor>mysql</keycloak.storage.connections.vendor>
+                <keycloak.connectionsJpa.driver>com.mysql.jdbc.Driver</keycloak.connectionsJpa.driver>
+                <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
+                <keycloak.connectionsJpa.user>keycloak</keycloak.connectionsJpa.user>
+                <keycloak.connectionsJpa.password>keycloak</keycloak.connectionsJpa.password>
+                <keycloak.connectionsJpa.url>jdbc:mysql://${auth.server.db.host}:${docker.database.port}/${keycloak.connectionsJpa.database}?allowPublicKeyRetrieval=true</keycloak.connectionsJpa.url>
+
+                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
+                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
+                <!-- for the particular EAP version -->
+                <jdbc.mvn.groupId>com.mysql</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>mysql-connector-j</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>${mysql-jdbc.version}</jdbc.mvn.version>
+                <docker.database.image>${mysql.container}</docker.database.image>
+                <docker.database.port>3306</docker.database.port>
+                <docker.database.skip>false</docker.database.skip>
+                <docker.database.cmd>mysqld</docker.database.cmd>
+                <docker.database.wait-for-log-regex>(?si)Ready for start up.*ready [^\n]{0,30}connections</docker.database.wait-for-log-regex>
+            </properties>
+        </profile>
+        <profile>
+            <id>db-postgres</id>
+            <properties>
+                <keycloak.storage.connections.vendor>postgres</keycloak.storage.connections.vendor>
+                <keycloak.connectionsJpa.driver>org.postgresql.Driver</keycloak.connectionsJpa.driver>
+                <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
+                <keycloak.connectionsJpa.user>keycloak</keycloak.connectionsJpa.user>
+                <keycloak.connectionsJpa.password>keycloak</keycloak.connectionsJpa.password>
+                <keycloak.connectionsJpa.url>jdbc:postgresql://${auth.server.db.host}:${docker.database.port}/${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.url>
+                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
+                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
+                <!-- for the particular EAP version -->
+                <jdbc.mvn.groupId>org.postgresql</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>postgresql</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>${postgresql-jdbc.version}</jdbc.mvn.version>
+                <docker.database.image>${postgresql.container}</docker.database.image>
+                <docker.database.port>5432</docker.database.port>
+                <docker.database.skip>false</docker.database.skip>
+                <docker.database.cmd>postgres</docker.database.cmd>
+                <docker.database.wait-for-log-regex>(?si)Ready for start up.*ready [^\n]{0,30}connections</docker.database.wait-for-log-regex>
+            </properties>
+        </profile>
+        <profile>
+            <id>db-aurora-postgres</id>
+            <properties>
+                <keycloak.storage.connections.vendor>aurora-postgres</keycloak.storage.connections.vendor>
+                <keycloak.connectionsJpa.driver>software.amazon.jdbc.Driver</keycloak.connectionsJpa.driver>
+                <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
+                <keycloak.connectionsJpa.user>keycloak</keycloak.connectionsJpa.user>
+                <keycloak.connectionsJpa.password>secret99</keycloak.connectionsJpa.password>
+                <keycloak.connectionsJpa.jdbcParameters/>
+                <keycloak.connectionsJpa.url>jdbc:aws-wrapper:postgresql://${auth.server.db.host}/${keycloak.connectionsJpa.database}${keycloak.connectionsJpa.jdbcParameters}</keycloak.connectionsJpa.url>
+                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
+                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
+                <!-- for the particular EAP version -->
+                <jdbc.mvn.groupId>software.amazon.jdbc</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>aws-advanced-jdbc-wrapper</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>${aws-jdbc-wrapper.version}</jdbc.mvn.version>
+            </properties>
+        </profile>
+        <profile>
+            <id>db-mariadb</id>
+            <properties>
+                <keycloak.storage.connections.vendor>mariadb</keycloak.storage.connections.vendor>
+                <keycloak.connectionsJpa.driver>org.mariadb.jdbc.Driver</keycloak.connectionsJpa.driver>
+                <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
+                <keycloak.connectionsJpa.user>keycloak</keycloak.connectionsJpa.user>
+                <keycloak.connectionsJpa.password>keycloak</keycloak.connectionsJpa.password>
+                <keycloak.connectionsJpa.url>jdbc:mariadb://${auth.server.db.host}:${docker.database.port}/${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.url>
+                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
+                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
+                <!-- for the particular EAP version -->
+                <jdbc.mvn.groupId>org.mariadb.jdbc</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>mariadb-java-client</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>${mariadb-jdbc.version}</jdbc.mvn.version>
+                <docker.database.image>${mariadb.container}</docker.database.image>
+                <docker.database.port>3306</docker.database.port>
+                <docker.database.skip>false</docker.database.skip>
+                <!-- Need to explicitly enable utf8 as it is not the default settings in the mariadb docker image -->
+                <docker.database.cmd>--character-set-server=utf8 --collation-server=utf8_unicode_ci</docker.database.cmd>
+                <docker.database.wait-for-log-regex>(?si)Ready for start up.*ready [^\n]{0,30}connections</docker.database.wait-for-log-regex>
+            </properties>
+        </profile>
+        <profile>
+            <id>db-mssql</id>
+            <properties>
+                <docker.database.image>${mssql.container}</docker.database.image>
+                <docker.database.port>1433</docker.database.port>
+                <docker.database.skip>false</docker.database.skip>
+                <docker.database.postStart>/opt/mssql-tools18/bin/sqlcmd -e -U sa -P ${keycloak.connectionsJpa.password} -No -d master -Q CREATE\ DATABASE\ ${keycloak.connectionsJpa.database}</docker.database.postStart>
+                <docker.database.cmd>/bin/sh -c /opt/mssql/bin/sqlservr</docker.database.cmd>
+                <docker.database.wait-for-log-regex>Recovery is complete. This is an informational message only. No user action is required.</docker.database.wait-for-log-regex>
+                <keycloak.storage.connections.vendor>mssql</keycloak.storage.connections.vendor>
+                <keycloak.connectionsJpa.driver>com.microsoft.sqlserver.jdbc.SQLServerDriver</keycloak.connectionsJpa.driver>
+                <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
+                <keycloak.connectionsJpa.user>sa</keycloak.connectionsJpa.user>
+                <keycloak.connectionsJpa.password>vEry$tron9Pwd</keycloak.connectionsJpa.password>
+                <keycloak.connectionsJpa.url>jdbc:sqlserver://${auth.server.db.host}:${docker.database.port};databaseName=${keycloak.connectionsJpa.database};integratedSecurity=false;encrypt=false;trustServerCertificate=true;sendStringParametersAsUnicode=false;</keycloak.connectionsJpa.url>
+                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
+                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
+                <!-- for the particular EAP version -->
+                <jdbc.mvn.groupId>com.microsoft.sqlserver</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>mssql-jdbc</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>${mssql-jdbc.version}</jdbc.mvn.version>
+            </properties>
+        </profile>
+        <profile>
+            <id>db-oracle</id>
+            <properties>
+                <docker.database.image>${oracledb.container}</docker.database.image>
+                <docker.database.port>1521</docker.database.port>
+                <docker.database.shmsize>1073741824</docker.database.shmsize>
+                <docker.database.skip>false</docker.database.skip>
+                <docker.database.cmd>/bin/sh -c exec\ $ORACLE_BASE/$RUN_FILE</docker.database.cmd>
+                <docker.database.wait-for-log-regex>DATABASE IS READY TO USE</docker.database.wait-for-log-regex>
+                <keycloak.storage.connections.vendor>oracle</keycloak.storage.connections.vendor>
+                <keycloak.connectionsJpa.driver>oracle.jdbc.OracleDriver</keycloak.connectionsJpa.driver>
+                <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
+                <keycloak.connectionsJpa.user>keycloak</keycloak.connectionsJpa.user>
+                <keycloak.connectionsJpa.password>keycloak</keycloak.connectionsJpa.password>
+                <keycloak.connectionsJpa.url>jdbc:oracle:thin:@//${auth.server.db.host}:${docker.database.port}/${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.url>
+
+                <docker.database.postStart/>
+                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
+                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
+                <!-- for the particular EAP version -->
+                <jdbc.mvn.groupId>com.oracle.database.jdbc</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>ojdbc17</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>${oracle-jdbc.version}</jdbc.mvn.version>
+            </properties>
+        </profile>
+    </profiles>
+
+</project>

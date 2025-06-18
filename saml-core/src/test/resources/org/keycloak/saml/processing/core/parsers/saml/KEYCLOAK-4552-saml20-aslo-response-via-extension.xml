@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<samlp:LogoutRequest xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" Destination="https://keycloak/auth/realms/XXX/protocol/saml" ID="_b89618b16ed98fed3d2f90b2ddee8027" IssueInstant="2017-03-09T09:32:00Z" Version="2.0">
+  <saml:Issuer xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion">https://sp/</saml:Issuer>
+  <saml:NameID xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" Format="urn:oasis:names:tc:SAML:2.0:nameid-format:persistent">G-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX</saml:NameID>
+  <samlp:Extensions>
+    <aslo:Asynchronous xmlns:aslo="urn:oasis:names:tc:SAML:2.0:protocol:ext:async-slo"/>
+  </samlp:Extensions>
+  <samlp:SessionIndex>a1b93b43-4652-4e76-937a-cf3b982d683a</samlp:SessionIndex>
+</samlp:LogoutRequest>

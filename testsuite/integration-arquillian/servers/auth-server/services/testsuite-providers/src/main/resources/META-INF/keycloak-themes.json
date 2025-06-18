@@ -1,0 +1,13 @@
+{
+  "themes": [{
+    "name" : "address",
+    "types": [ "admin", "login" ]
+  }, {
+    "name" : "incorrect",
+    "types": [ "admin" ]
+  },
+  {
+    "name" : "organization",
+    "types": [ "login" ]
+  }]
+}

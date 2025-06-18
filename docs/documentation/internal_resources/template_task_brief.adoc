@@ -1,0 +1,20 @@
+[[task_module]]
+
+= Do One Task
+
+This paragraph explains why the user performs the task, sets the context of the task, and may explain or list special considerations specific to this task. Keep the information brief and focused on what is needed for this specific task. Suggested length is 1 to 3 sentences, can be longer if needed.
+
+
+.Prerequisites _(if needed)_
+
+* List
+
+
+.Procedure
+
+. List
+
+
+.Related Information _(if needed)_
+
+* List
