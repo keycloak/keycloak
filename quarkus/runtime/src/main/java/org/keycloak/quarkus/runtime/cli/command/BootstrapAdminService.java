@@ -54,7 +54,7 @@ public class BootstrapAdminService extends AbstractNonServerCommand {
     @Option(paramLabel = "SECRET", names = { "--client-secret:env" }, description = "Environment variable name for the client secret")
     String clientSecretEnv;
 
-    @Option(paramLabel = "IS_TEMPORARY", names = { "--is-temporary" }, description = "Indicates whether this admin account is temporary, defaults to true", defaultValue = "true")
+    @Option(names = { "--is-temporary" }, description = "Indicates whether this admin account is temporary, defaults to true", defaultValue = "true")
     boolean isTemporary;
 
     String clientSecret;
