@@ -130,4 +130,9 @@ public class OrganizationResource {
     public OrganizationIdentityProvidersResource identityProvider() {
         return new OrganizationIdentityProvidersResource(session, organization, adminEvent);
     }
+
+    @Path("roles")
+    public OrganizationRolesResource roles() {
+        return new OrganizationRolesResource(session, organization, adminEvent);
+    }
 }

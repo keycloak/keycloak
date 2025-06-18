@@ -37,6 +37,7 @@ public class OrganizationRepresentation {
     private Set<OrganizationDomainRepresentation> domains;
     private List<MemberRepresentation> members;
     private List<IdentityProviderRepresentation> identityProviders;
+    private List<OrganizationRoleRepresentation> roles;
 
     public String getId() {
         return id;
@@ -156,6 +157,21 @@ public class OrganizationRepresentation {
             identityProviders = new ArrayList<>();
         }
         identityProviders.add(idp);
+    }
+
+    public List<OrganizationRoleRepresentation> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(List<OrganizationRoleRepresentation> roles) {
+        this.roles = roles;
+    }
+
+    public void addRole(OrganizationRoleRepresentation role) {
+        if (roles == null) {
+            roles = new ArrayList<>();
+        }
+        roles.add(role);
     }
 
     @Override

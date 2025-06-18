@@ -23,4 +23,142 @@
         </addColumn>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.3.0-organization-roles">
+        
+        <!-- Organization Role table -->
+        <createTable tableName="ORG_ROLE">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DESCRIPTION" type="VARCHAR(255)"/>
+            <column name="ORG_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        
+        <!-- Foreign key to organization -->
+        <addForeignKeyConstraint baseColumnNames="ORG_ID"
+                                 baseTableName="ORG_ROLE"
+                                 constraintName="FK_ORG_ROLE_ORG"
+                                 referencedColumnNames="ID"
+                                 referencedTableName="ORG"/>
+        
+        <!-- Unique constraint for role name within organization -->
+        <addUniqueConstraint tableName="ORG_ROLE" 
+                            columnNames="ORG_ID,NAME" 
+                            constraintName="UK_ORG_ROLE_NAME"/>
+        
+        <!-- Index on organization_id for faster lookups -->
+        <createIndex tableName="ORG_ROLE" indexName="IDX_ORG_ROLE_ORG_ID">
+            <column name="ORG_ID"/>
+        </createIndex>
+
+        <!-- Organization Role Attribute table -->
+        <createTable tableName="ORG_ROLE_ATTRIBUTE">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VALUE" type="TEXT"/>
+            <column name="ORG_ROLE_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        
+        <!-- Foreign key to organization role -->
+        <addForeignKeyConstraint baseColumnNames="ORG_ROLE_ID"
+                                 baseTableName="ORG_ROLE_ATTRIBUTE"
+                                 constraintName="FK_ORG_ROLE_ATTR_ROLE"
+                                 referencedColumnNames="ID"
+                                 referencedTableName="ORG_ROLE"/>
+        
+        <!-- Index on organization_role_id for faster lookups -->
+        <createIndex tableName="ORG_ROLE_ATTRIBUTE" indexName="IDX_ORG_ROLE_ATTR_ROLE_ID">
+            <column name="ORG_ROLE_ID"/>
+        </createIndex>
+        
+        <!-- Index on name for attribute searches -->
+        <createIndex tableName="ORG_ROLE_ATTRIBUTE" indexName="IDX_ORG_ROLE_ATTR_NAME">
+            <column name="NAME"/>
+        </createIndex>
+
+        <!-- Organization Role Composite table -->
+        <createTable tableName="ORG_ROLE_COMPOSITE">
+            <column name="COMPOSITE" type="VARCHAR(36)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="CHILD_ROLE" type="VARCHAR(36)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="CHILD_TYPE" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        
+        <!-- Foreign key to composite organization role -->
+        <addForeignKeyConstraint baseColumnNames="COMPOSITE"
+                                 baseTableName="ORG_ROLE_COMPOSITE"
+                                 constraintName="FK_ORG_ROLE_COMP_COMPOSITE"
+                                 referencedColumnNames="ID"
+                                 referencedTableName="ORG_ROLE"/>
+        
+        <!-- Index on composite for faster lookups -->
+        <createIndex tableName="ORG_ROLE_COMPOSITE" indexName="IDX_ORG_ROLE_COMP_COMPOSITE">
+            <column name="COMPOSITE"/>
+        </createIndex>
+        
+        <!-- Index on child_role for reverse lookups -->
+        <createIndex tableName="ORG_ROLE_COMPOSITE" indexName="IDX_ORG_ROLE_COMP_CHILD">
+            <column name="CHILD_ROLE"/>
+        </createIndex>
+
+        <!-- User Organization Role Mapping table -->
+        <createTable tableName="USER_ORG_ROLE_MAPPING">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="USER_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ORG_ROLE_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        
+        <!-- Foreign key to user -->
+        <addForeignKeyConstraint baseColumnNames="USER_ID"
+                                 baseTableName="USER_ORG_ROLE_MAPPING"
+                                 constraintName="FK_USER_ORG_ROLE_USER"
+                                 referencedColumnNames="ID"
+                                 referencedTableName="USER_ENTITY"/>
+        
+        <!-- Foreign key to organization role -->
+        <addForeignKeyConstraint baseColumnNames="ORG_ROLE_ID"
+                                 baseTableName="USER_ORG_ROLE_MAPPING"
+                                 constraintName="FK_USER_ORG_ROLE_ROLE"
+                                 referencedColumnNames="ID"
+                                 referencedTableName="ORG_ROLE"/>
+        
+        <!-- Unique constraint to prevent duplicate mappings -->
+        <addUniqueConstraint tableName="USER_ORG_ROLE_MAPPING" 
+                            columnNames="USER_ID,ORG_ROLE_ID" 
+                            constraintName="UK_USER_ORG_ROLE"/>
+        
+        <!-- Index on user_id for faster user role lookups -->
+        <createIndex tableName="USER_ORG_ROLE_MAPPING" indexName="IDX_USER_ORG_ROLE_USER_ID">
+            <column name="USER_ID"/>
+        </createIndex>
+        
+        <!-- Index on organization_role_id for faster role member lookups -->
+        <createIndex tableName="USER_ORG_ROLE_MAPPING" indexName="IDX_USER_ORG_ROLE_ROLE_ID">
+            <column name="ORG_ROLE_ID"/>
+        </createIndex>
+
+    </changeSet>
+
 </databaseChangeLog>

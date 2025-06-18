@@ -7,6 +7,7 @@ export type OrganizationTab =
   | "settings"
   | "attributes"
   | "members"
+  | "roles"
   | "identityProviders"
   | "events";
 
