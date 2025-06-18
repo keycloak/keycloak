@@ -2,9 +2,7 @@ package org.keycloak.connections.jpa.updater.liquibase.custom;
 
 import liquibase.exception.CustomChangeException;
 import liquibase.statement.core.DeleteStatement;
-import liquibase.structure.core.Catalog;
 import liquibase.structure.core.Column;
-import liquibase.structure.core.Schema;
 import org.keycloak.migration.ModelVersion;
 
 import java.sql.PreparedStatement;
@@ -76,7 +74,7 @@ public class JpaUpdate26_2_6_RemoveDuplicateMigrationModelTime extends CustomKey
                 .filter(f -> !f.equals(highestVersionId))
                 .collect(Collectors.groupingByConcurrent(id -> i.getAndIncrement() / 20, Collectors.toList())) // Split into chunks of at most 20 items
                 .values().stream()
-                .map(ids -> new DeleteStatement(null, null, tableName)
+                .map(ids -> new DeleteStatement(null, null, MIGRATION_MODEL_TABLE)
                         .setWhere(":name IN (" + ids.stream().map(id -> "?").collect(Collectors.joining(",")) + ")")
                         .addWhereColumnName(colId)
                         .addWhereParameters(ids.toArray())
