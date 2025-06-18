@@ -102,8 +102,6 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
     public static final String OPTIMIZED_ARG = "--optimized";
 
-    private boolean useServiceCaCrt;
-
     // Do not create the deployment before the initial admin secret is created to prevent the deployment from restarting.
     // Not using native dependsOn as the initial admin secret may not be created by the operator and might be provided by the user,
     // in which case we want to create the deployment immediately.
@@ -118,11 +116,6 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
     public KeycloakDeploymentDependentResource() {
         super(StatefulSet.class);
-        useServiceCaCrt = Files.exists(Path.of(SERVICE_CA_CRT));
-    }
-
-    public void setUseServiceCaCrt(boolean useServiceCaCrt) {
-        this.useServiceCaCrt = useServiceCaCrt;
     }
 
     @Override
@@ -303,9 +296,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         }
         handleScheduling(keycloakCR, schedulingLabels, specBuilder);
 
-        if (!keycloakCR.getSpec().isAutomountServiceAccountToken()) {
-            specBuilder.withAutomountServiceAccountToken(false);
-        }
+        specBuilder.withAutomountServiceAccountToken(keycloakCR.getSpec().isAutomountServiceAccountToken());
 
         // there isn't currently an editOrNewFirstContainer, so we need to do this manually
         var containerBuilder = specBuilder.buildContainers().isEmpty() ? specBuilder.addNewContainer() : specBuilder.editFirstContainer();
@@ -443,7 +434,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         LinkedHashMap<String, EnvVar> varMap = Stream.concat(Stream.concat(env.stream(), firstClasssEnvVars.stream()), additionalEnvVars.stream())
                 .collect(Collectors.toMap(EnvVar::getName, Function.identity(), (e1, e2) -> e1, LinkedHashMap::new));
 
-        if (useServiceCaCrt && keycloakCR.getSpec().isAutomountServiceAccountToken()) {
+        if (keycloakCR.getSpec().isAutomountServiceAccountToken()) {
             String truststores = SERVICE_ACCOUNT_DIR + "ca.crt";
             truststores += "," + SERVICE_CA_CRT;
             varMap.putIfAbsent(KC_TRUSTSTORE_PATHS, new EnvVarBuilder().withName(KC_TRUSTSTORE_PATHS).withValue(truststores).build());

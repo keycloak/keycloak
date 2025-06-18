@@ -151,7 +151,7 @@ public class KeycloakSpec {
 
     @JsonProperty("automountServiceAccountToken")
     @JsonPropertyDescription("Set this to automount the default ServiceAccount Token and Service CA")
-    private boolean automountServiceAccountToken;
+    private Boolean automountServiceAccountToken = true;
 
 
     public HttpSpec getHttpSpec() {
@@ -354,8 +354,8 @@ public class KeycloakSpec {
         this.startupProbeSpec = startupProbeSpec;
     }
 
-    public boolean isAutomountServiceAccountToken() {
+    public Boolean isAutomountServiceAccountToken() {
         return automountServiceAccountToken;
     }
-    public void setAutomountServiceAccountToken(boolean automountServiceAccountToken) {this.automountServiceAccountToken = automountServiceAccountToken;}
+    public void setAutomountServiceAccountToken(Boolean automountServiceAccountToken) {this.automountServiceAccountToken = automountServiceAccountToken;}
 }
