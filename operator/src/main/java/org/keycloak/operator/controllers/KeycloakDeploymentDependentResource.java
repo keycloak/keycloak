@@ -327,6 +327,12 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         if (!specBuilder.hasDnsPolicy()) {
             specBuilder.withDnsPolicy("ClusterFirst");
         }
+        if (Boolean.TRUE.equals(keycloakCR.getSpec().getAutomountServiceAccountToken()) || keycloakCR.getSpec().getAutomountServiceAccountToken() == null) {
+            specBuilder.withAutomountServiceAccountToken(true);
+
+        } else if (Boolean.FALSE.equals(keycloakCR.getSpec().getAutomountServiceAccountToken())) {
+            specBuilder.withAutomountServiceAccountToken(false);
+        }
         handleScheduling(keycloakCR, schedulingLabels, specBuilder);
 
         // there isn't currently an editOrNewFirstContainer, so we need to do this manually
@@ -463,7 +469,10 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         LinkedHashMap<String, EnvVar> varMap = Stream.concat(Stream.concat(unsupportedEnv.stream(), firstClasssEnvVars.stream()), Stream.concat(additionalEnvVars.stream(), env))
                 .collect(Collectors.toMap(EnvVar::getName, Function.identity(), (e1, e2) -> e1, LinkedHashMap::new));
 
-        String truststores = SERVICE_ACCOUNT_DIR + "ca.crt";
+        String truststores = SERVICE_ACCOUNT_DIR;
+        if (baseDeployment.getSpec().getTemplate().getSpec().getAutomountServiceAccountToken()) {
+            truststores += "ca.crt";
+        }
 
         if (useServiceCaCrt) {
             truststores += "," + SERVICE_CA_CRT;
