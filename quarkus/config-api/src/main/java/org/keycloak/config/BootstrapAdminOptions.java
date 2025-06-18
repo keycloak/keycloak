@@ -39,7 +39,7 @@ public class BootstrapAdminOptions {
 
     public static final Option<Boolean> IS_TEMPORARY = new OptionBuilder<>("bootstrap-admin-temporary", Boolean.class)
             .category(OptionCategory.BOOTSTRAP_ADMIN)
-            .description("Indicates whether this admin account is temporary." + USED_ONLY_WHEN + NON_CLI)
+            .description("Indicates whether the admin user or service account is temporary." + USED_ONLY_WHEN + NON_CLI)
             .defaultValue(DEFAULT_TEMP_ADMIN_IS_TEMPORARY)
             .build();
 
