@@ -292,6 +292,9 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         var specBuilder = baseDeploymentBuilder.editSpec().editTemplate().editOrNewSpec();
 
+        if (!specBuilder.hasAutomountServiceAccountToken()) {
+            specBuilder.withAutomountServiceAccountToken(false);
+        }
         if (!specBuilder.hasRestartPolicy()) {
             specBuilder.withRestartPolicy("Always");
         }
