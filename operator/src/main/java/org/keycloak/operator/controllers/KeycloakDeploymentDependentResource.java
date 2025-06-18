@@ -292,9 +292,6 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         var specBuilder = baseDeploymentBuilder.editSpec().editTemplate().editOrNewSpec();
 
-        if (!specBuilder.hasAutomountServiceAccountToken()) {
-            specBuilder.withAutomountServiceAccountToken(false);
-        }
         if (!specBuilder.hasRestartPolicy()) {
             specBuilder.withRestartPolicy("Always");
         }
@@ -305,6 +302,10 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
             specBuilder.withDnsPolicy("ClusterFirst");
         }
         handleScheduling(keycloakCR, schedulingLabels, specBuilder);
+
+        if (!keycloakCR.getSpec().isAutomountServiceAccountToken()) {
+            specBuilder.withAutomountServiceAccountToken(false);
+        }
 
         // there isn't currently an editOrNewFirstContainer, so we need to do this manually
         var containerBuilder = specBuilder.buildContainers().isEmpty() ? specBuilder.addNewContainer() : specBuilder.editFirstContainer();
@@ -442,14 +443,12 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         LinkedHashMap<String, EnvVar> varMap = Stream.concat(Stream.concat(env.stream(), firstClasssEnvVars.stream()), additionalEnvVars.stream())
                 .collect(Collectors.toMap(EnvVar::getName, Function.identity(), (e1, e2) -> e1, LinkedHashMap::new));
 
-        String truststores = SERVICE_ACCOUNT_DIR + "ca.crt";
-
-        if (useServiceCaCrt) {
+        if (useServiceCaCrt && keycloakCR.getSpec().isAutomountServiceAccountToken()) {
+            String truststores = SERVICE_ACCOUNT_DIR + "ca.crt";
             truststores += "," + SERVICE_CA_CRT;
+            varMap.putIfAbsent(KC_TRUSTSTORE_PATHS, new EnvVarBuilder().withName(KC_TRUSTSTORE_PATHS).withValue(truststores).build());
         }
 
-        // include the kube CA if the user is not controlling KC_TRUSTSTORE_PATHS via the unsupported or the additional
-        varMap.putIfAbsent(KC_TRUSTSTORE_PATHS, new EnvVarBuilder().withName(KC_TRUSTSTORE_PATHS).withValue(truststores).build());
 
         setTracingEnvVars(keycloakCR, varMap);
 

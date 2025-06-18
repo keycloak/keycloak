@@ -149,6 +149,10 @@ public class KeycloakSpec {
     @JsonPropertyDescription("Configuration for startup probe, by default it is 1 for periodSeconds and 600 for failureThreshold")
     private ProbeSpec startupProbeSpec;
 
+    @JsonProperty("automountServiceAccountToken")
+    @JsonPropertyDescription("Set this to automount the default ServiceAccount Token and Service CA")
+    private boolean automountServiceAccountToken;
+
 
     public HttpSpec getHttpSpec() {
         return httpSpec;
@@ -349,4 +353,9 @@ public class KeycloakSpec {
     public void setStartupProbeSpec(ProbeSpec startupProbeSpec) {
         this.startupProbeSpec = startupProbeSpec;
     }
+
+    public boolean isAutomountServiceAccountToken() {
+        return automountServiceAccountToken;
+    }
+    public void setAutomountServiceAccountToken(boolean automountServiceAccountToken) {this.automountServiceAccountToken = automountServiceAccountToken;}
 }
