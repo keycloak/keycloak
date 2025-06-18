@@ -54,7 +54,6 @@ public final class BootstrapAdminPropertyMappers {
                         .isMasked(true)
                         .build(),
                 fromOption(BootstrapAdminOptions.IS_TEMPORARY)
-                        .paramLabel("is temporary")
                         .build()
         };
     }
