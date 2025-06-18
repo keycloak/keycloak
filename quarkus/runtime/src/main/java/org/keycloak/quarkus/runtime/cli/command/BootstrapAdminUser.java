@@ -54,7 +54,7 @@ public class BootstrapAdminUser extends AbstractNonServerCommand {
     @Option(paramLabel = "PASSWORD", names = { "--password:env" }, description = "Environment variable name for the admin user password")
     String passwordEnv;
 
-    @Option(paramLabel = "IS_TEMPORARY", names = { "--is-temporary" }, description = "Indicates whether this admin account is temporary, defaults to true", defaultValue = "true")
+    @Option(names = { "--is-temporary" }, description = "Indicates whether this admin account is temporary, defaults to true", defaultValue = "true")
     boolean isTemporary;
 
     String password;
