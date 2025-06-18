@@ -19,6 +19,8 @@ package org.keycloak.truststore;
 
 import org.junit.Test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.net.URL;
 import java.security.KeyStore;
@@ -30,6 +32,24 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 public class TruststoreBuilderTest {
+
+    @Test
+    public void testNullPassword() throws Exception {
+        URL url = TruststoreBuilderTest.class.getResource("/truststores/keycloak.pem");
+
+        // eventually this just calling truststore.setCertificateEntry(alias, cert)
+        KeyStore storeWithoutDefaults = TruststoreBuilder.createMergedTruststore(new String[] { url.getPath() }, false);
+        // make sure the entry was added
+        assertTrue(storeWithoutDefaults.aliases().hasMoreElements());
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        storeWithoutDefaults.store(baos, null);
+
+        KeyStore kc1 = KeyStore.getInstance("pkcs12");
+        kc1.load(new ByteArrayInputStream(baos.toByteArray()), null);
+        // make sure the entry exists
+        assertTrue(kc1.aliases().hasMoreElements());
+    }
 
     @Test
     public void testMergedTrustStore() throws Exception {
