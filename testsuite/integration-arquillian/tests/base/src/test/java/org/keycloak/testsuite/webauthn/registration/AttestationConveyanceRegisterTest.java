@@ -18,7 +18,8 @@
 package org.keycloak.testsuite.webauthn.registration;
 
 import com.webauthn4j.data.AttestationConveyancePreference;
-import org.junit.Ignore;
+import com.webauthn4j.data.attestation.statement.NoneAttestationStatement;
+import com.webauthn4j.data.attestation.statement.PackedAttestationStatement;
 import org.junit.Test;
 import org.keycloak.models.credential.dto.WebAuthnCredentialData;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
@@ -63,23 +64,32 @@ public class AttestationConveyanceRegisterTest extends AbstractWebAuthnVirtualTe
         });
     }
 
-    @Ignore("invalid cert path")
     @Test
     public void attestationConveyancePreferenceNone() {
         assertAttestationConveyance(true, AttestationConveyancePreference.NONE);
     }
 
-    @Ignore("invalid cert path")
     @Test
     public void attestationConveyancePreferenceIndirect() {
-        assertAttestationConveyance(true, AttestationConveyancePreference.INDIRECT);
+        try {
+            // webauthn virtual emulator in chrome sets a self signed certificate every time, truststore needs to be disabled
+            testingClient.testing().disableTruststoreSpi();
+            assertAttestationConveyance(true, AttestationConveyancePreference.INDIRECT);
+        } finally {
+            testingClient.testing().reenableTruststoreSpi();
+        }
     }
 
-    @Ignore("invalid cert path")
     @Test
     public void attestationConveyancePreferenceDirect() {
         getVirtualAuthManager().useAuthenticator(DEFAULT.getOptions().setHasResidentKey(true).setIsUserConsenting(true).setHasUserVerification(true));
-        assertAttestationConveyance(true, AttestationConveyancePreference.DIRECT);
+        try {
+            // webauthn virtual emulator in chrome sets a self signed certificate every time, truststore needs to be disabled
+            testingClient.testing().disableTruststoreSpi();
+            assertAttestationConveyance(true, AttestationConveyancePreference.DIRECT);
+        } finally {
+            testingClient.testing().reenableTruststoreSpi();
+        }
     }
 
     protected void assertAttestationConveyance(boolean shouldSuccess, AttestationConveyancePreference attestation) {
@@ -102,6 +112,7 @@ public class AttestationConveyanceRegisterTest extends AbstractWebAuthnVirtualTe
             assertThat(isErrorCurrent, is(!shouldSuccess));
 
             final String credentialType = getCredentialType();
+            final String attestationValue = attestation.getValue();
 
             getTestingClient().server(TEST_REALM_NAME).run(session -> {
                 final WebAuthnDataWrapper dataWrapper = new WebAuthnDataWrapper(session, USERNAME, credentialType);
@@ -109,7 +120,11 @@ public class AttestationConveyanceRegisterTest extends AbstractWebAuthnVirtualTe
 
                 final WebAuthnCredentialData data = dataWrapper.getWebAuthnData();
                 assertThat(data, notNullValue());
-                assertThat(data.getAttestationStatementFormat(), is(attestation.getValue()));
+                if (attestationValue.equals(AttestationConveyancePreference.NONE.getValue())) {
+                    assertThat(data.getAttestationStatementFormat(), is(NoneAttestationStatement.FORMAT));
+                } else {
+                    assertThat(data.getAttestationStatementFormat(), is(PackedAttestationStatement.FORMAT));
+                }
             });
         } catch (IOException e) {
             throw new RuntimeException(e);

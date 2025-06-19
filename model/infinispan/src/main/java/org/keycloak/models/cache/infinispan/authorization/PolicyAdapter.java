@@ -25,6 +25,7 @@ import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.cache.infinispan.LazyModel;
 import org.keycloak.models.cache.infinispan.authorization.entities.CachedPolicy;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
@@ -53,7 +54,7 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
         this.cached = cached;
         this.cacheSession = cacheSession;
         this.session = cacheSession.session;
-        this.modelSupplier = this::getPolicyModel;
+        this.modelSupplier = new LazyModel<>(this::getPolicyModel);
     }
 
     @Override

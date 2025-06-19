@@ -32,13 +32,13 @@ NOTE: To set the theme for the `master` Admin Console you need to set the Admin 
 +
 . To see the changes to the Admin Console refresh the page.
 
-. Change the welcome theme by using the `spi-theme-welcome-theme` option.
+. Change the welcome theme by using the `spi-theme--welcome-theme` option.
 
 . For example:
 +
 [source,bash]
 ----
-bin/kc.[sh|bat] start --spi-theme-welcome-theme=custom-theme
+bin/kc.[sh|bat] start --spi-theme--welcome-theme=custom-theme
 ----
 
 [[_default-themes]]
@@ -74,7 +74,7 @@ restarting {project_name}.
 +
 [source,bash]
 ----
-bin/kc.[sh|bat] start --spi-theme-static-max-age=-1 --spi-theme-cache-themes=false --spi-theme-cache-templates=false
+bin/kc.[sh|bat] start --spi-theme--static-max-age=-1 --spi-theme--cache-themes=false --spi-theme-cache--templates=false
 ----
 
 . Create a directory in the `themes` directory.

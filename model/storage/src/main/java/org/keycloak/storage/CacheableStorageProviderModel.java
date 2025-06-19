@@ -219,16 +219,13 @@ public class CacheableStorageProviderModel extends PrioritizedComponentModel {
 
     public static long dailyTimeout(int hour, int minute) {
         Calendar cal = Calendar.getInstance();
-        Calendar cal2 = Calendar.getInstance();
         cal.setTimeInMillis(Time.currentTimeMillis());
-        cal2.setTimeInMillis(Time.currentTimeMillis());
-        cal2.set(Calendar.HOUR_OF_DAY, hour);
-        cal2.set(Calendar.MINUTE, minute);
-        if (cal2.getTimeInMillis() < cal.getTimeInMillis()) {
-            int add = (24 * 60 * 60 * 1000);
-            cal.add(Calendar.MILLISECOND, add);
-        } else {
-            cal = cal2;
+        cal.set(Calendar.HOUR_OF_DAY, hour);
+        cal.set(Calendar.MINUTE, minute);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        if (cal.getTimeInMillis() < Time.currentTimeMillis()) {
+            cal.add(Calendar.DAY_OF_YEAR, 1);
         }
         return cal.getTimeInMillis();
     }
@@ -238,6 +235,8 @@ public class CacheableStorageProviderModel extends PrioritizedComponentModel {
         cal.setTimeInMillis(Time.currentTimeMillis());
         cal.set(Calendar.HOUR_OF_DAY, hour);
         cal.set(Calendar.MINUTE, minute);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
         if (cal.getTimeInMillis() > Time.currentTimeMillis()) {
             // if daily evict for today hasn't happened yet set boundary
             // to yesterday's time of eviction
@@ -248,18 +247,18 @@ public class CacheableStorageProviderModel extends PrioritizedComponentModel {
 
     public static long weeklyTimeout(int day, int hour, int minute) {
         Calendar cal = Calendar.getInstance();
-        Calendar cal2 = Calendar.getInstance();
         cal.setTimeInMillis(Time.currentTimeMillis());
-        cal2.setTimeInMillis(Time.currentTimeMillis());
-        cal2.set(Calendar.HOUR_OF_DAY, hour);
-        cal2.set(Calendar.MINUTE, minute);
-        cal2.set(Calendar.DAY_OF_WEEK, day);
-        if (cal2.getTimeInMillis() < cal.getTimeInMillis()) {
+        cal.set(Calendar.HOUR_OF_DAY, hour);
+        cal.set(Calendar.MINUTE, minute);
+        cal.set(Calendar.DAY_OF_WEEK, day);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        if (cal.getTimeInMillis() < Time.currentTimeMillis()) {
             int add = (7 * 24 * 60 * 60 * 1000);
-            cal2.add(Calendar.MILLISECOND, add);
+            cal.add(Calendar.MILLISECOND, add);
         }
 
-        return cal2.getTimeInMillis();
+        return cal.getTimeInMillis();
     }
 
 

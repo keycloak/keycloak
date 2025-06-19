@@ -8,7 +8,11 @@ if [ "$REPO" == "" ]; then
 fi
 
 function parse_issues() {
-    echo "$1" | grep -i -P -o "(close|closes|closed|resolve|resolves|resolved|fixes|fixed):? #[[:digit:]]*" | cut -d '#' -f 2 | sort -n
+    echo "$1" | \
+      grep -i -P -o "(close|closes|closed|resolve|resolves|resolved|fixes|fixed):? (#|https://github.com/keycloak/keycloak/issues/)[[:digit:]]*" | \
+      sed -e 's|https://github.com/keycloak/keycloak/issues/|#|g' | \
+      sed -e 's|keycloak/keycloak/issues/|#|g' | \
+      cut -d '#' -f 2 | sort -n
 }
 
 if [ "$PR" != "" ]; then

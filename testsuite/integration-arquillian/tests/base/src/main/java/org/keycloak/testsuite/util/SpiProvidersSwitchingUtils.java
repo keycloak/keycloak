@@ -69,14 +69,14 @@ public class SpiProvidersSwitchingUtils {
             @Override
             public void setDefaultProvider(Container container, String spiName, String providerId, String... config) {
                 List<String> args = new LinkedList<>();
-                args.add(KEYCLOAKX_ARG_SPI_PREFIX + toDashCase(spiName) + "-provider=" + providerId);
+                args.add(KEYCLOAKX_ARG_SPI_PREFIX + toDashCase(spiName) + "--provider=" + providerId);
                 if (config != null) {
                     String optionName = null;
                     for (String c : config) {
                         if (optionName == null) {
                             optionName = c;
                         } else {
-                            args.add(KEYCLOAKX_ARG_SPI_PREFIX + toDashCase(spiName) + "-" + providerId + "-" + optionName + "=" + c);
+                            args.add(KEYCLOAKX_ARG_SPI_PREFIX + toDashCase(spiName) + "--" + providerId + "--" + optionName + "=" + c);
                             optionName = null;
                         }
                     }
@@ -197,7 +197,7 @@ public class SpiProvidersSwitchingUtils {
         Container container = authServerInfo.getArquillianContainer();
 
         log.infof("Removing default provider setting for %s", spi);
-        
+
         if (annotation.onlyUpdateDefault()) {
             spiSwitcher.unsetDefaultProvider(container, spi);
         } else {

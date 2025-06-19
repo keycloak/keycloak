@@ -242,7 +242,9 @@ public class ModelToRepresentation {
         if (setUserAttributes) {
             rep.setEmail(user.getEmail());
         }
-        rep.setEnabled(user.isEnabled());
+        if (rep.isEnabled() == null) {
+            rep.setEnabled(user.isEnabled());
+        }
         rep.setEmailVerified(user.isEmailVerified());
         rep.setTotp(user.credentialManager().isConfiguredFor(OTPCredentialModel.TYPE));
         rep.setDisableableCredentialTypes(user.credentialManager()
@@ -290,7 +292,9 @@ public class ModelToRepresentation {
         if (setUserAttributes) {
             rep.setEmail(user.getEmail());
         }
-        rep.setEnabled(user.isEnabled());
+        if (rep.isEnabled() == null) {
+            rep.setEnabled(user.isEnabled());
+        }
         rep.setEmailVerified(user.isEmailVerified());
         rep.setFederationLink(user.getFederationLink());
         addAttributeToBriefRep(user, rep, IS_TEMP_ADMIN_ATTR_NAME);

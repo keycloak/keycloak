@@ -147,7 +147,14 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
     public void fetchStaticResourceShouldRedirectOnUnknownVersion() throws IOException {
         final String resourcesVersion = testingClient.server().fetch(session -> Version.RESOURCES_VERSION, String.class);
         assertFound(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + resourcesVersion + "/login/keycloak.v2/css/styles.css");
-        assertRedirect(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + "unknown" + "/login/keycloak.v2/css/styles.css");
+        assertFound(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + resourcesVersion + "/login/keycloak.v2/css%2Fstyles.css");
+        assertNotFound(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + "unkno" + "/login/keycloak.v2/css%2Fstyles.css");
+        assertNotFound(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + "unkn%2F" + "/login/keycloak.v2/css/styles.css");
+        // This on check will fail on Quarkus as Quarkus will normalize the URL before handing it to the REST endpoint
+        // It will succeed on Undertow
+        // assertNotFound(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + "unkno" + "/login/keycloak.v2/css/../css/styles.css");
+        assertRedirectAndValidateRedirect(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + "unkno" + "/login/keycloak.v2/css/styles.css?name=%2Fvalue",
+                suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + resourcesVersion + "/login/keycloak.v2/css/styles.css?name=%2Fvalue");
     }
 
 
@@ -162,7 +169,7 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
         assertNoRedirect(suiteContext.getAuthServerInfo().getContextRoot().toString() + resource);
 
         // The unknown resource should be accessible without a redirect.
-        assertNoRedirect(suiteContext.getAuthServerInfo().getContextRoot().toString() + resource.replaceAll(Pattern.quote(resourcesVersion), "unknown"));
+        assertNoRedirect(suiteContext.getAuthServerInfo().getContextRoot().toString() + resource.replaceAll(Pattern.quote(resourcesVersion), "unkno"));
     }
 
     @Test
@@ -222,14 +229,18 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
-    private void assertRedirect(String url) throws IOException {
+    private void assertRedirectAndValidateRedirect(String url, String redirect) throws IOException {
+        assertRedirect(url, redirect);
+        assertFound(url);
+    }
+
+    private void assertRedirect(String url, String redirect) throws IOException {
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().disableRedirectHandling().build()) {
             HttpGet get = new HttpGet(url);
             CloseableHttpResponse response = httpClient.execute(get);
 
             MatcherAssert.assertThat(response.getStatusLine().getStatusCode(), CoreMatchers.equalTo(307));
-
-            assertFound(url);
+            MatcherAssert.assertThat(response.getFirstHeader("Location").getValue(), CoreMatchers.equalTo(redirect));
         }
     }
 

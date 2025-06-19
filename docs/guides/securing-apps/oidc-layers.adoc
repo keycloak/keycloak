@@ -6,7 +6,7 @@ title="Securing applications and services with OpenID Connect"
 priority=20
 summary="Use OpenID Connect with {project_name} to secure applications and services.">
 
-include::partials/oidc/available-endpoints.adoc[]
+<#include "partials/oidc/available-endpoints.adoc" />
 
 include::partials/oidc/supported-grant-types.adoc[]
 

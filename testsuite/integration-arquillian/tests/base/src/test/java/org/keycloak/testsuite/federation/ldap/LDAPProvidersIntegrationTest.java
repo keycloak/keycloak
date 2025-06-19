@@ -1341,48 +1341,52 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
     @Test
     public void testLDAPUserRefreshCache() {
-        testingClient.server().run(session -> {
-            UserStorageUtil.userCache(session).clear();
-        });
+        try {
+            testingClient.testing().setTestingInfinispanTimeService();
+            testingClient.server().run(session -> {
+                UserStorageUtil.userCache(session).clear();
+            });
 
-        testingClient.server().run(session -> {
-            LDAPTestContext ctx = LDAPTestContext.init(session);
-            RealmModel appRealm = ctx.getRealm();
-            session.getContext().setRealm(appRealm);
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                RealmModel appRealm = ctx.getRealm();
+                session.getContext().setRealm(appRealm);
 
-            LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ctx.getLdapModel());
-            LDAPTestUtils.addLDAPUser(ldapProvider, appRealm, "johndirect", "John", "Direct", "johndirect@email.org", null, "1234");
+                LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ctx.getLdapModel());
+                LDAPTestUtils.addLDAPUser(ldapProvider, appRealm, "johndirect", "John", "Direct", "johndirect@email.org", null, "1234");
 
-            // Fetch user from LDAP and check that postalCode is filled
-            UserModel user = session.users().getUserByUsername(appRealm, "johndirect");
-            String postalCode = user.getFirstAttribute("postal_code");
-            Assert.assertEquals("1234", postalCode);
+                // Fetch user from LDAP and check that postalCode is filled
+                UserModel user = session.users().getUserByUsername(appRealm, "johndirect");
+                String postalCode = user.getFirstAttribute("postal_code");
+                Assert.assertEquals("1234", postalCode);
 
-            LDAPTestUtils.removeLDAPUserByUsername(ldapProvider, appRealm, ldapProvider.getLdapIdentityStore().getConfig(), "johndirect");
-        });
+                LDAPTestUtils.removeLDAPUserByUsername(ldapProvider, appRealm, ldapProvider.getLdapIdentityStore().getConfig(), "johndirect");
+            });
 
-        setTimeOffset(60 * 5); // 5 minutes in future, user should be cached still
+            setTimeOffset(60 * 5); // 5 minutes in future, user should be cached still
 
-        testingClient.server().run(session -> {
-            RealmModel appRealm = new RealmManager(session).getRealmByName("test");
-            session.getContext().setRealm(appRealm);
-            CachedUserModel user = (CachedUserModel) session.users().getUserByUsername(appRealm, "johndirect");
-            String postalCode = user.getFirstAttribute("postal_code");
-            String email = user.getEmail();
-            Assert.assertEquals("1234", postalCode);
-            Assert.assertEquals("johndirect@email.org", email);
-        });
+            testingClient.server().run(session -> {
+                RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+                session.getContext().setRealm(appRealm);
+                CachedUserModel user = (CachedUserModel) session.users().getUserByUsername(appRealm, "johndirect");
+                String postalCode = user.getFirstAttribute("postal_code");
+                String email = user.getEmail();
+                Assert.assertEquals("1234", postalCode);
+                Assert.assertEquals("johndirect@email.org", email);
+            });
 
-        setTimeOffset(60 * 20); // 20 minutes into future, cache will be invalidated
+            setTimeOffset(60 * 20); // 20 minutes into future, cache will be invalidated
 
-        testingClient.server().run(session -> {
-            RealmModel appRealm = new RealmManager(session).getRealmByName("test");
-            session.getContext().setRealm(appRealm);
-            UserModel user = session.users().getUserByUsername(appRealm, "johndirect");
-            Assert.assertNull(user);
-        });
-
-        setTimeOffset(0);
+            testingClient.server().run(session -> {
+                RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+                session.getContext().setRealm(appRealm);
+                UserModel user = session.users().getUserByUsername(appRealm, "johndirect");
+                Assert.assertNull(user);
+            });
+        } finally {
+            resetTimeOffset();
+            testingClient.testing().revertTestingInfinispanTimeService();
+        }
     }
 
     @Test
@@ -1447,6 +1451,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
     @Test
     public void testAlwaysReadValueFromLdapCached() throws Exception {
         try {
+            testingClient.testing().setTestingInfinispanTimeService();
             // import user from the ldap johnkeycloak and cache it reading it by id
             List<UserRepresentation> users = testRealm().users().search("johnkeycloak", true);
             Assert.assertEquals(1, users.size());
@@ -1489,6 +1494,8 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
                 johnLdapObject.setSingleAttribute(LDAPConstants.SN, "Doe");
                 ctx.getLdapProvider().getLdapIdentityStore().update(johnLdapObject);
             });
+            resetTimeOffset();
+            testingClient.testing().revertTestingInfinispanTimeService();
         }
     }
 

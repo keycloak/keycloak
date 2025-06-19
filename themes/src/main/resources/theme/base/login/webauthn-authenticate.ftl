@@ -85,7 +85,7 @@
                 challenge : '${challenge}',
                 userVerification : '${userVerification}',
                 rpId : '${rpId}',
-                createTimeout : ${createTimeout},
+                createTimeout : ${createTimeout?c},
                 errmsg : "${msg("webauthn-unsupported-browser-text")?no_esc}"
             };
             authenticateByWebAuthn(input);

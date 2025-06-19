@@ -23,10 +23,11 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.CacheControl;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
+import org.jboss.logging.Logger;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.MimeTypeUtil;
@@ -47,6 +48,7 @@ import jakarta.ws.rs.ext.Provider;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -55,6 +57,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
@@ -67,6 +70,9 @@ import static java.util.stream.Collectors.toSet;
 @Provider
 @Path("/resources")
 public class ThemeResource {
+
+    private static final Logger log = Logger.getLogger(ThemeResource.class);
+    private static final Pattern RESOURCE_TAG_PATTERN = Pattern.compile("[0-9a-z]{5}");
 
     @Context
     private KeycloakSession session;
@@ -82,7 +88,7 @@ public class ThemeResource {
      */
     @GET
     @Path("/{version}/{themeType}/{themeName}/{path:.*}")
-    public Response getResource(@PathParam("version") String version, @PathParam("themeType") String themeType, @PathParam("themeName") String themeName, @PathParam("path") String path, @HeaderParam(HttpHeaders.IF_NONE_MATCH) String etag) {
+    public Response getResource(@PathParam("version") String version, @PathParam("themeType") String themeType, @PathParam("themeName") String themeName, @PathParam("path") String path, @HeaderParam(HttpHeaders.IF_NONE_MATCH) String etag, @Context UriInfo uriInfo) {
         final Optional<Theme.Type> type = getThemeType(themeType);
 
         if (!version.equals(Version.RESOURCES_VERSION) && !Profile.isFeatureEnabled(Profile.Feature.ROLLING_UPDATES_V2)) {
@@ -100,20 +106,45 @@ public class ThemeResource {
             boolean hasContentHash = theme.hasContentHash(path);
 
             if (Profile.isFeatureEnabled(Profile.Feature.ROLLING_UPDATES_V2)) {
+
+                String base = uriInfo.getBaseUri().getPath();
+                base = base.substring(0, base.length() - 1);
+                if (!RESOURCE_TAG_PATTERN.matcher(version).matches()) {
+                    // This prevents open or half-open redirects to other URLs later, or is accepting any version
+                    log.debugf("Illegal version passed, returning a 404: %s", uriInfo.getRequestUri().getPath());
+                    return Response.status(Response.Status.NOT_FOUND).build();
+                }
+
                 if (!version.equals(Version.RESOURCES_VERSION) && !hasContentHash) {
                     // If it is not the right version, and it does not have a content hash, redirect.
                     // If it is not the right version, but it has a content hash, continue to see if it exists.
+
+                    // A simpler way to check for encoded URL characters would be to retrieve the raw values.
+                    // Unfortunately, RESTEasy doesn't support this, and UrlInfo will throw an IllegalArgumentException.
+                    if (!uriInfo.getRequestUri().toURL().getPath().startsWith(base + UriBuilder.fromResource(ThemeResource.class)
+                            .path("/{version}/{themeType}/{themeName}/{path}").build(version,themeType, themeName, path).getPath())) {
+                        // This prevents half-open redirects
+                        log.debugf("No URL encoding should be necessary for the path, returning a 404: %s", uriInfo.getRequestUri().getPath());
+                        return Response.status(Response.Status.NOT_FOUND).build();
+                    }
+
+                    URI redirectUri = UriBuilder.fromResource(ThemeResource.class)
+                            .path("/{version}/{themeType}/{themeName}/{path}")
+                            .replaceQuery(uriInfo.getRequestUri().getRawQuery())
+                            // The 'path' can contain slashes, so encoding of slashes is set to false
+                            .build(new Object[]{Version.RESOURCES_VERSION, themeType, themeName, path}, false);
+                    if (!redirectUri.normalize().equals(redirectUri)) {
+                        // This prevents half-open redirects
+                        log.debugf("Redirect URL should not require normalization, returning a 404: %s", redirectUri.toString());
+                        return Response.status(Response.Status.NOT_FOUND).build();
+                    }
 
                     // The redirect will lead the browser to a resource that it then (when retrieved successfully) can cache again.
                     // This assumes that it is better to try to some content even if it is outdated or too new, instead of returning a 404.
                     // This should usually work for images, CSS or (simple) JavaScript referenced in the login theme that needs to be
                     // loaded while the rolling restart is progressing.
-                    return Response.temporaryRedirect(
-                            UriBuilder.fromResource(ThemeResource.class)
-                                    .path("/{version}/{themeType}/{themeName}/{path}")
-                                    // The 'path' can contain slashes, so encoding of slashes is set to false
-                                    .build(new Object[]{Version.RESOURCES_VERSION, themeType, themeName, path}, false)
-                    ).build();
+                    return Response.temporaryRedirect(redirectUri)
+                            .build();
                 }
 
                 if (hasContentHash && Objects.equals(etag, Version.RESOURCES_VERSION)) {

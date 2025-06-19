@@ -222,7 +222,10 @@ public class OrganizationsResource {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = OrganizationRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "400", description = "Bad Request")
     })
-    public Stream<OrganizationRepresentation> getOrganizations(@PathParam("member-id") String memberId) {
-        return new OrganizationMemberResource(session, null, adminEvent).getOrganizations(memberId);
+    public Stream<OrganizationRepresentation> getOrganizations(
+            @PathParam("member-id") String memberId,
+            @Parameter(description = "if false, return the full representation. Otherwise, only the basic fields are returned.")
+            @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
+        return new OrganizationMemberResource(session, null, adminEvent).getOrganizations(memberId, briefRepresentation);
     }
 }

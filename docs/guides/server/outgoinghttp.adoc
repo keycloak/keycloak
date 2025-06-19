@@ -17,7 +17,7 @@ to configure a {project_name} Truststore so that {project_name} is able to perfo
 == Client Configuration Command
 The HTTP client that {project_name} uses for outgoing communication is highly configurable. To configure the {project_name} outgoing HTTP client, enter this command:
 
-<@kc.start parameters="--spi-connections-http-client-default-<configurationoption>=<value>"/>
+<@kc.start parameters="--spi-connections-http-client--default--<configurationoption>=<value>"/>
 
 The following are the command options:
 
@@ -90,7 +90,7 @@ For example, consider the following regex:
 
 You apply a regex-based hostname pattern by entering this command:
 
-<@kc.start parameters="--spi-connections-http-client-default-proxy-mappings=\'.*\\\\.(google|googleapis)\\\\.com;http://www-proxy.acme.com:8080\'"/>
+<@kc.start parameters="--spi-connections-http-client--default--proxy-mappings=\'.*\\\\.(google|googleapis)\\\\.com;http://www-proxy.acme.com:8080\'"/>
 
 The backslash character `\` is escaped again because micro-profile config is used to parse the array of mappings.
 

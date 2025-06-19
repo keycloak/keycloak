@@ -19,10 +19,12 @@ package org.keycloak.admin.client.resource;
 
 import java.util.List;
 
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 
@@ -31,5 +33,7 @@ public interface OrganizationsMembersResource {
     @Path("{id}/organizations")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    List<OrganizationRepresentation> getOrganizations(@PathParam("id") String id);
+    List<OrganizationRepresentation> getOrganizations(
+            @PathParam("id") String id,
+            @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation);
 }

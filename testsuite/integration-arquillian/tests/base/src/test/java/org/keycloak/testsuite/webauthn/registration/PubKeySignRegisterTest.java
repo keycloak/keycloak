@@ -100,6 +100,7 @@ public class PubKeySignRegisterTest extends AbstractWebAuthnVirtualTest {
             }
 
             final String credentialType = getCredentialType();
+            final long selectedAlgorithmValue = selectedAlgorithm.getValue();
 
             getTestingClient().server(TEST_REALM_NAME).run(session -> {
                 final WebAuthnDataWrapper dataWrapper = new WebAuthnDataWrapper(session, USERNAME, credentialType);
@@ -111,7 +112,7 @@ public class PubKeySignRegisterTest extends AbstractWebAuthnVirtualTest {
                 final COSEKey pubKey = dataWrapper.getKey();
                 assertThat(pubKey, notNullValue());
                 assertThat(pubKey.getAlgorithm(), notNullValue());
-                assertThat(pubKey.getAlgorithm().getValue(), is(selectedAlgorithm.getValue()));
+                assertThat(pubKey.getAlgorithm().getValue(), is(selectedAlgorithmValue));
                 assertThat(pubKey.hasPublicKey(), is(true));
             });
         } catch (IOException e) {

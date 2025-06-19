@@ -667,15 +667,8 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
     private void doImportUser(final RealmModel realm, final UserModel user, final LDAPObject ldapUser) {
         user.setEnabled(true);
-        realm.getComponentsStream(model.getId(), LDAPStorageMapper.class.getName())
-                .sorted(ldapMappersComparator.sortDesc())
-                .forEachOrdered(mapperModel -> {
-                    if (logger.isTraceEnabled()) {
-                        logger.tracef("Using mapper %s during import user from LDAP", mapperModel);
-                    }
-                    LDAPStorageMapper ldapMapper = mapperManager.getMapper(mapperModel);
-                    ldapMapper.onImportUserFromLDAP(ldapUser, user, realm, true);
-                });
+
+        importUserAttributes(realm, user, ldapUser);
 
         String userDN = ldapUser.getDn().toString();
         if (model.isImportEnabled()) user.setFederationLink(model.getId());
@@ -784,6 +777,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
             LDAPUtils.checkUuid(ldapUser, ldapIdentityStore.getConfig());
             // If email attribute mapper is set to "Always Read Value From LDAP" the user may be in Keycloak DB with an old email address
             if (ldapUser.getUuid().equals(user.getFirstAttribute(LDAPConstants.LDAP_ID))) {
+                importUserAttributes(realm, user, ldapUser);
                 return proxy(realm, user, ldapUser, false);
             }
             throw new ModelDuplicateException("User with username '" + ldapUsername + "' already exists in Keycloak. It conflicts with LDAP user with email '" + email + "'");
@@ -1239,5 +1233,17 @@ public class LDAPStorageProvider implements UserStorageProvider,
             return (Long.parseLong(value) / 10000L) - 11644473600000L;
         }
         return LDAPUtils.generalizedTimeToDate(value).getTime();
+    }
+
+    private void importUserAttributes(RealmModel realm, UserModel user, LDAPObject ldapUser) {
+        realm.getComponentsStream(model.getId(), LDAPStorageMapper.class.getName())
+                .sorted(ldapMappersComparator.sortDesc())
+                .forEachOrdered(mapperModel -> {
+                    if (logger.isTraceEnabled()) {
+                        logger.tracef("Using mapper %s during import user from LDAP", mapperModel);
+                    }
+                    LDAPStorageMapper ldapMapper = mapperManager.getMapper(mapperModel);
+                    ldapMapper.onImportUserFromLDAP(ldapUser, user, realm, true);
+                });
     }
 }

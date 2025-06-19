@@ -17,7 +17,7 @@
                challenge : '${challenge}',
                userVerification : '${userVerification}',
                rpId : '${rpId}',
-               createTimeout : ${createTimeout}
+               createTimeout : ${createTimeout?c}
            };
 
            document.addEventListener("DOMContentLoaded", (event) => initAuthenticate({errmsg : "${msg("passkey-unsupported-browser-text")?no_esc}", ...args}));
