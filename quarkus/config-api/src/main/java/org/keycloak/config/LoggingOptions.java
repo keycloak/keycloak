@@ -279,6 +279,12 @@ public class LoggingOptions {
             .description("Set the Syslog output to JSON or default (plain) unstructured logging.")
             .build();
 
+    public static final Option<String> LOG_SYSLOG_COUNTING_FRAMING = new OptionBuilder<>("log-syslog-counting-framing", String.class)
+            .category(OptionCategory.LOGGING)
+            .description("If enabled, the message being sent is prefixed with the size of the message. " +
+                    "If not set, the default value is 'true' when 'log-syslog-protocol' is 'tcp' or 'ssl-tcp', otherwise 'false'")
+            .build();
+
     // Syslog async
     public static final Option<Boolean> LOG_SYSLOG_ASYNC = new OptionBuilder<>("log-syslog-async", Boolean.class)
             .category(OptionCategory.LOGGING)
