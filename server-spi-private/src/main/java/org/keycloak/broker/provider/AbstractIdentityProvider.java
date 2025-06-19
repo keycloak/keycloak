@@ -42,6 +42,10 @@ import java.util.UUID;
  */
 public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> implements IdentityProvider<C> {
 
+    // The clientSession note flag to indicate that email or username provided by identityProvider was changed on updateProfile page
+    public static final String UPDATE_PROFILE_EMAIL_CHANGED = "UPDATE_PROFILE_EMAIL_CHANGED";
+    public static final String UPDATE_PROFILE_USERNAME_CHANGED = "UPDATE_PROFILE_USERNAME_CHANGED";
+
     public static final String ACCOUNT_LINK_URL = "account-link-url";
     protected final KeycloakSession session;
     private final C config;
