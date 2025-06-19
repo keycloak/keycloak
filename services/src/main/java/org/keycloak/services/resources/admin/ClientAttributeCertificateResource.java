@@ -106,7 +106,7 @@ public class ClientAttributeCertificateResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_ATTRIBUTE_CERTIFICATE)
-    @Operation( summary = "Get key info")
+    @Operation(summary = "Get key info", operationId = "getKeyInfo")
     public CertificateRepresentation getKeyInfo() {
         auth.clients().requireView(client);
 
@@ -124,7 +124,7 @@ public class ClientAttributeCertificateResource {
     @Path("generate")
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_ATTRIBUTE_CERTIFICATE)
-    @Operation( summary = "Generate a new certificate with new key pair")
+    @Operation( summary = "Generate a new certificate with new key pair", operationId = "generate")
     public CertificateRepresentation generate() {
         auth.clients().requireConfigure(client);
 
@@ -148,7 +148,7 @@ public class ClientAttributeCertificateResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_ATTRIBUTE_CERTIFICATE)
-    @Operation( summary = "Upload certificate and eventually private key")
+    @Operation(summary = "Upload certificate and eventually private key", operationId = "uploadJks")
     public CertificateRepresentation uploadJks() throws IOException {
         try {
             CertificateRepresentation info = updateCertFromRequest();
@@ -170,7 +170,7 @@ public class ClientAttributeCertificateResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_ATTRIBUTE_CERTIFICATE)
-    @Operation( summary = "Upload only certificate, not private key")
+    @Operation(summary = "Upload only certificate, not private key", operationId = "uploadJksCertificate")
     public CertificateRepresentation uploadJksCertificate() throws IOException {
         try {
             CertificateRepresentation info = updateCertFromRequest();
@@ -285,7 +285,10 @@ public class ClientAttributeCertificateResource {
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_ATTRIBUTE_CERTIFICATE)
-    @Operation( summary = "Get a keystore file for the client, containing private key and public certificate")
+    @Operation(
+            summary = "Get a keystore file for the client, containing private key and public certificate",
+            operationId = "getKeystore"
+    )
     public byte[] getKeystore(@Parameter(description = "Keystore configuration as JSON") final KeyStoreConfig config) {
         auth.clients().requireView(client);
 
@@ -328,7 +331,9 @@ public class ClientAttributeCertificateResource {
             "Generate a new keypair and certificate, and get the private key file\n" +
                     "\n" +
                     "Generates a keypair and certificate and serves the private key in a specified keystore format.\n" +
-                    "Only generated public certificate is saved in Keycloak DB - the private key is not.")
+                    "Only generated public certificate is saved in Keycloak DB - the private key is not.",
+            operationId = "generateAndGetKeystore"
+    )
     public byte[] generateAndGetKeystore(@Parameter(description = "Keystore configuration as JSON") final KeyStoreConfig config) {
         auth.clients().requireConfigure(client);
 
