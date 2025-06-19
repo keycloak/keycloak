@@ -158,6 +158,10 @@ public class RealmRepresentation {
     protected List<String> webAuthnPolicyPasswordlessExtraOrigins;
     protected Boolean webAuthnPolicyPasswordlessPasskeysEnabled;
 
+    // Trusted Device properties below
+    protected Boolean trustedDeviceEnabled;
+    protected Integer trustedDeviceExpiration;
+
     // Client Policies/Profiles
 
     @JsonProperty("clientProfiles")
@@ -1081,6 +1085,24 @@ public class RealmRepresentation {
 
     public void setOtpPolicyCodeReusable(Boolean isCodeReusable) {
         this.otpPolicyCodeReusable = isCodeReusable;
+    }
+
+    // Trusted Device properties below
+
+    public Boolean isTrustedDeviceEnabled() {
+        return trustedDeviceEnabled;
+    }
+
+    public void setTrustedDeviceEnabled(Boolean isEnabled) {
+        this.trustedDeviceEnabled = isEnabled;
+    }
+
+    public Integer getTrustedDeviceExpiration() {
+        return trustedDeviceExpiration;
+    }
+
+    public void setTrustedDeviceExpiration(Integer expiration) {
+        this.trustedDeviceExpiration = expiration;
     }
 
     // WebAuthn 2-factor properties below

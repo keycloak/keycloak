@@ -303,6 +303,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             case LOGIN_RESET_OTP:
                 attributes.put("configuredOtpCredentials", new TotpLoginBean(session, realm, user, (String) this.attributes.get(OTPFormAuthenticator.SELECTED_OTP_CREDENTIAL_ID)));
                 break;
+            case LOGIN_WEBAUTHN:
+                attributes.put("trustedDevicePolicy", context.getRealm().getTrustedDevicePolicy());
+                break;
             case REGISTER:
                 RegisterBean rb = new RegisterBean(formData, session);
                 //legacy bean for static template
