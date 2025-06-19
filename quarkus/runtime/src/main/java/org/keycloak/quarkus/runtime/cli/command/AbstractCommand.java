@@ -66,19 +66,23 @@ public abstract class AbstractCommand implements Callable<Integer> {
 
     @Override
     public Integer call() {
-        return exitWith().orElseGet(() -> {
+        return callCommand().orElseGet(() -> {
             runCommand();
             return CommandLine.ExitCode.OK;
         });
     }
 
     /**
-     * An alternative to {@link #runCommand()} that allows for returning an exit code
+     * An alternative to {@link #runCommand()} that allows for returning an exit code.
+     * If the Optional is empty, {@link #runCommand()} will still be called
      */
-    protected Optional<Integer> exitWith() {
+    protected Optional<Integer> callCommand() {
         return Optional.empty();
     }
 
+    /**
+     * Used to run the command. OK will be returned as the exit code after successful completion.
+     */
     protected void runCommand() {
 
     }

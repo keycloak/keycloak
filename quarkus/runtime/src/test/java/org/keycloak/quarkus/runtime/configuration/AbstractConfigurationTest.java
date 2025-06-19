@@ -63,7 +63,6 @@ public abstract class AbstractConfigurationTest {
 
     public static void setSystemProperty(String key, String value, Runnable runnable) {
         System.setProperty(key, value);
-        createConfig();
         try {
             runnable.run();
         } finally {

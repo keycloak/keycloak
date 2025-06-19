@@ -43,8 +43,8 @@ public abstract class AbstractUpdatesCommand extends AbstractStartCommand {
     }
 
     @Override
-    protected Optional<Integer> exitWith() {
-        return super.exitWith().or(() -> {
+    protected Optional<Integer> callCommand() {
+        return super.callCommand().or(() -> {
             if (!Profile.isAnyVersionOfFeatureEnabled(Profile.Feature.ROLLING_UPDATES_V1)) {
                 printFeatureDisabled();
                 return Optional.of(FEATURE_DISABLED_EXIT_CODE);

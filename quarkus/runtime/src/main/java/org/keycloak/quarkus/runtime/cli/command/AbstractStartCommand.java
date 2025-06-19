@@ -54,7 +54,7 @@ public abstract class AbstractStartCommand extends AbstractCommand {
     HelpAllMixin helpAllMixin;
 
     @Override
-    protected Optional<Integer> exitWith() {
+    protected Optional<Integer> callCommand() {
         if (isRebuildCheck()) {
             if (requiresReAugmentation()) {
                 runReAugmentation();
@@ -134,6 +134,9 @@ public abstract class AbstractStartCommand extends AbstractCommand {
         }
     }
 
+    /**
+     * Controls whether the command actually starts the server
+     */
     protected boolean shouldStart() {
         return true;
     }

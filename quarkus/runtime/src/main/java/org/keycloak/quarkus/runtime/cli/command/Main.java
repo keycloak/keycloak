@@ -30,7 +30,6 @@ import picocli.CommandLine.ScopeType;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Optional;
 
 @Command(name = "keycloak",
         header = {
@@ -73,8 +72,6 @@ import java.util.Optional;
         })
 public final class Main {
 
-    private static final String VERBOSE_SHORT_NAME = "-v";
-    private static final String VERSION_SHORT_NAME = "-V";
     public static final String PROFILE_SHORT_NAME = "-pf";
     public static final String PROFILE_LONG_NAME = "--profile";
     public static final String CONFIG_FILE_SHORT_NAME = "-cf";
@@ -83,12 +80,12 @@ public final class Main {
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
 
-    @Option(names = { VERSION_SHORT_NAME, "--version" },
+    @Option(names = { "-V", "--version" },
             description = "Show version information",
             versionHelp = true)
     boolean version;
 
-    @Option(names = { VERBOSE_SHORT_NAME, "--verbose" },
+    @Option(names = { "-v", "--verbose" },
             description = "Print out error details when running this command.",
             paramLabel = NO_PARAM_LABEL,
             scope = ScopeType.INHERIT)
@@ -114,12 +111,5 @@ public final class Main {
                     String.format("File specified via '%s' or '%s' option does not exist.", CONFIG_FILE_LONG_NAME, CONFIG_FILE_SHORT_NAME));
         }
         System.setProperty(KeycloakPropertiesConfigSource.KEYCLOAK_CONFIG_FILE_PROP, path);
-    }
-
-    public static String getInitProfile(Optional<AbstractCommand> ac) {
-        // TODO: with a little more work, this doesn't need to be static
-        return ac.map(AbstractCommand::getInitProfile)
-                .orElseGet(() -> Optional.ofNullable(org.keycloak.common.util.Environment.getProfile())
-                        .orElse(Environment.PROD_PROFILE_VALUE));
     }
 }

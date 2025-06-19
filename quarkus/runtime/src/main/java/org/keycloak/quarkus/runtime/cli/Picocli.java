@@ -898,10 +898,17 @@ public class Picocli {
         QuarkusEntryPoint.main();
     }
 
-    // TODO: validate that the Configuration does not exist prior to this point
     public void initConfig(AbstractCommand command) {
+        if (Configuration.isInitialized()) {
+            throw new IllegalStateException("Config should not be initialized until profile is determined1000");
+        }
         this.parsedCommand = Optional.ofNullable(command);
-        Environment.setProfile(Main.getInitProfile(parsedCommand));
+
+        String profile = parsedCommand.map(AbstractCommand::getInitProfile)
+                .orElseGet(() -> Optional.ofNullable(org.keycloak.common.util.Environment.getProfile())
+                        .orElse(Environment.PROD_PROFILE_VALUE));
+
+        Environment.setProfile(profile);
         parsedCommand.ifPresent(PropertyMappers::sanitizeDisabledMappers);
     }
 
