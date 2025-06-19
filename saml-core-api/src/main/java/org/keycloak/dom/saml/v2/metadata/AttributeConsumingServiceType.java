@@ -16,6 +16,8 @@
  */
 package org.keycloak.dom.saml.v2.metadata;
 
+import org.keycloak.dom.saml.v2.assertion.AttributeType;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -46,17 +48,28 @@ import java.util.List;
  */
 public class AttributeConsumingServiceType {
 
+    protected static List<AttributeConsumingService> attributeConsumingServices;
+
     protected List<LocalizedNameType> serviceName = new ArrayList<>();
 
     protected List<LocalizedNameType> serviceDescription = new ArrayList<>();
 
-    protected List<RequestedAttributeType> requestedAttribute = new ArrayList<>();
+    protected List<AttributeType> requestedAttribute = new ArrayList<>();
 
     protected int index;
 
-    protected Boolean isDefault = Boolean.FALSE;
+    protected Boolean isDefault;
+
+    public static List<AttributeConsumingService> getAttributeConsumingServices() {
+        return attributeConsumingServices;
+    }
+
+    public static void setAttributeConsumingServices(List<AttributeConsumingService> attributeConsumingServices) {
+        AttributeConsumingServiceType.attributeConsumingServices = attributeConsumingServices;
+    }
 
     public AttributeConsumingServiceType(int index) {
+        this.isDefault = Boolean.FALSE;
         this.index = index;
     }
 
@@ -83,7 +96,7 @@ public class AttributeConsumingServiceType {
      * <p>
      * Objects of the following type(s) are allowed in the list {@link RequestedAttributeType }
      */
-    public void addRequestedAttribute(RequestedAttributeType req) {
+    public void addRequestedAttribute(AttributeType req) {
         this.requestedAttribute.add(req);
     }
 
@@ -137,7 +150,7 @@ public class AttributeConsumingServiceType {
      * <p>
      * Objects of the following type(s) are allowed in the list {@link RequestedAttributeType }
      */
-    public List<RequestedAttributeType> getRequestedAttribute() {
+    public List<AttributeType> getRequestedAttribute() {
         return Collections.unmodifiableList(this.requestedAttribute);
     }
 

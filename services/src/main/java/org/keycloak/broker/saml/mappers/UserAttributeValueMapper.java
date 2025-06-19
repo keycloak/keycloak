@@ -1,20 +1,3 @@
-/*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
- * and other contributors as indicated by the @author tags.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.keycloak.broker.saml.mappers;
 
 import org.keycloak.broker.provider.AbstractIdentityProviderMapper;
@@ -22,18 +5,12 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.saml.SAMLEndpoint;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.common.util.CollectionUtil;
-import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.KeyUse;
-import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
-import org.keycloak.dom.saml.v2.assertion.SAMLEncryptedId;
-import org.keycloak.dom.saml.v2.assertion.NameIDType;
-import org.keycloak.dom.saml.v2.assertion.SAMLEncryptedType;
 import org.keycloak.dom.saml.v2.metadata.AttributeConsumingServiceType;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
-import org.keycloak.dom.saml.v2.metadata.RequestedAttributeType;
+import org.keycloak.dom.saml.v2.metadata.RequestedAttributeValueType;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.KeycloakSession;
@@ -43,14 +20,9 @@ import org.keycloak.protocol.saml.mappers.SamlMetadataDescriptorUpdater;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.util.StringUtil;
-import org.keycloak.saml.encryption.DecryptionException;
-import org.keycloak.saml.encryption.SamlDecrypter;
 
-import java.nio.charset.StandardCharsets;
-import java.security.PrivateKey;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -62,32 +34,24 @@ import java.util.stream.Collectors;
 
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.ATTRIBUTE_FORMAT_BASIC;
 
-/**
- * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
- * @version $Revision: 1 $
- */
-public class UserAttributeMapper extends AbstractIdentityProviderMapper implements SamlMetadataDescriptorUpdater {
+public class UserAttributeValueMapper extends AbstractIdentityProviderMapper implements SamlMetadataDescriptorUpdater {
 
     public static final String[] COMPATIBLE_PROVIDERS = {SAMLIdentityProviderFactory.PROVIDER_ID};
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
-    public static final String ATTRIBUTE_DECRYPT = "attribute.decrypt";
-    public static final String ATTRIBUTE_XACML_CONTEXT = "attribute.xacml-context";
     public static final String ATTRIBUTE_NAME = "attribute.name";
-    public static final String ATTRIBUTE_VALUE = "attribute.value";
+    public static final String ATTRIBUTE_XACML_CONTEXT = "attribute.xacml-context";
     public static final String ATTRIBUTE_FRIENDLY_NAME = "attribute.friendly.name";
     public static final String ATTRIBUTE_NAME_FORMAT = "attribute.name.format";
+    public static final String ATTRIBUTE_VALUE = "attribute.value";
     public static final String USER_ATTRIBUTE = "user.attribute";
-    public static final String XML_ELEMENT_AS_ATTRIBUTE = "attribute.xml.element";
-    private static final String ID = "id";
     private static final String EMAIL = "email";
     private static final String FIRST_NAME = "firstName";
     private static final String LAST_NAME = "lastName";
     private static final Set<IdentityProviderSyncMode> IDENTITY_PROVIDER_SYNC_MODES = new HashSet<>(Arrays.asList(IdentityProviderSyncMode.values()));
 
     public static final List<String> NAME_FORMATS = Arrays.asList(JBossSAMLURIConstants.ATTRIBUTE_FORMAT_BASIC.name(), JBossSAMLURIConstants.ATTRIBUTE_FORMAT_URI.name(), JBossSAMLURIConstants.ATTRIBUTE_FORMAT_UNSPECIFIED.name());
-
     static {
         ProviderConfigProperty property;
         property = new ProviderConfigProperty();
@@ -111,22 +75,16 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper implemen
         property.setDefaultValue(JBossSAMLURIConstants.ATTRIBUTE_FORMAT_BASIC.name());
         configProperties.add(property);
         property = new ProviderConfigProperty();
+        property.setName(ATTRIBUTE_VALUE);
+        property.setLabel("Attribute value");
+        property.setHelpText("??");
+        property.setType(ProviderConfigProperty.STRING_TYPE);
+        configProperties.add(property);
+        property = new ProviderConfigProperty();
         property.setName(USER_ATTRIBUTE);
         property.setLabel("User Attribute Name");
         property.setHelpText("User attribute name to store saml attribute.  Use email, lastName, and firstName to map to those predefined user properties.");
-        property.setType(ProviderConfigProperty.USER_PROFILE_ATTRIBUTE_LIST_TYPE);
-        configProperties.add(property);
-        property = new ProviderConfigProperty();
-        property.setName(XML_ELEMENT_AS_ATTRIBUTE);
-        property.setLabel("Encrypted ID as Attribute");
-        property.setHelpText("Set the complete XML Element EncryptedID as attribute (Base64 encoded).");
-        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
-        configProperties.add(property);
-        property = new ProviderConfigProperty();
-        property.setName(ATTRIBUTE_DECRYPT);
-        property.setLabel("Decrypt Attribute");
-        property.setHelpText("Decrypt the value and set the decrypted value in the property.");
-        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        property.setType(ProviderConfigProperty.STRING_TYPE);
         configProperties.add(property);
         property = new ProviderConfigProperty();
         property.setName(ATTRIBUTE_XACML_CONTEXT);
@@ -136,7 +94,7 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper implemen
         configProperties.add(property);
     }
 
-    public static final String PROVIDER_ID = "saml-user-attribute-idp-mapper";
+    public static final String PROVIDER_ID = "saml-extended-user-attribute-value-idp-mapper";
 
     @Override
     public boolean supportsSyncMode(IdentityProviderSyncMode syncMode) {
@@ -160,12 +118,12 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper implemen
 
     @Override
     public String getDisplayCategory() {
-        return "Attribute Importer";
+        return "Attribute Value Importer";
     }
 
     @Override
     public String getDisplayType() {
-        return "Attribute Importer";
+        return "Attribute Value Importer";
     }
 
     @Override
@@ -176,12 +134,10 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper implemen
         }
         String attributeName = getAttributeNameFromMapperModel(mapperModel);
 
-        KeyWrapper keys = session.keys().getActiveKey(realm, KeyUse.SIG, Algorithm.RS256);
-        List<String> attributeValuesInContext = findAttributeValuesInContext(attributeName, context, mapperModel, keys);
+        List<String> attributeValuesInContext =
+                findAttributeValuesInContext(attributeName, context, mapperModel);
         if (!attributeValuesInContext.isEmpty()) {
-            if (attribute.equalsIgnoreCase(ID)) {
-                setIfNotEmpty(context::setId, attributeValuesInContext);
-            } else if (attribute.equalsIgnoreCase(EMAIL)) {
+            if (attribute.equalsIgnoreCase(EMAIL)) {
                 setIfNotEmptyAndStripMailto(context::setEmail, attributeValuesInContext);
             } else if (attribute.equalsIgnoreCase(FIRST_NAME)) {
                 setIfNotEmpty(context::setFirstName, attributeValuesInContext);
@@ -215,7 +171,7 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper implemen
 
     private void setIfNotEmptyAndStripMailto(Consumer<String> consumer, List<String> values) {
         if (values != null && !values.isEmpty()) {
-            consumer.accept(values.get(0).replace("mailto:", ""));
+            consumer.accept(values.get(0).replace("mailto:",""));
         }
     }
 
@@ -228,27 +184,27 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper implemen
     private Predicate<AttributeStatementType.ASTChoiceType> elementWith(String attributeName) {
         return attributeType -> {
             AttributeType attribute = attributeType.getAttribute();
-            return hasMatchingNameOrFriendlyName(attributeName).test(attribute);
+            return hasMatchingName(attributeName).test(attribute);
         };
     }
 
-    private Predicate<AttributeType> hasMatchingNameOrFriendlyName(String attributeName) {
+    private Predicate<AttributeType> hasMatchingName(String attributeName) {
         return attribute -> Objects.equals(attribute.getName(), attributeName)
                 || Objects.equals(attribute.getFriendlyName(), attributeName);
+
     }
 
-
-    private List<String> findAttributeValuesInContext(String attributeName, BrokeredIdentityContext context, IdentityProviderMapperModel mapperModel, KeyWrapper keys) {
+    private List<String> findAttributeValuesInContext(String attributeName, BrokeredIdentityContext context, IdentityProviderMapperModel mapperModel) {
         AssertionType assertion = (AssertionType) context.getContextData().get(SAMLEndpoint.SAML_ASSERTION);
 
         if(Boolean.valueOf(mapperModel.getConfig().get(ATTRIBUTE_XACML_CONTEXT))) {
             return assertion.getXacmlResources().stream()
                     .flatMap(resource -> resource.getAttributes().stream())
-                    .filter(hasMatchingNameOrFriendlyName(attributeName))
+                    .filter(hasMatchingName(attributeName))
                     .flatMap(attribute -> attribute.getAttributeValue().stream())
                     .filter(Objects::nonNull)
                     .findFirst()
-                    .map(object -> assignValue(mapperModel, object, keys))
+                    .map(Object::toString)
                     .map(List::of)
                     .orElse(List.of());
         }
@@ -261,27 +217,6 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper implemen
                 .collect(Collectors.toList());
     }
 
-    private String assignValue(IdentityProviderMapperModel mapperModel, Object object, KeyWrapper keys) {
-        String value = object.toString();
-        if(Boolean.valueOf(mapperModel.getConfig().get(XML_ELEMENT_AS_ATTRIBUTE))) {
-            value = Base64.getEncoder().encodeToString(value.getBytes(StandardCharsets.UTF_8));
-        } else if(Boolean.valueOf(mapperModel.getConfig().get(ATTRIBUTE_DECRYPT))) {
-            if(object instanceof SAMLEncryptedId) {
-                try {
-                    NameIDType nameID = SamlDecrypter.decryptToNameID((SAMLEncryptedType) object, (PrivateKey) keys.getPrivateKey());
-                    value = nameID.getValue();
-                } catch (DecryptionException e) {
-                    try {
-                        value = new String(SamlDecrypter.decrypt((SAMLEncryptedType) object, (PrivateKey) keys.getPrivateKey()));
-                    } catch (DecryptionException ex) {
-                        throw new SecurityException("Error when decrypting attribute to plain text.", ex);
-                    }
-                }
-            }
-        }
-        return value;
-    }
-
     @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         String attribute = mapperModel.getConfig().get(USER_ATTRIBUTE);
@@ -289,9 +224,7 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper implemen
             return;
         }
         String attributeName = getAttributeNameFromMapperModel(mapperModel);
-        KeyWrapper keys = session.keys().getActiveKey(realm, KeyUse.SIG, Algorithm.RS256);
-
-        List<String> attributeValuesInContext = findAttributeValuesInContext(attributeName, context, mapperModel, keys);
+        List<String> attributeValuesInContext = findAttributeValuesInContext(attributeName, context, mapperModel);
         if (attribute.equalsIgnoreCase(EMAIL)) {
             setIfNotEmptyAndDifferentAndStripMailto(user::setEmail, user::getEmail, attributeValuesInContext);
         } else if (attribute.equalsIgnoreCase(FIRST_NAME)) {
@@ -324,13 +257,19 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper implemen
     public void updateMetadata(IdentityProviderMapperModel mapperModel, EntityDescriptorType entityDescriptor) {
         String attributeName = mapperModel.getConfig().get(UserAttributeMapper.ATTRIBUTE_NAME);
         String attributeFriendlyName = mapperModel.getConfig().get(UserAttributeMapper.ATTRIBUTE_FRIENDLY_NAME);
+        String attributeValue = mapperModel.getConfig().get(UserAttributeMapper.ATTRIBUTE_VALUE);
 
-        RequestedAttributeType requestedAttribute = new RequestedAttributeType(attributeName);
+        RequestedAttributeValueType requestedAttribute = new RequestedAttributeValueType(attributeName);
         requestedAttribute.setIsRequired(null);
         requestedAttribute.setNameFormat(mapperModel.getConfig().get(UserAttributeMapper.ATTRIBUTE_NAME_FORMAT) != null ? JBossSAMLURIConstants.valueOf(mapperModel.getConfig().get(UserAttributeMapper.ATTRIBUTE_NAME_FORMAT)).get() :ATTRIBUTE_FORMAT_BASIC.get());
 
         if (attributeFriendlyName != null && attributeFriendlyName.length() > 0)
             requestedAttribute.setFriendlyName(attributeFriendlyName);
+
+        if (attributeValue != null && attributeValue.length() > 0) {
+            requestedAttribute.addAttributeValue(attributeValue);
+        }
+
 
         // Add the requestedAttribute item to any AttributeConsumingServices
         for (EntityDescriptorType.EDTChoiceType choiceType : entityDescriptor.getChoiceType()) {
@@ -338,8 +277,8 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper implemen
             for (EntityDescriptorType.EDTDescriptorChoiceType descriptor : descriptors) {
                 for (AttributeConsumingServiceType attributeConsumingService : descriptor.getSpDescriptor().getAttributeConsumingService()) {
                     boolean alreadyPresent = attributeConsumingService.getRequestedAttribute().stream()
-                        .anyMatch(t -> (attributeName == null || attributeName.equalsIgnoreCase(t.getName())) &&
-                                       (attributeFriendlyName == null || attributeFriendlyName.equalsIgnoreCase(t.getFriendlyName())));
+                            .anyMatch(t -> (attributeName == null || attributeName.equalsIgnoreCase(t.getName())) &&
+                                    (attributeFriendlyName == null || attributeFriendlyName.equalsIgnoreCase(t.getFriendlyName())));
 
                     if (!alreadyPresent)
                         attributeConsumingService.addRequestedAttribute(requestedAttribute);

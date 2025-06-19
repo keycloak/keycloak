@@ -23,9 +23,12 @@ import org.keycloak.dom.saml.v2.protocol.ArtifactResolveType;
 import org.keycloak.dom.saml.v2.protocol.AttributeQueryType;
 import org.keycloak.dom.saml.v2.protocol.AuthnContextComparisonType;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
+import org.keycloak.dom.saml.v2.protocol.IDPEntryType;
+import org.keycloak.dom.saml.v2.protocol.IDPListType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.keycloak.dom.saml.v2.protocol.NameIDPolicyType;
 import org.keycloak.dom.saml.v2.protocol.RequestedAuthnContextType;
+import org.keycloak.dom.saml.v2.protocol.ScopingType;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.StaxUtil;
@@ -147,6 +150,71 @@ public class SAMLRequestWriter extends BaseWriter {
         if (requestedAuthnContext != null) {
             write(requestedAuthnContext);
         }
+
+        ScopingType scopingType = request.getScoping();
+        if (scopingType != null) {
+            write(scopingType);
+        }
+
+        StaxUtil.writeEndElement(writer);
+        StaxUtil.flush(writer);
+    }
+
+    /**
+     * Write a {@code ScopingType} to stream
+     *
+     * @param scopingType
+     *
+     * @throws ProcessingException
+     */
+    private void write(ScopingType scopingType) throws ProcessingException {
+        StaxUtil.writeStartElement(writer, PROTOCOL_PREFIX, JBossSAMLConstants.SCOPING.get(), PROTOCOL_NSURI.get());
+
+        write(scopingType.getIDPList());
+
+        StaxUtil.writeEndElement(writer);
+        StaxUtil.flush(writer);
+    }
+
+    /**
+     * Write a {@code IDPListType} to stream
+     *
+     * @param idpList
+     *
+     * @throws ProcessingException
+     */
+    private void write(IDPListType idpList) throws ProcessingException {
+        StaxUtil.writeStartElement(writer, PROTOCOL_PREFIX, JBossSAMLConstants.IDP_LIST.get(), PROTOCOL_NSURI.get());
+
+        write(idpList.getIDPEntry());
+
+        StaxUtil.writeEndElement(writer);
+        StaxUtil.flush(writer);
+    }
+
+    /**
+     * Write a {@code List<IDPEntryType>} to stream
+     *
+     * @param idpEntries
+     *
+     * @throws ProcessingException
+     */
+    private void write(List<IDPEntryType> idpEntries) throws ProcessingException {
+        for (IDPEntryType idpEntry: idpEntries) {
+            write(idpEntry);
+        }
+    }
+
+    /**
+     * Write a {@code IDPEntryType} to stream
+     *
+     * @param idpEntry
+     *
+     * @throws ProcessingException
+     */
+    private void write(IDPEntryType idpEntry) throws ProcessingException {
+        StaxUtil.writeStartElement(writer, PROTOCOL_PREFIX, JBossSAMLConstants.IDP_ENTRY.get(), PROTOCOL_NSURI.get());
+        StaxUtil.writeAttribute(writer, JBossSAMLConstants.PROVIDER_ID.get(), idpEntry.getProviderID().toString());
 
         StaxUtil.writeEndElement(writer);
         StaxUtil.flush(writer);

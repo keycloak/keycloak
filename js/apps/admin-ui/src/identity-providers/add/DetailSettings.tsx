@@ -68,6 +68,7 @@ import { ReqAuthnConstraints } from "./ReqAuthnConstraintsSettings";
 import { SamlGeneralSettings } from "./SamlGeneralSettings";
 import { AdminEvents } from "../../events/AdminEvents";
 import { UserProfileClaimsSettings } from "./OAuth2UserProfileClaimsSettings";
+import {SamlExtendedSettings} from "./SamlExtendedSettings";
 
 type HeaderProps = {
   onChange: (value: boolean) => void;
@@ -518,8 +519,22 @@ export default function DetailSettings() {
             isOAuth2={isOAuth2!}
           />
 
-          <FixedButtonsGroup name="idp-details" isSubmit reset={reset} />
-        </FormAccess>
+            <FixedButtonsGroup name="idp-details" isSubmit reset={reset}/>
+          </FormAccess>
+      ),
+    },
+    {
+      title: t("extendedSamlSettings"),
+      isHidden: !isSAML,
+      panel: (
+          <FormAccess
+              role="manage-identity-providers"
+              isHorizontal
+              onSubmit={handleSubmit(save)}
+          >
+            <SamlExtendedSettings/>
+
+          </FormAccess>
       ),
     },
   ];

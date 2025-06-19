@@ -98,7 +98,7 @@ public class SAML2Request {
      * @param assertionConsumerURL
      * @param destination
      * @param issuerValue
-     * @param protocolBindingUri
+     * @param protocolBinding
      *
      * @return
      *

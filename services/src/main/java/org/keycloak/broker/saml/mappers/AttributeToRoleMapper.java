@@ -24,6 +24,7 @@ import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
+import org.keycloak.dom.saml.v2.assertion.XacmlResourceType;
 import org.keycloak.dom.saml.v2.metadata.AttributeConsumingServiceType;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.RequestedAttributeType;
@@ -34,10 +35,12 @@ import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.ATTRIBUTE_FORMAT_BASIC;
 
@@ -49,9 +52,10 @@ public class AttributeToRoleMapper extends AbstractAttributeToRoleMapper impleme
 
     public static final String[] COMPATIBLE_PROVIDERS = {SAMLIdentityProviderFactory.PROVIDER_ID};
 
-    private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
+    private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
     public static final String ATTRIBUTE_NAME = "attribute.name";
+    public static final String ATTRIBUTE_XACML_CONTEXT = "attribute.xacml-context";
     public static final String ATTRIBUTE_FRIENDLY_NAME = "attribute.friendly.name";
     public static final String ATTRIBUTE_VALUE = "attribute.value";
 
@@ -82,6 +86,12 @@ public class AttributeToRoleMapper extends AbstractAttributeToRoleMapper impleme
         property.setLabel("Role");
         property.setHelpText("Role to grant to user.  Click 'Select Role' button to browse roles, or just type it in the textbox.  To reference a client role the syntax is clientname.clientrole, i.e. myclient.myrole");
         property.setType(ProviderConfigProperty.ROLE_TYPE);
+        configProperties.add(property);
+        property = new ProviderConfigProperty();
+        property.setName(ATTRIBUTE_XACML_CONTEXT);
+        property.setLabel("Use XamlResource attributes");
+        property.setHelpText("Gets the attributes from the <xacml-context:Resource> instead of the <saml2:AttributeStatement> tag");
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
         configProperties.add(property);
     }
 
@@ -123,21 +133,49 @@ public class AttributeToRoleMapper extends AbstractAttributeToRoleMapper impleme
         String friendly = mapperModel.getConfig().get(ATTRIBUTE_FRIENDLY_NAME);
         if (friendly != null && friendly.trim().equals("")) friendly = null;
         String desiredValue = Optional.ofNullable(mapperModel.getConfig().get(ATTRIBUTE_VALUE)).orElse("");
-        AssertionType assertion = (AssertionType)context.getContextData().get(SAMLEndpoint.SAML_ASSERTION);
+        AssertionType assertion = (AssertionType) context.getContextData().get(SAMLEndpoint.SAML_ASSERTION);
+        if (Boolean.parseBoolean(mapperModel.getConfig().get(ATTRIBUTE_XACML_CONTEXT))) {
+            return appliesXacmlResource(name, friendly, desiredValue, assertion);
+        }
+        return appliesAttributeStatement(name, friendly, desiredValue, assertion);
+    }
+
+    private boolean appliesAttributeStatement(final String name, final String friendlyName,
+                                              final String desiredValue, final AssertionType assertion) {
         for (AttributeStatementType statement : assertion.getAttributeStatements()) {
-            for (AttributeStatementType.ASTChoiceType choice : statement.getAttributes()) {
-                AttributeType attr = choice.getAttribute();
-                if (name != null && !name.equals(attr.getName())) continue;
-                if (friendly != null && !friendly.equals(attr.getFriendlyName())) continue;
-                for (Object val : attr.getAttributeValue()) {
-                    val = Optional.ofNullable(val).orElse("");
-                    if (val.equals(desiredValue))
-                        return true;
+            if (hasMatchingAttribute(statement.getAttributes().stream()
+                    .map(choice -> choice.getAttribute())
+                    .collect(Collectors.toList()), name, friendlyName, desiredValue)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean appliesXacmlResource(final String name, final String friendlyName,
+                                         final String desiredValue, final AssertionType assertion) {
+        for (XacmlResourceType xacmlResource : assertion.getXacmlResources()) {
+            if (hasMatchingAttribute(xacmlResource.getAttributes(), name, friendlyName, desiredValue)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasMatchingAttribute(Collection<AttributeType> attributes, String name, String friendlyName, String desiredValue) {
+        for (AttributeType attr : attributes) {
+            if (name != null && !name.equals(attr.getName())) continue;
+            if (friendlyName != null && !friendlyName.equals(attr.getFriendlyName())) continue;
+            for (Object val : attr.getAttributeValue()) {
+                val = Optional.ofNullable(val).orElse("");
+                if (val.equals(desiredValue)) {
+                    return true;
                 }
             }
         }
         return false;
     }
+
 
     @Override
     public String getHelpText() {
@@ -158,14 +196,13 @@ public class AttributeToRoleMapper extends AbstractAttributeToRoleMapper impleme
             requestedAttribute.setFriendlyName(attributeFriendlyName);
 
         // Add the requestedAttribute item to any AttributeConsumingServices
-        for (EntityDescriptorType.EDTChoiceType choiceType: entityDescriptor.getChoiceType()) {
+        for (EntityDescriptorType.EDTChoiceType choiceType : entityDescriptor.getChoiceType()) {
             List<EntityDescriptorType.EDTDescriptorChoiceType> descriptors = choiceType.getDescriptors();
-            for (EntityDescriptorType.EDTDescriptorChoiceType descriptor: descriptors) {
-                for (AttributeConsumingServiceType attributeConsumingService: descriptor.getSpDescriptor().getAttributeConsumingService())
-                {
+            for (EntityDescriptorType.EDTDescriptorChoiceType descriptor : descriptors) {
+                for (AttributeConsumingServiceType attributeConsumingService : descriptor.getSpDescriptor().getAttributeConsumingService()) {
                     boolean alreadyPresent = attributeConsumingService.getRequestedAttribute().stream()
-                        .anyMatch(t -> (attributeName == null || attributeName.equalsIgnoreCase(t.getName())) &&
-                                       (attributeFriendlyName == null || attributeFriendlyName.equalsIgnoreCase(t.getFriendlyName())));
+                            .anyMatch(t -> (attributeName == null || attributeName.equalsIgnoreCase(t.getName())) &&
+                                    (attributeFriendlyName == null || attributeFriendlyName.equalsIgnoreCase(t.getFriendlyName())));
 
                     if (!alreadyPresent)
                         attributeConsumingService.addRequestedAttribute(requestedAttribute);

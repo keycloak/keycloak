@@ -466,6 +466,11 @@ public class XMLSignatureUtil {
      */
     @SuppressWarnings("unchecked")
     public static boolean validate(Document signedDoc, final KeyLocator locator) throws MarshalException, XMLSignatureException {
+        return validate(signedDoc, locator, false);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static boolean validate(Document signedDoc, final KeyLocator locator, boolean ignoreAdviceNodes) throws MarshalException, XMLSignatureException {
         if (signedDoc == null)
             throw logger.nullArgumentError("Signed Document");
 

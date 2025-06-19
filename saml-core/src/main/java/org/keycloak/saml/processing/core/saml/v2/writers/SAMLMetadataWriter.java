@@ -37,6 +37,7 @@ import org.keycloak.dom.saml.v2.metadata.LocalizedURIType;
 import org.keycloak.dom.saml.v2.metadata.OrganizationType;
 import org.keycloak.dom.saml.v2.metadata.PDPDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.RequestedAttributeType;
+import org.keycloak.dom.saml.v2.metadata.RequestedAttributeValueType;
 import org.keycloak.dom.saml.v2.metadata.RoleDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
 import org.keycloak.dom.saml.v2.metadata.SSODescriptorType;
@@ -370,11 +371,17 @@ public class SAMLMetadataWriter extends BaseWriter {
                     new QName(JBossSAMLURIConstants.METADATA_NSURI.get(), JBossSAMLConstants.SERVICE_DESCRIPTION.get(), METADATA_PREFIX));
         }
 
-        List<RequestedAttributeType> requestedAttributes = attributeConsumer.getRequestedAttribute();
-        for (RequestedAttributeType requestedAttribute : requestedAttributes) {
+        List<AttributeType> requestedAttributes = attributeConsumer.getRequestedAttribute();
+        for (AttributeType requestedAttribute : requestedAttributes) {
             StaxUtil.writeStartElement(writer, METADATA_PREFIX, JBossSAMLConstants.REQUESTED_ATTRIBUTE.get(),
                     JBossSAMLURIConstants.METADATA_NSURI.get());
-            Boolean isRequired = requestedAttribute.isIsRequired();
+            Boolean isRequired = null;
+            if(requestedAttribute instanceof RequestedAttributeType) {
+                isRequired = ((RequestedAttributeType) requestedAttribute).isIsRequired();
+            } else if(requestedAttribute instanceof RequestedAttributeValueType) {
+                RequestedAttributeValueType attributeValueType = (RequestedAttributeValueType) requestedAttribute;
+                isRequired = attributeValueType.isIsRequired();
+            }
             if (isRequired != null) {
                 StaxUtil.writeAttribute(writer, new QName(JBossSAMLConstants.IS_REQUIRED.get()), isRequired.toString());
             }

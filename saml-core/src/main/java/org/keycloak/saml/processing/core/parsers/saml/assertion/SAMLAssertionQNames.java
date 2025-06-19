@@ -21,6 +21,8 @@ import org.keycloak.saml.processing.core.parsers.saml.xmldsig.XmlDSigQNames;
 import org.keycloak.saml.processing.core.parsers.util.HasQName;
 import javax.xml.namespace.QName;
 
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.XMLENC_NSURI;
+
 /**
  * Elements and attribute names from saml-schema-assertion-2.0.xsd
  * @author hmlnarik
@@ -89,6 +91,13 @@ public enum SAMLAssertionQNames implements HasQName {
     SIGNATURE(XmlDSigQNames.SIGNATURE),
 
     ATTR_X500_ENCODING(JBossSAMLURIConstants.X500_NSURI, "Encoding"),
+
+    CIPHER_DATA(XMLENC_NSURI, "CipherData"),
+    CIPHER_VALUE(XMLENC_NSURI, "CipherValue"),
+    ENCRYPTED_DATA(XMLENC_NSURI,"EncryptedData"),
+    ENCRYPTED_KEY(XMLENC_NSURI,"EncryptedKey"),
+    ENCRYPTION_METHOD(XMLENC_NSURI, "EncryptionMethod"),
+    REFERENCE_LIST(XMLENC_NSURI, "ReferenceList"),
 
     UNKNOWN_ELEMENT("")
     ;

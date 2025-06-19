@@ -45,6 +45,8 @@ import java.util.List;
 public class AttributeStatementType extends StatementAbstractType {
 
     protected List<ASTChoiceType> attributes = new ArrayList<>();
+    protected List<SAMLEncryptedAttribute> encryptedAttributes = new ArrayList<>();
+
 
     /**
      * Add an attribute
@@ -75,6 +77,18 @@ public class AttributeStatementType extends StatementAbstractType {
 
     public void addAttributes(List<ASTChoiceType> attributes) {
         this.attributes.addAll(attributes);
+    }
+
+    public void addEncryptedAttribute(SAMLEncryptedAttribute encryptedAttribute) {
+        encryptedAttributes.add(encryptedAttribute);
+    }
+
+    public void removeEncryptedAttribute(SAMLEncryptedAttribute encryptedAttribute) {
+        encryptedAttributes.remove(encryptedAttribute);
+    }
+
+    public List<SAMLEncryptedAttribute> getEncryptedAttributes() {
+        return Collections.unmodifiableList(this.encryptedAttributes);
     }
 
     public static class ASTChoiceType implements Serializable {

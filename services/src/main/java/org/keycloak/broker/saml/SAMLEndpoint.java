@@ -25,10 +25,12 @@ import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Base64;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
+import org.keycloak.dom.saml.v2.assertion.EncryptedAssertionType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationDataType;
 import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationType;
@@ -50,7 +52,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
-import org.keycloak.protocol.saml.JaxrsSAML2BindingBuilder;
+import org.keycloak.protocol.saml.JaxrsSAML2BindingBuilderWithConfig;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.SamlProtocolUtils;
 import org.keycloak.protocol.saml.SamlService;
@@ -67,7 +69,6 @@ import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
-import org.keycloak.saml.processing.core.saml.v2.util.ArtifactResponseUtil;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
 import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
 import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
@@ -178,38 +179,41 @@ public class SAMLEndpoint {
     }
 
     @GET
-    public Response redirectBinding(@QueryParam(GeneralConstants.SAML_REQUEST_KEY) String samlRequest,
-                                    @QueryParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse,
-                                    @QueryParam(GeneralConstants.SAML_ARTIFACT_KEY) String samlArt,
-                                    @QueryParam(GeneralConstants.RELAY_STATE) String relayState)  {
-        if (Objects.isNull(samlArt)) {
-            return new RedirectBinding().execute(samlRequest, samlResponse, null, relayState, null);
+    public Response redirectBinding() {
+        MultivaluedMap<String, String> parameters = session.getContext().getUri().getQueryParameters();
+        String samlRequest = parameters.getFirst(GeneralConstants.SAML_REQUEST_KEY);
+        String samlResponse = parameters.getFirst(GeneralConstants.SAML_RESPONSE_KEY);
+        String samlArtifact = parameters.getFirst(GeneralConstants.SAML_ARTIFACT_KEY);
+        String relayState = parameters.getFirst(GeneralConstants.RELAY_STATE);
+
+        if (samlArtifact != null && !samlArtifact.isEmpty()) {
+            return new SAMLEndpoint.SoapBinding().execute(samlArtifact, relayState);
+        }else {
+            return new SAMLEndpoint.RedirectBinding().execute(samlRequest, samlResponse, relayState, null);
         }
-        return new ArtifactBinding().execute(samlRequest, samlResponse, samlArt, relayState, null);
     }
 
 
-    /**
-     */
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response postBinding(@FormParam(GeneralConstants.SAML_REQUEST_KEY) String samlRequest,
                                 @FormParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse,
-                                @FormParam(GeneralConstants.SAML_ARTIFACT_KEY) String samlArt,
+                                @FormParam(GeneralConstants.SAML_ARTIFACT_KEY) String samlArtifact,
                                 @FormParam(GeneralConstants.RELAY_STATE) String relayState) {
-        if (Objects.isNull(samlArt)) {
-            return new PostBinding().execute(samlRequest, samlResponse, null, relayState, null);
+        if (samlArtifact != null && !samlArtifact.isEmpty()) {
+            return new SAMLEndpoint.SoapBinding().execute(samlArtifact, relayState);
+        } else {
+            return new SAMLEndpoint.PostBinding().execute(samlRequest, samlResponse, relayState, null);
         }
-        return new ArtifactBinding().execute(samlRequest, samlResponse, samlArt, relayState, null);
     }
 
     @Path("clients/{client_id}")
     @GET
-    public Response redirectBindingIdpInitiated(@QueryParam(GeneralConstants.SAML_REQUEST_KEY) String samlRequest,
-                                                @QueryParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse,
-                                                @QueryParam(GeneralConstants.RELAY_STATE) String relayState,
-                                                @PathParam("client_id") String clientId)  {
-        return new RedirectBinding().execute(samlRequest, samlResponse, null, relayState, clientId);
+    public Response redirectClientBinding(@QueryParam(GeneralConstants.SAML_REQUEST_KEY) String samlRequest,
+                                          @QueryParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse,
+                                          @QueryParam(GeneralConstants.RELAY_STATE) String relayState,
+                                          @PathParam("client_id") String clientId) {
+        return new SAMLEndpoint.RedirectBinding().execute(samlRequest, samlResponse, relayState, clientId);
     }
 
 
@@ -222,7 +226,7 @@ public class SAMLEndpoint {
                                             @FormParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse,
                                             @FormParam(GeneralConstants.RELAY_STATE) String relayState,
                                             @PathParam("client_id") String clientId) {
-        return new PostBinding().execute(samlRequest, samlResponse, null, relayState, clientId);
+        return new SAMLEndpoint.PostBinding().execute(samlRequest, samlResponse, relayState, clientId);
     }
 
     protected abstract class Binding {
@@ -234,7 +238,7 @@ public class SAMLEndpoint {
             }
         }
 
-        protected Response basicChecks(String samlRequest, String samlResponse, String samlArt) {
+        protected Response basicChecks(String samlRequest, String samlResponse) {
             if (!checkSsl()) {
                 event.event(EventType.LOGIN);
                 event.error(Errors.SSL_REQUIRED);
@@ -246,7 +250,7 @@ public class SAMLEndpoint {
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.REALM_NOT_ENABLED);
             }
 
-            if (samlRequest == null && samlResponse == null&& samlArt == null) {
+            if (samlRequest == null && samlResponse == null) {
                 event.event(EventType.LOGIN);
                 event.error(Errors.INVALID_REQUEST);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
@@ -290,12 +294,20 @@ public class SAMLEndpoint {
             return new HardcodedKeyLocator(keys);
         }
 
-        public Response execute(String samlRequest, String samlResponse, String samlArt, String relayState, String clientId) {
+        public Response execute(String samlArtifact, String relayState) {
             event = new EventBuilder(realm, session, clientConnection);
-            Response response = basicChecks(samlRequest, samlResponse, samlArt);
+            String issuerURL = getEntityId(session.getContext().getUri(), realm);
+            String samlResponse = provider.resolveArtifact(samlArtifact, issuerURL, realm);
+            Response response = basicChecks(null, samlResponse);
+            if (response != null) return response;
+            else return handleSamlResponse(samlResponse, relayState, null);
+        }
+
+        public Response execute(String samlRequest, String samlResponse, String relayState, String clientId) {
+            event = new EventBuilder(realm, session, clientConnection);
+            Response response = basicChecks(samlRequest, samlResponse);
             if (response != null) return response;
             if (samlRequest != null) return handleSamlRequest(samlRequest, relayState);
-            if (samlArt != null) return handleSamlArt(samlArt, relayState, clientId);
             else return handleSamlResponse(samlResponse, relayState, clientId);
         }
 
@@ -346,7 +358,6 @@ public class SAMLEndpoint {
                 event.error(Errors.INVALID_SAML_LOGOUT_REQUEST);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.IDENTITY_PROVIDER_LOGOUT_FAILURE);
             }
-
             if (request.getSessionIndex() == null || request.getSessionIndex().isEmpty()) {
                 if (request.getNameID() == null){
                     //TODO this need to be implemented
@@ -390,7 +401,7 @@ public class SAMLEndpoint {
             builder.logoutRequestID(request.getID());
             builder.destination(config.getSingleLogoutServiceUrl());
             builder.issuer(issuerURL);
-            JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder(session)
+            JaxrsSAML2BindingBuilderWithConfig binding = new JaxrsSAML2BindingBuilderWithConfig(session, config)
                         .relayState(relayState);
             boolean postBinding = config.isPostBindingLogout();
             if (config.isWantAuthnRequestsSigned()) {
@@ -409,94 +420,10 @@ public class SAMLEndpoint {
                 } else {
                     return binding.redirectBinding(builder.buildDocument()).response(config.getSingleLogoutServiceUrl());
                 }
-            } catch (ConfigurationException e) {
-                throw new RuntimeException(e);
-            } catch (ProcessingException e) {
-                throw new RuntimeException(e);
-            } catch (IOException e) {
+            } catch (ConfigurationException | ProcessingException | IOException e) {
                 throw new RuntimeException(e);
             }
 
-        }
-
-        protected Response handleSamlArt(String samlArt, String relayState, String clientId) {
-            try {
-                // execute the Resolve Artifact request
-                SAMLDocumentHolder samlDocumentHolder = provider.resolveArtifact(session, session.getContext().getUri(), realm, relayState, samlArt);
-
-                // validate the type of the SAML object
-                if (!(samlDocumentHolder.getSamlObject() instanceof ArtifactResponseType artifactResponse)) {
-                    logger.error("artifact binding failed: the SAML object is not an ArtifactResponse");
-                    event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
-                    event.detail(Details.REASON, Errors.INVALID_SAML_ARTIFACT_RESPONSE);
-                    event.error(Errors.INVALID_REQUEST);
-                    return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
-                }
-
-                // validate the signature of the ArtifactResponse
-                if (config.isValidateSignature()) {
-                    try {
-                        verifySignature(GeneralConstants.SAML_RESPONSE_KEY, samlDocumentHolder);
-                    } catch (VerificationException e) {
-                        logger.error("artifact binding failed: the ArtifactResponse signature is invalid", e);
-                        event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
-                        event.error(Errors.INVALID_SIGNATURE);
-                        return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.IDENTITY_PROVIDER_INVALID_SIGNATURE);
-                    }
-                }
-
-                if (!(artifactResponse.getAny() instanceof ResponseType embeddedResponse)) {
-                    logger.error("artifact binding failed: the embedded SAML object is not a Response");
-                    event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
-                    event.detail(Details.REASON, Errors.INVALID_SAML_ARTIFACT_RESPONSE);
-                    event.error(Errors.INVALID_REQUEST);
-                    return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
-                }
-
-                // validate the destination of the embedded Response
-                if (isDestinationRequired() && embeddedResponse.getDestination() == null && containsUnencryptedSignature(samlDocumentHolder)) {
-                    logger.error("artifact binding failed: the embedded Response does not contain a destination");
-                    event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
-                    event.detail(Details.REASON, Errors.MISSING_REQUIRED_DESTINATION);
-                    event.error(Errors.INVALID_SAML_RESPONSE);
-                    return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
-                }
-                if (!destinationValidator.validate(getExpectedDestination(config.getAlias(), clientId), embeddedResponse.getDestination())) {
-                    logger.error("artifact binding failed: the embedded Response has an invalid destination");
-                    event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
-                    event.detail(Details.REASON, Errors.INVALID_DESTINATION);
-                    event.error(Errors.INVALID_SAML_RESPONSE);
-                    return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
-                }
-
-                // extract the SAML Response from the original SAML ArtifactResponse
-                Optional<String>  optionalEmbeddedResponseAsString = ArtifactResponseUtil.convertResponseToString(
-                        samlDocumentHolder.getSamlDocument()
-                );
-
-                // leave early if the embedded Response cannot be converted to string
-                if(optionalEmbeddedResponseAsString.isEmpty()) {
-                    logger.error("artifact binding failed: the embedded Response cannot be converted to string");
-                    event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
-                    event.detail(Details.REASON, Errors.INVALID_SAML_ARTIFACT_RESPONSE);
-                    event.error(Errors.INVALID_REQUEST);
-                    return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
-                }
-
-                // convert the embedded SAML response to a base64 serialized string
-                String embeddedResponseAsString = optionalEmbeddedResponseAsString.get();
-                logger.debugf("embeddedResponseAsString %s", embeddedResponseAsString);
-                String embeddedResponseAsBase64 =  PostBindingUtil.base64Encode(embeddedResponseAsString);
-
-                // continue the flow with POST binding
-                return execute(null, embeddedResponseAsBase64, null, relayState, clientId);
-            } catch (IOException e) {
-                logger.error("artifact binding failed", e);
-                event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
-                event.detail(Details.REASON, Errors.INVALID_SAML_ARTIFACT_RESPONSE);
-                event.error(Errors.INVALID_REQUEST);
-                return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
-            }
         }
 
         private Consumer<UserSessionModel> processLogout(AtomicReference<LogoutRequestType> ref) {
@@ -757,6 +684,7 @@ public class SAMLEndpoint {
 
 
         public Response handleSamlResponse(String samlResponse, String relayState, String clientId) {
+            boolean isArtifactResponse = false;
             SAMLDocumentHolder holder = extractResponseDocument(samlResponse);
             if (holder == null) {
                 event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
@@ -765,6 +693,11 @@ public class SAMLEndpoint {
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.IDENTITY_PROVIDER_INVALID_RESPONSE);
             }
             StatusResponseType statusResponse = (StatusResponseType)holder.getSamlObject();
+            if (statusResponse instanceof ArtifactResponseType) {
+                isArtifactResponse = true;
+                statusResponse = convertToResponseType(statusResponse);
+            }
+
             // validate destination
             if (isDestinationRequired()
                     && statusResponse.getDestination() == null && containsUnencryptedSignature(holder)) {
@@ -781,7 +714,11 @@ public class SAMLEndpoint {
             }
             if (config.isValidateSignature()) {
                 try {
-                    verifySignature(GeneralConstants.SAML_RESPONSE_KEY, holder);
+                    if(isArtifactResponse){
+                        verifySignature(GeneralConstants.SAML_ARTIFACT_RESPONSE_KEY, holder);
+                    }else{
+                        verifySignature(GeneralConstants.SAML_RESPONSE_KEY, holder);
+                    }
                 } catch (VerificationException e) {
                     logger.error("validation failed", e);
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
@@ -798,6 +735,46 @@ public class SAMLEndpoint {
             }
             //throw new RuntimeException("Unknown response type");
 
+        }
+
+        private ResponseType convertToResponseType(StatusResponseType statusResponse) {
+            ResponseType responseType;
+            if (statusResponse instanceof org.keycloak.dom.saml.v2.protocol.ResponseType) {
+                org.keycloak.dom.saml.v2.protocol.ResponseType kcResponseType =
+                        (org.keycloak.dom.saml.v2.protocol.ResponseType) ((ArtifactResponseType) statusResponse).getAny();
+                responseType = new ResponseType(kcResponseType.getID(), kcResponseType.getIssueInstant());
+                responseType.setExtensions(kcResponseType.getExtensions());
+                responseType.setInResponseTo(kcResponseType.getInResponseTo());
+                responseType.setConsent(kcResponseType.getConsent());
+                responseType.setSignature(kcResponseType.getSignature());
+                responseType.setStatus(kcResponseType.getStatus());
+                responseType.setDestination(kcResponseType.getDestination());
+                responseType.setIssuer(kcResponseType.getIssuer());
+                for (org.keycloak.dom.saml.v2.protocol.ResponseType.RTChoiceType kcRTChoiceType : kcResponseType.getAssertions()) {
+                    ResponseType.RTChoiceType rtChoiceType;
+                    org.keycloak.dom.saml.v2.assertion.AssertionType kcAssertionType = kcRTChoiceType.getAssertion();
+                    if (kcAssertionType != null) {
+                        rtChoiceType = new ResponseType.RTChoiceType(convertAssertionType(kcAssertionType));
+                    } else {
+                        EncryptedAssertionType encryptedAssertion = kcRTChoiceType.getEncryptedAssertion();
+                        rtChoiceType = new ResponseType.RTChoiceType(encryptedAssertion);
+                    }
+                    responseType.addAssertion(rtChoiceType);
+                }
+            } else {
+                responseType = (ResponseType) ((ArtifactResponseType) statusResponse).getAny();
+            }
+            return responseType;
+        }
+
+        private AssertionType convertAssertionType(org.keycloak.dom.saml.v2.assertion.AssertionType kcAssertionType) {
+            AssertionType assertionType = new AssertionType(kcAssertionType.getID(), kcAssertionType.getIssueInstant());
+            assertionType.setAdvice(kcAssertionType.getAdvice());
+            assertionType.setSubject(kcAssertionType.getSubject());
+            assertionType.setConditions(kcAssertionType.getConditions());
+            assertionType.setSignature(kcAssertionType.getSignature());
+            assertionType.setIssuer(kcAssertionType.getIssuer());
+            return assertionType;
         }
 
         protected Response handleLogoutResponse(SAMLDocumentHolder holder, StatusResponseType responseType, String relayState) {
@@ -831,7 +808,8 @@ public class SAMLEndpoint {
         }
     }
 
-    protected class PostBinding extends Binding {
+
+    protected class PostBinding extends SAMLEndpoint.Binding {
         @Override
         protected boolean containsUnencryptedSignature(SAMLDocumentHolder documentHolder) {
             NodeList nl = documentHolder.getSamlDocument().getElementsByTagNameNS(XMLSignature.XMLNS, "Signature");
@@ -859,6 +837,11 @@ public class SAMLEndpoint {
         @Override
         protected SAMLDocumentHolder extractResponseDocument(String response) {
             byte[] samlBytes = PostBindingUtil.base64Decode(response);
+            try {
+                samlBytes = Base64.decode(samlBytes);
+            } catch (IOException e) {
+                logger.warn("SAML Response was not a valid Base64 string, resuming as if SAML Response is plain text XML.");
+            }
             return SAMLRequestParser.parseResponseDocument(samlBytes);
         }
 
@@ -868,7 +851,24 @@ public class SAMLEndpoint {
         }
     }
 
-    protected class RedirectBinding extends Binding {
+    protected class SoapBinding extends PostBinding {
+        @Override
+        protected boolean isDestinationRequired() {
+            return false;
+        }
+
+        @Override
+        protected SAMLDocumentHolder extractResponseDocument(String response) {
+            return SAMLRequestParser.parseResponseDocument(response.getBytes());
+        }
+
+        @Override
+        protected String getBindingType() {
+            return SamlProtocol.SAML_SOAP_BINDING;
+        }
+    }
+
+    protected class RedirectBinding extends SAMLEndpoint.Binding {
         @Override
         protected boolean containsUnencryptedSignature(SAMLDocumentHolder documentHolder) {
             MultivaluedMap<String, String> encodedParams = session.getContext().getUri().getQueryParameters(false);
@@ -900,59 +900,6 @@ public class SAMLEndpoint {
             return SamlProtocol.SAML_REDIRECT_BINDING;
         }
 
-    }
-
-    protected class ArtifactBinding extends Binding {
-
-        private boolean unencryptedSignaturesVerified = false;
-
-        @Override
-        protected boolean containsUnencryptedSignature(SAMLDocumentHolder documentHolder) {
-            if (unencryptedSignaturesVerified) {
-                return true;
-            }
-            NodeList nl = documentHolder.getSamlDocument().getElementsByTagNameNS(XMLSignature.XMLNS, "Signature");
-            return (nl != null && nl.getLength() > 0);
-        }
-
-        @Override
-        protected void verifySignature(String key, SAMLDocumentHolder documentHolder) throws VerificationException {
-            if (unencryptedSignaturesVerified) {
-                // this is the second pass and signatures were already verified in the artifact response time
-                return;
-            }
-            if (!containsUnencryptedSignature(documentHolder)) {
-                List<ResponseType.RTChoiceType> assertions = null;
-                if (documentHolder.getSamlObject() instanceof ResponseType responseType) {
-                    assertions = responseType.getAssertions();
-                } else if (documentHolder.getSamlObject() instanceof ArtifactResponseType artifactResponseType
-                        && artifactResponseType.getAny() instanceof ResponseType responseType) {
-                    assertions = responseType.getAssertions();
-                }
-                if (assertions != null && !assertions.isEmpty() ) {
-                    // Only relax verification if the response is an authnresponse and contains (encrypted/plaintext) assertion.
-                    // In that case, signature is validated on assertion element
-                    return;
-                }
-            }
-            SamlProtocolUtils.verifyDocumentSignature(documentHolder.getSamlDocument(), getIDPKeyLocator());
-            unencryptedSignaturesVerified = true; // mark signatures as verified
-        }
-
-        @Override
-        protected SAMLDocumentHolder extractRequestDocument(String samlRequest) {
-            throw new UnsupportedOperationException("SAML request is not compliant with Artifact binding");
-        }
-        @Override
-        protected SAMLDocumentHolder extractResponseDocument(String response) {
-            byte[] samlBytes = PostBindingUtil.base64Decode(response);
-            return SAMLRequestParser.parseResponseDocument(samlBytes);
-        }
-
-        @Override
-        protected String getBindingType() {
-            return SamlProtocol.SAML_ARTIFACT_BINDING;
-        }
     }
 
     private String getX500Attribute(AssertionType assertion, X500SAMLProfileConstants attribute) {
