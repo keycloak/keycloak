@@ -19,6 +19,8 @@ package org.keycloak.tests.admin.client;
 
 import java.util.Collections;
 
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
@@ -161,12 +163,22 @@ public class ClientProtocolMapperTest extends AbstractProtocolMapperTest {
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientProtocolMapperPath(oidcClient.getId(), createdId), rep, ResourceType.PROTOCOL_MAPPER);
 
         rep.getConfig().put("role", "myotherrole");
+        rep.setName("oidc-hardcoded-role-mapper2-new");
         rep.setId(createdId);
         oidcMappersRsc.update(createdId, rep);
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.clientProtocolMapperPath(oidcClient.getId(), createdId), rep, ResourceType.PROTOCOL_MAPPER);
 
         ProtocolMapperRepresentation updated = oidcMappersRsc.getMapperById(createdId);
         assertEqualMappers(rep, updated);
+
+        // Test for Pre KC 26.3 legacy behavior that name will default to old name
+        rep.getConfig().put("role", "myotherrole");
+        rep.setName(null);
+        rep.setId(createdId);
+        oidcMappersRsc.update(createdId, rep);
+
+        ProtocolMapperRepresentation updated2 = oidcMappersRsc.getMapperById(createdId);
+        MatcherAssert.assertThat(updated2.getName(), Matchers.equalTo("oidc-hardcoded-role-mapper2-new"));
     }
 
     @Test
