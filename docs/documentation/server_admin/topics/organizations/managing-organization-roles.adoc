@@ -1,0 +1,79 @@
+[[_managing_organization_roles]]
+=== Managing organization roles
+
+[role="_abstract"]
+Organization roles provide fine-grained access control within organizations. You can create, assign, and manage roles specific to each organization to control member permissions and access levels.
+
+==== Creating organization roles
+
+Organization roles are created and managed separately for each organization. Each role has a name and optional description.
+
+.Procedure
+
+. Click *Organizations* in the menu.
+. Select the organization where you want to create a role.
+. Click the *Roles* tab.
+. Click *Create role*.
+. Enter a *Role name*. The role name must be unique within the organization.
+. Optionally, enter a *Description* for the role.
+. Click *Save*.
+
+The new role appears in the roles list for the organization.
+
+==== Assigning organization roles to members
+
+After creating organization roles, you can assign them to organization members to control their access and permissions.
+
+.Procedure
+
+. Click *Organizations* in the menu.
+. Select the organization.
+. Click the *Members* tab.
+. Click the username of the member you want to assign a role to.
+. Click the *Role mappings* tab.
+. In the *Organization roles* section, select the roles you want to assign from the *Available roles* list.
+. Click *Assign* to add the selected roles.
+
+The assigned roles appear in the *Assigned roles* list.
+
+==== Removing organization role assignments
+
+You can remove role assignments from organization members when they no longer need specific permissions.
+
+.Procedure
+
+. Navigate to the member's *Role mappings* tab as described above.
+. In the *Organization roles* section, select the roles you want to remove from the *Assigned roles* list.
+. Click *Unassign* to remove the selected roles.
+
+==== Deleting organization roles
+
+When an organization role is no longer needed, you can delete it. Deleting a role automatically removes all assignments of that role from organization members.
+
+.Procedure
+
+. Click *Organizations* in the menu.
+. Select the organization.
+. Click the *Roles* tab.
+. Click the *Actions* menu (⋮) for the role you want to delete.
+. Click *Delete*.
+. Confirm the deletion by clicking *Delete* in the confirmation dialog.
+
+[WARNING]
+====
+Deleting an organization role removes all assignments of that role from organization members and cannot be undone.
+====
+
+==== Using organization roles in authorization policies
+
+Organization roles can be used in authorization policies to control access to resources based on organization membership and assigned roles.
+
+.Procedure
+
+. Configure authorization for your client as described in the link:{authzguide_link}[Authorization Services Guide].
+. Create a new policy of type *Organization Role*.
+. Select the target organization and required roles.
+. Configure the policy logic (Positive or Negative).
+. Save the policy and associate it with permissions and resources as needed.
+
+This allows you to create fine-grained access control based on organization membership and role assignments.
