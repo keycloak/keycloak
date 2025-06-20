@@ -468,8 +468,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     }
 
     @Override
-    public String getMessage(String message) {
-        return formatMessage(new FormMessage(null, message));
+    public String getMessage(String message, Object... parameters) {
+        return formatMessage(new FormMessage(null, message, parameters));
     }
 
     /**

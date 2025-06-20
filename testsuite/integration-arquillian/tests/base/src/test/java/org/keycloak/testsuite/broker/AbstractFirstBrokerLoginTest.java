@@ -14,12 +14,15 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.authentication.authenticators.broker.IdpReviewProfileAuthenticatorFactory;
 import org.keycloak.broker.provider.HardcodedUserSessionAttributeMapper;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderSyncMode;
+import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
@@ -48,7 +51,6 @@ import org.openqa.selenium.support.PageFactory;
 import static org.junit.Assert.assertEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.startsWith;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
 import static org.keycloak.testsuite.admin.ApiUtil.removeUserByUsername;
@@ -824,6 +826,85 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         assertTrue(realm.users().get(linkedUserId).toRepresentation().isEmailVerified());
     }
 
+    @Test
+    public void testLinkAccountModifyingEmailLinkingByEmailNotAllowed() {
+        RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
+
+        configureSMTPServer();
+
+        // change provider user email to changed@localhost.com
+        UserRepresentation userProvider = ApiUtil.findUserByUsername(providerRealm, bc.getUserLogin());
+        userProvider.setEmail("changed@localhost.com");
+        providerRealm.users().get(userProvider.getId()).update(userProvider);
+
+        //create user on consumer's site with the correct email
+        final String linkedUserId = createUser(bc.getUserLogin());
+
+        //test
+        oauth.config().clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
+        logInWithBroker(bc);
+
+        waitForPage(driver, "update account information", false);
+        Assert.assertTrue(updateAccountInformationPage.isCurrent());
+        Assert.assertTrue("We must be on correct realm right now",
+                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+
+        // update the email to the correct one
+        log.debug("Updating info on updateAccount page");
+        updateAccountInformationPage.updateAccountInformation(USER_EMAIL, "Firstname", "Lastname");
+
+        //link account
+        waitForPage(driver, "account already exists", false);
+        idpConfirmLinkPage.clickLinkAccount();
+
+        //it should start the link using username and password as email has been changed
+        assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
+
+        loginPage.login("password");
+        Assert.assertTrue(appPage.isCurrent());
+
+        assertNumFederatedIdentities(linkedUserId, 1);
+    }
+
+    @Test
+    public void testLinkAccountReviewDisabled() throws Exception {
+        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
+
+        // disable the idp review step
+        AuthenticationExecutionInfoRepresentation idpReviewProfileExec = consumerRealm.flows().getExecutions("first broker login").stream()
+                .filter(execution -> IdpReviewProfileAuthenticatorFactory.PROVIDER_ID.equals(execution.getProviderId()))
+                .findAny()
+                .orElse(null);
+        Assert.assertNotNull("IdpReviewProfileAuthenticator execution not found", idpReviewProfileExec);
+        idpReviewProfileExec.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED.name());
+        consumerRealm.flows().updateExecutions("first broker login", idpReviewProfileExec);
+
+        //create user on consumer's site with the correct email
+        final String linkedUserId = createUser(bc.getUserLogin());
+
+        //test
+        oauth.config().clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
+        logInWithBroker(bc);
+
+        // no review displayed and button in link not available
+        waitForPage(driver, "account already exists", false);
+        Assert.assertTrue("We must be on correct realm right now",
+                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+        Assert.assertFalse("Review Profile button is displayed", idpConfirmLinkPage.isReviewProfileDisplayed());
+        idpConfirmLinkPage.clickLinkAccount();
+
+        //linking the account using password as email not configured
+        assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
+
+        loginPage.login("password");
+        Assert.assertTrue(appPage.isCurrent());
+
+        assertNumFederatedIdentities(linkedUserId, 1);
+    }
 
     /**
      * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractKeycloakIdentityProviderTest#testSuccessfulAuthenticationWithoutUpdateProfile_emailProvided_emailVerifyEnabled
@@ -1051,7 +1132,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         // in the second browser confirm the mail
         driver2.navigate().to(url);
-        assertThat(driver2.findElement(By.className("instruction")).getText(), startsWith("Confirm linking the account"));
+        assertThat(driver2.findElement(By.id("kc-page-title")).getText(), startsWith("Confirm linking the account"));
+        assertThat(driver2.findElement(By.className("instruction")).getText(), startsWith("If you link the account, you will also be able to login using account"));
         driver2.findElement(By.linkText("» Click here to proceed")).click();
         assertThat(driver2.findElement(By.className("instruction")).getText(), startsWith("You successfully verified your email."));
 

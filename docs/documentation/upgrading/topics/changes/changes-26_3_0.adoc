@@ -66,6 +66,18 @@ If the provider does not send the claim, it defaults to the original behavior an
 In the future, we might evaluate changing this specific configuration to avoid automatic updates on the email verification
 status on federated user accounts depending on the use cases and the demand from the community.
 
+=== Verify existing account by Email is only executed for the email and username sent by the identity provider
+
+The execution *Verify Existing Account By Email* is one of the alternatives that the *First Login Flow* has to allow a brokering account to be linked to an existing {project_name} user. This step is executed when the user logs in into {project_name} through the broker for the first time, and the identity provider account is already present in {project_name}. The execution sends an email to the current {project_name} address in order to confirm the user controls that account.
+
+Since this release, the *Verify Existing Account By Email* execution is only attempted in the *First Login Flow* if the linking attributes (email and username) sent by the external identity provider are not modified by the user during the review process. This new behavior avoids sending verification emails to an existing {project_name} account that can inadvertently accept the linking.
+
+In case the provider needs to modify the information sent by the identity provider (because emails or usernames are different in the broker), only the other alternative *Verify Existing Account By Re-authentication* is available to link the new account to the existing {project_name} user.
+
+If the data received from the identity provider is mandatory and cannot be modified, then the *Review Profile* step in the *First Login Flow* can be disabled to avoid any user intervention.
+
+For more information, see link:{adminguide_link}#_identity_broker_first_login[the First login flow section of the {adminguide_name}].
+
 === Signing out from other devices now disabled by default
 
 Previously, when a user updated their credentials, like changing their password or adding another factor like an OTP or Passkey, they had a checkbox *Sign out from other devices* which was checked by default. Since this release, {project_name} displays the checkbox *Sign out from other devices* not checked by default. This checkbox should now be intentionally enabled by the user to logout all the other related sessions associated to the same user.
