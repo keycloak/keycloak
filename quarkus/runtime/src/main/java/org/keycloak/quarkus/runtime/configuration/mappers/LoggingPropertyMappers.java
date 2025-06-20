@@ -18,6 +18,7 @@ import java.util.stream.Stream;
 
 import io.quarkus.runtime.configuration.MemorySizeConverter;
 import org.jboss.logmanager.LogContext;
+import org.keycloak.common.Profile;
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.config.Option;
 import org.keycloak.quarkus.runtime.Messages;
@@ -31,6 +32,7 @@ public final class LoggingPropertyMappers {
     private static final String CONSOLE_ENABLED_MSG = "Console log handler is activated";
     private static final String FILE_ENABLED_MSG = "File log handler is activated";
     private static final String SYSLOG_ENABLED_MSG = "Syslog is activated";
+    private static final String MDC_ENABLED_MSG = "MDC is activated";
     private static final String DEFAULT_ROOT_LOG_LEVEL = toLevel(LoggingOptions.LOG_LEVEL.getDefaultValue().orElseThrow().get(0)).getName();
 
     private static List<CategoryLevel> rootLogLevels;
@@ -63,7 +65,7 @@ public final class LoggingPropertyMappers {
                         .isEnabled(LoggingPropertyMappers::isConsoleEnabled, CONSOLE_ENABLED_MSG)
                         .to("quarkus.log.console.format")
                         .paramLabel("format")
-                        .transformer((value, ctx) -> addTracingInfo(value, LoggingOptions.LOG_CONSOLE_INCLUDE_TRACE))
+                        .transformer((value, ctx) -> addTracingAndMdcInfo(value, LoggingOptions.LOG_CONSOLE_INCLUDE_TRACE, LoggingOptions.LOG_CONSOLE_INCLUDE_MDC))
                         .build(),
                 fromOption(LoggingOptions.LOG_CONSOLE_JSON_FORMAT)
                         .isEnabled(LoggingPropertyMappers::isConsoleJsonEnabled, "%s and output is set to 'json'".formatted(CONSOLE_ENABLED_MSG))
@@ -73,6 +75,10 @@ public final class LoggingPropertyMappers {
                 fromOption(LoggingOptions.LOG_CONSOLE_INCLUDE_TRACE)
                         .isEnabled(() -> LoggingPropertyMappers.isConsoleEnabled() && TracingPropertyMappers.isTracingEnabled(),
                                 "Console log handler and Tracing is activated")
+                        .build(),
+                fromOption(LoggingOptions.LOG_CONSOLE_INCLUDE_MDC)
+                        .isEnabled(() -> LoggingPropertyMappers.isConsoleEnabled() && isMdcActive(),
+                                "Console log handler and MDC logging are activated")
                         .build(),
                 fromOption(LoggingOptions.LOG_CONSOLE_COLOR)
                         .isEnabled(LoggingPropertyMappers::isConsoleEnabled, CONSOLE_ENABLED_MSG)
@@ -114,7 +120,7 @@ public final class LoggingPropertyMappers {
                         .isEnabled(LoggingPropertyMappers::isFileEnabled, FILE_ENABLED_MSG)
                         .to("quarkus.log.file.format")
                         .paramLabel("format")
-                        .transformer((value, ctx) -> addTracingInfo(value, LoggingOptions.LOG_FILE_INCLUDE_TRACE))
+                        .transformer((value, ctx) -> addTracingAndMdcInfo(value, LoggingOptions.LOG_FILE_INCLUDE_TRACE, LoggingOptions.LOG_FILE_INCLUDE_MDC))
                         .build(),
                 fromOption(LoggingOptions.LOG_FILE_JSON_FORMAT)
                         .isEnabled(LoggingPropertyMappers::isFileJsonEnabled, FILE_ENABLED_MSG + " and output is set to 'json'")
@@ -124,6 +130,10 @@ public final class LoggingPropertyMappers {
                 fromOption(LoggingOptions.LOG_FILE_INCLUDE_TRACE)
                         .isEnabled(() -> LoggingPropertyMappers.isFileEnabled() && TracingPropertyMappers.isTracingEnabled(),
                                 "File log handler and Tracing is activated")
+                        .build(),
+                fromOption(LoggingOptions.LOG_FILE_INCLUDE_MDC)
+                        .isEnabled(() -> LoggingPropertyMappers.isFileEnabled() && isMdcActive(),
+                                "File log handler and MDC logging are activated")
                         .build(),
                 fromOption(LoggingOptions.LOG_FILE_OUTPUT)
                         .isEnabled(LoggingPropertyMappers::isFileEnabled, FILE_ENABLED_MSG)
@@ -198,7 +208,7 @@ public final class LoggingPropertyMappers {
                         .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
                         .to("quarkus.log.syslog.format")
                         .paramLabel("format")
-                        .transformer((value, ctx) -> addTracingInfo(value, LoggingOptions.LOG_SYSLOG_INCLUDE_TRACE))
+                        .transformer((value, ctx) -> addTracingAndMdcInfo(value, LoggingOptions.LOG_SYSLOG_INCLUDE_TRACE, LoggingOptions.LOG_SYSLOG_INCLUDE_MDC))
                         .build(),
                 fromOption(LoggingOptions.LOG_SYSLOG_JSON_FORMAT)
                         .isEnabled(LoggingPropertyMappers::isSyslogJsonEnabled, SYSLOG_ENABLED_MSG + " and output is set to 'json'")
@@ -208,6 +218,10 @@ public final class LoggingPropertyMappers {
                 fromOption(LoggingOptions.LOG_SYSLOG_INCLUDE_TRACE)
                         .isEnabled(() -> LoggingPropertyMappers.isSyslogEnabled() && TracingPropertyMappers.isTracingEnabled(),
                                 "Syslog handler and Tracing is activated")
+                        .build(),
+                fromOption(LoggingOptions.LOG_SYSLOG_INCLUDE_MDC)
+                        .isEnabled(() -> LoggingPropertyMappers.isSyslogEnabled() && isMdcActive(),
+                                "Syslog handler and MDC logging are activated")
                         .build(),
                 fromOption(LoggingOptions.LOG_SYSLOG_OUTPUT)
                         .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
@@ -226,6 +240,17 @@ public final class LoggingPropertyMappers {
                         .to("quarkus.log.syslog.async.queue-length")
                         .paramLabel("queue-length")
                         .build(),
+                // MDC
+                fromOption(LoggingOptions.LOG_MDC_ENABLED)
+                        .to("kc.spi-mapped-diagnostic-context--default--enabled")
+                        .isEnabled(LoggingPropertyMappers::isMdcAvailable, "log-mdc preview feature is enabled")
+                        .build(),
+                fromOption(LoggingOptions.LOG_MDC_KEYS)
+                        .isEnabled(LoggingPropertyMappers::isMdcActive, "MDC logging is enabled")
+                        .to("kc.spi-mapped-diagnostic-context--default--mdc-keys")
+                        .paramLabel("keys")
+                        .build(),
+
         };
 
         return defaultMappers;
@@ -261,6 +286,14 @@ public final class LoggingPropertyMappers {
 
     public static boolean isSyslogAsyncEnabled() {
         return isHandlerAsyncEnabled(LoggingOptions.Handler.syslog);
+    }
+
+    private static boolean isMdcAvailable() {
+        return Profile.isFeatureEnabled(Profile.Feature.LOG_MDC);
+    }
+
+    public static boolean isMdcActive() {
+        return Configuration.isTrue(LoggingOptions.LOG_MDC_ENABLED);
     }
 
     public static boolean isSyslogJsonEnabled() {
@@ -387,16 +420,24 @@ public final class LoggingPropertyMappers {
     /**
      * Add tracing info to the log if the format is not explicitly set, and tracing and {@code includeTraceOption} options are enabled
      */
-    private static String addTracingInfo(String value, Option<Boolean> includeTraceOption) {
+    private static String addTracingAndMdcInfo(String value, Option<Boolean> includeTraceOption, Option<Boolean> includeMdcOption) {
         var isTracingEnabled = TracingPropertyMappers.isTracingEnabled();
         var includeTrace = isTrue(includeTraceOption);
         var isChangedLogFormat = !DEFAULT_LOG_FORMAT.equals(value);
+        var includeMdc = isTrue(includeMdcOption);
 
-        if (!isTracingEnabled || !includeTrace || isChangedLogFormat) {
+        if (isChangedLogFormat) {
             return value;
         }
 
-        return LoggingOptions.DEFAULT_LOG_TRACING_FORMAT;
+        StringBuilder additionalFields = new StringBuilder();
+        if (isMdcActive() && includeMdc) {
+            additionalFields.append("%X ");
+        } else if (isTracingEnabled && includeTrace) {
+            additionalFields.append("traceId=%X{traceId}, parentId=%X{parentId}, spanId=%X{spanId}, sampled=%X{sampled} ");
+        }
+
+        return LoggingOptions.DEFAULT_LOG_FORMAT_FUNC.apply(additionalFields.toString());
     }
 
     private static String upperCase(String value, ConfigSourceInterceptorContext context) {

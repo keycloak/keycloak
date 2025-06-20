@@ -16,7 +16,11 @@ public final class MappedDiagnosticContextUtil {
             log.warn("Cannot obtain session from thread to init MappedDiagnosticContextProvider. Return Noop provider.");
             return NOOP_PROVIDER;
         }
-        return session.getProvider(MappedDiagnosticContextProvider.class);
+        MappedDiagnosticContextProvider provider = session.getProvider(MappedDiagnosticContextProvider.class);
+        if (provider == null) {
+            return NOOP_PROVIDER;
+        }
+        return provider;
     }
 
     /**

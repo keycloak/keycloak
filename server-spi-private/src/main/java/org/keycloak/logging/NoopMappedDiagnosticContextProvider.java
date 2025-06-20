@@ -7,7 +7,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
-public class NoopMappedDiagnosticContextProvider implements MappedDiagnosticContextProvider{
+public class NoopMappedDiagnosticContextProvider implements MappedDiagnosticContextProvider {
 
     @Override
     public void update(KeycloakContext keycloakContext, AuthenticationSessionModel session) {

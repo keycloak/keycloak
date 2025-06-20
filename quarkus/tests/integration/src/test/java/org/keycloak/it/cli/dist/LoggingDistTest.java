@@ -17,6 +17,7 @@
 
 package org.keycloak.it.cli.dist;
 
+import static io.restassured.RestAssured.when;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -31,7 +32,6 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.keycloak.config.LoggingOptions;
@@ -263,6 +263,16 @@ public class LoggingDistTest {
     @Test
     @Launch({"start-dev", "--log-async=true"})
     void asyncLogging(CLIResult cliResult) {
+        cliResult.assertStartedDevMode();
+    }
+
+    @Test
+    @Launch({ "start-dev", "--features=log-mdc","--log-mdc-enabled=true", "--log-level=org.keycloak:debug" })
+    void testLogMdcShowingInTheLogs(CLIResult cliResult) {
+
+        when().get("/realms/master/.well-known/openid-configuration").then()
+                .statusCode(200);
+        assertTrue(cliResult.getOutput().contains("{kc.realm=master} DEBUG [org.keycloak."));
         cliResult.assertStartedDevMode();
     }
 
