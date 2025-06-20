@@ -104,7 +104,7 @@ The `kc.sh|bat` script allows you to remotely debug the distribution. For that, 
 kc.sh --debug start-dev
 ```
 
-By default, the debug port is available at `8787`.
+By default, the debug port is available at `8787`. Additionally, you can specify IPv4 or bracketed IPv6 addresses with optional ports, e.g. `--debug 127.0.0.1`, `--debug 127.0.0.1:8786`, `--debug [::1]`, `--debug [::1]:8785`. Make sure to exercise caution when setting IP addresses in the `--debug` parameter, since a value such as `--debug 0.0.0.0:8787` will expose the debug port to all network interfaces!
 
 An additional environment variable `DEBUG_SUSPEND` can be set to suspend the JVM, when launched in debug mode. The `DEBUG_SUSPEND` variable supports the following values:
 

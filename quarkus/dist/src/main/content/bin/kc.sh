@@ -44,6 +44,7 @@ CLASSPATH_OPTS="'$(abs_path "../lib/quarkus-run.jar")'"
 DEBUG_MODE="${DEBUG:-false}"
 DEBUG_PORT="${DEBUG_PORT:-8787}"
 DEBUG_SUSPEND="${DEBUG_SUSPEND:-n}"
+DEBUG_ADDRESS="0.0.0.0:$DEBUG_PORT"
 
 esceval() {
     printf '%s\n' "$1" | sed "s/'/'\\\\''/g; 1 s/^/'/; $ s/$/'/"
@@ -55,9 +56,20 @@ do
     case "$1" in
       --debug)
           DEBUG_MODE=true
-          if [ -n "$2" ] && expr "$2" : '[0-9]\{0,\}$' >/dev/null; then
-              DEBUG_PORT=$2
-              shift
+          if [ -n "$2" ]; then
+              # Plain port
+              if echo "$2" | grep -Eq '^[0-9]+$'; then
+                  DEBUG_ADDRESS="0.0.0.0:$2"
+                  shift
+              # IPv4 or bracketed IPv6 with optional port
+              elif echo "$2" | grep -Eq '^(([0-9.]+)|(\[[0-9A-Fa-f:]+\]))'; then
+                  if echo "$2" | grep -Eq ':[0-9]+$'; then
+                      DEBUG_ADDRESS="$2"
+                  else
+                      DEBUG_ADDRESS="$2:$DEBUG_PORT"
+                  fi
+                  shift
+              fi
           fi
           ;;
       --)
@@ -142,7 +154,7 @@ fi
 if [ "$DEBUG_MODE" = "true" ]; then
     DEBUG_OPT="$(echo "$JAVA_OPTS" | $GREP "\-agentlib:jdwp")"
     if [ -z "$DEBUG_OPT" ]; then
-        JAVA_OPTS="$JAVA_OPTS -agentlib:jdwp=transport=dt_socket,address=$DEBUG_PORT,server=y,suspend=$DEBUG_SUSPEND"
+        JAVA_OPTS="$JAVA_OPTS -agentlib:jdwp=transport=dt_socket,address=$DEBUG_ADDRESS,server=y,suspend=$DEBUG_SUSPEND"
     else
         echo "Debug already enabled in JAVA_OPTS, ignoring --debug argument"
     fi
@@ -152,7 +164,7 @@ esceval_args() {
   while IFS= read -r entry; do
     result="$result $(esceval "$entry")"
   done
-  echo $result
+  echo "$result"
 }
 
 JAVA_RUN_OPTS=$(echo "$JAVA_OPTS" | xargs printf '%s\n' | esceval_args)
@@ -166,8 +178,8 @@ if [ "$PRINT_ENV" = "true" ]; then
 fi
 
 if [ "$PRE_BUILD" = "true" ]; then
-  eval "'$JAVA'" -Dkc.config.build-and-exit=true $JAVA_RUN_OPTS || exit $?
+  eval "'$JAVA'" -Dkc.config.build-and-exit=true "$JAVA_RUN_OPTS" || exit $?
   JAVA_RUN_OPTS="-Dkc.config.built=true $JAVA_RUN_OPTS"
 fi
 
-eval exec "'$JAVA'" $JAVA_RUN_OPTS
+eval exec "'$JAVA'" "$JAVA_RUN_OPTS"
