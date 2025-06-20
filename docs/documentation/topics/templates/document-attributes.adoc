@@ -2,10 +2,10 @@
 :project_name_full: Keycloak
 :project_community: true
 :project_product: false
-:project_version: 26.1.0
-:project_versionMvn: 26.1.0
-:project_versionNpm: 26.1.0
-:project_versionDoc: 26.1.0
+:project_version: 26.1.4
+:project_versionMvn: 26.1.4
+:project_versionNpm: 26.1.4
+:project_versionDoc: 26.1.4
 
 :archivebasename: keycloak
 :archivedownloadurl: https://github.com/keycloak/keycloak/releases/download/{project_version}/keycloak-{project_version}.zip
@@ -73,7 +73,7 @@
 :highavailabilityguide_name: High Availability Guide
 :highavailabilityguide_link: https://www.keycloak.org/guides#high-availability
 :tracingguide_name: Enabling Tracing
-:tracingguide_link: https://www.keycloak.org/server/tracing
+:tracingguide_link: https://www.keycloak.org/observability/tracing
 :upgradingguide_name: Upgrading Guide
 :upgradingguide_name_short: Upgrading
 :upgradingguide_link: {project_doc_base_url}/upgrading/

@@ -10,6 +10,7 @@ import {
   Text,
   TextContent,
 } from "@patternfly/react-core";
+import { useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
@@ -33,6 +34,7 @@ export const ImportKeyDialog = ({
 }: ImportKeyDialogProps) => {
   const { t } = useTranslation();
   const form = useForm<ImportFile>();
+  const [file, setFile] = useState<string>("");
   const { control, handleSubmit } = form;
 
   const baseFormats = useServerInfo().cryptoInfo?.supportedKeystoreTypes ?? [];
@@ -74,9 +76,7 @@ export const ImportKeyDialog = ({
           data-testid="cancel"
           key="cancel"
           variant={ButtonVariant.link}
-          onClick={() => {
-            toggleDialog();
-          }}
+          onClick={toggleDialog}
         >
           {t("cancel")}
         </Button>,
@@ -101,18 +101,22 @@ export const ImportKeyDialog = ({
             <Controller
               name="file"
               control={control}
-              defaultValue={{ filename: "" }}
+              defaultValue={{ value: "", filename: "" }}
               render={({ field }) => (
                 <FileUpload
                   id="importFile"
                   value={field.value.value}
-                  filename={field.value.filename}
-                  onTextChange={(value) =>
-                    field.onChange({ ...field.value, value })
-                  }
-                  onFileInputChange={(_, file) =>
-                    field.onChange({ ...field.value, filename: file.name })
-                  }
+                  filename={file}
+                  hideDefaultPreview
+                  type="text"
+                  onDataChange={(_, value) => {
+                    field.onChange({
+                      value,
+                    });
+                  }}
+                  onFileInputChange={(_, file) => {
+                    setFile(file.name);
+                  }}
                 />
               )}
             />

@@ -17,7 +17,7 @@ For a configuration where this is applied, visit <@links.ha id="deploy-keycloak-
 // remove this paragraph once OpenJDK 17 is no longer supported on the server side.
 // https://github.com/keycloak/keycloak/issues/31101
 
-JGroups communications, which is used in single-site setups for the communication between {project_name} nodes, benefits from the use of virtual threads which are available in OpenJDK 21.
+JGroups communications, which is used in single-site setups for the communication between {project_name} nodes, benefits from the use of virtual threads which are available in OpenJDK 21 when at least two cores are available for {project_name}.
 This reduces the memory usage and removes the need to configure thread pool sizes.
 Therefore, the use of OpenJDK 21 is recommended.
 

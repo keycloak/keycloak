@@ -126,7 +126,7 @@ export { UserDataTableToolbarItems } from "./components/users/UserDataTableToolb
 export { ViewHeader } from "./components/view-header/ViewHeader";
 export { WizardSectionHeader } from "./components/wizard-section-header/WizardSectionHeader";
 export { DefaultSwitchControl } from "./components/SwitchControl";
-export { useAccess, AccessContext } from "./context/access/Access";
+export { useAccess, AccessContextProvider } from "./context/access/Access";
 export { fetchAdminUI } from "./context/auth/admin-ui-endpoint";
 export {
   useRealm,
@@ -315,3 +315,4 @@ export type { Environment as AccountEnvironment } from "./environment";
 export { KeycloakProvider, useEnvironment } from "@keycloak/keycloak-ui-shared";
 export { AdminClientContext, initAdminClient } from "./admin-client";
 export * as PermissionsSection from "./permissions/PermissionsSection";
+export { AppContexts } from "./App";

@@ -61,7 +61,7 @@ Apart from disabling the /q/ endpoints, these are the other improvements made to
 * The `health/ready` endpoint used for readiness probes still checks for a working database connection. Make sure you have not only `health-enabled=true` but also `metrics-enabled=true` set in your configuration, to enable the database check, resulting in an effective readiness probe. It will return HTTP status-code 503 and a status of DOWN when the database connection is not in a healthy state.
 
 Expect more enhancements in this area in the future.
-For more information, see the https://www.keycloak.org/server/health[Health guide]
+For more information, see the https://www.keycloak.org/observability/health[Health guide]
 
 = Changes using GELF / centralized log management
 

@@ -33,12 +33,13 @@ export const JsonEditorTab = () => {
 
   return (
     <PageSection variant="light">
-      <CodeEditor
-        language="json"
-        value={code}
-        style={{ height: "30rem", overflow: "scroll" }}
-        onChange={(event) => setCode(event.target.value ?? "")}
-      />
+      <div style={{ height: "30rem", overflow: "scroll" }}>
+        <CodeEditor
+          language="json"
+          value={code}
+          onChange={(event) => setCode(event.target.value ?? "")}
+        />
+      </div>
       <Form>
         <ActionGroup>
           <Button

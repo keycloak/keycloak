@@ -64,6 +64,7 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
         X509AuthenticatorConfigModel config =
                 new X509AuthenticatorConfigModel()
                         .setCRLEnabled(true)
+                        .setCrlAbortIfNonUpdated(true)
                         .setCRLRelativePath(EMPTY_CRL_PATH)
                         .setConfirmationPageAllowed(true)
                         .setMappingSourceType(SUBJECTDN_EMAIL)
@@ -71,6 +72,25 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
         x509BrowserLogin(config, userId, "test-user@localhost", "test-user@localhost");
     }
 
+    @Test
+    public void loginFailureWithEmptyRevocationListFromFileButExpired() {
+        // Not possible to test file CRL on undertow at this moment - jboss config dir doesn't exist
+        ContainerAssume.assumeNotAuthServerUndertow();
+
+        X509AuthenticatorConfigModel config =
+                new X509AuthenticatorConfigModel()
+                        .setCRLEnabled(true)
+                        .setCrlAbortIfNonUpdated(true)
+                        .setCRLRelativePath(EMPTY_EXPIRED_CRL_PATH)
+                        .setConfirmationPageAllowed(true)
+                        .setMappingSourceType(SUBJECTDN_EMAIL)
+                        .setUserIdentityMapperType(USERNAME_EMAIL);
+        AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", config.getConfig());
+        String cfgId = createConfig(browserExecution.getId(), cfg);
+        Assert.assertNotNull(cfgId);
+
+        assertLoginFailedDueRevokedCertificate();
+    }
 
     @Test
     public void loginFailedWithIntermediateRevocationListFromFile() {
@@ -80,6 +100,7 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
         X509AuthenticatorConfigModel config =
                 new X509AuthenticatorConfigModel()
                         .setCRLEnabled(true)
+                        .setCrlAbortIfNonUpdated(true)
                         .setCRLRelativePath(INTERMEDIATE_CA_CRL_PATH)
                         .setConfirmationPageAllowed(true)
                         .setMappingSourceType(SUBJECTDN_EMAIL)
@@ -97,6 +118,7 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
         X509AuthenticatorConfigModel config =
                 new X509AuthenticatorConfigModel()
                         .setCRLEnabled(true)
+                        .setCrlAbortIfNonUpdated(true)
                         .setCRLRelativePath(CRLRule.CRL_RESPONDER_ORIGIN + "/" + EMPTY_CRL_PATH)
                         .setConfirmationPageAllowed(true)
                         .setMappingSourceType(SUBJECTDN_EMAIL)
@@ -104,12 +126,29 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
         x509BrowserLogin(config, userId, "test-user@localhost", "test-user@localhost");
     }
 
+    @Test
+    public void loginFailureWithEmptyRevocationListFromHttpButExpired() {
+        X509AuthenticatorConfigModel config =
+                new X509AuthenticatorConfigModel()
+                        .setCRLEnabled(true)
+                        .setCrlAbortIfNonUpdated(true)
+                        .setCRLRelativePath(CRLRule.CRL_RESPONDER_ORIGIN + "/" + EMPTY_EXPIRED_CRL_PATH)
+                        .setConfirmationPageAllowed(true)
+                        .setMappingSourceType(SUBJECTDN_EMAIL)
+                        .setUserIdentityMapperType(USERNAME_EMAIL);
+        AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", config.getConfig());
+        String cfgId = createConfig(browserExecution.getId(), cfg);
+        Assert.assertNotNull(cfgId);
+
+        assertLoginFailedDueRevokedCertificate();
+    }
 
     @Test
     public void loginFailedWithIntermediateRevocationListFromHttp() {
         X509AuthenticatorConfigModel config =
                 new X509AuthenticatorConfigModel()
                         .setCRLEnabled(true)
+                        .setCrlAbortIfNonUpdated(true)
                         .setCRLRelativePath(CRLRule.CRL_RESPONDER_ORIGIN + "/" + INTERMEDIATE_CA_CRL_PATH)
                         .setConfirmationPageAllowed(true)
                         .setMappingSourceType(SUBJECTDN_EMAIL)
@@ -127,6 +166,7 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
         X509AuthenticatorConfigModel config =
                 new X509AuthenticatorConfigModel()
                         .setCRLEnabled(true)
+                        .setCrlAbortIfNonUpdated(true)
                         .setCRLRelativePath(CRLRule.CRL_RESPONDER_ORIGIN + "/" + INTERMEDIATE_CA_INVALID_SIGNATURE_CRL_PATH)
                         .setConfirmationPageAllowed(true)
                         .setMappingSourceType(SUBJECTDN_EMAIL)
@@ -145,6 +185,7 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
         X509AuthenticatorConfigModel config =
                 new X509AuthenticatorConfigModel()
                         .setCRLEnabled(true)
+                        .setCrlAbortIfNonUpdated(false)
                         .setCRLRelativePath(CRLRule.CRL_RESPONDER_ORIGIN + "/" + INTERMEDIATE_CA_3_CRL_PATH)
                         .setConfirmationPageAllowed(true)
                         .setMappingSourceType(SUBJECTDN_EMAIL)
@@ -163,6 +204,7 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
         X509AuthenticatorConfigModel config =
                 new X509AuthenticatorConfigModel()
                         .setCRLEnabled(true)
+                        .setCrlAbortIfNonUpdated(true)
                         .setCRLRelativePath(CRLRule.CRL_RESPONDER_ORIGIN + "/" + EMPTY_CRL_PATH + Constants.CFG_DELIMITER + CRLRule.CRL_RESPONDER_ORIGIN + "/" + INTERMEDIATE_CA_CRL_PATH)
                         .setConfirmationPageAllowed(true)
                         .setMappingSourceType(SUBJECTDN_EMAIL)
@@ -182,6 +224,7 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
         X509AuthenticatorConfigModel config =
                 new X509AuthenticatorConfigModel()
                         .setCRLEnabled(true)
+                        .setCrlAbortIfNonUpdated(false)
                         .setCRLRelativePath(CRLRule.CRL_RESPONDER_ORIGIN + "/" + INVALID_CRL_PATH)
                         .setConfirmationPageAllowed(true)
                         .setMappingSourceType(SUBJECTDN_EMAIL)
@@ -198,6 +241,7 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
         X509AuthenticatorConfigModel config =
                 new X509AuthenticatorConfigModel()
                         .setCRLEnabled(true)
+                        .setCrlAbortIfNonUpdated(true)
                         .setCRLDistributionPointEnabled(true)
                         .setConfirmationPageAllowed(true)
                         .setMappingSourceType(SUBJECTDN_EMAIL)

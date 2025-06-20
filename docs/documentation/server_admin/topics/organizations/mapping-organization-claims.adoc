@@ -1,5 +1,6 @@
 [id="mapping-organization-claims_{context}"]
 
+[[_mapping_organization_claims_]]
 =  Mapping organization claims
 [role="_abstract"]
 To map organization-specific claims into tokens, a client needs to request the *organization* scope when sending

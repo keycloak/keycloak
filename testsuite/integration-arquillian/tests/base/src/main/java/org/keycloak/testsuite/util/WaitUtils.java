@@ -137,19 +137,19 @@ public final class WaitUtils {
             return; // not needed
         }
 
-        String currentUrl = null;
-
         // Ensure the URL is "stable", i.e. is not changing anymore; if it'd changing, some redirects are probably still in progress
         for (int maxRedirects = 4; maxRedirects > 0; maxRedirects--) {
-            currentUrl = driver.getCurrentUrl();
-            FluentWait<WebDriver> wait = new FluentWait<>(driver).withTimeout(Duration.ofMillis(250));
             try {
+                String currentUrl = driver.getCurrentUrl();
+                FluentWait<WebDriver> wait = new FluentWait<>(driver).withTimeout(Duration.ofMillis(250));
                 wait.until(not(urlToBe(currentUrl)));
-            }
-            catch (TimeoutException e) {
+            } catch (TimeoutException e) {
                 if (driver.getPageSource() != null) {
                     break; // URL has not changed recently - ok, the URL is stable and page is current
                 }
+            } catch (Exception e) {
+                log.warnf("Unknown exception thrown waiting stabilization of the URL: %s", e.getMessage());
+                pause(250);
             }
             if (maxRedirects == 1) {
                 log.warn("URL seems unstable! (Some redirect are probably still in progress)");

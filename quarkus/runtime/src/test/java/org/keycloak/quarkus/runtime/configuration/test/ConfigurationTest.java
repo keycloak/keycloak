@@ -46,7 +46,7 @@ import org.junit.Test;
 import org.keycloak.Config;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
-
+import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.vault.FilesKeystoreVaultProviderFactory;
 import org.keycloak.quarkus.runtime.vault.FilesPlainTextVaultProviderFactory;
@@ -514,6 +514,15 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void testHttpTrustStoreType() {
+        ConfigArgsConfigSource.setCliArgs("--fips-mode=strict");
+        assertEquals("BCFKS", createConfig().getConfigValue(HttpPropertyMappers.QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE).getValue());
+
+        ConfigArgsConfigSource.setCliArgs("--https-trust-store-type=jks");
+        assertEquals("jks", createConfig().getConfigValue(HttpPropertyMappers.QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE).getValue());
+    }
+
+    @Test
     public void testCacheMaxCount() {
         int maxCount = 500;
         Set<String> maxCountCaches = Stream.of(CachingOptions.LOCAL_MAX_COUNT_CACHES, CachingOptions.CLUSTERED_MAX_COUNT_CACHES)
@@ -532,36 +541,5 @@ public class ConfigurationTest extends AbstractConfigurationTest {
             String prop = "kc." + CachingOptions.cacheMaxCountProperty(cache);
             assertEquals(Integer.toString(maxCount), config.getConfigValue(prop).getValue());
         }
-    }
-
-    @Test
-    public void testWildcardCliOptionCanBeMappedToQuarkusOption() {
-        ConfigArgsConfigSource.setCliArgs("--log-level-org.keycloak=trace");
-        SmallRyeConfig config = createConfig();
-        assertEquals("TRACE", config.getConfigValue("quarkus.log.category.\"org.keycloak\".level").getValue());
-        assertEquals("INFO", config.getConfigValue("quarkus.log.category.\"io.quarkus\".level").getValue());
-        assertEquals("INFO", config.getConfigValue("quarkus.log.category.\"foo.bar\".level").getValue());
-    }
-
-    @Test
-    public void testWildcardEnvVarOptionCanBeMappedToQuarkusOption() {
-        putEnvVar("KC_LOG_LEVEL_IO_QUARKUS", "trace");
-        SmallRyeConfig config = createConfig();
-        assertEquals("INFO", config.getConfigValue("quarkus.log.category.\"org.keycloak\".level").getValue());
-        assertEquals("TRACE", config.getConfigValue("quarkus.log.category.\"io.quarkus\".level").getValue());
-        assertEquals("INFO", config.getConfigValue("quarkus.log.category.\"foo.bar\".level").getValue());
-    }
-
-    @Test
-    public void testWildcardOptionFromConfigFile() {
-        putEnvVar("SOME_CATEGORY_LOG_LEVEL", "debug");
-        SmallRyeConfig config = createConfig();
-        assertEquals("DEBUG", config.getConfigValue("quarkus.log.category.\"io.k8s\".level").getValue());
-    }
-
-    @Test
-    public void testWildcardPropertiesDontMatchEnvVarsFormat() {
-        SmallRyeConfig config = createConfig();
-        assertEquals("INFO", config.getConfigValue("quarkus.log.category.\"io.quarkus\".level").getValue());
     }
 }

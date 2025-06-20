@@ -151,14 +151,17 @@ export const FileUploadForm = ({
             hideDefaultPreview
           >
             {!rest.hideDefaultPreview && (
-              <CodeEditor
-                aria-label="File content"
-                value={fileUpload.value}
-                language={language}
-                style={{ height: "128px", overflow: "scroll" }}
-                onChange={(value) => handleTextOrDataChange(value.target.value)}
-                readOnly={!rest.allowEditingUploadedText}
-              />
+              <div style={{ height: "128px", overflow: "scroll" }}>
+                <CodeEditor
+                  aria-label="File content"
+                  value={fileUpload.value}
+                  language={language}
+                  onChange={(value) =>
+                    handleTextOrDataChange(value.target.value)
+                  }
+                  readOnly={!rest.allowEditingUploadedText}
+                />
+              </div>
             )}
           </FileUpload>
           <FormHelperText>

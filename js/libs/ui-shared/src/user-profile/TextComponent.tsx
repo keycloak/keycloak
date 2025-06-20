@@ -23,7 +23,7 @@ export const TextComponent = (props: UserProfileFieldProps) => {
             : label(
                 props.t,
                 attribute.annotations?.["inputTypePlaceholder"] as string,
-                attribute.name,
+                "",
                 attribute.annotations?.[
                   "inputOptionLabelsI18nPrefix"
                 ] as string,

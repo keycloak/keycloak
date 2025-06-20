@@ -25,20 +25,13 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.AdminRoles;
-import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientInitialAccessModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.UserSessionProvider;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.DynamicClientRegisterContext;
@@ -48,18 +41,18 @@ import org.keycloak.services.clientpolicy.context.DynamicClientViewContext;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyException;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyManager;
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
-import org.keycloak.services.util.DefaultClientSessionContext;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.util.TokenUtil;
 
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
-import org.keycloak.utils.RoleResolveUtil;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -71,7 +64,7 @@ public class ClientRegistrationAuth {
     private final EventBuilder event;
 
     private RealmModel realm;
-    private JsonWebToken jwt;
+    private AccessToken jwt;
     private ClientInitialAccessModel initialAccessModel;
     private String kid;
     private String token;
@@ -122,7 +115,7 @@ public class ClientRegistrationAuth {
         return kid;
     }
 
-    public JsonWebToken getJwt() {
+    public AccessToken getJwt() {
         return jwt;
     }
 
@@ -293,75 +286,28 @@ public class ClientRegistrationAuth {
 
     private boolean hasRole(String... roles) {
         try {
-
-            //support for lightweight access token
-            if (jwt.getSubject() == null) {
-                String sid = (String) jwt.getOtherClaims().get("sid");
-                if (sid != null) {
-                    final String issuedFor = jwt.getIssuedFor();
-                    UserSessionProvider sessions = session.sessions();
-                    UserSessionModel userSession = sessions.getUserSession(realm, sid);
-                    if (userSession == null) {
-                        userSession = sessions.getOfflineUserSession(realm, sid);
-                    }
-
-                    if (userSession != null) {
-                        //get client session
-                        ClientModel client = realm.getClientByClientId(issuedFor);
-                        AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
-
-                        //set realm roles
-                        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, (String) jwt.getOtherClaims().get("scope"), session);
-                        Map<String, AccessToken.Access> resourceAccess = RoleResolveUtil.getAllResolvedClientRoles(session, clientSessionCtx);
-
-                        Map<String, Map<String, List<String>>> resourceAccessMap = new HashMap<>();
-                        resourceAccess.forEach((key, access) ->
-                                resourceAccessMap.put(key, Map.of("roles", new ArrayList<>(access.getRoles())))
-                        );
-                        jwt.setSubject(userSession.getUser().getId());
-                        jwt.getOtherClaims().put("resource_access", resourceAccessMap);
-                    }
-                }
-            }
+            AuthenticationManager.resolveLightweightAccessTokenRoles(session, jwt, session.getContext().getRealm());
             return hasRoleInToken(roles);
-
         } catch (Throwable t) {
             return false;
         }
     }
 
     private boolean hasRoleInToken(String[] role) {
-        Map<String, Object> otherClaims = jwt.getOtherClaims();
-        if (otherClaims != null) {
-            Map<String, Map<String, List<String>>> resourceAccess = (Map<String, Map<String, List<String>>>) jwt.getOtherClaims().get("resource_access");
-            if (resourceAccess == null) {
-                return false;
-            }
-
-            List<String> roles = null;
-
-            Map<String, List<String>> map;
-            if (realm.getName().equals(Config.getAdminRealm())) {
-                map = resourceAccess.get(realm.getMasterAdminClient().getClientId());
-            } else {
-                map = resourceAccess.get(Constants.REALM_MANAGEMENT_CLIENT_ID);
-            }
-
-            if (map != null) {
-                roles = map.get("roles");
-            }
-
-            if (roles == null) {
-                return false;
-            }
-
-            for (String r : role) {
-                if (roles.contains(r)) {
-                    return true;
-                }
-            }
+        Map<String, AccessToken.Access> resourceAccess = jwt.getResourceAccess();
+        if (resourceAccess == null) {
+            return false;
         }
-        return false;
+
+        String clientId = realm.getName().equals(Config.getAdminRealm())
+                ? realm.getMasterAdminClient().getClientId()
+                : Constants.REALM_MANAGEMENT_CLIENT_ID;
+
+        Set<String> roles = Optional.ofNullable(resourceAccess.get(clientId))
+                .map(AccessToken.Access::getRoles)
+                .orElse(Collections.emptySet());
+
+        return Arrays.stream(role).anyMatch(roles::contains);
     }
 
     private boolean authenticatePublicClient(ClientModel client) {

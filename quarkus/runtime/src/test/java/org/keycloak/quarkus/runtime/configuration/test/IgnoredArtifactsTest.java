@@ -17,7 +17,6 @@
 
 package org.keycloak.quarkus.runtime.configuration.test;
 
-import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 import org.keycloak.common.Profile;
 import org.keycloak.common.profile.PropertiesProfileConfigResolver;
@@ -30,6 +29,7 @@ import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.IgnoredArtifacts;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
@@ -37,8 +37,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.quarkus.runtime.configuration.IgnoredArtifacts.JDBC_H2;
 import static org.keycloak.quarkus.runtime.configuration.IgnoredArtifacts.JDBC_MARIADB;
 import static org.keycloak.quarkus.runtime.configuration.IgnoredArtifacts.JDBC_MSSQL;
@@ -72,7 +72,7 @@ public class IgnoredArtifactsTest extends AbstractConfigurationTest {
 
     @Test
     public void jdbcH2() {
-        assertJdbc("h2", JDBC_H2);
+        assertJdbc("dev-file", JDBC_H2);
     }
 
     @Test
@@ -100,15 +100,15 @@ public class IgnoredArtifactsTest extends AbstractConfigurationTest {
         assertJdbc("postgres", JDBC_POSTGRES);
     }
 
-    // default ignored JDBC artifacts specified in quarkus.properties
-    private static final Set<String> IGNORED_JDBC_FROM_PROPS = Stream.of(JDBC_MARIADB, JDBC_POSTGRES)
+    // default not ignored JDBC artifacts specified in quarkus.properties
+    private static final Set<String> NOT_IGNORED_JDBC_FROM_PROPS = Stream.of(JDBC_MARIADB, JDBC_POSTGRES)
             .flatMap(Collection::stream)
             .collect(Collectors.toSet());
 
     @Test
     public void multipleDatasources() {
         // initialize the test with a default database
-        ConfigArgsConfigSource.setCliArgs("--db=dev-file");
+        ConfigArgsConfigSource.setCliArgs("");
         createConfig();
 
         var defaultDS = Configuration.getOptionalValue("quarkus.datasource.db-kind");
@@ -123,25 +123,27 @@ public class IgnoredArtifactsTest extends AbstractConfigurationTest {
         assertThat(catStoreDS.isPresent(), is(true));
         assertThat(catStoreDS.get(), is("postgresql"));
 
-        assertJdbc("h2", JDBC_H2);
+        assertNotIgnored("dev-file", JDBC_H2);
     }
 
-    private void assertJdbc(String vendor, Set<String> notIgnored) {
-        var notIgnoredWithDefaults = new HashSet<>(notIgnored);
-        notIgnoredWithDefaults.addAll(IGNORED_JDBC_FROM_PROPS);
-
-        setSystemProperty(NS_KEYCLOAK_PREFIX + DatabaseOptions.DB.getKey(), vendor, () -> {
-            final var resultArtifacts = IgnoredArtifacts.getDefaultIgnoredArtifacts();
-            assertThat(String.format("Ignored artifacts does not comply with the specified artifacts for '%s' JDBC driver", vendor),
-                    resultArtifacts,
-                    not(CoreMatchers.hasItems(notIgnoredWithDefaults.toArray(new String[0]))));
-
-            final var includedArtifacts = new HashSet<>(IgnoredArtifacts.JDBC_DRIVERS);
-            includedArtifacts.removeAll(notIgnoredWithDefaults);
-            assertThat("Ignored artifacts does not contain items for the other JDBC drivers",
-                    resultArtifacts,
-                    CoreMatchers.hasItems(includedArtifacts.toArray(new String[0])));
+    private void assertJdbc(String db, Set<String> notIgnored) {
+        setSystemProperty(NS_KEYCLOAK_PREFIX + DatabaseOptions.DB.getKey(), db, () -> {
+            assertNotIgnored(db, notIgnored);
         });
+    }
+
+    private void assertNotIgnored(String db, Set<String> notIgnored) {
+        var notIgnoredWithDefaults = new HashSet<>(notIgnored);
+        notIgnoredWithDefaults.addAll(NOT_IGNORED_JDBC_FROM_PROPS);
+
+        final var actualIgnoredArtifacts = IgnoredArtifacts.getDefaultIgnoredArtifacts();
+        assertTrue(String.format("Ignored artifacts does not comply with the specified artifacts for '%s' JDBC driver",
+                db), Collections.disjoint(actualIgnoredArtifacts, notIgnored));
+
+        final var allIgnoredArtifacts = new HashSet<>(IgnoredArtifacts.JDBC_DRIVERS);
+        allIgnoredArtifacts.removeAll(notIgnoredWithDefaults);
+        assertThat("Ignored artifacts does not contain items for the other JDBC drivers",
+                actualIgnoredArtifacts.containsAll(allIgnoredArtifacts));
     }
 
     @Test

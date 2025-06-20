@@ -251,12 +251,13 @@ export default function ProfilesTab() {
       ) : (
         <FormGroup fieldId={"jsonEditor"}>
           <div className="pf-v5-u-mt-md pf-v5-u-ml-lg">
-            <CodeEditor
-              value={code}
-              language="json"
-              style={{ height: "30rem", overflow: "scroll" }}
-              onChange={(event) => setCode(event.target.value ?? "")}
-            />
+            <div style={{ height: "30rem", overflow: "scroll" }}>
+              <CodeEditor
+                value={code}
+                language="json"
+                onChange={(event) => setCode(event.target.value ?? "")}
+              />
+            </div>
           </div>
           <ActionGroup>
             <div className="pf-v5-u-mt-md">

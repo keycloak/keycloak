@@ -28,9 +28,9 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -59,6 +59,15 @@ public class RoleAdapter implements RoleModel {
             updated = modelSupplier.get();
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
+    }
+
+    protected void getDelegateForRename(String newName) {
+        if (!Objects.equals(newName, cached.getName())) {
+            // New role name might have been cached as non-existent
+            String containerId = getContainerId();
+            cacheSession.registerRoleInvalidation(cached.getId(), newName, containerId);
+        }
+        getDelegateForUpdate();
     }
 
     protected boolean invalidated;
@@ -102,7 +111,7 @@ public class RoleAdapter implements RoleModel {
 
     @Override
     public void setName(String name) {
-        getDelegateForUpdate();
+        getDelegateForRename(name);
         updated.setName(name);
     }
 

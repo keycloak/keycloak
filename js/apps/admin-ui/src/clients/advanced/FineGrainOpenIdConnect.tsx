@@ -138,7 +138,7 @@ export const FineGrainOpenIdConnect = ({
         label={t("requestObjectSignatureAlgorithm")}
         labelIcon={t("requestObjectSignatureAlgorithmHelp")}
         controller={{
-          defaultValue: "",
+          defaultValue: "any",
         }}
         options={[
           { key: "any", value: t("any") },
@@ -152,7 +152,7 @@ export const FineGrainOpenIdConnect = ({
         label={t("requestObjectEncryption")}
         labelIcon={t("requestObjectEncryptionHelp")}
         controller={{
-          defaultValue: "",
+          defaultValue: "any",
         }}
         options={prependAny(cekManagementProviders!)}
       />
@@ -163,7 +163,7 @@ export const FineGrainOpenIdConnect = ({
         label={t("requestObjectEncoding")}
         labelIcon={t("requestObjectEncodingHelp")}
         controller={{
-          defaultValue: "",
+          defaultValue: "any",
         }}
         options={prependAny(contentEncryptionProviders!)}
       />
@@ -174,7 +174,7 @@ export const FineGrainOpenIdConnect = ({
         label={t("requestObjectRequired")}
         labelIcon={t("requestObjectRequiredHelp")}
         controller={{
-          defaultValue: "",
+          defaultValue: "not required",
         }}
         options={[
           "not required",

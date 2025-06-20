@@ -153,6 +153,8 @@ export async function linkAccount(
       "realms",
       context.environment.realm,
       "account",
+      "account-security",
+      "linked-accounts",
     ),
   );
   const response = await request(

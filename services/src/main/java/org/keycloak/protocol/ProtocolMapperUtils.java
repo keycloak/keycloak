@@ -101,13 +101,14 @@ public class ProtocolMapperUtils {
             } else {
                 continue;
             }
-            propertyName = Character.toLowerCase(propertyName.charAt(0)) + propertyName.substring(1);
-            ACCESSORS.put(propertyName, method);
+            ACCESSORS.put(getLowerCasedProperty(propertyName), method);
         }
     }
 
     public static String getUserModelValue(UserModel user, String propertyName) {
-        Method m = ACCESSORS.get(propertyName);
+        // To support existing configurations, we accept property names starting with both upper and lower case
+        // as earlier versions of Keycloak where applying this behavior.
+        Method m = ACCESSORS.get(getLowerCasedProperty(propertyName));
         if (m == null) {
             return null;
         }
@@ -119,6 +120,10 @@ public class ProtocolMapperUtils {
         }
 
         return null;
+    }
+
+    private static String getLowerCasedProperty(String propertyName) {
+        return Character.toLowerCase(propertyName.charAt(0)) + propertyName.substring(1);
     }
 
     /**

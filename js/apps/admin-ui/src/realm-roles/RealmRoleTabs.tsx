@@ -347,7 +347,7 @@ export default function RealmRoleTabs() {
                   <PermissionsTab id={id} type="roles" />
                 </Tab>
               )}
-            {realm?.adminEventsEnabled && hasAccess("view-events") && (
+            {hasAccess("view-events") && (
               <Tab
                 data-testid="admin-events-tab"
                 title={<TabTitleText>{t("adminEvents")}</TabTitleText>}

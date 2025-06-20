@@ -17,6 +17,9 @@
 
 package org.keycloak.organization.authentication.authenticators.browser;
 
+import static org.keycloak.provider.ProviderConfigProperty.BOOLEAN_TYPE;
+
+import java.util.Collections;
 import java.util.List;
 
 import org.keycloak.Config.Scope;
@@ -34,6 +37,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 public class OrganizationAuthenticatorFactory extends IdentityProviderAuthenticatorFactory implements EnvironmentDependentProviderFactory {
 
     public static final String ID = "organization";
+    public static final String REQUIRES_USER_MEMBERSHIP = "requiresUserMembership";
 
     @Override
     public String getId() {
@@ -61,7 +65,7 @@ public class OrganizationAuthenticatorFactory extends IdentityProviderAuthentica
     }
 
     @Override
-    public List<ProviderConfigProperty> getConfigProperties() { // org identity-first login
-        return List.of();
+    public List<ProviderConfigProperty> getConfigProperties() {
+        return Collections.singletonList(new ProviderConfigProperty(REQUIRES_USER_MEMBERSHIP, "Requires user membership", "Enforces that users authenticating in the scope of an organization are members. If not a member, the user won't be able to proceed authenticating to the realm", BOOLEAN_TYPE, null));
     }
 }

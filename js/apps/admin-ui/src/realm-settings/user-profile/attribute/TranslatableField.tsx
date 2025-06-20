@@ -1,4 +1,5 @@
 import KeycloakAdminClient from "@keycloak/keycloak-admin-client";
+import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { FormErrorText } from "@keycloak/keycloak-ui-shared";
 import {
   Alert,
@@ -9,9 +10,10 @@ import {
   TextInput,
 } from "@patternfly/react-core";
 import { GlobeRouteIcon } from "@patternfly/react-icons";
-import { useEffect, useRef } from "react";
+import { TFunction } from "i18next";
+import { useEffect } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { useRealm } from "../../../context/realm-context/RealmContext";
 import { i18n } from "../../../i18n/i18n";
 import { beerify, debeerify } from "../../../util";
@@ -67,6 +69,18 @@ type TranslatableFieldProps = {
   fieldName: string;
 };
 
+function hasTranslation(value: string, t: TFunction) {
+  return t(value) === value && value !== "";
+}
+
+function isTranslationRequired(
+  value: string,
+  t: TFunction,
+  realm?: RealmRepresentation,
+) {
+  return realm?.internationalizationEnabled && hasTranslation(value, t);
+}
+
 export const TranslatableField = ({
   attributeName,
   prefix,
@@ -74,8 +88,7 @@ export const TranslatableField = ({
 }: TranslatableFieldProps) => {
   const { t } = useTranslation();
   const { realmRepresentation: realm } = useRealm();
-  const { register, control, setValue, setError, getFieldState, clearErrors } =
-    useFormContext();
+  const { register, control, getFieldState, setValue } = useFormContext();
   const [open, toggle] = useToggle();
 
   const value = useWatch({ control, name: attributeName });
@@ -84,35 +97,24 @@ export const TranslatableField = ({
   const translationPrefix = `translation.${beerify(key)}`;
   const requiredTranslationName = `${translationPrefix}.0.value`;
 
-  const requiredTranslationValue = useWatch({
-    control,
-    name: requiredTranslationName,
-  });
-
-  const ref = useRef(requiredTranslationName);
-
   useEffect(() => {
-    if (realm?.internationalizationEnabled) {
-      clearErrors(ref.current);
-      if (!requiredTranslationValue && t(key) === key) {
-        setError(requiredTranslationName, {
-          message: t("required"),
-        });
-      }
-      ref.current = requiredTranslationName;
-
-      if (value !== "") {
-        setValue(fieldName, `\${${prefix}.${value}}`);
-      } else {
-        setValue(fieldName, "");
-      }
+    if (isTranslationRequired(value, t, realm)) {
+      setValue(fieldName, `\${${prefix}.${value}}`);
     }
-  }, [value, requiredTranslationValue]);
+  }, [value]);
 
   return (
     <>
+      {isTranslationRequired(value, t, realm) && (
+        <input
+          type="hidden"
+          data-testid="requiredTranslationName"
+          {...register(requiredTranslationName, { required: t("required") })}
+        />
+      )}
       {open && (
         <AddTranslationsDialog
+          orgKey={value}
           translationKey={`${prefix}.${value}`}
           fieldName={fieldName}
           toggleDialog={toggle}
@@ -146,11 +148,17 @@ export const TranslatableField = ({
             variant="info"
             isInline
             isPlain
-            title={t("addTranslationsModalSubTitle", {
-              fieldName: t(fieldName),
-            })}
+            title={
+              <Trans
+                i18nKey="addTranslationsModalSubTitle"
+                values={{ fieldName: t(fieldName) }}
+              >
+                You are able to translate the fieldName based on your locale or
+                <strong>location</strong>
+              </Trans>
+            }
           />
-          {getFieldState(`${translationPrefix}.0.value`).error && (
+          {getFieldState(requiredTranslationName).error && (
             <FormErrorText message={t("required")} />
           )}
         </FormHelperText>

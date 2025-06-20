@@ -65,6 +65,12 @@ public class InfoPage extends LanguageComboboxAwarePage {
         UIUtils.clickLink(backToApplicationLink);
     }
 
+    public String getBackToApplicationLink() {
+        return backToApplicationLink != null
+                ? backToApplicationLink.getAttribute("href")
+                : null;
+    }
+
     public void clickToContinueDe() {
         clickToContinueDe.click();
     }

@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
@@ -52,6 +53,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.keycloak.testsuite.util.LDAPTestUtils.getGroupDescriptionLDAPAttrName;
 
 /**
@@ -582,6 +586,11 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             Assert.assertFalse(carlosGroups.contains(group12));
 
             Assert.assertEquals(1, carlosGroups.size());
+
+            // check the user is listed as the sole member of group1
+            List<UserModel> group1Members = session.users().getGroupMembersStream(appRealm, group1, 0, 10).toList();
+            assertThat(group1Members, hasSize(1));
+            assertThat(group1Members.get(0).getUsername(), equalTo("carloskeycloak"));
         });
 
         // Revert mappers

@@ -100,6 +100,11 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
         return this;
     }
 
+    public RealmAttributeUpdater setQuickLoginCheckMilliSeconds(Long value) {
+        rep.setQuickLoginCheckMilliSeconds(value);
+        return this;
+    }
+
     public RealmAttributeUpdater setEventsListeners(List<String> eventListanets) {
         rep.setEventsListeners(eventListanets);
         return this;

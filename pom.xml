@@ -31,7 +31,7 @@
     </description>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-parent</artifactId>
-    <version>26.1.0</version>
+    <version>26.1.4</version>
     <packaging>pom</packaging>
 
     <properties>
@@ -41,7 +41,7 @@
         <maven.compiler.target>17</maven.compiler.target>
         <maven.compiler.release>17</maven.compiler.release>
 
-        <project.version.npm>26.1.0</project.version.npm>
+        <project.version.npm>26.1.4</project.version.npm>
 
         <asciidoctor.plugin.version>1.5.8</asciidoctor.plugin.version>
 
@@ -52,8 +52,8 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>3.15.2</quarkus.version>
-        <quarkus.build.version>3.15.2</quarkus.build.version>
+        <quarkus.version>3.15.3.1</quarkus.version>
+        <quarkus.build.version>3.15.3.1</quarkus.build.version>
 
         <project.build-time>${timestamp}</project.build-time>
 
@@ -96,8 +96,8 @@
         <h2.version>2.3.230</h2.version>
         <hibernate-orm.plugin.version>6.2.13.Final</hibernate-orm.plugin.version>
         <hibernate.c3p0.version>6.2.13.Final</hibernate.c3p0.version>
-        <infinispan.version>15.0.11.Final</infinispan.version>
-        <protostream.plugin.version>5.0.12.Final</protostream.plugin.version>
+        <infinispan.version>15.0.14.Final</infinispan.version>
+        <protostream.plugin.version>5.0.13.Final</protostream.plugin.version>
 
         <!--JAKARTA-->
         <jakarta.mail.version>2.1.1</jakarta.mail.version>
@@ -134,7 +134,7 @@
         <ua-parser.version>1.5.4</ua-parser.version>
         <org.yaml.snakeyaml.version>2.0</org.yaml.snakeyaml.version>
         <picketbox.version>5.0.3.Final</picketbox.version>
-        <xstream.version>1.4.20</xstream.version>
+        <xstream.version>1.4.21</xstream.version>
         <org.snakeyaml.snakeyaml-engine.version>2.6</org.snakeyaml.snakeyaml-engine.version>
 
         <!-- Others -->
@@ -234,7 +234,7 @@
 
         <!-- Set to true on release to update proto.lock files -->
         <commitProtoLockChanges>false</commitProtoLockChanges>
-        <skipProtoLock>true</skipProtoLock>
+        <skipProtoLock>false</skipProtoLock>
     </properties>
 
     <url>http://keycloak.org</url>
@@ -1098,7 +1098,12 @@
                 <artifactId>keycloak-rest-admin-ui-ext</artifactId>
                 <version>${project.version}</version>
             </dependency>
-
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-saml-wildfly-modules</artifactId>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-quarkus-dist</artifactId>

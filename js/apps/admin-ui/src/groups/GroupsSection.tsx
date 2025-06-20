@@ -49,7 +49,7 @@ export default function GroupsSection() {
   const [activeTab, setActiveTab] = useState(0);
 
   const { subGroups, setSubGroups, currentGroup } = useSubGroups();
-  const { realm, realmRepresentation } = useRealm();
+  const { realm } = useRealm();
 
   const [rename, setRename] = useState<GroupRepresentation>();
   const [deleteOpen, toggleDeleteOpen] = useToggle();
@@ -237,54 +237,43 @@ export default function GroupsSection() {
                       <PermissionsTab id={id} type="groups" />
                     </Tab>
                   )}
-                  {realmRepresentation?.adminEventsEnabled &&
-                    hasAccess("view-events") && (
-                      <Tab
-                        eventKey={5}
-                        data-testid="admin-events-tab"
-                        title={<TabTitleText>{t("adminEvents")}</TabTitleText>}
+                  {hasAccess("view-events") && (
+                    <Tab
+                      eventKey={5}
+                      data-testid="admin-events-tab"
+                      title={<TabTitleText>{t("adminEvents")}</TabTitleText>}
+                    >
+                      <Tabs
+                        activeKey={activeEventsTab}
+                        onSelect={(_, key) => setActiveEventsTab(key as string)}
                       >
-                        <Tabs
-                          activeKey={activeEventsTab}
-                          onSelect={(_, key) =>
-                            setActiveEventsTab(key as string)
+                        <Tab
+                          eventKey="adminEvents"
+                          title={
+                            <TabTitleText>{t("adminEvents")}</TabTitleText>
                           }
                         >
-                          <Tab
-                            eventKey="adminEvents"
-                            title={
-                              <TabTitleText>{t("adminEvents")}</TabTitleText>
-                            }
-                          >
-                            <AdminEvents resourcePath={`groups/${id}`} />
-                          </Tab>
-                          <Tab
-                            eventKey="membershipEvents"
-                            title={
-                              <TabTitleText>
-                                {t("membershipEvents")}
-                              </TabTitleText>
-                            }
-                          >
-                            <AdminEvents
-                              resourcePath={`users/*/groups/${id}`}
-                            />
-                          </Tab>
-                          <Tab
-                            eventKey="childGroupEvents"
-                            title={
-                              <TabTitleText>
-                                {t("childGroupEvents")}
-                              </TabTitleText>
-                            }
-                          >
-                            <AdminEvents
-                              resourcePath={`groups/${id}/children`}
-                            />
-                          </Tab>
-                        </Tabs>
-                      </Tab>
-                    )}
+                          <AdminEvents resourcePath={`groups/${id}`} />
+                        </Tab>
+                        <Tab
+                          eventKey="membershipEvents"
+                          title={
+                            <TabTitleText>{t("membershipEvents")}</TabTitleText>
+                          }
+                        >
+                          <AdminEvents resourcePath={`users/*/groups/${id}`} />
+                        </Tab>
+                        <Tab
+                          eventKey="childGroupEvents"
+                          title={
+                            <TabTitleText>{t("childGroupEvents")}</TabTitleText>
+                          }
+                        >
+                          <AdminEvents resourcePath={`groups/${id}/children`} />
+                        </Tab>
+                      </Tabs>
+                    </Tab>
+                  )}
                 </Tabs>
               )}
               {subGroups.length === 0 && <GroupTable refresh={refresh} />}

@@ -53,19 +53,41 @@ public class KeycloakMain implements QuarkusApplication {
 
     private static final String INFINISPAN_VIRTUAL_THREADS_PROP = "org.infinispan.threads.virtual";
 
+    public static final int MIN_VT_POOL_SIZE = 2;
+
     static {
         // enable Infinispan and JGroups virtual threads by default
-        if (System.getProperty(INFINISPAN_VIRTUAL_THREADS_PROP) == null) {
+        if (System.getProperty(INFINISPAN_VIRTUAL_THREADS_PROP) == null && getParallelism() >= MIN_VT_POOL_SIZE) {
             System.setProperty(INFINISPAN_VIRTUAL_THREADS_PROP, "true");
         }
     }
 
     public static void main(String[] args) {
         ensureForkJoinPoolThreadFactoryHasBeenSetToQuarkus();
+        ensureVirtualThreadsParallelism();
 
         System.setProperty("kc.version", Version.VERSION);
 
         main(args, new Picocli());
+    }
+
+    private static void ensureVirtualThreadsParallelism() {
+        if (Boolean.parseBoolean(System.getProperty(INFINISPAN_VIRTUAL_THREADS_PROP))) {
+            if (getParallelism() < MIN_VT_POOL_SIZE) {
+                throw new RuntimeException("To be able to use Infinispan/JGroups virtual threads, you need to set the Java system property jdk.virtualThreadScheduler.parallelism to at least " + MIN_VT_POOL_SIZE);
+            }
+        }
+    }
+
+    private static int getParallelism() {
+        int parallelism;
+        String parallelismValue = System.getProperty("jdk.virtualThreadScheduler.parallelism");
+        if (parallelismValue != null) {
+            parallelism = Integer.parseInt(parallelismValue);
+        } else {
+            parallelism = Runtime.getRuntime().availableProcessors();
+        }
+        return parallelism;
     }
 
     public static void main(String[] args, Picocli picocli) {

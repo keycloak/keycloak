@@ -34,15 +34,16 @@ export const ScriptComponent = ({
         defaultValue={defaultValue}
         control={control}
         render={({ field }) => (
-          <CodeEditor
-            id={name!}
-            data-testid={name}
-            readOnly={isDisabled}
-            onChange={field.onChange}
-            value={Array.isArray(field.value) ? field.value[0] : field.value}
-            style={{ height: "600px", overflow: "scroll" }}
-            language="js"
-          />
+          <div style={{ height: "600px", overflow: "scroll" }}>
+            <CodeEditor
+              id={name!}
+              data-testid={name}
+              readOnly={isDisabled}
+              onChange={field.onChange}
+              value={Array.isArray(field.value) ? field.value[0] : field.value}
+              language="js"
+            />
+          </div>
         )}
       />
     </FormGroup>

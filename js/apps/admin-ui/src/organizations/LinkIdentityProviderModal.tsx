@@ -76,7 +76,7 @@ export const LinkIdentityProviderModal = ({
         ...foundIdentityProvider.config,
         ...config,
       };
-      foundIdentityProvider.hideOnLogin = data.hideOnLogin;
+      foundIdentityProvider.hideOnLogin = data.hideOnLogin ?? true;
       await adminClient.identityProviders.update(
         { alias: data.alias[0] },
         foundIdentityProvider,

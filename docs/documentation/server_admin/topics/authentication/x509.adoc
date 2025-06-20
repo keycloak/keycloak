@@ -134,6 +134,9 @@ Use CDP to check the certificate revocation status. Most PKI authorities include
 *CRL file path*::
 The path to a file containing a CRL list. The value must be a path to a valid file if the *CRL Checking Enabled* option is enabled.
 
+*CRL abort if non updated*::
+A CRL conforming to link:https://datatracker.ietf.org/doc/html/rfc5280#section-5.1.2.5[RFC5280] contains a next update field that indicates the date by which the next CRL will be issued. When that time is passed, the CRL is considered outdated and it should be refreshed. If this option is `true`, the authentication will fail if the CRL is outdated (recommended). If the option is set to `false`, the outdated CRL is still used to validate the user certificates.
+
 *OCSP Checking Enabled*::
 Checks the certificate revocation status by using Online Certificate Status Protocol.
 

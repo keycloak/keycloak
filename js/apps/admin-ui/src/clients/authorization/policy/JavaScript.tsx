@@ -22,14 +22,15 @@ export const JavaScript = () => {
         defaultValue=""
         control={control}
         render={({ field }) => (
-          <CodeEditor
-            id="code"
-            data-testid="code"
-            readOnly
-            value={field.value}
-            style={{ height: "600px", overflow: "scroll" }}
-            language="js"
-          />
+          <div style={{ height: "600px", overflow: "scroll" }}>
+            <CodeEditor
+              id="code"
+              data-testid="code"
+              readOnly
+              value={field.value}
+              language="js"
+            />
+          </div>
         )}
       />
     </FormGroup>

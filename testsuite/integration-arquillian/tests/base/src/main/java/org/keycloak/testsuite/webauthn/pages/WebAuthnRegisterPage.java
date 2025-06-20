@@ -19,6 +19,7 @@ package org.keycloak.testsuite.webauthn.pages;
 
 import org.hamcrest.CoreMatchers;
 import org.keycloak.testsuite.pages.LogoutSessionsPage;
+import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.Alert;
 import org.openqa.selenium.By;
@@ -56,14 +57,12 @@ public class WebAuthnRegisterPage extends LogoutSessionsPage {
     private WebElement formTitle;
 
     public void clickRegister() {
-        WaitUtils.waitUntilElement(registerButton).is().clickable();
-        registerButton.click();
+        UIUtils.clickLinkWithoutWait(registerButton);
     }
 
     public void cancelAIA() {
         assertThat("It only works with AIA", isAIA(), CoreMatchers.is(true));
-        WaitUtils.waitUntilElement(cancelAIAButton).is().clickable();
-        cancelAIAButton.click();
+        UIUtils.clickLink(cancelAIAButton);
     }
 
     public void registerWebAuthnCredential(String authenticatorLabel) {

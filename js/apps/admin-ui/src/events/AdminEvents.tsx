@@ -178,9 +178,9 @@ export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
 
   function loader(first?: number, max?: number) {
     return adminClient.realms.findAdminEvents({
+      resourcePath,
       // The admin client wants 'dateFrom' and 'dateTo' to be Date objects, however it cannot actually handle them so we need to cast to any.
       ...(activeFilters as any),
-      resourcePath,
       realm,
       first,
       max,
@@ -224,6 +224,10 @@ export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
       getValues(),
       (value) => value !== "" || (Array.isArray(value) && value.length > 0),
     );
+
+    if (resourcePath) {
+      delete newFilters.resourcePath;
+    }
 
     setActiveFilters(newFilters);
     setKey(key + 1);
@@ -279,12 +283,9 @@ export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
           data-testid="representation-dialog"
           onClose={() => setRepresentationEvent(undefined)}
         >
-          <CodeEditor
-            readOnly
-            value={code}
-            language="json"
-            style={{ height: "8rem", overflow: "scroll" }}
-          />
+          <div style={{ height: "8rem", overflow: "scroll" }}>
+            <CodeEditor readOnly value={code} language="json" />
+          </div>
         </DisplayDialog>
       )}
       {!adminEventsEnabled && <EventsBanners type="adminEvents" />}
@@ -602,6 +603,8 @@ export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
           <ListEmptyState
             message={t("emptyAdminEvents")}
             instructions={t("emptyAdminEventsInstructions")}
+            primaryActionText={t("refresh")}
+            onPrimaryAction={() => setKey(key + 1)}
           />
         }
         isSearching={Object.keys(activeFilters).length > 0}

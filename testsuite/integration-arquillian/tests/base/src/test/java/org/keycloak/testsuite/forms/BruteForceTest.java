@@ -591,6 +591,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
     public void testPermanentLockout() throws Exception {
         testingClient.testing().addEventsToEmailEventListenerProvider(Collections.singletonList(EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT));
         try (RealmAttributeUpdater updater = new RealmAttributeUpdater(testRealm()).setPermanentLockout(true)
+                .setQuickLoginCheckMilliSeconds(0L)
                 .addEventsListener(EmailEventListenerProviderFactory.ID).update()) {
             // act
             loginInvalidPassword("test-user@localhost");
@@ -603,7 +604,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
             assertIsContained(events.expect(EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT).client((String) null).detail(Details.REASON, "brute_force_attack detected"), actualEvents);
             assertIsContained(events.expect(EventType.LOGIN_ERROR).error(Errors.INVALID_USER_CREDENTIALS), actualEvents);
 
-            checkEmailPresent("User disabled by permament lockout");
+            checkEmailPresent("User disabled by permanent lockout");
 
             // assert
             expectPermanentlyDisabled();

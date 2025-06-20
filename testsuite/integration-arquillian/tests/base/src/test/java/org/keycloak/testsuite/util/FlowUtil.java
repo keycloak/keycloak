@@ -12,6 +12,7 @@ import org.keycloak.services.resources.admin.AuthenticationManagementResource;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
@@ -19,6 +20,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.keycloak.models.utils.DefaultAuthenticationFlows.BROWSER_FLOW;
 import static org.keycloak.models.utils.DefaultAuthenticationFlows.DIRECT_GRANT_FLOW;
@@ -327,6 +329,48 @@ public class FlowUtil {
 
         if (alias != null && alias.equals(newFlowAlias)) {
             setFlow.accept(realm.getFlowByAlias(defaultFlowAlias));
+        }
+    }
+
+    /**
+     * <p>Sets the given {@code key} and {@code value} to an execution that maps to the given {@code authenticatorId}.
+     *
+     * <p>This method will try to find the given {@code authenticatorId} recursively by going through all the subflows, if there are any.
+     *
+     * @param session the session
+     * @param flowId the parent flow
+     * @param authenticatorId the authenticator id
+     * @param key the key
+     * @param value the value
+     */
+    public static void setAuthenticatorConfig(KeycloakSession session, String flowId, String authenticatorId, String key, String value) {
+        RealmModel realm = session.getContext().getRealm();
+
+        for (AuthenticationExecutionModel execution : Optional.ofNullable(realm.getAuthenticationExecutionsStream(flowId)).orElse(Stream.empty()).toList()) {
+            if (execution.isAuthenticatorFlow()) {
+                setAuthenticatorConfig(session, execution.getFlowId(), authenticatorId, key, value);
+            } else if (authenticatorId.equals(execution.getAuthenticator())) {
+                AuthenticatorConfigModel configModel;
+                String configId = execution.getAuthenticatorConfig();
+
+                if (configId == null) {
+                    configModel = new AuthenticatorConfigModel();
+                    configModel.setAlias(authenticatorId + flowId);
+                    configModel = realm.addAuthenticatorConfig(configModel);
+                    execution.setAuthenticatorConfig(configModel.getId());
+                    realm.updateAuthenticatorExecution(execution);
+                } else {
+                    configModel = realm.getAuthenticatorConfigById(configId);
+                }
+
+                Map<String, String> config = new HashMap<>(configModel.getConfig());
+
+                configModel.setConfig(config);
+                config.put(key, value);
+                configModel.setConfig(config);
+
+                realm.updateAuthenticatorConfig(configModel);
+            }
         }
     }
 }

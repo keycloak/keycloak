@@ -1,6 +1,6 @@
 {
   "name": "@keycloak/keycloak-ui-shared",
-  "version": "26.1.0",
+  "version": "26.1.4",
   "type": "module",
   "main": "./dist/keycloak-ui-shared.js",
   "types": "./dist/keycloak-ui-shared.d.ts",

@@ -59,7 +59,7 @@
     <parent>
         <groupId>org.keycloak.documentation</groupId>
         <artifactId>documentation-parent</artifactId>
-        <version>26.1.0</version>
+        <version>26.1.4</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 

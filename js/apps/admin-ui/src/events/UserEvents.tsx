@@ -34,12 +34,12 @@ import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
+import { EventsBanners } from "../Banners";
 import DropdownPanel from "../components/dropdown-panel/DropdownPanel";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { toUser } from "../user/routes/User";
 import useFormatDate, { FORMAT_DATE_AND_TIME } from "../utils/useFormatDate";
 import useLocaleSort from "../utils/useLocaleSort";
-import { EventsBanners } from "../Banners";
 
 import "./events.css";
 
@@ -493,6 +493,8 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
           <ListEmptyState
             message={t("emptyUserEvents")}
             instructions={t("emptyUserEventsInstructions")}
+            primaryActionText={t("refresh")}
+            onPrimaryAction={() => setKey(key + 1)}
           />
         }
         isSearching={Object.keys(activeFilters).length > 0}
