@@ -19,11 +19,9 @@ This prevents accidentally downgrading functionality, for example, by using an o
 
 === Problematic cache configurations ignored
 
-Previous versions {project_name} warned about problematic configurations, for example, if a wrong number of owners was configured or a cache size was set when it should not have been set when enabling volatile user sessions.
-The current version will still warn about those settings, but will also ignore them to ensure a correct behavior and to avoid data loss.
+Previous versions of {project_name} warned about problematic configurations, for example, if a wrong number of owners was configured or a cache size was set when it should not have been set when enabling volatile user sessions.
+The docs also stated to update the `cache-ispn.xml` configuration file for volatile user sessions.
 
-=== Volatile Session Cache Defaults
-
-If the `persistent-user-sessions` feature is disabled, i.e. volatile sessions are configured, {project_name} now prevents
-`num_owners=1` being configured unless a shared persistent store is also configured. This is to prevent data loss on cache
-rebalances.
+The current version will always use safe settings for the number of owners and maximum cache size for the affected user and client session caches, and will log only an INFO message.
+With this behavior, there is no need any more to update the `cache-ispn.xml` configuration file.
+If you previously used a custom `cache-ispn.xml` in order to use volatile user sessions, we recommend reverting those changes and use the standard configuration file.
