@@ -106,6 +106,12 @@ public class DatabaseOptions {
             .description("Deactivate specific named datasource <datasource>.")
             .build();
 
+    public static final Option<Boolean> DB_POSTGRESQL_TARGET_SERVER_TYPE = new OptionBuilder<>("db-jdbc-default-options", Boolean.class)
+            .category(OptionCategory.DATABASE)
+            .defaultValue(true)
+            .hidden()
+            .build();
+
     /**
      * Options that have their sibling for a named datasource
      * Example: for `db-dialect`, `db-dialect-<datasource>` is created
