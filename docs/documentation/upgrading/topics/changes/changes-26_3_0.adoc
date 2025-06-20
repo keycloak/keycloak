@@ -46,9 +46,12 @@ To enhance security, only users with the `admin` role in the `master` realm (ser
 
 === Problematic cache configurations ignored
 
-Previous versions {project_name} warned about problematic configurations, for example, if a wrong number of owners was configured or a cache size was set when it should not have been set when enabling volatile user sessions.
-The current version will still warn about those settings, but will also ignore them to ensure a correct behavior and to avoid data loss.
+Previous versions of {project_name} warned about problematic configurations, for example, if a wrong number of owners was configured or a cache size was set when it should not have been set when enabling volatile user sessions.
+The docs also stated to update the `cache-ispn.xml` configuration file for volatile user sessions.
 
+The current version will always use safe settings for the number of owners and maximum cache size for the affected user and client session caches, and will log only an INFO message.
+With this behavior, there is no need any more to update the `cache-ispn.xml` configuration file.
+If you previously used a custom `cache-ispn.xml` in order to use volatile user sessions, we recommend reverting those changes and use the standard configuration file.
 
 === Email verification is now automatically set when using a OpenID Connect broker with `Trust email` is enabled and `Sync Mode` is `FORCE`
 
@@ -110,12 +113,6 @@ This prevents accidentally downgrading functionality, for example, by using an o
 Previously the default *browser* flow had a *Browser - Conditional OTP* conditional sub-flow that enabled One-Time Password (OTP) as a 2nd Factor Authentication (2FA). Starting with this version, the sub-flow is renamed to *Browser - Conditional 2FA*, the *OTP Form* is _Alternative_, and includes two more 2FA methods: *WebAuthn Authenticator* and *Recovery Authentication Code Form*. Both new executions are _Disabled_ by default, but they can be set to _Alternative_ to include them into the flow.
 
 Upgraded realms will not be changed. The updated flow will only be available for new realms. Take this change into consideration if you have automated the realm creation.
-
-=== Volatile Session Cache Defaults
-
-If the `persistent-user-sessions` feature is disabled, i.e. volatile sessions are configured, {project_name} now prevents
-`num_owners=1` being configured unless a shared persistent store is also configured. This is to prevent data loss on cache
-rebalances.
 
 == Deprecated features
 
