@@ -42,13 +42,12 @@ import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawDistRootPath;
 import org.keycloak.it.utils.RawKeycloakDistribution;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
 
 import io.quarkus.deployment.util.FileUtil;
 import io.quarkus.test.junit.main.Launch;
 
-@DistributionTest
+@DistributionTest(keepAlive = true)
 @RawDistOnly(reason = "Too verbose for docker and enough to check raw dist")
 @Tag(DistributionTest.SLOW)
 public class LoggingDistTest {
@@ -270,7 +269,7 @@ public class LoggingDistTest {
     @Launch({ "start-dev", "--features=log-mdc","--log-mdc-enabled=true", "--log-level=org.keycloak:debug" })
     void testLogMdcShowingInTheLogs(CLIResult cliResult) {
 
-        when().get("/realms/master/.well-known/openid-configuration").then()
+        when().get("http://127.0.0.1:8080/realms/master/.well-known/openid-configuration").then()
                 .statusCode(200);
         assertTrue(cliResult.getOutput().contains("{kc.realm=master} DEBUG [org.keycloak."));
         cliResult.assertStartedDevMode();

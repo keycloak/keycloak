@@ -13,7 +13,7 @@ public final class MappedDiagnosticContextUtil {
     private static final MappedDiagnosticContextProvider NOOP_PROVIDER = new NoopMappedDiagnosticContextProvider();
 
     public static MappedDiagnosticContextProvider getMappedDiagnosticContextProvider(KeycloakSession session) {
-        if (Profile.isFeatureEnabled(Profile.Feature.LOG_MDC)) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.LOG_MDC)) {
             return NOOP_PROVIDER;
         }
         if (session == null) {
