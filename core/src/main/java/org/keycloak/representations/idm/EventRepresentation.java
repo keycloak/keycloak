@@ -153,4 +153,5 @@ public class EventRepresentation {
         result = 31 * result + (details != null ? details.hashCode() : 0);
         return result;
     }
+
 }
