@@ -16,3 +16,9 @@ If you are upgrading {project_name} by downloading the distribution, the upgrade
 The new procedure recommends to re-apply any changes to `cache-ispn.xml` or a custom cache configuration based on the file included in the new version.
 
 This prevents accidentally downgrading functionality, for example, by using an old `cache-ispn.xml` file from a previous version.
+
+=== Volatile Session Cache Defaults
+
+If the `persistent-user-sessions` feature is disabled, i.e. volatile sessions are configured, {project_name} now prevents
+`num_owners=1` being configured unless a shared persistent store is also configured. This is to prevent data loss on cache
+rebalances.
