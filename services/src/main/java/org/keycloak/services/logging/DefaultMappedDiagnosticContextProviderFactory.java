@@ -69,7 +69,7 @@ public class DefaultMappedDiagnosticContextProviderFactory implements MappedDiag
                 .name(MDC_KEYS)
                 .type("string")
                 .helpText("Comma-separated list of MDC keys to add to the Mapped Diagnostic Context.")
-                .options(Stream.of(MDC_KEY_REALM, MDC_KEY_CLIENT_ID, MDC_KEY_USER_ID, MDC_KEY_IP_ADDRESS, MDC_KEY_ORGANIZATION).map(s -> s.substring(MDC_KEYS.length())).collect(Collectors.toList()))
+                .options(Stream.of(MDC_KEY_REALM, MDC_KEY_CLIENT_ID, MDC_KEY_USER_ID, MDC_KEY_IP_ADDRESS, MDC_KEY_ORGANIZATION).map(s -> s.substring(MDC_PREFIX.length())).collect(Collectors.toList()))
                 .add();
 
         return builder.build();
