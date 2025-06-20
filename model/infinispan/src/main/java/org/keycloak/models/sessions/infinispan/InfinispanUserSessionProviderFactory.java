@@ -482,13 +482,13 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         builder.property()
                 .name(CONFIG_OFFLINE_CLIENT_SESSION_CACHE_ENTRY_LIFESPAN_OVERRIDE)
                 .type("int")
-                .helpText("Override how long offline client sessions should be kept in memory")
+                .helpText("Override how long offline client sessions should be kept in memory in seconds")
                 .add();
 
         builder.property()
                 .name(CONFIG_OFFLINE_SESSION_CACHE_ENTRY_LIFESPAN_OVERRIDE)
                 .type("int")
-                .helpText("Override how long offline user sessions should be kept in memory")
+                .helpText("Override how long offline user sessions should be kept in memory in seconds")
                 .add();
 
         builder.property()
