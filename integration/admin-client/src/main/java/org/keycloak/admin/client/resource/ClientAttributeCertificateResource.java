@@ -17,6 +17,7 @@
 
 package org.keycloak.admin.client.resource;
 
+import jakarta.ws.rs.QueryParam;
 import org.keycloak.representations.KeyStoreConfig;
 import org.keycloak.representations.idm.CertificateRepresentation;
 

@@ -18,6 +18,7 @@
 package org.keycloak.services.resources.admin;
 
 import com.google.common.base.Strings;
+import jakarta.ws.rs.QueryParam;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -64,6 +65,7 @@ import java.security.PrivateKey;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.util.Calendar;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -340,7 +342,15 @@ public class ClientAttributeCertificateResource {
             throw new ErrorResponseException("password-missing", "Need to specify a store password for jks generation and download", Response.Status.BAD_REQUEST);
         }
 
-        CertificateRepresentation info = KeycloakModelUtils.generateKeyPairCertificate(client.getClientId());
+        CertificateRepresentation info;
+        if (config.getKeySize() <= 0 || config.getValidity() <= 0) {
+            info = KeycloakModelUtils.generateKeyPairCertificate(client.getClientId());
+        }
+        else {
+            Calendar calendar = Calendar.getInstance();
+            calendar.add(Calendar.YEAR, config.getValidity());
+            info = KeycloakModelUtils.generateKeyPairCertificate(client.getClientId(), config.getKeySize(), calendar);
+        }
         byte[] rtn = getKeystore(config, info.getPrivateKey(), info.getCertificate());
 
         info.setPrivateKey(null);
