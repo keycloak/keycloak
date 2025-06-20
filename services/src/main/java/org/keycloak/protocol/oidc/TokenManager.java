@@ -1039,8 +1039,11 @@ public class TokenManager {
             expiration = Time.currentTimeMillis() + TimeUnit.SECONDS.toMillis(tokenLifespan);
         }
 
+        final boolean offline = userSession.isOffline() || offlineTokenRequested ||
+                (userSession.getPersistenceState() == UserSessionModel.SessionPersistenceState.TRANSIENT &&
+                Constants.CREATED_FROM_PERSISTENT_OFFLINE.equals(userSession.getNote(Constants.CREATED_FROM_PERSISTENT)));
         long sessionExpires = SessionExpirationUtils.calculateClientSessionMaxLifespanTimestamp(
-                userSession.isOffline() || offlineTokenRequested, userSession.isRememberMe(),
+                offline, userSession.isRememberMe(),
                 TimeUnit.SECONDS.toMillis(clientSession.getStarted()), TimeUnit.SECONDS.toMillis(userSession.getStarted()),
                 realm, client);
         expiration = sessionExpires > 0? Math.min(expiration, sessionExpires) : expiration;
