@@ -351,15 +351,30 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertEquals(PostgreSQLDialect.class.getName(), config.getConfigValue("kc.db-dialect").getValue());
         assertEquals(PGXADataSource.class.getName(), config.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
 
-        System.clearProperty("kc.db-url-properties");
-        ConfigArgsConfigSource.setCliArgs("--db=postgres");
-        config = createConfig();
-        assertEquals("jdbc:postgresql://localhost:5432/keycloak?targetServerType=primary", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
-
         ConfigArgsConfigSource.setCliArgs("--db-schema=test-schema");
         config = createConfig();
         assertEquals("test-schema", config.getConfigValue("kc.db-schema").getValue());
         assertEquals("test-schema", config.getConfigValue("kc.db-schema").getValue());
+
+        ConfigArgsConfigSource.setCliArgs("--db=postgres");
+        config = createConfig();
+        assertEquals("primary", config.getConfigValue("quarkus.datasource.jdbc.additional-jdbc-properties.targetServerType").getValue());
+
+        ConfigArgsConfigSource.setCliArgs("--db=postgres");
+        config = createConfig();
+        assertEquals("primary", config.getConfigValue("quarkus.datasource.jdbc.additional-jdbc-properties.targetServerType").getValue());
+
+        ConfigArgsConfigSource.setCliArgs("--db=postgres", "--db-url-properties=\"targetServerType=any\"");
+        config = createConfig();
+        assertNull(config.getConfigValue("quarkus.datasource.jdbc.additional-jdbc-properties.targetServerType").getValue());
+
+        ConfigArgsConfigSource.setCliArgs("--db=postgres", "--db-driver=software.amazon.jdbc.Driver");
+        config = createConfig();
+        assertNull(config.getConfigValue("quarkus.datasource.jdbc.additional-jdbc-properties.targetServerType").getValue());
+
+        ConfigArgsConfigSource.setCliArgs("--db=postgres", "--db-url=jdbc:postgresql://localhost:5432/keycloak?targetServerType=any");
+        config = createConfig();
+        assertNull(config.getConfigValue("quarkus.datasource.jdbc.additional-jdbc-properties.targetServerType").getValue());
     }
 
     // KEYCLOAK-15632

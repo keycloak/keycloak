@@ -168,7 +168,7 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         initConfig();
         assertConfig("db-dialect-asdf", "org.hibernate.dialect.PostgreSQLDialect");
         assertExternalConfig(Map.of(
-                "quarkus.datasource.\"asdf\".jdbc.url", "jdbc:postgresql://localhost:5432/keycloak?targetServerType=primary",
+                "quarkus.datasource.\"asdf\".jdbc.url", "jdbc:postgresql://localhost:5432/keycloak",
                 "quarkus.datasource.\"asdf\".db-kind", "postgresql"
         ));
         onAfter();
