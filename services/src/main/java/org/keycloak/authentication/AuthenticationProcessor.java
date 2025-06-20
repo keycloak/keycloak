@@ -90,6 +90,7 @@ public class AuthenticationProcessor {
     public static final String LAST_PROCESSED_EXECUTION = "last.processed.execution";
     public static final String CURRENT_FLOW_PATH = "current.flow.path";
     public static final String FORKED_FROM = "forked.from";
+    public static final String LAST_AUTHN_CREDENTIAL = "last.authn.credential";
 
     public static final String BROKER_SESSION_ID = "broker.session.id";
     public static final String BROKER_USER_ID = "broker.user.id";
@@ -406,6 +407,14 @@ public class AuthenticationProcessor {
 
         @Override
         public void success() {
+            success(null);
+        }
+
+        @Override
+        public void success(String credentialType) {
+            if (credentialType != null) {
+                getAuthenticationSession().setAuthNote(LAST_AUTHN_CREDENTIAL, credentialType);
+            }
             this.status = FlowStatus.SUCCESS;
         }
 

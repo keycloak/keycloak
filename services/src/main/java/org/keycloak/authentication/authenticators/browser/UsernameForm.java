@@ -34,6 +34,14 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 
 public final class UsernameForm extends UsernamePasswordForm {
 
+    public UsernameForm() {
+        super();
+    }
+
+    public UsernameForm(KeycloakSession session) {
+        super(session);
+    }
+
     @Override
     public void authenticate(AuthenticationFlowContext context) {
         if (context.getUser() != null) {
