@@ -288,7 +288,7 @@
             </property>
             <property name="bindHttpPortOffset">${auth.server.port.offset}</property>
             <property name="javaOpts">-Xms512m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=512m
-                -Dauth.server.db.host=some
+                -Dauth.server.db.host=some -Djava.net.preferIPv6Addresses=${auth.server.ipv6}
             </property>
             <property name="enabledFeatures">${auth.server.feature}</property>
             <property name="disabledFeatures">${auth.server.feature.disable}</property>
