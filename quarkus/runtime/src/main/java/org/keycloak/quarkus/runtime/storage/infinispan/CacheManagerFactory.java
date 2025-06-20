@@ -475,13 +475,13 @@ public class CacheManagerFactory {
                         configurationBuilder.clustering().hash().numOwners(1);
                     } else {
                         if (configurationBuilder.memory().maxCount() != -1) {
-                            logger.warnf("Persistent user sessions disabled and memory limit is set. Ignoring cache limits to avoid losing sessions for cache %s.", cacheName);
+                            logger.infof("Persistent user sessions disabled and memory limit is set. Ignoring cache limits to avoid losing sessions for cache %s.", cacheName);
                             configurationBuilder.memory().maxCount(-1);
                         }
                         if (configurationBuilder.clustering().hash().attributes().attribute(HashConfiguration.NUM_OWNERS).get() == 1 &&
                               configurationBuilder.persistence().stores().stream().noneMatch(p -> p.attributes().attribute(AbstractStoreConfiguration.SHARED).get())
                         ) {
-                            logger.warnf("Persistent user sessions disabled with number of owners set to default value 1 for cache %s and no shared persistence store configured. Setting num_owners=2 to avoid data loss.", cacheName);
+                            logger.infof("Persistent user sessions disabled with number of owners set to default value 1 for cache %s and no shared persistence store configured. Setting num_owners=2 to avoid data loss.", cacheName);
                             configurationBuilder.clustering().hash().numOwners(2);
                         }
                     }
