@@ -1,12 +1,13 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import static org.keycloak.config.LoggingOptions.DEFAULT_LOG_FORMAT;
-import static org.keycloak.config.LoggingOptions.LOG_CONSOLE_ENABLED;
-import static org.keycloak.config.LoggingOptions.LOG_FILE_ENABLED;
-import static org.keycloak.config.LoggingOptions.LOG_SYSLOG_ENABLED;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.isSet;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.isTrue;
-import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
+import io.quarkus.runtime.configuration.MemorySizeConverter;
+import io.smallrye.config.ConfigSourceInterceptorContext;
+import org.jboss.logmanager.LogContext;
+import org.keycloak.config.LoggingOptions;
+import org.keycloak.config.Option;
+import org.keycloak.quarkus.runtime.Messages;
+import org.keycloak.quarkus.runtime.cli.PropertyException;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import java.io.File;
 import java.util.List;
@@ -16,15 +17,14 @@ import java.util.function.BiFunction;
 import java.util.logging.Level;
 import java.util.stream.Stream;
 
-import io.quarkus.runtime.configuration.MemorySizeConverter;
-import org.jboss.logmanager.LogContext;
-import org.keycloak.config.LoggingOptions;
-import org.keycloak.config.Option;
-import org.keycloak.quarkus.runtime.Messages;
-import org.keycloak.quarkus.runtime.cli.PropertyException;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
-
-import io.smallrye.config.ConfigSourceInterceptorContext;
+import static org.keycloak.config.LoggingOptions.DEFAULT_LOG_FORMAT;
+import static org.keycloak.config.LoggingOptions.LOG_CONSOLE_ENABLED;
+import static org.keycloak.config.LoggingOptions.LOG_FILE_ENABLED;
+import static org.keycloak.config.LoggingOptions.LOG_SYSLOG_ENABLED;
+import static org.keycloak.config.LoggingOptions.LOG_SYSLOG_PROTOCOL;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.isSet;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.isTrue;
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 public final class LoggingPropertyMappers {
 
@@ -78,7 +78,7 @@ public final class LoggingPropertyMappers {
                         .isEnabled(LoggingPropertyMappers::isConsoleEnabled, CONSOLE_ENABLED_MSG)
                         .to("quarkus.log.console.color")
                         .build(),
-                fromOption(LoggingOptions.LOG_CONSOLE_ENABLED)
+                fromOption(LOG_CONSOLE_ENABLED)
                         .mapFrom(LoggingOptions.LOG, LoggingPropertyMappers.resolveLogHandler(LoggingOptions.DEFAULT_LOG_HANDLER.name()))
                         .to("quarkus.log.console.enable")
                         .build(),
@@ -94,7 +94,7 @@ public final class LoggingPropertyMappers {
                         .paramLabel("queue-length")
                         .build(),
                 // File
-                fromOption(LoggingOptions.LOG_FILE_ENABLED)
+                fromOption(LOG_FILE_ENABLED)
                         .mapFrom(LoggingOptions.LOG, LoggingPropertyMappers.resolveLogHandler("file"))
                         .to("quarkus.log.file.enable")
                         .build(),
@@ -158,7 +158,7 @@ public final class LoggingPropertyMappers {
                         .paramLabel("level")
                         .build(),
                 // Syslog
-                fromOption(LoggingOptions.LOG_SYSLOG_ENABLED)
+                fromOption(LOG_SYSLOG_ENABLED)
                         .mapFrom(LoggingOptions.LOG, LoggingPropertyMappers.resolveLogHandler("syslog"))
                         .to("quarkus.log.syslog.enable")
                         .build(),
@@ -189,7 +189,7 @@ public final class LoggingPropertyMappers {
                         .validator(LoggingPropertyMappers::validateSyslogMaxLength)
                         .paramLabel("max-length")
                         .build(),
-                fromOption(LoggingOptions.LOG_SYSLOG_PROTOCOL)
+                fromOption(LOG_SYSLOG_PROTOCOL)
                         .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
                         .to("quarkus.log.syslog.protocol")
                         .paramLabel("protocol")
@@ -214,6 +214,12 @@ public final class LoggingPropertyMappers {
                         .to("quarkus.log.syslog.json.enabled")
                         .paramLabel("output")
                         .transformer(LoggingPropertyMappers::resolveLogOutput)
+                        .build(),
+                fromOption(LoggingOptions.LOG_SYSLOG_COUNTING_FRAMING)
+                        .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
+                        .mapFrom(LOG_SYSLOG_PROTOCOL, LoggingPropertyMappers::resolveSyslogCountingFraming)
+                        .to("quarkus.log.syslog.use-counting-framing")
+                        .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
                         .build(),
                 // Syslog async
                 fromOption(LoggingOptions.LOG_SYSLOG_ASYNC)
@@ -411,4 +417,15 @@ public final class LoggingPropertyMappers {
             throw new PropertyException(String.format("Invalid value for option '--log-syslog-max-length': %s", e.getMessage()));
         }
     }
+
+    // Workaround BEGIN - for https://github.com/keycloak/keycloak/issues/39893
+    // Remove once the https://github.com/quarkusio/quarkus/issues/48036 is included in Keycloak as Quarkus might handle it on its own
+    private static String resolveSyslogCountingFraming(String protocol, ConfigSourceInterceptorContext c) {
+        return switch (protocol) {
+            case "tcp", "ssl-tcp" -> Boolean.TRUE.toString();
+            case "udp" -> Boolean.FALSE.toString();
+            default -> throw new IllegalStateException("Unexpected value: " + protocol);
+        };
+    }
+    // Workaround END
 }
