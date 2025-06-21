@@ -215,7 +215,6 @@ export default function MappingDetails() {
               name="name"
               label={t("name")}
               labelIcon={t("mapperNameHelp")}
-              readOnlyVariant={isUpdating ? "default" : undefined}
               rules={{ required: t("required") }}
             />
             <DynamicComponents
