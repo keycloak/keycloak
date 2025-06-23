@@ -2,11 +2,10 @@ name: Keycloak CI
 
 on:
   push:
-    branches-ignore:
+    branches:
       - main
-      - dependabot/**
-  pull_request:
-  workflow_dispatch:
+      - '**'
+
 
 env:
   MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
