@@ -26,10 +26,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.authentication.actiontoken.inviteorg.InviteOrgActionToken;
 import org.keycloak.common.Profile;
@@ -41,6 +41,7 @@ import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
@@ -188,11 +189,14 @@ public class Organizations {
     }
 
     public static OrganizationModel resolveOrganization(KeycloakSession session, UserModel user, String domain) {
-        if (!session.getContext().getRealm().isOrganizationsEnabled()) {
+        KeycloakContext context = session.getContext();
+        RealmModel realm = context.getRealm();
+
+        if (!realm.isOrganizationsEnabled()) {
             return null;
         }
 
-        Optional<OrganizationModel> organization = Optional.ofNullable(session.getContext().getOrganization());
+        Optional<OrganizationModel> organization = Optional.ofNullable(context.getOrganization());
 
         if (organization.isPresent()) {
             // resolved from current keycloak session
@@ -205,39 +209,57 @@ public class Organizations {
             return null;
         }
 
-        AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
+        AuthenticationSessionModel authSession = context.getAuthenticationSession();
 
         if (authSession != null) {
             OrganizationScope scope = OrganizationScope.valueOfScope(session);
-
+            // try to resolve first a single organization from the authentication session, if any
+            // otherwise, resolve from the requested scope, if any
             List<OrganizationModel> organizations = ofNullable(authSession.getAuthNote(OrganizationModel.ORGANIZATION_ATTRIBUTE))
                     .map(provider::getById)
                     .map(List::of)
                     .orElseGet(() -> scope == null ? List.of() : scope.resolveOrganizations(user, session).toList());
 
             if (organizations.size() == 1) {
-                // single organization mapped from authentication session
+                // single organization mapped
                 OrganizationModel resolved = organizations.get(0);
 
                 if (user == null) {
+                    // no user, resolve any organization
                     return resolved;
                 }
 
-                // make sure the user still maps to the organization from the authentication session
+                // make sure the user still maps to the resolved organization
                 if (matchesOrganization(resolved, user)) {
                     return resolved;
                 }
 
                 return null;
             } else if (scope != null && user != null) {
-                // organization scope requested but no user and no single organization mapped from the scope
-                return null;
+                // multiple organizations found, resolve the one that maps to a domain and the user is a managed member
+                return organizations.stream()
+                        .filter((o) -> o.isManaged(user))
+                        .findAny()
+                        .orElse(null);
             }
         }
 
-        organization = ofNullable(user).stream().flatMap(provider::getByMember)
+        AtomicReference<OrganizationModel> homeOrg = new AtomicReference<>();
+        List<OrganizationModel> organizations = ofNullable(user).stream()
+                .flatMap(provider::getByMember)
                 .filter(OrganizationModel::isEnabled)
-                .findAny();
+                .peek(org -> {
+                    if (org.isManaged(user)) {
+                        homeOrg.set(org);
+                    }
+                })
+                .toList();
+
+        if (organizations.size() == 1) {
+            return organizations.get(0);
+        }
+
+        organization = ofNullable(homeOrg.get());
 
         if (organization.isPresent()) {
             return organization.get();
