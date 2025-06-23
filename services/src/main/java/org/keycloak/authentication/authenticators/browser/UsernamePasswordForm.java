@@ -85,6 +85,12 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
         String rememberMeUsername = AuthenticationManager.getRememberMeUsername(context.getSession());
 
         if (context.getUser() != null) {
+            if (alreadyAuthenticatedUsingPasswordlessCredential(context)) {
+                // if already authenticated using passwordless webauthn just success
+                context.success();
+                return;
+            }
+
             LoginFormsProvider form = context.form();
             form.setAttribute(LoginFormsProvider.USERNAME_HIDDEN, true);
             form.setAttribute(LoginFormsProvider.REGISTRATION_DISABLED, true);
