@@ -4,6 +4,7 @@ import static org.keycloak.config.LoggingOptions.DEFAULT_LOG_FORMAT;
 import static org.keycloak.config.LoggingOptions.LOG_CONSOLE_ENABLED;
 import static org.keycloak.config.LoggingOptions.LOG_FILE_ENABLED;
 import static org.keycloak.config.LoggingOptions.LOG_SYSLOG_ENABLED;
+import static org.keycloak.config.LoggingOptions.SYSLOG_COUNTING_FRAMING_PROTOCOL_DEPENDENT;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.isSet;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.isTrue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.stream.Stream;
 
@@ -215,6 +217,13 @@ public final class LoggingPropertyMappers {
                         .paramLabel("output")
                         .transformer(LoggingPropertyMappers::resolveLogOutput)
                         .build(),
+                fromOption(LoggingOptions.LOG_SYSLOG_COUNTING_FRAMING)
+                        .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
+                        .mapFrom(LoggingOptions.LOG_SYSLOG_PROTOCOL, LoggingPropertyMappers::resolveSyslogCountingFramingMapFrom)
+                        .transformer(LoggingPropertyMappers::resolveSyslogCountingFraming)
+                        .to("quarkus.log.syslog.use-counting-framing")
+                        .paramLabel("strategy")
+                        .build(),
                 // Syslog async
                 fromOption(LoggingOptions.LOG_SYSLOG_ASYNC)
                         .mapFrom(LoggingOptions.LOG_ASYNC)
@@ -411,4 +420,35 @@ public final class LoggingPropertyMappers {
             throw new PropertyException(String.format("Invalid value for option '--log-syslog-max-length': %s", e.getMessage()));
         }
     }
+
+    // Workaround BEGIN - for https://github.com/keycloak/keycloak/issues/39893
+    // Remove once the https://github.com/quarkusio/quarkus/issues/48036 is included in Keycloak as Quarkus might handle it on its own
+    private static String resolveSyslogCountingFraming(String value, ConfigSourceInterceptorContext context) {
+        if (SYSLOG_COUNTING_FRAMING_PROTOCOL_DEPENDENT.equals(value)) {
+            return Configuration.getOptionalKcValue(LoggingOptions.LOG_SYSLOG_PROTOCOL)
+                    .map(LoggingPropertyMappers::handleSyslogCountingFramingBasedOnProtocol)
+                    .orElse(Boolean.FALSE.toString());
+        }
+        return value;
+    }
+
+    private static String resolveSyslogCountingFramingMapFrom(String protocol, ConfigSourceInterceptorContext context) {
+        // if 'protocol-dependent' is used, resolve the counting framing based on used Syslog protocol
+        Function<String, String> evaluateProtocolDependent = (strategy) -> SYSLOG_COUNTING_FRAMING_PROTOCOL_DEPENDENT.equals(strategy) ?
+                handleSyslogCountingFramingBasedOnProtocol(protocol) :
+                strategy;
+
+        return LoggingOptions.LOG_SYSLOG_COUNTING_FRAMING.getDefaultValue()
+                .map(evaluateProtocolDependent)
+                .orElse(Boolean.FALSE.toString());
+    }
+
+    private static String handleSyslogCountingFramingBasedOnProtocol(String protocol) {
+        return switch (protocol) {
+            case "tcp", "ssl-tcp" -> Boolean.TRUE.toString();
+            case "udp" -> Boolean.FALSE.toString();
+            default -> throw new PropertyException("Invalid Syslog protocol: " + protocol);
+        };
+    }
+    // Workaround END
 }

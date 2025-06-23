@@ -19,6 +19,7 @@ package org.keycloak.quarkus.runtime.cli;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
@@ -479,6 +480,31 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString(
                 "Invalid value for option '--log-syslog-max-length': value wrong not in correct format (regular expression): [0-9]+[BbKkMmGgTtPpEeZzYy]?"));
+    }
+
+    @Test
+    public void syslogCountingFraming() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log=syslog", "--log-syslog-counting-framing=TRUE");
+        assertThat(nonRunningPicocli.exitCode, is(CommandLine.ExitCode.USAGE));
+        assertThat(nonRunningPicocli.getErrString(), containsString(
+                "Invalid value for option '--log-syslog-counting-framing': TRUE. Expected values are: true, false, protocol-dependent"));
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--log=syslog", "--log-syslog-counting-framing=true");
+        assertThat(nonRunningPicocli.exitCode, is(CommandLine.ExitCode.OK));
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.log.syslog.use-counting-framing").getValue(), is("true"));
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--log=syslog", "--log-syslog-counting-framing=false");
+        assertThat(nonRunningPicocli.exitCode, is(CommandLine.ExitCode.OK));
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.log.syslog.use-counting-framing").getValue(), is("false"));
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--log=syslog", "--log-syslog-protocol=ssl-tcp", "--log-syslog-counting-framing=protocol-dependent");
+        assertThat(nonRunningPicocli.exitCode, is(CommandLine.ExitCode.OK));
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.log.syslog.use-counting-framing").getValue(), is("true"));
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--log=syslog", "--log-syslog-counting-framing=wrong");
+        assertThat(nonRunningPicocli.exitCode, is(CommandLine.ExitCode.USAGE));
+        assertThat(nonRunningPicocli.getErrString(), containsString(
+                "Invalid value for option '--log-syslog-counting-framing': wrong. Expected values are: true, false, protocol-dependent"));
     }
 
     @Test
