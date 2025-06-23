@@ -87,4 +87,7 @@ public interface IdentityProviderResource {
     @GET
     @Path("reload-keys")
     boolean reloadKeys();
+
+    @Path("/management")
+    IdentityProviderManagementResource management();
 }
