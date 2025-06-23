@@ -2,20 +2,16 @@ name: CodeQL
 
 on:
   push:
-    branches-ignore:
+    branches:
       - main
-      - dependabot/**
-      - quarkus-next
-  pull_request:
-     branches: [main]
-  workflow_dispatch:
+      - '**'
 
 env:
   MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
 
 concurrency:
-  # Only cancel jobs for PR updates
-  group: codeql-analysis-${{ github.ref }}
+  # Unique group per event type + ref ensures PRs and manual runs aren't blocked
+  group: codeql-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 defaults:
@@ -28,7 +24,7 @@ permissions:
 jobs:
   conditional:
     name: Check conditional workflows and jobs
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     outputs:
       java: ${{ steps.conditional.outputs.codeql-java }}
       javascript: ${{ steps.conditional.outputs.codeql-javascript }}
@@ -47,7 +43,7 @@ jobs:
   java:
     name: CodeQL Java
     needs: conditional
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     permissions:
       security-events: write  # Required for SARIF upload
     if: needs.conditional.outputs.java == 'true'
@@ -75,7 +71,7 @@ jobs:
   javascript:
     name: CodeQL JavaScript
     needs: conditional
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     permissions:
       security-events: write  # Required for SARIF upload
     if: needs.conditional.outputs.javascript == 'true'
@@ -102,7 +98,7 @@ jobs:
   typescript:
     name: CodeQL TypeScript
     needs: conditional
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     permissions:
       security-events: write  # Required for SARIF upload
     if: needs.conditional.outputs.typescript == 'true'
@@ -134,7 +130,7 @@ jobs:
       - java
       - javascript
       - typescript
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - uses: ./.github/actions/status-check
