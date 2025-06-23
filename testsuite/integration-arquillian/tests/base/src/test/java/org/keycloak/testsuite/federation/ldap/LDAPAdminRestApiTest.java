@@ -243,11 +243,14 @@ public class LDAPAdminRestApiTest extends AbstractLDAPTest {
             @Override
             public void close() {
                 ldapProvider.getConfig().put(LDAPConstants.CONNECTION_URL, originalUrl);
+                ldapProvider.getConfig().putSingle(LDAPConstants.BIND_CREDENTIAL,
+                        ldapRule.getConfig().get(LDAPConstants.BIND_CREDENTIAL));
                 testRealm().components().component(ldapProvider.getId()).update(ldapProvider);
             }
         });
 
         ldapProvider.getConfig().put(LDAPConstants.CONNECTION_URL, List.of("ldap://invalid"));
+        ldapProvider.getConfig().putSingle(LDAPConstants.BIND_CREDENTIAL, "abc");
         testRealm().components().component(ldapProvider.getId()).update(ldapProvider);
 
         try {
