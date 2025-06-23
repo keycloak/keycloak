@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.testsuite.webauthn.passwordless;
 
 import java.io.Closeable;
@@ -22,7 +21,6 @@ import java.io.IOException;
 import java.util.List;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 import org.keycloak.WebAuthnConstants;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
@@ -31,17 +29,26 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.organization.authentication.authenticators.browser.OrganizationAuthenticatorFactory;
+import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
+import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
+import org.keycloak.representations.idm.OrganizationDomainRepresentation;
+import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
-import org.keycloak.testsuite.pages.SelectOrganizationPage;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions;
 import org.keycloak.testsuite.webauthn.utils.PropertyRequirement;
 import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
 /**
@@ -50,10 +57,7 @@ import org.openqa.selenium.firefox.FirefoxDriver;
  */
 @EnableFeature(value = Profile.Feature.PASSKEYS, skipRestart = true)
 @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
-public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTest {
-
-    @Page
-    protected SelectOrganizationPage selectOrganizationPage;
+public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirtualTest {
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -61,6 +65,15 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
 
         makePasswordlessRequiredActionDefault(realmRepresentation);
         switchExecutionInBrowserFormToProvider(realmRepresentation, UsernamePasswordFormFactory.PROVIDER_ID);
+        realmRepresentation.setOrganizationsEnabled(Boolean.TRUE);
+
+        OrganizationRepresentation emailOrg = new OrganizationRepresentation();
+        emailOrg.setName("email");
+        emailOrg.setAlias("email");
+        OrganizationDomainRepresentation domainRep = new OrganizationDomainRepresentation();
+        domainRep.setName("email");
+        emailOrg.addDomain(domainRep);
+        realmRepresentation.addOrganization(emailOrg);
 
         testRealms.add(realmRepresentation);
     }
@@ -71,7 +84,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
     }
 
     @Test
-    public void webauthnLoginWithDiscoverableKey() throws Exception {
+    public void webauthnLoginWithDiscoverableKey() throws IOException {
         getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.PASSKEYS.getOptions());
 
         // set passwordless policy for discoverable keys
@@ -110,7 +123,50 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
     }
 
     @Test
-    public void passwordLoginWithNonDiscoverableKey() throws IOException {
+    public void webauthnLoginWithDiscoverableKeyRequiresMembership() throws IOException {
+        getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.PASSKEYS.getOptions());
+
+        // enable organization configuration
+        AuthenticationExecutionInfoRepresentation organizationExec = testRealm().flows().getExecutions("browser-webauthn-conditional-organization").stream()
+                .filter(exec -> OrganizationAuthenticatorFactory.ID.equals(exec.getProviderId()))
+                .findAny()
+                .orElse(null);
+        Assert.assertNotNull("Organization execution not found", organizationExec);
+
+        AuthenticatorConfigRepresentation config = new AuthenticatorConfigRepresentation();
+        config.setAlias(KeycloakModelUtils.generateId());
+        config.getConfig().put(OrganizationAuthenticatorFactory.REQUIRES_USER_MEMBERSHIP, Boolean.TRUE.toString());
+        getCleanup().addAuthenticationConfigId(ApiUtil.getCreatedId(testRealm().flows().newExecutionConfig(organizationExec.getId(), config)));
+
+        // set passwordless policy for discoverable keys
+        try (Closeable c = getWebAuthnRealmUpdater()
+                .setWebAuthnPolicyRpEntityName("localhost")
+                .setWebAuthnPolicyRequireResidentKey(PropertyRequirement.YES.getValue())
+                .setWebAuthnPolicyUserVerificationRequirement(WebAuthnConstants.OPTION_REQUIRED)
+                .setWebAuthnPolicyPasskeysEnabled(Boolean.TRUE)
+                .update()) {
+
+            checkWebAuthnConfiguration(PropertyRequirement.YES.getValue(), WebAuthnConstants.OPTION_REQUIRED);
+
+            registerDefaultUser();
+
+            UserRepresentation user = userResource().toRepresentation();
+            MatcherAssert.assertThat(user, Matchers.notNullValue());
+
+            logout();
+            events.clear();
+
+            // the user should be automatically logged in using the discoverable key but error because no org
+            oauth.openLoginForm();
+            WaitUtils.waitForPageToLoad();
+
+            errorPage.assertCurrent();
+            MatcherAssert.assertThat(errorPage.getError(), Matchers.containsString("User is not a member of the organization"));
+        }
+    }
+
+    @Test
+    public void passwordLoginWithNonDiscoverableKey() throws Exception {
         getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.PASSKEYS.getOptions());
 
         // set passwordless policy not specified, key will not be discoverable
@@ -120,39 +176,44 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
                 .setWebAuthnPolicyUserVerificationRequirement(WebAuthnConstants.OPTION_NOT_SPECIFIED)
                 .setWebAuthnPolicyPasskeysEnabled(Boolean.TRUE)
                 .update()) {
+
             registerDefaultUser();
 
             UserRepresentation user = userResource().toRepresentation();
             MatcherAssert.assertThat(user, Matchers.notNullValue());
 
             logout();
-
             events.clear();
 
-            // login should be done manually but webauthn is enabled
+            // access login page, key is not discoverable so webauthn should be enabled but login should be manual
             oauth.openLoginForm();
             WaitUtils.waitForPageToLoad();
             loginPage.assertCurrent();
             MatcherAssert.assertThat(loginPage.getUsernameAutocomplete(), Matchers.is("username webauthn"));
+            MatcherAssert.assertThat(loginPage.isPasswordInputPresent(), Matchers.is(false));
             MatcherAssert.assertThat(driver.findElement(By.xpath("//form[@id='webauth']")), Matchers.notNullValue());
+            loginPage.loginUsername(USERNAME);
 
-            // invalid login first
-            loginPage.login(USERNAME, "invalid-password");
+            // now the passkeys username password page should be presented with username selected and passkeys disabled
             loginPage.assertCurrent();
-            MatcherAssert.assertThat(loginPage.getUsernameInputError(), Matchers.is("Invalid username or password."));
-            MatcherAssert.assertThat(loginPage.getPasswordInputError(), Matchers.nullValue());
+            MatcherAssert.assertThat(loginPage.getAttemptedUsername(), Matchers.is("userwebauthn"));
+            Assert.assertThrows(NoSuchElementException.class, () -> driver.findElement(By.xpath("//form[@id='webauth']")));
+            loginPage.login("invalid-password");
+            loginPage.assertCurrent();
+            MatcherAssert.assertThat(loginPage.getPasswordInputError(), Matchers.is("Invalid password."));
             events.expect(EventType.LOGIN_ERROR)
-                    .detail(Details.USERNAME, USERNAME)
                     .error(Errors.INVALID_USER_CREDENTIALS)
                     .user(user.getId())
                     .assertEvent();
 
-            // login OK now
-            loginPage.login(USERNAME, getPassword(USERNAME));
+            // correct login now
+            MatcherAssert.assertThat(loginPage.getAttemptedUsername(), Matchers.is("userwebauthn"));
+            Assert.assertThrows(NoSuchElementException.class, () -> driver.findElement(By.xpath("//form[@id='webauth']")));
+            loginPage.login(getPassword(USERNAME));
             appPage.assertCurrent();
             events.expectLogin()
                     .user(user.getId())
-                    .detail(Details.USERNAME, USERNAME)
+                    .detail(Details.USERNAME, "userwebauthn")
                     .detail(Details.CREDENTIAL_TYPE, Matchers.nullValue())
                     .assertEvent();
         }
@@ -187,6 +248,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
 
             loginPage.assertCurrent();
             MatcherAssert.assertThat(loginPage.getUsernameAutocomplete(), Matchers.is("username webauthn"));
+            MatcherAssert.assertThat(loginPage.isPasswordInputPresent(), Matchers.is(false));
             MatcherAssert.assertThat(driver.findElement(By.xpath("//form[@id='webauth']")), Matchers.notNullValue());
 
             // force login using webauthn link
