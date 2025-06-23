@@ -26,6 +26,53 @@ public class BasicAuthHelperTest {
         String[] actual = BasicAuthHelper.parseHeader(header);
 
         assertArrayEquals(new String[] {username, password}, actual);
+        password = "open sesameopen %D0secret/with=special?character";
+        header = BasicAuthHelper.createHeader(username, password);
+        actual = BasicAuthHelper.parseHeader(header);
+        assertArrayEquals(new String[] {username, password}, actual);
+
+        password = "open sesameopen \\%D0secret/with=special?character";
+        header = BasicAuthHelper.createHeader(username, password);
+        actual = BasicAuthHelper.parseHeader(header);
+        assertArrayEquals(new String[] {username, password}, actual);
+
+        password = "open sesameopen %D0secret/with=\r\nspecial?character";
+        header = BasicAuthHelper.createHeader(username, password);
+        actual = BasicAuthHelper.parseHeader(header);
+        assertArrayEquals(new String[] {username, password}, actual);
+
+        password = "open sesameopen %D0secret/with=\r\nspecial?character \r\n Content-Disposition: attachment;filename="malicious.sh";dummy=.txt";
+        header = BasicAuthHelper.createHeader(username, password);
+        actual = BasicAuthHelper.parseHeader(header);
+        assertArrayEquals(new String[] {username, password}, actual);
+
+        password = "open sesameopen %D0secret/with=\r\nspecial?character\r\nPOST /search\r\nHTTP/1.1\r\nHost: normal-website.com\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 11\r\n\r\nq=smuggling";
+        header = BasicAuthHelper.createHeader(username, password);
+        actual = BasicAuthHelper.parseHeader(header);
+        assertArrayEquals(new String[] {username, password}, actual);
+
+        password = "open sesameopen //%^&*()$#@%%%!±{}??<>";
+        header = BasicAuthHelper.createHeader(username, password);
+        actual = BasicAuthHelper.parseHeader(header);
+        assertArrayEquals(new String[] {username, password}, actual);
+
+        password = "open sesameopen %%^&*()$#@!±{}??<>";
+        header = BasicAuthHelper.createHeader(username, password);
+        actual = BasicAuthHelper.parseHeader(header);
+        assertArrayEquals(new String[] {username, password}, actual);
+
+        password = "open sesameopen POST /search\r\nHTTP/1.1\r\nHost: normal-website.com\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 11\r\n\r\nq=smuggling";
+        header = BasicAuthHelper.createHeader(username, password);
+        actual = BasicAuthHelper.parseHeader(header);
+        assertArrayEquals(new String[] {username, password}, actual);
+
+        password = "open sesameopen !@#$%^&*(){}POST /search\r\nHTTP/1.1\r\nHost: normal-website.com\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 11\r\n\r\nq=smuggling";
+        header = BasicAuthHelper.createHeader(username, password);
+        actual = BasicAuthHelper.parseHeader(header);
+        assertArrayEquals(new String[] {username, password}, actual);
+
+        
+        
     }
 
     @Test
@@ -48,5 +95,51 @@ public class BasicAuthHelperTest {
         String[] actual = BasicAuthHelper.parseHeader(header);
 
         assertArrayEquals(new String[] {username, password}, actual);
+
+        password = "%D0secret/with=special?character";
+        header = BasicAuthHelper.createHeader(username, password);
+        actual = BasicAuthHelper.parseHeader(header);
+        assertArrayEquals(new String[] {username, password}, actual);
+
+        password = "\\%D0secret/with=special?character";
+        header = BasicAuthHelper.createHeader(username, password);
+        actual = BasicAuthHelper.parseHeader(header);
+        assertArrayEquals(new String[] {username, password}, actual);
+
+        password = "%D0secret/with=\r\nspecial?character";
+        header = BasicAuthHelper.createHeader(username, password);
+        actual = BasicAuthHelper.parseHeader(header);
+        assertArrayEquals(new String[] {username, password}, actual);
+
+        password = "%D0secret/with=\r\nspecial?character \r\n Content-Disposition: attachment;filename="malicious.sh";dummy=.txt";
+        header = BasicAuthHelper.createHeader(username, password);
+        actual = BasicAuthHelper.parseHeader(header);
+        assertArrayEquals(new String[] {username, password}, actual);
+
+        password = "%D0secret/with=\r\nspecial?character\r\nPOST /search\r\nHTTP/1.1\r\nHost: normal-website.com\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 11\r\n\r\nq=smuggling";
+        header = BasicAuthHelper.createHeader(username, password);
+        actual = BasicAuthHelper.parseHeader(header);
+        assertArrayEquals(new String[] {username, password}, actual);
+
+        password = "//%^&*()$#@%%%!±{}??<>";
+        header = BasicAuthHelper.createHeader(username, password);
+        actual = BasicAuthHelper.parseHeader(header);
+        assertArrayEquals(new String[] {username, password}, actual);
+
+        password = "%%^&*()$#@!±{}??<>";
+        header = BasicAuthHelper.createHeader(username, password);
+        actual = BasicAuthHelper.parseHeader(header);
+        assertArrayEquals(new String[] {username, password}, actual);
+
+        password = "POST /search\r\nHTTP/1.1\r\nHost: normal-website.com\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 11\r\n\r\nq=smuggling";
+        header = BasicAuthHelper.createHeader(username, password);
+        actual = BasicAuthHelper.parseHeader(header);
+        assertArrayEquals(new String[] {username, password}, actual);
+
+        password = "!@#$%^&*(){}POST /search\r\nHTTP/1.1\r\nHost: normal-website.com\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 11\r\n\r\nq=smuggling";
+        header = BasicAuthHelper.createHeader(username, password);
+        actual = BasicAuthHelper.parseHeader(header);
+        assertArrayEquals(new String[] {username, password}, actual);
+        
     }
 }
