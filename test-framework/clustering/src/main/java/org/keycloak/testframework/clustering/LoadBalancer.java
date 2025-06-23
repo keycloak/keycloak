@@ -2,6 +2,10 @@ package org.keycloak.testframework.clustering;
 
 import java.util.HashMap;
 
+import io.vertx.httpproxy.ProxyContext;
+import io.vertx.httpproxy.ProxyInterceptor;
+import io.vertx.httpproxy.ProxyResponse;
+import org.jboss.logging.Logger;
 import org.keycloak.testframework.server.ClusteredKeycloakServer;
 import org.keycloak.testframework.server.KeycloakUrls;
 
@@ -13,6 +17,7 @@ import io.vertx.httpproxy.HttpProxy;
 
 public class LoadBalancer {
 
+    private static final Logger LOGGER = Logger.getLogger(LoadBalancer.class);
     public static final String HOSTNAME = "http://localhost:9999";
 
     private final ClusteredKeycloakServer server;
@@ -26,6 +31,13 @@ public class LoadBalancer {
         this.vertx = Vertx.vertx();
         HttpClient proxyClient = vertx.createHttpClient();
         proxy = HttpProxy.reverseProxy(proxyClient);
+        proxy.addInterceptor(new ProxyInterceptor() {
+            @Override
+            public Future<ProxyResponse> handleProxyRequest(ProxyContext context) {
+                LOGGER.debugf("Proxy request intercepted: %s", context.request().getURI());
+                return ProxyInterceptor.super.handleProxyRequest(context);
+            }
+        });
         node(0);
 
         HttpServer proxyServer = vertx.createHttpServer();
@@ -34,6 +46,7 @@ public class LoadBalancer {
 
     public void node(int index) {
         Origin origin = origin(index);
+        LOGGER.debugf("Setting proxy origin to: %s:%d", origin.host, origin.port);
         proxy.origin(origin.port, origin.host);
     }
 
