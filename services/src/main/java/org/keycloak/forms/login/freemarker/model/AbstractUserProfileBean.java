@@ -151,6 +151,10 @@ public abstract class AbstractUserProfileBean {
             return metadata.isMultivalued();
         }
 
+        public String getDefaultValue() {
+            return metadata.getDefaultValue();
+        }
+
         public String getValue() {
             List<String> v = getValues();
             if (v == null || v.isEmpty()) {
