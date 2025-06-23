@@ -1,6 +1,7 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import static org.keycloak.config.LoggingOptions.DEFAULT_LOG_FORMAT;
+import static org.keycloak.config.LoggingOptions.SYSLOG_COUNTING_FRAMING_PROTOCOL_DEPENDENT;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.isTrue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
@@ -187,6 +188,12 @@ public final class LoggingPropertyMappers {
                         .paramLabel("output")
                         .transformer(LoggingPropertyMappers::resolveLogOutput)
                         .build(),
+                fromOption(LoggingOptions.LOG_SYSLOG_COUNTING_FRAMING)
+                        .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
+                        .transformer(LoggingPropertyMappers::resolveSyslogCountingFraming)
+                        .to("quarkus.log.syslog.use-counting-framing")
+                        .paramLabel("strategy")
+                        .build()
         };
 
         return defaultMappers;
@@ -340,4 +347,20 @@ public final class LoggingPropertyMappers {
             throw new PropertyException(String.format("Invalid value for option '--log-syslog-max-length': %s", e.getMessage()));
         }
     }
+
+    // Workaround BEGIN - for https://github.com/keycloak/keycloak/issues/39893
+    // Remove once the https://github.com/quarkusio/quarkus/issues/48036 is included in Keycloak as Quarkus might handle it on its own
+    private static String resolveSyslogCountingFraming(String value, ConfigSourceInterceptorContext context) {
+        if (SYSLOG_COUNTING_FRAMING_PROTOCOL_DEPENDENT.equals(value)) {
+            return Configuration.getOptionalKcValue(LoggingOptions.LOG_SYSLOG_PROTOCOL)
+                    .map(protocol -> switch (protocol) {
+                        case "tcp", "ssl-tcp" -> Boolean.TRUE.toString();
+                        case "udp" -> Boolean.FALSE.toString();
+                        default -> throw new PropertyException("Invalid Syslog protocol: " + protocol);
+                    })
+                    .orElse(Boolean.FALSE.toString());
+        }
+        return value;
+    }
+    // Workaround END
 }
