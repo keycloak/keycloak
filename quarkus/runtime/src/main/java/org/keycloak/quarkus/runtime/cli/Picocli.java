@@ -900,7 +900,7 @@ public class Picocli {
 
     public void initConfig(AbstractCommand command) {
         if (Configuration.isInitialized()) {
-            throw new IllegalStateException("Config should not be initialized until profile is determined1000");
+            throw new IllegalStateException("Config should not be initialized until profile is determined");
         }
         this.parsedCommand = Optional.ofNullable(command);
 
