@@ -120,8 +120,8 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     public void setRealm(RealmModel realm) {
         this.realm = realm;
         this.uriInfo = null;
-        trace(this.realm);
-        mdc().update(this, this.realm);
+        trace(realm);
+        mdc().update(this, realm);
     }
 
     @Override
@@ -137,8 +137,8 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     @Override
     public void setClient(ClientModel client) {
         this.client = client;
-        trace(this.client);
-        mdc().update(this, this.client);
+        trace(client);
+        mdc().update(this, client);
     }
 
     @Override
@@ -149,7 +149,7 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     @Override
     public void setOrganization(OrganizationModel organization) {
         this.organization = organization;
-        mdc().update(this, this.organization);
+        mdc().update(this, organization);
     }
 
     @Override
@@ -179,8 +179,8 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     @Override
     public void setAuthenticationSession(AuthenticationSessionModel authenticationSession) {
         this.authenticationSession = authenticationSession;
-        trace(this.authenticationSession);
-        mdc().update(this, this.authenticationSession);
+        trace(authenticationSession);
+        mdc().update(this, authenticationSession);
     }
 
     @Override
@@ -236,8 +236,8 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     @Override
     public void setUserSession(UserSessionModel userSession) {
         this.userSession = userSession;
-        trace(this.userSession);
-        mdc().update(this, this.userSession);
+        trace(userSession);
+        mdc().update(this, userSession);
     }
 
     // Tracing
