@@ -12,7 +12,7 @@ public class InstanceContext<T, A extends Annotation> {
     private final Registry registry;
     private final Supplier<T, A> supplier;
     private final A annotation;
-    private final Set<InstanceContext<?, ?>> dependencies = new HashSet<>();
+    private final Set<InstanceContext<?, ?>> dependents = new HashSet<>();
     private T value;
     private Class<? extends T> requestedValueType;
     private LifeCycle lifeCycle;
@@ -73,12 +73,18 @@ public class InstanceContext<T, A extends Annotation> {
         return annotation;
     }
 
-    public Set<InstanceContext<?, ?>> getDependencies() {
-        return dependencies;
+    public Set<InstanceContext<?, ?>> getDependents() {
+        return dependents;
     }
 
-    public void registerDependency(InstanceContext<?, ?> instanceContext) {
-        dependencies.add(instanceContext);
+    /**
+     * This method registers dependents for this Instance contents.
+     * This makes sure whenever this instance is cleaned all of its dependents need to be cleaned first
+     *
+     * @param instanceContext dependent instance context
+     */
+    public void registerDependent(InstanceContext<?, ?> instanceContext) {
+        dependents.add(instanceContext);
     }
 
     public void addNote(String key, Object value) {

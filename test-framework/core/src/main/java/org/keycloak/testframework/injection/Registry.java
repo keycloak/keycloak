@@ -70,7 +70,7 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
     private <T> T getDeployedDependency(Class<T> typeClass, String ref, InstanceContext dependent) {
         InstanceContext dependency = getDeployedInstance(typeClass, ref);
         if (dependency != null) {
-            dependency.registerDependency(dependent);
+            dependency.registerDependent(dependent);
 
             logger.logDependencyInjection(dependent, dependency, RegistryLogger.InjectionType.EXISTING);
 
@@ -84,11 +84,12 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
         if (requestedDependency != null) {
             InstanceContext dependency = new InstanceContext<Object, Annotation>(requestedDependency.getInstanceId(), this, requestedDependency.getSupplier(), requestedDependency.getAnnotation(), requestedDependency.getValueType());
             dependency.setValue(requestedDependency.getSupplier().getValue(dependency));
-            dependency.registerDependency(dependent);
+            dependency.registerDependent(dependent);
             deployedInstances.add(dependency);
 
             requestedInstances.remove(requestedDependency);
 
+            logger.logCreatedInstance(requestedDependency, dependency);
             logger.logDependencyInjection(dependent, dependency, RegistryLogger.InjectionType.REQUESTED);
 
             return (T) dependency.getValue();
@@ -102,11 +103,12 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
         Annotation defaultAnnotation = DefaultAnnotationProxy.proxy(supplier.getAnnotationClass(), ref);
         dependency = new InstanceContext(-1, this, supplier, defaultAnnotation, typeClass);
 
-        dependency.registerDependency(dependent);
+        dependency.registerDependent(dependent);
         dependency.setValue(supplier.getValue(dependency));
 
         deployedInstances.add(dependency);
 
+        logger.logCreatedInstanceForSupplier(supplier, dependency);
         logger.logDependencyInjection(dependent, dependency, RegistryLogger.InjectionType.UN_CONFIGURED);
 
         return (T) dependency.getValue();
@@ -183,9 +185,9 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
                 instance.setValue(requestedInstance.getSupplier().getValue(instance));
                 deployedInstances.add(instance);
 
-                if (!requestedInstance.getDependencies().isEmpty()) {
-                    Set<InstanceContext<?,?>> dependencies = requestedInstance.getDependencies();
-                    dependencies.forEach(instance::registerDependency);
+                if (!requestedInstance.getDependents().isEmpty()) {
+                    Set<InstanceContext<?,?>> dependencies = requestedInstance.getDependents();
+                    dependencies.forEach(d -> d.registerDependent(instance));
                 }
 
                 logger.logCreatedInstance(requestedInstance, instance);
@@ -205,13 +207,19 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
 
     public void afterAll() {
         logger.logAfterAll();
-        List<InstanceContext<?, ?>> destroy = deployedInstances.stream().filter(i -> i.getLifeCycle().equals(LifeCycle.CLASS)).toList();
+        List<InstanceContext<?, ?>> destroy = deployedInstances.stream()
+                .filter(i -> i.getLifeCycle().equals(LifeCycle.CLASS))
+                .sorted(InstanceContextComparator.INSTANCE.reversed())
+                .toList();
         destroy.forEach(this::destroy);
     }
 
     public void afterEach() {
         logger.logAfterEach();
-        List<InstanceContext<?, ?>> destroy = deployedInstances.stream().filter(i -> i.getLifeCycle().equals(LifeCycle.METHOD)).toList();
+        List<InstanceContext<?, ?>> destroy = deployedInstances.stream()
+                .filter(i -> i.getLifeCycle().equals(LifeCycle.METHOD))
+                .sorted(InstanceContextComparator.INSTANCE.reversed())
+                .toList();
         destroy.forEach(this::destroy);
 
         List<InstanceContext<?, ?>> cleanup = deployedInstances.stream().filter(i -> i.getValue() instanceof ManagedTestResource).toList();
@@ -272,8 +280,11 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
     private void destroy(InstanceContext instanceContext) {
         boolean removed = deployedInstances.remove(instanceContext);
         if (removed) {
-            Set<InstanceContext> dependencies = instanceContext.getDependencies();
-            dependencies.forEach(this::destroy);
+            Set<InstanceContext> dependents = instanceContext.getDependents();
+            dependents.stream()
+                    .peek(d -> logger.logDependentCleaning(instanceContext, d))
+                    .forEach(this::destroy);
+
             instanceContext.getSupplier().close(instanceContext);
 
             logger.logDestroy(instanceContext);

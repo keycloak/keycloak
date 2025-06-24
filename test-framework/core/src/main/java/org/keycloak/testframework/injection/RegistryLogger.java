@@ -70,9 +70,20 @@ class RegistryLogger {
     }
 
     public void logCreatedInstance(RequestedInstance requestedInstance, InstanceContext instance) {
+        logCreatedInstanceForSupplier(requestedInstance.getSupplier(), instance);
+    }
+
+    public void logCreatedInstanceForSupplier(Supplier<?,?> supplier, InstanceContext instance) {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debugv("Created instance: {0}#{1,number,#}",
-                    requestedInstance.getSupplier().getClass().getSimpleName(), instance.getInstanceId());
+                    supplier.getClass().getSimpleName(), instance.getInstanceId());
+        }
+    }
+
+    public void logDependentCleaning(InstanceContext<?, ?> cleanedInstance, InstanceContext instanceDependent) {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debugv("Before cleaning {0}#{1,number,#}, cleaning dependent {2}#{3,number,#}",
+                    cleanedInstance.getValue().getClass().getSimpleName(), cleanedInstance.getInstanceId(), instanceDependent.getValue().getClass().getSimpleName(), instanceDependent.getInstanceId());
         }
     }
 
