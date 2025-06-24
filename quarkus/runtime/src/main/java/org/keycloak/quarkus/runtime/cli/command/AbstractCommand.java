@@ -57,7 +57,7 @@ public abstract class AbstractCommand implements Callable<Integer> {
             // builds default to prod, if the profile is not overriden via the cli
             return Environment.PROD_PROFILE_VALUE;
         }
-        // otherwise take the default profile, or what is persisted, or ultimately dev
+        // otherwise take the default profile, or what is persisted, or ultimately prod
         return Optional.ofNullable(this.getDefaultProfile())
                 .or(() -> Optional.ofNullable(
                         PersistedConfigSource.getInstance().getValue(org.keycloak.common.util.Environment.PROFILE)))
