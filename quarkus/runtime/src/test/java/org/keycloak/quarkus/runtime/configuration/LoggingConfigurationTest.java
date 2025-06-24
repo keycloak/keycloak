@@ -87,7 +87,7 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
                 "log-syslog-protocol", "tcp",
                 "log-syslog-format", DEFAULT_LOG_FORMAT,
                 "log-syslog-output", DEFAULT_SYSLOG_OUTPUT.toString(),
-                "log-syslog-counting-framing", "true"
+                "log-syslog-counting-framing", SYSLOG_COUNTING_FRAMING_PROTOCOL_DEPENDENT
         ));
         assertThat(Configuration.getOptionalKcValue(LoggingOptions.LOG_SYSLOG_MAX_LENGTH).orElse(null), CoreMatchers.nullValue());
 
@@ -175,12 +175,6 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
 
     @Test
     public void syslogCountingFraming() {
-        putEnvVar("KC_LOG_SYSLOG_COUNTING_FRAMING", SYSLOG_COUNTING_FRAMING_PROTOCOL_DEPENDENT);
-        initConfig();
-        assertConfig("log-syslog-counting-framing", "protocol-dependent");
-        assertExternalConfig("quarkus.log.syslog.use-counting-framing", "true");
-        onAfter();
-
         assertSyslogCountingFramingProtocolDependent("tcp", true);
         assertSyslogCountingFramingProtocolDependent("udp", false);
         assertSyslogCountingFramingProtocolDependent("ssl-tcp", true);
@@ -193,8 +187,6 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
     }
 
     protected void assertSyslogCountingFramingProtocolDependent(String protocol, boolean expectedCountingFraming) {
-        final var expectedCountingFramingString = Boolean.toString(expectedCountingFraming);
-
         putEnvVars(Map.of(
                 "KC_LOG", "syslog",
                 "KC_LOG_SYSLOG_PROTOCOL", protocol
@@ -205,12 +197,12 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
         assertConfig(Map.of(
                 "log-syslog-enabled", "true",
                 "log-syslog-protocol", protocol,
-                "log-syslog-counting-framing", expectedCountingFramingString
+                "log-syslog-counting-framing", SYSLOG_COUNTING_FRAMING_PROTOCOL_DEPENDENT
         ));
         assertExternalConfig(Map.of(
                 "quarkus.log.syslog.enable", "true",
                 "quarkus.log.syslog.protocol", protocol,
-                "quarkus.log.syslog.use-counting-framing", expectedCountingFramingString
+                "quarkus.log.syslog.use-counting-framing", Boolean.toString(expectedCountingFraming)
         ));
         onAfter();
     }

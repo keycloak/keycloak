@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.stream.Stream;
 
@@ -219,7 +218,6 @@ public final class LoggingPropertyMappers {
                         .build(),
                 fromOption(LoggingOptions.LOG_SYSLOG_COUNTING_FRAMING)
                         .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
-                        .mapFrom(LoggingOptions.LOG_SYSLOG_PROTOCOL, LoggingPropertyMappers::resolveSyslogCountingFramingMapFrom)
                         .transformer(LoggingPropertyMappers::resolveSyslogCountingFraming)
                         .to("quarkus.log.syslog.use-counting-framing")
                         .paramLabel("strategy")
@@ -426,29 +424,14 @@ public final class LoggingPropertyMappers {
     private static String resolveSyslogCountingFraming(String value, ConfigSourceInterceptorContext context) {
         if (SYSLOG_COUNTING_FRAMING_PROTOCOL_DEPENDENT.equals(value)) {
             return Configuration.getOptionalKcValue(LoggingOptions.LOG_SYSLOG_PROTOCOL)
-                    .map(LoggingPropertyMappers::handleSyslogCountingFramingBasedOnProtocol)
+                    .map(protocol -> switch (protocol) {
+                        case "tcp", "ssl-tcp" -> Boolean.TRUE.toString();
+                        case "udp" -> Boolean.FALSE.toString();
+                        default -> throw new PropertyException("Invalid Syslog protocol: " + protocol);
+                    })
                     .orElse(Boolean.FALSE.toString());
         }
         return value;
-    }
-
-    private static String resolveSyslogCountingFramingMapFrom(String protocol, ConfigSourceInterceptorContext context) {
-        // if 'protocol-dependent' is used, resolve the counting framing based on used Syslog protocol
-        Function<String, String> evaluateProtocolDependent = (strategy) -> SYSLOG_COUNTING_FRAMING_PROTOCOL_DEPENDENT.equals(strategy) ?
-                handleSyslogCountingFramingBasedOnProtocol(protocol) :
-                strategy;
-
-        return LoggingOptions.LOG_SYSLOG_COUNTING_FRAMING.getDefaultValue()
-                .map(evaluateProtocolDependent)
-                .orElse(Boolean.FALSE.toString());
-    }
-
-    private static String handleSyslogCountingFramingBasedOnProtocol(String protocol) {
-        return switch (protocol) {
-            case "tcp", "ssl-tcp" -> Boolean.TRUE.toString();
-            case "udp" -> Boolean.FALSE.toString();
-            default -> throw new PropertyException("Invalid Syslog protocol: " + protocol);
-        };
     }
     // Workaround END
 }
