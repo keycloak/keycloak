@@ -1,5 +1,6 @@
 <#import "template.ftl" as layout>
 <#import "buttons.ftl" as buttons>
+<#import "field.ftl" as field>
 <@layout.registrationLayout displayInfo=(realm.registrationAllowed && !registrationDisabled??); section>
 <!-- template: webauthn-authenticate.ftl -->
 
@@ -9,33 +10,24 @@
         ${kcSanitize(msg("webauthn-login-title"))?no_esc}
     <#elseif section = "form">
         <div id="kc-form-webauthn" class="${properties.kcFormClass!}" >
-            <form id="webauth" action="${url.loginAction}" method="post" hidden="hidden">
-                <input type="hidden" id="clientDataJSON" name="clientDataJSON"/>
-                <input type="hidden" id="authenticatorData" name="authenticatorData"/>
-                <input type="hidden" id="signature" name="signature"/>
-                <input type="hidden" id="credentialId" name="credentialId"/>
-                <input type="hidden" id="userHandle" name="userHandle"/>
-                <input type="hidden" id="error" name="error"/>
-            </form>
+            <#if authenticators??>
+                <form id="authn_select" class="${properties.kcFormClass!}" hidden="hidden">
+                    <#list authenticators.authenticators as authenticator>
+                        <input type="hidden" name="authn_use_chk" value="${authenticator.credentialId}"/>
+                    </#list>
+                </form>
 
-                <#if authenticators??>
-                    <form id="authn_select" class="${properties.kcFormClass!}" hidden="hidden">
+                <#if shouldDisplayAuthenticators?? && shouldDisplayAuthenticators>
+                    <#if authenticators.authenticators?size gt 1>
+                        <p class="${properties.kcSelectAuthListItemTitle!}">${kcSanitize(msg("webauthn-available-authenticators"))?no_esc}</p>
+                    </#if>
+
+                    <ul class="${properties.kcSelectAuthListClass!}" role="list">
                         <#list authenticators.authenticators as authenticator>
-                            <input type="hidden" name="authn_use_chk" value="${authenticator.credentialId}"/>
-                        </#list>
-                    </form>
-
-                    <#if shouldDisplayAuthenticators?? && shouldDisplayAuthenticators>
-                        <#if authenticators.authenticators?size gt 1>
-                            <p class="${properties.kcSelectAuthListItemTitle!}">${kcSanitize(msg("webauthn-available-authenticators"))?no_esc}</p>
-                        </#if>
-
-                        <ul class="${properties.kcSelectAuthListClass!}" role="list">
-                            <#list authenticators.authenticators as authenticator>
-                                <li class="${properties.kcSelectAuthListItemWrapperClass!}">
-                                    <div id="kc-webauthn-authenticator-item-${authenticator?index}" class="${properties.kcSelectAuthListItemClass!}">
-                                        <div class="${properties.kcSelectAuthListItemIconClass!}">
-                                            <div class="${properties.kcWebAuthnDefaultIcon!}">
+                            <li class="${properties.kcSelectAuthListItemWrapperClass!}">
+                                <div id="kc-webauthn-authenticator-item-${authenticator?index}" class="${properties.kcSelectAuthListItemClass!}">
+                                    <div class="${properties.kcSelectAuthListItemIconClass!}">
+                                        <div class="${properties.kcWebAuthnDefaultIcon!}">
                                             <#switch authenticator.transports.iconClass>
                                                 <#case "kcWebAuthnBLE">
                                                     <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
@@ -65,39 +57,54 @@
                                                     </svg>
                                                     <#break>
                                             </#switch>
-                                            </div>
                                         </div>
-                                        <div class="${properties.kcSelectAuthListItemBodyClass!}">
-                                            <div id="kc-webauthn-authenticator-label-${authenticator?index}"
-                                                class="${properties.kcSelectAuthListItemHeadingClass!}">
-                                                ${kcSanitize(msg('${authenticator.label}'))?no_esc}
+                                    </div>
+                                    <div class="${properties.kcSelectAuthListItemBodyClass!}">
+                                        <div id="kc-webauthn-authenticator-label-${authenticator?index}"
+                                             class="${properties.kcSelectAuthListItemHeadingClass!}">
+                                            ${kcSanitize(msg('${authenticator.label}'))?no_esc}
+                                        </div>
+
+                                        <#if authenticator.transports?? && authenticator.transports.displayNameProperties?has_content>
+                                            <div id="kc-webauthn-authenticator-transport-${authenticator?index}">
+                                                <#list authenticator.transports.displayNameProperties as nameProperty>
+                                                    <span>${kcSanitize(msg('${nameProperty!}'))?no_esc}</span>
+                                                    <#if nameProperty?has_next>
+                                                        <span>, </span>
+                                                    </#if>
+                                                </#list>
                                             </div>
+                                        </#if>
 
-                                            <#if authenticator.transports?? && authenticator.transports.displayNameProperties?has_content>
-                                                <div id="kc-webauthn-authenticator-transport-${authenticator?index}">
-                                                    <#list authenticator.transports.displayNameProperties as nameProperty>
-                                                        <span>${kcSanitize(msg('${nameProperty!}'))?no_esc}</span>
-                                                        <#if nameProperty?has_next>
-                                                            <span>, </span>
-                                                        </#if>
-                                                    </#list>
-                                                </div>
-                                            </#if>
-
-                                            <span id="kc-webauthn-authenticator-createdlabel-${authenticator?index}">
+                                        <span id="kc-webauthn-authenticator-createdlabel-${authenticator?index}">
                                                 <i>${kcSanitize(msg('webauthn-createdAt-label'))?no_esc}</i>
                                             </span>
-                                            <span id="kc-webauthn-authenticator-created-${authenticator?index}">
+                                        <span id="kc-webauthn-authenticator-created-${authenticator?index}">
                                                 <i>${kcSanitize(authenticator.createdAt)?no_esc}</i>
                                             </span>
-                                        </div>
-                                        <div class="${properties.kcSelectAuthListItemFillClass!}"></div>
                                     </div>
-                                </li>
-                            </#list>
-                        </ul>
-                    </#if>
+                                    <div class="${properties.kcSelectAuthListItemFillClass!}"></div>
+                                </div>
+                            </li>
+                        </#list>
+                    </ul>
                 </#if>
+            </#if>
+
+            <form id="webauth" action="${url.loginAction}" method="post">
+                <input type="hidden" id="clientDataJSON" name="clientDataJSON"/>
+                <input type="hidden" id="authenticatorData" name="authenticatorData"/>
+                <input type="hidden" id="signature" name="signature"/>
+                <input type="hidden" id="credentialId" name="credentialId"/>
+                <input type="hidden" id="userHandle" name="userHandle"/>
+                <input type="hidden" id="error" name="error"/>
+
+                <#if trustedDevicePolicy.enabled>
+                    <div class="${properties.kcFormGroupClass!}">
+                        <@field.checkbox name="trustDevice" label=msg("trustDevice") description=msg("trusted-device-help-text") />
+                    </div>
+                </#if>
+            </form>
 
             <@buttons.actionGroup>
                 <@buttons.button id="authenticateWebAuthnButton" label="webauthn-doAuthenticate" class=["kcButtonPrimaryClass","kcButtonBlockClass"]/>

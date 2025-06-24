@@ -50,6 +50,7 @@ import org.keycloak.models.RequiredActionConfigModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.TrustedDevicePolicy;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.cache.infinispan.DefaultLazyLoader;
 import org.keycloak.models.cache.infinispan.LazyLoader;
@@ -121,6 +122,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected OTPPolicy otpPolicy;
     protected WebAuthnPolicy webAuthnPolicy;
     protected WebAuthnPolicy webAuthnPasswordlessPolicy;
+    protected TrustedDevicePolicy trustedDevicePolicy;
 
     protected String loginTheme;
     protected String accountTheme;
@@ -240,6 +242,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         otpPolicy = model.getOTPPolicy();
         webAuthnPolicy = model.getWebAuthnPolicy();
         webAuthnPasswordlessPolicy = model.getWebAuthnPolicyPasswordless();
+        trustedDevicePolicy = model.getTrustedDevicePolicy();
 
         loginTheme = model.getLoginTheme();
         accountTheme = model.getAccountTheme();
@@ -669,6 +672,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public WebAuthnPolicy getWebAuthnPasswordlessPolicy() {
         return webAuthnPasswordlessPolicy;
+    }
+
+    public TrustedDevicePolicy getTrustedDevicePolicy() {
+        return trustedDevicePolicy;
     }
 
     public AuthenticationFlowModel getBrowserFlow() {

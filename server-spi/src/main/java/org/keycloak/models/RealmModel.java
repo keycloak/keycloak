@@ -325,6 +325,9 @@ public interface RealmModel extends RoleContainerModel {
      */
     void setWebAuthnPolicyPasswordless(WebAuthnPolicy policy);
 
+    TrustedDevicePolicy getTrustedDevicePolicy();
+    void setTrustedDevicePolicy(TrustedDevicePolicy policy);
+
     RoleModel getRoleById(String id);
 
     /**
