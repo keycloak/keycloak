@@ -74,3 +74,7 @@ In this release, we extended this to perform rolling update when the new image c
 This can reduce the service's downtime even further, as downtime is only needed when upgrading from a different minor or major version.
 
 Read more on how to enable this feature in https://www.keycloak.org/server/update-compatibility#rolling-updates-for-patch-releases[update compatibility command].
+
+= Deprecation of the Passkeys Conditional UI Authenticator
+
+The preview feature *Passkeys* recently introduced a new *Passkeys Conditional UI Authenticator* that you can use to integrate the passkey auto-fill or conditional UI feature in your login flow. Passkeys are now being seamlessly integrated into {project_name} inside the default username forms. Therefore, the old authenticator is invalid and it is deprecated in this release. The factory and implementation classes will be removed when *Passkeys* are supported in {project_name}.
