@@ -16,7 +16,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
  */
 public interface MappedDiagnosticContextProvider extends Provider {
 
-    static final String MDC_PREFIX = "kc.";
+    String MDC_PREFIX = "kc.";
 
     /**
      * Updates the Mapped Diagnostic Context (MDC) with key/value pairs based on the current Keycloak context.

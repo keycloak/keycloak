@@ -22,12 +22,12 @@ public class MappedDiagnosticContextSpi implements Spi {
     }
 
     @Override
-    public Class<? extends Provider> getProviderClass() {
+    public Class<MappedDiagnosticContextProvider> getProviderClass() {
         return MappedDiagnosticContextProvider.class;
     }
 
     @Override
-    public Class<? extends ProviderFactory> getProviderFactoryClass() {
+    public Class<MappedDiagnosticContextProviderFactory> getProviderFactoryClass() {
         return MappedDiagnosticContextProviderFactory.class;
     }
 }
