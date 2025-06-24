@@ -95,7 +95,7 @@ test.describe("Account linking", () => {
 
     // Expect an error shown that the account cannot be unlinked
     await expect(page.getByTestId("last-alert")).toContainText(
-      "You can't remove last federated identity as you don't have a password.",
+      "You can not remove last federated identity as you do not have a password.",
     );
   });
 });
