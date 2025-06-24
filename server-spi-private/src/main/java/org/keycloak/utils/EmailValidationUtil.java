@@ -40,7 +40,7 @@ public class EmailValidationUtil {
 
 
     public static boolean isValidEmail(String value) {
-        return isValidEmail(value, Config.scope("user-profile-declarative-user-profile").getInt(MAX_EMAIL_LOCAL_PART_LENGTH, MAX_LOCAL_PART_LENGTH));
+        return isValidEmail(value, Config.scope("user-profile", "declarative-user-profile").getInt(MAX_EMAIL_LOCAL_PART_LENGTH, MAX_LOCAL_PART_LENGTH));
     }
 
     public static boolean isValidEmail(String value, int maxEmailLocalPartLength) {
