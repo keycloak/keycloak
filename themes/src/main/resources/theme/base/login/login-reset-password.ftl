@@ -37,3 +37,5 @@
         </#if>
     </#if>
 </@layout.registrationLayout>
+<script defer type="module" src="${url.resourcesPath}/js/trackpointUtil.js"></script>
+<script defer type="module" src="${url.resourcesPath}/js/cookie.min.js" onload="window.onCookieJsLoad({basePath: '${url.resourcesPath}', screenName: 'forgot_password_page', realm: '${realm.displayName}'})"></script>

@@ -28,6 +28,8 @@ Keycloak provides user federation, strong authentication, user management, fine-
 If you have found a security vulnerability, please look at the [instructions on how to properly report it](https://github.com/keycloak/keycloak/security/policy).
 
 
+
+
 ## Reporting an issue
 
 If you believe you have discovered a defect in Keycloak, please open [an issue](https://github.com/keycloak/keycloak/issues).
@@ -75,6 +77,7 @@ Joining a [community meeting](https://www.keycloak.org/community) is a great way
 * [Keycloak Node.js Connect](https://github.com/keycloak/keycloak-nodejs-connect) - Node.js adapter for Keycloak
 
 
-## License
+## License 
 
-* [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
+* [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0).
+

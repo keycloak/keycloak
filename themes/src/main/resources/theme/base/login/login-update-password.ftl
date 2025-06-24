@@ -4,7 +4,18 @@
     <#if section = "header">
         ${msg("updatePasswordTitle")}
     <#elseif section = "form">
-        <form id="kc-passwd-update-form" class="${properties.kcFormClass!}" onsubmit="login.disabled = true; return true;" action="${url.loginAction}" method="post">
+        <form id="kc-passwd-update-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post" style="margin-top: 1rem;">
+            <input type="text" id="username" name="username" value="${username}" autocomplete="username"
+                   readonly="readonly" style="display:none;"/>
+            <div class="${properties.kcInputGroup!}" style="display:none;">
+                <input type="password" id="password" name="password" autocomplete="current-password"/>
+                <button class="pf-c-button pf-m-control" type="button" aria-label="${msg('showPassword')}"
+                        aria-controls="password"  data-password-toggle
+                        data-label-show="${msg('showPassword')}" data-label-hide="${msg('hidePassword')}">
+                    <i class="fa fa-eye" aria-hidden="true"></i>
+                </button>
+            </div>
+
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelWrapperClass!}">
                     <label for="password-new" class="${properties.kcLabelClass!}">${msg("passwordNew")}</label>
