@@ -312,14 +312,14 @@ public class LoggingOptions {
     public static final Option<Boolean> LOG_MDC_ENABLED = new OptionBuilder<>("log-mdc-enabled", Boolean.class)
             .category(OptionCategory.LOGGING)
             .defaultValue(false)
-            .description("Add information about the realm and other information the mapped diagnostic context. All elements will be prefixed with 'kc.'")
+            .description("Indicates whether to add information about the realm and other information to the mapped diagnostic context. All elements will be prefixed with 'kc.'")
             .build();
 
     public static final Option<List<String>> LOG_MDC_KEYS = OptionBuilder.listOptionBuilder("log-mdc-keys", String.class)
             .category(OptionCategory.LOGGING)
             .expectedValues(List.of("realm", "clientId", "userId", "ipAddress", "org"))
             .defaultValue(List.of("realm", "org", "clientId"))
-            .description("Add information about the realm and other information the mapped diagnostic context.")
+            .description("Defines which information should be added to the mapped diagnostic context as a comma-separated list.")
             .build();
 
 }
