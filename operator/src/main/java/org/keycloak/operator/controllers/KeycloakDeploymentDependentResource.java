@@ -322,8 +322,15 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                         && (customImage.isPresent() || operatorConfig.keycloak().startOptimized())) {
             containerBuilder.addToArgs(OPTIMIZED_ARG);
         }
-        // Set bind address as this is required for JGroups to form a cluster in IPv6 envionments
-        containerBuilder.addToArgs(0, "-Djgroups.bind.address=$(%s)".formatted(POD_IP));
+
+        boolean bindAddressRequired = Optional.ofNullable(containerBuilder.getArgs())
+              .orElse(List.of())
+              .stream()
+              .noneMatch(a -> a.contains("--cache-embedded-network-bind-address"));
+        if (bindAddressRequired) {
+            // Set bind address as this is required for JGroups to form a cluster in IPv6 environments
+            containerBuilder.addToArgs("--cache-embedded-network-bind-address=$(%s)".formatted(POD_IP));
+        }
 
         // probes
         var protocol = isTlsConfigured(keycloakCR) ? "HTTPS" : "HTTP";

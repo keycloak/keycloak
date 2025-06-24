@@ -36,6 +36,14 @@ Cache:
                      The maximum number of entries that can be stored in-memory by the crl cache.
 --cache-embedded-keys-max-count <max-count>
                      The maximum number of entries that can be stored in-memory by the keys cache.
+--cache-embedded-network-bind-address <address>
+                     IP address used by clustering transport.
+--cache-embedded-network-bind-port <port>
+                     Port used by clustering transport.
+--cache-embedded-network-external-address <address>
+                     IP address that other instances in the cluster should use to contact this node.
+--cache-embedded-network-external-port <port>
+                     Port that other instances in the cluster should use to contact this node.
 --cache-embedded-offline-client-sessions-max-count <max-count>
                      The maximum number of entries that can be stored in-memory by the
                        offlineClientSessions cache. Available only when embedded Infinispan

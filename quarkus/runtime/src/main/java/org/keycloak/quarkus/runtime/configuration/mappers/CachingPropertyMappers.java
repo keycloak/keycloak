@@ -1,5 +1,8 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
+
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -8,8 +11,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 
-import com.google.common.base.CaseFormat;
-import io.smallrye.config.ConfigSourceInterceptorContext;
+import org.apache.http.conn.util.InetAddressUtils;
+import org.jgroups.Global;
+import org.jgroups.util.Util;
 import org.keycloak.common.Profile;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.config.Option;
@@ -19,8 +23,9 @@ import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.utils.StringUtil;
 
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
-import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
+import com.google.common.base.CaseFormat;
+
+import io.smallrye.config.ConfigSourceInterceptorContext;
 
 final class CachingPropertyMappers {
 
@@ -98,6 +103,24 @@ final class CachingPropertyMappers {
                         .isEnabled(() -> Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED), "property '%s' is enabled".formatted(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED.getKey()))
                         .validator(CachingPropertyMappers::validateCertificateRotationIsPositive)
                         .build(),
+                fromOption(CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_ADDRESS)
+                        .paramLabel("address")
+                        .to("kc.spi-cache--embedded--default--network-bind-address")
+                        .validator(CachingPropertyMappers::validateBindAddress)
+                        .build(),
+                fromOption(CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_PORT)
+                       .paramLabel("port")
+                       .to("kc.spi-cache--embedded--default--network-bind-port")
+                       .build(),
+                fromOption(CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_ADDRESS)
+                       .paramLabel("address")
+                       .to("kc.spi-cache--embedded--default--network-external-address")
+                       .validator(CachingPropertyMappers::validateExternalAddress)
+                       .build(),
+                fromOption(CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_PORT)
+                       .paramLabel("port")
+                       .to("kc.spi-cache--embedded--default--network-external-port")
+                       .build(),
                 fromOption(CachingOptions.CACHE_REMOTE_HOST)
                         .paramLabel("hostname")
                         .to("kc.spi-cache-remote--default--hostname")
@@ -255,5 +278,25 @@ final class CachingPropertyMappers {
         } catch (NumberFormatException unused) {
             throw new PropertyException("JGroups MTLS certificate rotation in '%s' option must positive.".formatted(CachingOptions.CACHE_EMBEDDED_MTLS_ROTATION.getKey()));
         }
+    }
+
+    private static void validateBindAddress(String address) {
+        if (InetAddressUtils.isIPv4Address(address) || InetAddressUtils.isIPv6Address(address))
+            return;
+
+        for (Util.AddressScope addressScope : Util.AddressScope.values())
+            if (addressScope.name().equals(address))
+                return;
+
+        String matchType = address.split(":")[0];
+        if (Global.MATCH_ADDR.equals(matchType) || Global.MATCH_HOST.equals(matchType) || Global.MATCH_INTF.equals(matchType))
+            return;
+
+        throw new PropertyException("Option '%s'. Invalid address: '%s'".formatted(CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_ADDRESS.getKey(), address));
+    }
+
+    private static void validateExternalAddress(String address) {
+        if (!InetAddressUtils.isIPv4Address(address) && !InetAddressUtils.isIPv6Address(address))
+            throw new PropertyException("Option '%s'. Invalid address: '%s'".formatted(CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_ADDRESS.getKey(), address));
     }
 }

@@ -59,6 +59,14 @@ Cache:
 --cache-embedded-mtls-trust-store-password <password>
                      The password to access the Truststore. Available only when property
                        'cache-embedded-mtls-enabled' is enabled.
+--cache-embedded-network-bind-address <address>
+                     IP address used by clustering transport.
+--cache-embedded-network-bind-port <port>
+                     Port used by clustering transport.
+--cache-embedded-network-external-address <address>
+                     IP address that other instances in the cluster should use to contact this node.
+--cache-embedded-network-external-port <port>
+                     Port that other instances in the cluster should use to contact this node.
 --cache-embedded-offline-client-sessions-max-count <max-count>
                      The maximum number of entries that can be stored in-memory by the
                        offlineClientSessions cache. Available only when embedded Infinispan

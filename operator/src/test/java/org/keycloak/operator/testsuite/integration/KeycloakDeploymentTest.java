@@ -494,7 +494,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                 .list()
                 .getItems();
 
-        assertThat(pods.get(0).getSpec().getContainers().get(0).getArgs()).endsWith("--verbose", "start", "--optimized");
+        assertThat(pods.get(0).getSpec().getContainers().get(0).getArgs()).endsWith("--verbose", "start", "--optimized", "--cache-embedded-network-bind-address=$(POD_IP)");
     }
 
     @Test
@@ -517,7 +517,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                 .list()
                 .getItems();
 
-        assertThat(pods.get(0).getSpec().getContainers().get(0).getArgs()).endsWith("--verbose", "start", "--optimized");
+        assertThat(pods.get(0).getSpec().getContainers().get(0).getArgs()).endsWith("--verbose", "start", "--optimized", "--cache-embedded-network-bind-address=$(POD_IP)");
         assertThat(pods.get(0).getSpec().getImagePullSecrets().size()).isEqualTo(1);
         assertThat(pods.get(0).getSpec().getImagePullSecrets().get(0).getName()).isEqualTo(imagePullSecretName);
     }

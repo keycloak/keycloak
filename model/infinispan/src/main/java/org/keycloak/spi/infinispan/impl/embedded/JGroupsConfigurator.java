@@ -17,6 +17,8 @@
 
 package org.keycloak.spi.infinispan.impl.embedded;
 
+import static org.infinispan.configuration.global.TransportConfiguration.STACK;
+
 import java.lang.invoke.MethodHandles;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -24,6 +26,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Supplier;
+
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.TrustManager;
 
 import org.infinispan.commons.configuration.attributes.Attribute;
 import org.infinispan.configuration.global.TransportConfigurationBuilder;
@@ -40,6 +49,7 @@ import org.jgroups.stack.Protocol;
 import org.jgroups.util.DefaultSocketFactory;
 import org.jgroups.util.SocketFactory;
 import org.keycloak.Config;
+import org.keycloak.config.CachingOptions;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.InfinispanConnectionSpi;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
@@ -48,15 +58,10 @@ import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.jgroups.protocol.KEYCLOAK_JDBC_PING2;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.spi.infinispan.JGroupsCertificateProvider;
-
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLParameters;
-import javax.net.ssl.SSLServerSocket;
-import javax.net.ssl.TrustManager;
-
-import static org.infinispan.configuration.global.TransportConfiguration.STACK;
+import org.keycloak.spi.infinispan.impl.Util;
 
 /**
  * Utility class to configure JGroups based on the Keycloak configuration.
@@ -66,6 +71,10 @@ public final class JGroupsConfigurator {
     private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
     private static final String TLS_PROTOCOL_VERSION = "TLSv1.3";
     private static final String TLS_PROTOCOL = "TLS";
+    private static final String BIND_ADDRESS = "networkBindAddress";
+    private static final String BIND_PORT = "networkBindPort";
+    private static final String EXTERNAL_ADDRESS = "networkExternalAddress";
+    private static final String EXTERNAL_PORT = "networkExternalPort";
 
     private JGroupsConfigurator() {
     }
@@ -88,6 +97,7 @@ public final class JGroupsConfigurator {
         if (stack != null) {
             transportOf(holder).stack(stack);
         }
+        configureTransport(config);
         configureDiscovery(holder, session);
         configureTls(holder, session);
         warnDeprecatedStack(holder);
@@ -124,6 +134,42 @@ public final class JGroupsConfigurator {
         if (siteName != null) {
             transport.siteId(siteName);
         }
+    }
+
+    static void createJGroupsProperties(ProviderConfigurationBuilder builder) {
+        Util.copyFromOption(builder, BIND_ADDRESS, "address", ProviderConfigProperty.STRING_TYPE, CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_ADDRESS, false);
+        Util.copyFromOption(builder, BIND_PORT, "port", ProviderConfigProperty.INTEGER_TYPE, CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_PORT, false);
+        Util.copyFromOption(builder, EXTERNAL_ADDRESS, "address", ProviderConfigProperty.STRING_TYPE, CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_ADDRESS, false);
+        Util.copyFromOption(builder, EXTERNAL_PORT, "port", ProviderConfigProperty.INTEGER_TYPE, CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_PORT, false);
+    }
+
+    private static void configureTransport(Config.Scope config) {
+        setJGroupsNetworkProperty(BIND_ADDRESS, () -> config.get(BIND_ADDRESS));
+        setJGroupsNetworkProperty(BIND_PORT, intAsString(config, BIND_PORT));
+        setJGroupsNetworkProperty(EXTERNAL_ADDRESS, () -> config.get(EXTERNAL_ADDRESS));
+        setJGroupsNetworkProperty(EXTERNAL_PORT, intAsString(config, EXTERNAL_PORT));
+    }
+
+    private static Supplier<String> intAsString(Config.Scope config, String key) {
+        Integer val = config.getInt(key);
+        return val == null ? () -> null : val::toString;
+    }
+
+    private static void setJGroupsNetworkProperty(String key, Supplier<String> config) {
+        String userConfig = config.get();
+        if (userConfig == null) {
+            // User property is either already set or missing, so do nothing
+            return;
+        }
+
+        String[] split = key.split("(?=[A-Z])", 3);
+        String property = "jgroups.%s.%s".formatted(split[1].toLowerCase(), split[2].toLowerCase());
+        String userProp = System.getProperty(property);
+        if (userProp != null) {
+            logger.warnf("Corresponding system property '%s' and CLI arg '%s' set, utilising CLI value '%s'",
+                  property, CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_ADDRESS_PROPERTY, userConfig);
+        }
+        System.setProperty(property, userConfig);
     }
 
     private static void configureTls(ConfigurationBuilderHolder holder, KeycloakSession session) {
