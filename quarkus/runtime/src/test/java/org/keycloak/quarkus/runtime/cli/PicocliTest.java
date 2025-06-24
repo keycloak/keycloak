@@ -35,6 +35,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import org.apache.commons.io.FileUtils;
@@ -326,16 +327,22 @@ public class PicocliTest extends AbstractConfigurationTest {
     /**
      * Runs a fake build to setup the state of the persisted build properties
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
     private NonRunningPicocli build(String... args) {
+        return build(out -> {
+            assertFalse(out, out.contains("first-class"));
+            assertFalse(out, out.toUpperCase().contains("WARN"));
+        }, args);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private NonRunningPicocli build(Consumer<String> outChecker, String... args) {
         if (Stream.of(args).anyMatch("start-dev"::equals)) {
             Environment.setRebuildCheck(); // auto-build
         }
         NonRunningPicocli nonRunningPicocli = pseudoLaunch(args);
         assertTrue(nonRunningPicocli.reaug);
         assertEquals(nonRunningPicocli.getErrString(), CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().contains("first-class"));
-        assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().toUpperCase().contains("WARN"));
+        outChecker.accept(nonRunningPicocli.getOutString());
         onAfter();
         addPersistedConfigValues((Map)nonRunningPicocli.buildProps);
         return nonRunningPicocli;
@@ -614,14 +621,14 @@ public class PicocliTest extends AbstractConfigurationTest {
     public void testAmbiguousSpiOption() {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--spi-x-y-enabled=true");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        assertThat(nonRunningPicocli.getOutString(), containsString("The following spi options are using the legacy format and are not being treated as build time options. Please use the new format with the appropriate -- separators to resolve this ambiguity: kc.spi-x-y-enabled"));
+        assertThat(nonRunningPicocli.getOutString(), containsString("The following SPI options are using the legacy format and are not being treated as build time options. Please use the new format with the appropriate -- separators to resolve this ambiguity: kc.spi-x-y-enabled"));
     }
 
     @Test
     public void testAmbiguousSpiOptionBuild() {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("build", "--db=dev-file", "--spi-x-y-enabled=true");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        assertThat(nonRunningPicocli.getOutString(), containsString("The following spi options are using the legacy format and are not being treated as build time options. Please use the new format with the appropriate -- separators to resolve this ambiguity: kc.spi-x-y-enabled"));
+        assertThat(nonRunningPicocli.getOutString(), containsString("The following SPI options are using the legacy format and are not being treated as build time options. Please use the new format with the appropriate -- separators to resolve this ambiguity: kc.spi-x-y-enabled"));
     }
 
     @Test
@@ -773,5 +780,18 @@ public class PicocliTest extends AbstractConfigurationTest {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--optimized", "--http-enabled=true", "--hostname-strict=false");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.spi-events-listener--provider"));
+    }
+
+    @Test
+    public void spiAmbiguousSpiAutoBuild() {
+        putEnvVar("KC_SPI_EVENTS_LISTENER_PROVIDER", "jboss-logging");
+        NonRunningPicocli nonRunningPicocli = build(out -> assertThat(out, containsString("The following SPI options")), "build", "--db=dev-file");
+
+        Environment.setRebuildCheck(); // auto-build
+        putEnvVar("KC_SPI_EVENTS_LISTENER_PROVIDER", "new-jboss-logging");
+        nonRunningPicocli = pseudoLaunch("start", "--http-enabled=true", "--hostname-strict=false");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertTrue(nonRunningPicocli.reaug);
+        assertThat(nonRunningPicocli.getOutString(), containsString("The following SPI options"));
     }
 }
