@@ -77,4 +77,4 @@ Read more on how to enable this feature in https://www.keycloak.org/server/updat
 
 = Deprecation of the Passkeys Conditional UI Authenticator
 
-The preview feature *Passkeys* introduced recently a new *Passkeys Conditional UI Authenticator* that allowed to integrate the passkey auto-fill or conditional UI feature in your login flow. Passkeys are now going to be integrated into {project_name} seamlessly inside the default username forms. Therefore, the old authenticator makes no sense and, since this release, it is deprecated. The factory and implementation classes will be finally removed when *Passkeys* are supported in {project_name}.
+The preview feature *Passkeys* recently introduced a new *Passkeys Conditional UI Authenticator* that you can use to integrate the passkey auto-fill or conditional UI feature in your login flow. Passkeys are now being seamlessly integrated into {project_name} inside the default username forms. Therefore, the old authenticator is invalid and it is deprecated in this release. The factory and implementation classes will be removed when *Passkeys* are supported in {project_name}.
