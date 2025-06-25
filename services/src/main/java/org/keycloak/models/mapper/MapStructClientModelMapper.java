@@ -29,7 +29,8 @@ public interface MapStructClientModelMapper extends ClientModelMapper {
     @Override
     ClientRepresentation fromModel(ClientModel model);
 
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    // we don't want to ignore nulls so that we completely overwrite the state
+    @Override
     void toModel(@MappingTarget ClientModel model, ClientRepresentation rep, @Context RealmModel realm);
 
     @Named("getRoleStrings")
