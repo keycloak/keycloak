@@ -11,6 +11,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: retryCount,
   workers: 1,
+  timeout: 60 * 1000,
   reporter: process.env.CI ? [["github"], ["html"]] : "list",
 
   use: {

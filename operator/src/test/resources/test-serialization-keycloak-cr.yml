@@ -32,6 +32,15 @@ spec:
     annotations:
       myAnnotation: myValue
       anotherAnnotation: anotherValue
+  readinessProbe:
+    periodSeconds: 50
+    failureThreshold: 3
+  livenessProbe:
+    periodSeconds: 60
+    failureThreshold: 1
+  startupProbe:
+    periodSeconds: 40
+    failureThreshold: 2
   networkPolicy:
     enabled: true
     http:

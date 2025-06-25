@@ -43,10 +43,7 @@ As most requests will not touch the database due to the {project_name} embedded 
 See the <@links.ha id="concepts-database-connections" /> {section} for details.
 <2> Specify the URL to your custom {project_name} image. If your image is optimized, set the `startOptimized` flag to `true`.
 <3> Enable additional features for multi-site support like the loadbalancer probe `/lb-check`.
-<4> XA transactions are not supported by the https://github.com/awslabs/aws-advanced-jdbc-wrapper/releases/[Amazon Web Services JDBC Driver].
-<5> To be able to analyze the system under load, enable the metrics endpoint.
-The disadvantage of the setting is that the metrics will be available at the external {project_name} endpoint, so you must add a filter so that the endpoint is not available from the outside.
-Use a reverse proxy in front of {project_name} to filter out those URLs.
+<4> To be able to analyze the system under load, enable the metrics endpoint.
 
 == Verifying the deployment
 

@@ -31,13 +31,16 @@ import java.util.Map;
 import liquibase.ContextExpression;
 import liquibase.Labels;
 import liquibase.change.CheckSum;
+import liquibase.change.ColumnConfig;
 import liquibase.changelog.ChangeSet;
 import liquibase.changelog.RanChangeSet;
 import liquibase.changelog.StandardChangeLogHistoryService;
 import liquibase.database.Database;
 import liquibase.database.core.MySQLDatabase;
 import liquibase.exception.DatabaseException;
+import liquibase.executor.jvm.ChangelogJdbcMdcListener;
 import liquibase.logging.LogFactory;
+import liquibase.statement.core.AddPrimaryKeyStatement;
 
 /**
  *
@@ -46,19 +49,35 @@ import liquibase.logging.LogFactory;
 public class CustomChangeLogHistoryService extends StandardChangeLogHistoryService {
 
     private List<RanChangeSet> ranChangeSetList;
+    private boolean serviceInitialized;
+
+    @Override
+    public boolean supports(Database database) {
+        return database instanceof MySQLDatabase;
+    }
+
+    @Override
+    public void init() throws DatabaseException {
+        super.init();
+
+        if (serviceInitialized) return;
+
+        AddPrimaryKeyStatement pkStatement = new AddPrimaryKeyStatement(getLiquibaseCatalogName(), getLiquibaseSchemaName(), getDatabaseChangeLogTableName(), 
+                ColumnConfig.arrayFromNames("ID, AUTHOR, FILENAME"), "PK_DATABASECHANGELOG");
+        ChangelogJdbcMdcListener.execute(getDatabase(), ex -> ex.execute(pkStatement));
+        getDatabase().commit();
+
+        serviceInitialized = true;
+    }
 
     @Override
     public List<RanChangeSet> getRanChangeSets() throws DatabaseException {
-        Database database = getDatabase();
-        if (! (database instanceof MySQLDatabase)) {
-            return super.getRanChangeSets();
-        }
         if (this.ranChangeSetList == null) {
             String databaseChangeLogTableName = getDatabase().escapeTableName(getLiquibaseCatalogName(), getLiquibaseSchemaName(), getDatabaseChangeLogTableName());
             List<RanChangeSet> ranChangeSetList = new ArrayList<>();
             if (hasDatabaseChangeLogTable()) {
                 LogFactory.getLogger().info("Reading from " + databaseChangeLogTableName);
-                List<Map<String, ?>> results = queryDatabaseChangeLogTable(database);
+                List<Map<String, ?>> results = queryDatabaseChangeLogTable(getDatabase());
                 for (Map rs : results) {
                     String fileName = rs.get("FILENAME").toString();
                     String author = rs.get("AUTHOR").toString();

@@ -114,12 +114,14 @@ The section presents some examples of conditional workflows that integrates 2nd 
 
 ===== Conditional 2FA sub-flow
 
-The default `browser` flow uses a `Conditional OTP` sub-flow that already gives a 2FA with OTP Form (One Time Password). Following the same idea, different 2FA methods can be integrated with the `Condition - User Configured`.
+The default `browser` flow uses a `Conditional 2FA` sub-flow that already gives 2nd factor Authentication (2FA) with OTP Form (One Time Password). It also provides WebAuthn and Recovery Codes but they are disabled by default. Consistent with this approach, different 2FA methods can be integrated with the `Condition - User Configured`.
 
 .2FA all alternative
 image:images/2fa-example1.png[2FA all alternative]
 
 The `forms` sub-flow contains another `2FA` conditional sub-flow with `Condition - user configured`. Three 2FA steps (OTP, Webauthn and Recovery Codes) are allowed as alternative steps. The user will be able to choose one of the three options, if they are configured for the user. As the sub-flow is conditional, the authentication process will complete successfully if no 2FA credential is configured.
+
+This configuration provides the same behavior as when you configure with the default *browser* flow with both _Disabled_ steps are configured to _Alternative_.
 
 ===== Conditional 2FA sub-flow and deny access
 

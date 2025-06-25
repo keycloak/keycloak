@@ -89,7 +89,7 @@ public class OrganizationMemberWithLdapTest extends AbstractOrganizationTest {
         try (Response response = organization.members().addMember(ldapUser.getId())) {
             assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
         }
-        List<OrganizationRepresentation> orgMemberships = organization.members().member(ldapUser.getId()).getOrganizations();
+        List<OrganizationRepresentation> orgMemberships = organization.members().member(ldapUser.getId()).getOrganizations(true);
         assertThat(orgMemberships, notNullValue());
         assertThat(orgMemberships, hasSize(1));
         assertThat(orgMemberships.get(0).getId(), equalTo(orgRepresentation.getId()));

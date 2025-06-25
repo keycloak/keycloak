@@ -51,7 +51,7 @@ public class GroupAdapter implements GroupModel {
         this.cacheSession = cacheSession;
         this.keycloakSession = keycloakSession;
         this.realm = realm;
-        modelSupplier = this::getGroupModel;
+        modelSupplier = new LazyModel<>(this::getGroupModel);
     }
 
     protected void getDelegateForUpdate() {

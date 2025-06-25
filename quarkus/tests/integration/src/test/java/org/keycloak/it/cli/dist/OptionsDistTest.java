@@ -72,11 +72,13 @@ public class OptionsDistTest {
 
     @Test
     @Order(5)
-    @WithEnvVars({"KC_LOG", "console", "KC_LOG_FILE", "something-env", "KC_HTTP_ENABLED", "true", "KC_HOSTNAME_STRICT", "false"})
+    @WithEnvVars({"KC_SPI_CONNECTIONS_HTTP_CLIENT__DEFAULT__EXPECT_CONTINUE_ENABLED", "true", "KC_LOG", "console", "KC_LOG_FILE", "something-env", "KC_HTTP_ENABLED", "true", "KC_HOSTNAME_STRICT", "false"})
     @Launch({"start", "--db=dev-file"})
     public void testSettingEnvVars(CLIResult cliResult) {
         cliResult.assertMessage("The following used run time options are UNAVAILABLE and will be ignored during build time:");
         cliResult.assertMessage("- log-file: Available only when File log handler is activated.");
+        cliResult.assertNoMessage("kc.spi-connections-http-client"); // no info/warning expected
+        cliResult.assertStarted();
     }
 
     @DryRun

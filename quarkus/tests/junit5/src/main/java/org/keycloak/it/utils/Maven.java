@@ -17,6 +17,7 @@
 
 package org.keycloak.it.utils;
 
+import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -46,11 +47,7 @@ public final class Maven {
 
     public static Path resolveArtifact(String groupId, String artifactId) {
         try {
-            Path classPathDir = Paths.get(Thread.currentThread().getContextClassLoader().getResource(".").toURI());
-            Path projectDir = BuildToolHelper.getProjectDir(classPathDir);
-            BootstrapMavenContext ctx = new BootstrapMavenContext(
-                    BootstrapMavenContext.config().setPreferPomsFromWorkspace(true).setWorkspaceModuleParentHierarchy(true)
-                            .setCurrentProject(projectDir.toString()));
+            BootstrapMavenContext ctx = bootstrapCurrentMavenContext();
             LocalProject project = ctx.getCurrentProject();
             RepositorySystem repositorySystem = ctx.getRepositorySystem();
             List<RemoteRepository> remoteRepositories = ctx.getRemoteRepositories();
@@ -127,5 +124,31 @@ public final class Maven {
         }
 
         return artifactResults.get(0).getArtifact();
+    }
+
+    public static Path getKeycloakQuarkusModulePath() {
+        // Find keycloak-parent module first
+        BootstrapMavenContext ctx = null;
+        try {
+            ctx = bootstrapCurrentMavenContext();
+        } catch (BootstrapMavenException | URISyntaxException e) {
+            throw new RuntimeException("Failed bootstrap maven context", e);
+        }
+        for (LocalProject m = ctx.getCurrentProject(); m != null; m = m.getLocalParent()) {
+            if ("keycloak-parent".equals(m.getArtifactId())) {
+                // When found, advance to quarkus module
+                return m.getDir().resolve("quarkus");
+            }
+        }
+
+        throw new RuntimeException("Failed to find keycloak-parent module.");
+    }
+
+    private static BootstrapMavenContext bootstrapCurrentMavenContext() throws BootstrapMavenException, URISyntaxException {
+        Path classPathDir = Paths.get(Thread.currentThread().getContextClassLoader().getResource(".").toURI());
+        Path projectDir = BuildToolHelper.getProjectDir(classPathDir);
+        return new BootstrapMavenContext(
+                BootstrapMavenContext.config().setPreferPomsFromWorkspace(true).setWorkspaceModuleParentHierarchy(true)
+                        .setCurrentProject(projectDir.toString()));
     }
 }

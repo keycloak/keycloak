@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.forms;
 
+import jakarta.ws.rs.BadRequestException;
 import org.hamcrest.MatcherAssert;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
@@ -23,6 +24,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
@@ -31,6 +33,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -63,6 +66,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -183,6 +188,72 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
     protected void clearAllUserFailures() throws Exception {
         adminClient.realm("test").attackDetection().clearAllBruteForce();
+    }
+    
+    @Test
+    public void testInvalidConfiguration() throws Exception {
+        RealmRepresentation realm = testRealm().toRepresentation();
+        realm.setFailureFactor(-1);
+        try {
+            testRealm().update(realm);
+        } catch (BadRequestException ex) {
+            ErrorRepresentation error = ex.getResponse().readEntity(ErrorRepresentation.class);
+            assertEquals("Failure factor may not be a negative value", error.getErrorMessage());
+        }
+
+        realm = testRealm().toRepresentation();
+        realm.setMaxTemporaryLockouts(-1);
+        try {
+            testRealm().update(realm);
+        }  catch (BadRequestException ex) {
+            ErrorRepresentation error = ex.getResponse().readEntity(ErrorRepresentation.class);
+            assertEquals("Maximum temporary lockouts may not be a negative value", error.getErrorMessage());
+        }
+
+        realm = testRealm().toRepresentation();
+        realm.setMaxFailureWaitSeconds(-1);
+        try {
+            testRealm().update(realm);
+        }  catch (BadRequestException ex) {
+            ErrorRepresentation error = ex.getResponse().readEntity(ErrorRepresentation.class);
+            assertEquals("Maximum failure wait seconds may not be a negative value", error.getErrorMessage());
+        }
+
+        realm = testRealm().toRepresentation();
+        realm.setWaitIncrementSeconds(-1);
+        try {
+            testRealm().update(realm);
+        }   catch (BadRequestException ex) {
+            ErrorRepresentation error = ex.getResponse().readEntity(ErrorRepresentation.class);
+            assertEquals("Wait increment seconds may not be a negative value", error.getErrorMessage());
+        }
+
+        realm = testRealm().toRepresentation();
+        realm.setMinimumQuickLoginWaitSeconds(-1);
+        try {
+            testRealm().update(realm);
+        } catch (BadRequestException ex) {
+            ErrorRepresentation error = ex.getResponse().readEntity(ErrorRepresentation.class);
+            assertEquals("Minimum quick login wait seconds may not be a negative value", error.getErrorMessage());
+        }
+
+        realm = testRealm().toRepresentation();
+        realm.setQuickLoginCheckMilliSeconds(-1L);
+        try {
+            testRealm().update(realm);
+        }  catch (BadRequestException ex) {
+            ErrorRepresentation error = ex.getResponse().readEntity(ErrorRepresentation.class);
+            assertEquals("Quick login check milliseconds may not be a negative value", error.getErrorMessage());
+        }
+
+        realm = testRealm().toRepresentation();
+        realm.setMaxDeltaTimeSeconds(-1);
+        try {
+            testRealm().update(realm);
+        }   catch (BadRequestException ex) {
+            ErrorRepresentation error = ex.getResponse().readEntity(ErrorRepresentation.class);
+            assertEquals("Maximum delta time seconds may not be a negative value",  error.getErrorMessage());
+        }
     }
 
     @Test
@@ -551,6 +622,57 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         assertTrue(testRealm().users().get(userId).toRepresentation().isEnabled());
         assertTrue(testRealm().users().search("test-user@localhost", true).get(0).isEnabled());
         assertEquals(Boolean.TRUE, testRealm().attackDetection().bruteForceUserStatus(userId).get("disabled"));
+    }
+
+    @Test
+    public void testUserDisabledAfterSwitchFromMixedToPermanentLockout() throws Exception {
+        UsersResource users = testRealm().users();
+        UserRepresentation user = users.search("test-user@localhost", null, null, null, 0, 1).get(0);
+
+        // temporarily lockout
+        loginInvalidPassword();
+        loginInvalidPassword();
+        expectTemporarilyDisabled();
+        assertUserNumberOfFailures(user.getId(), 2);
+        // user is still enabled during temporary lockout
+        assertTrue(users.get(user.getId()).toRepresentation().isEnabled());
+        assertTrue(users.search("test-user@localhost", true).get(0).isEnabled());
+        assertEquals(Boolean.TRUE, testRealm().attackDetection().bruteForceUserStatus(user.getId()).get("disabled"));
+
+        RealmRepresentation realm = testRealm().toRepresentation();
+
+        try {
+            // switch to permanent lockout before waiting to successful login
+            realm.setPermanentLockout(true);
+            testRealm().update(realm);
+
+            // expires the temporary lockout
+            this.setTimeOffset(60);
+
+            // after switching to permanent lockout the user status is disabled because there are login failures
+            // the user did not try to successfully authenticate yet to clear the login failures
+            user = users.get(user.getId()).toRepresentation();
+            assertFalse(user.isEnabled());
+            assertFalse(users.search("test-user@localhost", true).get(0).isEnabled());
+            assertEquals(Boolean.TRUE, testRealm().attackDetection().bruteForceUserStatus(user.getId()).get("disabled"));
+            expectPermanentlyDisabled();
+
+            // attempt to re-enable the user and login successfully
+            user.setEnabled(true);
+            users.get(user.getId()).update(user);
+            user = users.get(user.getId()).toRepresentation();
+            assertTrue(user.isEnabled());
+            assertTrue(users.search("test-user@localhost", true).get(0).isEnabled());
+            Map<String, Object> userAttackInfo = testRealm().attackDetection().bruteForceUserStatus(user.getId());
+            assertEquals(Boolean.FALSE, userAttackInfo.get("disabled"));
+            assertThat((Integer) userAttackInfo.get("numFailures"), is(0));
+            // login failures should be removed after re-enabling the user and the user able to authenticate
+            loginSuccess();
+        } finally {
+            resetTimeOffset();
+            realm.setPermanentLockout(false);
+            testRealm().update(realm);
+        }
     }
 
     @Test
@@ -977,6 +1099,12 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             .detail(Details.USERNAME, username)
             .removeDetail(Details.CONSENT);
         event.assertEvent();
+        UserRepresentation user = testRealm().users().search(username, true).get(0);
+        user = testRealm().users().get(user.getId()).toRepresentation();
+        List<String> disabledReason = user.getAttributes().get(UserModel.DISABLED_REASON);
+        assertNotNull(disabledReason);
+        assertEquals(1, disabledReason.size());
+        assertEquals(BruteForceProtector.DISABLED_BY_PERMANENT_LOCKOUT, disabledReason.get(0));
     }
 
     public void loginSuccess() {

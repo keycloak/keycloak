@@ -66,14 +66,6 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
     @Before
     public void setOTPAuthRequired() {
-        adminClient.realm("test").flows().getExecutions("browser")
-                .stream()
-                .filter(execution -> execution.getDisplayName().equals("Browser - Conditional OTP"))
-                .forEach(execution -> {
-                        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED.name());
-                        adminClient.realm("test").flows().updateExecutions("browser", execution);
-                });
-
         ApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
         UserRepresentation user = UserBuilder.create().enabled(true)
                 .username("test-user@localhost")
@@ -103,6 +95,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         registerPage.register("firstName", "lastName", "email@mail.com", "setupTotp", "password", "password");
 
         String userId = events.expectRegister("setupTotp", "email@mail.com").assertEvent().getUserId();
+        getCleanup().addUserId(userId);
 
         doAIA();
 
@@ -129,11 +122,38 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
     }
 
     @Test
+    public void setupTotpRegisterDuplicateUserLabel() {
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.register("firstName", "lastName", "email@mail.com", "setupTotp", "password", "password");
+
+        String userId = events.expectRegister("setupTotp", "email@mail.com").assertEvent().getUserId();
+        getCleanup().addUserId(userId);
+
+        doAIA();
+
+        totpPage.assertCurrent();
+
+        totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), "otp");
+
+        assertKcActionStatus(SUCCESS);
+
+        doAIA();
+
+        totpPage.assertCurrent();
+
+        totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), "otp");
+
+        assertEquals("Device already exists with the same name", totpPage.getInputLabelError());
+
+    }
+
+    @Test
     public void cancelSetupTotp() throws Exception {
         try {
             // Emulate former (pre KEYCLOAK-11745 change) OPTIONAL requirement by:
             // * Disabling the CONFIGURE_TOTP required action on realm
-            // * Marking "Browser - Conditional OTP" authenticator as CONDITIONAL
+            // * Marking "Browser - Conditional 2FA" authenticator as CONDITIONAL
             // * Marking "Condition - user configured" authenticator as DISABLED, and
             // * Marking "OTP Form" authenticator as ALTERNATIVE
             preConfigureRealmForCancelSetupTotpTest();
@@ -153,7 +173,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         // Disable CONFIGURE_TOTP required action
         configureRealmEnableRequiredActionByAlias("CONFIGURE_TOTP", false);
         // Set "Browser - Conditional OTP" execution requirement to CONDITIONAL
-        configureRealmSetExecutionRequirementByDisplayName("browser", "Browser - Conditional OTP", AuthenticationExecutionModel.Requirement.CONDITIONAL);
+        configureRealmSetExecutionRequirementByDisplayName("browser", "Browser - Conditional 2FA", AuthenticationExecutionModel.Requirement.CONDITIONAL);
         // Set "Condition - user configured" execution requirement to DISABLED
         configureRealmSetExecutionRequirementByDisplayName("browser", "Condition - user configured", AuthenticationExecutionModel.Requirement.DISABLED);
         // Set "OTP Form" execution requirement to ALTERNATIVE
@@ -165,9 +185,9 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         // Enable CONFIGURE_TOTP required action back (the default)
         configureRealmEnableRequiredActionByAlias("CONFIGURE_TOTP", true);
 
-        // Set requirement of "Browser - Conditional OTP", "Condition - user configured",
+        // Set requirement of "Browser - Conditional 2FA", "Condition - user configured",
         // and "OTP Form" browser flow executions back to REQUIRED (the default)
-        List<String> executionDisplayNames = Arrays.asList("Browser - Conditional OTP", "Condition - user configured", "OTP Form");
+        List<String> executionDisplayNames = Arrays.asList("Browser - Conditional 2FA", "Condition - user configured", "OTP Form");
         executionDisplayNames.stream().forEach(name -> configureRealmSetExecutionRequirementByDisplayName("browser", name, AuthenticationExecutionModel.Requirement.REQUIRED));
     }
 
@@ -390,6 +410,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         registerPage.register("firstName2", "lastName2", "email2@mail.com", "setupTotp2", "password2", "password2");
 
         String userId = events.expectRegister("setupTotp2", "email2@mail.com").assertEvent().getUserId();
+        getCleanup().addUserId(userId);
 
         doAIA();
 

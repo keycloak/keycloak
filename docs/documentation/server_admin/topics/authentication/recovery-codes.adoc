@@ -6,7 +6,7 @@ The Recovery Codes are a number of sequential one-time passwords (currently 12) 
 
 Due to its nature, the Recovery Codes work normally as a backup for another 2FA methods. They can complement the `OTP Form` or the `WebAuthn Authenticator` to give a backing way to log inside {project_name}, for example, if the software or hardware device used for the previous 2FA methods is broken or unavailable.
 
-==== Enable Recovery Codes required action
+==== Check Recovery Codes required action is enabled
 
 Check the Recovery Codes action is enabled in {project_name}:
 
@@ -31,24 +31,13 @@ The following procedure adds the `Recovery Authentication Code Form` as an alter
 
 . Click *Authentication* in the realm menu.
 . Click the *Browser* flow.
-. Select *Duplicate* from the *Action list* to make a copy of the built-in *Browser* flow.
-+
-For example enter *Recovery Codes Browser* as the name of the copy.
-. Click *Duplicate*.
-. In the flow *Recovery Codes Browser Browser - Conditional OTP*, click the *Add* (*+*) button and select *Add Execution*.
-. Filter to find the *Recovery Authentication Code Form* and *Add* the execution.
-. Set requirement to *Alternative* for the new step.
-. Set requirement to *Alternative* for the *OTP Form* too.
+. Locate the execution *Recovery Authentication Code Form* inside the *Browser - Conditional 2FA* sub-flow.
+. Change the _requirement_ from _Disabled_ to _Alternative_ for that execution.
 +
 .Recovery Codes Browser flow
 image:images/recovery-codes-browser-flow.png[Recovery Codes Browser flow]
 +
-. Click the *Action* menu at the top of the screen.
-. Select *Bind flow* from the drop-down list.
-. Select *Browser flow* from the drop-down list to setup this new flow as the default flow for the realm.
-. Click *Save*.
-
-With this configuration, both 2FA authenticators (`OTP Form` and `Recovery Authentication Code Form`) are alternate ways to log into {project_name}. If the user has configured both credential types, the `OTP Form` will be displayed by default, but another option *Try Another Way* will be available that allows to select the *Recovery Authentication Code* to login.
+With this configuration, both 2FA authenticators (`OTP Form` and `Recovery Authentication Code Form`) are alternate ways to log into {project_name}. If the user has configured both credential types, the credential with the highest priority will be displayed by default, but the *Try Another Way* option will appear so that the user has the alternative methods to log in.
 
 You can see more examples of 2FA configurations in <<twofa-conditional-workflow-examples>>.
 

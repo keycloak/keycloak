@@ -23,7 +23,7 @@
 
 <#list options as option>
 |
-[.options-key]#``${option.key}``# <#if buildIcon><#if option.build>[.none]#icon:tools[role=options-build]#</#if></#if>
+[.options-key]#`+${option.key}+`# <#if buildIcon><#if option.build>[.none]#icon:tools[role=options-build]#</#if></#if>
 
 [.options-description]#${option.description}#
 
@@ -31,8 +31,8 @@
 --
 <#if option.descriptionExtended?has_content>[.options-description-extended]#${option.descriptionExtended!}#</#if>
 
-*CLI:* `${option.keyCli}` +
-*Env:* `${option.keyEnv}`
+*CLI:* `+${option.keyCli}+` +
+*Env:* `+${option.keyEnv}+`
 --
 
 <#if option.enabledWhen?has_content>

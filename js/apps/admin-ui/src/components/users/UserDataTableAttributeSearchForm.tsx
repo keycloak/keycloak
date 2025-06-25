@@ -1,8 +1,8 @@
 import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import {
   KeycloakSelect,
-  SelectVariant,
   label,
+  SelectVariant,
   useAlerts,
 } from "@keycloak/keycloak-ui-shared";
 import {
@@ -22,7 +22,7 @@ import {
 } from "@patternfly/react-core";
 import { CheckIcon } from "@patternfly/react-icons";
 import { ReactNode, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Form } from "react-router-dom";
 import { UserAttribute, UserFilter } from "./UserDataTable";
@@ -62,7 +62,6 @@ export function UserDataTableAttributeSearchForm({
     setValue,
     setError,
     clearErrors,
-    control,
   } = useForm<UserFilterForm>({
     mode: "onChange",
     defaultValues,
@@ -115,10 +114,10 @@ export function UserDataTableAttributeSearchForm({
   const addToFilter = () => {
     if (isAttributeValid()) {
       setActiveFilters({
-        exact: getValues().exact,
+        ...activeFilters,
         userAttribute: [...activeFilters.userAttribute, { ...getValues() }],
       });
-      reset({ exact: getValues().exact });
+      reset(defaultValues);
     } else {
       if (errors.name?.message) {
         addAlert(errors.name.message, AlertVariant.danger);
@@ -134,7 +133,7 @@ export function UserDataTableAttributeSearchForm({
     const filtered = [...activeFilters.userAttribute].filter(
       (chip) => chip.name !== chip.name,
     );
-    setActiveFilters({ exact: getValues().exact, userAttribute: filtered });
+    setActiveFilters({ ...activeFilters, userAttribute: filtered });
   };
 
   const createAttributeKeyInputField = () => {
@@ -252,19 +251,17 @@ export function UserDataTableAttributeSearchForm({
       {createAttributeSearchChips()}
 
       <div className="pf-v5-u-pt-lg">
-        <Controller
-          name="exact"
-          defaultValue={false}
-          control={control}
-          render={({ field }) => (
-            <Checkbox
-              id="exact"
-              data-testid="exact"
-              label={t("exactSearch")}
-              isChecked={field.value}
-              onChange={field.onChange}
-            />
-          )}
+        <Checkbox
+          id="exact"
+          data-testid="exact"
+          label={t("exactSearch")}
+          isChecked={activeFilters.exact}
+          onChange={(_, value) => {
+            setActiveFilters({
+              ...activeFilters,
+              exact: value,
+            });
+          }}
         />
       </div>
       <ActionGroup className="user-attribute-search-form-action-group">
