@@ -167,9 +167,10 @@ public class Assert extends org.junit.Assert {
 
     public static void assertRoleAttributes(Map<String, List<String>> expected, Map<String, List<String>> actual) {
         MatcherAssert.assertThat(actual.keySet(), equalTo(expected.keySet()));
-        for (String expectedKey : expected.keySet()) {
-            MatcherAssert.assertThat(actual.get(expectedKey).size(), is(equalTo(expected.get(expectedKey).size())));
-            MatcherAssert.assertThat(actual.get(expectedKey), containsInAnyOrder(expected.get(expectedKey).toArray()));
+        for (var entry : expected.entrySet()) {
+            String expectedKey = entry.getKey();
+            MatcherAssert.assertThat(actual.get(expectedKey).size(), is(equalTo(entry.getValue().size())));
+            MatcherAssert.assertThat(actual.get(expectedKey), containsInAnyOrder(entry.getValue().toArray()));
         }
     }
 }
