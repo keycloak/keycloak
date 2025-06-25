@@ -87,6 +87,10 @@ public interface KeycloakContext {
         return resolveLocale(user);
     }
 
+    default Locale resolveLocale(UserModel user, boolean ignoreAcceptLanguageHeader) {
+        return resolveLocale(user);
+    }
+
     /**
      * Get current AuthenticationSessionModel, can be null out of the AuthenticationSession context.
      *

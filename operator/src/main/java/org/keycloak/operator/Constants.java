@@ -49,8 +49,7 @@ public final class Constants {
 
     public static final List<ValueOrSecret> DEFAULT_DIST_CONFIG_LIST = List.of(
             new ValueOrSecret("health-enabled", "true"),
-            new ValueOrSecret("cache", "ispn"),
-            new ValueOrSecret("cache-stack", "kubernetes")
+            new ValueOrSecret("cache", "ispn")
     );
 
 

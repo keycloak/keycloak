@@ -124,6 +124,8 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.keycloak.broker.provider.AbstractIdentityProvider.BROKER_REGISTERED_NEW_USER;
+
 /**
  * <p></p>
  *
@@ -729,12 +731,13 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             }
 
 
-            String isRegisteredNewUser = authSession.getAuthNote(AbstractIdpAuthenticator.BROKER_REGISTERED_NEW_USER);
+            String isRegisteredNewUser = authSession.getAuthNote(BROKER_REGISTERED_NEW_USER);
             if (Boolean.parseBoolean(isRegisteredNewUser)) {
 
                 logger.debugf("Registered new user '%s' after first login with identity provider '%s'. Identity provider username is '%s' . ", federatedUser.getUsername(), providerAlias, context.getUsername());
 
-                context.getIdp().importNewUser(session, realmModel, federatedUser, context);
+                IdentityProvider idp = context.getIdp();
+                idp.importNewUser(session, realmModel, federatedUser, context);
                 KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
                 session.identityProviders().getMappersByAliasStream(providerAlias).forEach(mapper -> {
                     IdentityProviderMapper target = (IdentityProviderMapper) sessionFactory
@@ -742,10 +745,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                     target.importNewUser(session, realmModel, federatedUser, mapper, context);
                 });
 
-                if (context.getIdpConfig().isTrustEmail() && !Validation.isBlank(federatedUser.getEmail()) && !Boolean.parseBoolean(authSession.getAuthNote(AbstractIdpAuthenticator.UPDATE_PROFILE_EMAIL_CHANGED))) {
-                    logger.debugf("Email verified automatically after registration of user '%s' through Identity provider '%s' ", federatedUser.getUsername(), context.getIdpConfig().getAlias());
-                    federatedUser.setEmailVerified(true);
-                }
+                idp.updateBrokeredUser(session, realmModel, federatedUser, context);
 
                 event.clone()
                         .event(EventType.REGISTER)
@@ -1112,7 +1112,6 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     }
 
     private void setBasicUserAttributes(BrokeredIdentityContext context, UserModel federatedUser) {
-        setDiffAttrToConsumer(federatedUser.getEmail(), context.getEmail(), email -> setEmail(context, federatedUser, email), true);
         setDiffAttrToConsumer(federatedUser.getFirstName(), context.getFirstName(), federatedUser::setFirstName, false);
         setDiffAttrToConsumer(federatedUser.getLastName(), context.getLastName(), federatedUser::setLastName, false);
     }
@@ -1121,18 +1120,6 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         String actualValueNotNull = Optional.ofNullable(actualValue).orElse("");
         if (newValue != null && !(ignoreCase? newValue.equalsIgnoreCase(actualValueNotNull) : newValue.equals(actualValueNotNull))) {
             consumer.accept(newValue);
-        }
-    }
-
-    private void setEmail(BrokeredIdentityContext context, UserModel federatedUser, String newEmail) {
-        federatedUser.setEmail(newEmail);
-        // change email verified depending on if it is trusted or not
-        if (context.getIdpConfig().isTrustEmail() && !Boolean.parseBoolean(context.getAuthenticationSession().getAuthNote(AbstractIdpAuthenticator.UPDATE_PROFILE_EMAIL_CHANGED))) {
-            logger.tracef("Email verified automatically after updating user '%s' through Identity provider '%s' ", federatedUser.getUsername(), context.getIdpConfig().getAlias());
-            federatedUser.setEmailVerified(true);
-        } else {
-            logger.tracef("Email verified reset to false after updating user '%s' through Identity provider '%s' ", federatedUser.getUsername(), context.getIdpConfig().getAlias());
-            federatedUser.setEmailVerified(false);
         }
     }
 

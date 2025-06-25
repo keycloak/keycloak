@@ -637,6 +637,10 @@ public class TokenManager {
             return clientScopes;
         }
 
+        // skip scopes that were explicitly requested using the dynamic scope format
+        // we don't want dynamic and default client scopes duplicated
+        clientScopes = clientScopes.filter(scope -> !scopeParam.contains(scope.getName() + ClientScopeModel.VALUE_SEPARATOR));
+
         Map<String, ClientScopeModel> allOptionalScopes = client.getClientScopes(false);
 
         // Add optional client scopes requested by scope parameter
@@ -1033,8 +1037,11 @@ public class TokenManager {
             expiration = Time.currentTimeMillis() + TimeUnit.SECONDS.toMillis(tokenLifespan);
         }
 
+        final boolean offline = userSession.isOffline() || offlineTokenRequested ||
+                (userSession.getPersistenceState() == UserSessionModel.SessionPersistenceState.TRANSIENT &&
+                Constants.CREATED_FROM_PERSISTENT_OFFLINE.equals(userSession.getNote(Constants.CREATED_FROM_PERSISTENT)));
         long sessionExpires = SessionExpirationUtils.calculateClientSessionMaxLifespanTimestamp(
-                userSession.isOffline() || offlineTokenRequested, userSession.isRememberMe(),
+                offline, userSession.isRememberMe(),
                 TimeUnit.SECONDS.toMillis(clientSession.getStarted()), TimeUnit.SECONDS.toMillis(userSession.getStarted()),
                 realm, client);
         expiration = sessionExpires > 0? Math.min(expiration, sessionExpires) : expiration;

@@ -38,13 +38,11 @@ import java.util.stream.Collectors;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
-import org.keycloak.admin.client.resource.ScopePermissionsResource;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -80,13 +78,6 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
     ManagedClient realmClient;
 
     private final String clientsType = AdminPermissionsSchema.CLIENTS.getType();
-
-    @AfterEach
-    public void onAfter() {
-        ScopePermissionsResource permissions = getScopePermissionsResource(client);
-
-        permissions.findAll(null, null, null, -1, -1).forEach(p -> permissions.findById(p.getId()).remove());
-    }
 
     @Test
     public void testUnsupportedPolicyTypes() {

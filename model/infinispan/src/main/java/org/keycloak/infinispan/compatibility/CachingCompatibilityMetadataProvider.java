@@ -30,8 +30,7 @@ public class CachingCompatibilityMetadataProvider implements CompatibilityMetada
     private static Map<String, String> remoteInfinispanMetadata() {
         return Map.of(
                 "mode", "remote",
-                "persistence", Boolean.toString(MultiSiteUtils.isPersistentSessionsEnabled()),
-                "version", Version.getVersion()
+                "persistence", Boolean.toString(MultiSiteUtils.isPersistentSessionsEnabled())
         );
     }
 
@@ -39,7 +38,8 @@ public class CachingCompatibilityMetadataProvider implements CompatibilityMetada
         return Map.of(
                 "mode", "embedded",
                 "persistence", Boolean.toString(Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)),
-                "version", Version.getVersion()
+                "version", Version.getVersion(),
+                "jgroupsVersion", org.jgroups.Version.printVersion()
         );
     }
 }

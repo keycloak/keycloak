@@ -389,8 +389,8 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeyc
         testAppHelper.startLogin("otp1", "pass");
 
         configureTotpRequiredActionPage.assertCurrent();
-        if (!logoutOtherSessions) {
-            configureTotpRequiredActionPage.uncheckLogoutSessions();
+        if (logoutOtherSessions) {
+            configureTotpRequiredActionPage.checkLogoutSessions();
         }
         String totpSecret = configureTotpRequiredActionPage.getTotpSecret();
         configureTotpRequiredActionPage.configure(totp.generateTOTP(totpSecret));
@@ -417,8 +417,8 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeyc
         testAppHelper.startLogin("otp1", "pass");
 
         setupRecoveryAuthnCodesPage.assertCurrent();
-        if (!logoutOtherSessions) {
-            setupRecoveryAuthnCodesPage.uncheckLogoutSessions();
+        if (logoutOtherSessions) {
+            setupRecoveryAuthnCodesPage.checkLogoutSessions();
         }
         List<String> codes = setupRecoveryAuthnCodesPage.getRecoveryAuthnCodes();
         setupRecoveryAuthnCodesPage.clickSaveRecoveryAuthnCodesButton();

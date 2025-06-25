@@ -22,8 +22,13 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.representations.idm.ClientPolicyConditionRepresentation;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -72,5 +77,14 @@ public class ClientScopesConditionFactory extends AbstractClientPolicyConditionP
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
         return configProperties;
+    }
+
+    @Override
+    public void validateConfiguration(KeycloakSession session, RealmModel realm, ClientPolicyConditionRepresentation conditionRepresentation) throws ClientPolicyException {
+        ClientScopesCondition.Configuration configuration = JsonSerialization.mapper.convertValue(conditionRepresentation.getConfiguration(), ClientScopesCondition.Configuration.class);
+
+        if (configuration.getScopes() != null && !realm.getClientScopesStream().map(ClientScopeModel::getName).toList().containsAll(configuration.getScopes())) {
+            throw new ClientPolicyException("Client scopes not allowed: " +  configuration.getScopes());
+        }
     }
 }

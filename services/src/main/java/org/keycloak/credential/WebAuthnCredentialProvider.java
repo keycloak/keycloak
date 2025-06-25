@@ -31,8 +31,8 @@ import com.webauthn4j.data.client.Origin;
 import com.webauthn4j.server.ServerProperty;
 import com.webauthn4j.util.AssertUtil;
 import com.webauthn4j.util.exception.WebAuthnException;
-import com.webauthn4j.validator.OriginValidatorImpl;
-import com.webauthn4j.validator.exception.BadOriginException;
+import com.webauthn4j.verifier.OriginVerifierImpl;
+import com.webauthn4j.verifier.exception.BadOriginException;
 import jakarta.annotation.Nonnull;
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
@@ -209,7 +209,7 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
                             authenticator,
                             context.getAuthenticationParameters().isUserVerificationRequired()
                     );
-                    webAuthnAuthenticationManager.validate(authenticationData, authenticationParameters);
+                    webAuthnAuthenticationManager.verify(authenticationData, authenticationParameters);
 
 
                     logger.debugv("response.getAuthenticatorData().getFlags() = {0}", authenticationData.getAuthenticatorData().getFlags());
@@ -246,9 +246,9 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
                 .map(Origin::new)
                 .collect(Collectors.toSet());
         WebAuthnAuthenticationManager webAuthnAuthenticationManager = new WebAuthnAuthenticationManager();
-        webAuthnAuthenticationManager.getAuthenticationDataValidator().setOriginValidator(new OriginValidatorImpl(){
+        webAuthnAuthenticationManager.getAuthenticationDataVerifier().setOriginVerifier(new OriginVerifierImpl() {
             @Override
-            protected void validate(@Nonnull CollectedClientData collectedClientData,
+            protected void verify(@Nonnull CollectedClientData collectedClientData,
                                     @Nonnull ServerProperty serverProperty) {
                 AssertUtil.notNull(collectedClientData, "collectedClientData must not be null");
                 AssertUtil.notNull(serverProperty, "serverProperty must not be null");

@@ -30,16 +30,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.GroupResource;
-import org.keycloak.admin.client.resource.GroupsResource;
-import org.keycloak.admin.client.resource.ScopePermissionsResource;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
-import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectUser;
@@ -77,18 +73,6 @@ public class GroupResourceTypeFilteringTest extends AbstractPermissionTest {
                 groupResource.subGroup(subGroup).close();
             }
         }
-    }
-
-    @AfterEach
-    public void onAfterEach() {
-        ScopePermissionsResource permissions = getScopePermissionsResource(client);
-
-        for (ScopePermissionRepresentation permission : permissions.findAll(null, null, null, -1, -1)) {
-            permissions.findById(permission.getId()).remove();
-        }
-
-        GroupsResource groups = realm.admin().groups();
-        groups.groups().forEach(group -> groups.group(group.getId()).remove());
     }
 
     @Test

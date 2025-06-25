@@ -84,9 +84,9 @@ Cache:
 --cache-stack <stack>
                      Define the default stack to use for cluster communication and node discovery.
                        Defaults to 'jdbc-ping' if not set. Possible values are: jdbc-ping,
-                       kubernetes, jdbc-ping-udp (deprecated), tcp (deprecated), udp (deprecated),
-                       ec2 (deprecated), azure (deprecated), google (deprecated), or a custom one.
-                       Available only when 'cache' type is set to 'ispn'.
+                       kubernetes (deprecated), jdbc-ping-udp (deprecated), tcp (deprecated), udp
+                       (deprecated), ec2 (deprecated), azure (deprecated), google (deprecated), or
+                       a custom one. Available only when 'cache' type is set to 'ispn'.
 
 Config:
 
@@ -103,8 +103,14 @@ Database:
                        deprecated, you should explicitly specify the db instead. Possible values
                        are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres. Default:
                        dev-file.
+--db-debug-jpql <true|false>
+                     Add JPQL information as comments to SQL statements to debug JPA SQL statement
+                       generation. Default: false.
 --db-driver <driver> The fully qualified class name of the JDBC driver. If not set, a default
                        driver is set accordingly to the chosen database.
+--db-log-slow-queries-threshold <milliseconds>
+                     Log SQL statements slower than the configured threshold with logger org.
+                       hibernate.SQL_SLOW and log-level info. Default: 10000.
 --db-password <password>
                      The password of the database user.
 --db-pool-initial-size <size>

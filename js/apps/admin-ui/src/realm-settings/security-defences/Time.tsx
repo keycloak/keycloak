@@ -6,9 +6,11 @@ import { TimeSelectorControl } from "../../components/time-selector/TimeSelector
 export const Time = ({
   name,
   style,
+  min,
 }: {
   name: string;
   style?: CSSProperties;
+  min?: number;
 }) => {
   const { t } = useTranslation();
   return (
@@ -17,9 +19,10 @@ export const Time = ({
       style={style}
       label={t(name)}
       labelIcon={t(`${name}Help`)}
+      min={min}
       controller={{
         defaultValue: "",
-        rules: { required: t("required") },
+        rules: { required: t("required"), min: min },
       }}
     />
   );

@@ -39,11 +39,9 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.ForbiddenException;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.resource.ScopePermissionsResource;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -53,7 +51,6 @@ import org.keycloak.representations.idm.authorization.PolicyEvaluationRequest;
 import org.keycloak.representations.idm.authorization.PolicyEvaluationResponse;
 import org.keycloak.representations.idm.authorization.PolicyEvaluationResponse.EvaluationResultRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
-import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
@@ -122,17 +119,6 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
         ALL_USERS.add(this.myadmin);
         ALL_USERS.add(userJdoe);
         ALL_GROUP_MEMBERS = groupMembers.values().stream().flatMap(Collection::stream).toList();
-    }
-
-    @AfterEach
-    public void onAfter() {
-        ScopePermissionsResource permissions = getScopePermissionsResource(client);
-
-        for (ScopePermissionRepresentation permission : permissions.findAll(null, null, null, -1, -1)) {
-            permissions.findById(permission.getId()).remove();
-        }
-
-        realm.admin().groups().groups().forEach(group -> realm.admin().groups().group(group.getId()).remove());
     }
 
     @Test

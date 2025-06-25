@@ -459,7 +459,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         // the alternative of clearing the persistence context is not either as we don't know if something currently present
         // in the context is not needed later.
 
-        roleEntity.getParentRoles().forEach(roleEntity1 -> roleEntity1.getCompositeRoles().remove(roleEntity));
+        roleEntity.getCompositeRoles().forEach(childRole -> childRole.getParentRoles().remove(roleEntity));
+        roleEntity.getParentRoles().forEach(parentRole -> parentRole.getCompositeRoles().remove(roleEntity));
 
         em.createNamedQuery("deleteClientScopeRoleMappingByRole").setParameter("role", roleEntity).executeUpdate();
 

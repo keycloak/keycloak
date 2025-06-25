@@ -108,6 +108,7 @@ import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
@@ -169,6 +170,7 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
+import org.keycloak.testsuite.util.ClientScopeBuilder;
 import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.SignatureSignerUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -197,6 +199,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     protected static final String POLICY_NAME = "MyPolicy";
     protected static final String PROFILE_NAME = "MyProfile";
     protected static final String SAMPLE_CLIENT_ROLE = "sample-client-role";
+    protected static final String SAMPLE_CLIENT_SCOPE = "sample-client-scope";
 
     protected static final String FAPI1_BASELINE_PROFILE_NAME = "fapi-1-baseline";
     protected static final String FAPI1_ADVANCED_PROFILE_NAME = "fapi-1-advanced";
@@ -247,6 +250,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     @Before
     public void before() throws Exception {
         setInitialAccessTokenForDynamicClientRegistration();
+        adminClient.realm(REALM_NAME).clientScopes().create(ClientScopeBuilder.create().name(SAMPLE_CLIENT_SCOPE).protocol(OIDCLoginProtocol.LOGIN_PROTOCOL).build());
     }
 
     protected void setInitialAccessTokenForDynamicClientRegistration() {
@@ -307,7 +311,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
                     .addCondition(ClientRolesConditionFactory.PROVIDER_ID, 
                             createClientRolesConditionConfig(List.of(SAMPLE_CLIENT_ROLE)))
                     .addCondition(ClientScopesConditionFactory.PROVIDER_ID, 
-                            createClientScopesConditionConfig(ClientScopesConditionFactory.OPTIONAL, List.of(SAMPLE_CLIENT_ROLE)))
+                            createClientScopesConditionConfig(ClientScopesConditionFactory.OPTIONAL, List.of(SAMPLE_CLIENT_SCOPE)))
                         .addProfile("ordinal-test-profile")
                         .addProfile("lack-of-builtin-field-test-profile")
 
@@ -403,7 +407,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         assertExpectedConditions(Arrays.asList(ClientAccessTypeConditionFactory.PROVIDER_ID, ClientRolesConditionFactory.PROVIDER_ID, ClientScopesConditionFactory.PROVIDER_ID), actualPolicyRep);
         assertExpectedClientAccessTypeCondition(Arrays.asList(ClientAccessTypeConditionFactory.TYPE_PUBLIC, ClientAccessTypeConditionFactory.TYPE_BEARERONLY), actualPolicyRep);
         assertExpectedClientRolesCondition(List.of(SAMPLE_CLIENT_ROLE), actualPolicyRep);
-        assertExpectedClientScopesCondition(ClientScopesConditionFactory.OPTIONAL, List.of(SAMPLE_CLIENT_ROLE), actualPolicyRep);
+        assertExpectedClientScopesCondition(ClientScopesConditionFactory.OPTIONAL, List.of(SAMPLE_CLIENT_SCOPE), actualPolicyRep);
 
         // each policy - lack-of-builtin-field-test-policy
         actualPolicyRep = getPolicyRepresentation(actualPoliciesRep, "lack-of-builtin-field-test-policy");
@@ -593,6 +597,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         // Set required signature for request_uri
         // use and set jwks_url
         ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
+        assert clientResource != null;
         ClientRepresentation clientRep = clientResource.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectSignatureAlg(sigAlg);
         OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(true);
@@ -1091,6 +1096,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     private void assertExpectedEmptyConfig(String executorProviderId, ClientProfileRepresentation profileRep) {
         JsonNode config = getConfigOfExecutor(executorProviderId, profileRep);
+        assert config != null;
         Assert.assertTrue("Expected empty configuration for provider " + executorProviderId, config.isEmpty());
     }
 
@@ -1101,6 +1107,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
         // use and set jwks_url
         ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(oauth.getRealm()), oauth.getClientId());
+        assert clientResource != null;
         ClientRepresentation clientRep = clientResource.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(true);
         OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(TestApplicationResourceUrls.clientJwksUri());

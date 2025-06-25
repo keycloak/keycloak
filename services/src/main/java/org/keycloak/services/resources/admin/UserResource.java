@@ -883,6 +883,12 @@ public class UserResource {
             if (auth.users().canQuery()) throw new NotFoundException("Credential not found");
             else throw new ForbiddenException();
         }
+
+        if (userLabel == null || userLabel.trim().isEmpty()) {
+            throw new ErrorResponseException("missingCredentialLabel", "Credential label must not be empty", Status.BAD_REQUEST);
+
+        }
+
         user.credentialManager().updateCredentialLabel(credentialId, userLabel);
     }
 
@@ -1014,12 +1020,13 @@ public class UserResource {
             builder.queryParam("key", token.serialize(session, realm, session.getContext().getUri()));
 
             String link = builder.build(realm.getName()).toString();
-
+            
             this.session.getProvider(EmailTemplateProvider.class)
-              .setAttribute(Constants.TEMPLATE_ATTR_REQUIRED_ACTIONS, token.getRequiredActions())
-              .setRealm(realm)
-              .setUser(user)
-              .sendExecuteActions(link, TimeUnit.SECONDS.toMinutes(result.lifespan));
+                    .setAttribute(Constants.TEMPLATE_ATTR_REQUIRED_ACTIONS, token.getRequiredActions())
+                    .setAttribute(Constants.IGNORE_ACCEPT_LANGUAGE_HEADER, true)
+                    .setRealm(realm)
+                    .setUser(user)
+                    .sendExecuteActions(link, TimeUnit.SECONDS.toMinutes(result.lifespan));
 
             //audit.user(user).detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, accessCode.getCodeId()).success();
 

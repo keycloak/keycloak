@@ -37,7 +37,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  .kc-dropdown-panel-content {
+  .pf-v5-theme-dark .kc-dropdown-panel-content {
     background-color: var(--pf-v5-global--BackgroundColor--300);
   }
 }

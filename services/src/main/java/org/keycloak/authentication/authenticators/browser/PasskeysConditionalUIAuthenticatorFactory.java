@@ -26,7 +26,11 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ * @deprecated Factory is deprecated as passkeys are now integrated with the
+ * default username authenticators. It will be removed in future versions
+ * when the passkeys feature become supported.
  */
+@Deprecated(since = "26.3", forRemoval = true)
 public class PasskeysConditionalUIAuthenticatorFactory extends WebAuthnPasswordlessAuthenticatorFactory implements EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "passkeys-authenticator";

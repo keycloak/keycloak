@@ -17,6 +17,7 @@
 
 package org.keycloak.jgroups.certificates;
 
+import java.io.File;
 import java.time.Duration;
 import java.util.List;
 import java.util.Set;
@@ -109,10 +110,10 @@ public class DefaultJGroupsCertificateProviderFactory implements JGroupsCertific
         }
         if (isKeystoreOrTruststoreConfigured()) {
             return FileJGroupsCertificateProvider.create(
-                    requireConfiguration(KEYSTORE_PATH, CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE),
-                    requireConfiguration(KEYSTORE_PASSWORD, CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD),
-                    requireConfiguration(TRUSTSTORE_PATH, CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE),
-                    requireConfiguration(TRUSTSTORE_PASSWORD, CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD)
+                  requireConfigurationAndFile(KEYSTORE_PATH, CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE),
+                  requireConfiguration(KEYSTORE_PASSWORD, CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD),
+                  requireConfigurationAndFile(TRUSTSTORE_PATH, CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE),
+                  requireConfiguration(TRUSTSTORE_PASSWORD, CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD)
             );
         }
         return DatabaseJGroupsCertificateProvider.create(factory, Duration.ofDays(requireRotationInDays()));
@@ -126,6 +127,14 @@ public class DefaultJGroupsCertificateProviderFactory implements JGroupsCertific
         var value = configuration.getLong(ROTATION);
         if (value == null) {
             throw new RuntimeException("Property '%s' required but not specified.".formatted(CachingOptions.CACHE_EMBEDDED_MTLS_ROTATION.getKey()));
+        }
+        return value;
+    }
+
+    private String requireConfigurationAndFile(String key, Option<?> option) {
+        var value = requireConfiguration(key, option);
+        if (!new File(value).exists()) {
+            throw new RuntimeException("Property '%s' file '%s' does not exist.".formatted(key, value));
         }
         return value;
     }

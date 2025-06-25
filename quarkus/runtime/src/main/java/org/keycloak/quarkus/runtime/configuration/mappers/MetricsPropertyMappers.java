@@ -18,12 +18,12 @@ final class MetricsPropertyMappers {
                         .to("quarkus.micrometer.enabled")
                         .build(),
                 fromOption(MetricsOptions.PASSWORD_VALIDATION_COUNTER_ENABLED)
-                        .to("kc.spi-credential-keycloak-password-metrics-enabled")
+                        .to("kc.spi-credential--keycloak-password--metrics-enabled")
                         .isEnabled(MetricsPropertyMappers::metricsEnabled, "metrics are enabled")
                         .build(),
                 fromOption(MetricsOptions.INFINISPAN_METRICS_ENABLED)
                         .mapFrom(MetricsOptions.METRICS_ENABLED)
-                        .to("kc.spi-cache-embedded-default-metrics-enabled")
+                        .to("kc.spi-cache-embedded--default--metrics-enabled")
                         .isEnabled(MetricsPropertyMappers::metricsEnabled, "metrics are enabled")
                         .build()
         };
