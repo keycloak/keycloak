@@ -71,13 +71,14 @@ export const PersonalInfo = () => {
       );
       await savePersonalInfo(context, { ...user, attributes });
       const locale = attributes["locale"]?.toString();
-      if (locale)
-        i18n.changeLanguage(locale, (error) => {
+      if (locale) {
+        await i18n.changeLanguage(locale, (error) => {
           if (error) {
             console.warn("Error(s) loading locale", locale, error);
           }
         });
-      context.keycloak.updateToken();
+      }
+      await context.keycloak.updateToken();
       addAlert(t("accountUpdatedMessage"));
     } catch (error) {
       addAlert(t("accountUpdatedError"), AlertVariant.danger);

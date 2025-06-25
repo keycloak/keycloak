@@ -10,7 +10,7 @@ test.describe("Signing in with referrer link", () => {
   }) => {
     const referrer = "security-admin-console";
     const referrerUrl = getAdminUrl();
-    const referrerName = "security admin console";
+    const referrerName = "Security Admin Console";
 
     const queryParams = {
       referrer,

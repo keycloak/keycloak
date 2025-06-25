@@ -79,6 +79,11 @@ public class V1TokenExchangeProvider extends AbstractTokenExchangeProvider {
     private static final Logger logger = Logger.getLogger(V1TokenExchangeProvider.class);
 
     @Override
+    public int getVersion() {
+        return 1;
+    }
+
+    @Override
     public boolean supports(TokenExchangeContext context) {
         return true;
     }

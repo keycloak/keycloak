@@ -17,12 +17,15 @@
 
 package org.keycloak.authentication.authenticators.browser;
 
+import org.keycloak.WebAuthnConstants;
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.managers.AuthenticationManager;
 
@@ -36,21 +39,42 @@ import jakarta.ws.rs.core.Response;
  */
 public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator implements Authenticator {
 
+    protected final WebAuthnConditionalUIAuthenticator webauthnAuth;
+
+    public UsernamePasswordForm() {
+        webauthnAuth = null;
+    }
+
+    public UsernamePasswordForm(KeycloakSession session) {
+        webauthnAuth = new WebAuthnConditionalUIAuthenticator(session, (context) -> createLoginForm(context.form()));
+    }
+
     @Override
     public void action(AuthenticationFlowContext context) {
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         if (formData.containsKey("cancel")) {
             context.cancelLogin();
             return;
-        }
-        if (!validateForm(context, formData)) {
+        } else if (webauthnAuth != null && webauthnAuth.isPasskeysEnabled()
+                && (formData.containsKey(WebAuthnConstants.AUTHENTICATOR_DATA) || formData.containsKey(WebAuthnConstants.ERROR))) {
+            // webauth form submission, try to action using the webauthn authenticator
+            webauthnAuth.action(context);
+            return;
+        } else if (!validateForm(context, formData)) {
+            // normal username and form authenticator
             return;
         }
-        context.success();
+        context.success(PasswordCredentialModel.TYPE);
     }
 
     protected boolean validateForm(AuthenticationFlowContext context, MultivaluedMap<String, String> formData) {
         return validateUserAndPassword(context, formData);
+    }
+
+    protected boolean alreadyAuthenticatedUsingPasswordlessCredential(AuthenticationFlowContext context) {
+        // check if the authentication was already done using passwordless via passkeys
+        return webauthnAuth != null && webauthnAuth.isPasskeysEnabled() && webauthnAuth.getCredentialType().equals(
+                context.getAuthenticationSession().getAuthNote(AuthenticationProcessor.LAST_AUTHN_CREDENTIAL));
     }
 
     @Override
@@ -75,6 +99,10 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
                     formData.add("rememberMe", "on");
                 }
             }
+            // setup webauthn data when the user is not already selected
+            if (webauthnAuth != null && webauthnAuth.isPasskeysEnabled()) {
+                webauthnAuth.fillContextForm(context);
+            }
         }
         Response challengeResponse = challenge(context, formData);
         context.challenge(challengeResponse);
@@ -88,11 +116,19 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
     protected Response challenge(AuthenticationFlowContext context, MultivaluedMap<String, String> formData) {
         LoginFormsProvider forms = context.form();
 
-        if (formData.size() > 0) forms.setFormData(formData);
+        if (!formData.isEmpty()) forms.setFormData(formData);
 
         return forms.createLoginUsernamePassword();
     }
 
+    @Override
+    protected Response challenge(AuthenticationFlowContext context, String error, String field) {
+        if (context.getUser() == null && webauthnAuth != null && webauthnAuth.isPasskeysEnabled()) {
+            // setup webauthn data when the user is not already selected
+            webauthnAuth.fillContextForm(context);
+        }
+        return super.challenge(context, error, field);
+    }
 
     @Override
     public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {

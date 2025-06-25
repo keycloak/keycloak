@@ -124,17 +124,6 @@
             MSSQL returns the whole result at once.
             See https://docs.oracle.com/en/database/oracle/oracle-database/21/jjdbc/resultset.html -->
             <property name="hibernate.jdbc.fetch_size" value="64" />
-
-            <!-- We consider database statements taking longer than 10s as slow
-            See https://docs.jboss.org/hibernate/orm/6.6/introduction/html_single/Hibernate_Introduction.html#slow-queries
-            Note, that this requires the logger configuration: org.hibernate.SQL_SLOW:info
-            -->
-            <property name="hibernate.log_slow_query" value="10000"/>
-
-            <!-- Prepends the name or query text of the executed statement as comment to make it easier to identify slow queries
-            See https://docs.jboss.org/hibernate/orm/6.6/introduction/html_single/Hibernate_Introduction.html#slow-queries
-            -->
-            <property name="hibernate.use_sql_comments" value="true"/>
         </properties>
     </persistence-unit>
 </persistence>

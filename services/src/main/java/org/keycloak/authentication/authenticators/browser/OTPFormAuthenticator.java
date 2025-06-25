@@ -116,7 +116,7 @@ public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator impl
             context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);
             return;
         }
-        context.success();
+        context.success(OTPCredentialModel.TYPE);
     }
 
     @Override

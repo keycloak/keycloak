@@ -62,7 +62,7 @@ test.describe("Applications test", () => {
     await page.goto("/");
     await expect(page).toHaveURL(getAdminUrl());
     await page.waitForURL(getAdminUrl());
-    await expect(page.getByTestId("realmSelector")).toBeVisible();
+    await expect(page.getByTestId("options-toggle")).toBeVisible();
 
     await page.goto(getRootPath());
     await page.waitForURL(getAccountUrl());

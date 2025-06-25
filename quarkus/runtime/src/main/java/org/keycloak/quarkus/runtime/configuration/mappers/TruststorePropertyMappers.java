@@ -13,7 +13,7 @@ public class TruststorePropertyMappers {
                         .build(),
                 fromOption(TruststoreOptions.HOSTNAME_VERIFICATION_POLICY)
                         .paramLabel(TruststoreOptions.HOSTNAME_VERIFICATION_POLICY.getKey())
-                        .to("kc.spi-truststore-file-hostname-verification-policy")
+                        .to("kc.spi-truststore--file--hostname-verification-policy")
                         .build(),
         };
     }

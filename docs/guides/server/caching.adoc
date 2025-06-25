@@ -108,36 +108,47 @@ CPU, memory, and network utilization.
 
 These in-memory caches for user sessions and client sessions are limited to, by default, 10000 entries per node which reduces the overall memory usage of {project_name} for larger installations.
 The internal caches will run with only a single owner for each cache entry.
-Consider trade-off between memory consumption and the database utilization and set different sizes for the caches, edit {project_name}'s cache config file (`conf/cache-ispn.xml`) to set a `+<memory max-count="..."/>+` for those caches.
 
-.Volatile user sessions
+.Offline user sessions
+As an OpenID Connect Provider, the server is capable of authenticating users and issuing offline tokens. When issuing an offline token after successful authentication, the server creates an offline user session and offline client session.
 
-By default, user sessions are stored in the database and loaded on-demand to the cache.
-It is possible to configure {project_name} to store user sessions in the cache only and minimize the database utilization.
+The following caches are used to store offline sessions:
+
+* offlineSessions
+* offlineClientSessions
+
+Like the user and client sessions caches, the offline user and client session caches are limited to 10000 entries per node by default. Items which are evicted from the memory will be loaded on-demand from the database when needed.
+
+.Password brute force detection
+The `loginFailures` distributed cache is used to track data about failed login attempts.
+This cache is needed for the Brute Force Protection feature to work in a multi-node {project_name} setup.
+
+.Action tokens
+Action tokens are used for scenarios when a user needs to confirm an action asynchronously, for example in the emails sent by the forgot password flow.
+The `actionTokens` distributed cache is used to track metadata about action tokens.
+
+=== Volatile user sessions
+
+By default, regular user sessions are stored in the database and loaded on-demand to the cache.
+It is possible to configure {project_name} to store regular user sessions in the cache only and minimize calls to the database.
 
 Since all the sessions in this setup are stored in-memory, there are two side effects related to this:
 
-* Losing sessions on when all {project_name} nodes restart.
+* Losing sessions when all {project_name} nodes restart.
 * Increased memory consumption.
+
+When using volatile user sessions, the cache is the source of truth for user and client sessions.
+{project_name} automatically adjusts the number of entries that can be stored in memory, and increases the number of copies to prevent data loss.
+
+[WARNING]
+====
+It is not recommended to use volatile user sessions when using offline sessions extensively due to potentially high memory usage.
+For volatile sessions, the time offline sessions are cached in memory can be limited with the SPI options `spi-user-sessions--infinispan--offline-client-session-cache-entry-lifespan-override` and `spi-user-sessions--infinispan--offline-session-cache-entry-lifespan-override`.
+====
 
 Follow these steps to enable this setup:
 
-1. Since the cache is the only source of truth for user and client sessions, configure caches to not limit the number of entries and to replicate each entry to at least two nodes. To do so, edit {project_name}'s cache config file (`conf/cache-ispn.xml`) for caches `sessions` and `clientSessions` with the following update:
-+
---
-* Remove the `+<memory max-count="..."/>+`
-* Change `owners` attribute of the `distributed-cache` tag to 2 or more
---
-+
-An example of the resulting configuration for the `sessions` cache would look as follows.
-+
-[source,xml]
-----
-<distributed-cache name="sessions" owners="2">
-    <expiration lifespan="-1"/>
-</distributed-cache>
-----
-2. Disable `persistent-user-sessions` feature using the following command:
+1. Disable `persistent-user-sessions` feature using the following command:
 +
 ----
 bin/kc.sh start --features-disabled=persistent-user-sessions ...
@@ -148,27 +159,8 @@ bin/kc.sh start --features-disabled=persistent-user-sessions ...
 Disabling `persistent-user-sessions` is not possible when `multi-site` feature is enabled.
 ====
 
-.Offline user sessions
-As an OpenID Connect Provider, the server is also capable of authenticating users and issuing offline tokens. Similarly to regular user and client sessions,
-when an offline token is issued by the server upon successful authentication, the server also creates an offline user session and an offline client session.
-
-The following caches are used to store offline sessions:
-
-* offlineSessions
-* offlineClientSessions
-
-Similarly to regular user and client sessions caches, also the offline user and client session caches are limited to 10000 entries per node by default. Items which are evicted from the memory will be loaded on-demand from the database when needed.
-Consider trade-off between memory consumption and the database utilization and set different sizes for the caches, edit {project_name}'s cache config file (`conf/cache-ispn.xml`) to set a `+<memory max-count="..."/>+` for those caches.
-
-.Password brute force detection
-The `loginFailures` distributed cache is used to track data about failed login attempts.
-This cache is needed for the Brute Force Protection feature to work in a multi-node {project_name} setup.
-
-.Action tokens
-Action tokens are used for scenarios when a user needs to confirm an action asynchronously, for example in the emails sent by the forgot password flow.
-The `actionTokens` distributed cache is used to track metadata about action tokens.
-
 === Configuring cache maximum size
+
 In order to reduce memory usage, it's possible to place an upper bound on the number of entries which are stored in a given
 cache. To specify an upper bound of on a cache, you must provide the following command line argument
 `--cache-embedded-$\{CACHE_NAME}-max-count=`, with `$\{CACHE_NAME}` replaced with the name of the cache you would like to
@@ -176,16 +168,20 @@ apply the upper bound to. For example, to apply an upper-bound of `1000` to the 
 `--cache-embedded-offline-sessions-max-count=1000`. An upper bound can not be defined on the following caches:
 `actionToken`, `authenticationSessions`, `loginFailures`, `work`.
 
+Setting a maximum cache size for `sessions`, `clientSessions`, `offlineSessions` and `offlineClientSessions` is not supported when volatile sessions are enabled.
+
 === Configuring caches for availability
 
 Distributed caches replicate cache entries on a subset of nodes in a cluster and assigns entries to fixed owner nodes.
 
 Each distributed cache, that is a primary source of truth of the data (`authenticationSessions`, `loginFailures` and `actionTokens`) has two owners per default, which means that two nodes have a copy of the specific cache entries.
 Non-owner nodes query the owners of a specific cache to obtain data.
+When one of the owners becomes unavailable, the data is restored from the remaining owner and rebalanced across the remaining nodes.
 When both owner nodes are offline, all data is lost.
 
-The default number of owners is enough to survive 1 node (owner) failure in a cluster setup with at least three nodes. You are free
-to change the number of owners accordingly to better fit into your availability requirements. To change the number of owners, open `conf/cache-ispn.xml` and change the value for `owners=<value>` for the distributed caches to your desired value.
+The default number of two owners is the minimum number is necessary to survive one node (owner) failure or a rolling restart in a cluster setup with at least two nodes.
+A higher number increases the availability of the data, but at the expense of slower writes as more nodes need to be updated.
+Therefore, changing the number of owners for the caches `authenticationSessions`, `loginFailures` and `actionTokens` is not recommended.
 
 === Specify your own cache configuration file
 
@@ -242,7 +238,7 @@ The following table shows transport stacks that are available using the `--cache
 |===
 |Stack name|Transport protocol|Discovery
 
-|`kubernetes`|TCP|DNS resolution using the JGroups `DNS_PING` protocol. It requires to set `jgroups.dns.query` to the headless service FQDN.
+|`kubernetes` (deprecated) |TCP|DNS resolution using the JGroups `DNS_PING` protocol. It requires to set `jgroups.dns.query` to the headless service FQDN.
 |`tcp` (deprecated)|TCP|IP multicast using the JGroups `MPING` protocol. See below on how to configure a unique `jgroups.mcast_addr` or `jgroups.mcast_port` for each cluster.
 |`udp` (deprecated)|UDP|IP multicast using the JGroups `PING` protocol. See below on how to configure a unique `jgroups.mcast_addr` or `jgroups.mcast_port` for each cluster.
 |===
@@ -336,6 +332,7 @@ m|jgroups.fd.port-offset
 |Failure detection by protocol `FD_SOCK2`.
 It listens to the abrupt closing of a socket to suspect a {project_name} server failure.
 The `jgroups.fd.port-offset` property defines the offset from the `jgroups.bind.port`.
+By default, the offset is set to 50000, making the failure detection port 57800.
 
 |===
 
