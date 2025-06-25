@@ -585,8 +585,16 @@ public class TokenManager {
     }
 
 
-    public static Set<RoleModel> getAccess(UserModel user, ClientModel client, Stream<ClientScopeModel> clientScopes) {
-        Set<RoleModel> roleMappings = RoleUtils.getDeepUserRoleMappings(user);
+    // TIDECLOAK MODIFIED
+    public static Set<RoleModel> getAccess(KeycloakSession session, UserModel user, ClientModel client, Stream<ClientScopeModel> clientScopes) {
+        Set<RoleModel> roleMappings;
+        UserContextUtilBase userContextUtil = UserContextUtilBase.getUserContextUtil();
+
+        if( Boolean.parseBoolean(client.getRealm().getAttribute("isIGAEnabled"))){
+            roleMappings = userContextUtil.getDeepUserRoleMappings(user, session, client.getRealm(), DraftStatus.ACTIVE);
+        } else {
+            roleMappings = RoleUtils.getDeepUserRoleMappings(user);
+        }
 
         if (client.isFullScopeAllowed()) {
             if (logger.isTraceEnabled()) {
@@ -612,7 +620,11 @@ public class TokenManager {
             scopeMappings = Stream.concat(scopeMappings, clientScopesMappings);
 
             // 3 - Expand scope mappings
+            if( Boolean.parseBoolean(client.getRealm().getAttribute("isIGAEnabled"))){
+                scopeMappings =  userContextUtil.expandActiveCompositeRoles(session, scopeMappings.collect(Collectors.toSet())).stream();
+            } else {
             scopeMappings = RoleUtils.expandCompositeRolesStream(scopeMappings);
+            }
 
             // Intersection of expanded user roles and expanded scopeMappings
             roleMappings.retainAll(scopeMappings.collect(Collectors.toSet()));

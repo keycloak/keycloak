@@ -46,6 +46,8 @@ import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.rar.AuthorizationRequestContext;
 import org.keycloak.rar.AuthorizationRequestSource;
 import org.keycloak.util.TokenUtil;
+import org.tidecloak.shared.utils.UserContextUtilBase;
+import org.tidecloak.shared.enums.DraftStatus;
 
 /**
  * Not thread safe. It's per-request object
@@ -275,7 +277,15 @@ public class DefaultClientSessionContext implements ClientSessionContext {
         }
 
         // Expand (resolve composite roles)
+
+        // TIDECLOAK IMPLEMENTATION
+        UserContextUtilBase userContextUtil = UserContextUtilBase.getUserContextUtil();
+        if(Boolean.parseBoolean(clientScope.getRealm().getAttribute("isIGAEnabled"))){
+            clientScopeRoles = userContextUtil.expandActiveCompositeRoles(session, clientScopeRoles);
+        }
+        else {
         clientScopeRoles = RoleUtils.expandCompositeRoles(clientScopeRoles);
+        }
 
         //remove roles that are not contained in requested audience
         if (attributes.get(Constants.REQUESTED_AUDIENCE_CLIENTS) != null) {
@@ -294,7 +304,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
     private Set<RoleModel> loadRoles() {
         UserModel user = clientSession.getUserSession().getUser();
         ClientModel client = clientSession.getClient();
-        return TokenManager.getAccess(user, client, getClientScopesStream());
+        return TokenManager.getAccess(session, user, client, getClientScopesStream());
     }
 
 
@@ -317,9 +327,17 @@ public class DefaultClientSessionContext implements ClientSessionContext {
     }
 
 
+    // TIDECLOAK MODIFIED
     private Set<RoleModel> loadUserRoles() {
         UserModel user = clientSession.getUserSession().getUser();
-        return RoleUtils.getDeepUserRoleMappings(user);
-    }
+        ClientModel client = clientSession.getClient();
 
+        UserContextUtilBase userContextUtil = UserContextUtilBase.getUserContextUtil();
+        if(Boolean.parseBoolean(client.getRealm().getAttribute("isIGAEnabled"))){
+            return userContextUtil.getDeepUserRoleMappings(user, session, client.getRealm(), DraftStatus.ACTIVE);
+        }
+        else {
+            return RoleUtils.getDeepUserRoleMappings(user);
+        }
+    }
 }
