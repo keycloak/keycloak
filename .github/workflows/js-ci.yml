@@ -173,7 +173,7 @@ jobs:
         working-directory: js
 
       - name: Run Playwright tests
-        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test:integration
+        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test
         working-directory: js
 
       - name: Upload Playwright report

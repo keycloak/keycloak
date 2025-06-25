@@ -15,16 +15,16 @@
  * limitations under the License.
  */
 
-package org.keycloak.quarkus.runtime.configuration.test;
+package org.keycloak.quarkus.runtime.configuration;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
-import java.lang.reflect.Field;
 import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.function.Function;
@@ -36,11 +36,6 @@ import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
-import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
-import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
-import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
-import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import io.smallrye.config.ConfigValue;
@@ -50,27 +45,11 @@ import io.smallrye.config.SmallRyeConfig;
 public abstract class AbstractConfigurationTest {
 
     private static final Properties SYSTEM_PROPERTIES = (Properties) System.getProperties().clone();
-    private static final Map<String, String> ENVIRONMENT_VARIABLES = new HashMap<>(System.getenv());
 
-    @SuppressWarnings("unchecked")
     public static void putEnvVar(String name, String value) {
-        Map<String, String> env = System.getenv();
-        Field field = null;
-        try {
-            field = env.getClass().getDeclaredField("m");
-            field.setAccessible(true);
-            if (value == null) {
-                ((Map<String, String>) field.get(env)).remove(name);
-            } else {
-                ((Map<String, String>) field.get(env)).put(name, value);
-            }
-        } catch (Exception cause) {
-            throw new RuntimeException("Failed to update environment variables", cause);
-        } finally {
-            if (field != null) {
-                field.setAccessible(false);
-            }
-        }
+        assertNotNull(name);
+        assertNotNull(value);
+        KcEnvConfigSource.ENV_OVERRIDE.put(name, value);
     }
 
     public static void putEnvVars(Map<String, String> map) {
@@ -79,19 +58,7 @@ public abstract class AbstractConfigurationTest {
 
     @SuppressWarnings("unchecked")
     public static void removeEnvVar(String name) {
-        Map<String, String> env = System.getenv();
-        Field field = null;
-        try {
-            field = env.getClass().getDeclaredField("m");
-            field.setAccessible(true);
-            ((Map<String, String>) field.get(env)).remove(name);
-        } catch (Exception cause) {
-            throw new RuntimeException("Failed to update environment variables", cause);
-        } finally {
-            if (field != null) {
-                field.setAccessible(false);
-            }
-        }
+        assertTrue(KcEnvConfigSource.ENV_OVERRIDE.remove(name) != null);
     }
 
     public static void setSystemProperty(String key, String value, Runnable runnable) {
@@ -109,16 +76,7 @@ public abstract class AbstractConfigurationTest {
         System.setProperties((Properties) SYSTEM_PROPERTIES.clone());
         Environment.setHomeDir(Paths.get("src/test/resources/"));
 
-        for (String name : new HashMap<>(System.getenv()).keySet()) {
-            if (!ENVIRONMENT_VARIABLES.containsKey(name)) {
-                removeEnvVar(name);
-            }
-        }
-        ENVIRONMENT_VARIABLES.forEach((key, value) -> {
-            if (!System.getenv(key).equals(value)) {
-                putEnvVar(key, value);
-            }
-        });
+        KcEnvConfigSource.ENV_OVERRIDE.clear();
 
         PropertyMappers.reset();
         ConfigArgsConfigSource.setCliArgs();
@@ -172,7 +130,7 @@ public abstract class AbstractConfigurationTest {
     protected void assertExternalConfig(Map<String, String> expectedValues) {
         expectedValues.forEach(this::assertExternalConfig);
     }
-    
+
     protected void assertConfigNull(String key, boolean isExternal) {
         Function<String, ConfigValue> getConfig = isExternal ? Configuration::getConfigValue : Configuration::getKcConfigValue;
         assertThat(String.format("We expect that the value is null for key '%s'", key), getConfig.apply(key).getValue(), nullValue());

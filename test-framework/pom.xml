@@ -47,6 +47,7 @@
         <module>remote</module>
         <module>remote-providers</module>
         <module>ui</module>
+        <module>clustering</module>
     </modules>
 
 </project>

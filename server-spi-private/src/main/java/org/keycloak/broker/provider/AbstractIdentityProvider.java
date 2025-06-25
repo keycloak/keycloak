@@ -47,8 +47,9 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
 
     protected static final Logger logger = Logger.getLogger(AbstractIdentityProvider.class);
 
-    // The clientSession note flag to indicate that email provided by identityProvider was changed on updateProfile page
+    // The clientSession note flag to indicate that email or username provided by identityProvider was changed on updateProfile page
     public static final String UPDATE_PROFILE_EMAIL_CHANGED = "UPDATE_PROFILE_EMAIL_CHANGED";
+    public static final String UPDATE_PROFILE_USERNAME_CHANGED = "UPDATE_PROFILE_USERNAME_CHANGED";
 
     // clientSession.note flag specifies if we imported new user to keycloak (true) or we just linked to an existing keycloak user (false)
     public static final String BROKER_REGISTERED_NEW_USER = "BROKER_REGISTERED_NEW_USER";

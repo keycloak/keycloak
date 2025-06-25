@@ -20,8 +20,6 @@ import org.keycloak.config.HealthOptions;
 import org.keycloak.config.HttpOptions;
 import org.keycloak.config.ManagementOptions;
 import org.keycloak.config.MetricsOptions;
-import org.keycloak.quarkus.runtime.Messages;
-import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import static org.keycloak.config.ManagementOptions.LEGACY_OBSERVABILITY_INTERFACE;
@@ -81,25 +79,21 @@ public class ManagementPropertyMappers {
                 fromOption(ManagementOptions.HTTPS_MANAGEMENT_CERTIFICATE_FILE)
                         .mapFrom(HttpOptions.HTTPS_CERTIFICATE_FILE)
                         .to("quarkus.management.ssl.certificate.files")
-                        .validator(value -> validateTlsProperties())
                         .paramLabel("file")
                         .build(),
                 fromOption(ManagementOptions.HTTPS_MANAGEMENT_CERTIFICATE_KEY_FILE)
                         .mapFrom(HttpOptions.HTTPS_CERTIFICATE_KEY_FILE)
                         .to("quarkus.management.ssl.certificate.key-files")
-                        .validator(value -> validateTlsProperties())
                         .paramLabel("file")
                         .build(),
                 fromOption(ManagementOptions.HTTPS_MANAGEMENT_KEY_STORE_FILE)
                         .mapFrom(HttpOptions.HTTPS_KEY_STORE_FILE)
                         .to("quarkus.management.ssl.certificate.key-store-file")
-                        .validator(value -> validateTlsProperties())
                         .paramLabel("file")
                         .build(),
                 fromOption(ManagementOptions.HTTPS_MANAGEMENT_KEY_STORE_PASSWORD)
                         .mapFrom(HttpOptions.HTTPS_KEY_STORE_PASSWORD)
                         .to("quarkus.management.ssl.certificate.key-store-password")
-                        .validator(value -> validateTlsProperties())
                         .paramLabel("password")
                         .isMasked(true)
                         .build(),
@@ -126,16 +120,12 @@ public class ManagementPropertyMappers {
     public static boolean isManagementTlsEnabled() {
         var key = Configuration.getOptionalKcValue(ManagementOptions.HTTPS_MANAGEMENT_CERTIFICATE_KEY_FILE.getKey());
         var cert = Configuration.getOptionalKcValue(ManagementOptions.HTTPS_MANAGEMENT_CERTIFICATE_FILE.getKey());
-        if (key.isPresent() && cert.isPresent()) return true;
+        if (key.isPresent() && cert.isPresent()) {
+            return true;
+        }
 
         var keystore = Configuration.getOptionalKcValue(ManagementOptions.HTTPS_MANAGEMENT_KEY_STORE_FILE.getKey());
         return keystore.isPresent();
     }
 
-    private static void validateTlsProperties() {
-        var isHttpEnabled = Configuration.isTrue(HttpOptions.HTTP_ENABLED);
-        if (!isHttpEnabled && !isManagementTlsEnabled()) {
-            throw new PropertyException(Messages.httpsConfigurationNotSet());
-        }
-    }
 }

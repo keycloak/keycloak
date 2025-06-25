@@ -95,7 +95,7 @@ test.describe("Account linking", () => {
 
     // Expect an error shown that the account cannot be unlinked
     await expect(page.getByTestId("last-alert")).toContainText(
-      "You can''t remove last federated identity as you don''t have a password.",
+      "You can not remove last federated identity as you do not have a password.",
     );
   });
 });
@@ -115,12 +115,16 @@ async function updateProfile(
   await page.getByRole("button", { name: "Submit" }).click();
 }
 
-async function loginWithUsernamePassword(page, username, password) {
+async function loginWithUsernamePassword(
+  page: Page,
+  username: string,
+  password: string,
+) {
   await page.getByLabel("Username").fill(username);
   await page.getByLabel("Password", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Sign In" }).click();
 }
 
-async function loginWithIdp(page, idpAlias: string) {
+async function loginWithIdp(page: Page, idpAlias: string) {
   await page.getByRole("link", { name: idpAlias }).click();
 }

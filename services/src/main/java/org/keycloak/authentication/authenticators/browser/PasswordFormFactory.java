@@ -35,11 +35,10 @@ import java.util.List;
 public class PasswordFormFactory implements AuthenticatorFactory {
 
     public static final String PROVIDER_ID = "auth-password-form";
-    public static final PasswordForm SINGLETON = new PasswordForm();
 
     @Override
     public Authenticator create(KeycloakSession session) {
-        return SINGLETON;
+        return new PasswordForm(session);
     }
 
     @Override

@@ -347,7 +347,7 @@ public class AuthorizationTokenService {
             authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(keycloakSession.getContext().getUri().getBaseUri(), realm.getName()));
 
             AuthenticationManager.setClientScopesInSession(keycloakSession, authSession);
-            clientSessionCtx = TokenManager.attachAuthenticationSession(keycloakSession, userSessionModel, authSession);
+            clientSessionCtx = TokenManager.attachAuthenticationSession(keycloakSession, userSessionModel, authSession, true);
         } else {
             clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSession, keycloakSession);
         }

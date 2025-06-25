@@ -10,9 +10,13 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
+import org.keycloak.vault.VaultProvider;
+
+import static org.junit.Assert.assertFalse;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class DefaultKeycloakSessionFactoryTest {
 
@@ -28,6 +32,41 @@ public class DefaultKeycloakSessionFactoryTest {
     @After
     public void after() {
         Config.init(new Config.SystemPropertiesConfigProvider());
+    }
+
+    @Test
+    public void testProviderInitialization() {
+        DefaultKeycloakSessionFactory factory = new DefaultKeycloakSessionFactory() {
+
+            @Override
+            public KeycloakSession create() {
+                return null;
+            }
+        };
+
+        Map<String, ProviderFactory> dependants = Map.of("two", new DummyProviderFactory("two", 2) {
+            @Override
+            public Set<Class<? extends Provider>> dependsOn() {
+                return Set.of(VaultProvider.class);
+            }
+        }, "one", new DummyProviderFactory("one", 0) {
+            @Override
+            public Set<Class<? extends Provider>> dependsOn() {
+                return Set.of(VaultProvider.class);
+            }
+        });
+
+        Map<String, ProviderFactory> vault = Map.of("three", new DummyVaultProviderFactory("three", 3) {
+            boolean init;
+
+            @Override
+            public void postInit(KeycloakSessionFactory factory) {
+                assertFalse(init);
+                init = true;
+            }
+        });
+
+        factory.initProviderFactories(false, Map.of(Provider.class, dependants, VaultProvider.class, vault));
     }
 
     @Test
@@ -90,18 +129,34 @@ public class DefaultKeycloakSessionFactoryTest {
         }
     }
 
-    private class DummyProviderFactory implements ProviderFactory {
-
-        private String id;
-        private int order;
+    private class DummyProviderFactory extends SimpleProviderFactory<Provider> {
 
         public DummyProviderFactory(String id, int order) {
+            super(id, order);
+        }
+
+    }
+
+    private class DummyVaultProviderFactory extends SimpleProviderFactory<VaultProvider> {
+
+        public DummyVaultProviderFactory(String id, int order) {
+            super(id, order);
+        }
+
+    }
+
+    private class SimpleProviderFactory<T extends Provider> implements ProviderFactory<T> {
+
+        String id;
+        int order;
+
+        public SimpleProviderFactory(String id, int order) {
             this.id = id;
             this.order = order;
         }
 
         @Override
-        public Provider create(KeycloakSession session) {
+        public T create(KeycloakSession session) {
             return null;
         }
 

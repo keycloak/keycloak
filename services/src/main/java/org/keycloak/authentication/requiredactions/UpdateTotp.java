@@ -32,6 +32,7 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.Constants;
@@ -116,10 +117,23 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
             AuthenticatorUtil.logoutOtherSessions(context);
         }
 
-        if (!CredentialHelper.createOTPCredential(context.getSession(), context.getRealm(), context.getUser(), challengeResponse, credentialModel)) {
+        try {
+            if (!CredentialHelper.createOTPCredential(context.getSession(), context.getRealm(), context.getUser(), challengeResponse, credentialModel)) {
+                Response challenge = context.form()
+                        .setAttribute("mode", mode)
+                        .addError(new FormMessage(Validation.FIELD_OTP_CODE, Messages.INVALID_TOTP))
+                        .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
+                context.challenge(challenge);
+                return;
+            }
+        } catch (ModelDuplicateException e) {
+            String field = switch (e.getDuplicateFieldName()) {
+                case CredentialModel.USER_LABEL ->  Validation.FIELD_OTP_LABEL;
+                default -> null;
+            };
             Response challenge = context.form()
                     .setAttribute("mode", mode)
-                    .addError(new FormMessage(Validation.FIELD_OTP_CODE, Messages.INVALID_TOTP))
+                    .addError(new FormMessage(field, e.getMessage()))
                     .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
             context.challenge(challenge);
             return;

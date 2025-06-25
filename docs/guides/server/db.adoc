@@ -308,7 +308,7 @@ Because cluster nodes can boot concurrently, they take extra time for database a
 
 The maximum timeout for this lock is 900 seconds. If a node waits on this lock for more than the timeout, the boot fails. The need to change the default value is unlikely, but you can change it by entering this command:
 
-<@kc.start parameters="--spi-dblock-jpa-lock-wait-timeout 900"/>
+<@kc.start parameters="--spi-dblock--jpa--lock-wait-timeout 900"/>
 
 == Using Database Vendors with XA transaction support
 {project_name} uses non-XA transactions and the appropriate database drivers by default.
@@ -330,17 +330,17 @@ NOTE: Enabling XA transactions in a containerized environment does not fully sup
 To setup the JPA migrationStrategy (manual/update/validate) you should setup JPA provider as follows:
 
 .Setting the `migration-strategy` for the `quarkus` provider of the `connections-jpa` SPI
-<@kc.start parameters="--spi-connections-jpa-quarkus-migration-strategy=manual"/>
+<@kc.start parameters="--spi-connections--jpa--quarkus-migration-strategy=manual"/>
 
 If you want to get a SQL file for DB initialization, too, you have to add this additional SPI initializeEmpty (true/false):
 
 .Setting the `initialize-empty` for the `quarkus` provider of the `connections-jpa` SPI
-<@kc.start parameters="--spi-connections-jpa-quarkus-initialize-empty=false"/>
+<@kc.start parameters="--spi-connections--jpa--quarkus-initialize-empty=false"/>
 
 In the same way the migrationExport to point to a specific file and location:
 
 .Setting the `migration-export` for the `quarkus` provider of the `connections-jpa` SPI
-<@kc.start parameters="--spi-connections-jpa-quarkus-migration-export=<path>/<file.sql>"/>
+<@kc.start parameters="--spi-connections--jpa--quarkus-migration-export=<path>/<file.sql>"/>
 
 For more information, check the link:{upgrading_guide_link}#_migrate_db[Migrating the database] documentation.
 
