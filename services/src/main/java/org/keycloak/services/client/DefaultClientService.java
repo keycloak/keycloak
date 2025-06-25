@@ -36,14 +36,26 @@ public class DefaultClientService implements ClientService {
     }
 
     @Override
-    public ClientRepresentation createClient(RealmModel realm, ClientRepresentation client) throws ServiceException {
-        if (realm.getClientByClientId(client.getClientId()) != null) {
-            throw new ServiceException("Client already exists", Response.Status.CONFLICT);
+    public CreateOrUpdateResult createOrUpdate(RealmModel realm, ClientRepresentation client, boolean allowUpdate)
+            throws ServiceException {
+        boolean created = false;
+        ClientModel model = realm.getClientByClientId(client.getClientId());
+        if (model != null) {
+            if (!allowUpdate) {
+                throw new ServiceException("Client already exists", Response.Status.CONFLICT);
+            }
+        } else {
+            model = realm.addClient(client.getClientId());
+            created = true;
         }
 
-        var model = realm.addClient(client.getClientId());
-        // TODO: overlay model
-        return mapper.fromModel(model);
+        // TODO: defaulting, validation, canonicalization
+
+        mapper.toModel(model, client, realm);
+
+        var updated = mapper.fromModel(model);
+
+        return new CreateOrUpdateResult(updated, created);
     }
 
     @Override
@@ -58,16 +70,6 @@ public class DefaultClientService implements ClientService {
         return null;
     }
 
-    @Override
-    public ClientRepresentation updateClient(RealmModel realm, ClientRepresentation client) throws ServiceException {
-        ClientModel model = realm.getClientByClientId(client.getClientId());
-        if (model == null) {
-            throw new ServiceException("Client does not exist", Response.Status.NOT_FOUND);
-        }
-
-        // TODO: overlay model
-        return mapper.fromModel(model);
-    }
 
     @Override
     public void close() {
