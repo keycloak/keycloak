@@ -61,7 +61,8 @@ public class ClickThroughAuthenticator implements Authenticator, AuthenticatorFa
 
     @Override
     public void action(AuthenticationFlowContext context) {
-        if (context.getHttpRequest().getDecodedFormParameters().containsKey("cancel")) {
+        final var accepted = context.getHttpRequest().getDecodedFormParameters().containsKey("accept");
+        if (!accepted) {
             authenticate(context);
             return;
         }
