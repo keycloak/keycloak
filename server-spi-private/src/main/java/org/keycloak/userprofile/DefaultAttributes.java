@@ -567,6 +567,11 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         return unmanagedAttributes;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        return super.equals(o);
+    }
+
     protected AttributeMetadata createUnmanagedAttributeMetadata(String name) {
         return new AttributeMetadata(name, Integer.MAX_VALUE) {
             final UnmanagedAttributePolicy unmanagedAttributePolicy = upConfig.getUnmanagedAttributePolicy();
