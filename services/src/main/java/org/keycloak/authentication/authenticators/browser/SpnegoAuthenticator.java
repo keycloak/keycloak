@@ -105,7 +105,7 @@ public class SpnegoAuthenticator extends AbstractUsernameFormAuthenticator imple
                     context.getAuthenticationSession().setUserSessionNote(entry.getKey(), entry.getValue());
                 }
             }
-            context.success();
+            context.success(UserCredentialModel.KERBEROS);
         } else if (output.getAuthStatus() == CredentialValidationOutput.Status.CONTINUE) {
             String spnegoResponseToken = (String) output.getState().get(KerberosConstants.RESPONSE_TOKEN);
             Response challenge =  challengeNegotiation(context, spnegoResponseToken);

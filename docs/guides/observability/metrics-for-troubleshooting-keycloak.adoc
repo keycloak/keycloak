@@ -73,7 +73,7 @@ Possible values:
 --
 ====
 
-To configure what tags are available provide a comma-separated list of tag names to the following option `spi-credential-keycloak-password-validations-counter-tags`.
+To configure what tags are available provide a comma-separated list of tag names to the following option `spi-credential--keycloak-password--validations-counter-tags`.
 By default, all tags are enabled.
 
 The snippet below is an example of a response provided by the metric endpoint:

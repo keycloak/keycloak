@@ -31,19 +31,6 @@ runs:
         # Enable cross-os archive use the cache on both Linux and Windows
         enableCrossOsArchive: true
 
-    - shell: powershell
-      name: Link the cached Maven repository to the OS-dependent location
-      if: inputs.create-cache-if-it-doesnt-exist == 'false' && runner.os == 'Windows'
-      # The cache restore in the next step uses the relative path which was valid on Linux and that is part of the archive it downloads.
-      # You'll see that path when you enable debugging for the GitHub workflow on Windows.
-      # On Windows, the .m2 folder is in different location, so move all the contents to the right folder here.
-      # Also, not using the C: drive will speed up the build, see https://github.com/actions/runner-images/issues/8755
-      run: |
-        mkdir -p ..\..\..\.m2
-        mkdir -p D:\.m2\repository
-        cmd /c mklink /d $HOME\.m2\repository D:\.m2\repository
-        cmd /c mklink /d $PWD\..\..\..\.m2\repository D:\.m2\repository
-
     - id: restore-maven-repository
       name: Maven cache
       uses: actions/cache/restore@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
@@ -55,6 +42,15 @@ runs:
           !~/.m2/repository/org/keycloak
         key: ${{ steps.weekly-cache-key.outputs.key }}
         enableCrossOsArchive: true
+
+    - shell: bash
+      name: Copy restored maven repo to home folder in Windows
+      if: (steps.cache-maven-repository.outputs.cache-hit == 'true' || steps.restore-maven-repository.outputs.cache-hit == 'true') && runner.os == 'Windows'
+      run: |
+        if [ -d ../../../.m2/repository ]; then
+          cp -r ../../../.m2/repository ~/.m2
+          rm -r ../../../.m2/repository
+        fi
 
     - id: node-cache
       name: Node cache

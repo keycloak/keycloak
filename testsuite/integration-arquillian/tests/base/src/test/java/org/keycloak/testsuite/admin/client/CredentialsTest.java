@@ -240,6 +240,8 @@ public class CredentialsTest extends AbstractClientTest {
         config.setKeyAlias("alias");
         config.setKeyPassword("keyPass");
         config.setStorePassword("storePass");
+        config.setKeySize(4096);
+        config.setValidity(3);
         byte[] result = certRsc.generateAndGetKeystore(config);
         KeyStore keyStore = CryptoIntegration.getProvider().getKeyStore(preferredKeystoreType);
         keyStore.load(new ByteArrayInputStream(result), "storePass".toCharArray());

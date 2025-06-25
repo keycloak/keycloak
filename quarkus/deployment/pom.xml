@@ -34,6 +34,10 @@
                     <groupId>org.eclipse.sisu</groupId>
                     <artifactId>org.eclipse.sisu.inject</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-devtools-utilities</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -76,6 +80,36 @@
                     <groupId>io.quarkus</groupId>
                     <artifactId>quarkus-devtools-codestarts</artifactId>
                 </exclusion>
+                <!-- Exclude transitive dependencies for 'io.quarkus:quarkus-devtools-common' BEGIN -->
+                <exclusion>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-devtools-registry-client</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-devtools-utilities</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-devtools-base-codestarts</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.codejive</groupId>
+                    <artifactId>java-properties</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.commons</groupId>
+                    <artifactId>commons-compress</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.smallrye.common</groupId>
+                    <artifactId>smallrye-common-version</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.dataformat</groupId>
+                    <artifactId>jackson-dataformat-yaml</artifactId>
+                </exclusion>
+                <!-- Exclude transitive dependencies for 'io.quarkus:quarkus-devtools-common' END -->
             </exclusions>
         </dependency>
         <dependency>
@@ -97,6 +131,10 @@
                 <exclusion>
                     <groupId>io.quarkus</groupId>
                     <artifactId>quarkus-devservices-deployment</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-agroal-dev</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -195,6 +233,12 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-junit5-internal</artifactId>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-devtools-utilities</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>

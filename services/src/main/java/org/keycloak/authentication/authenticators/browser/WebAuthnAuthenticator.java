@@ -252,7 +252,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
             context.getEvent()
                 .detail(WebAuthnConstants.USER_VERIFICATION_CHECKED, isUVChecked)
                 .detail(WebAuthnConstants.PUBKEY_CRED_ID_ATTR, encodedCredentialID);
-            context.success();
+            context.success(getCredentialType());
         } else {
             context.getEvent()
                 .detail(WebAuthnConstants.AUTHENTICATED_USER_ID, userId)
