@@ -288,6 +288,22 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                     super.setEmailVerified(verified);
                 }
 
+                @Override
+                public String getUsername() {
+                    if (UserModel.USERNAME.equals(userModelAttrName)) {
+                        return ldapUser.getAttributeAsString(ldapAttrName);
+                    }
+                    return super.getUsername();
+                }
+
+                @Override
+                public String getEmail() {
+                    if (UserModel.EMAIL.equals(userModelAttrName)) {
+                        return ldapUser.getAttributeAsString(ldapAttrName);
+                    }
+                    return super.getEmail();
+                }
+
                 protected boolean setLDAPAttribute(String modelAttrName, Object value) {
                     if (modelAttrName.equalsIgnoreCase(userModelAttrName)) {
                         if (UserAttributeLDAPStorageMapper.logger.isTraceEnabled()) {
@@ -506,11 +522,18 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
             userModelProperty.setValue(user, null);
         } else {
             Class<Object> clazz = userModelProperty.getJavaClass();
+            Object currentValue = userModelProperty.getValue(user);
 
             if (String.class.equals(clazz)) {
+                if (ldapAttrValue.equals(currentValue)) {
+                    return;
+                }
                 userModelProperty.setValue(user, ldapAttrValue);
             } else if (Boolean.class.equals(clazz) || boolean.class.equals(clazz)) {
                 Boolean boolVal = Boolean.valueOf(ldapAttrValue);
+                if (boolVal.equals(currentValue)) {
+                    return;
+                }
                 userModelProperty.setValue(user, boolVal);
             } else {
                 logger.warnf("Don't know how to set the property '%s' on user '%s' . Value of LDAP attribute is '%s' ", userModelProperty.getName(), user.getUsername(), ldapAttrValue.toString());

@@ -193,8 +193,9 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
             containerBuilder.withVolumeMounts(newVolumeMounts);
         }
 
-        // remove restart policy and probes
+        // remove restart policy, lifecycle, and probes
         containerBuilder.withRestartPolicy(null);
+        containerBuilder.withLifecycle(null);
         containerBuilder.withReadinessProbe(null);
         containerBuilder.withLivenessProbe(null);
         containerBuilder.withStartupProbe(null);

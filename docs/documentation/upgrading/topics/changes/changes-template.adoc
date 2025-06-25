@@ -1,0 +1,29 @@
+// ------------------------ Breaking changes ------------------------  //
+== Breaking changes
+
+Breaking changes are identified as requiring changes from existing users to their configurations.
+In minor or patch releases we will only do breaking changes to fix bugs.
+
+=== <TODO>
+
+// ------------------------ Notable changes ------------------------ //
+== Notable changes
+
+Notable changes where an internal behavior changed to prevent common misconfigurations, fix bugs or simplify running {project_name}.
+
+=== <TODO>
+
+// ------------------------ Deprecated features ------------------------ //
+== Deprecated features
+
+The following sections provide details on deprecated features.
+
+=== <TODO>
+
+// ------------------------ Removed features ------------------------ //
+== Removed features
+
+The following features have been removed from this release.
+
+=== <TODO>
+

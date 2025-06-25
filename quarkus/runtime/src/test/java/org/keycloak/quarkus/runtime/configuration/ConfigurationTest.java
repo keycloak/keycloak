@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.quarkus.runtime.configuration.test;
+package org.keycloak.quarkus.runtime.configuration;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -66,6 +66,14 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void testCamelCaseNewFormat() {
+        putEnvVar("KC_SPI_CAMEL_CASE_SCOPE__CAMEL_CASE_PROP", "foobar");
+        initConfig();
+        String value = Config.scope("camelCaseScope").get("camelCaseProp");
+        assertEquals(value, "foobar");
+    }
+
+    @Test
     public void testEnvVarPriorityOverPropertiesFile() {
         putEnvVar("KC_SPI_HOSTNAME_DEFAULT_FRONTEND_URL", "http://envvar.unittest");
         assertEquals("http://envvar.unittest", initConfig("hostname", "default").get("frontendUrl"));
@@ -84,13 +92,13 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         Config.Scope config = initConfig("vault", FilesPlainTextVaultProviderFactory.ID);
         assertEquals("/foo/bar", config.get("dir"));
         assertTrue(config.getPropertyNames()
-                .contains("kc.spi-vault-".concat(FilesPlainTextVaultProviderFactory.ID).concat("-dir")));
+                .contains("kc.spi-vault--".concat(FilesPlainTextVaultProviderFactory.ID).concat("--dir")));
 
         putEnvVar("KC_VAULT_TYPE", "JKS");
         config = initConfig("vault", FilesKeystoreVaultProviderFactory.ID);
         assertEquals("JKS", config.get("type"));
         assertTrue(config.getPropertyNames()
-                .contains("kc.spi-vault-".concat(FilesKeystoreVaultProviderFactory.ID).concat("-type")));
+                .contains("kc.spi-vault--".concat(FilesKeystoreVaultProviderFactory.ID).concat("--type")));
     }
 
     @Test
@@ -159,7 +167,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertEquals("false", config.getConfigValue("MY_EXPRESSION").getValue());
 
         // without the env variable set, the expression should use the missing env variable
-        putEnvVar("KC_HOSTNAME_STRICT", null);
+        removeEnvVar("KC_HOSTNAME_STRICT");
         ConfigArgsConfigSource.setCliArgs("");
         config = createConfig();
         // check that we get the mapped default value
@@ -183,7 +191,6 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     public void testPropertyNamesFromConfig() {
         ConfigArgsConfigSource.setCliArgs("--spi-client-registration-openid-connect-static-jwk-url=http://c.jwk.url");
         Config.Scope config = initConfig("client-registration", "openid-connect");
-        assertEquals(1, config.getPropertyNames().size());
         assertEquals("http://c.jwk.url", config.get("static-jwk-url"));
 
         ConfigArgsConfigSource.setCliArgs("--vault-dir=secrets");
@@ -199,17 +206,14 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         ConfigArgsConfigSource.setCliArgs();
         System.setProperty("kc.spi-client-registration-openid-connect-static-jwk-url", "http://c.jwk.url");
         config = initConfig("client-registration", "openid-connect");
-        assertEquals(1, config.getPropertyNames().size());
         assertEquals("http://c.jwk.url", config.get("static-jwk-url"));
 
         ConfigArgsConfigSource.setCliArgs();
         System.getProperties().remove("kc.spi-client-registration-openid-connect-static-jwk-url");
         putEnvVar("KC_SPI_CLIENT_REGISTRATION_OPENID_CONNECT_STATIC_JWK_URL", "http://c.jwk.url/from-env");
         config = initConfig("client-registration", "openid-connect");
-        assertEquals(2, config.getPropertyNames().size()); // transformed name is coming from KcEnvVarConfigSource, raw env var name is coming from EnvVarConfigSource
         assertEquals("http://c.jwk.url/from-env", config.get("static-jwk-url"));
     }
-
 
     @Test
     public void testPropertyMapping() {
@@ -590,5 +594,5 @@ public class ConfigurationTest extends AbstractConfigurationTest {
 
     private static Config.Scope cacheEmbeddedConfiguration() {
         return initConfig(CacheEmbeddedConfigProviderSpi.SPI_NAME, DefaultCacheEmbeddedConfigProviderFactory.PROVIDER_ID);
-    } 
+    }
 }

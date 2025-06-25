@@ -202,12 +202,21 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
         UserProfile profile = profileProvider.create(UserProfileContext.IDP_REVIEW, attributes, updatedProfile);
 
         try {
-            String oldEmail = userCtx.getEmail();
-
             profile.update((attributeName, userModel, oldValue) -> {
-                if (attributeName.equals(UserModel.EMAIL)) {
+                if (attributeName.equals(UserModel.USERNAME)) {
+                    context.getAuthenticationSession().setAuthNote(AbstractIdentityProvider.UPDATE_PROFILE_USERNAME_CHANGED, "true");
+                    event.clone().event(EventType.UPDATE_PROFILE)
+                            .detail(Details.CONTEXT, UserProfileContext.IDP_REVIEW.name())
+                            .detail(Details.PREF_PREVIOUS + UserModel.USERNAME, oldValue)
+                            .detail(Details.PREF_UPDATED + UserModel.USERNAME, profile.getAttributes().getFirst(UserModel.USERNAME))
+                            .success();
+                } else if (attributeName.equals(UserModel.EMAIL)) {
                     context.getAuthenticationSession().setAuthNote(AbstractIdentityProvider.UPDATE_PROFILE_EMAIL_CHANGED, "true");
-                    event.clone().event(EventType.UPDATE_EMAIL).detail(Details.CONTEXT, UserProfileContext.IDP_REVIEW.name()).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, profile.getAttributes().getFirst(UserModel.EMAIL)).success();
+                    event.clone().event(EventType.UPDATE_EMAIL)
+                            .detail(Details.CONTEXT, UserProfileContext.IDP_REVIEW.name())
+                            .detail(Details.PREVIOUS_EMAIL, oldValue)
+                            .detail(Details.UPDATED_EMAIL, profile.getAttributes().getFirst(UserModel.EMAIL))
+                            .success();
                 }
             });
         } catch (ValidationException pve) {

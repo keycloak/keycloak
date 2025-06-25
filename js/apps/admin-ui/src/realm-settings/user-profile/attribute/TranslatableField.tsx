@@ -98,9 +98,7 @@ export const TranslatableField = ({
   const requiredTranslationName = `${translationPrefix}.0.value`;
 
   useEffect(() => {
-    if (isTranslationRequired(value, t, realm)) {
-      setValue(fieldName, `\${${prefix}.${value}}`);
-    }
+    setValue(fieldName, `\${${prefix}.${value}}`);
   }, [value]);
 
   return (

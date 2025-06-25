@@ -80,10 +80,10 @@ test.describe("Personal info with userprofile enabled", () => {
   test("render long list of locales as typeahead", async ({ page }) => {
     await login(page, user, "jdoe", realm);
 
-    await page.locator("#locale").click();
+    await page.locator("#attributes\\.locale").click();
     await page.waitForSelector("text=Italiano");
 
-    await page.locator("#locale").click();
+    await page.locator("#attributes\\.locale").click();
     await page.locator("*:focus").press("Control+A");
     await page.locator("*:focus").pressSequentially("S");
     await expect(page.getByText("Italiano")).toHaveCount(0);
@@ -126,14 +126,14 @@ test.describe("Realm localization", () => {
     );
 
     await login(page, user, "pwd", realm);
-    await page.locator("#locale").click();
+    await page.locator("#attributes\\.locale").click();
     page.getByRole("option").filter({ hasText: "Deutsch" });
     await page.getByRole("option", { name: "English" }).click();
     await page.getByTestId("save").click();
     await page.reload();
 
     expect(
-      page.locator("#locale").filter({ hasText: /^English$/ }),
+      page.locator("#attributes\\.locale").filter({ hasText: /^English$/ }),
     ).toBeDefined();
   });
 });

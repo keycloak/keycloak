@@ -54,7 +54,7 @@ metadata:
   name: keycloak-providers
   namespace: keycloak
 binaryData:
-  keycloak-benchmark-dataset-0.15-SNAPSHOT.jar: ...
+  keycloak-benchmark-dataset-999.0.0-SNAPSHOT.jar: ...
 ---
 # Source: keycloak/templates/postgres/postgres-exporter-configmap.yaml
 apiVersion: v1
@@ -206,7 +206,7 @@ spec:
               value: keycloak
             - name: POSTGRES_DB
               value: keycloak
-          image: postgres:15
+          image: mirror.gcr.io/postgres:15
           volumeMounts:
             # Using volume mount for PostgreSQL's data folder as it is otherwise not writable
             - mountPath: /var/lib/postgresql
@@ -351,7 +351,7 @@ spec:
             - name: SQLPAD_CONNECTIONS__pgdemo__username
               value: keycloak
             - name: SQLPAD_CONNECTIONS__pgdemo__password
-              value: pass
+              value: secret99
             - name: SQLPAD_CONNECTIONS__pgdemo__database
               value: keycloak
             - name: SQLPAD_CONNECTIONS__pgdemo__driver
@@ -362,7 +362,7 @@ spec:
               value: '86400'
             - name: SQLPAD_QUERY_RESULT_MAX_ROWS
               value: '100000'
-          image: sqlpad/sqlpad:6.11.0
+          image: mirror.gcr.io/sqlpad/sqlpad:6.11.0
           imagePullPolicy: Always
           startupProbe:
             httpGet:
@@ -451,14 +451,10 @@ spec:
   startOptimized: false # <2>
   features:
     enabled:
-      - user-event-metrics
       - multi-site # <3>
-  transaction:
-    xaEnabled: false # <4>
   # tag::keycloak-ispn[]
   additionalOptions:
     # end::keycloak-ispn[]
-
     # end::keycloak[]
     - name: http-metrics-histograms-enabled
       value: 'true'
@@ -473,7 +469,7 @@ spec:
     # tag::keycloak[]
     - name: log-console-output
       value: json
-    - name: metrics-enabled # <5>
+    - name: metrics-enabled # <4>
       value: 'true'
     - name: event-metrics-user-enabled
       value: 'true'
@@ -490,10 +486,9 @@ spec:
       secret:
         name: remote-store-secret
         key: password
-    - name: spi-cache-embedded-default-site-name # <5>
-      value: keycloak
-    # end::keycloak-ispn[]
     - name: db-driver
+      # end::keycloak-ispn[]
+
       value: software.amazon.jdbc.Driver
   http:
     tlsSecret: keycloak-tls-secret
@@ -503,7 +498,7 @@ spec:
     podTemplate:
       metadata:
         annotations:
-          checksum/config: a6e4c8f98e1b1035942cd1121684f817d533021a392be90b5df784f474146350-9bfd430c6539df907f0421bb34c92fb32194d461565bd342f7f96ff5a5408273-<KEYCLOAK_IMAGE_HERE>-01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+          checksum/config: 74d09d74f6547eec9888f07648f5f5be52afa1be1a6231f286cbd368e86e6f19-099f6e0e31165c359aa5534e8dc6e42b603410742f45fefbc62d923ea6cb7e64-<KEYCLOAK_IMAGE_HERE>-01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
       spec:
         containers:
           - env:
@@ -520,10 +515,11 @@ spec:
                     name: keycloak-preconfigured-admin
                     key: password
                     optional: false
-              - name: JAVA_OPTS_APPEND # <5>
-                value: ""
+              - name: JAVA_OPTS_APPEND
+                value: >
+                  -Djdk.tracePinnedThreads=full
+
             ports:
-            # end::keycloak[]
             # readinessProbe:
             #   exec:
             #     command:
@@ -534,8 +530,8 @@ spec:
             #       - 'true'
             volumeMounts:
               - name: keycloak-providers
-                mountPath: /opt/keycloak/providers/keycloak-benchmark-dataset-0.15-SNAPSHOT.jar
-                subPath: keycloak-benchmark-dataset-0.15-SNAPSHOT.jar
+                mountPath: /opt/keycloak/providers/keycloak-benchmark-dataset-999.0.0-SNAPSHOT.jar
+                subPath: keycloak-benchmark-dataset-999.0.0-SNAPSHOT.jar
                 readOnly: true
         volumes:
           - name: keycloak-providers
@@ -552,11 +548,26 @@ spec:
   selector:
     matchLabels:
       app: keycloak
+  # Use pod target labels "as is" without any renaming
+  # podTargetLabels:
+  #   - app
+  # Since at least Keycloak 26.2 and the latest Quarkus 3.19 version, it requires "OpenMetricsText1.0.0" to retrieve exemplars,
+  # as at least some of the other protocols don't support exemplars.
+  scrapeProtocols:
+    - OpenMetricsText1.0.0
   podMetricsEndpoints:
     - port: management
       scheme: https
       tlsConfig:
         insecureSkipVerify: true
+      relabelings:
+        - targetLabel: application
+          # Alternative: hard-coded value
+          # replacement: "keycloak"
+          sourceLabels:
+            - __meta_kubernetes_pod_label_app
+          regex: (.+)
+          replacement: ${1}
 ---
 # Source: keycloak/templates/postgres/postgres-exporter.yaml
 apiVersion: monitoring.coreos.com/v1
