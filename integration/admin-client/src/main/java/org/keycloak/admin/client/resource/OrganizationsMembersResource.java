@@ -30,6 +30,25 @@ import org.keycloak.representations.idm.OrganizationRepresentation;
 
 public interface OrganizationsMembersResource {
 
+    /**
+     * Returns the organizations associated with the user that has the specified id.
+     *
+     * @param id user id
+     * @return Organizations of the user
+     */
+    @Path("{id}/organizations")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<OrganizationRepresentation> getOrganizations(
+            @PathParam("id") String id);
+
+    /**
+     * Returns the organizations associated with the user that has the specified id.
+     *
+     * @param id user id
+     * @param briefRepresentation if false, return the full representation. Otherwise, only the basic fields are returned. It is true by default. Parameter supported since Keycloak 26.3. It is assumed to be false for the older Keycloak server versions.
+     * @return Organizations of the user
+     */
     @Path("{id}/organizations")
     @GET
     @Produces(MediaType.APPLICATION_JSON)

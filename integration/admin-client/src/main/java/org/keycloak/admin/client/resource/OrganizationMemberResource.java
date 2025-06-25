@@ -48,6 +48,18 @@ public interface OrganizationMemberResource {
     @Path("organizations")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    List<OrganizationRepresentation> getOrganizations();
+
+    /**
+     * Returns the organizations associated with the user
+     *
+     * @param briefRepresentation if false, return the full representation. Otherwise, only the basic fields are returned. It is true by default. Parameter supported since Keycloak 26.3. It is assumed to be false for the older Keycloak server versions.
+     * @since Keycloak server 26
+     * @return the organizations associated with the user
+     */
+    @Path("organizations")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
     List<OrganizationRepresentation> getOrganizations(
             @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation);
 }
