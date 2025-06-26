@@ -45,6 +45,7 @@
         <mvel.version>2.5.2.Final</mvel.version>
         <systemrules.version>1.19.0</systemrules.version>
         <common.resources>${basedir}/../../servers/auth-server/common</common.resources>
+        <auth.server.ipv6>false</auth.server.ipv6>
     </properties>
     
     <dependencies>
@@ -433,7 +434,20 @@
     </build>
 
     <profiles>
-
+    
+        <profile>
+            <id>ipv6</id>
+            <activation>
+                <property>
+                    <name>java.net.preferIPv6Addresses</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <properties>
+                <auth.server.ipv6>true</auth.server.ipv6>
+            </properties>
+        </profile>
+        
         <profile>
             <id>app-server-wildfly</id>
             <activation>
