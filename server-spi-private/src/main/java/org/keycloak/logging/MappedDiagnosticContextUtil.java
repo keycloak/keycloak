@@ -31,9 +31,12 @@ public final class MappedDiagnosticContextUtil {
      * Clears the Mapped Diagnostic Context (MDC), but only clears the key/value pairs that were set by this provider.
      */
     public static void clearMdc() {
-        for (String key : new ArrayList<>(MDC.getMap().keySet())) {
-            if (key.startsWith(MappedDiagnosticContextProvider.MDC_PREFIX)) {
-                MDC.remove(key);
+        if (Profile.isFeatureEnabled(Profile.Feature.LOG_MDC)) {
+            // getMap() is relatively expensive as it actually copies the context, but just calling MDC.clear() is not an option because it might affect otel tracing.
+            for (String key : new ArrayList<>(MDC.getMap().keySet())) {
+                if (key.startsWith(MappedDiagnosticContextProvider.MDC_PREFIX)) {
+                    MDC.remove(key);
+                }
             }
         }
     }
