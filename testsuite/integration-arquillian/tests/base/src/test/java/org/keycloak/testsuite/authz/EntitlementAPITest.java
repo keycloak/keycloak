@@ -16,7 +16,9 @@
  */
 package org.keycloak.testsuite.authz;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -411,6 +413,110 @@ public class EntitlementAPITest extends AbstractAuthzTest {
                 PAIRWISE_TEST_CLIENT,
                 PAIRWISE_RESOURCE_SERVER_TEST,
                 PAIRWISE_AUTHZ_CLIENT_CONFIG);
+    }
+
+    @Test
+    public void testResolveResourcesWithSameUri() throws Exception {
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+        AuthorizationResource authorization = client.authorization();
+        List<ResourceRepresentation> defaultResource = authorization.resources().findByName("Default Resource");
+        assertThat(defaultResource.isEmpty(), is(false));
+        authorization.resources().resource(defaultResource.get(0).getId()).remove();
+
+        JSPolicyRepresentation policy = new JSPolicyRepresentation();
+        policy.setName(KeycloakModelUtils.generateId());
+        policy.setType("script-scripts/default-policy.js");
+        authorization.policies().js().create(policy).close();
+
+        ResourceRepresentation resource = new ResourceRepresentation();
+        resource.setName("Resource A");
+        resource.addScope("read");
+        resource.setUris(Set.of("/resource"));
+        authorization.resources().create(resource).close();
+
+        resource = new ResourceRepresentation();
+        resource.setName("Resource B");
+        resource.addScope("write");
+        resource.setUris(Set.of("/resource"));
+        authorization.resources().create(resource).close();
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+
+        permission.setName("Can Access Resource A");
+        permission.setResources(Set.of("Resource A"));
+        permission.addPolicy(policy.getName());
+
+        authorization.permissions().resource().create(permission).close();
+
+        permission = new ResourcePermissionRepresentation();
+
+        permission.setName("Can Access Resource B");
+        permission.setResources(Set.of("Resource B"));
+
+        authorization.permissions().resource().create(permission).close();
+
+        String accessToken = oauth.newConfig().realm("authz-test").client(RESOURCE_SERVER_TEST, "secret").doPasswordGrantRequest("kolo", "password").getAccessToken();
+        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        request.addPermission("/resource", "read");
+        Metadata metadata = new Metadata();
+        metadata.setPermissionResourceMatchingUri(true);
+        metadata.setPermissionResourceFormat("uri");
+        request.setMetadata(metadata);
+        authzClient.authorization(accessToken).authorize(request);
+
+        request = new AuthorizationRequest();
+        request.addPermission("/resource", "write");
+        request.setMetadata(metadata);
+        try {
+            authzClient.authorization(accessToken).authorize(request);
+            fail("should fail");
+        } catch (AuthorizationDeniedException ignore) {
+
+        }
+
+        request = new AuthorizationRequest();
+        request.addPermission("/resource", "write");
+        request.addPermission("/unknown", "write");
+        request.setMetadata(metadata);
+        try {
+            authzClient.authorization(accessToken).authorize(request);
+            fail("should fail");
+        } catch (Exception e) {
+            HttpResponseException cause = (HttpResponseException) e.getCause();
+            assertThat(cause.getStatusCode(), is(Response.Status.BAD_REQUEST.getStatusCode()));
+            assertThat(new String(cause.getBytes()), containsString("Resource with uri [/unknown] does not exist."));
+        }
+
+        request = new AuthorizationRequest();
+        request.addPermission("/resource", "write");
+        request.addPermission("/resource", "read");
+        request.setMetadata(metadata);
+        authzClient.authorization(accessToken).authorize(request);
+
+        request = new AuthorizationRequest();
+        request.addPermission("/unknown", "write");
+        try {
+            authzClient.authorization(accessToken).authorize(request);
+            fail("should fail");
+        } catch (Exception hre) {
+            HttpResponseException cause = (HttpResponseException) hre.getCause();
+            assertThat(cause.getStatusCode(), is(Response.Status.BAD_REQUEST.getStatusCode()));
+            assertThat(new String(cause.getBytes()), containsString("Resource with id [/unknown] does not exist."));
+        }
+
+        request = new AuthorizationRequest();
+        request.addPermission("/unknown", "write");
+        request.setMetadata(metadata);
+        try {
+            authzClient.authorization(accessToken).authorize(request);
+            fail("should fail");
+        } catch (Exception hre) {
+            HttpResponseException cause = (HttpResponseException) hre.getCause();
+            assertThat(cause.getStatusCode(), is(Response.Status.BAD_REQUEST.getStatusCode()));
+            assertThat(new String(cause.getBytes()), containsString("Resource with uri [/unknown] does not exist."));
+        }
     }
 
     @Test
