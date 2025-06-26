@@ -66,7 +66,7 @@ final class DatabasePropertyMappers {
                                 getPostgresqlTargetServerType(
                                         Configuration.getConfigValue(DB).getValue(),
                                         Configuration.getConfigValue(DatabaseOptions.DB_DRIVER).getValue(),
-                                        Configuration.getConfigValue(DatabaseOptions.DB_URL_PROPERTIES).getValue(),
+                                        Configuration.getConfigValue(DatabaseOptions.DB_URL).getValue(),
                                         Configuration.getConfigValue(DatabaseOptions.DB_URL_PROPERTIES).getValue(),
                                         null) != null)
                         .build(),

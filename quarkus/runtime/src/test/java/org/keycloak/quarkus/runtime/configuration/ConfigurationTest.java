@@ -45,7 +45,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.Config;
 import org.keycloak.config.CachingOptions;
-import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.vault.FilesKeystoreVaultProviderFactory;
