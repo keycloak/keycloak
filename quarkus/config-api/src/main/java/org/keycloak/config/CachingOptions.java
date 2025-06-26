@@ -115,22 +115,24 @@ public class CachingOptions {
 
     public static final Option<String> CACHE_EMBEDDED_NETWORK_BIND_ADDRESS = new OptionBuilder<>(CACHE_EMBEDDED_NETWORK_BIND_ADDRESS_PROPERTY, String.class)
           .category(OptionCategory.CACHE)
-          .description("IP address used by clustering transport.")
+          .description("IP address used by clustering transport. By default, SITE_LOCAL is used.")
           .build();
 
     public static final Option<Integer> CACHE_EMBEDDED_NETWORK_BIND_PORT = new OptionBuilder<>(CACHE_EMBEDDED_NETWORK_BIND_PORT_PROPERTY, Integer.class)
           .category(OptionCategory.CACHE)
-          .description("Port used by clustering transport.")
+          .description("The Port the clustering transport will bind to. By default, port 7800 is used.")
           .build();
 
     public static final Option<String> CACHE_EMBEDDED_NETWORK_EXTERNAL_ADDRESS = new OptionBuilder<>(CACHE_EMBEDDED_NETWORK_EXTERNAL_ADDRESS_PROPERTY, String.class)
           .category(OptionCategory.CACHE)
-          .description("IP address that other instances in the cluster should use to contact this node.")
+          .description("IP address that other instances in the cluster should use to contact this node. Set only if it is " +
+                "different to %s, for example when this instance is behind a firewall.".formatted(CACHE_EMBEDDED_NETWORK_BIND_ADDRESS_PROPERTY))
           .build();
 
     public static final Option<Integer> CACHE_EMBEDDED_NETWORK_EXTERNAL_PORT = new OptionBuilder<>(CACHE_EMBEDDED_NETWORK_EXTERNAL_PORT_PROPERTY, Integer.class)
           .category(OptionCategory.CACHE)
-          .description("Port that other instances in the cluster should use to contact this node.")
+          .description("Port that other instances in the cluster should use to contact this node. Set only if it is different " +
+                "to %s, for example when this instance is behind a firewall".formatted(CACHE_EMBEDDED_NETWORK_BIND_PORT_PROPERTY))
           .build();
 
     public static final Option<String> CACHE_REMOTE_HOST = new OptionBuilder<>(CACHE_REMOTE_HOST_PROPERTY, String.class)
