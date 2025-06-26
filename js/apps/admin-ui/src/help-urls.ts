@@ -20,4 +20,5 @@ export default {
   guides: `${keycloakHomepageURL}/guides`,
   community: `${keycloakHomepageURL}/community`,
   blog: `${keycloakHomepageURL}/blog`,
+  changeRequests: `something/to/explain/approvals` // tidecloak implementation
 };

@@ -11,13 +11,17 @@ import {
   TextControl,
   useEnvironment,
   useFetch,
+  useAlerts
 } from "@keycloak/keycloak-ui-shared";
 import {
+  ActionGroup,
+  Button,
   ClipboardCopy,
   FormGroup,
   PageSection,
   Stack,
   StackItem,
+  Switch
 } from "@patternfly/react-core";
 import { useEffect, useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
@@ -41,10 +45,12 @@ import { SIGNATURE_ALGORITHMS } from "../clients/add/SamlSignature";
 type RealmSettingsGeneralTabProps = {
   realm: UIRealmRepresentation;
   save: (realm: UIRealmRepresentation) => Promise<void>;
+  refresh: () => void; // TIDECLOAK IMPLEMENTATION
 };
 
 export const RealmSettingsGeneralTab = ({
   realm,
+  refresh, // TIDECLOAK IMPLEMENTATION
   save,
 }: RealmSettingsGeneralTabProps) => {
   const { adminClient } = useAdminClient();
@@ -68,6 +74,7 @@ export const RealmSettingsGeneralTab = ({
       realm={realm}
       save={save}
       userProfileConfig={userProfileConfig}
+      refresh={refresh} // TIDECLOAK IMPLEMENTATION
     />
   );
 };
@@ -76,6 +83,7 @@ type RealmSettingsGeneralTabFormProps = {
   realm: UIRealmRepresentation;
   save: (realm: UIRealmRepresentation) => Promise<void>;
   userProfileConfig: UserProfileConfig;
+  refresh: () => void; // TIDECLOAK IMPLEMENTATION
 };
 
 type FormFields = Omit<RealmRepresentation, "groups"> & {
@@ -93,12 +101,14 @@ const UNMANAGED_ATTRIBUTE_POLICIES = [
 
 function RealmSettingsGeneralTabForm({
   realm,
+  refresh, // TIDECLOAK IMPLEMENTATION
   save,
   userProfileConfig,
 }: RealmSettingsGeneralTabFormProps) {
   const {
     environment: { serverBaseUrl },
   } = useEnvironment();
+  const { adminClient } = useAdminClient();
 
   const { t } = useTranslation();
   const { realm: realmName } = useRealm();
@@ -107,7 +117,7 @@ function RealmSettingsGeneralTabForm({
     control,
     handleSubmit,
     setValue,
-    formState: { errors },
+    formState: { isDirty, errors },
   } = form;
   const isFeatureEnabled = useIsFeatureEnabled();
   const isOrganizationsEnabled = isFeatureEnabled(Feature.Organizations);
@@ -115,6 +125,23 @@ function RealmSettingsGeneralTabForm({
     Feature.AdminFineGrainedAuthzV2,
   );
   const isOpenid4vciEnabled = isFeatureEnabled(Feature.OpenId4VCI);
+
+  const { addAlert, addError } = useAlerts();
+
+
+  const updateSwitchValue = async (value: boolean) => {
+
+    try {
+      const data = new FormData();
+      data.append("isIGAEnabled", value.toString());
+
+      await adminClient.tideAdmin.toggleIGA(data)
+      addAlert(t("enableSwitchSuccess", { switch: t("IGA") }));
+      refresh();
+    } catch (error) {
+      addError(t("enableSwitchError"), error);
+    }
+  };
 
   const setupForm = () => {
     convertToFormValues(realm, setValue);
@@ -183,6 +210,30 @@ function RealmSettingsGeneralTabForm({
                 message={errors.realm.message as string}
               />
             )}
+          </FormGroup>
+          <FormGroup
+              label={t("Identity Governance and Administration (IGA)")}
+              fieldId="tide-iga"
+              labelIcon={
+                <HelpItem
+                  helpText={t("some help text for iga")}
+                  fieldLabelId="igaEnabled"
+                />
+              }
+              hasNoPaddingTop
+            >
+            <Switch
+              id="tide-realm-iga-switch"
+              data-testid="realm-iga-switch"
+              value={realm.attributes?.["isIGAEnabled"]?.toLowerCase() === "true" ? "on" : "off"}
+              label={t("on")}
+              labelOff={t("off")}
+              isChecked={realm.attributes?.["isIGAEnabled"]?.toLowerCase() === "true" ? true : false}
+              onChange={(_event, value) => {
+                updateSwitchValue(value);
+              }}
+              aria-label={t("igaEnabled")}
+            />
           </FormGroup>
           <TextControl name="displayName" label={t("displayName")} />
           <TextControl name="displayNameHtml" label={t("htmlDisplayName")} />

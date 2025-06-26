@@ -18,6 +18,7 @@ export const ListComponent = ({
   required,
   isDisabled = false,
   convertToName,
+  isHidden = false, // TIDECLOAK IMPLEMENTATION
 }: ComponentProps) => {
   const { t } = useTranslation();
   const { control } = useFormContext();
@@ -25,6 +26,7 @@ export const ListComponent = ({
 
   return (
     <FormGroup
+      style={{ display: isHidden ? 'none' : undefined }} // TIDECLOAK IMPLEMENTATION
       label={t(label!)}
       labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
       fieldId={name!}
