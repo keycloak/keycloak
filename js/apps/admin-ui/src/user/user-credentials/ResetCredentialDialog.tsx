@@ -64,33 +64,69 @@ export const ResetCredentialDialog = ({
     }
   };
 
+  /* TIDECLOAK IMPLEMENTATION */
+  const getLinkTideAccountBtn = async () => {
+    const actions = form.getValues("actions");
+    const lifespan = form.getValues("lifespan")
+    if (isEmpty(actions)) {
+      return;
+    }
+
+    try {
+
+      const response = await adminClient.tideAdmin.getRequiredActionLink({
+        userId,
+        actions,
+        lifespan,
+      });
+
+
+      navigator.clipboard.writeText(response);
+      addAlert(t("Link copied to clipboard"), AlertVariant.success);
+      onClose();
+    } catch (error) {
+      addError("Could not get required action link", error);
+    }
+  };
+
   return (
-    <ConfirmDialogModal
-      variant={ModalVariant.medium}
-      titleKey="credentialReset"
-      open
-      onCancel={onClose}
-      toggleDialog={onClose}
-      continueButtonLabel="credentialResetConfirm"
-      onConfirm={() => {
-        handleSubmit(sendCredentialsResetEmail)();
-      }}
-      confirmButtonDisabled={!resetIsNotDisabled}
-    >
-      <Form
-        id="userCredentialsReset-form"
-        isHorizontal
-        data-testid="credential-reset-modal"
-      >
-        <FormProvider {...form}>
-          <RequiredActionMultiSelect
-            name="actions"
-            label="resetAction"
-            help="resetActions"
-          />
-          <LifespanField />
-        </FormProvider>
-      </Form>
-    </ConfirmDialogModal>
+<ConfirmDialogModal
+  variant={ModalVariant.medium}
+  titleKey="credentialReset"
+  open
+  onCancel={onClose}
+  toggleDialog={onClose}
+  continueButtonLabel="credentialResetConfirm"
+  onConfirm={() => {
+    handleSubmit(sendCredentialsResetEmail)();
+  }}
+  confirmButtonDisabled={!resetIsNotDisabled}
+>
+  <Form
+    id="userCredentialsReset-form"
+    isHorizontal
+    data-testid="credential-reset-modal"
+  >
+    <FormProvider {...form}>
+      <RequiredActionMultiSelect
+        name="actions"
+        label="resetAction"
+        help="resetActions"
+      />
+      <LifespanField />
+    </FormProvider>
+  </Form>
+
+  {/* TIDECLOAK IMPLEMENTATION */}
+  <button
+    type="button"
+    onClick={async () => {
+      await getLinkTideAccountBtn();
+    }}
+    style={{ marginTop: "1rem" }}
+  >
+    Copy Link
+  </button>
+</ConfirmDialogModal>
   );
 };

@@ -11,7 +11,8 @@ export type ProviderType =
   | "rsa"
   | "rsa-enc"
   | "rsa-enc-generated"
-  | "rsa-generated";
+  | "rsa-generated"
+  | "tide-vendor-key";  // TIDE IMPLEMENTATION
 
 export type KeyProviderParams = {
   id: string;
