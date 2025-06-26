@@ -322,12 +322,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                         && (customImage.isPresent() || operatorConfig.keycloak().startOptimized())) {
             containerBuilder.addToArgs(OPTIMIZED_ARG);
         }
-
-        boolean bindAddressRequired = Optional.ofNullable(containerBuilder.getArgs())
-              .orElse(List.of())
-              .stream()
-              .noneMatch(a -> a.contains("--cache-embedded-network-bind-address"));
-        if (bindAddressRequired) {
+        if (isBindAddressRequired(containerBuilder.getArgs(), keycloakCR.getSpec().getAdditionalOptions())) {
             // Set bind address as this is required for JGroups to form a cluster in IPv6 environments
             containerBuilder.addToArgs("--cache-embedded-network-bind-address=$(%s)".formatted(POD_IP));
         }
@@ -395,6 +390,14 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                 .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL)
             .endPort()
             .endContainer().endSpec().endTemplate().endSpec().build();
+    }
+
+    private boolean isBindAddressRequired(List<String> args, List<ValueOrSecret> additionalOptions) {
+        String bindAddress = "cache-embedded-network-bind-address";
+        if (args != null && args.stream().anyMatch(a -> a.contains(bindAddress))) {
+            return false;
+        }
+        return additionalOptions.stream().noneMatch(v -> v.getName().equals(bindAddress));
     }
 
     private void handleScheduling(Keycloak keycloakCR, Map<String, String> labels, PodSpecFluent<?> specBuilder) {

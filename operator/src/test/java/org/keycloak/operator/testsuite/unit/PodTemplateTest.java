@@ -752,4 +752,41 @@ public class PodTemplateTest {
         assertNull(job.getSpec().getTemplate().getSpec().getInitContainers().get(0).getRestartPolicy());
     }
 
+    @Test
+    public void testBindAddressAdditionalOptions() {
+        // Act
+        var bindConfig = new ValueOrSecret("cache-embedded-network-bind-address", "LINK_LOCAL");
+        var container = getDeployment(null, null, s -> s.withAdditionalOptions(bindConfig))
+              .getSpec()
+              .getTemplate()
+              .getSpec()
+              .getContainers()
+              .get(0);
+
+        // Assert
+        assertThat(container.getArgs()).doesNotContain("--cache-embedded-network-bind-address=$(POD_IP)");
+    }
+
+    @Test
+    public void testBindAddressUnsupportedCommand() {
+        // Arrange
+        var additionalPodTemplate = new PodTemplateSpecBuilder()
+              .withNewSpec()
+              .addNewContainer()
+              .withArgs("cache-embedded-network-bind-address=LINK_LOCAL")
+              .endContainer()
+              .endSpec()
+              .build();
+
+        // Act
+        var container = getDeployment(additionalPodTemplate)
+              .getSpec()
+              .getTemplate()
+              .getSpec()
+              .getContainers()
+              .get(0);
+
+        // Assert
+        assertThat(container.getArgs()).doesNotContain("--cache-embedded-network-bind-address=$(POD_IP)");
+    }
 }
