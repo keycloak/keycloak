@@ -105,21 +105,21 @@ final class CachingPropertyMappers {
                         .build(),
                 fromOption(CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_ADDRESS)
                         .paramLabel("address")
-                        .to("kc.spi-cache--embedded--default--network-bind-address")
+                        .to("kc.spi-cache-embedded--default--network-bind-address")
                         .validator(CachingPropertyMappers::validateBindAddress)
                         .build(),
                 fromOption(CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_PORT)
                        .paramLabel("port")
-                       .to("kc.spi-cache--embedded--default--network-bind-port")
+                       .to("kc.spi-cache-embedded--default--network-bind-port")
                        .build(),
                 fromOption(CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_ADDRESS)
                        .paramLabel("address")
-                       .to("kc.spi-cache--embedded--default--network-external-address")
+                       .to("kc.spi-cache-embedded--default--network-external-address")
                        .validator(CachingPropertyMappers::validateExternalAddress)
                        .build(),
                 fromOption(CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_PORT)
                        .paramLabel("port")
-                       .to("kc.spi-cache--embedded--default--network-external-port")
+                       .to("kc.spi-cache-embedded--default--network-external-port")
                        .build(),
                 fromOption(CachingOptions.CACHE_REMOTE_HOST)
                         .paramLabel("hostname")
