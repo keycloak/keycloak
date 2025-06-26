@@ -188,6 +188,10 @@ recommended to use the configuration option *Warning Threshold* of the *Recovery
 
 The `org.keycloak.Config.Scope.getPropertyNames` method has been deprecated for removal.
 
+=== Deprecation of the Passkeys Conditional UI Authenticator
+
+The preview feature *Passkeys* recently introduced a new *Passkeys Conditional UI Authenticator* that you can use to integrate the passkey auto-fill or conditional UI feature in your login flow. Passkeys are now being seamlessly integrated into {project_name} inside the default username forms. Therefore, the old authenticator is invalid and it is deprecated in this release. The factory and implementation classes will be removed when *Passkeys* are supported in {project_name}.
+
 == Removed features
 
 The following features have been removed from this release.
@@ -221,4 +225,3 @@ Consider one of the following cases and recommended migration steps:
 
 * With the feature `persistent-user-session` feature enabled, the remote store configuration is ignored and {project_name} will print a warning.
 ====
-
