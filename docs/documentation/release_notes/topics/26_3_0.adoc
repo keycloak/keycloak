@@ -65,12 +65,12 @@ Asynchronous logging helps deployments that require high throughput and low late
 
 For more details on this opt-in feature, see the https://www.keycloak.org/server/logging[Logging guide].
 
-= Rolling updates for patch releases for minimized downtime (experimental)
+= Rolling updates for patch releases for minimized downtime (preview)
 
 In the previous release, the Keycloak Operator was enhanced to support performing rolling updates of the Keycloak image if both images contain the same version.
 This is useful, for example, when switching to an optimized image, changing a theme or a provider source code.
 
-In this release, we extended this to perform rolling update when the new image contains a future patch release from the same `major.minor` release stream as an experimental feature.
+In this release, we extended this to perform rolling update when the new image contains a future patch release from the same `major.minor` release stream as a preview feature.
 This can reduce the service's downtime even further, as downtime is only needed when upgrading from a different minor or major version.
 
 Read more on how to enable this feature in https://www.keycloak.org/server/update-compatibility#rolling-updates-for-patch-releases[update compatibility command].
