@@ -37,6 +37,4 @@ public class ClusteredKeycloakServerSupplier extends AbstractKeycloakServerSuppl
     protected String cache() {
         return "ispn";
     }
-
-
 }

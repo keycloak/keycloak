@@ -98,7 +98,9 @@ export const TranslatableField = ({
   const requiredTranslationName = `${translationPrefix}.0.value`;
 
   useEffect(() => {
-    setValue(fieldName, `\${${prefix}.${value}}`);
+    if (realm?.internationalizationEnabled && !value) {
+      setValue(fieldName, `\${${prefix}.${value}}`);
+    }
   }, [value]);
 
   return (

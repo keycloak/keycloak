@@ -108,7 +108,7 @@ public interface GroupResource {
      * @param briefRepresentation if {@code true}, each returned subgroup representation will only contain basic information
      *                           (id, name, path, and parentId). If {@code false}, the complete representations of the subgroups
      *                            are returned (include role mappings and attributes).
-     * @param subGroupsCount if {@code true}, the count of subgroups is returned for each subgroup. Defaults to true.
+     * @param subGroupsCount if {@code true}, the count of subgroups is returned for each subgroup. Defaults to true. Parameter supported since Keycloak 26.3. For older versions, it is always true.
      */
     @GET
     @Path("children")
@@ -154,7 +154,7 @@ public interface GroupResource {
      * @param briefRepresentation if {@code true}, each returned subgroup representation will only contain basic information
      *                           (id, name, path, and parentId). If {@code false}, the complete representations of the subgroups
      *                            are returned (including role mappings and attributes).
-     * @param subGroupsCount if {@code true}, the count of subgroups is returned for each subgroup. Defaults to true.
+     * @param subGroupsCount if {@code true}, the count of subgroups is returned for each subgroup. Defaults to true. Parameter supported since Keycloak 26.3. For older versions, it is always true.
      */
     @GET
     @Path("children")
