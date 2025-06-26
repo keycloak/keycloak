@@ -8,13 +8,14 @@ import {
   useFetch,
   KeycloakSpinner,
   HelpItem,
-  ListEmptyState
+  ListEmptyState,
 } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   Button,
   ButtonVariant,
   Divider,
+  DropdownItem,
   Form,
   PageSection,
   Tab,
@@ -26,9 +27,8 @@ import {
   Grid,
   GridItem,
   ClipboardCopy,
-  DropdownItem,
   FileUpload,
-  DropEvent
+  DropEvent,
 } from "@patternfly/react-core";
 import { useMemo, useState, useEffect } from "react";
 import {
@@ -69,13 +69,17 @@ import { AdvancedSettings } from "./AdvancedSettings";
 import { DescriptorSettings } from "./DescriptorSettings";
 import { DiscoverySettings } from "./DiscoverySettings";
 import { ExtendedNonDiscoverySettings } from "./ExtendedNonDiscoverySettings";
+import { ExtendedOAuth2Settings } from "./ExtendedOAuth2Settings";
 import { GeneralSettings } from "./GeneralSettings";
 import { OIDCAuthentication } from "./OIDCAuthentication";
 import { OIDCGeneralSettings } from "./OIDCGeneralSettings";
 import { ReqAuthnConstraints } from "./ReqAuthnConstraintsSettings";
 import { SamlGeneralSettings } from "./SamlGeneralSettings";
 import { toKeyProvider } from "../../realm-settings/routes/KeyProvider";
-import { createTideComponent, findTideComponent } from "../utils/SignSettingsUtil";
+import {
+  createTideComponent,
+  findTideComponent,
+} from "../utils/SignSettingsUtil";
 import { AdminEvents } from "../../events/AdminEvents";
 import { UserProfileClaimsSettings } from "./OAuth2UserProfileClaimsSettings";
 
@@ -188,37 +192,37 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
         divider={false}
         dropdownItems={[
           ...(provider?.providerId?.includes("saml") &&
-            validateSignature === "true" &&
-            useMetadataDescriptorUrl === "true" &&
-            metadataDescriptorUrl &&
-            !formState.isDirty &&
-            value
+          validateSignature === "true" &&
+          useMetadataDescriptorUrl === "true" &&
+          metadataDescriptorUrl &&
+          !formState.isDirty &&
+          value
             ? [
-              <DropdownItem
-                key="reloadKeys"
-                onClick={() => reloadSamlKeys(provider.alias!)}
-              >
-                {t("reloadKeys")}
-              </DropdownItem>,
-            ]
-            : provider?.providerId?.includes("saml") &&
-              validateSignature === "true" &&
-              useMetadataDescriptorUrl !== "true" &&
-              metadataDescriptorUrl &&
-              !formState.isDirty
-              ? [
                 <DropdownItem
-                  key="importKeys"
-                  onClick={() =>
-                    importSamlKeys(
-                      provider.providerId!,
-                      metadataDescriptorUrl,
-                    )
-                  }
+                  key="reloadKeys"
+                  onClick={() => reloadSamlKeys(provider.alias!)}
                 >
-                  {t("importKeys")}
+                  {t("reloadKeys")}
                 </DropdownItem>,
               ]
+            : provider?.providerId?.includes("saml") &&
+                validateSignature === "true" &&
+                useMetadataDescriptorUrl !== "true" &&
+                metadataDescriptorUrl &&
+                !formState.isDirty
+              ? [
+                  <DropdownItem
+                    key="importKeys"
+                    onClick={() =>
+                      importSamlKeys(
+                        provider.providerId!,
+                        metadataDescriptorUrl,
+                      )
+                    }
+                  >
+                    {t("importKeys")}
+                  </DropdownItem>,
+                ]
               : []),
           <Divider key="separator" />,
           <DropdownItem key="delete" onClick={() => toggleDeleteDialog()}>
@@ -268,7 +272,7 @@ export default function DetailSettings() {
   const { alias, providerId } = useParams<IdentityProviderParams>();
   const isFeatureEnabled = useIsFeatureEnabled();
   const form = useForm<IdentityProviderRepresentation>();
-  const { handleSubmit, getValues, reset, setValue } = form;
+  const { handleSubmit, getValues, reset } = form;
   const [provider, setProvider] = useState<IdentityProviderRepresentation>();
   const [selectedMapper, setSelectedMapper] =
     useState<IdPWithMapperAttributes>();
@@ -279,7 +283,8 @@ export default function DetailSettings() {
   const [logo, setLogo] = useState<File | null>(null);
   const [backgroundPreviewUrl, setBackgroundPreviewUrl] = useState<string>("");
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string>("");
-  const [imageDeleteRequested, setImageDeleteRequested] = useState<boolean>(false);
+  const [imageDeleteRequested, setImageDeleteRequested] =
+    useState<boolean>(false);
   /** TIDECLOAK IMPLEMENTATION END */
 
   const providerInfo = useMemo(() => {
@@ -305,11 +310,6 @@ export default function DetailSettings() {
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
   const { hasAccess } = useAccess();
-  const handleTideRefresh = async () => {
-    const updatedProvider = await adminClient.identityProviders.findOne({ alias })
-    reset(updatedProvider);
-    refresh()
-  }
 
   /** TIDECLOAK IMPLEMENTATION START */
   const currentHost = window.location.origin;
@@ -317,30 +317,27 @@ export default function DetailSettings() {
   const backgroundUrl = `${currentHost}/realms/${realm}/tide-idp-resources/images/BACKGROUND_IMAGE`;
   const logoUrl = `${currentHost}/realms/${realm}/tide-idp-resources/images/LOGO`;
 
-  const handleFileChange = (type: 'background' | 'logo') => (
-    event: DropEvent,
-    file: File
-  ) => {
-    if (type === 'background') {
-      setBackgroundImage(file);
-      setBackgroundPreviewUrl(URL.createObjectURL(file));
-    } else if (type === 'logo') {
-      setLogo(file);
-      setLogoPreviewUrl(URL.createObjectURL(file));
-    }
-    setImageDeleteRequested(false);
+  const handleFileChange =
+    (type: "background" | "logo") => (event: DropEvent, file: File) => {
+      if (type === "background") {
+        setBackgroundImage(file);
+        setBackgroundPreviewUrl(URL.createObjectURL(file));
+      } else if (type === "logo") {
+        setLogo(file);
+        setLogoPreviewUrl(URL.createObjectURL(file));
+      }
+      setImageDeleteRequested(false);
+    };
 
-  };
-
-  const handleClear = (type: 'background' | 'logo') => {
-    if (type === 'background') {
+  const handleClear = (type: "background" | "logo") => {
+    if (type === "background") {
       setBackgroundImage(null);
       setBackgroundPreviewUrl("");
-    } else if (type === 'logo') {
+    } else if (type === "logo") {
       setLogo(null);
       setLogoPreviewUrl("");
     }
-    setImageDeleteRequested(true)
+    setImageDeleteRequested(true);
   };
 
   async function fetchImage(type: string) {
@@ -362,7 +359,10 @@ export default function DetailSettings() {
     const backgroundImageFile = await fetchImage("BACKGROUND_IMAGE");
     const logoImageFile = await fetchImage("LOGO");
 
-    if (backgroundImageFile?.size !== undefined && backgroundImageFile.name !== "") {
+    if (
+      backgroundImageFile?.size !== undefined &&
+      backgroundImageFile.name !== ""
+    ) {
       setBackgroundImage(backgroundImageFile);
       setBackgroundPreviewUrl(backgroundUrl);
     }
@@ -378,8 +378,8 @@ export default function DetailSettings() {
     initializeImages();
   }, []);
 
-
-  const hasValue = (value: string) => value !== undefined && value !== null && value !== "" ? true : false;
+  const hasValue = (value: string) =>
+    value !== undefined && value !== null && value !== "" ? true : false;
   const handleImageUpdate = async (image: File | null, type: string) => {
     try {
       if (image === null && imageDeleteRequested === true) {
@@ -464,16 +464,17 @@ export default function DetailSettings() {
   const save = async (savedProvider?: IdentityProviderRepresentation) => {
     try {
       // Check if settings needs to be re-signed
-      const { LogoURL, ImageURL, backupOn, CustomAdminUIDomain } = provider!.config!;
+      const { LogoURL, ImageURL, backupOn, CustomAdminUIDomain } =
+        provider!.config!;
       const settingsUnchanged =
         form.getValues("config.LogoURL") === LogoURL &&
         form.getValues("config.ImageURL") === ImageURL &&
         form.getValues("config.backupOn") === backupOn &&
         form.getValues("config.CustomAdminUIDomain") === CustomAdminUIDomain;
 
-
       // always get current form values for tide idp
-      const p = providerId === "tide" ? getValues() : savedProvider || getValues();
+      const p =
+        providerId === "tide" ? getValues() : savedProvider || getValues();
       const origAuthnContextClassRefs = p.config?.authnContextClassRefs;
       if (p.config?.authnContextClassRefs)
         p.config.authnContextClassRefs = JSON.stringify(
@@ -507,14 +508,14 @@ export default function DetailSettings() {
 
         if (tideComponent) {
           const vvkId = getSingleValue(tideComponent!.config!.vvkId);
-          const resignSettingsRequired = hasValue(vvkId) && !settingsUnchanged
+          const resignSettingsRequired = hasValue(vvkId) && !settingsUnchanged;
           if (resignSettingsRequired) {
             await adminClient.tideAdmin.signIdpSettings();
           }
         }
 
         handleImageUpdate(logo, "LOGO");
-        handleImageUpdate(backgroundImage, "BACKGROUND_IMAGE")
+        handleImageUpdate(backgroundImage, "BACKGROUND_IMAGE");
         setImageDeleteRequested(false);
       }
       /** TIDECLOAK IMPLEMENTATION end */
@@ -539,7 +540,6 @@ export default function DetailSettings() {
         }
         /** TIDECLOAK IMPLEMENTATION end */
         await adminClient.identityProviders.del({ alias: alias });
-
         addAlert(t("deletedSuccessIdentityProvider"), AlertVariant.success);
         navigate(toIdentityProviders({ realm }));
       } catch (error) {
@@ -611,7 +611,11 @@ export default function DetailSettings() {
       const tideComponent = await findTideComponent(adminClient, realm);
 
       if (!tideComponent) {
-        const newComponent = await createTideComponent(adminClient, realm, serverInfo);
+        const newComponent = await createTideComponent(
+          adminClient,
+          realm,
+          serverInfo,
+        );
         const id = getSingleValue(newComponent!.id!);
         navigateToKeyProvider(id);
       } else {
@@ -625,7 +629,7 @@ export default function DetailSettings() {
 
   const navigateToKeyProvider = (id: string) => {
     const path = toKeyProvider({ realm, id, providerType: "tide-vendor-key" });
-    path.pathname += "/license"
+    path.pathname += "/license";
     navigate(path);
   };
 
@@ -642,7 +646,11 @@ export default function DetailSettings() {
           {(isOIDC || isOAuth2) && <OIDCGeneralSettings />}
           {isSAML && <SamlGeneralSettings isAliasReadonly />}
           {providerInfo && (
-            <DynamicComponents stringify properties={providerInfo.properties} isTideProvider={providerId === "tide"} />
+            <DynamicComponents
+              stringify
+              properties={providerInfo.properties}
+              isTideProvider={providerId === "tide"}
+            />
           )}
           <FormGroup
             label={t("License")}
@@ -659,7 +667,8 @@ export default function DetailSettings() {
               onClick={async (e) => {
                 e.preventDefault(); // Prevent the default anchor behavior
                 await handleManageLicenseClick();
-              }}            >
+              }}
+            >
               Manage License
             </Button>
           </FormGroup>
@@ -667,12 +676,24 @@ export default function DetailSettings() {
           {providerId === "tide" && (
             <>
               <div style={{ paddingTop: "5rem" }}>
-                <h1 className="pf-v5-c-title pf-m-xl">Image Upload for Keycloak Hosting</h1>
-                <p className="pf-v5-c-content ">Optionally upload images to Keycloak for hosting. This is used by default if not updated above.</p>
+                <h1 className="pf-v5-c-title pf-m-xl">
+                  Image Upload for Keycloak Hosting
+                </h1>
+                <p className="pf-v5-c-content ">
+                  Optionally upload images to Keycloak for hosting. This is used
+                  by default if not updated above.
+                </p>
               </div>
               <FormGroup
                 label={t("Upload Background Image")}
-                labelIcon={<HelpItem helpText={"Upload an image for Keycloak to host for you. Remember to provide the URL on Vendor sign up. IMPORTANT: this image does not get backed up"} fieldLabelId={"UploadBackgroundImage"} />}
+                labelIcon={
+                  <HelpItem
+                    helpText={
+                      "Upload an image for Keycloak to host for you. Remember to provide the URL on Vendor sign up. IMPORTANT: this image does not get backed up"
+                    }
+                    fieldLabelId={"UploadBackgroundImage"}
+                  />
+                }
                 fieldId="background-image-upload"
               >
                 <Grid hasGutter>
@@ -684,16 +705,20 @@ export default function DetailSettings() {
                       id="background-image-upload"
                       value={backgroundImage || undefined}
                       filename={backgroundImage?.name || ""}
-                      onFileInputChange={handleFileChange('background')}
+                      onFileInputChange={handleFileChange("background")}
                       isRequired
-                      onClearClick={() => handleClear('background')}
+                      onClearClick={() => handleClear("background")}
                     />
                   </GridItem>
                   {backgroundPreviewUrl !== "" && (
                     <GridItem span={12}>
                       <Gallery hasGutter>
                         <GalleryItem>
-                          <img src={backgroundPreviewUrl} alt="Background Image Preview" style={{ maxWidth: "200px", marginTop: "10px" }} />
+                          <img
+                            src={backgroundPreviewUrl}
+                            alt="Background Image Preview"
+                            style={{ maxWidth: "200px", marginTop: "10px" }}
+                          />
                         </GalleryItem>
                       </Gallery>
                     </GridItem>
@@ -702,7 +727,14 @@ export default function DetailSettings() {
               </FormGroup>
               <FormGroup
                 label={t("Upload Logo Image")}
-                labelIcon={<HelpItem helpText={"Upload an image for Keycloak to host for you. Remember to provide the URL on Vendor sign up. IMPORTANT: this image does not get backed up"} fieldLabelId={"UploadLogoImage"} />}
+                labelIcon={
+                  <HelpItem
+                    helpText={
+                      "Upload an image for Keycloak to host for you. Remember to provide the URL on Vendor sign up. IMPORTANT: this image does not get backed up"
+                    }
+                    fieldLabelId={"UploadLogoImage"}
+                  />
+                }
                 fieldId="logo-upload"
               >
                 <Grid hasGutter>
@@ -714,17 +746,20 @@ export default function DetailSettings() {
                       id="logo-upload"
                       value={logo || undefined}
                       filename={logo?.name || ""}
-                      onFileInputChange={handleFileChange('logo')}
+                      onFileInputChange={handleFileChange("logo")}
                       isRequired
-                      onClearClick={() => handleClear('logo')}
-
+                      onClearClick={() => handleClear("logo")}
                     />
                   </GridItem>
                   {logoPreviewUrl !== "" && (
                     <GridItem span={12}>
                       <Gallery hasGutter>
                         <GalleryItem>
-                          <img src={logoPreviewUrl} alt="Logo Preview" style={{ maxWidth: "200px", marginTop: "10px" }} />
+                          <img
+                            src={logoPreviewUrl}
+                            alt="Logo Preview"
+                            style={{ maxWidth: "200px", marginTop: "10px" }}
+                          />
                         </GalleryItem>
                       </Gallery>
                     </GridItem>
