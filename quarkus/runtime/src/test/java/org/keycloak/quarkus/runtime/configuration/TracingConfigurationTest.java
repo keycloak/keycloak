@@ -197,7 +197,7 @@ public class TracingConfigurationTest extends AbstractConfigurationTest {
     protected void assertLogFormat(LoggingOptions.Handler loggerType, boolean includeTrace, boolean includeMdc, String expectedFormat) {
         var envVars = new HashMap<String, String>();
         envVars.put("KC_TRACING_ENABLED", "true");
-        if (includeTrace) {
+        if (includeMdc) {
             envVars.put("KC_LOG_MDC_ENABLED", "true");
         }
         envVars.put("KC_LOG_" + loggerType.name().toUpperCase() + "_INCLUDE_TRACE", Boolean.toString(includeTrace));

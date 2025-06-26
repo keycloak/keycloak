@@ -32,7 +32,6 @@ public final class LoggingPropertyMappers {
     private static final String CONSOLE_ENABLED_MSG = "Console log handler is activated";
     private static final String FILE_ENABLED_MSG = "File log handler is activated";
     private static final String SYSLOG_ENABLED_MSG = "Syslog is activated";
-    private static final String MDC_ENABLED_MSG = "MDC is activated";
     private static final String DEFAULT_ROOT_LOG_LEVEL = toLevel(LoggingOptions.LOG_LEVEL.getDefaultValue().orElseThrow().get(0)).getName();
 
     private static List<CategoryLevel> rootLogLevels;
@@ -421,23 +420,19 @@ public final class LoggingPropertyMappers {
      * Add tracing info to the log if the format is not explicitly set, and tracing and {@code includeTraceOption} options are enabled
      */
     private static String addTracingAndMdcInfo(String value, Option<Boolean> includeTraceOption, Option<Boolean> includeMdcOption) {
-        var isTracingEnabled = TracingPropertyMappers.isTracingEnabled();
-        var includeTrace = isTrue(includeTraceOption);
-        var isChangedLogFormat = !DEFAULT_LOG_FORMAT.equals(value);
-        var includeMdc = isTrue(includeMdcOption);
-
-        if (isChangedLogFormat) {
+        if (!DEFAULT_LOG_FORMAT.equals(value)) {
             return value;
         }
+        var isTracingEnabled = TracingPropertyMappers.isTracingEnabled();
+        var includeTrace = isTrue(includeTraceOption);
+        var includeMdc = isTrue(includeMdcOption);
 
-        StringBuilder additionalFields = new StringBuilder();
         if (isMdcActive() && includeMdc) {
-            additionalFields.append("%X ");
-        } else if (isTracingEnabled && includeTrace) {
-            additionalFields.append("traceId=%X{traceId}, parentId=%X{parentId}, spanId=%X{spanId}, sampled=%X{sampled} ");
+            return LoggingOptions.DEFAULT_LOG_FORMAT_FUNC.apply("%X "); }
+        else if (isTracingEnabled && includeTrace) {
+            return LoggingOptions.DEFAULT_LOG_FORMAT_FUNC.apply("traceId=%X{traceId}, parentId=%X{parentId}, spanId=%X{spanId}, sampled=%X{sampled} ");
         }
-
-        return LoggingOptions.DEFAULT_LOG_FORMAT_FUNC.apply(additionalFields.toString());
+        return LoggingOptions.DEFAULT_LOG_FORMAT;
     }
 
     private static String upperCase(String value, ConfigSourceInterceptorContext context) {
