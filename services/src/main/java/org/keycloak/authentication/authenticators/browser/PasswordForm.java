@@ -53,8 +53,15 @@ public class PasswordForm extends UsernamePasswordForm implements CredentialVali
 
     @Override
     public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
-        return user.credentialManager().isConfiguredFor(getCredentialProvider(session).getType())
-                || alreadyAuthenticatedUsingPasswordlessCredential(session.getContext().getAuthenticationSession());
+        var authSession = session.getContext().getAuthenticationSession();
+        if (authSession != null) {
+            String lastCredential = authSession.getAuthNote(org.keycloak.authentication.AuthenticationProcessor.LAST_AUTHN_CREDENTIAL);
+            // Skip password check if user was authenticated with an alternative credential (e.g. passkey)
+            if (lastCredential != null && !getCredentialProvider(session).getType().equals(lastCredential)) {
+                return true;
+            }
+        }
+        return user.credentialManager().isConfiguredFor(getCredentialProvider(session).getType());
     }
 
     @Override
