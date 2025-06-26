@@ -19,18 +19,6 @@ user profile configuration where too much information was returned in the past.
 
 Notable changes where an internal behavior changed to prevent common misconfigurations, fix bugs or simplify running {project_name}.
 
-=== SPI Options naming
-
-SPI options ending in `-enabled`, `-provider-default`, or `-provider` are treated as buildtime options. However, in some instances, this was not correct as a provider could have a configuration property ending in one of those suffixes as well.
-
-To resolve this ambiguity, and any potential ambiguity involving SPI and provider names, a new SPI option format was introduced where the scopes and suffix are separated by `--`(double dash) instead of `-`(dash).
-
-An SPI property ending in `-enabled`, `-provider-default`, or `-provider` should use the new format or else a warning will be emitted - e.g. `spi-<spi-name>--<provider-name>--enabled` will be recognized as a buildtime option without a warning.
-
-For instance, the correct way to reference your custom email template is: `--spi-email-template--mycustomprovider--enabled` (not `--spi-email-template-mycustomprovider-enabled`).
-
-Options using the legacy format and ending in `-enabled`, `-provider-default`, or `-provider` will sill be treated as a buildtime option, but may not be in future releases.
-
 === Different credentials of a user need to have different names
 
 When adding an OTP, WebAuthn or any other 2FA credentials, the name the user assigns to this credential needs to be unique for the given user.
@@ -132,6 +120,18 @@ To change this behavior, use the `--log-syslog-counting-framing` option with one
 == Deprecated features
 
 The following sections provide details on deprecated features.
+
+=== SPI options separating the provider with a single dash
+
+SPI options ending in `-enabled`, `-provider-default`, or `-provider` are treated as build-time options. However, in some instances, this was not correct as a provider could have a configuration property ending in one of those suffixes as well.
+
+To resolve this ambiguity, and any potential ambiguity involving SPI and provider names, a new SPI option format was introduced where the scopes and suffix are separated by `--`(double dash) instead of `-`(dash). The new format then reads as `+spi-<spi-name>--<provider-name>--...+`.
+
+An SPI property ending in `-enabled`, `-provider-default`, or `-provider` should use the new format or else a warning will be emitted. For example `spi-<spi-name>--<provider-name>--enabled` will be recognized as a build-time option without a warning.
+
+For instance, the correct way to reference your custom email template is: `--spi-email-template--mycustomprovider--enabled` (not `--spi-email-template-mycustomprovider-enabled`).
+
+Options using the legacy format and ending in `-enabled`, `-provider-default`, or `-provider` will still be treated as a build-time option, but may not be in future releases.
 
 === Kubernetes cache stack has been deprecated
 
