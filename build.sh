@@ -26,3 +26,7 @@ echo "--2-- $(which javac)"
 echo "--3-- $(readlink -f $( which javac ))"
 
 ./mvnw -pl quarkus/deployment,quarkus/dist,themes, -am -DskipTests clean install | tee log-$(date +%H-%M-%y-%m-%d).txt
+
+echo "Running build command for MSQL database"
+
+java -jar quarkus/server/target/lib/quarkus-run.jar build --db=mysql
