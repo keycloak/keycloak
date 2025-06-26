@@ -291,18 +291,24 @@ public final class JGroupsConfigurator {
     }
 
     private enum SystemProperties {
-        BIND_ADDRESS(CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_ADDRESS, Global.BIND_ADDR),
-        BIND_PORT(CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_PORT, Global.BIND_PORT),
+        BIND_ADDRESS(CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_ADDRESS, Global.BIND_ADDR, "jgroups.bind.address"),
+        BIND_PORT(CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_PORT, Global.BIND_PORT, "jgroups.bind.port"),
         EXTERNAL_ADDRESS(CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_ADDRESS, Global.EXTERNAL_ADDR),
         EXTERNAL_PORT(CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_PORT, Global.EXTERNAL_PORT);
 
         final Option<?> option;
         final String property;
+        final String altProperty;
         final String configKey;
 
         SystemProperties(Option<?> option, String property) {
+            this(option, property, null);
+        }
+
+        SystemProperties(Option<?> option, String property, String altProperty) {
             this.option = option;
             this.property = property;
+            this.altProperty = altProperty;
             this.configKey = configKey();
         }
 
@@ -312,12 +318,19 @@ public final class JGroupsConfigurator {
                 // User property is either already set or missing, so do nothing
                 return;
             }
+            checkPropertyAlreadySet(userConfig, property);
+            if (altProperty != null)
+                checkPropertyAlreadySet(userConfig, altProperty);
+            System.setProperty(property, userConfig);
+        }
+
+        void checkPropertyAlreadySet(String userValue, String property) {
             String userProp = System.getProperty(property);
             if (userProp != null) {
-                logger.warnf("Corresponding system property '%s' and CLI arg '%s' set, utilising CLI value '%s'",
-                      property, option.getKey(), userConfig);
+                logger.warnf("Conflicting system property '%s' and CLI arg '%s' set, utilising CLI value '%s'",
+                      property, option.getKey(), userValue);
+                System.clearProperty(property);
             }
-            System.setProperty(property, userConfig);
         }
 
         String fromConfig(Config.Scope config) {

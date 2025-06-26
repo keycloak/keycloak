@@ -56,10 +56,11 @@ public class ClusterConfigDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--cache=ispn", "--cache-embedded-network-bind-address=127.0.0.1", "-Djgroups.bind.address=127.0.0.2"})
+    @Launch({ "start-dev", "--cache=ispn", "--cache-embedded-network-bind-address=127.0.0.1", "-Djgroups.bind.address=127.0.0.2", "-Djgroups.bind_addr=127.0.0.3"})
     void testJGroupsBindAddressPropertyAlsoExists(CLIResult result) {
         result.assertClusteredCache();
-        result.assertMessage("Corresponding system property 'jgroups.bind.address' and CLI arg 'cache-embedded-network-bind-address' set, utilising CLI value '127.0.0.1'");
+        result.assertMessage("Conflicting system property 'jgroups.bind.address' and CLI arg 'cache-embedded-network-bind-address' set, utilising CLI value '127.0.0.1'");
+        result.assertMessage("Conflicting system property 'jgroups.bind_addr' and CLI arg 'cache-embedded-network-bind-address' set, utilising CLI value '127.0.0.1'");
         result.assertMessage("physical addresses are `[127.0.0.1:7800]`");
         result.assertMessage("ISPN000078: Starting JGroups channel `ISPN` with stack `jdbc-ping`");
     }
