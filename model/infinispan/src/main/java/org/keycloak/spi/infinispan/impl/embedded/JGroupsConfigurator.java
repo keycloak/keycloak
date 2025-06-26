@@ -291,8 +291,8 @@ public final class JGroupsConfigurator {
     }
 
     private enum SystemProperties {
-        BIND_ADDRESS(CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_ADDRESS, "jgroups.bind.address"),
-        BIND_PORT(CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_PORT, "jgroups.bind.port"),
+        BIND_ADDRESS(CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_ADDRESS, Global.BIND_ADDR),
+        BIND_PORT(CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_PORT, Global.BIND_PORT),
         EXTERNAL_ADDRESS(CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_ADDRESS, Global.EXTERNAL_ADDR),
         EXTERNAL_PORT(CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_PORT, Global.EXTERNAL_PORT);
 
