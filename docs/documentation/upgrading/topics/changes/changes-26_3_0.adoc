@@ -46,7 +46,7 @@ To enhance security, only users with the `admin` role in the `master` realm (ser
 
 === JGroups system properties replaced with CLI options
 
-Until now it was necessary to configure JGroups network addresses and ports using the `jgroups.bind.*` and `jgroups.external_*`
+Until now it was necessary to configure JGroups network addresses and ports using the `+jgroups.bind.*+` and `+jgroups.external_*+`
 system properties. In this release we have introduced the following CLI options to allow these addresses and ports to be
 configured directly via {project_name}: `cache-embedded-network-bind-address`, `cache-embedded-network-bind-port`,
 `cache-embedded-network-external-address`, `cache-embedded-network-external-port`. Configuring ports using the old
