@@ -41,6 +41,7 @@ import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.infinispan.remoting.transport.jgroups.EmbeddedJGroupsChannelConfigurator;
 import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.jboss.logging.Logger;
+import org.jgroups.Global;
 import org.jgroups.conf.ClassConfigurator;
 import org.jgroups.conf.ProtocolConfiguration;
 import org.jgroups.protocols.TCP;
@@ -292,8 +293,8 @@ public final class JGroupsConfigurator {
     private enum SystemProperties {
         BIND_ADDRESS(CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_ADDRESS, "jgroups.bind.address"),
         BIND_PORT(CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_PORT, "jgroups.bind.port"),
-        EXTERNAL_ADDRESS(CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_ADDRESS, "jgroups.external_addr"),
-        EXTERNAL_PORT(CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_PORT, "jgroups.external_port");
+        EXTERNAL_ADDRESS(CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_ADDRESS, Global.EXTERNAL_ADDR),
+        EXTERNAL_PORT(CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_PORT, Global.EXTERNAL_PORT);
 
         final Option<?> option;
         final String property;
