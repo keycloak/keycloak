@@ -106,19 +106,23 @@ final class CachingPropertyMappers {
                 fromOption(CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_ADDRESS)
                         .paramLabel("address")
                         .to("kc.spi-cache-embedded--default--network-bind-address")
+                        .isEnabled(CachingPropertyMappers::cacheSetToInfinispan, "Infinispan clustered embedded is enabled")
                         .validator(CachingPropertyMappers::validateBindAddress)
                         .build(),
                 fromOption(CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_PORT)
                        .paramLabel("port")
                        .to("kc.spi-cache-embedded--default--network-bind-port")
+                       .isEnabled(CachingPropertyMappers::cacheSetToInfinispan, "Infinispan clustered embedded is enabled")
                        .build(),
                 fromOption(CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_ADDRESS)
                        .paramLabel("address")
                        .to("kc.spi-cache-embedded--default--network-external-address")
+                       .isEnabled(CachingPropertyMappers::cacheSetToInfinispan, "Infinispan clustered embedded is enabled")
                        .validator(CachingPropertyMappers::validateExternalAddress)
                        .build(),
                 fromOption(CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_PORT)
                        .paramLabel("port")
+                       .isEnabled(CachingPropertyMappers::cacheSetToInfinispan, "Infinispan clustered embedded is enabled")
                        .to("kc.spi-cache-embedded--default--network-external-port")
                        .build(),
                 fromOption(CachingOptions.CACHE_REMOTE_HOST)
