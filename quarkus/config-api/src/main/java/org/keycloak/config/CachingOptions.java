@@ -8,7 +8,7 @@ public class CachingOptions {
 
     public static final String CACHE_CONFIG_FILE_PROPERTY = "cache-config-file";
 
-    private static final String CACHE_EMBEDDED_PREFIX = "cache-embedded";
+    public static final String CACHE_EMBEDDED_PREFIX = "cache-embedded";
     private static final String CACHE_EMBEDDED_MTLS_PREFIX = CACHE_EMBEDDED_PREFIX + "-mtls";
     public static final String CACHE_EMBEDDED_MTLS_ENABLED_PROPERTY = CACHE_EMBEDDED_MTLS_PREFIX + "-enabled";
     public static final String CACHE_EMBEDDED_MTLS_KEYSTORE_FILE_PROPERTY = CACHE_EMBEDDED_MTLS_PREFIX + "-key-store-file";

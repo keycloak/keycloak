@@ -18,15 +18,16 @@
 package org.keycloak.spi.infinispan.impl.embedded;
 
 import static org.infinispan.configuration.global.TransportConfiguration.STACK;
+import static org.keycloak.config.CachingOptions.CACHE_EMBEDDED_PREFIX;
 
 import java.lang.invoke.MethodHandles;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Supplier;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
@@ -50,6 +51,7 @@ import org.jgroups.util.DefaultSocketFactory;
 import org.jgroups.util.SocketFactory;
 import org.keycloak.Config;
 import org.keycloak.config.CachingOptions;
+import org.keycloak.config.Option;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.InfinispanConnectionSpi;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
@@ -71,10 +73,6 @@ public final class JGroupsConfigurator {
     private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
     private static final String TLS_PROTOCOL_VERSION = "TLSv1.3";
     private static final String TLS_PROTOCOL = "TLS";
-    private static final String BIND_ADDRESS = "networkBindAddress";
-    private static final String BIND_PORT = "networkBindPort";
-    private static final String EXTERNAL_ADDRESS = "networkExternalAddress";
-    private static final String EXTERNAL_PORT = "networkExternalPort";
 
     private JGroupsConfigurator() {
     }
@@ -137,39 +135,14 @@ public final class JGroupsConfigurator {
     }
 
     static void createJGroupsProperties(ProviderConfigurationBuilder builder) {
-        Util.copyFromOption(builder, BIND_ADDRESS, "address", ProviderConfigProperty.STRING_TYPE, CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_ADDRESS, false);
-        Util.copyFromOption(builder, BIND_PORT, "port", ProviderConfigProperty.INTEGER_TYPE, CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_PORT, false);
-        Util.copyFromOption(builder, EXTERNAL_ADDRESS, "address", ProviderConfigProperty.STRING_TYPE, CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_ADDRESS, false);
-        Util.copyFromOption(builder, EXTERNAL_PORT, "port", ProviderConfigProperty.INTEGER_TYPE, CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_PORT, false);
+        Util.copyFromOption(builder, SystemProperties.BIND_ADDRESS.configKey, "address", ProviderConfigProperty.STRING_TYPE, CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_ADDRESS, false);
+        Util.copyFromOption(builder, SystemProperties.BIND_PORT.configKey, "port", ProviderConfigProperty.INTEGER_TYPE, CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_PORT, false);
+        Util.copyFromOption(builder, SystemProperties.EXTERNAL_ADDRESS.configKey, "address", ProviderConfigProperty.STRING_TYPE, CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_ADDRESS, false);
+        Util.copyFromOption(builder, SystemProperties.EXTERNAL_PORT.configKey, "port", ProviderConfigProperty.INTEGER_TYPE, CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_PORT, false);
     }
 
     private static void configureTransport(Config.Scope config) {
-        setJGroupsNetworkProperty(BIND_ADDRESS, () -> config.get(BIND_ADDRESS));
-        setJGroupsNetworkProperty(BIND_PORT, intAsString(config, BIND_PORT));
-        setJGroupsNetworkProperty(EXTERNAL_ADDRESS, () -> config.get(EXTERNAL_ADDRESS));
-        setJGroupsNetworkProperty(EXTERNAL_PORT, intAsString(config, EXTERNAL_PORT));
-    }
-
-    private static Supplier<String> intAsString(Config.Scope config, String key) {
-        Integer val = config.getInt(key);
-        return val == null ? () -> null : val::toString;
-    }
-
-    private static void setJGroupsNetworkProperty(String key, Supplier<String> config) {
-        String userConfig = config.get();
-        if (userConfig == null) {
-            // User property is either already set or missing, so do nothing
-            return;
-        }
-
-        String[] split = key.split("(?=[A-Z])", 3);
-        String property = "jgroups.%s.%s".formatted(split[1].toLowerCase(), split[2].toLowerCase());
-        String userProp = System.getProperty(property);
-        if (userProp != null) {
-            logger.warnf("Corresponding system property '%s' and CLI arg '%s' set, utilising CLI value '%s'",
-                  property, CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_ADDRESS_PROPERTY, userConfig);
-        }
-        System.setProperty(property, userConfig);
+        Arrays.stream(SystemProperties.values()).forEach(p -> p.set(config));
     }
 
     private static void configureTls(ConfigurationBuilderHolder holder, KeycloakSession session) {
@@ -313,6 +286,58 @@ public final class JGroupsConfigurator {
             if (protocol instanceof KEYCLOAK_JDBC_PING2 kcPing) {
                 kcPing.setJpaConnectionProviderFactory(factory);
             }
+        }
+    }
+
+    private enum SystemProperties {
+        BIND_ADDRESS(CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_ADDRESS, "jgroups.bind.address"),
+        BIND_PORT(CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_PORT, "jgroups.bind.port"),
+        EXTERNAL_ADDRESS(CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_ADDRESS, "jgroups.external_addr"),
+        EXTERNAL_PORT(CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_PORT, "jgroups.external_port");
+
+        final Option<?> option;
+        final String property;
+        final String configKey;
+
+        SystemProperties(Option<?> option, String property) {
+            this.option = option;
+            this.property = property;
+            this.configKey = configKey();
+        }
+
+        void set(Config.Scope config) {
+            String userConfig = fromConfig(config);
+            if (userConfig == null) {
+                // User property is either already set or missing, so do nothing
+                return;
+            }
+            String userProp = System.getProperty(property);
+            if (userProp != null) {
+                logger.warnf("Corresponding system property '%s' and CLI arg '%s' set, utilising CLI value '%s'",
+                      property, option.getKey(), userConfig);
+            }
+            System.setProperty(property, userConfig);
+        }
+
+        String fromConfig(Config.Scope config) {
+            if (option.getType() == Integer.class) {
+                Integer val = config.getInt(configKey);
+                return val == null ? null : val.toString();
+            }
+            return config.get(configKey);
+        }
+
+        String configKey() {
+            // Strip the scope from the key and convert to camelCase
+            String key = option.getKey().substring(CACHE_EMBEDDED_PREFIX.length() + 1);
+            StringBuilder sb = new StringBuilder(key);
+            for (int i = 0; i < sb.length(); i++) {
+                if (sb.charAt(i) == '-') {
+                    sb.deleteCharAt(i);
+                    sb.replace(i, i+1, String.valueOf(Character.toUpperCase(sb.charAt(i))));
+                }
+            }
+            return sb.toString();
         }
     }
 }
