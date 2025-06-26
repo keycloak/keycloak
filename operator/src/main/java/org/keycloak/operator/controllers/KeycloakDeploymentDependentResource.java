@@ -83,7 +83,7 @@ import static org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec.co
 )
 public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependentResource<StatefulSet, Keycloak> {
 
-    public static final String POD_IP = "POD_IP";
+    public static final String BIND_ADDRESS = "KC_CACHE_EMBEDDED_NETWORK_BIND_ADDRESS";
 
     private static final List<String> COPY_ENV = Arrays.asList("HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY");
 
@@ -322,10 +322,6 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                         && (customImage.isPresent() || operatorConfig.keycloak().startOptimized())) {
             containerBuilder.addToArgs(OPTIMIZED_ARG);
         }
-        if (isBindAddressRequired(containerBuilder.getArgs(), keycloakCR.getSpec().getAdditionalOptions())) {
-            // Set bind address as this is required for JGroups to form a cluster in IPv6 environments
-            containerBuilder.addToArgs("--cache-embedded-network-bind-address=$(%s)".formatted(POD_IP));
-        }
 
         // probes
         var protocol = isTlsConfigured(keycloakCR) ? "HTTPS" : "HTTP";
@@ -390,14 +386,6 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                 .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL)
             .endPort()
             .endContainer().endSpec().endTemplate().endSpec().build();
-    }
-
-    private boolean isBindAddressRequired(List<String> args, List<ValueOrSecret> additionalOptions) {
-        String bindAddress = "cache-embedded-network-bind-address";
-        if (args != null && args.stream().anyMatch(a -> a.contains(bindAddress))) {
-            return false;
-        }
-        return additionalOptions.stream().noneMatch(v -> v.getName().equals(bindAddress));
     }
 
     private void handleScheduling(Keycloak keycloakCR, Map<String, String> labels, PodSpecFluent<?> specBuilder) {
@@ -544,7 +532,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
             }
         }
 
-        envVars.add(new EnvVarBuilder().withName(POD_IP).withNewValueFrom().withNewFieldRef()
+        envVars.add(new EnvVarBuilder().withName(BIND_ADDRESS).withNewValueFrom().withNewFieldRef()
                 .withFieldPath("status.podIP").withApiVersion("v1").endFieldRef().endValueFrom().build());
 
         return envVars;

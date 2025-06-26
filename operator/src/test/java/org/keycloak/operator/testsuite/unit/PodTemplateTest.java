@@ -247,7 +247,7 @@ public class PodTemplateTest {
         // Assert
         assertEquals(1, podTemplate.getSpec().getContainers().get(0).getCommand().size());
         assertEquals(command, podTemplate.getSpec().getContainers().get(0).getCommand().get(0));
-        assertEquals(2, podTemplate.getSpec().getContainers().get(0).getArgs().size());
+        assertEquals(1, podTemplate.getSpec().getContainers().get(0).getArgs().size());
         assertEquals(arg, podTemplate.getSpec().getContainers().get(0).getArgs().get(0));
     }
 
@@ -433,13 +433,12 @@ public class PodTemplateTest {
         assertThat(spec.getServiceName()).isEqualTo("instance-discovery");
         assertNotNull(container);
         assertThat(container.getArgs()).doesNotContain(KeycloakDeploymentDependentResource.OPTIMIZED_ARG);
-        assertThat(container.getArgs()).contains("--cache-embedded-network-bind-address=$(POD_IP)");
 
         var envVars = container.getEnv();
         assertThat(envVars.stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TRUSTSTORE_PATHS));
         assertThat(envVars.stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TRACING_SERVICE_NAME));
         assertThat(envVars.stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TRACING_RESOURCE_ATTRIBUTES));
-        assertThat(envVars.stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.POD_IP));
+        assertThat(envVars.stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.BIND_ADDRESS));
 
         var readiness = container.getReadinessProbe().getHttpGet();
         assertNotNull(readiness);
@@ -750,43 +749,5 @@ public class PodTemplateTest {
                 });
         assertNull(job.getSpec().getTemplate().getSpec().getInitContainers().get(0).getLifecycle());
         assertNull(job.getSpec().getTemplate().getSpec().getInitContainers().get(0).getRestartPolicy());
-    }
-
-    @Test
-    public void testBindAddressAdditionalOptions() {
-        // Act
-        var bindConfig = new ValueOrSecret("cache-embedded-network-bind-address", "LINK_LOCAL");
-        var container = getDeployment(null, null, s -> s.withAdditionalOptions(bindConfig))
-              .getSpec()
-              .getTemplate()
-              .getSpec()
-              .getContainers()
-              .get(0);
-
-        // Assert
-        assertThat(container.getArgs()).doesNotContain("--cache-embedded-network-bind-address=$(POD_IP)");
-    }
-
-    @Test
-    public void testBindAddressUnsupportedCommand() {
-        // Arrange
-        var additionalPodTemplate = new PodTemplateSpecBuilder()
-              .withNewSpec()
-              .addNewContainer()
-              .withArgs("cache-embedded-network-bind-address=LINK_LOCAL")
-              .endContainer()
-              .endSpec()
-              .build();
-
-        // Act
-        var container = getDeployment(additionalPodTemplate)
-              .getSpec()
-              .getTemplate()
-              .getSpec()
-              .getContainers()
-              .get(0);
-
-        // Assert
-        assertThat(container.getArgs()).doesNotContain("--cache-embedded-network-bind-address=$(POD_IP)");
     }
 }

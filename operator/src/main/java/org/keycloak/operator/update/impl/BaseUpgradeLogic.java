@@ -147,7 +147,7 @@ abstract class BaseUpdateLogic implements UpdateLogic {
     private static Map<String, EnvVar> envVars(Container container) {
         // The operator only sets value or secrets. Any other combination is from unsupported pod template.
         return container.getEnv().stream()
-                .filter(envVar -> !envVar.getName().equals(KeycloakDeploymentDependentResource.POD_IP))
+                .filter(envVar -> !envVar.getName().equals(KeycloakDeploymentDependentResource.BIND_ADDRESS))
                 .collect(Collectors.toMap(EnvVar::getName, Function.identity()));
     }
 

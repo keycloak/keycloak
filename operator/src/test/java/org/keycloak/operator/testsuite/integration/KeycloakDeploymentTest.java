@@ -47,7 +47,6 @@ import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.BootstrapAdminSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProbeSpec;
 import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.unit.WatchedResourcesTest;
 import org.keycloak.operator.testsuite.utils.CRAssert;
@@ -494,7 +493,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                 .list()
                 .getItems();
 
-        assertThat(pods.get(0).getSpec().getContainers().get(0).getArgs()).endsWith("--verbose", "start", "--optimized", "--cache-embedded-network-bind-address=$(POD_IP)");
+        assertThat(pods.get(0).getSpec().getContainers().get(0).getArgs()).endsWith("--verbose", "start", "--optimized");
     }
 
     @Test
@@ -517,7 +516,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                 .list()
                 .getItems();
 
-        assertThat(pods.get(0).getSpec().getContainers().get(0).getArgs()).endsWith("--verbose", "start", "--optimized", "--cache-embedded-network-bind-address=$(POD_IP)");
+        assertThat(pods.get(0).getSpec().getContainers().get(0).getArgs()).endsWith("--verbose", "start", "--optimized");
         assertThat(pods.get(0).getSpec().getImagePullSecrets().size()).isEqualTo(1);
         assertThat(pods.get(0).getSpec().getImagePullSecrets().get(0).getName()).isEqualTo(imagePullSecretName);
     }
