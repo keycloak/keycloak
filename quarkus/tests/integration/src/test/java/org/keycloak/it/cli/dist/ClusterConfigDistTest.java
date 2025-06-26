@@ -89,12 +89,6 @@ public class ClusterConfigDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--cache-embedded-network-bind-address=UNKNOWN" })
-    void failInvalidBindAddress(CLIResult result) {
-        result.assertError("Option 'cache-embedded-network-bind-address'. Invalid address: 'UNKNOWN'");
-    }
-
-    @Test
     @Launch({ "start-dev", "--cache=ispn", "--cache-stack=jdbc-ping-udp"})
     void testJdbcPingTCP(CLIResult result) {
         result.assertClusteredCache();

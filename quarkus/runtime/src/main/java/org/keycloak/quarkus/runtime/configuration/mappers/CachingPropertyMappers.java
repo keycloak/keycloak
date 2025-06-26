@@ -11,9 +11,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 
-import org.apache.http.conn.util.InetAddressUtils;
-import org.jgroups.Global;
-import org.jgroups.util.Util;
 import org.keycloak.common.Profile;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.config.Option;
@@ -107,7 +104,6 @@ final class CachingPropertyMappers {
                         .paramLabel("address")
                         .to("kc.spi-cache-embedded--default--network-bind-address")
                         .isEnabled(CachingPropertyMappers::cacheSetToInfinispan, "Infinispan clustered embedded is enabled")
-                        .validator(CachingPropertyMappers::validateBindAddress)
                         .build(),
                 fromOption(CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_PORT)
                        .paramLabel("port")
@@ -118,7 +114,6 @@ final class CachingPropertyMappers {
                        .paramLabel("address")
                        .to("kc.spi-cache-embedded--default--network-external-address")
                        .isEnabled(CachingPropertyMappers::cacheSetToInfinispan, "Infinispan clustered embedded is enabled")
-                       .validator(CachingPropertyMappers::validateExternalAddress)
                        .build(),
                 fromOption(CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_PORT)
                        .paramLabel("port")
@@ -282,25 +277,5 @@ final class CachingPropertyMappers {
         } catch (NumberFormatException unused) {
             throw new PropertyException("JGroups MTLS certificate rotation in '%s' option must positive.".formatted(CachingOptions.CACHE_EMBEDDED_MTLS_ROTATION.getKey()));
         }
-    }
-
-    private static void validateBindAddress(String address) {
-        if (InetAddressUtils.isIPv4Address(address) || InetAddressUtils.isIPv6Address(address))
-            return;
-
-        for (Util.AddressScope addressScope : Util.AddressScope.values())
-            if (addressScope.name().equals(address))
-                return;
-
-        String matchType = address.split(":")[0];
-        if (Global.MATCH_ADDR.equals(matchType) || Global.MATCH_HOST.equals(matchType) || Global.MATCH_INTF.equals(matchType))
-            return;
-
-        throw new PropertyException("Option '%s'. Invalid address: '%s'".formatted(CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_ADDRESS.getKey(), address));
-    }
-
-    private static void validateExternalAddress(String address) {
-        if (!InetAddressUtils.isIPv4Address(address) && !InetAddressUtils.isIPv6Address(address))
-            throw new PropertyException("Option '%s'. Invalid address: '%s'".formatted(CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_ADDRESS.getKey(), address));
     }
 }
