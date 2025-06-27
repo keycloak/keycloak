@@ -93,7 +93,7 @@ public class CustomOIDCIdentityProvider extends OIDCIdentityProvider {
     @Override
     public SimpleHttp authenticateTokenRequest(final SimpleHttp tokenRequest) {
         SimpleHttp authenticatedRequest = super.authenticateTokenRequest(tokenRequest);
-        String claimsJson = "{\"id_token\":{\"urn:telekom.com:all\":null}}";
+        String claimsJson = "{\"id_token\":{\"urn:telekom.com:all\":{\"essential\":true}}}";
         authenticatedRequest.param("claims", URLEncoder.encode(claimsJson));
         return authenticatedRequest;
     }
@@ -101,7 +101,7 @@ public class CustomOIDCIdentityProvider extends OIDCIdentityProvider {
     @Override
     protected UriBuilder createAuthorizationUrl(AuthenticationRequest request) {
         final UriBuilder uriBuilder = super.createAuthorizationUrl(request);
-        String claimsJson = "{\"id_token\":{\"urn:telekom.com:all\":null}}";
+        String claimsJson = "{\"id_token\":{\"urn:telekom.com:all\":{\"essential\":true}}}";
         uriBuilder.queryParam("claims", URLEncoder.encode(claimsJson));
         return uriBuilder;
     }
