@@ -19,11 +19,11 @@ package org.keycloak.protocol.oidc.endpoints.request;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 
+import java.util.List;
 import java.util.Set;
 
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 
 /**
  * Parse the parameters from request queryString
@@ -55,6 +55,15 @@ public class AuthzEndpointQueryStringParser extends AuthzEndpointRequestParser {
         }
 
         super.validateResponseTypeParameter(responseTypeParameter, request);
+    }
+
+    @Override
+    protected Set<String> getMultiParameter(String paramName) {
+        List<String> strings = requestParams.get(paramName);
+        if (strings == null) {
+            return null;
+        }
+        return Set.copyOf(strings);
     }
 
     @Override
