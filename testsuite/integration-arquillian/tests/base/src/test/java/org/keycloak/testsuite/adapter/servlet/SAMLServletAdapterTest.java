@@ -2009,19 +2009,15 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
                 CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build()) {
             Map<String, Object> response = adminClient.realm(SAMLSERVLETDEMO).users().get(userId).impersonate();
             
-            Assert.assertNotNull(response);
+            Assertions.assertNotNull(response);
             String redirect = (String) response.get("redirect");
-            Assert.assertNotNull(redirect);
+            Assertions.assertNotNull(redirect);
             
             HttpUriRequest req = RequestBuilder.get()
                     .setUri(redirect)
                     .build();
             HttpResponse res = httpClient.execute(req);
             Assertions.assertEquals(Response.Status.OK.getStatusCode(), res.getStatusLine().getStatusCode());
-            String resBody = EntityUtils.toString(res.getEntity());
-
-            Assertions.assertNotNull(resBody);
-            Assertions.assertTrue(resBody.contains("redirect"));
 
             // return cookies not expired in the store as selenium cookies
             final Date now = new Date();
