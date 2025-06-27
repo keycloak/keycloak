@@ -488,6 +488,12 @@ Logging:
                      The queue length to use before flushing writing when logging to Syslog.
                        Default: 512. Available only when Syslog is activated and asynchronous
                        logging is enabled.
+--log-syslog-counting-framing <strategy>
+                     If 'true', the message being sent is prefixed with the size of the message. If
+                       'protocol-dependent', the default value is 'true' when 'log-syslog-protocol'
+                       is 'tcp' or 'ssl-tcp', otherwise 'false'. Possible values are: true, false,
+                       protocol-dependent. Default: protocol-dependent. Available only when Syslog
+                       is activated.
 --log-syslog-endpoint <host:port>
                      Set the IP address and port of the Syslog server. Default: localhost:514.
                        Available only when Syslog is activated.

@@ -22,7 +22,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.net.InetAddress;
+import java.net.Inet4Address;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
@@ -68,7 +68,7 @@ public class AttributeTest {
 
         assertEquals(new SimpleDateFormat("dd/MM/yyyy").parse("12/12/2016"), attributes.getValue("date").asDate(0, "dd/MM/yyyy"));
 
-        assertEquals(InetAddress.getLoopbackAddress(), attributes.getValue("ip_network_address").asInetAddress(0));
-        assertEquals(InetAddress.getLoopbackAddress(), attributes.getValue("host_network_address").asInetAddress(0));
+        assertEquals("127.0.0.1", attributes.getValue("ip_network_address").asInetAddress(0).getHostAddress());
+        assertEquals("localhost", attributes.getValue("host_network_address").asInetAddress(0).getHostName());
     }
 }
