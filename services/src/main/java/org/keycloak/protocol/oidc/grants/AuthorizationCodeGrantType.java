@@ -17,8 +17,13 @@
 
 package org.keycloak.protocol.oidc.grants;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.MediaType;
 
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -26,6 +31,7 @@ import org.jboss.logging.Logger;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -33,6 +39,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -40,13 +47,18 @@ import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.protocol.oidc.utils.PkceUtils;
+import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.services.CorsErrorResponseException;
+import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.TokenRequestContext;
 import org.keycloak.services.clientpolicy.context.TokenResponseContext;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.services.util.DefaultClientSessionContext;
+import org.keycloak.protocol.oid4vc.model.AuthorizationDetailResponse;
+import org.keycloak.util.TokenUtil;
 
 /**
  * OAuth 2.0 Authorization Code Grant
@@ -188,6 +200,8 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
 
+        List<AuthorizationDetailResponse> authorizationDetailsResponse = processAuthorizationDetails(userSession);
+
         updateClientSession(clientSession);
         updateUserSessionFromClientAuth(userSession);
 
@@ -207,7 +221,78 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
         // Set nonce as an attribute in the ClientSessionContext. Will be used for the token generation
         clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, codeData.getNonce());
 
+        // Store authorization_details_response in ClientSessionContext
+        clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE_KEY, authorizationDetailsResponse);
+
         return createTokenResponse(user, userSession, clientSessionCtx, scopeParam, true, s -> {return new TokenResponseContext(formParams, parseResult, clientSessionCtx, s);});
+    }
+
+    // Override createTokenResponse to include authorization_details
+    @Override
+    protected Response createTokenResponse(UserModel user, UserSessionModel userSession, ClientSessionContext clientSessionCtx,
+                                           String scopeParam, boolean code, Function<TokenManager.AccessTokenResponseBuilder, ClientPolicyContext> clientPolicyContextGenerator) {
+        clientSessionCtx.setAttribute(Constants.GRANT_TYPE, context.getGrantType());
+        AccessToken token = tokenManager.createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx);
+
+        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager
+                .responseBuilder(realm, client, event, session, userSession, clientSessionCtx).accessToken(token);
+        boolean useRefreshToken = clientConfig.isUseRefreshToken();
+        if (useRefreshToken) {
+            responseBuilder.generateRefreshToken();
+            if (TokenUtil.TOKEN_TYPE_OFFLINE.equals(responseBuilder.getRefreshToken().getType())
+                    && clientSessionCtx.getClientSession().getNote(AuthenticationProcessor.FIRST_OFFLINE_ACCESS) != null) {
+                // the online session can be removed if first created for offline access
+                session.sessions().removeUserSession(realm, userSession);
+            }
+        }
+
+        checkAndBindMtlsHoKToken(responseBuilder, useRefreshToken);
+
+        if (TokenUtil.isOIDCRequest(scopeParam)) {
+            responseBuilder.generateIDToken().generateAccessTokenHash();
+        }
+
+        if (clientPolicyContextGenerator != null) {
+            try {
+                session.clientPolicy().triggerOnEvent(clientPolicyContextGenerator.apply(responseBuilder));
+            } catch (ClientPolicyException cpe) {
+                event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+                event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+                event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+                event.error(cpe.getError());
+                throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
+            }
+        }
+
+        AccessTokenResponse res;
+        try {
+            res = responseBuilder.build();
+        } catch (RuntimeException re) {
+            if ("can not get encryption KEK".equals(re.getMessage())) {
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                        "can not get encryption KEK", Response.Status.BAD_REQUEST);
+            } else {
+                throw re;
+            }
+        }
+
+        // Add authorization_details to the response
+        List<AuthorizationDetailResponse> authDetailsResponse = clientSessionCtx.getAttribute(AUTHORIZATION_DETAILS_RESPONSE_KEY, List.class);
+        if (authDetailsResponse != null) {
+            try {
+                Map<String, Object> responseMap = objectMapper.convertValue(res, new TypeReference<>() {
+                });
+                responseMap.put(AUTHORIZATION_DETAILS_PARAM, authDetailsResponse);
+                event.success();
+                return cors.add(Response.ok(responseMap).type(MediaType.APPLICATION_JSON_TYPE));
+            } catch (Exception e) {
+                event.error(Errors.INVALID_REQUEST);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Failed to include authorization_details in response", Response.Status.BAD_REQUEST);
+            }
+        }
+
+        event.success();
+        return cors.add(Response.ok(res).type(MediaType.APPLICATION_JSON_TYPE));
     }
 
     @Override
