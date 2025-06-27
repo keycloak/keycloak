@@ -79,6 +79,6 @@ Read more on how to enable this feature in https://www.keycloak.org/server/updat
 
 In this release {project_name} integrates *Passkeys* in the default authentications forms. A new switch *Enable Passkeys* is available in the configuration, *Authentication* → *Policies* → *Webauthn Passwordless Policy*, that seamlessly incorporates passkeys support to the realm. With just one click, {project_name} offers conditional and modal user interfaces in the default login forms to allow users to authenticate with a passkey.
 
-The *Passkeys* feature is still in preview. Follow the https://www.keycloak.org/server/features[Enabling and disabling features] {section} to enable it at boot time.
+The *Passkeys* feature is still in preview. Follow the https://www.keycloak.org/server/features[Enabling and disabling features] {section} to enable it.
 
 For more information, see link:{adminguide_link}#passkeys_server_administration_guide[Passkeys section in the {adminguide_name}].
