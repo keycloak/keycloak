@@ -430,7 +430,7 @@ public class UserResource {
         URI redirect = Urls.accountBase(session.getContext().getUri().getBaseUri()).build(realm.getName());
         int expires = Time.currentTime() + 60;
 
-        ImpersonateActionToken token = new ImpersonateActionToken(user.getId(), impersonator, impersonatorId, redirect.toString(), expires);
+        ImpersonateActionToken token = new ImpersonateActionToken(user.getId(), impersonator, impersonatorId, authenticatedRealm.getName(), redirect.toString(), expires);
         String impersonateAction = LoginActionsService.actionTokenProcessor(session.getContext().getUri())
             .queryParam(Constants.KEY, token.serialize(session, realm, session.getContext().getUri()))
             .build(realm.getName())
