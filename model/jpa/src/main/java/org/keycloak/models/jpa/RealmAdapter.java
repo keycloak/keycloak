@@ -37,6 +37,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.TypedQuery;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.utils.StringUtil;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -911,6 +912,8 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
             otpPolicy.setType(realm.getOtpPolicyType());
             otpPolicy.setPeriod(realm.getOtpPolicyPeriod());
             otpPolicy.setCodeReusable(getAttribute(OTPPolicy.REALM_REUSABLE_CODE_ATTRIBUTE, OTPPolicy.DEFAULT_IS_REUSABLE));
+            otpPolicy.setEmailInUrl(getAttribute(OTPPolicy.REALM_IS_EMAIL_IN_URL_ATTRIBUTE, OTPPolicy.DEFAULT_EMAIL_IN_URL));
+            otpPolicy.setIssuerOverride(getAttribute(OTPPolicy.REALM_ISSUER_OVERRIDE_ATTRIBUTE));
         }
         return otpPolicy;
     }
@@ -924,6 +927,13 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
         realm.setOtpPolicyType(policy.getType());
         realm.setOtpPolicyPeriod(policy.getPeriod());
         setAttribute(OTPPolicy.REALM_REUSABLE_CODE_ATTRIBUTE, policy.isCodeReusable());
+        setAttribute(OTPPolicy.REALM_IS_EMAIL_IN_URL_ATTRIBUTE, policy.isEmailInUrl());
+        String issuerOverride = policy.getIssuerOverride();
+        if (!StringUtil.isNullOrEmpty(issuerOverride)) {
+            setAttribute(OTPPolicy.REALM_ISSUER_OVERRIDE_ATTRIBUTE, issuerOverride);
+        } else {
+            removeAttribute(OTPPolicy.REALM_ISSUER_OVERRIDE_ATTRIBUTE);
+        }
         em.flush();
     }
 
