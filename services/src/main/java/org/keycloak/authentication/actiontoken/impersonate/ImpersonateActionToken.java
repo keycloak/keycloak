@@ -30,14 +30,19 @@ public class ImpersonateActionToken extends DefaultActionToken {
     @JsonProperty("impersonatorId")
     private String impersonatorId;
 
+    @JsonProperty("impersonatorRealm")
+    private String impersonatorRealm;
+
     @JsonProperty("reduri")
     private String redirectUri;
 
-    public ImpersonateActionToken(String userId, String impersonatorUsername, String impersonatorId, String redirectUri,
+    public ImpersonateActionToken(String userId, String impersonatorUsername, String impersonatorId,
+            String impersonatorRealm, String redirectUri,
             int absoluteExpirationInSecs) {
         super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null);
         this.impersonatorUsername = impersonatorUsername;
         this.impersonatorId = impersonatorId;
+        this.impersonatorRealm = impersonatorRealm;
         this.redirectUri = redirectUri;
     }
 
@@ -48,16 +53,24 @@ public class ImpersonateActionToken extends DefaultActionToken {
         return impersonatorId;
     }
 
-    public String getImpersonatorUsername() {
-        return impersonatorUsername;
-    }
-
     public void setImpersonatorId(String impersonatorId) {
         this.impersonatorId = impersonatorId;
     }
 
+    public String getImpersonatorUsername() {
+        return impersonatorUsername;
+    }
+
     public void setImpersonatorUsername(String impersonatorUsername) {
         this.impersonatorUsername = impersonatorUsername;
+    }
+
+    public void setImpersonatorRealm(String impersonatorRealm) {
+        this.impersonatorRealm = impersonatorRealm;
+    }
+
+    public String getImpersonatorRealm() {
+        return impersonatorRealm;
     }
 
     public String getRedirectUri() {

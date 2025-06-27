@@ -21,8 +21,6 @@ import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
 
 import java.net.URI;
-import java.util.HashMap;
-import java.util.Map;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
@@ -31,7 +29,6 @@ import org.keycloak.authentication.actiontoken.AbstractActionTokenHandler;
 import org.keycloak.authentication.actiontoken.ActionTokenContext;
 import org.keycloak.authentication.actiontoken.TokenUtils;
 import org.keycloak.common.ClientConnection;
-import org.keycloak.common.VerificationException;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -41,13 +38,10 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.services.ErrorPage;
-import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.sessions.AuthenticationSessionModel;
 
 public class ImpersonateActionTokenHandler extends AbstractActionTokenHandler<ImpersonateActionToken> {
 
@@ -100,7 +94,7 @@ public class ImpersonateActionTokenHandler extends AbstractActionTokenHandler<Im
         event.event(EventType.IMPERSONATE)
                 .session(userSession)
                 .user(user)
-                .detail(Details.IMPERSONATOR_REALM, realm.getName())
+                .detail(Details.IMPERSONATOR_REALM, token.getImpersonatorRealm())
                 .detail(Details.IMPERSONATOR, token.getImpersonatorUsername())
                 .success();
 
