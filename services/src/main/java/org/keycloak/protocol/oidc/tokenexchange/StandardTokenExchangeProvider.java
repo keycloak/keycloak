@@ -238,6 +238,7 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
                         "Scope offline_access not allowed for token exchange", Response.Status.BAD_REQUEST);
             }
 
+            validateTargetResources(clientSessionCtx);
             updateUserSessionFromClientAuth(targetUserSession);
 
             if (params.getAudience() != null && !targetAudienceClients.isEmpty()) {
