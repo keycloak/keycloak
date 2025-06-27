@@ -74,6 +74,7 @@ test.describe("Realm settings client profiles tab tests", () => {
     );
 
     test.beforeEach(async ({ page }) => {
+      await searchClientProfile(page, editedProfileName);
       await clickTableRowItem(page, editedProfileName);
     });
 
