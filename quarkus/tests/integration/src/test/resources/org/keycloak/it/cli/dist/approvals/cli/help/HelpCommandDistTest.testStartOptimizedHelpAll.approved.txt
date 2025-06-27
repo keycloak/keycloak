@@ -155,8 +155,8 @@ Database:
 
 Database - additional datasources:
 
---db-active-<datasource> <true|false>
-                     Deactivate specific named datasource <datasource>. Default: true.
+--db-enabled-<datasource> <true|false>
+                     Enable specific named datasource <datasource>. Default: true.
 --db-password-<datasource> <password>
                      Used for named <datasource>. The password of the database user.
 --db-pool-initial-size-<datasource> <size>
