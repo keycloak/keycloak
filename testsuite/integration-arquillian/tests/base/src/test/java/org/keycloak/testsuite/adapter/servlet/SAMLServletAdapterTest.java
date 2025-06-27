@@ -2007,9 +2007,14 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
                 .username(admin).password(adminPassword).clientId(Constants.ADMIN_CLI_CLIENT_ID)
                 .resteasyClient(AdminClientUtil.createResteasyClient()).build();
                 CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build()) {
-            HttpUriRequest req = RequestBuilder.post()
-                    .setUri(oauth.getBaseUrl() + "/admin/realms/" + SAMLSERVLETDEMO + "/users/" + userId + "/impersonation")
-                    .addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + client.tokenManager().getAccessTokenString())
+            Map<String, Object> response = adminClient.realm(SAMLSERVLETDEMO).users().get(userId).impersonate();
+            
+            Assert.assertNotNull(response);
+            String redirect = (String) response.get("redirect");
+            Assert.assertNotNull(redirect);
+            
+            HttpUriRequest req = RequestBuilder.get()
+                    .setUri(redirect)
                     .build();
             HttpResponse res = httpClient.execute(req);
             Assertions.assertEquals(Response.Status.OK.getStatusCode(), res.getStatusLine().getStatusCode());
