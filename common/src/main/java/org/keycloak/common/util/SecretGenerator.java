@@ -30,6 +30,15 @@ public class SecretGenerator {
     public static SecretGenerator getInstance() {
         return instance;
     }
+    
+    public String generateSecureID() {
+        StringBuilder builder = new StringBuilder(instance.randomBytesHex(16));
+        builder.insert(8, '-');
+        builder.insert(13, '-');
+        builder.insert(18, '-');
+        builder.insert(23, '-');
+        return builder.toString();
+    }
 
     public String randomString() {
         return randomString(SECRET_LENGTH_256_BITS, ALPHANUM);
@@ -69,6 +78,15 @@ public class SecretGenerator {
         byte[] buf = new byte[length];
         random.get().nextBytes(buf);
         return buf;
+    }
+
+    public String randomBytesHex(int length) {
+        final StringBuilder sb = new StringBuilder();
+        for (byte b : randomBytes(length)) {
+            sb.append(Character.forDigit((b >> 4) & 0xF, 16));
+            sb.append(Character.forDigit((b & 0xF), 16));
+        }
+        return sb.toString();
     }
 
     /**

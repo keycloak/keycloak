@@ -22,6 +22,7 @@ import java.util.HashMap;
 import org.jboss.logging.Logger;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.common.Profile.Feature;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -979,7 +980,7 @@ public class TokenManager {
         AccessToken token = new AccessToken();
 
         TokenContextEncoderProvider encoder = session.getProvider(TokenContextEncoderProvider.class);
-        AccessTokenContext tokenCtx = encoder.getTokenContextFromClientSessionContext(clientSessionCtx, KeycloakModelUtils.generateId());
+        AccessTokenContext tokenCtx = encoder.getTokenContextFromClientSessionContext(clientSessionCtx, SecretGenerator.getInstance().generateSecureID());
         token.id(encoder.encodeTokenId(tokenCtx));
 
         token.type(formatTokenType(client, token));
@@ -1180,7 +1181,7 @@ public class TokenManager {
             AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
             final AccessToken.Confirmation confirmation = getConfirmation(clientSession, accessToken);
             refreshToken = new RefreshToken(accessToken, confirmation);
-            refreshToken.id(KeycloakModelUtils.generateId());
+            refreshToken.id(SecretGenerator.getInstance().generateSecureID());
             refreshToken.issuedNow();
             clientSession.setTimestamp(refreshToken.getIat().intValue());
             UserSessionModel userSession = clientSession.getUserSession();
@@ -1249,7 +1250,7 @@ public class TokenManager {
                 throw new IllegalStateException("accessToken not set");
             }
             idToken = new IDToken();
-            idToken.id(KeycloakModelUtils.generateId());
+            idToken.id(SecretGenerator.getInstance().generateSecureID());
             idToken.type(TokenUtil.TOKEN_TYPE_ID);
             idToken.subject(userSession.getUser().getId());
             idToken.audience(client.getClientId());

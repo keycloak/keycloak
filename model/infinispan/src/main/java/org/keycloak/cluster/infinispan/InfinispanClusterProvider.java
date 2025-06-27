@@ -20,7 +20,6 @@ package org.keycloak.cluster.infinispan;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -43,6 +42,7 @@ import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ExecutionResult;
 import org.keycloak.common.util.ConcurrentMultivaluedHashMap;
 import org.keycloak.common.util.Retry;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.TopologyInfo;
 import org.keycloak.models.sessions.infinispan.CacheDecorators;
@@ -192,7 +192,7 @@ public class InfinispanClusterProvider implements ClusterProvider {
         }
         var wrappedEvent = WrapperClusterEvent.wrap(taskKey, events, myAddress, mySite, dcNotify, ignoreSender);
 
-        String eventKey = UUID.randomUUID().toString();
+        String eventKey = SecretGenerator.getInstance().generateSecureID();
 
         if (logger.isTraceEnabled()) {
             logger.tracef("Sending event with key %s: %s", eventKey, events);
