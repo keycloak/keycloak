@@ -100,10 +100,10 @@ public class DatabaseOptions {
             .defaultValue(10000)
             .build();
 
-    public static final Option<Boolean> DB_ACTIVE_DATASOURCE = new OptionBuilder<>("db-active-<datasource>", Boolean.class)
+    public static final Option<Boolean> DB_ENABLED_DATASOURCE = new OptionBuilder<>("db-enabled-<datasource>", Boolean.class)
             .category(OptionCategory.DATABASE_DATASOURCES)
             .defaultValue(true)
-            .description("Deactivate specific named datasource <datasource>.")
+            .description("If specific named datasource <datasource> should be enabled.")
             .build();
 
     /**
