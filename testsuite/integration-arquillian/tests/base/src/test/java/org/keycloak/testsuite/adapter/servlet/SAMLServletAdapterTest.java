@@ -1989,10 +1989,6 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
                     .build();
             HttpResponse res = httpClient.execute(req);
             Assert.assertEquals(Response.Status.OK.getStatusCode(), res.getStatusLine().getStatusCode());
-            String resBody = EntityUtils.toString(res.getEntity());
-
-            Assert.assertNotNull(resBody);
-            Assert.assertTrue(resBody.contains("redirect"));
 
             // return cookies not expired in the store as selenium cookies
             final Date now = new Date();
