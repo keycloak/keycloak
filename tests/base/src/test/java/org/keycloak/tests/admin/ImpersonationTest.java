@@ -291,17 +291,16 @@ public class ImpersonationTest {
     private Set<Cookie> impersonate(Keycloak adminClient, String admin, String adminRealm) {
         BasicCookieStore cookieStore = new BasicCookieStore();
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build()) {
+            Map<String, Object> response = adminClient.realm("test").users().get(managedUser.getId()).impersonate();
 
-            HttpUriRequest req = RequestBuilder.post()
-                    .setUri(keycloakUrls.getBase() + "/admin/realms/test/users/" + managedUser.getId() + "/impersonation")
-                    .addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + adminClient.tokenManager().getAccessTokenString())
+            Assertions.assertNotNull(response);
+            String redirect = (String) response.get("redirect");
+            Assertions.assertNotNull(redirect);
+
+            HttpUriRequest req = RequestBuilder.get()
+                    .setUri(redirect)
                     .build();
-
             HttpResponse res = httpClient.execute(req);
-            String resBody = EntityUtils.toString(res.getEntity());
-
-            Assertions.assertNotNull(resBody);
-            Assertions.assertTrue(resBody.contains("redirect"));
 
             EventRepresentation event = events.poll();
             Assertions.assertEquals(event.getType(), EventType.IMPERSONATE.toString());
@@ -416,17 +415,17 @@ public class ImpersonationTest {
     private Set<Cookie> impersonateServiceAccount(Keycloak adminClient) {
         BasicCookieStore cookieStore = new BasicCookieStore();
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build()) {
+            Map<String, Object> response = adminClient.realm("test").users().get(managedUser.getId()).impersonate();
 
-            HttpUriRequest req = RequestBuilder.post()
-                    .setUri(keycloakUrls.getBase() + "/admin/realms/test/users/" + managedUser.getId() + "/impersonation")
-                    .addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + adminClient.tokenManager().getAccessTokenString())
+            Assertions.assertNotNull(response);
+            String redirect = (String) response.get("redirect");
+            Assertions.assertNotNull(redirect);
+
+            HttpUriRequest req = RequestBuilder.get()
+                    .setUri(redirect)
                     .build();
-
             HttpResponse res = httpClient.execute(req);
-            String resBody = EntityUtils.toString(res.getEntity());
 
-            Assertions.assertNotNull(resBody);
-            Assertions.assertTrue(resBody.contains("redirect"));
             Set<Cookie> cookies = cookieStore.getCookies().stream()
                     .filter(c -> c.getName().startsWith(CookieType.IDENTITY.getName()))
                     .map(c -> new Cookie(c.getName(), c.getValue(), c.getDomain(), c.getPath(), c.getExpiryDate(), c.isSecure(), true))
