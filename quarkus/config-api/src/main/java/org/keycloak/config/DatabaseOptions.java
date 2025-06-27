@@ -106,7 +106,7 @@ public class DatabaseOptions {
             .description("Deactivate specific named datasource <datasource>.")
             .build();
 
-    public static final Option<String> DB_POSTGRESQL_TARGET_SERVER_TYPE = new OptionBuilder<>("db-jdbc-default-options", String.class)
+    public static final Option<String> DB_POSTGRESQL_TARGET_SERVER_TYPE = new OptionBuilder<>("db-postgres-target-server-type", String.class)
             .category(OptionCategory.DATABASE)
             .hidden()
             .build();
