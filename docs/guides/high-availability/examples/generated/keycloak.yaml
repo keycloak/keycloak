@@ -330,6 +330,7 @@ spec:
     limits:
       cpu: "6"
       memory: "2250M"
+  automountServiceAccountToken: true
   db:
     vendor: postgres
     url: jdbc:aws-wrapper:postgresql://<AWS_AURORA_URL_HERE>:5432/keycloak?sslmode=verify-full&sslrootcert=/opt/keycloak/conf/truststores/configmap-keycloak-aurora-rootcert/aurora.pem # <1>
