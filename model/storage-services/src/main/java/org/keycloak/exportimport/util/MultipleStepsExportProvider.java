@@ -18,6 +18,7 @@
 package org.keycloak.exportimport.util;
 
 import org.jboss.logging.Logger;
+import org.keycloak.connections.jpa.support.EntityManagers;
 import org.keycloak.exportimport.ExportProvider;
 import org.keycloak.exportimport.UsersExportStrategy;
 import org.keycloak.exportimport.util.ExportImportSessionTask.Mode;
@@ -27,12 +28,15 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageUtil;
 
 import java.io.IOException;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -44,7 +48,7 @@ public abstract class MultipleStepsExportProvider<T extends MultipleStepsExportP
     protected final KeycloakSessionFactory factory;
 
     private String realmId;
-    private int usersPerFile;
+    private int usersPerFile = 50;
     private UsersExportStrategy usersExportStrategy;
 
     public MultipleStepsExportProvider(KeycloakSessionFactory factory) {
@@ -78,6 +82,9 @@ public abstract class MultipleStepsExportProvider<T extends MultipleStepsExportP
     }
 
     public T withUsersPerFile(int usersPerFile) {
+        if (usersPerFile < 1) {
+            throw new IllegalArgumentException("usersPerFile must be greater than 0");
+        }
         this.usersPerFile = usersPerFile;
         return (T) this;
     }
@@ -88,9 +95,7 @@ public abstract class MultipleStepsExportProvider<T extends MultipleStepsExportP
     }
 
     protected void exportRealmImpl(final String realmName) {
-        final UsersHolder usersHolder = new UsersHolder();
         final boolean exportUsersIntoRealmFile = usersExportStrategy == UsersExportStrategy.REALM_FILE;
-        FederatedUsersHolder federatedUsersHolder = new FederatedUsersHolder();
 
         new ExportImportSessionTask() {
 
@@ -103,86 +108,58 @@ public abstract class MultipleStepsExportProvider<T extends MultipleStepsExportP
                 logger.info("Realm '" + realmName + "' - data exported");
 
                 // Count total number of users
-                if (!exportUsersIntoRealmFile) {
-                    usersHolder.totalCount = session.users().getUsersCount(realm, true);
+                if (usersExportStrategy != UsersExportStrategy.SKIP && !exportUsersIntoRealmFile) {
+                    Stream<UserModel> users = UserStoragePrivateUtil.userLocalStorage(session).searchForUserStream(realm, Map.of());
+                    exportUsers(realmName, session, realm, users, false);
+
                     if (UserStorageUtil.userFederatedStorage(session) != null) {
-                        federatedUsersHolder.totalCount = UserStorageUtil.userFederatedStorage(session).getStoredUsersCount(realm);
-                    } else {
-                        federatedUsersHolder.totalCount = 0;
+                        Stream<String> federatedUsers = UserStorageUtil.userFederatedStorage(session).getStoredUsersStream(realm, null, null);
+                        exportUsers(realmName, session, realm, federatedUsers, true);
                     }
                 }
+            }
+
+            private <U> void exportUsers(final String realmName, KeycloakSession session, RealmModel realm, Stream<U> users, boolean federated)
+                    throws IOException {
+                final UsersHolder usersHolder = new UsersHolder();
+
+                final Integer countPerPage = (usersExportStrategy == UsersExportStrategy.SAME_FILE) ? null : usersPerFile;
+
+                List<U> usersBatch = new ArrayList<U>();
+
+                users.forEachOrdered(user -> {
+                    usersBatch.add(user);
+
+                    if (countPerPage != null && usersBatch.size() >= countPerPage) {
+                        try {
+                            flushUsers(realmName, session, realm, usersHolder, countPerPage, usersBatch, federated);
+                        } catch (IOException e) {
+                            throw new RuntimeException("Error during export/import: " + e.getMessage(), e);
+                        }
+                    }
+                });
+
+                if (!usersBatch.isEmpty()) {
+                    flushUsers(realmName, session, realm, usersHolder, countPerPage, usersBatch, federated);
+                }
+            }
+
+            private <U> void flushUsers(final String realmName, KeycloakSession session, RealmModel realm,
+                    final UsersHolder usersHolder, final Integer countPerPage, List<U> usersBatch, boolean federated)
+                    throws IOException {
+                if (federated) {
+                    writeFederatedUsers(realmName + "-federated-users-" + usersHolder.file + ".json", session, realm, (List<String>) usersBatch);
+                } else {
+                    writeUsers(realmName + "-users-" + usersHolder.file + ".json", session, realm, (List<UserModel>) usersBatch);
+                }
+                int start = countPerPage == null ? 0 : countPerPage * usersHolder.file;
+                logger.infof("%sUsers %s - %s exported", federated ? "Federated " : "", start, start + usersBatch.size() - 1);
+                usersHolder.file++;
+                usersBatch.clear();
+                EntityManagers.flush(session, true);
             }
 
         }.runTask(factory, Mode.BATCHED);
-
-        if (usersExportStrategy != UsersExportStrategy.SKIP && !exportUsersIntoRealmFile) {
-            // We need to export users now
-            usersHolder.currentPageStart = 0;
-
-            // usersExportStrategy==SAME_FILE  means exporting all users into single file (but separate to realm)
-            final int countPerPage = (usersExportStrategy == UsersExportStrategy.SAME_FILE) ? usersHolder.totalCount : usersPerFile;
-
-            while (usersHolder.currentPageStart < usersHolder.totalCount) {
-                if (usersHolder.currentPageStart + countPerPage < usersHolder.totalCount) {
-                    usersHolder.currentPageEnd = usersHolder.currentPageStart + countPerPage;
-                } else {
-                    usersHolder.currentPageEnd = usersHolder.totalCount;
-                }
-
-                new ExportImportSessionTask() {
-
-                    @Override
-                    protected void runExportImportTask(KeycloakSession session) throws IOException {
-                        RealmModel realm = session.realms().getRealmByName(realmName);
-                        session.getContext().setRealm(realm);
-                        usersHolder.users = session.users()
-                                .searchForUserStream(realm, Collections.emptyMap(), usersHolder.currentPageStart, usersHolder.currentPageEnd - usersHolder.currentPageStart)
-                                .collect(Collectors.toList());
-
-                        writeUsers(realmName + "-users-" + (usersHolder.currentPageStart / countPerPage) + ".json", session, realm, usersHolder.users);
-
-                        logger.info("Users " + usersHolder.currentPageStart + "-" + (usersHolder.currentPageEnd -1) + " exported");
-                    }
-
-                }.runTask(factory, Mode.BATCHED);
-
-                usersHolder.currentPageStart = usersHolder.currentPageEnd;
-            }
-        }
-        if (usersExportStrategy != UsersExportStrategy.SKIP && !exportUsersIntoRealmFile) {
-            // We need to export users now
-            federatedUsersHolder.currentPageStart = 0;
-
-            // usersExportStrategy==SAME_FILE  means exporting all users into single file (but separate to realm)
-            final int countPerPage = (usersExportStrategy == UsersExportStrategy.SAME_FILE) ? federatedUsersHolder.totalCount : usersPerFile;
-
-            while (federatedUsersHolder.currentPageStart < federatedUsersHolder.totalCount) {
-                if (federatedUsersHolder.currentPageStart + countPerPage < federatedUsersHolder.totalCount) {
-                    federatedUsersHolder.currentPageEnd = federatedUsersHolder.currentPageStart + countPerPage;
-                } else {
-                    federatedUsersHolder.currentPageEnd = federatedUsersHolder.totalCount;
-                }
-
-                new ExportImportSessionTask() {
-
-                    @Override
-                    protected void runExportImportTask(KeycloakSession session) throws IOException {
-                        RealmModel realm = session.realms().getRealmByName(realmName);
-                        session.getContext().setRealm(realm);
-                        federatedUsersHolder.users = UserStorageUtil.userFederatedStorage(session)
-                                .getStoredUsersStream(realm, federatedUsersHolder.currentPageStart, federatedUsersHolder.currentPageEnd - federatedUsersHolder.currentPageStart)
-                                .collect(Collectors.toList());
-
-                        writeFederatedUsers(realmName + "-federated-users-" + (federatedUsersHolder.currentPageStart / countPerPage) + ".json", session, realm, federatedUsersHolder.users);
-
-                        logger.info("Users " + federatedUsersHolder.currentPageStart + "-" + (federatedUsersHolder.currentPageEnd -1) + " exported");
-                    }
-
-                }.runTask(factory, Mode.BATCHED);
-
-                federatedUsersHolder.currentPageStart = federatedUsersHolder.currentPageEnd;
-            }
-        }
     }
 
     protected abstract void writeRealm(String fileName, RealmRepresentation rep) throws IOException;
@@ -191,15 +168,6 @@ public abstract class MultipleStepsExportProvider<T extends MultipleStepsExportP
     protected abstract void writeFederatedUsers(String fileName, KeycloakSession session, RealmModel realm, List<String> users) throws IOException;
 
     public static class UsersHolder {
-        List<UserModel> users;
-        int totalCount;
-        int currentPageStart;
-        int currentPageEnd;
-    }
-    public static class FederatedUsersHolder {
-        List<String> users;
-        int totalCount;
-        int currentPageStart;
-        int currentPageEnd;
+        int file;
     }
 }

@@ -17,21 +17,16 @@
 
 package org.keycloak.migration.migrators;
 
-import org.jboss.logging.Logger;
-import org.keycloak.migration.ModelVersion;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.representations.idm.RealmRepresentation;
-
-import java.lang.invoke.MethodHandles;
 import java.util.Collections;
 import java.util.HashMap;
 
-public class MigrateTo26_2_0 implements Migration {
+import org.keycloak.migration.ModelVersion;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+
+public class MigrateTo26_2_0 extends RealmMigration {
 
     public static final ModelVersion VERSION = new ModelVersion("26.2.0");
-
-    private static final Logger LOG = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
     @Override
     public ModelVersion getVersion() {
@@ -39,16 +34,7 @@ public class MigrateTo26_2_0 implements Migration {
     }
 
     @Override
-    public void migrate(KeycloakSession session) {
-        session.realms().getRealmsStream().forEach(this::migrateRealm);
-    }
-
-    @Override
-    public void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
-        migrateRealm(realm);
-    }
-
-    private void migrateRealm(RealmModel realm) {
+    public void migrateRealm(KeycloakSession session, RealmModel realm) {
         // Removes _browser_header.xXSSProtection attribute
         var headers = new HashMap<>(realm.getBrowserSecurityHeaders());
         headers.remove("xXSSProtection");
