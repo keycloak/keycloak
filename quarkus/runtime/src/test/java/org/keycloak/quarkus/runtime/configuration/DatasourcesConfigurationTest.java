@@ -387,4 +387,52 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
                 "quarkus.datasource.\"users\".jdbc.max-size", "115"
         ));
     }
+
+    @Test
+    public void envVarsHandling() {
+        putEnvVars(Map.of(
+                "KC_DB_KIND_USER_STORE", "postgres",
+                "KC_DB_URL_FULL_USER_STORE", "jdbc:postgresql://localhost/KEYCLOAK",
+                "KC_DB_USERNAME_USER_STORE", "my-username",
+                "KC_DB_KIND_MY_STORE", "mariadb"
+        ));
+        initConfig();
+
+        assertConfig(Map.of(
+                "db-kind-user-store", "postgres",
+                "db-url-full-user-store", "jdbc:postgresql://localhost/KEYCLOAK",
+                "db-username-user-store", "my-username",
+                "db-kind-my-store", "mariadb",
+                "db-kind-my.store", "mariadb"
+        ));
+
+        assertExternalConfig(Map.of(
+                "quarkus.datasource.\"user-store\".db-kind", "postgresql",
+                "quarkus.datasource.\"user-store\".jdbc.url", "jdbc:postgresql://localhost/KEYCLOAK",
+                "quarkus.datasource.\"user-store\".username", "my-username",
+                "quarkus.datasource.\"my-store\".db-kind", "mariadb",
+                "quarkus.datasource.\"my.store\".db-kind", "mariadb"
+        ));
+    }
+
+    @Test
+    public void envVarsSpecialChars() {
+        putEnvVars(Map.of(
+                "KC_USER_STORE_DB_KIND", "mariadb",
+                "KCKEY_USER_STORE_DB_KIND", "db-kind-user_store$something",
+                "KC_CLIENT_STORE_PW", "password",
+                "KCKEY_CLIENT_STORE_PW", "db-password-client.store_123"
+        ));
+        initConfig();
+
+        assertConfig(Map.of(
+                "db-kind-user_store$something", "mariadb",
+                "db-password-client.store_123", "password"
+        ));
+
+        assertExternalConfig(Map.of(
+                "quarkus.datasource.\"user_store$something\".db-kind", "mariadb",
+                "quarkus.datasource.\"client.store_123\".password", "password"
+        ));
+    }
 }
