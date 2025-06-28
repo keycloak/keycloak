@@ -117,6 +117,14 @@ Syslog messages sent over `tcp` (or `ssl-tcp`) protocol now use counting framing
 
 To change this behavior, use the `--log-syslog-counting-framing` option with one of the following values: `protocol-dependent` (default), `true`, or `false`.
 
+=== Automatic database connection properties for the PostgreSQL driver
+
+When running PostgreSQL reader and writer instances, {project_name} needs to connect always to the writer instance to do its work.
+
+Starting with this release, and when using the original PostgreSQL driver, {project_name} sets the `targetServerType` property of the PostgreSQL JDBC driver to `primary` to ensure that it always connects to a writable primary instance and never connects to a secondary reader instance in failover or switchover scenarios.
+
+You can override this behavior by setting your own value for `targetServerType` in the DB URL or additional properties.
+
 == Deprecated features
 
 The following sections provide details on deprecated features.

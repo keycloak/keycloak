@@ -106,6 +106,11 @@ public class DatabaseOptions {
             .description("Deactivate specific named datasource <datasource>.")
             .build();
 
+    public static final Option<String> DB_POSTGRESQL_TARGET_SERVER_TYPE = new OptionBuilder<>("db-postgres-target-server-type", String.class)
+            .category(OptionCategory.DATABASE)
+            .hidden()
+            .build();
+
     /**
      * Options that have their sibling for a named datasource
      * Example: for `db-dialect`, `db-dialect-<datasource>` is created
