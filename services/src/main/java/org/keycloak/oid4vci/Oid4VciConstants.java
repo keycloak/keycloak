@@ -25,5 +25,8 @@ public final class Oid4VciConstants {
 
     public static final String C_NONCE_LIFETIME_IN_SECONDS = "vc.c-nonce-lifetime-seconds";
 
-    private Oid4VciConstants() {}
+    public static final String CREDENTIAL_SUBJECT = "credentialSubject";
+
+    private Oid4VciConstants() {
+    }
 }
