@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oidc.grants;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
@@ -31,6 +32,8 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oid4vc.model.AuthorizationDetailResponse;
+import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
@@ -40,6 +43,8 @@ import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.utils.MediaType;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
@@ -91,18 +96,55 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
                 clientSession.getUserSession(),
                 sessionContext);
 
-        AccessTokenResponse tokenResponse = tokenManager.responseBuilder(
-                        clientSession.getRealm(),
-                        clientSession.getClient(),
-                        event,
-                        session,
-                        clientSession.getUserSession(),
-                        sessionContext)
-                .accessToken(accessToken).build();
+        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(
+                clientSession.getRealm(),
+                clientSession.getClient(),
+                event,
+                session,
+                clientSession.getUserSession(),
+                sessionContext).accessToken(accessToken);
 
-        event.success();
+        // Check if authorization_details is present in the request
+        if (formParams.containsKey(AUTHORIZATION_DETAILS_PARAM)) {
 
-        return cors.allowAllOrigins().add(Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE));
+            // Process authorization_details
+            List<AuthorizationDetailResponse> authorizationDetailsResponse = processAuthorizationDetails(clientSession.getUserSession());
+
+            AccessTokenResponse tokenResponse;
+            try {
+                tokenResponse = responseBuilder.build();
+            } catch (RuntimeException re) {
+                if ("can not get encryption KEK".equals(re.getMessage())) {
+                    throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                            "can not get encryption KEK", Response.Status.BAD_REQUEST);
+                } else {
+                    throw re;
+                }
+            }
+
+            // If authorization_details is present, serialize the response and add it
+            if (authorizationDetailsResponse != null) {
+                try {
+                    Map<String, Object> responseMap = objectMapper.convertValue(tokenResponse, new TypeReference<Map<String, Object>>() {
+                    });
+                    responseMap.put(AUTHORIZATION_DETAILS_PARAM, authorizationDetailsResponse);
+                    event.success();
+                    return cors.allowAllOrigins().add(Response.ok(responseMap).type(MediaType.APPLICATION_JSON_TYPE));
+                } catch (Exception e) {
+                    event.error(Errors.INVALID_REQUEST);
+                    throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                            "Failed to include authorization_details in response", Response.Status.BAD_REQUEST);
+                }
+            }
+
+            // Return the token response without serialization
+            event.success();
+            return cors.allowAllOrigins().add(Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE));
+        } else {
+            AccessTokenResponse tokenResponse = responseBuilder.build();
+            event.success();
+            return cors.allowAllOrigins().add(Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE));
+        }
     }
 
     @Override
@@ -125,4 +167,5 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
                 authenticatedClientSession.getUserSession().getId());
         return OAuth2CodeParser.persistCode(session, authenticatedClientSession, oAuth2Code);
     }
+
 }

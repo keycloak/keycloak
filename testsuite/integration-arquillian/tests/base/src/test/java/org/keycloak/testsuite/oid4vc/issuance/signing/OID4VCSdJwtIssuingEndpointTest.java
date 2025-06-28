@@ -44,6 +44,8 @@ import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.SdJwtCredentialBu
 import org.keycloak.protocol.oid4vc.issuance.keybinding.CNonceHandler;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.JwtCNonceHandler;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCGeneratedIdMapper;
+import org.keycloak.protocol.oid4vc.model.AuthorizationDetail;
+import org.keycloak.protocol.oid4vc.model.AuthorizationDetailResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
@@ -64,6 +66,7 @@ import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -75,6 +78,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.keycloak.protocol.oid4vc.model.Format.SD_JWT_VC;
+import static org.keycloak.protocol.oidc.grants.OAuth2GrantTypeBase.OPENID_CREDENTIAL_TYPE;
 
 /**
  * Endpoint test with sd-jwt specific config.
@@ -223,7 +228,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
 
         CredentialRequest credentialRequest = new CredentialRequest()
-                .setFormat(Format.SD_JWT_VC)
+                .setFormat(SD_JWT_VC)
                 .setVct(vct)
                 .setProof(proof);
 
@@ -337,7 +342,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                     assertEquals("The expected server should have been returned.", expectedAuthorizationServer, credentialIssuer.getAuthorizationServers().get(0));
                     assertTrue("The test-credential should be supported.", credentialIssuer.getCredentialsSupported().containsKey("test-credential"));
                     assertEquals("The test-credential should offer type test-credential", "test-credential", credentialIssuer.getCredentialsSupported().get("test-credential").getScope());
-                    assertEquals("The test-credential should be offered in the sd-jwt format.", Format.SD_JWT_VC, credentialIssuer.getCredentialsSupported().get("test-credential").getFormat());
+                    assertEquals("The test-credential should be offered in the sd-jwt format.", SD_JWT_VC, credentialIssuer.getCredentialsSupported().get("test-credential").getFormat());
                     assertNotNull("The test-credential can optionally provide a claims claim.", credentialIssuer.getCredentialsSupported().get("test-credential").getClaims());
                     assertNotNull("The test-credential claim firstName is present.", credentialIssuer.getCredentialsSupported().get("test-credential").getClaims().get("firstName"));
                     assertFalse("The test-credential claim firstName is not mandatory.", credentialIssuer.getCredentialsSupported().get("test-credential").getClaims().get("firstName").getMandatory());
@@ -389,14 +394,14 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
 
     @Override
     protected List<ComponentExportRepresentation> getCredentialBuilderProviders() {
-        return List.of(getCredentialBuilderProvider(Format.SD_JWT_VC));
+        return List.of(getCredentialBuilderProvider(SD_JWT_VC));
     }
 
     @Override
     protected Map<String, String> getCredentialDefinitionAttributes() {
         Map<String, String> testCredentialAttributes = Map.ofEntries(
                 Map.entry("vc.test-credential.expiry_in_s", "1800"),
-                Map.entry("vc.test-credential.format", Format.SD_JWT_VC),
+                Map.entry("vc.test-credential.format", SD_JWT_VC),
                 Map.entry("vc.test-credential.scope", "test-credential"),
                 Map.entry("vc.test-credential.claims", "{ \"firstName\": {\"mandatory\": false, \"display\": [{\"name\": \"First Name\", \"locale\": \"en-US\"}, {\"name\": \"名前\", \"locale\": \"ja-JP\"}]}, \"lastName\": {\"mandatory\": false}, \"email\": {\"mandatory\": false} }"),
                 Map.entry("vc.test-credential.vct", "https://credentials.example.com/test-credential"),
@@ -413,7 +418,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
 
         Map<String, String> identityCredentialAttributes = Map.ofEntries(
                 Map.entry("vc.IdentityCredential.expiry_in_s", "31536000"),
-                Map.entry("vc.IdentityCredential.format", Format.SD_JWT_VC),
+                Map.entry("vc.IdentityCredential.format", SD_JWT_VC),
                 Map.entry("vc.IdentityCredential.scope", "identity_credential"),
                 Map.entry("vc.IdentityCredential.vct", "https://credentials.example.com/identity_credential"),
                 Map.entry("vc.IdentityCredential.cryptographic_binding_methods_supported", "jwk"),
@@ -476,6 +481,163 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
 
             assertNotNull("Test credential shall include an iat claim.", jsonWebToken.getIat());
             assertNotNull("Test credential shall include an nbf claim.", jsonWebToken.getNbf());
+        }
+    }
+
+    @Test
+    public void testPreAuthorizedCodeWithAuthorizationDetailsFormat() throws Exception {
+        String token = getBearerToken(oauth);
+
+        // 1. Retrieve the credential offer URI
+        HttpGet getCredentialOfferURI = new HttpGet(getBasePath(TEST_REALM_NAME) + "credential-offer-uri?credential_configuration_id=test-credential");
+        getCredentialOfferURI.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+        CredentialOfferURI credentialOfferURI;
+        try (CloseableHttpResponse response = httpClient.execute(getCredentialOfferURI)) {
+            assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
+            String s = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
+            credentialOfferURI = JsonSerialization.readValue(s, CredentialOfferURI.class);
+        }
+
+        // 2. Get the credential offer
+        HttpGet getCredentialOffer = new HttpGet(credentialOfferURI.getIssuer() + "/" + credentialOfferURI.getNonce());
+        CredentialsOffer credentialsOffer;
+        try (CloseableHttpResponse response = httpClient.execute(getCredentialOffer)) {
+            assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
+            String s = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
+            credentialsOffer = JsonSerialization.readValue(s, CredentialsOffer.class);
+        }
+
+        // 3. Get the issuer metadata
+        HttpGet getIssuerMetadata = new HttpGet(credentialsOffer.getCredentialIssuer() + "/.well-known/openid-credential-issuer");
+        CredentialIssuer credentialIssuer;
+        try (CloseableHttpResponse response = httpClient.execute(getIssuerMetadata)) {
+            assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
+            String s = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
+            credentialIssuer = JsonSerialization.readValue(s, CredentialIssuer.class);
+        }
+
+        // 4. Get the openid-configuration
+        HttpGet getOpenidConfiguration = new HttpGet(credentialIssuer.getAuthorizationServers().get(0) + "/.well-known/openid-configuration");
+        OIDCConfigurationRepresentation openidConfig;
+        try (CloseableHttpResponse response = httpClient.execute(getOpenidConfiguration)) {
+            assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
+            String s = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
+            openidConfig = JsonSerialization.readValue(s, OIDCConfigurationRepresentation.class);
+        }
+
+        // 5. Prepare authorization_details
+        AuthorizationDetail authDetail = new AuthorizationDetail();
+        authDetail.setType(OPENID_CREDENTIAL_TYPE);
+        authDetail.setFormat(SD_JWT_VC);
+        authDetail.setVct("https://credentials.example.com/test-credential");
+        if (credentialIssuer.getAuthorizationServers() != null && !credentialIssuer.getAuthorizationServers().isEmpty()) {
+            authDetail.setLocations(Collections.singletonList(credentialIssuer.getCredentialIssuer()));
+        }
+        List<AuthorizationDetail> authDetails = List.of(authDetail);
+        String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
+
+        // 6. Get an access token with authorization_details
+        HttpPost postPreAuthorizedCode = new HttpPost(openidConfig.getTokenEndpoint());
+        List<NameValuePair> parameters = new LinkedList<>();
+        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE));
+        parameters.add(new BasicNameValuePair(PreAuthorizedCodeGrantTypeFactory.CODE_REQUEST_PARAM, credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode()));
+        parameters.add(new BasicNameValuePair("authorization_details", authDetailsJson));
+        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
+        postPreAuthorizedCode.setEntity(formEntity);
+        try (CloseableHttpResponse tokenResponse = httpClient.execute(postPreAuthorizedCode)) {
+            assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusLine().getStatusCode());
+
+            // 7. Read the response body
+            String responseBody = IOUtils.toString(tokenResponse.getEntity().getContent(), StandardCharsets.UTF_8);
+
+            // Parse authorization_details
+            List<AuthorizationDetailResponse> authDetailsResponse = parseAuthorizationDetails(responseBody);
+            assertNotNull("authorization_details should be present in the response", authDetailsResponse);
+            assertEquals(1, authDetailsResponse.size());
+            AuthorizationDetailResponse authDetailResponse = authDetailsResponse.get(0);
+            assertEquals(OPENID_CREDENTIAL_TYPE, authDetailResponse.getType());
+            assertEquals(SD_JWT_VC, authDetailResponse.getFormat());
+            assertEquals("https://credentials.example.com/test-credential", authDetailResponse.getVct());
+            assertNotNull(authDetailResponse.getCredentialIdentifiers());
+            assertFalse(authDetailResponse.getCredentialIdentifiers().isEmpty());
+
+            // Extract access token
+            String a_token = getAccessToken(responseBody);
+
+            // 8. Request the credential
+            final String vct = "https://credentials.example.com/test-credential";
+            credentialsOffer.getCredentialConfigurationIds().stream()
+                    .map(offeredCredentialId -> credentialIssuer.getCredentialsSupported().get(offeredCredentialId))
+                    .forEach(supportedCredential -> {
+                        try {
+                            requestOffer(a_token, credentialIssuer.getCredentialEndpoint(), supportedCredential, new TestCredentialResponseHandler(vct));
+                        } catch (IOException | VerificationException e) {
+                            fail("Was not able to get the credential: " + e.getMessage());
+                        }
+                    });
+        }
+    }
+
+    @Test
+    public void testPreAuthorizedCodeWithInvalidAuthorizationDetails() throws Exception {
+        String token = getBearerToken(oauth);
+
+        // 1. Retrieve the credential offer URI
+        HttpGet getCredentialOfferURI = new HttpGet(getBasePath(TEST_REALM_NAME) + "credential-offer-uri?credential_configuration_id=test-credential");
+        getCredentialOfferURI.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+        CredentialOfferURI credentialOfferURI;
+        try (CloseableHttpResponse response = httpClient.execute(getCredentialOfferURI)) {
+            assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
+            String s = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
+            credentialOfferURI = JsonSerialization.readValue(s, CredentialOfferURI.class);
+        }
+
+        // 2. Get the credential offer
+        HttpGet getCredentialOffer = new HttpGet(credentialOfferURI.getIssuer() + "/" + credentialOfferURI.getNonce());
+        CredentialsOffer credentialsOffer;
+        try (CloseableHttpResponse response = httpClient.execute(getCredentialOffer)) {
+            assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
+            String s = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
+            credentialsOffer = JsonSerialization.readValue(s, CredentialsOffer.class);
+        }
+
+        // 3. Get the issuer metadata
+        HttpGet getIssuerMetadata = new HttpGet(credentialsOffer.getCredentialIssuer() + "/.well-known/openid-credential-issuer");
+        CredentialIssuer credentialIssuer;
+        try (CloseableHttpResponse response = httpClient.execute(getIssuerMetadata)) {
+            assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
+            String s = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
+            credentialIssuer = JsonSerialization.readValue(s, CredentialIssuer.class);
+        }
+
+        // 4. Get the openid-configuration
+        HttpGet getOpenidConfiguration = new HttpGet(credentialIssuer.getAuthorizationServers().get(0) + "/.well-known/openid-configuration");
+        OIDCConfigurationRepresentation openidConfig;
+        try (CloseableHttpResponse response = httpClient.execute(getOpenidConfiguration)) {
+            assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
+            String s = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
+            openidConfig = JsonSerialization.readValue(s, OIDCConfigurationRepresentation.class);
+        }
+
+        // 5. Prepare invalid authorization_details
+        AuthorizationDetail authDetail = new AuthorizationDetail();
+        authDetail.setType(OPENID_CREDENTIAL_TYPE);
+        authDetail.setFormat(SD_JWT_VC);
+        authDetail.setVct("https://credentials.example.com/test-credential");
+        authDetail.setCredentialConfigurationId("test-credential"); // Invalid: credential_configuration_id should not be combined with format
+        List<AuthorizationDetail> authDetails = List.of(authDetail);
+        String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
+
+        // 6. Attempt to get an access token with invalid authorization_details
+        HttpPost postPreAuthorizedCode = new HttpPost(openidConfig.getTokenEndpoint());
+        List<NameValuePair> parameters = new LinkedList<>();
+        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE));
+        parameters.add(new BasicNameValuePair(PreAuthorizedCodeGrantTypeFactory.CODE_REQUEST_PARAM, credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode()));
+        parameters.add(new BasicNameValuePair("authorization_details", authDetailsJson));
+        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
+        postPreAuthorizedCode.setEntity(formEntity);
+        try (CloseableHttpResponse tokenResponse = httpClient.execute(postPreAuthorizedCode)) {
+            assertEquals(HttpStatus.SC_BAD_REQUEST, tokenResponse.getStatusLine().getStatusCode());
         }
     }
 }
