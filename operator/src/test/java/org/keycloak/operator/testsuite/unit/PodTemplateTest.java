@@ -247,8 +247,8 @@ public class PodTemplateTest {
         // Assert
         assertEquals(1, podTemplate.getSpec().getContainers().get(0).getCommand().size());
         assertEquals(command, podTemplate.getSpec().getContainers().get(0).getCommand().get(0));
-        assertEquals(2, podTemplate.getSpec().getContainers().get(0).getArgs().size());
-        assertEquals(arg, podTemplate.getSpec().getContainers().get(0).getArgs().get(1));
+        assertEquals(1, podTemplate.getSpec().getContainers().get(0).getArgs().size());
+        assertEquals(arg, podTemplate.getSpec().getContainers().get(0).getArgs().get(0));
     }
 
     @Test
@@ -433,13 +433,12 @@ public class PodTemplateTest {
         assertThat(spec.getServiceName()).isEqualTo("instance-discovery");
         assertNotNull(container);
         assertThat(container.getArgs()).doesNotContain(KeycloakDeploymentDependentResource.OPTIMIZED_ARG);
-        assertThat(container.getArgs()).contains("-Djgroups.bind.address=$(POD_IP)");
 
         var envVars = container.getEnv();
         assertThat(envVars.stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TRUSTSTORE_PATHS));
         assertThat(envVars.stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TRACING_SERVICE_NAME));
         assertThat(envVars.stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TRACING_RESOURCE_ATTRIBUTES));
-        assertThat(envVars.stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.POD_IP));
+        assertThat(envVars.stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.BIND_ADDRESS));
 
         var readiness = container.getReadinessProbe().getHttpGet();
         assertNotNull(readiness);
@@ -751,5 +750,4 @@ public class PodTemplateTest {
         assertNull(job.getSpec().getTemplate().getSpec().getInitContainers().get(0).getLifecycle());
         assertNull(job.getSpec().getTemplate().getSpec().getInitContainers().get(0).getRestartPolicy());
     }
-
 }

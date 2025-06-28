@@ -8,7 +8,7 @@ public class CachingOptions {
 
     public static final String CACHE_CONFIG_FILE_PROPERTY = "cache-config-file";
 
-    private static final String CACHE_EMBEDDED_PREFIX = "cache-embedded";
+    public static final String CACHE_EMBEDDED_PREFIX = "cache-embedded";
     private static final String CACHE_EMBEDDED_MTLS_PREFIX = CACHE_EMBEDDED_PREFIX + "-mtls";
     public static final String CACHE_EMBEDDED_MTLS_ENABLED_PROPERTY = CACHE_EMBEDDED_MTLS_PREFIX + "-enabled";
     public static final String CACHE_EMBEDDED_MTLS_KEYSTORE_FILE_PROPERTY = CACHE_EMBEDDED_MTLS_PREFIX + "-key-store-file";
@@ -16,6 +16,10 @@ public class CachingOptions {
     public static final String CACHE_EMBEDDED_MTLS_TRUSTSTORE_FILE_PROPERTY = CACHE_EMBEDDED_MTLS_PREFIX + "-trust-store-file";
     public static final String CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD_PROPERTY = CACHE_EMBEDDED_MTLS_PREFIX + "-trust-store-password";
     public static final String CACHE_EMBEDDED_MTLS_ROTATION_PROPERTY = CACHE_EMBEDDED_MTLS_PREFIX + "-rotation-interval-days";
+    public static final String CACHE_EMBEDDED_NETWORK_BIND_ADDRESS_PROPERTY = CACHE_EMBEDDED_PREFIX + "-network-bind-address";
+    public static final String CACHE_EMBEDDED_NETWORK_BIND_PORT_PROPERTY = CACHE_EMBEDDED_PREFIX + "-network-bind-port";
+    public static final String CACHE_EMBEDDED_NETWORK_EXTERNAL_ADDRESS_PROPERTY = CACHE_EMBEDDED_PREFIX + "-network-external-address";
+    public static final String CACHE_EMBEDDED_NETWORK_EXTERNAL_PORT_PROPERTY = CACHE_EMBEDDED_PREFIX + "-network-external-port";
 
     private static final String CACHE_REMOTE_PREFIX = "cache-remote";
     public static final String CACHE_REMOTE_HOST_PROPERTY = CACHE_REMOTE_PREFIX + "-host";
@@ -108,6 +112,28 @@ public class CachingOptions {
             .defaultValue(30)
             .description("Rotation period in days of automatic JGroups MTLS certificates.")
             .build();
+
+    public static final Option<String> CACHE_EMBEDDED_NETWORK_BIND_ADDRESS = new OptionBuilder<>(CACHE_EMBEDDED_NETWORK_BIND_ADDRESS_PROPERTY, String.class)
+          .category(OptionCategory.CACHE)
+          .description("IP address used by clustering transport. By default, SITE_LOCAL is used.")
+          .build();
+
+    public static final Option<Integer> CACHE_EMBEDDED_NETWORK_BIND_PORT = new OptionBuilder<>(CACHE_EMBEDDED_NETWORK_BIND_PORT_PROPERTY, Integer.class)
+          .category(OptionCategory.CACHE)
+          .description("The Port the clustering transport will bind to. By default, port 7800 is used.")
+          .build();
+
+    public static final Option<String> CACHE_EMBEDDED_NETWORK_EXTERNAL_ADDRESS = new OptionBuilder<>(CACHE_EMBEDDED_NETWORK_EXTERNAL_ADDRESS_PROPERTY, String.class)
+          .category(OptionCategory.CACHE)
+          .description("IP address that other instances in the cluster should use to contact this node. Set only if it is " +
+                "different to %s, for example when this instance is behind a firewall.".formatted(CACHE_EMBEDDED_NETWORK_BIND_ADDRESS_PROPERTY))
+          .build();
+
+    public static final Option<Integer> CACHE_EMBEDDED_NETWORK_EXTERNAL_PORT = new OptionBuilder<>(CACHE_EMBEDDED_NETWORK_EXTERNAL_PORT_PROPERTY, Integer.class)
+          .category(OptionCategory.CACHE)
+          .description("Port that other instances in the cluster should use to contact this node. Set only if it is different " +
+                "to %s, for example when this instance is behind a firewall".formatted(CACHE_EMBEDDED_NETWORK_BIND_PORT_PROPERTY))
+          .build();
 
     public static final Option<String> CACHE_REMOTE_HOST = new OptionBuilder<>(CACHE_REMOTE_HOST_PROPERTY, String.class)
             .category(OptionCategory.CACHE)

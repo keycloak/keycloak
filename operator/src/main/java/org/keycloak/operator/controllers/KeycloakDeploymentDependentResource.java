@@ -83,7 +83,7 @@ import static org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec.co
 )
 public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependentResource<StatefulSet, Keycloak> {
 
-    public static final String POD_IP = "POD_IP";
+    public static final String BIND_ADDRESS = "KC_CACHE_EMBEDDED_NETWORK_BIND_ADDRESS";
 
     private static final List<String> COPY_ENV = Arrays.asList("HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY");
 
@@ -322,8 +322,6 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                         && (customImage.isPresent() || operatorConfig.keycloak().startOptimized())) {
             containerBuilder.addToArgs(OPTIMIZED_ARG);
         }
-        // Set bind address as this is required for JGroups to form a cluster in IPv6 envionments
-        containerBuilder.addToArgs(0, "-Djgroups.bind.address=$(%s)".formatted(POD_IP));
 
         // probes
         var protocol = isTlsConfigured(keycloakCR) ? "HTTPS" : "HTTP";
@@ -534,7 +532,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
             }
         }
 
-        envVars.add(new EnvVarBuilder().withName(POD_IP).withNewValueFrom().withNewFieldRef()
+        envVars.add(new EnvVarBuilder().withName(BIND_ADDRESS).withNewValueFrom().withNewFieldRef()
                 .withFieldPath("status.podIP").withApiVersion("v1").endFieldRef().endValueFrom().build());
 
         return envVars;
