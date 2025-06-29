@@ -59,9 +59,9 @@ class CodeGenerateUtil {
 
 
     static <CS extends CommonClientSessionModel> ClientSessionParser<CS> getParser(Class<CS> clientSessionClass) {
-        for (Class<?> c : PARSERS.keySet()) {
-            if (c.isAssignableFrom(clientSessionClass)) {
-                return PARSERS.get(c).get();
+        for (var entry : PARSERS.entrySet()) {
+            if (entry.getKey().isAssignableFrom(clientSessionClass)) {
+                return entry.getValue().get();
             }
         }
         return null;
