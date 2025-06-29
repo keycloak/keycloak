@@ -375,33 +375,35 @@ public class SamlProtocol implements LoginProtocol {
         boolean redirectUrlSet = !(logoutRedirectUrl == null || logoutRedirectUrl.trim().isEmpty());
         boolean artifactUrlSet = !(logoutArtifactUrl == null || logoutArtifactUrl.trim().isEmpty());
 
-        // Default to Redirect
-        String bindingType = SAML_REDIRECT_BINDING;
-
-        // fall back to post binding if no redirect URL is set
-        if (postUrlSet && !redirectUrlSet) {
-            bindingType = SAML_POST_BINDING;
-        }
-
-        // evaluate how the user logged in
-        if (clientSession != null) {
-            String sessionBinding = clientSession.getNote(SAML_BINDING);
-            if (SAML_ARTIFACT_BINDING.equals(sessionBinding) && artifactUrlSet) {
-                bindingType = SAML_ARTIFACT_BINDING;
-            }
+        // client configured to force post binding and postUrl for logout is set
+        if (samlClient.forcePostBinding() && postUrlSet) {
+            return SAML_POST_BINDING;
         }
 
         // client configured to force artifact binding and artifactUrl for logout is set
         if (samlClient.forceArtifactBinding() && artifactUrlSet) {
-            bindingType = SAML_ARTIFACT_BINDING;
+            return SAML_ARTIFACT_BINDING;
         }
 
-        // client configured to force post binding and postUrl for logout ‚is set
-        if (samlClient.forcePostBinding() && postUrlSet) {
-            bindingType = SAML_POST_BINDING;
+        final String bindingType = clientSession.getNote(SAML_BINDING);
+
+        // if the login binding was artifact and url set, return artifact
+        if (SAML_ARTIFACT_BINDING.equals(bindingType) && artifactUrlSet) {
+            return SAML_ARTIFACT_BINDING;
         }
 
-        return bindingType;
+        // if the login binding was POST and url set, return POST
+        if (SAML_POST_BINDING.equals(bindingType) && postUrlSet) {
+            return SAML_POST_BINDING;
+        }
+
+        // fall back to post binding if no redirect URL
+        if (!redirectUrlSet && (postUrlSet || samlClient.forcePostBinding())) {
+            return SAML_POST_BINDING;
+        }
+
+        // Default to Redirect
+        return SAML_REDIRECT_BINDING;
     }
 
     protected String getNameIdFormat(SamlClient samlClient, AuthenticationSessionModel authSession) {

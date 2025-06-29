@@ -465,6 +465,49 @@ public class LogoutTest extends AbstractSamlTest {
         assertLogoutEvent(SAML_CLIENT_ID_SALES_POST2);
     }
 
+    @Test
+    public void testFrontchannelLogoutInSameBrowserUsingDefaultAdminUrl() {
+        adminClient.realm(REALM_NAME)
+          .clients().get(sales2Rep.getId())
+          .update(ClientBuilder.edit(sales2Rep)
+            .frontchannelLogout(true)
+            .attribute(SamlConfigAttributes.SAML_FORCE_POST_BINDING, Boolean.TRUE.toString())
+            .attribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, "")
+            .attribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, "")
+            .adminUrl(SAML_ASSERTION_CONSUMER_URL_SALES_POST2)
+            .build());
+
+        SAMLDocumentHolder samlResponse = prepareLogIntoTwoApps()
+          .logoutRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, POST)
+            .nameId(nameIdRef::get)
+            .sessionIndex(sessionIndexRef::get)
+            .build()
+
+          .processSamlResponse(POST)
+            .transformDocument(doc -> {
+              // Expect logout request for sales-post2
+              SAML2Object so = (SAML2Object) SAMLParser.getInstance().parse(new DOMSource(doc));
+              assertThat(so, isSamlLogoutRequest(SAML_ASSERTION_CONSUMER_URL_SALES_POST2));
+
+              // Emulate successful logout response from sales-post2 logout
+              return new SAML2LogoutResponseBuilder()
+                .destination(getAuthServerSamlEndpoint(REALM_NAME).toString())
+                .issuer(SAML_CLIENT_ID_SALES_POST2)
+                .logoutRequestID(((LogoutRequestType) so).getID())
+                .buildDocument();
+            })
+            .targetAttributeSamlResponse()
+            .targetUri(getAuthServerSamlEndpoint(REALM_NAME))
+            .build()
+
+          .getSamlResponse(POST);
+
+        // Expect final successful logout response from auth server signalling final successful logout
+        assertThat(samlResponse.getSamlObject(), isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+        assertThat(((StatusResponseType) samlResponse.getSamlObject()).getDestination(), is("http://url"));
+        assertLogoutEvent(SAML_CLIENT_ID_SALES_POST2);
+    }
+
     private void assertLogoutEvent(String clientId) {
         List<EventRepresentation> logoutEvents = adminClient.realm(REALM_NAME)
                 .getEvents(Arrays.asList(EventType.LOGOUT.name()), clientId, null, null, null, null, null, null);
