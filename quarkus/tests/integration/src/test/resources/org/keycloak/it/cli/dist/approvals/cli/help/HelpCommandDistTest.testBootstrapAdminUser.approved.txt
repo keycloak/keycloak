@@ -74,12 +74,12 @@ Database:
 
 Database - additional datasources:
 
---db-active-<datasource> <true|false>
-                     Deactivate specific named datasource <datasource>. Default: true.
 --db-driver-<datasource> <driver>
                      Used for named <datasource>. The fully qualified class name of the JDBC
                        driver. If not set, a default driver is set accordingly to the chosen
                        database.
+--db-enabled-<datasource> <true|false>
+                     Enable specific named datasource <datasource>. Default: true.
 --db-kind-<datasource> <vendor>
                      Used for named <datasource>. The database vendor. In production mode the
                        default value of 'dev-file' is deprecated, you should explicitly specify the
