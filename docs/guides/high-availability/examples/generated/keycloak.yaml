@@ -424,6 +424,7 @@ spec:
     limits:
       cpu: "6"
       memory: "2250M"
+  automountServiceAccountToken: true
   db:
     vendor: postgres
     url: jdbc:aws-wrapper:postgresql://<AWS_AURORA_URL_HERE>:5432/keycloak
