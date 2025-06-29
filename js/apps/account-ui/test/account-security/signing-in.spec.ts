@@ -18,7 +18,7 @@ test.describe("Signing in", () => {
 
     await page.getByTestId("accountSecurity").click();
     await expect(page.getByTestId("account-security/signing-in")).toBeVisible();
-    page.getByTestId("account-security/signing-in").click();
+    await page.getByTestId("account-security/signing-in").click();
 
     await expect(
       page.getByTestId("password/credential-list").getByRole("listitem"),
@@ -54,11 +54,11 @@ test.describe("Signing in 2", () => {
     await login(page, "jdoe", "jdoe", "groups");
 
     const credentials = await getCredentials(jdoeUser!.id!, realm);
-    deleteCredential(jdoeUser!.id!, credentials![0].id!, realm);
+    await deleteCredential(jdoeUser!.id!, credentials![0].id!, realm);
 
     await page.getByTestId("accountSecurity").click();
     await expect(page.getByTestId("account-security/signing-in")).toBeVisible();
-    page.getByTestId("account-security/signing-in").click();
+    await page.getByTestId("account-security/signing-in").click();
 
     await expect(
       page.getByTestId("password/credential-list").getByRole("listitem"),

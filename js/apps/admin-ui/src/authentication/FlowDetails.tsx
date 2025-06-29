@@ -434,7 +434,7 @@ export default function FlowDetails() {
                     const [removed] = order.splice(source.index, 1);
                     order.splice(dest.index, 0, removed);
                     const change = executionList.getChange(dragged, order);
-                    executeChange(dragged, change);
+                    void executeChange(dragged, change);
                     return true;
                   } else {
                     setLiveText(t("onDragCancel"));
@@ -482,9 +482,9 @@ export default function FlowDetails() {
                     type={
                       flow.providerId === "client-flow" ? "client" : "basic"
                     }
-                    onSelect={(type) => {
+                    onSelect={async (type) => {
                       if (type) {
-                        addExecution(flow.alias!, type);
+                        await addExecution(flow.alias!, type);
                       }
                       setShowAddExecutionDialog(false);
                     }}
@@ -494,8 +494,8 @@ export default function FlowDetails() {
                   <AddSubFlowModal
                     name={flow.alias!}
                     onCancel={() => setShowSubFlowDialog(false)}
-                    onConfirm={(newFlow) => {
-                      addFlow(flow.alias!, newFlow);
+                    onConfirm={async (newFlow) => {
+                      await addFlow(flow.alias!, newFlow);
                       setShowSubFlowDialog(false);
                     }}
                   />

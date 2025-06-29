@@ -51,6 +51,7 @@ export const Oid4Vci = () => {
 
   useEffect(() => {
     if (initialSelected !== selected && credentialsIssuer !== undefined) {
+      // eslint-disable-next-line
       requestVCOffer(context, selectOptions[selected], credentialsIssuer).then(
         (blob) => {
           const reader = new FileReader();

@@ -66,7 +66,7 @@ export function usePromise<T>(
       }
     }
 
-    handlePromise();
+    void handlePromise();
 
     // Abort the Promise when the component unmounts, or the dependencies change.
     return () => controller.abort();

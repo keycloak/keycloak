@@ -58,8 +58,8 @@ export const ImportKeyDialog = ({
           id="modal-confirm"
           data-testid="confirm"
           key="confirm"
-          onClick={() => {
-            handleSubmit((importFile) => {
+          onClick={async () => {
+            await handleSubmit((importFile) => {
               save(importFile);
               toggleDialog();
             })();

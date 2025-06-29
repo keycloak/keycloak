@@ -134,7 +134,7 @@ styles=css/login.css css/theme-styles.css
       }
       `,
     );
-    zip.generateAsync({ type: "blob" }).then((content) => {
+    await zip.generateAsync({ type: "blob" }).then((content) => {
       const url = URL.createObjectURL(content);
       const a = document.createElement("a");
       a.href = url;

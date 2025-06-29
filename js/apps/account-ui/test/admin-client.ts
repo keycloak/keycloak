@@ -58,7 +58,7 @@ export async function createIdentityProvider(
   idp: IdentityProviderRepresentation,
   realm = DEFAULT_REALM,
 ): Promise<string> {
-  return adminClient.identityProviders.create({ ...idp, realm })["id"];
+  return (await adminClient.identityProviders.create({ ...idp, realm }))["id"];
 }
 
 export async function deleteIdentityProvider(
