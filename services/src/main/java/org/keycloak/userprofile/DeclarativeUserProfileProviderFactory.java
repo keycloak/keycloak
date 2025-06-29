@@ -152,6 +152,12 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         }
 
         if (Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL)) {
+            if (c.getUser() != null) {
+                if ((c.getUser().getEmail() == null || c.getUser().getEmail().isEmpty()) && UPDATE_PROFILE.equals(c.getContext())) {
+                    // allow to set email via UPDATE_PROFILE if the email is not set for the user
+                    return true;
+                }
+            }
             return !(UPDATE_PROFILE.equals(c.getContext()) || ACCOUNT.equals(c.getContext()));
         }
 
@@ -170,6 +176,12 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         }
 
         if (Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL)) {
+            if (c.getUser() != null) {
+                if ((c.getUser().getEmail() == null || c.getUser().getEmail().isEmpty()) && UPDATE_PROFILE.equals(c.getContext())) {
+                    // show email field in UPDATE_PROFILE page if the email is not set for the user
+                    return true;
+                }
+            }
             return !UPDATE_PROFILE.equals(context);
         }
 
@@ -233,9 +245,7 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         addContextualProfileMetadata(configureUserProfile(createBrokeringProfile(readOnlyValidator)));
         addContextualProfileMetadata(configureUserProfile(createAccountProfile(ACCOUNT, readOnlyValidator)));
         addContextualProfileMetadata(configureUserProfile(createDefaultProfile(UPDATE_PROFILE, readOnlyValidator)));
-        if (Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL)) {
-            addContextualProfileMetadata(configureUserProfile(createDefaultProfile(UPDATE_EMAIL, readOnlyValidator)));
-        }
+        addContextualProfileMetadata(configureUserProfile(createDefaultProfile(UPDATE_EMAIL, readOnlyValidator)));
         addContextualProfileMetadata(configureUserProfile(createRegistrationUserCreationProfile(readOnlyValidator)));
         addContextualProfileMetadata(configureUserProfile(createUserResourceValidation(config)));
     }

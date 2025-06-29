@@ -77,7 +77,6 @@ import java.util.Set;
 
 import org.hamcrest.Matchers;
 import org.junit.Assume;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -1113,7 +1112,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.UPDATE_EMAIL, skipRestart = true)
+    @EnableFeature(value = Profile.Feature.UPDATE_EMAIL, skipRestart = true) // The feature is enabled by default but skipRestart = true is important for the test
     public void actionTokenWithInvalidRequiredActions() throws IOException {
         // Send email with required action
         testRealm().users().get(testUserId).executeActionsEmail(List.of(RequiredAction.UPDATE_EMAIL.name()));
