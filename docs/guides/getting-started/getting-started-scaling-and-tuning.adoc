@@ -47,7 +47,7 @@ If you are not using the Operator, please review the following:
 
 - Your instances need a way to discover each other. For more information, see discovery in <@links.server id="caching" />.
 - This cache is not optimal for clusters that span multiple availability zones, which are also called stretch clusters. For embedded Infinispan cache, work to have all instances in one availability zone. The goal is to avoid unnecessary round-trips in the communication that would amplify in the response times. On Kubernetes, use Pod affinity to enforce this grouping of Pods.
-- This cache does not gracefully handle multiple members joining or leaving concurrently. In particular, members leaving at the same time can lead to data loss. On Kubernetes, you can use a StatefulSet with the default serial handling to ensure Pods are started and stopped sequentially.
+- This cache does not gracefully handle multiple members joining or leaving concurrently. In particular, members leaving at the same time can lead to data loss. On Kubernetes, use a StatefulSet with the default serial handling to ensure Pods are started and stopped sequentially, using a deployment is not supported or recommended.
 
 To avoid losing service availability when a whole site is unavailable, see the high availability guide for more information on a multi-site deployment. See <@links.ha id="introduction" />.
 
