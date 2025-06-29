@@ -2,7 +2,7 @@
 == Breaking changes
 
 Breaking changes are identified as requiring changes from existing users to their configurations.
-In minor or patch releases we will only do breaking changes to fix bugs.
+In minor or patch releases, we will only do breaking changes to fix important bugs.
 
 === <TODO>
 

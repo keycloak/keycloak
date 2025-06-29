@@ -169,6 +169,7 @@ public class ClientScopeProtocolMapperTest extends AbstractProtocolMapperTest {
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientScopeProtocolMapperPath(oidcClientScopeId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
 
         rep.getConfig().put("role", "myotherrole");
+        rep.setName("oidc-hardcoded-role-mapper2-new");
         rep.setId(createdId);
         oidcMappersRsc.update(createdId, rep);
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.clientScopeProtocolMapperPath(oidcClientScopeId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
