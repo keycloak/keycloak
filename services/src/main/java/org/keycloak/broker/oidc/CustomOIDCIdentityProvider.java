@@ -104,7 +104,9 @@ public class CustomOIDCIdentityProvider extends OIDCIdentityProvider {
         String claimsJson = getClaimsJson();
         authenticatedRequest.param("claims", URLEncoder.encode(claimsJson));
         try {
-            logger.info("Token request - URL: " + tokenRequest.getUrl() + ", Parameters: " + tokenRequest.asString() + ", Claims: " + claimsJson);
+            logger.info("Request URL: " + authenticatedRequest.getUrl());
+            logger.info("Request headers: " + authenticatedRequest.getHeaders());
+            logger.info("Request params: " + authenticatedRequest.getParams());
         } catch (Exception e) {
             logger.error("Failed to convert tokenRequest to JSON string", e);
         }
