@@ -10,3 +10,7 @@ runs:
     - id: maven-cache
       name: Maven cache
       uses: ./.github/actions/maven-cache
+
+    - id: frontend-plugin-cache
+      name: Frontend Plugin Cache
+      uses: ./.github/actions/frontend-plugin-cache

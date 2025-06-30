@@ -18,21 +18,20 @@ export default class CreateClientScopePage extends CommonPage {
 
   constructor() {
     super();
-    this.settingsTab = ".pf-c-tabs__item:nth-child(1)";
-    this.mappersTab = ".pf-c-tabs__item:nth-child(2)";
+    this.settingsTab = ".pf-v5-c-tabs__item:nth-child(1)";
+    this.mappersTab = ".pf-v5-c-tabs__item:nth-child(2)";
 
-    this.clientScopeNameInput = "#kc-name";
-    this.clientScopeNameError = "#kc-name-helper";
-    this.clientScopeDescriptionInput = "#kc-description";
+    this.clientScopeNameInput = "name";
+    this.clientScopeNameError = "#name-helper";
+    this.clientScopeDescriptionInput = "description";
     this.clientScopeTypeDrpDwn = "#kc-protocol";
     this.clientScopeTypeList = "#kc-protocol + ul";
-    this.displayOnConsentInput = '[id="kc-display-on-consent-screen"]';
+    this.displayOnConsentInput = "attributes.display🍺on🍺consent🍺screen";
     this.displayOnConsentSwitch =
-      this.displayOnConsentInput + " + .pf-c-switch__toggle";
-    this.consentScreenTextInput = "#kc-consent-screen-text";
-    this.includeInTokenSwitch =
-      '[id="includeInTokenScope"] + .pf-c-switch__toggle';
-    this.displayOrderInput = "#kc-gui-order";
+      '[for="attributes.display🍺on🍺consent🍺screen"] .pf-v5-c-switch__toggle';
+    this.consentScreenTextInput = "attributes.consent🍺screen🍺text";
+    this.includeInTokenSwitch = "#attributes.include🍺in🍺token🍺scope-on";
+    this.displayOrderInput = "attributes.gui🍺order";
 
     this.saveBtn = '[type="submit"]';
     this.cancelBtn = '[type="button"]';
@@ -45,22 +44,22 @@ export default class CreateClientScopePage extends CommonPage {
     consentScreenText = "",
     displayOrder = "",
   ) {
-    cy.get(this.clientScopeNameInput).clear();
+    cy.findByTestId(this.clientScopeNameInput).clear();
 
     if (name) {
-      cy.get(this.clientScopeNameInput).type(name);
+      cy.findByTestId(this.clientScopeNameInput).type(name);
     }
 
     if (description) {
-      cy.get(this.clientScopeDescriptionInput).type(description);
+      cy.findByTestId(this.clientScopeDescriptionInput).type(description);
     }
 
     if (consentScreenText) {
-      cy.get(this.consentScreenTextInput).type(consentScreenText);
+      cy.findByTestId(this.consentScreenTextInput).type(consentScreenText);
     }
 
     if (displayOrder) {
-      cy.get(this.displayOrderInput).type(displayOrder);
+      cy.findByTestId(this.displayOrderInput).type(displayOrder);
     }
 
     return this;
@@ -74,11 +73,11 @@ export default class CreateClientScopePage extends CommonPage {
   }
 
   getSwitchDisplayOnConsentScreenInput() {
-    return cy.get(this.displayOnConsentInput);
+    return cy.findByTestId(this.displayOnConsentInput);
   }
 
   getConsentScreenTextInput() {
-    return cy.get(this.consentScreenTextInput);
+    return cy.findByTestId(this.consentScreenTextInput);
   }
 
   switchDisplayOnConsentScreen() {
@@ -96,6 +95,14 @@ export default class CreateClientScopePage extends CommonPage {
 
   save() {
     cy.get(this.saveBtn).click();
+
+    return this;
+  }
+
+  save_is_disabled(value: boolean) {
+    cy.get(this.saveBtn)
+      .invoke("attr", "aria-disabled")
+      .should("eq", value ? "true" : "false");
 
     return this;
   }

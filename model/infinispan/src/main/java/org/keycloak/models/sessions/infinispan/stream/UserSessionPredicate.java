@@ -17,6 +17,7 @@
 
 package org.keycloak.models.sessions.infinispan.stream;
 
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.AuthenticatedClientSessionAdapter;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
@@ -164,6 +165,51 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
         }
         return true;
     }
+
+    public String getClient() {
+        return client;
+    }
+
+    public Predicate<? super UserSessionModel> toModelPredicate() {
+
+        return (Predicate<UserSessionModel>) entity -> {
+            if (!realm.equals(entity.getRealm().getId())) {
+                return false;
+            }
+
+            if (user != null && !entity.getUser().getId().equals(user)) {
+                return false;
+            }
+
+            if (client != null && (entity.getAuthenticatedClientSessions() == null || !entity.getAuthenticatedClientSessions().containsKey(client))) {
+                return false;
+            }
+
+            if (brokerSessionId != null && !brokerSessionId.equals(entity.getBrokerSessionId())) {
+                return false;
+            }
+
+            if (brokerUserId != null && !brokerUserId.equals(entity.getBrokerUserId())) {
+                return false;
+            }
+
+            if (entity.isRememberMe()) {
+                if (expiredRememberMe != null && expiredRefreshRememberMe != null && entity.getStarted() > expiredRememberMe && entity.getLastSessionRefresh() > expiredRefreshRememberMe) {
+                    return false;
+                }
+            } else {
+                if (expired != null && expiredRefresh != null && entity.getStarted() > expired && entity.getLastSessionRefresh() > expiredRefresh) {
+                    return false;
+                }
+            }
+
+            if (expired == null && expiredRefresh != null && entity.getLastSessionRefresh() > expiredRefresh) {
+                return false;
+            }
+            return true;
+        };
+    }
+
 
     public static class ExternalizerImpl implements Externalizer<UserSessionPredicate> {
 

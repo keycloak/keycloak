@@ -2,12 +2,14 @@
 
 <@tmpl.guide
 title="OpenShift"
-summary="Get started with Keycloak on OpenShift">
+summary="Get started with {project_name} on OpenShift">
 
-:links-admin-console: Keycloak Admin Console
-:links-account-console: Keycloak Account Console
+:links-admin-console: {project_name} Admin Console
+:links-account-console: {project_name} Account Console
 
 == Before you start
+
+include::templates/hw-requirements.adoc[]
 
 . Install https://code-ready.github.io/crc/[Red Hat Code Ready Containers] and follow the steps in the documentation to install a 
 local OpenShift cluster.
@@ -42,9 +44,9 @@ oc login -u developer -p developer
 oc new-project keycloak
 ----
 
-== Start Keycloak
+== Start {project_name}
 
-. To start a Keycloak server in your project, enter the following command:
+. To start a {project_name} server in your project, enter the following command:
 +
 [source,bash,subs="attributes+"]
 ----
@@ -66,10 +68,10 @@ route.route.openshift.io/keycloak created
 deploymentconfig.apps.openshift.io/keycloak created.
 ----
 +
-At this point, OpenShift will provision a Keycloak pod and related resources. As part of the process, OpenShift will
-try to pull the Keycloak server image. This operation might take some time depending on your network connection.
+At this point, OpenShift will provision a {project_name} pod and related resources. As part of the process, OpenShift will
+try to pull the {project_name} server image. This operation might take some time depending on your network connection.
 
-. To make sure Keycloak is provisioned, execute the following command:
+. To make sure {project_name} is provisioned, execute the following command:
 +
 [source,bash,subs="attributes+"]
 ----
@@ -85,15 +87,15 @@ keycloak-1-deploy   0/1       Completed   0          1h
 keycloak-1-l9kdx    1/1       Running     0          1h
 ----
 
-. Once the server is provisioned, enter the following command to find out the Keycloak URLs:
+. Once the server is provisioned, enter the following command to find out the {project_name} URLs:
 +
 [source,bash,subs="attributes+"]
 ----
 KEYCLOAK_URL=https://$(oc get route keycloak --template='{{ .spec.host }}') &&
 echo "" &&
-echo "Keycloak:                 $KEYCLOAK_URL" &&
-echo "Keycloak Admin Console:   $KEYCLOAK_URL/admin" &&
-echo "Keycloak Account Console: $KEYCLOAK_URL/realms/myrealm/account" &&
+echo "{project_name}:                 $KEYCLOAK_URL" &&
+echo "{project_name} Admin Console:   $KEYCLOAK_URL/admin" &&
+echo "{project_name} Account Console: $KEYCLOAK_URL/realms/myrealm/account" &&
 echo ""
 ----
 

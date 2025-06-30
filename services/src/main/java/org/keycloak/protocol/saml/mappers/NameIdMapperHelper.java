@@ -23,10 +23,6 @@ public class NameIdMapperHelper {
         List<String> types = new ArrayList<String>();
         types.add(JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get());
         types.add(JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL.get());
-        types.add(JBossSAMLURIConstants.NAMEID_FORMAT_X509SUBJECTNAME.get());
-        types.add(JBossSAMLURIConstants.NAMEID_FORMAT_WINDOWS_DOMAIN_NAME.get());
-        types.add(JBossSAMLURIConstants.NAMEID_FORMAT_KERBEROS.get());
-        types.add(JBossSAMLURIConstants.NAMEID_FORMAT_ENTITY.get());
         types.add(JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get());
         types.add(JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT.get());
         property.setType(ProviderConfigProperty.LIST_TYPE);

@@ -1,10 +1,12 @@
-import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import { AlertVariant } from "@patternfly/react-core";
 import { PropsWithChildren, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { createNamedContext, useRequiredContext } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
+import {
+  createNamedContext,
+  useRequiredContext,
+} from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useFetch } from "../../utils/useFetch";
@@ -30,6 +32,8 @@ export const UserProfileContext = createNamedContext<
 >("UserProfileContext", undefined);
 
 export const UserProfileProvider = ({ children }: PropsWithChildren) => {
+  const { adminClient } = useAdminClient();
+
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const { t } = useTranslation();

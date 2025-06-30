@@ -1,16 +1,16 @@
 class CreateRealmRolePage {
-  #realmRoleNameInput = "#kc-name";
-  #realmRoleNameError = "#kc-name-helper";
-  #realmRoleDescriptionInput = "#kc-description";
+  #realmRoleNameInput = "name";
+  #realmRoleNameError = "#name-helper";
+  #realmRoleDescriptionInput = "description";
   #saveBtn = "save";
   #cancelBtn = "cancel";
 
   //#region General Settings
   fillRealmRoleData(name: string, description = "") {
-    cy.get(this.#realmRoleNameInput).clear();
+    cy.findByTestId(this.#realmRoleNameInput).clear();
 
     if (name) {
-      cy.get(this.#realmRoleNameInput).type(name);
+      cy.findByTestId(this.#realmRoleNameInput).type(name);
     }
 
     if (description !== "") {
@@ -19,8 +19,10 @@ class CreateRealmRolePage {
     return this;
   }
 
-  checkRealmRoleNameRequiredMessage(exist = true) {
-    cy.get(this.#realmRoleNameError).should((!exist ? "not." : "") + "exist");
+  checkRealmRoleNameRequiredMessage() {
+    cy.findByTestId(this.#realmRoleNameInput)
+      .parent()
+      .should("have.class", "pf-v5-c-form-control pf-m-error");
 
     return this;
   }
@@ -29,6 +31,7 @@ class CreateRealmRolePage {
   clickActionMenu(item: string) {
     cy.findByTestId("action-dropdown")
       .click()
+      .parent()
       .within(() => {
         cy.findByText(item).click();
       });
@@ -36,22 +39,25 @@ class CreateRealmRolePage {
   }
 
   checkNameDisabled() {
-    cy.get(this.#realmRoleNameInput).should(
+    cy.findByTestId(this.#realmRoleNameInput).should(
       "have.attr",
-      "readonly",
-      "readonly",
+      "disabled",
+      "disabled",
     );
     return this;
   }
 
   checkDescription(description: string) {
-    cy.get(this.#realmRoleDescriptionInput).should("have.value", description);
+    cy.findByTestId(this.#realmRoleDescriptionInput).should(
+      "have.value",
+      description,
+    );
     return this;
   }
 
   updateDescription(description: string) {
-    cy.get(this.#realmRoleDescriptionInput).clear();
-    cy.get(this.#realmRoleDescriptionInput).type(description);
+    cy.findByTestId(this.#realmRoleDescriptionInput).clear();
+    cy.findByTestId(this.#realmRoleDescriptionInput).type(description);
     return this;
   }
 

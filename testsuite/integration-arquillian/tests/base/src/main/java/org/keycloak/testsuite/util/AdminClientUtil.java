@@ -119,10 +119,10 @@ public class AdminClientUtil {
         ResteasyClientBuilder resteasyClientBuilder = (ResteasyClientBuilder) ResteasyClientBuilder.newBuilder();
 
         if ("true".equals(System.getProperty("auth.server.ssl.required"))) {
-            File trustore = new File(PROJECT_BUILD_DIRECTORY, "dependency/keystore/keycloak.truststore");
-            resteasyClientBuilder.sslContext(getSSLContextWithTrustore(trustore, "secret"));
+            File truststore = new File(PROJECT_BUILD_DIRECTORY, "dependency/keystore/keycloak.truststore");
+            resteasyClientBuilder.sslContext(getSSLContextWithTruststore(truststore, "secret"));
 
-            System.setProperty("javax.net.ssl.trustStore", trustore.getAbsolutePath());
+            System.setProperty("javax.net.ssl.trustStore", truststore.getAbsolutePath());
         }
 
         // We need to ignore unknown JSON properties e.g. in the adapter configuration representation
@@ -145,12 +145,12 @@ public class AdminClientUtil {
         return resteasyClientBuilder.build();
     }
 
-    private static SSLContext getSSLContextWithTrustore(File file, String password) throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
+    private static SSLContext getSSLContextWithTruststore(File file, String password) throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
         if (!file.isFile()) {
             throw new RuntimeException("Truststore file not found: " + file.getAbsolutePath());
         }
         SSLContext theContext = SSLContexts.custom()
-                .useProtocol("TLS")
+                .setProtocol("TLS")
                 .loadTrustMaterial(file, password == null ? null : password.toCharArray())
                 .build();
         return theContext;
@@ -191,5 +191,5 @@ public class AdminClientUtil {
             return engine;
         }
     }
-   
+
 }

@@ -37,10 +37,10 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.ErrorResponseException;
-import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.DynamicClientRegisteredContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdatedContext;
@@ -50,6 +50,7 @@ import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.validation.ValidationUtil;
 
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
 
 /**
@@ -67,6 +68,9 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
 
     public ClientRepresentation create(ClientRegistrationContext context) {
         ClientRepresentation client = context.getClient();
+        if(client.getOptionalClientScopes() != null && client.getDefaultClientScopes() == null) {
+            client.setDefaultClientScopes(List.of(OIDCLoginProtocolFactory.BASIC_SCOPE));
+        }
 
         event.event(EventType.CLIENT_REGISTER);
 
@@ -161,6 +165,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
 
         RepresentationToModel.updateClient(rep, client, session);
         RepresentationToModel.updateClientProtocolMappers(rep, client);
+        RepresentationToModel.updateClientScopes(rep, client);
 
         if (rep.getDefaultRoles() != null) {
             updateDefaultRoles(client, rep.getDefaultRoles());

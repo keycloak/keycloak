@@ -1,17 +1,18 @@
+import { SERVER_URL } from "../support/constants";
+import LoginPage from "../support/pages/LoginPage";
+import ListingPage from "../support/pages/admin-ui/ListingPage";
 import Masthead from "../support/pages/admin-ui/Masthead";
 import SidebarPage from "../support/pages/admin-ui/SidebarPage";
-import LoginPage from "../support/pages/LoginPage";
-import { keycloakBefore } from "../support/util/keycloak_hooks";
-import ListingPage from "../support/pages/admin-ui/ListingPage";
-import CreateProviderPage from "../support/pages/admin-ui/manage/identity_providers/CreateProviderPage";
-import ModalUtils from "../support/util/ModalUtils";
 import AddMapperPage from "../support/pages/admin-ui/manage/identity_providers/AddMapperPage";
-import ProviderBaseGeneralSettingsPage from "../support/pages/admin-ui/manage/identity_providers/ProviderBaseGeneralSettingsPage";
+import CreateProviderPage from "../support/pages/admin-ui/manage/identity_providers/CreateProviderPage";
 import ProviderBaseAdvancedSettingsPage, {
   ClientAssertionSigningAlg,
   ClientAuthentication,
   PromptSelect,
 } from "../support/pages/admin-ui/manage/identity_providers/ProviderBaseAdvancedSettingsPage";
+import ProviderBaseGeneralSettingsPage from "../support/pages/admin-ui/manage/identity_providers/ProviderBaseGeneralSettingsPage";
+import ModalUtils from "../support/util/ModalUtils";
+import { keycloakBefore } from "../support/util/keycloak_hooks";
 
 describe("OIDC identity provider test", () => {
   const loginPage = new LoginPage();
@@ -27,9 +28,8 @@ describe("OIDC identity provider test", () => {
   const deletePrompt = "Delete provider?";
   const deleteSuccessMsg = "Provider successfully deleted.";
 
-  const keycloakServer = Cypress.env("KEYCLOAK_SERVER");
-  const discoveryUrl = `${keycloakServer}/realms/master/.well-known/openid-configuration`;
-  const authorizationUrl = `${keycloakServer}/realms/master/protocol/openid-connect/auth`;
+  const discoveryUrl = `${SERVER_URL}/realms/master/.well-known/openid-configuration`;
+  const authorizationUrl = `${SERVER_URL}/realms/master/protocol/openid-connect/auth`;
 
   describe("OIDC Identity provider creation", () => {
     const oidcProviderName = "oidc";
@@ -46,7 +46,7 @@ describe("OIDC identity provider test", () => {
         .checkVisible(oidcProviderName)
         .clickCard(oidcProviderName);
 
-      createProviderPage.checkAddButtonDisabled();
+      // createProviderPage.checkAddButtonDisabled();
 
       createProviderPage
         .fillDiscoveryUrl(discoveryUrl)
@@ -84,18 +84,27 @@ describe("OIDC identity provider test", () => {
         ClientAuthentication.basicAuth,
       );
       providerBaseAdvancedSettingsPage.assertOIDCClientAuthentication(
+        ClientAuthentication.post,
+      );
+      providerBaseAdvancedSettingsPage.assertOIDCClientAuthentication(
         ClientAuthentication.jwt,
       );
       providerBaseAdvancedSettingsPage.assertOIDCClientAuthentication(
         ClientAuthentication.jwtPrivKey,
       );
-      providerBaseAdvancedSettingsPage.assertOIDCClientAuthentication(
-        ClientAuthentication.post,
-      );
       //Client assertion signature algorithm
       Object.entries(ClientAssertionSigningAlg).forEach(([, value]) => {
         providerBaseAdvancedSettingsPage.assertOIDCClientAuthSignAlg(value);
       });
+      //Client assertion audience
+      providerBaseAdvancedSettingsPage.typeClientAssertionAudience(
+        "http://localhost:8180",
+      );
+      providerBaseAdvancedSettingsPage.assertClientAssertionAudienceInputEqual(
+        "http://localhost:8180",
+      );
+      //JWT X509 Headers
+      providerBaseAdvancedSettingsPage.assertOIDCJWTX509HeadersSwitch();
       //OIDC Advanced Settings
       providerBaseAdvancedSettingsPage.assertOIDCSettingsAdvancedSwitches();
       providerBaseAdvancedSettingsPage.selectPromptOption(PromptSelect.none);

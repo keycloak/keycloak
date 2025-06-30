@@ -259,7 +259,7 @@ public class GroupNamePolicyTest extends AbstractAuthzTest {
                 continue;
             }
 
-            GroupRepresentation group = getGroup(part, parent.getSubGroups());
+            GroupRepresentation group = getGroup(part, realm.groups().group(parent.getId()).getSubGroups(0, 10, true));
 
             if (path.endsWith(group.getName())) {
                 return group;
@@ -272,12 +272,13 @@ public class GroupNamePolicyTest extends AbstractAuthzTest {
     }
 
     private GroupRepresentation getGroup(String name, List<GroupRepresentation> groups) {
+        RealmResource realm = getRealm();
         for (GroupRepresentation group : groups) {
             if (name.equals(group.getName())) {
                 return group;
             }
 
-            GroupRepresentation child = getGroup(name, group.getSubGroups());
+            GroupRepresentation child = getGroup(name, realm.groups().group(group.getId()).getSubGroups(0, 10, true));
 
             if (child != null && name.equals(child.getName())) {
                 return child;

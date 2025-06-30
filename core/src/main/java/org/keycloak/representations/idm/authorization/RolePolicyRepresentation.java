@@ -25,6 +25,7 @@ import java.util.Set;
 public class RolePolicyRepresentation extends AbstractPolicyRepresentation {
 
     private Set<RoleDefinition> roles;
+    private boolean fetchRoles;
 
     @Override
     public String getType() {
@@ -58,7 +59,15 @@ public class RolePolicyRepresentation extends AbstractPolicyRepresentation {
         addRole(clientId + "/" + name, required);
     }
 
-    public static class RoleDefinition {
+    public boolean isFetchRoles() {
+        return fetchRoles;
+    }
+
+    public void setFetchRoles(boolean fetchRoles) {
+        this.fetchRoles = fetchRoles;
+    }
+
+    public static class RoleDefinition implements Comparable<RoleDefinition> {
 
         private String id;
         private boolean required;
@@ -86,6 +95,14 @@ public class RolePolicyRepresentation extends AbstractPolicyRepresentation {
 
         public void setRequired(boolean required) {
             this.required = required;
+        }
+
+        @Override
+        public int compareTo(RoleDefinition o) {
+            if (id == null || o.id == null) {
+                return 1;
+            }
+            return id.compareTo(o.id);
         }
     }
 }

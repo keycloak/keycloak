@@ -41,7 +41,7 @@ public interface ValidationContext extends FormContext {
     void error(String error);
 
     /**
-     * Mark this validation as sucessful
+     * Mark this validation as successful
      *
      */
     void success();

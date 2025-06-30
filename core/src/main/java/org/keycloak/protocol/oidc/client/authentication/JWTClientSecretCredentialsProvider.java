@@ -131,11 +131,11 @@ public class JWTClientSecretCredentialsProvider implements ClientCredentialsProv
         reqToken.subject(clientId);
         reqToken.audience(realmInfoUrl);
 
-        int now = Time.currentTime();
-        reqToken.issuedAt(now);
+        long now = Time.currentTime();
+        reqToken.iat(now);
         // the same as in KEYCLOAK-2986, JWTClientCredentialsProvider's timeout field
-        reqToken.expiration(now + 10);
-        reqToken.notBefore(now);
+        reqToken.exp(now + 10);
+        reqToken.nbf(now);
         return reqToken;
     }
 

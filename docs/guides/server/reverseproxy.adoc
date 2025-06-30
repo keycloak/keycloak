@@ -5,82 +5,87 @@
 
 <@tmpl.guide
 title="Using a reverse proxy"
-summary="Learn how to configure Keycloak together with a reverse proxy, api gateway, or load balancer."
+summary="Learn how to configure {project_name} together with a reverse proxy, api gateway, or load balancer."
 includedOptions="proxy proxy-* hostname-path hostname-url http-relative-path">
 
-Distributed environments frequently require the use of a reverse proxy.
-For Keycloak, your choice of proxy modes depends on the TLS termination in your environment.
+Distributed environments frequently require the use of a reverse proxy. {project_name} offers several options to securely integrate with such environments.
 
-== Proxy modes
-The following proxy modes are available:
+== Configure the reverse proxy headers
 
-edge:: Enables communication through HTTP between the proxy and Keycloak.
-This mode is suitable for deployments with a highly secure internal network where the reverse proxy keeps a secure connection (HTTP over TLS) with clients while communicating with Keycloak using HTTP.
+{project_name} will parse the reverse proxy headers based on the `proxy-headers` option which accepts several values:
 
-reencrypt:: Requires communication through HTTPS between the proxy and Keycloak.
-This mode is suitable for deployments where internal communication between the reverse proxy and Keycloak should also be protected.
-Different keys and certificates are used on the reverse proxy as well as on Keycloak.
+* By default if the option is not specified, no reverse proxy headers are parsed.
+* `forwarded` enables parsing of the `Forwarded` header as per https://www.rfc-editor.org/rfc/rfc7239.html[RFC7239].
+* `xforwarded` enables parsing of non-standard `X-Forwarded-*` headers, such as `X-Forwarded-For`, `X-Forwarded-Proto`, `X-Forwarded-Host`, and `X-Forwarded-Port`.
 
-passthrough:: The proxy forwards the HTTPS connection to Keycloak without terminating TLS.
-The secure connections between the server and clients are based on the keys and certificates used by the Keycloak server.
+For example:
 
-== Configure the proxy mode in Keycloak
+<@kc.start parameters="--proxy-headers forwarded"/>
+
+WARNING: If either `forwarded` or `xforwarded` is selected, make sure your reverse proxy properly sets and overwrites the `Forwarded` or `X-Forwarded-*` headers respectively. To set these headers, consult the documentation for your reverse proxy. Misconfiguration will leave {project_name} exposed to security vulnerabilities.
+
+Take extra precautions to ensure that the client address is properly set by your reverse proxy via the `Forwarded` or `X-Forwarded-For` headers.
+If this header is incorrectly configured, rogue clients can set this header and trick {project_name} into thinking the client is connected from a different IP address than the actual address. This precaution can be more critical if you do any deny or allow listing of IP addresses.
+
+NOTE: When using the `xforwarded` setting, the `X-Forwarded-Port` takes precedence over any port included in the `X-Forwarded-Host`.
+
+== Proxy modes (deprecated)
+NOTE: The support for setting proxy modes is deprecated and will be removed in a future {project_name} release. Consider configuring accepted reverse proxy headers instead as described in the chapter above. For migration instructions consult the https://www.keycloak.org/docs/latest/upgrading/index.html#deprecated-proxy-option[Upgrading Guide].
+
+For {project_name}, your choice of proxy modes depends on the TLS termination in your environment. The following proxy modes are available:
+
+edge:: Enables communication through HTTP between the proxy and {project_name}.
+This mode is suitable for deployments with a highly secure internal network where the reverse proxy keeps a secure connection (HTTP over TLS) with clients while communicating with {project_name} using HTTP.
+
+reencrypt:: Requires communication through HTTPS between the proxy and {project_name}.
+This mode is suitable for deployments where internal communication between the reverse proxy and {project_name} should also be protected.
+Different keys and certificates are used on the reverse proxy as well as on {project_name}.
+
+passthrough:: The proxy forwards the HTTPS connection to {project_name} without terminating TLS.
+The secure connections between the server and clients are based on the keys and certificates used by the {project_name} server.
+
+When in **edge** or **reencrypt** proxy mode, {project_name} will parse the following headers and expects the reverse proxy to set them:
+
+* `Forwarded` as per https://www.rfc-editor.org/rfc/rfc7239.html[RFC7239]
+* Non-standard `X-Forwarded-*`, such as `X-Forwarded-For`, `X-Forwarded-Proto`, `X-Forwarded-Host`, and `X-Forwarded-Port`
+
+=== Configure the proxy mode in {project_name}
 To select the proxy mode, enter this command:
 
 <@kc.start parameters="--proxy <mode>"/>
 
-== Configure the reverse proxy
-
-Some Keycloak features rely on the assumption that the remote address of the HTTP request connecting to Keycloak is the real IP address of the clients machine.
-
-When in **edge** or **reencrypt** proxy mode, Keycloak will parse the following headers and expects the reverse proxy to set them:
-
-* `Forwarded` as per https://www.rfc-editor.org/rfc/rfc7239.html[RFC7239]
-* Non-standard `X-Forwarded`
-* Non-standard `X-Forwarded-*`, such as `X-Forwarded-For`, `X-Forwarded-Proto`, `X-Forwarded-Host`, and `X-Forwarded-Port`
-
-To set these headers, consult the documentation for your reverse proxy.
-
-Take extra precautions to ensure that the client address is properly set by your reverse proxy via the `Forwarded` or `X-Forwarded-For` headers.
-If this header is incorrectly configured, rogue clients can set this header and trick Keycloak into thinking the client is connected from a different IP address than the actual address.
-This precaution can be more critical if you do any deny or allow listing of IP addresses.
-
 == Different context-path on reverse proxy
 
-Keycloak assumes it is exposed through the reverse proxy under the same context path as Keycloak is configured for. By default Keycloak is exposed through the root (`/`), which means it expects to be exposed through the reverse proxy on `/` as well.
-You can use `hostname-path` or `hostname-url` in these cases, for example using `--hostname-path=/auth` if Keycloak is exposed through the reverse proxy on `/auth`.
+{project_name} assumes it is exposed through the reverse proxy under the same context path as {project_name} is configured for. By default {project_name} is exposed through the root (`/`), which means it expects to be exposed through the reverse proxy on `/` as well.
+You can use a full URL for the `hostname` option in these cases, for example using `--hostname=https://my.keycloak.org/auth` if {project_name} is exposed through the reverse proxy on `/auth`.
 
-Alternatively you can also change the context path of Keycloak itself to match the context path for the reverse proxy using the `http-relative-path` option, which will change the context-path of Keycloak itself to match the context path used by the reverse proxy.
+For more details on exposing {project_name} on different hostname or context-path incl. Administration REST API and Console, see <@links.server id="hostname"/>.
 
-== Trust the proxy to set hostname
-
-By default, Keycloak needs to know under which hostname it will be called. If your reverse proxy is configured to check for the correct hostname, you can set Keycloak to accept any hostname.
-
-<@kc.start parameters="--proxy <mode> --hostname-strict=false"/>
+Alternatively you can also change the context path of {project_name} itself to match the context path for the reverse proxy using the `http-relative-path` option, which will change the context-path of {project_name} itself to match the context path used by the reverse proxy.
 
 == Enable sticky sessions
 
-Typical cluster deployment consists of the load balancer (reverse proxy) and 2 or more Keycloak servers on private network.
-For performance purposes, it may be useful if load balancer forwards all requests related to particular browser session to the same Keycloak backend node.
+Typical cluster deployment consists of the load balancer (reverse proxy) and 2 or more {project_name} servers on private network.
+For performance purposes, it may be useful if load balancer forwards all requests related to particular browser session to the same {project_name} backend node.
 
-The reason is, that Keycloak is using Infinispan distributed cache under the covers for save data related to current authentication session and user session.
+The reason is, that {project_name} is using Infinispan distributed cache under the covers for save data related to current authentication session and user session.
 The Infinispan distributed caches are configured with two owners by default. That means that particular session is primarily stored on two cluster nodes and the other nodes need to lookup the session remotely if they want to access it.
 
 For example if authentication session with ID 123 is saved in the Infinispan cache on node1, and then node2 needs to lookup this session, it needs to send the request to node1 over the network to return the particular session entity.
 
-It is beneficial if particular session entity is always available locally, which can be done with the help of sticky sessions. The workflow in the cluster environment with the public frontend load balancer and two backend Keycloak nodes can be like this:
+It is beneficial if particular session entity is always available locally, which can be done with the help of sticky sessions. The workflow in the cluster environment with the public frontend load balancer and two backend {project_name} nodes can be like this:
 
-* User sends initial request to see the Keycloak login screen
+* User sends initial request to see the {project_name} login screen
 
-* This request is served by the frontend load balancer, which forwards it to some random node (eg. node1). Strictly said, the node doesn't need to be random, but can be chosen according to some other criterias (client IP address etc). It all depends on the implementation and configuration of underlying load balancer (reverse proxy).
+* This request is served by the frontend load balancer, which forwards it to some random node (eg. node1). Strictly said, the node doesn't need to be random, but can be chosen according to some other criteria (client IP address etc). It all depends on the implementation and configuration of underlying load balancer (reverse proxy).
 
-* Keycloak creates authentication session with random ID (eg. 123) and saves it to the Infinispan cache.
+* {project_name} creates authentication session with random ID (eg. 123) and saves it to the Infinispan cache.
 
 * Infinispan distributed cache assigns the primary owner of the session based on the hash of session ID. See Infinispan documentation for more details around this. Let's assume that Infinispan assigned node2 to be the owner of this session.
 
-* Keycloak creates the cookie AUTH_SESSION_ID with the format like <session-id>.<owner-node-id> . In our example case, it will be 123.node2 .
+* {project_name} creates the cookie AUTH_SESSION_ID with the format like <session-id>.<owner-node-id> . In our example case, it will be 123.node2 .
 
-* Response is returned to the user with the Keycloak login screen and the AUTH_SESSION_ID cookie in the browser
+* Response is returned to the user with the {project_name} login screen and the AUTH_SESSION_ID cookie in the browser
 
 From this point, it is beneficial if load balancer forwards all the next requests to the node2 as this is the node, who is owner of the authentication session with ID 123 and hence Infinispan can lookup this session locally. After authentication is finished, the authentication session is converted to user session, which will be also saved on node2 because it has same ID 123 .
 
@@ -94,22 +99,13 @@ to `false` in order to avoid attaching the node to cookies and just rely on the 
 By default, the `spi-sticky-session-encoder-infinispan-should-attach-route` option value is `true` so that the node name is attached to
 cookies to indicate to the reverse proxy the node that subsequent requests should be sent to.
 
-=== Exposing the administration console
-
-By default, the administration console URLs are created solely based on the requests to resolve the proper scheme, host name, and port. For instance,
-if you are using the `edge` proxy mode and your proxy is misconfigured, backend requests from your TLS termination proxy are going to use plain HTTP and potentially cause the administration
-console from being accessible because URLs are going to be created using the `http` scheme and the proxy does not support plain HTTP.
-
-In order to proper expose the administration console, you should make sure that your proxy is setting the `X-Forwarded-*` headers herein mentioned in order
-to create URLs using the scheme, host name, and port, being exposed by your proxy.
-
-=== Exposed path recommendations
-When using a reverse proxy, Keycloak only requires certain paths need to be exposed.
+== Exposed path recommendations
+When using a reverse proxy, {project_name} only requires certain paths need to be exposed.
 The following table shows the recommended paths to expose.
 
 [%autowidth]
 |===
-|Keycloak Path|Reverse Proxy Path|Exposed|Reason
+|{project_name} Path|Reverse Proxy Path|Exposed|Reason
 
 |/
 |-
@@ -126,11 +122,6 @@ The following table shows the recommended paths to expose.
 |Yes (see note below)
 |Access to keycloak.js needed for "internal" clients, e.g. the account console
 
-|/welcome/
-| -
-|No
-|No need exists to expose the welcome page after initial installation.
-
 |/realms/
 |/realms/
 |Yes
@@ -139,7 +130,7 @@ The following table shows the recommended paths to expose.
 |/resources/
 |/resources/
 |Yes
-|This path is needed to serve assets correctly. It may be served from a CDN instead of the Keycloak path.
+|This path is needed to serve assets correctly. It may be served from a CDN instead of the {project_name} path.
 
 |/robots.txt
 |/robots.txt
@@ -161,10 +152,10 @@ The following table shows the recommended paths to expose.
 [NOTE]
 As it's true that the `js` path is needed for internal clients like the account console, it's good practice to use `keycloak.js` from a JavaScript package manager like npm or yarn for your external clients.
 
-We assume you run Keycloak on the root path `/` on your reverse proxy/gateway's public API.
+We assume you run {project_name} on the root path `/` on your reverse proxy/gateway's public API.
 If not, prefix the path with your desired one.
 
-=== Enabling client certificate lookup
+== Enabling client certificate lookup
 
 When the proxy is configured as a TLS termination proxy the client certificate information can be forwarded to the server through specific HTTP request headers and then used to authenticate
 clients. You are able to configure how the server is going to retrieve client certificate information depending on the proxy you are using.
@@ -214,14 +205,14 @@ to load additional certificates from headers `CERT_CHAIN_0` to `CERT_CHAIN_9` if
 | The maximum length of the certificate chain.
 
 |trust-proxy-verification
-| Enable trusting NGINX proxy certificate verification, instead of forwarding the certificate to keycloak and verifying it in keycloak.
+| Enable trusting NGINX proxy certificate verification, instead of forwarding the certificate to {project_name} and verifying it in {project_name}.
 |===
 
-==== Configuring the NGINX provider
+=== Configuring the NGINX provider
 
-The NGINX SSL/TLS module does not expose the client certificate chain. Keycloak's NGINX certificate lookup provider rebuilds it by using the Keycloak truststore.
+The NGINX SSL/TLS module does not expose the client certificate chain. {project_name}'s NGINX certificate lookup provider rebuilds it by using the {project_name} truststore.
 
 If you are using this provider, see <@links.server id="keycloak-truststore"/> for how
-to configure a Keycloak Truststore.
+to configure a {project_name} Truststore.
 
 </@tmpl.guide>

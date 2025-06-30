@@ -26,6 +26,7 @@ import java.util.List;
 import jakarta.ws.rs.core.Response.Status;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.hamcrest.MatcherAssert;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
@@ -62,7 +63,7 @@ public class TokenRevocationCorsTest extends AbstractKeycloakTest {
 
         oauth.origin(VALID_CORS_URL);
         CloseableHttpResponse response = oauth.doTokenRevoke(tokenResponse.getRefreshToken(), "refresh_token", "password");
-        assertThat(response, Matchers.statusCodeIsHC(Status.OK));
+        MatcherAssert.assertThat(response, Matchers.statusCodeIsHC(Status.OK));
         assertCors(response);
 
         isTokenDisabled(tokenResponse, "test-app2");
@@ -78,7 +79,7 @@ public class TokenRevocationCorsTest extends AbstractKeycloakTest {
 
         oauth.origin(INVALID_CORS_URL);
         CloseableHttpResponse response = oauth.doTokenRevoke(tokenResponse.getRefreshToken(), "refresh_token", "password");
-        assertThat(response, Matchers.statusCodeIsHC(Status.OK));
+        MatcherAssert.assertThat(response, Matchers.statusCodeIsHC(Status.OK));
         assertNotCors(response);
 
         isTokenDisabled(tokenResponse, "test-app2");

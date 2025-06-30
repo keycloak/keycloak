@@ -30,17 +30,8 @@
     <dependencies>
         <dependency>
             <groupId>org.keycloak.testsuite</groupId>
-            <artifactId>keycloak-undertow-adapter-jakarta</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak.testsuite</groupId>
             <artifactId>keycloak-saml-undertow-adapter-jakarta</artifactId>
             <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-saml-servlet-filter-adapter</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak.testsuite</groupId>

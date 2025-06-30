@@ -3,8 +3,7 @@ import { AlertVariant, Form, ModalVariant } from "@patternfly/react-core";
 import { isEmpty } from "lodash-es";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { ConfirmDialogModal } from "../../components/confirm-dialog/ConfirmDialog";
 import { LifespanField } from "./LifespanField";
@@ -29,6 +28,8 @@ export const ResetCredentialDialog = ({
   userId,
   onClose,
 }: ResetCredentialDialogProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const form = useForm<CredentialResetForm>({
     defaultValues: credResetFormDefaultValues,
@@ -82,13 +83,12 @@ export const ResetCredentialDialog = ({
         isHorizontal
         data-testid="credential-reset-modal"
       >
-        <RequiredActionMultiSelect
-          control={control}
-          name="actions"
-          label="resetAction"
-          help="resetActions"
-        />
         <FormProvider {...form}>
+          <RequiredActionMultiSelect
+            name="actions"
+            label="resetAction"
+            help="resetActions"
+          />
           <LifespanField />
         </FormProvider>
       </Form>

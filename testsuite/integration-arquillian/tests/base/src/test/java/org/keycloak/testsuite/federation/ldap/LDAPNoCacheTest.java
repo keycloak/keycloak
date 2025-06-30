@@ -37,7 +37,6 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.ldap.LDAPStorageProvider;

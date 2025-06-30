@@ -17,8 +17,6 @@
 package org.keycloak.testsuite.util;
 
 import org.jboss.arquillian.graphene.wait.ElementBuilder;
-import org.keycloak.common.Profile;
-import org.keycloak.testsuite.ProfileAssume;
 import org.openqa.selenium.By;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
@@ -80,7 +78,7 @@ public final class WaitUtils {
     }
 
     public static void waitUntilElementClassContains(WebElement element, String value) {
-        new WebDriverWait(getCurrentDriver(), 1).until(
+        new WebDriverWait(getCurrentDriver(), Duration.ofSeconds(1)).until(
                 ExpectedConditions.attributeContains(element, "class", value)
         );
     }
@@ -107,7 +105,7 @@ public final class WaitUtils {
             return; // not needed
         }
 
-        WebDriverWait wait = new WebDriverWait(driver, PAGELOAD_TIMEOUT_MILLIS / 1000);
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofMillis(PAGELOAD_TIMEOUT_MILLIS));
 
         try {
             wait
@@ -146,12 +144,6 @@ public final class WaitUtils {
             if (maxRedirects == 1) {
                 log.warn("URL seems unstable! (Some redirect are probably still in progress)");
             }
-        }
-
-        if (
-                ProfileAssume.isFeatureEnabled(Profile.Feature.ACCOUNT2) && currentUrl.matches("^[^\\/]+:\\/\\/[^\\/]+\\/auth\\/realms\\/[^\\/]+\\/account\\/.*$") // check for new Account Console URL
-        ) {
-            pause(2000); // TODO rework this temporary workaround once KEYCLOAK-11201 and/or KEYCLOAK-8181 are fixed
         }
     }
 

@@ -2,7 +2,8 @@ import {
   Divider,
   Dropdown,
   DropdownItem,
-  DropdownToggle,
+  DropdownList,
+  MenuToggle,
   Split,
   SplitItem,
   Switch,
@@ -13,7 +14,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import helpUrls from "../../help-urls";
-import { useHelp } from "ui-shared";
+import { useHelp } from "@keycloak/keycloak-ui-shared";
 
 import "./help-header.css";
 
@@ -58,20 +59,24 @@ export const HelpHeader = () => {
   ];
   return (
     <Dropdown
-      position="right"
-      isPlain
+      popperProps={{
+        position: "right",
+      }}
+      onOpenChange={(isOpen) => setOpen(isOpen)}
       isOpen={open}
-      toggle={
-        <DropdownToggle
-          toggleIndicator={null}
-          onToggle={() => setOpen(!open)}
+      toggle={(ref) => (
+        <MenuToggle
+          ref={ref}
+          variant="plain"
+          onClick={() => setOpen(!open)}
           aria-label="Help"
           id="help"
         >
           <HelpIcon />
-        </DropdownToggle>
-      }
-      dropdownItems={dropdownItems}
-    />
+        </MenuToggle>
+      )}
+    >
+      <DropdownList>{dropdownItems}</DropdownList>
+    </Dropdown>
   );
 };

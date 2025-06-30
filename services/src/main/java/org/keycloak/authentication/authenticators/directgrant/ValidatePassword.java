@@ -30,6 +30,8 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
+import org.keycloak.services.managers.AuthenticationManager;
+
 import java.util.LinkedList;
 import java.util.List;
 
@@ -52,7 +54,7 @@ public class ValidatePassword extends AbstractDirectGrantAuthenticator {
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
-
+        context.getAuthenticationSession().setAuthNote(AuthenticationManager.PASSWORD_VALIDATED, "true");
         context.success();
     }
 

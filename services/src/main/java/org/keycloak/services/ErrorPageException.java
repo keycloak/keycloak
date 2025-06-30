@@ -36,6 +36,7 @@ public class ErrorPageException extends WebApplicationException {
 
     
     public ErrorPageException(KeycloakSession session, Response.Status status, String errorMessage, Object... parameters) {
+        super(errorMessage, status);
         this.session = session;
         this.status = status;
         this.errorMessage = errorMessage;

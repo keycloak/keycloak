@@ -213,6 +213,7 @@ public class SAMLResponseWriter extends BaseWriter {
         String statusMessage = status.getStatusMessage();
         if (StringUtil.isNotNull(statusMessage)) {
             StaxUtil.writeStartElement(writer, PROTOCOL_PREFIX, JBossSAMLConstants.STATUS_MESSAGE.get(), JBossSAMLURIConstants.PROTOCOL_NSURI.get());
+            StaxUtil.writeCharacters(writer, statusMessage);
             StaxUtil.writeEndElement(writer);
         }
 

@@ -5,23 +5,19 @@ import {
   Button,
   ButtonVariant,
   DropdownItem,
-  FormGroup,
   PageSection,
-  ValidatedOptions,
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
+import { TextControl } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 import { FormAccess } from "../../components/form/FormAccess";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useFetch } from "../../utils/useFetch";
@@ -33,35 +29,28 @@ import {
 import { toClientRegistration } from "../routes/ClientRegistration";
 
 export default function DetailProvider() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { id, providerId, subTab } = useParams<RegistrationProviderParams>();
   const navigate = useNavigate();
   const form = useForm<ComponentRepresentation>({
     defaultValues: { providerId },
   });
-  const {
-    register,
-    control,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = form;
+  const { control, handleSubmit, reset } = form;
 
-  const { realm } = useRealm();
+  const { realm, realmRepresentation } = useRealm();
   const { addAlert, addError } = useAlerts();
   const [provider, setProvider] = useState<ComponentTypeRepresentation>();
-  const [parentId, setParentId] = useState("");
 
   useFetch(
     async () =>
       await Promise.all([
         adminClient.realms.getClientRegistrationPolicyProviders({ realm }),
-        adminClient.realms.findOne({ realm }),
         id ? adminClient.components.findOne({ id }) : Promise.resolve(),
       ]),
-    ([providers, realm, data]) => {
+    ([providers, data]) => {
       setProvider(providers.find((p) => p.id === providerId));
-      setParentId(realm?.id || "");
       reset(data || { providerId });
     },
     [],
@@ -79,7 +68,7 @@ export default function DetailProvider() {
       const updatedComponent = {
         ...component,
         subType: subTab,
-        parentId,
+        parentId: realmRepresentation?.id,
         providerType:
           "org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy",
         providerId,
@@ -142,63 +131,38 @@ export default function DetailProvider() {
       />
       <DeleteConfirm />
       <PageSection variant="light">
-        <FormAccess
-          role="manage-clients"
-          isHorizontal
-          onSubmit={handleSubmit(onSubmit)}
-        >
-          <FormGroup label={t("provider")} fieldId="provider">
-            <KeycloakTextInput
-              id="providerId"
-              data-testid="providerId"
-              {...register("providerId")}
-              readOnly
-            />
-          </FormGroup>
-          <FormGroup
-            label={t("name")}
-            fieldId="kc-name"
-            helperTextInvalid={t("required")}
-            validated={
-              errors.name ? ValidatedOptions.error : ValidatedOptions.default
-            }
-            labelIcon={
-              <HelpItem
-                helpText={t("clientPolicyNameHelp")}
-                fieldLabelId="kc-name"
-              />
-            }
-            isRequired
+        <FormProvider {...form}>
+          <FormAccess
+            role="manage-clients"
+            isHorizontal
+            onSubmit={handleSubmit(onSubmit)}
           >
-            <KeycloakTextInput
-              id="kc-name"
-              data-testid="name"
-              validated={
-                errors.name ? ValidatedOptions.error : ValidatedOptions.default
-              }
-              {...register("name", { required: true })}
+            <TextControl name="providerId" label={t("provider")} readOnly />
+            <TextControl
+              name="name"
+              label={t("name")}
+              labelIcon={t("clientPolicyNameHelp")}
+              rules={{ required: t("required") }}
             />
-          </FormGroup>
-          <FormProvider {...form}>
             <DynamicComponents properties={provider.properties} />
-          </FormProvider>
-          <ActionGroup>
-            <Button data-testid="save" type="submit">
-              {t("save")}
-            </Button>
-            <Button
-              variant="link"
-              component={(props) => (
-                <Link
-                  {...props}
-                  to={toClientRegistration({ realm, subTab })}
-                ></Link>
-              )}
-            >
-              {t("cancel")}
-            </Button>
-          </ActionGroup>
-        </FormAccess>
+            <ActionGroup>
+              <Button data-testid="save" type="submit">
+                {t("save")}
+              </Button>
+              <Button
+                variant="link"
+                component={(props) => (
+                  <Link
+                    {...props}
+                    to={toClientRegistration({ realm, subTab })}
+                  ></Link>
+                )}
+              >
+                {t("cancel")}
+              </Button>
+            </ActionGroup>
+          </FormAccess>
+        </FormProvider>
       </PageSection>
     </>
   );

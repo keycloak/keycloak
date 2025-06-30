@@ -1,7 +1,5 @@
 package org.keycloak.documentation.test;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.keycloak.documentation.test.utils.DocUtils;
 
 import java.io.File;
@@ -11,8 +9,6 @@ import java.net.URL;
 import java.util.Map;
 
 public class Guide {
-
-    private static final Logger log = LogManager.getLogger(Guide.class);
 
     protected DocUtils utils = new DocUtils();
 
@@ -36,7 +32,6 @@ public class Guide {
                 File htmlFile = config.getGuideHtmlFile(guide);
                 body = utils.readBody(htmlFile);
             } else {
-                log.info("Loading guide from '" + guideUrl);
                 body = utils.readBody(new URL(guideUrl));
             }
 

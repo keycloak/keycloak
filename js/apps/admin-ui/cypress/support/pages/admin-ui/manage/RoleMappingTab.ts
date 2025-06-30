@@ -7,12 +7,13 @@ export default class RoleMappingTab {
     `no-roles-for-this-${type}-empty-action`;
   #assignRoleBtn = "assignRole";
   #unAssignBtn = "unAssignRole";
-  #unAssignDrpDwnBtn = '.pf-c-table__action li button[role="menuitem"]';
+  #unAssignDrpDwnBtn = '.pf-v5-c-table__action li button[role="menuitem"]';
   #assignBtn = "assign";
   #hideInheritedRolesBtn = "#hideInheritedRoles";
   #assignedRolesTable = "assigned-roles";
-  #namesColumn = 'td[data-label="Name"]:visible';
+  #namesColumn = "td:visible";
   #roleMappingTab = "role-mapping-tab";
+  #filterTypeDropdown = "filter-type-dropdown";
 
   constructor(type: string) {
     this.#type = type;
@@ -60,8 +61,18 @@ export default class RoleMappingTab {
     return this;
   }
 
+  changeRoleTypeFilter(filter: string) {
+    // Invert the filter because the testid of the DropdownItem is the current filter
+    const option = filter == "roles" ? "clients" : "roles";
+
+    cy.findByTestId(this.#filterTypeDropdown).click();
+    cy.findByTestId(option).click();
+
+    return this;
+  }
+
   selectRow(name: string, modal = false) {
-    cy.get(modal ? ".pf-c-modal-box " : "" + this.#namesColumn)
+    cy.get(modal ? ".pf-v5-c-modal-box " : "" + this.#namesColumn)
       .contains(name)
       .parent()
       .within(() => {

@@ -4,12 +4,12 @@
 == Using token exchange
 
 :tech_feature_name: Token Exchange
-:tech_feature_setting: -Dkeycloak.profile.feature.token_exchange=enabled
+:tech_feature_id: token-exchange
 include::../templates/techpreview.adoc[]
 
 [NOTE]
 ====
-To use more than the <<_internal-token-to-internal-token-exchange,Internal Token to Internal Token Exchange>> flow, also enable the `admin_fine_grained_authz` feature.
+To use more than the <<_internal-token-to-internal-token-exchange,Internal Token to Internal Token Exchange>> flow, also enable the `admin-fine-grained-authz` feature.
 For details, see the https://www.keycloak.org/server/features[Enabling and disabling features] {section}.
 ====
 
@@ -76,9 +76,8 @@ requested_issuer::
 requested_subject::
     _OPTIONAL._ This specifies a username or user id if your client wants to impersonate a different user.
 scope::
-    _NOT IMPLEMENTED._ This parameter represents the target set of OAuth and OpenID Connect scopes the client
-    is requesting.  It is not implemented at this time but will be once {project_name} has better support for
-    scopes in general.
+    _OPTIONAL._ This parameter represents the target set of OAuth and OpenID Connect scopes the client
+    is requesting. Returned scope is the Cartesian product of scope parameter and access token scope.
 
 NOTE:   We currently only support OpenID Connect and OAuth exchanges.  Support for SAML based clients and identity providers may be added in the future depending on user demand.
 
@@ -358,7 +357,7 @@ to do this is <<_client_to_client_permission, discussed earlier>> in this sectio
 The `subject_token_type` must either be `urn:ietf:params:oauth:token-type:access_token` or `urn:ietf:params:oauth:token-type:jwt`.
 If the type is `urn:ietf:params:oauth:token-type:access_token` you specify the `subject_issuer` parameter and it must be the
 alias of the configured identity provider.  If the type is `urn:ietf:params:oauth:token-type:jwt`, the provider will be matched via
-the `issuer` claim within the JWT which must be the alias of the provider, or a registered issuer within the providers configuration.
+the `iss` (issuer) claim within the JWT which must be the alias of the provider, or a registered issuer within the providers configuration.
 
 For validation, if the token is an access token, the provider's user info service will be invoked to validate the token.  A successful call
 will mean that the access token is valid.  If the subject token is a JWT and if the provider has signature validation enabled, that will be attempted,

@@ -2,9 +2,8 @@ import { Button, PageSection, Popover } from "@patternfly/react-core";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { useHelp } from "ui-shared";
-
-import { adminClient } from "../admin-client";
+import { useHelp } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../admin-client";
 import type { ClientRoleParams } from "../clients/routes/ClientRole";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
@@ -13,6 +12,8 @@ import { emptyFormatter, upperCaseFormatter } from "../util";
 import { useParams } from "../utils/useParams";
 
 export const UsersInRoleTab = () => {
+  const { adminClient } = useAdminClient();
+
   const navigate = useNavigate();
   const { realm } = useRealm();
 
@@ -50,6 +51,7 @@ export const UsersInRoleTab = () => {
         loader={loader}
         ariaLabelKey="roleList"
         searchPlaceholderKey=""
+        data-testid="users-in-role-table"
         toolbarItem={
           enabled && (
             <Popover

@@ -26,13 +26,13 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionConfigModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
 
@@ -50,6 +50,7 @@ public class RequiredActionContextResult implements RequiredActionContext {
     protected HttpRequest httpRequest;
     protected UserModel user;
     protected RequiredActionFactory factory;
+    protected RequiredActionConfigModel config;
 
     public RequiredActionContextResult(AuthenticationSessionModel authSession,
                                        RealmModel realm, EventBuilder eventBuilder, KeycloakSession session,
@@ -62,6 +63,11 @@ public class RequiredActionContextResult implements RequiredActionContext {
         this.httpRequest = httpRequest;
         this.user = user;
         this.factory = factory;
+        this.config = realm.getRequiredActionConfigByAlias(factory.getId());
+    }
+
+    public RequiredActionConfigModel getConfig() {
+        return config;
     }
 
     public RequiredActionFactory getFactory() {
@@ -137,6 +143,11 @@ public class RequiredActionContextResult implements RequiredActionContext {
     }
 
     @Override
+    public String getAction() {
+        return getFactory().getId();
+    }
+
+    @Override
     public URI getActionUrl(String code) {
         ClientModel client = authenticationSession.getClient();
         return LoginActionsService.requiredActionProcessor(getUriInfo())
@@ -144,6 +155,7 @@ public class RequiredActionContextResult implements RequiredActionContext {
                 .queryParam(Constants.EXECUTION, getExecution())
                 .queryParam(Constants.CLIENT_ID, client.getClientId())
                 .queryParam(Constants.TAB_ID, authenticationSession.getTabId())
+                .queryParam(Constants.CLIENT_DATA, AuthenticationProcessor.getClientData(session, authenticationSession))
                 .build(getRealm().getName());
     }
 

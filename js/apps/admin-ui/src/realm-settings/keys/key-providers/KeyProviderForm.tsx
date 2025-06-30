@@ -3,21 +3,16 @@ import {
   ActionGroup,
   AlertVariant,
   Button,
-  FormGroup,
   PageSection,
-  TextInput,
-  ValidatedOptions,
 } from "@patternfly/react-core";
-import { Controller, FormProvider, useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../../../admin-client";
+import { TextControl } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../../admin-client";
 import { useAlerts } from "../../../components/alert/Alerts";
 import { DynamicComponents } from "../../../components/dynamic/DynamicComponents";
 import { FormAccess } from "../../../components/form/FormAccess";
-import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../../components/view-header/ViewHeader";
 import { useServerInfo } from "../../../context/server-info/ServerInfoProvider";
 import { KEY_PROVIDER_TYPE } from "../../../util";
@@ -36,6 +31,8 @@ export const KeyProviderForm = ({
   providerType,
   onClose,
 }: KeyProviderFormProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { addAlert, addError } = useAlerts();
@@ -47,13 +44,7 @@ export const KeyProviderForm = ({
   const form = useForm<ComponentRepresentation>({
     mode: "onChange",
   });
-  const {
-    register,
-    control,
-    handleSubmit,
-    formState: { errors },
-    reset,
-  } = form;
+  const { handleSubmit, reset } = form;
 
   const save = async (component: ComponentRepresentation) => {
     if (component.config)
@@ -99,73 +90,46 @@ export const KeyProviderForm = ({
 
   return (
     <FormAccess isHorizontal role="manage-realm" onSubmit={handleSubmit(save)}>
-      {id && (
-        <FormGroup
-          label={t("providerId")}
-          labelIcon={
-            <HelpItem
-              helpText={t("mapperNameHelp")}
-              fieldLabelId="providerId"
-            />
-          }
-          fieldId="providerId"
-          isRequired
-        >
-          <KeycloakTextInput
-            id="providerId"
-            data-testid="providerId-input"
-            isReadOnly
-            {...register("id")}
-          />
-        </FormGroup>
-      )}
-      <FormGroup
-        label={t("name")}
-        labelIcon={
-          <HelpItem helpText={t("mapperNameHelp")} fieldLabelId="name" />
-        }
-        fieldId="name"
-        isRequired
-        validated={
-          errors.name ? ValidatedOptions.error : ValidatedOptions.default
-        }
-        helperTextInvalid={t("required")}
-      >
-        <Controller
-          name="name"
-          control={control}
-          rules={{ required: true }}
-          defaultValue={providerType}
-          render={({ field }) => (
-            <TextInput
-              id="name"
-              value={field.value}
-              onChange={field.onChange}
-              data-testid="name-input"
-            />
-          )}
-        />
-      </FormGroup>
       <FormProvider {...form}>
+        {id && (
+          <TextControl
+            name="id"
+            label={t("providerId")}
+            labelIcon={t("providerIdHelp")}
+            rules={{
+              required: t("required"),
+            }}
+            readOnly
+          />
+        )}
+        <TextControl
+          name="name"
+          defaultValue={providerType}
+          label={t("name")}
+          labelIcon={t("keyProviderMapperNameHelp")}
+          rules={{
+            required: t("required"),
+          }}
+        />
         <DynamicComponents
           properties={
             allComponentTypes.find((type) => type.id === providerType)
               ?.properties || []
           }
         />
+        <ActionGroup>
+          <Button
+            data-testid="add-provider-button"
+            variant="primary"
+            type="submit"
+          >
+            {t("save")}
+          </Button>
+          <Button onClick={() => onClose?.()} variant="link">
+            {t("cancel")}
+          </Button>
+        </ActionGroup>
       </FormProvider>
-      <ActionGroup>
-        <Button
-          data-testid="add-provider-button"
-          variant="primary"
-          type="submit"
-        >
-          {t("save")}
-        </Button>
-        <Button onClick={() => onClose?.()} variant="link">
-          {t("cancel")}
-        </Button>
-      </ActionGroup>
     </FormAccess>
   );
 };

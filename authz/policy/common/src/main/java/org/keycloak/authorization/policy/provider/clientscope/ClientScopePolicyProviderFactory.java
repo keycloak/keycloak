@@ -69,13 +69,12 @@ public class ClientScopePolicyProviderFactory implements PolicyProviderFactory<C
                 StoreFactory storeFactory = provider.getStoreFactory();
                 PolicyStore policyStore = storeFactory.getPolicyStore();
                 ClientScopeModel removedClientScope = ((ClientScopeRemovedEvent) event).getClientScope();
-                RealmModel realm = ((ClientScopeRemovedEvent) event).getClientScope().getRealm();
 
                 Map<Policy.FilterOption, String[]> filters = new HashMap<>();
 
                 filters.put(Policy.FilterOption.TYPE, new String[] { getId() });
 
-                policyStore.find(realm, null, filters, null, null).forEach(new Consumer<Policy>() {
+                policyStore.find(null, filters, null, null).forEach(new Consumer<Policy>() {
 
                     @Override
                     public void accept(Policy policy) {
@@ -94,7 +93,7 @@ public class ClientScopePolicyProviderFactory implements PolicyProviderFactory<C
                         }
 
                         if (clientScopes.isEmpty()) {
-                            policyStore.delete(realm, policy.getId());
+                            policyStore.delete(policy.getId());
                         } else {
                             try {
                                 policy.putConfig("clientScopes", JsonSerialization.writeValueAsString(clientScopes));

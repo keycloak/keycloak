@@ -7,6 +7,9 @@
 :project_versionNpm: 999.0.0-SNAPSHOT
 :project_versionDoc: DEV
 
+:archivebasename: keycloak
+:archivedownloadurl: https://github.com/keycloak/keycloak/releases/download/{project_version}/keycloak-{project_version}.zip
+
 :standalone:
 :api-management!:
 :on-prem:
@@ -50,6 +53,8 @@
 :adminguide_link_latest: {project_doc_base_url_latest}/server_admin/
 :adminguide_bruteforce_name: Password guess: brute force attacks
 :adminguide_bruteforce_link: {adminguide_link}#password-guess-brute-force-attacks
+:adminguide_eventlistener_name: Event listener
+:adminguide_eventlistener_link: {adminguide_link}#event-listener
 :adminguide_timeouts_name: Timeouts
 :adminguide_timeouts_link: {adminguide_link}#_timeouts
 :adminguide_clearcache_name: Clearing Server Caches
@@ -69,6 +74,8 @@
 :gettingstarted_name_short: Getting Started
 :gettingstarted_link: https://www.keycloak.org/guides#getting-started
 :gettingstarted_link_latest: https://www.keycloak.org/guides#getting-started
+:highavailabilityguide_name: High Availability Guide
+:highavailabilityguide_link: https://www.keycloak.org/guides#high-availability
 :upgradingguide_name: Upgrading Guide
 :upgradingguide_name_short: Upgrading
 :upgradingguide_link: {project_doc_base_url}/upgrading/

@@ -19,9 +19,10 @@ package org.keycloak.services.resources.admin;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import org.keycloak.authentication.AuthenticationFlow;
@@ -39,8 +40,8 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RequiredActionConfigModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.utils.Base32;
@@ -57,10 +58,14 @@ import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
+import org.keycloak.representations.idm.ErrorRepresentation;
+import org.keycloak.representations.idm.RequiredActionConfigInfoRepresentation;
+import org.keycloak.representations.idm.RequiredActionConfigRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.userprofile.ValidationException;
 import org.keycloak.utils.CredentialHelper;
 
 import jakarta.ws.rs.Consumes;
@@ -86,7 +91,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static jakarta.ws.rs.core.Response.Status.NOT_FOUND;
+import org.keycloak.utils.RequiredActionHelper;
 import org.keycloak.utils.ReservedCharValidator;
 
 /**
@@ -114,6 +119,7 @@ public class AuthenticationManagementResource {
      * Get form providers
      *
      * Returns a stream of form providers.
+     * @return
      */
     @Path("/form-providers")
     @GET
@@ -131,6 +137,7 @@ public class AuthenticationManagementResource {
      * Get authenticator providers
      *
      * Returns a stream of authenticator providers.
+     * @return
      */
     @Path("/authenticator-providers")
     @GET
@@ -148,6 +155,7 @@ public class AuthenticationManagementResource {
      * Get client authenticator providers
      *
      * Returns a stream of client authenticator providers.
+     * @return
      */
     @Path("/client-authenticator-providers")
     @GET
@@ -157,17 +165,27 @@ public class AuthenticationManagementResource {
     @Operation( summary = "Get client authenticator providers Returns a stream of client authenticator providers.")
     public Stream<Map<String, Object>> getClientAuthenticatorProviders() {
         auth.realm().requireViewClientAuthenticatorProviders();
+        Stream<ProviderFactory> factories =  session.getKeycloakSessionFactory().getProviderFactoriesStream(ClientAuthenticator.class);
 
-        return buildProviderMetadata(session.getKeycloakSessionFactory().getProviderFactoriesStream(ClientAuthenticator.class));
+        return factories.map(factory -> {
+            Map<String, Object> data = new HashMap<>();
+            buildProviderMetadataHelper(data, factory);
+            data.put("supportsSecret", ((ClientAuthenticatorFactory) factory).supportsSecret());
+            return data;
+        });
+    }
+
+    private void buildProviderMetadataHelper(Map<String, Object> data, ProviderFactory factory) {
+        data.put("id", factory.getId());
+        ConfigurableAuthenticatorFactory configured = (ConfigurableAuthenticatorFactory) factory;
+        data.put("description", configured.getHelpText());
+        data.put("displayName", configured.getDisplayType());
     }
 
     public Stream<Map<String, Object>> buildProviderMetadata(Stream<ProviderFactory> factories) {
         return factories.map(factory -> {
             Map<String, Object> data = new HashMap<>();
-            data.put("id", factory.getId());
-            ConfigurableAuthenticatorFactory configured = (ConfigurableAuthenticatorFactory)factory;
-            data.put("description", configured.getHelpText());
-            data.put("displayName", configured.getDisplayType());
+            buildProviderMetadataHelper(data, factory);
             return data;
         });
     }
@@ -176,6 +194,7 @@ public class AuthenticationManagementResource {
      * Get form action providers
      *
      * Returns a stream of form action providers.
+     * @return
      */
     @Path("/form-action-providers")
     @GET
@@ -195,6 +214,7 @@ public class AuthenticationManagementResource {
      * Get authentication flows
      *
      * Returns a stream of authentication flows.
+     * @return
      */
     @Path("/flows")
     @GET
@@ -222,6 +242,7 @@ public class AuthenticationManagementResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
     @Operation( summary = "Create a new authentication flow")
+    @APIResponse(responseCode = "201", description = "Created")
     public Response createFlow(@Parameter( description = "Authentication flow representation") AuthenticationFlowRepresentation flow) {
         auth.realm().requireManageRealm();
 
@@ -272,6 +293,7 @@ public class AuthenticationManagementResource {
     /**
      * Update an authentication flow
      *
+     * @param id The flow id
      * @param flow Authentication flow representation
      * @return
      */
@@ -282,7 +304,8 @@ public class AuthenticationManagementResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
     @Operation( summary = "Update an authentication flow")
-    public Response updateFlow(@PathParam("id") String id, AuthenticationFlowRepresentation flow) {
+    @APIResponse(responseCode = "204", description = "No Content")
+    public void updateFlow(@PathParam("id") String id, AuthenticationFlowRepresentation flow) {
         auth.realm().requireManageRealm();
 
         AuthenticationFlowRepresentation existingFlow = getFlow(id);
@@ -323,7 +346,6 @@ public class AuthenticationManagementResource {
         flow.setId(existingFlow.getId());
         realm.updateAuthenticationFlow(RepresentationToModel.toModel(flow));
         adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(flow).success();
-        return Response.accepted(flow).build();
     }
 
     /**
@@ -336,13 +358,17 @@ public class AuthenticationManagementResource {
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
     @Operation( summary = "Delete an authentication flow")
+    @APIResponse(responseCode = "204", description = "No Content")
     public void deleteFlow(@Parameter(description = "Flow id") @PathParam("id") String id) {
         auth.realm().requireManageRealm();
 
-        KeycloakModelUtils.deepDeleteAuthenticationFlow(realm, realm.getAuthenticationFlowById(id),
-                () -> {
-                    throw new NotFoundException("Could not find flow with id");
-                },
+        AuthenticationFlowModel flow = realm.getAuthenticationFlowById(id);
+        if (flow == null) {
+            throw new NotFoundException("Flow not found");
+        }
+
+        KeycloakModelUtils.deepDeleteAuthenticationFlow(session, realm, flow,
+                () -> {}, // allow deleting even with missing references
                 () -> {
                     throw new BadRequestException("Can't delete built in flow");
                 }
@@ -359,6 +385,7 @@ public class AuthenticationManagementResource {
      *
      * @param flowAlias Name of the existing authentication flow
      * @param data JSON containing 'newName' attribute
+     * @return
      */
     @Path("/flows/{flowAlias}/copy")
     @POST
@@ -366,6 +393,7 @@ public class AuthenticationManagementResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
     @Operation( summary = "Copy existing authentication flow under a new name The new name is given as 'newName' attribute of the passed JSON object")
+    @APIResponse(responseCode = "201", description = "Created")
     public Response copy(@Parameter(description="name of the existing authentication flow") @PathParam("flowAlias") String flowAlias, Map<String, String> data) {
         auth.realm().requireManageRealm();
 
@@ -377,8 +405,9 @@ public class AuthenticationManagementResource {
         AuthenticationFlowModel flow = realm.getFlowByAlias(flowAlias);
         if (flow == null) {
             logger.debug("flow not found: " + flowAlias);
-            return Response.status(NOT_FOUND).build();
+            throw new NotFoundException("Flow not found");
         }
+
         AuthenticationFlowModel copy = copyFlow(session, realm, flow, newName);
 
         data.put("id", copy.getId());
@@ -420,7 +449,7 @@ public class AuthenticationManagementResource {
                 AuthenticatorConfigModel config = configManager.getAuthenticatorConfig(realm, execution.getAuthenticatorConfig());
 
                 if (config == null) {
-                    logger.debugf("Authentication execution with id [%s] not found", config.getId());
+                    logger.debugf("Authentication execution configuration with id [%s] not found", execution.getAuthenticatorConfig());
                     throw new IllegalStateException("Authentication execution configuration not found");
                 }
 
@@ -450,7 +479,8 @@ public class AuthenticationManagementResource {
      * Add new flow with new execution to existing flow
      *
      * @param flowAlias Alias of parent authentication flow
-     * @param data New authentication flow / execution JSON data containing 'alias', 'type', 'provider', and 'description' attributes
+     * @param data New authentication flow / execution JSON data containing 'alias', 'type', 'provider', 'priority', and 'description' attributes
+     * @return
      */
     @Path("/flows/{flowAlias}/executions/flow")
     @POST
@@ -458,7 +488,8 @@ public class AuthenticationManagementResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
     @Operation( summary = "Add new flow with new execution to existing flow")
-    public Response addExecutionFlow(@Parameter(description = "Alias of parent authentication flow") @PathParam("flowAlias") String flowAlias, @Parameter(description = "New authentication flow / execution JSON data containing 'alias', 'type', 'provider', and 'description' attributes") Map<String, String> data) {
+    @APIResponse(responseCode = "201", description = "Created")
+    public Response addExecutionFlow(@Parameter(description = "Alias of parent authentication flow") @PathParam("flowAlias") String flowAlias, @Parameter(description = "New authentication flow / execution JSON data containing 'alias', 'type', 'provider', 'priority', and 'description' attributes") Map<String, Object> data) {
         auth.realm().requireManageRealm();
 
         AuthenticationFlowModel parentFlow = realm.getFlowByAlias(flowAlias);
@@ -468,12 +499,13 @@ public class AuthenticationManagementResource {
         if (parentFlow.isBuiltIn()) {
             throw new BadRequestException("It is illegal to add sub-flow to a built in flow");
         }
-        String alias = data.get("alias");
-        String type = data.get("type");
-        String provider = data.get("provider");
+        String alias = (String) data.get("alias");
+        String type = (String) data.get("type");
+        String provider = (String) data.get("provider");
+        int priority = data.containsKey("priority") ? (Integer) data.get("priority") : getNextPriority(parentFlow);
         
         //Make sure that the description to avoid NullPointerException
-        String description = Objects.isNull(data.get("description")) ? "" : data.get("description");
+        String description = Objects.isNull(data.get("description")) ? "" : (String) data.get("description");
 
 
         AuthenticationFlowModel newFlow = realm.getFlowByAlias(alias);
@@ -493,7 +525,7 @@ public class AuthenticationManagementResource {
         if (type.equals("form-flow")) {
             execution.setAuthenticator(provider);
         }
-        execution.setPriority(getNextPriority(parentFlow));
+        execution.setPriority(priority);
         execution = realm.addAuthenticatorExecution(execution);
 
         data.put("id", execution.getId());
@@ -513,7 +545,8 @@ public class AuthenticationManagementResource {
      * Add new authentication execution to a flow
      *
      * @param flowAlias Alias of parent flow
-     * @param data New execution JSON data containing 'provider' attribute
+     * @param data New execution JSON data containing 'provider' and 'priority' (optional) attribute
+     * @return
      */
     @Path("/flows/{flowAlias}/executions/execution")
     @POST
@@ -521,7 +554,8 @@ public class AuthenticationManagementResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
     @Operation( summary="Add new authentication execution to a flow")
-    public Response addExecutionToFlow(@Parameter(description = "Alias of parent flow") @PathParam("flowAlias") String flowAlias, @Parameter(description = "New execution JSON data containing 'provider' attribute") Map<String, String> data) {
+    @APIResponse(responseCode = "201", description = "Created")
+    public Response addExecutionToFlow(@Parameter(description = "Alias of parent flow") @PathParam("flowAlias") String flowAlias, @Parameter(description = "New execution JSON data containing 'provider' and 'priority' (optional) attribute") Map<String, Object> data) {
         auth.realm().requireManageRealm();
 
         AuthenticationFlowModel parentFlow = realm.getFlowByAlias(flowAlias);
@@ -531,7 +565,8 @@ public class AuthenticationManagementResource {
         if (parentFlow.isBuiltIn()) {
             throw new BadRequestException("It is illegal to add execution to a built in flow");
         }
-        String provider = data.get("provider");
+        String provider = (String) data.get("provider");
+        int priority = data.containsKey("priority") ? (Integer) data.get("priority") : getNextPriority(parentFlow);
 
         // make sure provider is one of the registered providers
         ProviderFactory f = getProviderFactory( parentFlow, provider);
@@ -547,7 +582,7 @@ public class AuthenticationManagementResource {
 
         execution.setAuthenticatorFlow(false);
         execution.setAuthenticator(provider);
-        execution.setPriority(getNextPriority(parentFlow));
+        execution.setPriority(priority);
 
         execution = realm.addAuthenticatorExecution(execution);
 
@@ -596,6 +631,7 @@ public class AuthenticationManagementResource {
      * Get authentication executions for a flow
      *
      * @param flowAlias Flow alias
+     * @return The list of executions
      */
     @Path("/flows/{flowAlias}/executions")
     @GET
@@ -603,20 +639,20 @@ public class AuthenticationManagementResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
     @Operation( summary = "Get authentication executions for a flow")
-    public Response getExecutions(@Parameter(description = "Flow alias") @PathParam("flowAlias") String flowAlias) {
+    public List<AuthenticationExecutionInfoRepresentation> getExecutions(@Parameter(description = "Flow alias") @PathParam("flowAlias") String flowAlias) {
         auth.realm().requireViewRealm();
 
         AuthenticationFlowModel flow = realm.getFlowByAlias(flowAlias);
         if (flow == null) {
             logger.debug("flow not found: " + flowAlias);
-            return Response.status(NOT_FOUND).build();
+            throw new NotFoundException("Flow not found");
         }
         List<AuthenticationExecutionInfoRepresentation> result = new LinkedList<>();
 
         int level = 0;
 
         recurseExecutions(flow, result, level);
-        return Response.ok(result).build();
+        return result;
     }
 
     public void recurseExecutions(AuthenticationFlowModel flow, List<AuthenticationExecutionInfoRepresentation> result, int level) {
@@ -626,6 +662,7 @@ public class AuthenticationManagementResource {
             rep.setLevel(level);
             rep.setIndex(index.getAndIncrement());
             rep.setRequirementChoices(new LinkedList<>());
+            rep.setPriority(execution.getPriority());
             if (execution.isAuthenticatorFlow()) {
                 AuthenticationFlowModel flowRef = realm.getAuthenticationFlowById(execution.getFlowId());
                 if (AuthenticationFlow.BASIC_FLOW.equals(flowRef.getProviderId())) {
@@ -651,8 +688,7 @@ public class AuthenticationManagementResource {
                 rep.setRequirement(execution.getRequirement().name());
                 rep.setFlowId(execution.getFlowId());
                 result.add(rep);
-                AuthenticationFlowModel subFlow = realm.getAuthenticationFlowById(execution.getFlowId());
-                recurseExecutions(subFlow, result, level + 1);
+                recurseExecutions(flowRef, result, level + 1);
             } else {
                 String providerId = execution.getAuthenticator();
                 ConfigurableAuthenticatorFactory factory = CredentialHelper.getConfigurableAuthenticatorFactory(session, providerId);
@@ -698,6 +734,7 @@ public class AuthenticationManagementResource {
      * Update authentication executions of a Flow
      * @param flowAlias Flow alias
      * @param rep AuthenticationExecutionInfoRepresentation
+     * @return
      */
     @Path("/flows/{flowAlias}/executions")
     @PUT
@@ -706,7 +743,8 @@ public class AuthenticationManagementResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
     @Operation( summary = "Update authentication executions of a Flow")
-    public Response updateExecutions(@Parameter(description = "Flow alias") @PathParam("flowAlias") String flowAlias, @Parameter(description = "AuthenticationExecutionInfoRepresentation") AuthenticationExecutionInfoRepresentation rep) {
+    @APIResponse(responseCode = "204", description = "No Content")
+    public void updateExecutions(@Parameter(description = "Flow alias") @PathParam("flowAlias") String flowAlias, @Parameter(description = "AuthenticationExecutionInfoRepresentation") AuthenticationExecutionInfoRepresentation rep) {
         auth.realm().requireManageRealm();
 
         AuthenticationFlowModel flow = realm.getFlowByAlias(flowAlias);
@@ -721,15 +759,25 @@ public class AuthenticationManagementResource {
             throw new NotFoundException("Illegal execution");
 
         }
+        boolean updateExecution = false;
+        if (model.getPriority() != rep.getPriority()) {
+            model.setPriority(rep.getPriority());
+            updateExecution = true;
+        }
         if (!model.getRequirement().name().equals(rep.getRequirement())) {
             model.setRequirement(AuthenticationExecutionModel.Requirement.valueOf(rep.getRequirement()));
+            updateExecution = true;
+        }
+        if (updateExecution) {
             realm.updateAuthenticatorExecution(model);
             adminEvent.operation(OperationType.UPDATE).resource(ResourceType.AUTH_EXECUTION).resourcePath(session.getContext().getUri()).representation(rep).success();
-            return Response.accepted(flow).build();
+            return;
         }
 
         //executions can't have name and description updated
-        if (rep.getAuthenticationFlow() == null) { return Response.accepted(flow).build();}
+        if (rep.getAuthenticationFlow() == null) {
+            return;
+        }
 
         //check if updating a correct flow
         AuthenticationFlowModel checkFlow = realm.getAuthenticationFlowById(rep.getFlowId());
@@ -761,11 +809,12 @@ public class AuthenticationManagementResource {
         //update the flow
         realm.updateAuthenticationFlow(checkFlow);
         adminEvent.operation(OperationType.UPDATE).resource(ResourceType.AUTH_EXECUTION).resourcePath(session.getContext().getUri()).representation(rep).success();
-        return Response.accepted(flow).build();
     }
 
     /**
      * Get Single Execution
+     * @param executionId The execution id
+     * @return
      */
     @Path("/executions/{executionId}")
     @GET
@@ -773,7 +822,7 @@ public class AuthenticationManagementResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
     @Operation( summary = "Get Single Execution")
-    public Response getExecution(final @PathParam("executionId") String executionId) {
+    public AuthenticationExecutionRepresentation getExecution(final @PathParam("executionId") String executionId) {
     	//http://localhost:8080/auth/admin/realms/master/authentication/executions/cf26211b-9e68-4788-b754-1afd02e59d7f
         auth.realm().requireManageRealm();
 
@@ -783,13 +832,14 @@ public class AuthenticationManagementResource {
             throw new NotFoundException("Illegal execution");
         }
 
-        return Response.ok(model.get()).build();
+        return ModelToRepresentation.toRepresentation(model.get());
     }
 
     /**
      * Add new authentication execution
      *
      * @param execution JSON model describing authentication execution
+     * @return
      */
     @Path("/executions")
     @POST
@@ -797,6 +847,7 @@ public class AuthenticationManagementResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
     @Operation( summary = "Add new authentication execution")
+    @APIResponse(responseCode = "201", description = "Created")
     public Response addExecution(@Parameter(description = "JSON model describing authentication execution") AuthenticationExecutionRepresentation execution) {
         auth.realm().requireManageRealm();
 
@@ -805,7 +856,8 @@ public class AuthenticationManagementResource {
         if (parentFlow.isBuiltIn()) {
             throw new BadRequestException("It is illegal to add execution to a built in flow");
         }
-        model.setPriority(getNextPriority(parentFlow));
+        int priority = execution.getPriority() != null ? execution.getPriority() : getNextPriority(parentFlow);
+        model.setPriority(priority);
         model = realm.addAuthenticatorExecution(model);
 
         if (!execution.isAuthenticatorFlow()) {
@@ -840,6 +892,7 @@ public class AuthenticationManagementResource {
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
     @Operation( summary = "Raise execution's priority")
+    @APIResponse(responseCode = "204", description = "No Content")
     public void raisePriority(@Parameter(description = "Execution id") @PathParam("executionId") String execution) {
         auth.realm().requireManageRealm();
 
@@ -882,6 +935,7 @@ public class AuthenticationManagementResource {
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
     @Operation( summary = "Lower execution's priority")
+    @APIResponse(responseCode = "204", description = "No Content")
     public void lowerPriority(@Parameter( description = "Execution id") @PathParam("executionId") String execution) {
         auth.realm().requireManageRealm();
 
@@ -924,6 +978,7 @@ public class AuthenticationManagementResource {
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
     @Operation( summary = "Delete execution")
+    @APIResponse(responseCode = "204", description = "No Content")
     public void removeExecution(@Parameter(description = "Execution id") @PathParam("executionId") String execution) {
         auth.realm().requireManageRealm();
 
@@ -931,19 +986,19 @@ public class AuthenticationManagementResource {
         if (model == null) {
             session.getTransactionManager().setRollbackOnly();
             throw new NotFoundException("Illegal execution");
-
         }
+
         AuthenticationFlowModel parentFlow = getParentFlow(model);
         if (parentFlow.isBuiltIn()) {
             throw new BadRequestException("It is illegal to remove execution from a built in flow");
         }
 
-        if(model.getFlowId() != null) {
-        	AuthenticationFlowModel nonTopLevelFlow = realm.getAuthenticationFlowById(model.getFlowId());
-        	realm.removeAuthenticationFlow(nonTopLevelFlow);
-        }
-
-        realm.removeAuthenticatorExecution(model);
+        KeycloakModelUtils.deepDeleteAuthenticationExecutor(session, realm, model,
+                () -> {}, // allow deleting even with missing references
+                () -> {
+                    throw new BadRequestException("It is illegal to remove execution from a built in flow");
+                }
+        );
 
         adminEvent.operation(OperationType.DELETE).resource(ResourceType.AUTH_EXECUTION).resourcePath(session.getContext().getUri()).success();
     }
@@ -962,6 +1017,7 @@ public class AuthenticationManagementResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
     @Operation( summary = "Update execution with new configuration")
+    @APIResponse(responseCode = "201", description = "Created")
     public Response newExecutionConfig(@Parameter(description = "Execution id") @PathParam("executionId") String execution, @Parameter(description = "JSON with new configuration") AuthenticatorConfigRepresentation json) {
         auth.realm().requireManageRealm();
         
@@ -991,6 +1047,7 @@ public class AuthenticationManagementResource {
      *
      * @param execution Execution id
      * @param id Configuration id
+     * @return
      * @deprecated Use rather {@link #getAuthenticatorConfig(String)}
      */
     @Path("/executions/{executionId}/config/{id}")
@@ -999,6 +1056,7 @@ public class AuthenticationManagementResource {
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
     @Operation( summary = "Get execution's configuration", deprecated = true)
+    @Deprecated
     public AuthenticatorConfigRepresentation getAuthenticatorConfig(@Parameter(description = "Execution id") @PathParam("executionId") String execution, @Parameter(description = "Configuration id") @PathParam("id") String id) {
         auth.realm().requireViewRealm();
 
@@ -1014,6 +1072,7 @@ public class AuthenticationManagementResource {
      * Get unregistered required actions
      *
      * Returns a stream of unregistered required actions.
+     * @return
      */
     @Path("unregistered-required-actions")
     @GET
@@ -1049,10 +1108,16 @@ public class AuthenticationManagementResource {
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
     @Operation( summary = "Register a new required actions")
+    @APIResponse(responseCode = "204", description = "No Content")
     public void registerRequiredAction(@Parameter(description = "JSON containing 'providerId', and 'name' attributes.") Map<String, String> data) {
         auth.realm().requireManageRealm();
 
         String providerId = data.get("providerId");
+
+        if (providerId == null || session.getKeycloakSessionFactory().getProviderFactory(RequiredActionProvider.class, providerId) == null) {
+            throw new BadRequestException("Required Action Provider with given providerId not found");
+        }
+
         String name = data.get("name");
         RequiredActionProviderModel requiredAction = new RequiredActionProviderModel();
         requiredAction.setAlias(providerId);
@@ -1077,6 +1142,7 @@ public class AuthenticationManagementResource {
      * Get required actions
      *
      * Returns a stream of required actions.
+     * @return
      */
     @Path("required-actions")
     @GET
@@ -1105,6 +1171,7 @@ public class AuthenticationManagementResource {
     /**
      * Get required action for alias
      * @param alias Alias of required action
+     * @return The required action representation
      */
     @Path("required-actions/{alias}")
     @GET
@@ -1134,6 +1201,7 @@ public class AuthenticationManagementResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
     @Operation( summary = "Update required action")
+    @APIResponse(responseCode = "204", description = "No Content")
     public void updateRequiredAction(@Parameter(description = "Alias of required action") @PathParam("alias") String alias, @Parameter(description = "JSON describing new state of required action") RequiredActionProviderRepresentation rep) {
         auth.realm().requireManageRealm();
 
@@ -1163,6 +1231,7 @@ public class AuthenticationManagementResource {
     @DELETE
     @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
     @Operation( summary = "Delete required action")
+    @APIResponse(responseCode = "204", description = "No Content")
     public void removeRequiredAction(@Parameter(description = "Alias of required action") @PathParam("alias") String alias) {
         auth.realm().requireManageRealm();
 
@@ -1185,6 +1254,7 @@ public class AuthenticationManagementResource {
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
     @Operation( summary = "Raise required action's priority")
+    @APIResponse(responseCode = "204", description = "No Content")
     public void raiseRequiredActionPriority(@Parameter(description = "Alias of required action") @PathParam("alias") String alias) {
         auth.realm().requireManageRealm();
 
@@ -1220,6 +1290,7 @@ public class AuthenticationManagementResource {
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
     @Operation( summary = "Lower required action's priority")
+    @APIResponse(responseCode = "204", description = "No Content")
     public void lowerRequiredActionPriority(@Parameter(description = "Alias of required action") @PathParam("alias") String alias) {
         auth.realm().requireManageRealm();
 
@@ -1247,7 +1318,134 @@ public class AuthenticationManagementResource {
     }
 
     /**
+     * Get required actions provider's configuration description
+     * @param alias The alias of the required action
+     * @return The required action configuration representation
+     */
+    @Path("required-actions/{alias}/config-description")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
+    @Operation( summary = "Get RequiredAction provider configuration description")
+    public RequiredActionConfigInfoRepresentation getRequiredActionConfigDescription(@Parameter(description = "Alias of required action")  @PathParam("alias") String alias) {
+        auth.realm().requireViewRealm();
+
+        RequiredActionFactory factory = RequiredActionHelper.lookupConfigurableRequiredActionFactory(session, alias);
+        if (factory == null) {
+            throw new NotFoundException("Could not find configurable RequiredAction provider");
+        }
+
+        RequiredActionConfigInfoRepresentation rep = new RequiredActionConfigInfoRepresentation();
+        rep.setProperties(new LinkedList<>());
+        List<ProviderConfigProperty> configProperties = Optional.ofNullable(factory.getConfigMetadata()).orElse(Collections.emptyList());
+        for (ProviderConfigProperty prop : configProperties) {
+            ConfigPropertyRepresentation propRep = getConfigPropertyRep(prop);
+            rep.getProperties().add(propRep);
+        }
+        return rep;
+    }
+
+    /**
+     * Get the configuration of the RequiredAction provider in the current Realm.
+     * @param alias Provider id
+     * @return The required action configuration representation
+     */
+    @Path("required-actions/{alias}/config")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
+    @Operation( summary = "Get RequiredAction configuration")
+    public RequiredActionConfigRepresentation getRequiredActionConfig(@Parameter(description = "Alias of required action")  @PathParam("alias") String alias) {
+        auth.realm().requireViewRealm();
+
+        RequiredActionFactory factory = RequiredActionHelper.lookupConfigurableRequiredActionFactory(session, alias);
+        if (factory == null) {
+            throw new BadRequestException("RequiredAction is not configurable");
+        }
+
+        RequiredActionConfigModel config = realm.getRequiredActionConfigByAlias(alias);
+        if (config == null) {
+            throw new NotFoundException("Could not find RequiredAction config");
+        }
+
+        return ModelToRepresentation.toRepresentation(config);
+    }
+
+    /**
+     * Remove the configuration from the RequiredAction provider in the current Realm.
+     * @param alias Provider id
+     */
+    @Path("required-actions/{alias}/config")
+    @DELETE
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
+    @Operation( summary = "Delete RequiredAction configuration")
+    @APIResponse(responseCode = "204", description = "No Content")
+    public void removeRequiredActionConfig(@Parameter(description = "Alias of required action")  @PathParam("alias") String alias) {
+        auth.realm().requireManageRealm();
+
+        RequiredActionFactory factory = RequiredActionHelper.lookupConfigurableRequiredActionFactory(session, alias);
+        if (factory == null) {
+            throw new BadRequestException("RequiredAction is not configurable");
+        }
+
+        RequiredActionConfigModel config = realm.getRequiredActionConfigByAlias(alias);
+        if (config == null) {
+            throw new NotFoundException("Could not find RequiredAction config");
+        }
+        realm.removeRequiredActionProviderConfig(config);
+
+        adminEvent.operation(OperationType.DELETE) //
+                .resource(ResourceType.REQUIRED_ACTION_CONFIG) //
+                .resourcePath(session.getContext().getUri()) //
+                .success();
+    }
+
+    /**
+     * Update the configuration of the RequiredAction provider in the current Realm.
+     * @param alias provider id
+     * @param rep JSON describing new state of RequiredAction configuration
+     */
+    @Path("required-actions/{alias}/config")
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
+    @Operation( summary = "Update RequiredAction configuration")
+    @APIResponse(responseCode = "204", description = "No Content")
+    public void updateRequiredActionConfig(@Parameter(description = "Alias of required action")  @PathParam("alias") String alias, @Parameter(description = "JSON describing new state of required action configuration") RequiredActionConfigRepresentation rep) {
+        auth.realm().requireManageRealm();
+
+        RequiredActionFactory factory = RequiredActionHelper.lookupConfigurableRequiredActionFactory(session, alias);
+        if (factory == null) {
+            throw new BadRequestException("RequiredAction is not configurable");
+        }
+
+        RequiredActionConfigModel exists = realm.getRequiredActionConfigByAlias(alias);
+        if (exists == null) {
+            throw new NotFoundException("Could not find RequiredAction config");
+        }
+
+        exists.setConfig(RepresentationToModel.removeEmptyString(rep.getConfig()));
+        try {
+            realm.updateRequiredActionConfig(exists);
+            adminEvent.operation(OperationType.UPDATE) //
+                    .resource(ResourceType.REQUIRED_ACTION_CONFIG) //
+                    .resourcePath(session.getContext().getUri()) //
+                    .representation(rep) //
+                    .success();
+        } catch (ValidationException ve) {
+            List<ErrorRepresentation> errorReps = ve.getErrors().stream().map(err -> new ErrorRepresentation(err.getAttribute(), err.getMessage(), err.getMessageParameters())).toList();
+            throw ErrorResponse.errors(errorReps, Response.Status.BAD_REQUEST);
+        }
+    }
+
+    /**
      * Get authenticator provider's configuration description
+     * @param providerId The authenticator provider id
+     * @return The authenticator configuration representation
      */
     @Path("config-description/{providerId}")
     @GET
@@ -1287,7 +1485,8 @@ public class AuthenticationManagementResource {
     }
 
     /**
-     *  Get configuration descriptions for all clients
+     * Get configuration descriptions for all clients
+     * @return
      */
     @Path("per-client-config-description")
     @GET
@@ -1312,6 +1511,7 @@ public class AuthenticationManagementResource {
     /**
      * Create new authenticator configuration
      * @param rep JSON describing new authenticator configuration
+     * @return
      * @deprecated Use {@link #newExecutionConfig(String, AuthenticatorConfigRepresentation)} instead
      */
     @Path("config")
@@ -1320,6 +1520,8 @@ public class AuthenticationManagementResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
     @Operation( summary = "Create new authenticator configuration", deprecated = true)
+    @APIResponse(responseCode = "201", description = "Created")
+    @Deprecated
     public Response createAuthenticatorConfig(@Parameter(description = "JSON describing new authenticator configuration") AuthenticatorConfigRepresentation rep) {
         auth.realm().requireManageRealm();
 
@@ -1333,6 +1535,7 @@ public class AuthenticationManagementResource {
     /**
      * Get authenticator configuration
      * @param id Configuration id
+     * @return The authenticator configuration representation
      */
     @Path("config/{id}")
     @GET
@@ -1360,6 +1563,7 @@ public class AuthenticationManagementResource {
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
     @Operation( summary = "Delete authenticator configuration")
+    @APIResponse(responseCode = "204", description = "No Content")
     public void removeAuthenticatorConfig(@Parameter(description = "Configuration id") @PathParam("id") String id) {
         auth.realm().requireManageRealm();
 
@@ -1391,6 +1595,7 @@ public class AuthenticationManagementResource {
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
     @Operation( summary = "Update authenticator configuration")
+    @APIResponse(responseCode = "204", description = "No Content")
     public void updateAuthenticatorConfig(@Parameter(description = "Configuration id") @PathParam("id") String id, @Parameter(description = "JSON describing new state of authenticator configuration") AuthenticatorConfigRepresentation rep) {
         auth.realm().requireManageRealm();
 

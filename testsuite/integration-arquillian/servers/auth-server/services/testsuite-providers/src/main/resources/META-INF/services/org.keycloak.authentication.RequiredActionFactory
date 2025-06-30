@@ -16,3 +16,4 @@
 #
 
 org.keycloak.testsuite.actions.DummyRequiredActionFactory
+org.keycloak.testsuite.actions.DummyConfigurableRequiredActionFactory

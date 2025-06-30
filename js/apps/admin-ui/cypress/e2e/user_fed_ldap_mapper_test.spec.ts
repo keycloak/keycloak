@@ -264,7 +264,7 @@ describe("User Fed LDAP mapper tests", () => {
     providersPage.clickExistingCard(ldapName);
     providersPage.goToMappers();
     listingPage.searchItem(nonexistingSearchTerm, false);
-    cy.findByTestId(listingPage.emptyState).should("exist");
+    listingPage.assertNoResults();
   });
 
   // *** test cleanup ***

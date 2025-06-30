@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.page;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.logging.Logger;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.URLUtils;

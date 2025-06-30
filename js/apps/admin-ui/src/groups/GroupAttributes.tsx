@@ -8,8 +8,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import {
   AttributeForm,
@@ -21,6 +20,8 @@ import { useFetch } from "../utils/useFetch";
 import { getLastId } from "./groupIdUtils";
 
 export const GroupAttributes = () => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const form = useForm<AttributeForm>({

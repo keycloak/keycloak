@@ -17,23 +17,33 @@
 
 package org.keycloak.representations.idm;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class GroupRepresentation {
+    // For an individual group these are the sufficient minimum fields
+    // to identify a group and operate on it in a basic way
     protected String id;
     protected String name;
     protected String path;
+    protected String parentId;
+    protected Long subGroupCount;
+    // For navigating a hierarchy of groups, we can also include a minimum representation of subGroups
+    // These aren't populated by default and are only included as-needed
+    protected List<GroupRepresentation> subGroups;
     protected Map<String, List<String>>  attributes;
     protected List<String> realmRoles;
     protected Map<String, List<String>> clientRoles;
-    protected List<GroupRepresentation> subGroups;
+
     private Map<String, Boolean> access;
 
     public String getId() {
@@ -58,6 +68,22 @@ public class GroupRepresentation {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public String getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(String parentId) {
+        this.parentId = parentId;
+    }
+
+    public Long getSubGroupCount() {
+        return subGroupCount;
+    }
+
+    public void setSubGroupCount(Long subGroupCount) {
+        this.subGroupCount = subGroupCount;
     }
 
     public List<String> getRealmRoles() {
@@ -92,6 +118,9 @@ public class GroupRepresentation {
     }
 
     public List<GroupRepresentation> getSubGroups() {
+        if(subGroups == null) {
+            subGroups = new ArrayList<>();
+        }
         return subGroups;
     }
 
@@ -105,5 +134,50 @@ public class GroupRepresentation {
 
     public void setAccess(Map<String, Boolean> access) {
         this.access = access;
+    }
+
+    public void merge(GroupRepresentation g) {
+        merge(this, g);
+    }
+
+    private void merge(GroupRepresentation g1, GroupRepresentation g2) {
+        if(g1.equals(g2)) {
+            Map<String, GroupRepresentation> g1Children = g1.getSubGroups().stream().collect(Collectors.toMap(GroupRepresentation::getId, g -> g));
+            Map<String, GroupRepresentation> g2Children = g2.getSubGroups().stream().collect(Collectors.toMap(GroupRepresentation::getId, g -> g));
+
+            g2Children.forEach((key, value) -> {
+                if (g1Children.containsKey(key)) {
+                    merge(g1Children.get(key), value);
+                } else {
+                    g1Children.put(key, value);
+                }
+            });
+            g1.setSubGroups(new ArrayList<>(g1Children.values()));
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        GroupRepresentation that = (GroupRepresentation) o;
+        boolean isEqual = Objects.equals(id, that.id) && Objects.equals(parentId, that.parentId);
+        if(isEqual) {
+            return true;
+        } else {
+            return Objects.equals(name, that.name) && Objects.equals(path, that.path);
+        }
+    }
+
+    @Override
+    public int hashCode() {
+        if(id == null) {
+            return Objects.hash(name, path);
+        }
+        return Objects.hash(id, parentId);
     }
 }

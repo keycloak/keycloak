@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.saml;
 
+import java.util.Map;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
@@ -135,15 +136,17 @@ public class BrokerTest extends AbstractSamlTest {
         final ClientsResource clients = realm.clients();
 
         AuthenticationExecutionInfoRepresentation reviewProfileAuthenticator = null;
-        String firstBrokerLoginFlowAlias = null;
+        final String firstBrokerLoginFlowAlias = UUID.randomUUID().toString();
+
+        realm.flows().copy(realm.toRepresentation().getFirstBrokerLoginFlow(), Map.of("newName", firstBrokerLoginFlowAlias)).close();
+
         final IdentityProviderRepresentation rep = addIdentityProvider("https://saml.idp/saml");
+        rep.setFirstBrokerLoginFlowAlias(firstBrokerLoginFlowAlias);
         rep.getConfig().put(SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT, "undefined");
         rep.getConfig().put(SAMLIdentityProviderConfig.PRINCIPAL_TYPE, SamlPrincipalType.ATTRIBUTE.toString());
         rep.getConfig().put(SAMLIdentityProviderConfig.PRINCIPAL_ATTRIBUTE, "mail");
 
         try (IdentityProviderCreator idp = new IdentityProviderCreator(realm, rep)) {
-            IdentityProviderRepresentation idpRepresentation = idp.identityProvider().toRepresentation();
-            firstBrokerLoginFlowAlias = idpRepresentation.getFirstBrokerLoginFlowAlias();
             List<AuthenticationExecutionInfoRepresentation> executions = realm.flows().getExecutions(firstBrokerLoginFlowAlias);
             reviewProfileAuthenticator = executions.stream()
               .filter(ex -> Objects.equals(ex.getProviderId(), IdpReviewProfileAuthenticatorFactory.PROVIDER_ID))

@@ -22,6 +22,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
@@ -81,7 +82,7 @@ public class FallbackKeyProviderTest extends AbstractKeycloakTest {
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         providers = realmsResouce().realm("test").components().query(realmId, "org.keycloak.keys.KeyProvider");
-        assertProviders(providers, "fallback-RS256", "fallback-HS256");
+        assertProviders(providers, "fallback-RS256", "fallback-AES", "fallback-" + Constants.INTERNAL_SIGNATURE_ALGORITHM);
     }
 
     @Test
@@ -118,7 +119,7 @@ public class FallbackKeyProviderTest extends AbstractKeycloakTest {
         List<String> expected = new LinkedList<>();
         expected.add("rsa-generated");
         expected.add("rsa-enc-generated");
-        expected.add("hmac-generated");
+        expected.add("hmac-generated-hs512");
         expected.add("aes-generated");
 
         for (String a : algorithmsToTest) {

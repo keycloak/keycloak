@@ -23,6 +23,7 @@ import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
@@ -32,12 +33,16 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
-import org.keycloak.services.ForbiddenException;
+import org.keycloak.representations.idm.authorization.Permission;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+
+import jakarta.ws.rs.ForbiddenException;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -49,12 +54,19 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
     protected final RealmModel realm;
     protected final AuthorizationProvider authz;
     protected final MgmtPermissions root;
+    private final ResourceStore resourceStore;
+    private static final String RESOURCE_NAME_PREFIX = "role.resource.";
 
     public RolePermissions(KeycloakSession session, RealmModel realm, AuthorizationProvider authz, MgmtPermissions root) {
         this.session = session;
         this.realm = realm;
         this.authz = authz;
         this.root = root;
+        if (authz != null) {
+            resourceStore = authz.getStoreFactory().getResourceStore();
+        } else {
+            resourceStore = null;
+        }
     }
 
     @Override
@@ -75,17 +87,15 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         ResourceServer server = resourceServer(role);
         if (server == null) return;
 
-        RealmModel realm = server.getRealm();
-
         Policy policy = mapRolePermission(role);
-        if (policy != null) authz.getStoreFactory().getPolicyStore().delete(realm, policy.getId());
+        if (policy != null) authz.getStoreFactory().getPolicyStore().delete(policy.getId());
         policy = mapClientScopePermission(role);
-        if (policy != null) authz.getStoreFactory().getPolicyStore().delete(realm, policy.getId());
+        if (policy != null) authz.getStoreFactory().getPolicyStore().delete(policy.getId());
         policy = mapCompositePermission(role);
-        if (policy != null) authz.getStoreFactory().getPolicyStore().delete(realm, policy.getId());
+        if (policy != null) authz.getStoreFactory().getPolicyStore().delete(policy.getId());
 
         Resource resource = authz.getStoreFactory().getResourceStore().findByName(server, getRoleResourceName(role));
-        if (resource != null) authz.getStoreFactory().getResourceStore().delete(realm, resource.getId());
+        if (resource != null) authz.getStoreFactory().getResourceStore().delete(resource.getId());
     }
 
     @Override
@@ -529,6 +539,43 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         return Helper.createRolePolicy(authz, server, role, policyName);
     }
 
+    @Override
+    public Set<String> getRolesWithPermission(String scope) {
+        if (!root.isAdminSameRealm()) {
+            return Collections.emptySet();
+        }
+
+        ResourceServer server = root.realmResourceServer();
+
+        if (server == null) {
+            return Collections.emptySet();
+        }
+
+        Set<String> granted = new HashSet<>();
+
+        resourceStore.findByType(server, "Role", resource -> {
+            if (hasPermission(resource, scope)) {
+                granted.add(resource.getName().substring(RESOURCE_NAME_PREFIX.length()));
+            }
+        });
+
+        return granted;
+    }
+
+    private boolean hasPermission(Resource resource, String scope) {
+        ResourceServer server = root.realmResourceServer();
+        Collection<Permission> permissions = root.evaluatePermission(new ResourcePermission(resource, resource.getScopes(), server), server);
+        for (Permission permission : permissions) {
+            for (String s : permission.getScopes()) {
+                if (scope.equals(s)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     private Scope mapRoleScope(ResourceServer server) {
         return authz.getStoreFactory().getScopeStore().findByName(server, MAP_ROLE_SCOPE);
     }
@@ -607,6 +654,4 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
     private static String getRoleResourceName(RoleModel role) {
         return "role.resource." + role.getId();
     }
-
-
 }

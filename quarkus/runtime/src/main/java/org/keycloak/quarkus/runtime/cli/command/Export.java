@@ -20,6 +20,7 @@ package org.keycloak.quarkus.runtime.cli.command;
 import static org.keycloak.exportimport.ExportImportConfig.ACTION_EXPORT;
 
 import org.keycloak.config.OptionCategory;
+import org.keycloak.quarkus.runtime.configuration.mappers.ExportPropertyMappers;
 import picocli.CommandLine.Command;
 
 import java.util.List;
@@ -40,6 +41,12 @@ public final class Export extends AbstractExportImportCommand implements Runnabl
     public List<OptionCategory> getOptionCategories() {
         return super.getOptionCategories().stream().filter(optionCategory ->
                 optionCategory != OptionCategory.IMPORT).collect(Collectors.toList());
+    }
+
+    @Override
+    public void validateConfig() {
+        ExportPropertyMappers.validateConfig();
+        super.validateConfig();
     }
 
     @Override

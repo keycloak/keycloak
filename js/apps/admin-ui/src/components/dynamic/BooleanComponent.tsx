@@ -2,7 +2,7 @@ import { FormGroup, Switch } from "@patternfly/react-core";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "ui-shared";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import type { ComponentProps } from "./components";
 import { convertToName } from "./DynamicComponents";
 
@@ -40,7 +40,7 @@ export const BooleanComponent = ({
               field.value === true ||
               field.value?.[0] === "true"
             }
-            onChange={(value) => field.onChange("" + value)}
+            onChange={(_event, value) => field.onChange("" + value)}
             data-testid={name}
             aria-label={t(label!)}
           />

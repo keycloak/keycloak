@@ -1,13 +1,8 @@
-import {
-  AlertVariant,
-  DropdownItem,
-  DropdownSeparator,
-} from "@patternfly/react-core";
+import { AlertVariant, Divider, DropdownItem } from "@patternfly/react-core";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { Header } from "./Header";
@@ -25,6 +20,8 @@ export const ExtendedHeader = ({
   save,
   noDivider = false,
 }: ExtendedHeaderProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { addAlert, addError } = useAlerts();
@@ -148,7 +145,7 @@ export const ExtendedHeader = ({
           </DropdownItem>,
           <DropdownItem
             key="unlink"
-            isDisabled={editMode ? !editMode.includes("UNSYNCED") : false}
+            isDisabled={editMode ? editMode.includes("UNSYNCED") : false}
             onClick={toggleUnlinkUsersDialog}
           >
             {t("unlinkUsers")}
@@ -156,7 +153,7 @@ export const ExtendedHeader = ({
           <DropdownItem key="remove" onClick={toggleRemoveUsersDialog}>
             {t("removeImported")}
           </DropdownItem>,
-          <DropdownSeparator key="separator" />,
+          <Divider key="separator" />,
         ]}
       />
     </>

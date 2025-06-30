@@ -1,20 +1,15 @@
 import type PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
+import { SelectControl, TextControl } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
   Button,
   Dropdown,
-  DropdownToggle,
   Form,
-  FormGroup,
-  Select,
-  SelectOption,
-  SelectVariant,
+  MenuToggle,
 } from "@patternfly/react-core";
 import { useEffect } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import useToggle from "../../utils/useToggle";
 
 import "./search-dropdown.css";
@@ -32,26 +27,24 @@ type SearchDropdownProps = {
   types?: PolicyProviderRepresentation[] | PolicyProviderRepresentation[];
   search: SearchForm;
   onSearch: (form: SearchForm) => void;
-  isResource?: boolean;
+  type: "resource" | "policy" | "permission";
 };
 
 export const SearchDropdown = ({
   types,
   search,
   onSearch,
-  isResource = false,
+  type,
 }: SearchDropdownProps) => {
   const { t } = useTranslation();
+  const form = useForm<SearchForm>({ mode: "onChange" });
   const {
-    register,
-    control,
     reset,
     formState: { isDirty },
     handleSubmit,
-  } = useForm<SearchForm>({ mode: "onChange" });
+  } = form;
 
   const [open, toggle] = useToggle();
-  const [typeOpen, toggleType] = useToggle();
 
   const submit = (form: SearchForm) => {
     toggle();
@@ -60,132 +53,76 @@ export const SearchDropdown = ({
 
   useEffect(() => reset(search), [search]);
 
-  const typeOptions = (value?: string) => [
-    <SelectOption key="empty" value="">
-      {t("allTypes")}
-    </SelectOption>,
-    ...(types || []).map((type) => (
-      <SelectOption
-        selected={type.type === value}
-        key={type.type}
-        value={type.type}
-      >
-        {type.name}
-      </SelectOption>
-    )),
-  ];
-
   return (
     <Dropdown
-      data-testid="searchdropdown_dorpdown"
-      className="pf-u-ml-md"
-      toggle={
-        <DropdownToggle
-          onToggle={toggle}
+      onOpenChange={toggle}
+      toggle={(ref) => (
+        <MenuToggle
+          data-testid="searchdropdown_dorpdown"
+          ref={ref}
+          onClick={toggle}
           className="keycloak__client_authentication__searchdropdown"
         >
-          {t("searchForPermission")}
-        </DropdownToggle>
-      }
+          {type === "resource" && t("searchClientAuthorizationResource")}
+          {type === "policy" && t("searchClientAuthorizationPolicy")}
+          {type === "permission" && t("searchClientAuthorizationPermission")}
+        </MenuToggle>
+      )}
       isOpen={open}
     >
-      <Form
-        isHorizontal
-        className="keycloak__client_authentication__searchdropdown_form"
-        onSubmit={handleSubmit(submit)}
-      >
-        <FormGroup label={t("name")} fieldId="name">
-          <KeycloakTextInput
-            id="name"
-            data-testid="searchdropdown_name"
-            {...register("name")}
-          />
-        </FormGroup>
-        {isResource && (
-          <>
-            <FormGroup label={t("type")} fieldId="type">
-              <KeycloakTextInput
-                id="type"
-                data-testid="searchdropdown_type"
-                {...register("type")}
-              />
-            </FormGroup>
-            <FormGroup label={t("uris")} fieldId="uri">
-              <KeycloakTextInput
-                id="uri"
-                data-testid="searchdropdown_uri"
-                {...register("uri")}
-              />
-            </FormGroup>
-            <FormGroup label={t("owner")} fieldId="owner">
-              <KeycloakTextInput
-                id="owner"
-                data-testid="searchdropdown_owner"
-                {...register("owner")}
-              />
-            </FormGroup>
-          </>
-        )}
-        {!isResource && (
-          <FormGroup label={t("resource")} fieldId="resource">
-            <KeycloakTextInput
-              id="resource"
-              data-testid="searchdropdown_resource"
-              {...register("resource")}
-            />
-          </FormGroup>
-        )}
-        <FormGroup label={t("scope")} fieldId="scope">
-          <KeycloakTextInput
-            id="scope"
-            data-testid="searchdropdown_scope"
-            {...register("scope")}
-          />
-        </FormGroup>
-        {!isResource && (
-          <FormGroup label={t("type")} fieldId="type">
-            <Controller
+      <FormProvider {...form}>
+        <Form
+          isHorizontal
+          className="keycloak__client_authentication__searchdropdown_form"
+          onSubmit={handleSubmit(submit)}
+        >
+          <TextControl name="name" label={t("name")} />
+          {type === "resource" && (
+            <>
+              <TextControl name="type" label={t("type")} />
+              <TextControl name="uris" label={t("uris")} />
+              <TextControl name="owner" label={t("owner")} />
+            </>
+          )}
+          {type !== "resource" && type !== "policy" && (
+            <TextControl name="resource" label={t("resource")} />
+          )}
+          {type !== "policy" && <TextControl name="scope" label={t("scope")} />}
+          {type !== "resource" && (
+            <SelectControl
               name="type"
-              defaultValue=""
-              control={control}
-              render={({ field }) => (
-                <Select
-                  toggleId="type"
-                  onToggle={toggleType}
-                  onSelect={(event, value) => {
-                    event.stopPropagation();
-                    field.onChange(value);
-                    toggleType();
-                  }}
-                  selections={field.value || t("allTypes")}
-                  variant={SelectVariant.single}
-                  aria-label={t("type")}
-                  isOpen={typeOpen}
-                >
-                  {typeOptions(field.value)}
-                </Select>
-              )}
+              label={t("type")}
+              controller={{
+                defaultValue: "",
+              }}
+              options={[
+                { key: "", value: t("allTypes") },
+                ...(types || []).map(({ type, name }) => ({
+                  key: type!,
+                  value: name!,
+                })),
+              ]}
             />
-          </FormGroup>
-        )}
-        <ActionGroup>
-          <Button
-            variant="primary"
-            type="submit"
-            data-testid="search-btn"
-            isDisabled={!isDirty}
-          >
-            {t("search")}
-          </Button>
-          <Button
-            variant="link"
-            data-testid="revert-btn"
-            onClick={() => onSearch({})}
-          >
-            {t("clear")}
-          </Button>
-        </ActionGroup>
-      </Form>
+          )}
+          <ActionGroup>
+            <Button
+              variant="primary"
+              type="submit"
+              data-testid="search-btn"
+              isDisabled={!isDirty}
+            >
+              {t("search")}
+            </Button>
+            <Button
+              variant="link"
+              data-testid="revert-btn"
+              onClick={() => onSearch({})}
+            >
+              {t("clear")}
+            </Button>
+          </ActionGroup>
+        </Form>
+      </FormProvider>
     </Dropdown>
   );
 };

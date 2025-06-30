@@ -6,7 +6,6 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.keycloak.admin.client.CreatedResponseUtil;
 import org.keycloak.broker.provider.ConfigConstants;

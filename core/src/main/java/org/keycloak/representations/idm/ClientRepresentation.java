@@ -31,6 +31,7 @@ public class ClientRepresentation {
     protected String clientId;
     protected String name;
     protected String description;
+    protected String type;
     protected String rootUrl;
     protected String adminUrl;
     protected String baseUrl;
@@ -51,7 +52,6 @@ public class ClientRepresentation {
     protected Boolean implicitFlowEnabled;
     protected Boolean directAccessGrantsEnabled;
     protected Boolean serviceAccountsEnabled;
-    protected Boolean oauth2DeviceAuthorizationGrantEnabled;
     protected Boolean authorizationServicesEnabled;
     @Deprecated
     protected Boolean directGrantsOnly;
@@ -104,6 +104,14 @@ public class ClientRepresentation {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 
     public String getClientId() {

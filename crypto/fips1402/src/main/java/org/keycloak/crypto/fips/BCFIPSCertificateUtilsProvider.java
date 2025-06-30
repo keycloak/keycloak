@@ -67,7 +67,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * The Class CertificateUtils provides utility functions for generation of V1 and V3 {@link java.security.cert.X509Certificate}
+ * The Class CertificateUtils provides utility functions for generation of V1 and V3 {@link X509Certificate}
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @author <a href="mailto:giriraj.sharma27@gmail.com">Giriraj Sharma</a>
@@ -76,7 +76,7 @@ import java.util.List;
 public class BCFIPSCertificateUtilsProvider implements CertificateUtilsProvider{
 
     /**
-     * Generates version 3 {@link java.security.cert.X509Certificate}.
+     * Generates version 3 {@link X509Certificate}.
      *
      * @param keyPair the key pair
      * @param caPrivateKey the CA private key
@@ -114,7 +114,7 @@ public class BCFIPSCertificateUtilsProvider implements CertificateUtilsProvider{
 
             // Authority Key Identifier
             certGen.addExtension(Extension.authorityKeyIdentifier, false,
-                    x509ExtensionUtils.createAuthorityKeyIdentifier(subjPubKeyInfo));
+                    x509ExtensionUtils.createAuthorityKeyIdentifier(caCert));
 
             // Key Usage
             certGen.addExtension(Extension.keyUsage, false, new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyCertSign
@@ -141,7 +141,7 @@ public class BCFIPSCertificateUtilsProvider implements CertificateUtilsProvider{
     }
 
     /**
-     * Generate version 1 self signed {@link java.security.cert.X509Certificate}..
+     * Generate version 1 self signed {@link X509Certificate}..
      *
      * @param caKeyPair the CA key pair
      * @param subject the subject name
@@ -174,7 +174,7 @@ public class BCFIPSCertificateUtilsProvider implements CertificateUtilsProvider{
     }
 
     /**
-     * Creates the content signer for generation of Version 1 {@link java.security.cert.X509Certificate}.
+     * Creates the content signer for generation of Version 1 {@link X509Certificate}.
      *
      * @param privateKey the private key
      *
@@ -182,8 +182,23 @@ public class BCFIPSCertificateUtilsProvider implements CertificateUtilsProvider{
      */
     private ContentSigner createSigner(PrivateKey privateKey) {
         try {
-            JcaContentSignerBuilder signerBuilder = new JcaContentSignerBuilder("SHA256WithRSAEncryption")
-                    .setProvider(BouncyIntegration.PROVIDER);
+            JcaContentSignerBuilder signerBuilder;
+            switch (privateKey.getAlgorithm()) {
+                case "RSA": {
+                    signerBuilder = new JcaContentSignerBuilder("SHA256WithRSAEncryption")
+                            .setProvider(BouncyIntegration.PROVIDER);
+                    break;
+                }
+                case "EC": {
+                    signerBuilder = new JcaContentSignerBuilder("SHA256WithECDSA")
+                            .setProvider(BouncyIntegration.PROVIDER);
+                    break;
+
+                }
+                default: {
+                    throw new RuntimeException(String.format("Keytype %s is not supported.", privateKey.getAlgorithm()));
+                }
+            }
             return signerBuilder.build(privateKey);
         } catch (Exception e) {
             throw new RuntimeException("Could not create content signer.", e);

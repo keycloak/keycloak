@@ -3,27 +3,28 @@ import type ClientPolicyConditionRepresentation from "@keycloak/keycloak-admin-c
 import type ClientPolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientPolicyRepresentation";
 import type ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
 import {
+  HelpItem,
+  KeycloakSelect,
+  SelectVariant,
+} from "@keycloak/keycloak-ui-shared";
+import {
   ActionGroup,
   AlertVariant,
   Button,
   FormGroup,
   PageSection,
-  Select,
   SelectOption,
-  SelectVariant,
 } from "@patternfly/react-core";
 import { camelCase } from "lodash-es";
 import { useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useParams } from "react-router-dom";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../admin-client";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { DynamicComponents } from "../components/dynamic/DynamicComponents";
 import { FormAccess } from "../components/form/FormAccess";
-import { FormPanel } from "../components/scroll-form/FormPanel";
+import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { useFetch } from "../utils/useFetch";
@@ -38,12 +39,15 @@ type ConfigProperty = ConfigPropertyRepresentation & {
 };
 
 export default function NewClientPolicyCondition() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
   const { realm } = useRealm();
 
   const [openConditionType, setOpenConditionType] = useState(false);
+  const [isGlobalPolicy, setIsGlobalPolicy] = useState(false);
   const [policies, setPolicies] = useState<ClientPolicyRepresentation[]>([]);
 
   const [condition, setCondition] = useState<
@@ -72,15 +76,24 @@ export default function NewClientPolicyCondition() {
   };
 
   useFetch(
-    () => adminClient.clientPolicies.listPolicies(),
+    () =>
+      adminClient.clientPolicies.listPolicies({
+        includeGlobalPolicies: true,
+      }),
 
     (policies) => {
       setPolicies(policies.policies ?? []);
 
       if (conditionName) {
-        const currentPolicy = policies.policies?.find(
+        let currentPolicy = policies.policies?.find(
           (item) => item.name === policyName,
         );
+        if (currentPolicy === undefined) {
+          currentPolicy = policies.globalPolicies?.find(
+            (item) => item.name === policyName,
+          );
+          setIsGlobalPolicy(currentPolicy !== undefined);
+        }
 
         const typeAndConfigData = currentPolicy?.conditions?.find(
           (item) => item.condition === conditionName,
@@ -170,15 +183,23 @@ export default function NewClientPolicyCondition() {
   };
 
   return (
-    <PageSection variant="light">
-      <FormPanel
-        className="kc-login-screen"
-        title={conditionName ? t("editCondition") : t("addCondition")}
-      >
+    <>
+      <ViewHeader
+        titleKey={
+          conditionName
+            ? isGlobalPolicy
+              ? t("viewCondition")
+              : t("editCondition")
+            : t("addCondition")
+        }
+        divider
+      />
+      <PageSection variant="light">
         <FormAccess
           isHorizontal
           role="manage-realm"
-          className="pf-u-mt-lg"
+          isReadOnly={isGlobalPolicy}
+          className="pf-v5-u-mt-lg"
           onSubmit={form.handleSubmit(save)}
         >
           <FormGroup
@@ -200,14 +221,14 @@ export default function NewClientPolicyCondition() {
               defaultValue={"any-client"}
               control={form.control}
               render={({ field }) => (
-                <Select
+                <KeycloakSelect
                   placeholderText={t("selectACondition")}
                   className="kc-conditionType-select"
                   data-testid="conditionType-select"
                   toggleId="provider"
                   isDisabled={!!conditionName}
                   onToggle={(toggle) => setOpenConditionType(toggle)}
-                  onSelect={(_, value) => {
+                  onSelect={(value) => {
                     field.onChange(value);
                     setConditionProperties(
                       (value as ComponentTypeRepresentation).properties,
@@ -229,9 +250,7 @@ export default function NewClientPolicyCondition() {
                     <SelectOption
                       selected={condition.id === field.value}
                       description={t(
-                        `realm-settings-help:${camelCase(
-                          condition.id.replace(/-/g, " "),
-                        )}`,
+                        camelCase(condition.id.replace(/-/g, " ")),
                       )}
                       key={condition.id}
                       value={condition}
@@ -239,7 +258,7 @@ export default function NewClientPolicyCondition() {
                       {condition.id}
                     </SelectOption>
                   ))}
-                </Select>
+                </KeycloakSelect>
               )}
             />
           </FormGroup>
@@ -247,27 +266,48 @@ export default function NewClientPolicyCondition() {
           <FormProvider {...form}>
             <DynamicComponents properties={conditionProperties} />
           </FormProvider>
-          <ActionGroup>
-            <Button
-              variant="primary"
-              type="submit"
-              data-testid="addCondition-saveBtn"
-              isDisabled={conditionType === "" && !conditionName}
-            >
-              {conditionName ? t("save") : t("add")}
-            </Button>
-            <Button
-              variant="link"
-              data-testid="addCondition-cancelBtn"
-              onClick={() =>
-                navigate(toEditClientPolicy({ realm, policyName: policyName! }))
-              }
-            >
-              {t("cancel")}
-            </Button>
-          </ActionGroup>
+          {!isGlobalPolicy && (
+            <ActionGroup>
+              <Button
+                variant="primary"
+                type="submit"
+                data-testid="addCondition-saveBtn"
+                isDisabled={
+                  conditionType === "" && !conditionName && isGlobalPolicy
+                }
+              >
+                {conditionName ? t("save") : t("add")}
+              </Button>
+              <Button
+                variant="link"
+                data-testid="addCondition-cancelBtn"
+                onClick={() =>
+                  navigate(
+                    toEditClientPolicy({ realm, policyName: policyName! }),
+                  )
+                }
+              >
+                {t("cancel")}
+              </Button>
+            </ActionGroup>
+          )}
         </FormAccess>
-      </FormPanel>
-    </PageSection>
+        {isGlobalPolicy && (
+          <div className="kc-backToProfile">
+            <Button
+              component={(props) => (
+                <Link
+                  {...props}
+                  to={toEditClientPolicy({ realm, policyName: policyName! })}
+                />
+              )}
+              variant="primary"
+            >
+              {t("back")}
+            </Button>
+          </div>
+        )}
+      </PageSection>
+    </>
   );
 }

@@ -1,22 +1,19 @@
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
+import type GlobalRequestResult from "@keycloak/keycloak-admin-client/lib/defs/globalRequestResult";
 import { AlertVariant, PageSection, Text } from "@patternfly/react-core";
 import type { TFunction } from "i18next";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-import type GlobalRequestResult from "@keycloak/keycloak-admin-client/lib/defs/globalRequestResult";
-
+import { ScrollForm } from "@keycloak/keycloak-ui-shared";
 import type { AddAlertFunction } from "../components/alert/Alerts";
-import { ScrollForm } from "../components/scroll-form/ScrollForm";
 import { convertAttributeNameToForm, toUpperCase } from "../util";
+import type { FormFields, SaveOptions } from "./ClientDetails";
 import { AdvancedSettings } from "./advanced/AdvancedSettings";
 import { AuthenticationOverrides } from "./advanced/AuthenticationOverrides";
 import { ClusteringPanel } from "./advanced/ClusteringPanel";
 import { FineGrainOpenIdConnect } from "./advanced/FineGrainOpenIdConnect";
 import { FineGrainSamlEndpointConfig } from "./advanced/FineGrainSamlEndpointConfig";
 import { OpenIdConnectCompatibilityModes } from "./advanced/OpenIdConnectCompatibilityModes";
-import { RevocationPanel } from "./advanced/RevocationPanel";
-import type { FormFields, SaveOptions } from "./ClientDetails";
 
 export const parseResult = (
   result: GlobalRequestResult,
@@ -73,14 +70,10 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
   };
 
   return (
-    <PageSection variant="light" className="pf-u-py-0">
+    <PageSection variant="light" className="pf-v5-u-py-0">
       <ScrollForm
+        label={t("jumpToSection")}
         sections={[
-          {
-            title: t("revocation"),
-            isHidden: protocol !== openIdConnect,
-            panel: <RevocationPanel client={client} save={save} />,
-          },
           {
             title: t("clustering"),
             isHidden: !publicClient,
@@ -91,7 +84,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
             isHidden: protocol !== openIdConnect,
             panel: (
               <>
-                <Text className="pf-u-pb-lg">
+                <Text className="pf-v5-u-pb-lg">
                   {t("fineGrainOpenIdConnectConfigurationHelp")}
                 </Text>
                 <FineGrainOpenIdConnect
@@ -127,7 +120,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
             isHidden: protocol !== openIdConnect,
             panel: (
               <>
-                <Text className="pf-u-pb-lg">
+                <Text className="pf-v5-u-pb-lg">
                   {t("openIdConnectCompatibilityModesHelp")}
                 </Text>
                 <OpenIdConnectCompatibilityModes
@@ -149,7 +142,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
             isHidden: protocol === openIdConnect,
             panel: (
               <>
-                <Text className="pf-u-pb-lg">
+                <Text className="pf-v5-u-pb-lg">
                   {t("fineGrainSamlEndpointConfigHelp")}
                 </Text>
                 <FineGrainSamlEndpointConfig
@@ -176,7 +169,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
             title: t("advancedSettings"),
             panel: (
               <>
-                <Text className="pf-u-pb-lg">
+                <Text className="pf-v5-u-pb-lg">
                   {t("advancedSettings" + toUpperCase(protocol || ""))}
                 </Text>
                 <AdvancedSettings
@@ -198,7 +191,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
             title: t("authenticationOverrides"),
             panel: (
               <>
-                <Text className="pf-u-pb-lg">
+                <Text className="pf-v5-u-pb-lg">
                   {t("authenticationOverridesHelp")}
                 </Text>
                 <AuthenticationOverrides

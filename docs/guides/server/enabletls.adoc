@@ -4,26 +4,26 @@
 
 <@tmpl.guide
 title="Configuring TLS"
-summary="Learn how to configure Keycloak's https certificates for ingoing and outgoing requests as well as mTLS."
+summary="Learn how to configure {project_name}'s https certificates for ingoing and outgoing requests as well as mTLS."
 includedOptions="https-* http-enabled">
 
 Transport Layer Security (short: TLS) is crucial to exchange data over a secured channel.
-For production environments, you should never expose Keycloak endpoints through HTTP, as sensitive data is at the core of what Keycloak exchanges with other applications.
-In this {section}, you will learn how to configure Keycloak to use HTTPS/TLS.
+For production environments, you should never expose {project_name} endpoints through HTTP, as sensitive data is at the core of what {project_name} exchanges with other applications.
+In this {section}, you will learn how to configure {project_name} to use HTTPS/TLS.
 
-== Configuring TLS in Keycloak
-Keycloak can be configured to load the required certificate infrastructure using files in PEM format or from a Java Keystore.
+== Configuring TLS in {project_name}
+{project_name} can be configured to load the required certificate infrastructure using files in PEM format or from a Java Keystore.
 When both alternatives are configured, the PEM files takes precedence over the Java Keystores.
 
 === Providing certificates in PEM format
-When you use a pair of matching certificate and private key files in PEM format, you configure Keycloak to use them by running the following command:
+When you use a pair of matching certificate and private key files in PEM format, you configure {project_name} to use them by running the following command:
 
 <@kc.start parameters="--https-certificate-file=/path/to/certfile.pem --https-certificate-key-file=/path/to/keyfile.pem"/>
 
-Keycloak creates a keystore out of these files in memory and uses this keystore afterwards.
+{project_name} creates a keystore out of these files in memory and uses this keystore afterwards.
 
 === Providing a Java Keystore
-When no keystore file is explicitly configured, but `http-enabled` is set to false, Keycloak looks for a `conf/server.keystore` file.
+When no keystore file is explicitly configured, but `http-enabled` is set to false, {project_name} looks for a `conf/server.keystore` file.
 
 As an alternative, you can use an existing keystore by running the following command:
 <@kc.start parameters="--https-key-store-file=/path/to/existing-keystore-file"/>
@@ -35,7 +35,7 @@ You can set a secure password for your keystore using the `https-key-store-passw
 If no password is set, the default password `password` is used.
 
 == Configuring TLS protocols
-By default, Keycloak does not enable deprecated TLS protocols.
+By default, {project_name} does not enable deprecated TLS protocols.
 If your client supports only deprecated protocols, consider upgrading the client.
 However, as a temporary work-around, you can enable deprecated protocols by running the following command:
 
@@ -44,7 +44,7 @@ However, as a temporary work-around, you can enable deprecated protocols by runn
 To also allow TLSv1.2, use a command such as the following: `kc.sh start --https-protocols=TLSv1.3,TLSv1.2`.
 
 == Switching the HTTPS port
-Keycloak listens for HTTPS traffic on port `8443`. To change this port, use the following command:
+{project_name} listens for HTTPS traffic on port `8443`. To change this port, use the following command:
 <@kc.start parameters="--https-port=<port>"/>
 
 == Using a truststore
@@ -60,8 +60,8 @@ You can configure the location of this truststore by running the following comma
 
 <@kc.start parameters="--https-trust-store-file=/path/to/file"/>
 
-NOTE: This trust store is targeted for authenticating clients where Keycloak is acting as a server. For configuring a trust store
-where Keycloak is acting as a client to external services through TLS, see <@links.server id="keycloak-truststore"/>.
+NOTE: This trust store is targeted for authenticating clients where {project_name} is acting as a server. For configuring a trust store
+where {project_name} is acting as a client to external services through TLS, see <@links.server id="keycloak-truststore"/>.
 
 === Setting the truststore password
 You can set a secure password for your truststore using the `https-trust-store-password` option:
@@ -73,12 +73,16 @@ Avoid setting a password in plaintext by using the CLI or adding it to `conf/key
 Instead use good practices such as using a vault / mounted secret. For more detail, see <@links.server id="vault"/> and <@links.server id="configuration-production" />.
 
 == Enabling mutual TLS
-Authentication using mTLS is disabled by default. To enable mTLS certificate handling when Keycloak is the server and needs to validate certificates from requests made to Keycloaks endpoints, put the appropriate certificates in Keycloaks truststore and use the following command to enable mTLS:
+Authentication using mTLS is disabled by default. To enable mTLS certificate handling when {project_name} is the server and needs to validate certificates from requests made to {project_name} endpoints, put the appropriate certificates in {project_name} truststore and use the following command to enable mTLS:
 
 <@kc.start parameters="--https-client-auth=<none|request|required>"/>
 
-Using the value `required` sets up Keycloak to always ask for certificates and fail if no certificate is provided in a request. By setting the value to `request`, Keycloak will also accept requests without a certificate and only validate the correctness of a certificate if it exists.
+Using the value `required` sets up {project_name} to always ask for certificates and fail if no certificate is provided in a request. By setting the value to `request`, {project_name} will also accept requests without a certificate and only validate the correctness of a certificate if it exists.
 
-Be aware that this is the basic certificate configuration for mTLS use cases where Keycloak acts as server. When Keycloak acts as client instead, e.g. when Keycloak tries to get a token from a token endpoint of a brokered identity provider that is secured by mTLS, you need to set up the HttpClient to provide the right certificates in the keystore for the outgoing request. To configure mTLS in these scenarios, see <@links.server id="outgoinghttp"/>.
+Be aware that this is the basic certificate configuration for mTLS use cases where {project_name} acts as server. When {project_name} acts as client instead, e.g. when {project_name} tries to get a token from a token endpoint of a brokered identity provider that is secured by mTLS, you need to set up the HttpClient to provide the right certificates in the keystore for the outgoing request. To configure mTLS in these scenarios, see <@links.server id="outgoinghttp"/>.
+
+NOTE: Management interface properties are inherited from the main HTTP server, including mTLS settings.
+It means when mTLS is set, it is also enabled for the management interface.
+To override the behavior, use the `https-management-client-auth` property.
 
 </@tmpl.guide>

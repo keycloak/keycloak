@@ -237,6 +237,10 @@ It is also possible to change to a snapshot version by running:
 ./set-quarkus-version.sh
 ```
 
+After setting the version, please verify that:
+
+* `org.apache.maven` dependencies used by the test suite (and arquillian) are the same from the new Quarkus version 
+
 ### Run a local build
 
 After changing the dependency versions, you can run a local build to make sure the server extension is not broken by API changes and if

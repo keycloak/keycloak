@@ -23,6 +23,7 @@ import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
 import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
+import org.keycloak.dom.saml.v2.protocol.StatusType;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
@@ -39,12 +40,18 @@ import org.w3c.dom.Document;
 public class SAML2ErrorResponseBuilder implements SamlProtocolExtensionsAwareBuilder<SAML2ErrorResponseBuilder> {
 
     protected String status;
+    protected String statusMessage;
     protected String destination;
     protected NameIDType issuer;
     protected final List<NodeGenerator> extensions = new LinkedList<>();
 
     public SAML2ErrorResponseBuilder status(String status) {
         this.status = status;
+        return this;
+    }
+
+    public SAML2ErrorResponseBuilder statusMessage(String statusMessage) {
+        this.statusMessage = statusMessage;
         return this;
     }
 
@@ -73,7 +80,9 @@ public class SAML2ErrorResponseBuilder implements SamlProtocolExtensionsAwareBui
         try {
             StatusResponseType statusResponse = new ResponseType(IDGenerator.create("ID_"), XMLTimeUtil.getIssueInstant());
 
-            statusResponse.setStatus(JBossSAMLAuthnResponseFactory.createStatusTypeForResponder(status));
+            StatusType statusType = JBossSAMLAuthnResponseFactory.createStatusTypeForResponder(status);
+            statusType.setStatusMessage(statusMessage);
+            statusResponse.setStatus(statusType);
             statusResponse.setIssuer(issuer);
             statusResponse.setDestination(destination);
 

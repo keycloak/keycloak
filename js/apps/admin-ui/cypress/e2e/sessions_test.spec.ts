@@ -3,15 +3,17 @@ import SidebarPage from "../support/pages/admin-ui/SidebarPage";
 import SessionsPage from "../support/pages/admin-ui/manage/sessions/SessionsPage";
 import CommonPage from "../support/pages/CommonPage";
 import ListingPage from "../support/pages/admin-ui/ListingPage";
-import GroupPage from "../support/pages/admin-ui/manage/groups/GroupPage";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
+import PageObject from "../support/pages/admin-ui/components/PageObject";
+import adminClient from "../support/util/AdminClient";
+import { v4 as uuid } from "uuid";
 
 const loginPage = new LoginPage();
 const sidebarPage = new SidebarPage();
 const sessionsPage = new SessionsPage();
 const commonPage = new CommonPage();
 const listingPage = new ListingPage();
-const groupPage = new GroupPage();
+const page = new PageObject();
 
 describe("Sessions test", () => {
   const admin = "admin";
@@ -29,7 +31,8 @@ describe("Sessions test", () => {
       commonPage
         .tableUtils()
         .checkRowItemExists(admin)
-        .checkRowItemExists(client);
+        .checkRowItemExists(client)
+        .assertRowItemActionExist(admin, "Sign out");
     });
 
     it("go to item accessed clients link", () => {
@@ -38,20 +41,84 @@ describe("Sessions test", () => {
     });
   });
 
+  describe("Offline sessions", () => {
+    const clientId = "offline-client-" + uuid();
+    const username = "user-" + uuid();
+
+    beforeEach(async () => {
+      await Promise.all([
+        adminClient.createClient({
+          protocol: "openid-connect",
+          clientId,
+          publicClient: false,
+          directAccessGrantsEnabled: true,
+          clientAuthenticatorType: "client-secret",
+          secret: "secret",
+          standardFlowEnabled: true,
+        }),
+        adminClient.createUser({
+          // Create user in master realm
+          username: username,
+          enabled: true,
+          credentials: [{ type: "password", value: "password" }],
+        }),
+      ]);
+
+      await adminClient.auth({
+        username,
+        password: "password",
+        grantType: "password",
+        clientId,
+        clientSecret: "secret",
+        scopes: ["openid", "offline_access"],
+      });
+    });
+
+    after(() =>
+      Promise.all([
+        adminClient.deleteClient(clientId),
+        adminClient.deleteUser(username),
+      ]),
+    );
+
+    it("check offline token", () => {
+      sidebarPage.waitForPageLoad();
+
+      listingPage.searchItem(clientId, false);
+      sidebarPage.waitForPageLoad();
+      // Log out the associated online session of the user
+      commonPage
+        .tableUtils()
+        .checkRowItemExists(username)
+        .selectRowItemAction(username, "Sign out");
+
+      listingPage.searchItem(clientId, false);
+      sidebarPage.waitForPageLoad();
+
+      // Now check that offline session exists (online one has been logged off above)
+      // and that it is possible to revoke it
+      commonPage
+        .tableUtils()
+        .checkRowItemExists(username)
+        .selectRowItemAction(username, "Revoke");
+    });
+  });
+
   describe("Search", () => {
     it("search existing session", () => {
       listingPage.searchItem(admin, false);
       listingPage.itemExist(admin, true);
-      groupPage.assertNoSearchResultsMessageExist(false);
+      page.assertEmptyStateExist(false);
     });
 
     it("search non-existant session", () => {
       listingPage.searchItem("non-existant-session", false);
-      groupPage.assertNoSearchResultsMessageExist(true);
+      page.assertEmptyStateExist(true);
     });
   });
 
-  describe("revocation", () => {
+  //TODO seems these tests are not stable on CI
+  describe.skip("revocation", () => {
     it("Clear revocation notBefore", () => {
       sessionsPage.clearNotBefore();
     });

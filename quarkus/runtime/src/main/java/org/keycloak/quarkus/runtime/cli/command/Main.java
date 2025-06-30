@@ -21,12 +21,15 @@ import static org.keycloak.quarkus.runtime.cli.Picocli.NO_PARAM_LABEL;
 
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
-import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.quarkus.runtime.configuration.KeycloakPropertiesConfigSource;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
+import picocli.CommandLine.ScopeType;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 @Command(name = "keycloak",
         header = {
@@ -87,7 +90,8 @@ public final class Main {
 
     @Option(names = { "-v", "--verbose" },
             description = "Print out error details when running this command.",
-            paramLabel = NO_PARAM_LABEL)
+            paramLabel = NO_PARAM_LABEL,
+            scope = ScopeType.INHERIT)
     public void setVerbose(boolean verbose) {
         ExecutionExceptionHandler exceptionHandler = (ExecutionExceptionHandler) spec.commandLine().getExecutionExceptionHandler();
         exceptionHandler.setVerbose(verbose);
@@ -105,6 +109,10 @@ public final class Main {
             description = "Set the path to a configuration file. By default, configuration properties are read from the \"keycloak.conf\" file in the \"conf\" directory.",
             paramLabel = "file")
     public void setConfigFile(String path) {
+        if (Files.notExists(Path.of(path))) {
+            throw new CommandLine.ParameterException(spec.commandLine(),
+                    String.format("File specified via '%s' or '%s' option does not exist.", CONFIG_FILE_LONG_NAME, CONFIG_FILE_SHORT_NAME));
+        }
         System.setProperty(KeycloakPropertiesConfigSource.KEYCLOAK_CONFIG_FILE_PROP, path);
     }
 }

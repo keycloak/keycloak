@@ -50,6 +50,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.matchesRegex;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT;
@@ -343,6 +344,30 @@ public class BasicSamlTest extends AbstractSamlTest {
                         return EntityUtils.toString(response.getEntity(), "UTF-8");
                     });
             assertThat(page, containsString("Invalid redirect uri"));
+        }
+    }
+
+    @Test
+    public void testConsumerServiceURLHtmlEntities() throws IOException {
+        try (var c = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_SALES_POST)
+                .setRedirectUris(Collections.singletonList("*"))
+                .update()) {
+
+            String action = new SamlClientBuilder()
+                    .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, "javascript&colon;alert('xss');", Binding.POST)
+                    .build()
+                    .login().user(bburkeUser).build()
+                    .executeAndTransform(response -> {
+                        assertThat(response, statusCodeIsHC(Response.Status.OK));
+                        String responsePage = EntityUtils.toString(response.getEntity(), "UTF-8");
+                        return SamlClient.extractFormFromPostResponse(responsePage)
+                                .attributes().asList().stream()
+                                .filter(a -> "action".equalsIgnoreCase(a.getKey()))
+                                .map(org.jsoup.nodes.Attribute::getValue)
+                                .findAny().orElse(null);
+                    });
+            // if not encoded properly jsoup returns ":" instead of "&colon;"
+            assertThat(action, endsWith("javascript&colon;alert('xss');"));
         }
     }
 }

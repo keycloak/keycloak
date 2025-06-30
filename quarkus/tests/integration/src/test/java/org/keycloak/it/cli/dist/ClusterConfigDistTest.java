@@ -30,7 +30,7 @@ import org.junit.jupiter.api.condition.OS;
 import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.LegacyStore;
+import org.keycloak.it.junit5.extension.Storage;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
 
@@ -39,7 +39,7 @@ import io.quarkus.test.junit.main.LaunchResult;
 
 @DistributionTest(reInstall = DistributionTest.ReInstall.BEFORE_TEST)
 @RawDistOnly(reason = "Not possible to mount files using docker.")
-@LegacyStore(defaultLocalCache = false)
+@Storage(defaultLocalCache = false)
 public class ClusterConfigDistTest {
 
     @Test
@@ -50,7 +50,7 @@ public class ClusterConfigDistTest {
     }
 
     @Test
-    @Launch({ "build", "--cache-config-file=invalid" })
+    @Launch({ "start-dev", "--cache-config-file=invalid" })
     void failInvalidClusterConfig(LaunchResult result) {
         assertTrue(result.getErrorOutput().contains("ERROR: Could not load cluster configuration file"));
     }
@@ -62,9 +62,9 @@ public class ClusterConfigDistTest {
     }
 
     @Test
-    @Launch({ "build", "--cache-stack=invalid" })
+    @Launch({ "start-dev", "--cache=ispn", "--cache-stack=invalid" })
     void failInvalidClusterStack(LaunchResult result) {
-        assertTrue(result.getErrorOutput().contains("Invalid value for option '--cache-stack': invalid. Expected values are: tcp, udp, kubernetes, ec2, azure, google"));
+        assertTrue(result.getOutput().contains("No such JGroups stack 'invalid'"));
     }
 
     @Test

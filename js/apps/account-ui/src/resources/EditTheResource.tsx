@@ -1,9 +1,13 @@
-import { Button, Form, FormGroup, Modal } from "@patternfly/react-core";
+import { Button, Form, Modal } from "@patternfly/react-core";
 import { Fragment, useEffect } from "react";
 import { FormProvider, useFieldArray, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { KeycloakTextInput, SelectControl, useAlerts } from "ui-shared";
+import {
+  SelectControl,
+  TextControl,
+  useAlerts,
+  useEnvironment,
+} from "@keycloak/keycloak-ui-shared";
 import { updatePermissions } from "../api";
 import type { Permission, Resource } from "../api/representations";
 
@@ -23,10 +27,11 @@ export const EditTheResource = ({
   onClose,
 }: EditTheResourceProps) => {
   const { t } = useTranslation();
+  const context = useEnvironment();
   const { addAlert, addError } = useAlerts();
 
   const form = useForm<FormValues>();
-  const { control, register, reset, handleSubmit } = form;
+  const { control, reset, handleSubmit } = form;
 
   const { fields } = useFieldArray<FormValues>({
     control,
@@ -39,7 +44,7 @@ export const EditTheResource = ({
     try {
       await Promise.all(
         permissions.map((permission) =>
-          updatePermissions(resource._id, [permission]),
+          updatePermissions(context, resource._id, [permission]),
         ),
       );
       addAlert(t("updateSuccess"));
@@ -71,25 +76,21 @@ export const EditTheResource = ({
         <FormProvider {...form}>
           {fields.map((p, index) => (
             <Fragment key={p.id}>
-              <FormGroup label={t("user")} fieldId={`user-${p.id}`}>
-                <KeycloakTextInput
-                  id={`user-${p.id}`}
-                  type="text"
-                  {...register(`permissions.${index}.username`)}
-                  isDisabled
-                />
-              </FormGroup>
+              <TextControl
+                name={`permissions.${index}.username`}
+                label={t("user")}
+                isDisabled
+              />
               <SelectControl
                 id={`permissions-${p.id}`}
                 name={`permissions.${index}.scopes`}
                 label="permissions"
-                variant="typeaheadmulti"
+                variant="typeaheadMulti"
                 controller={{ defaultValue: [] }}
                 options={resource.scopes.map(({ name, displayName }) => ({
                   key: name,
                   value: displayName || name,
                 }))}
-                menuAppendTo="parent"
               />
             </Fragment>
           ))}

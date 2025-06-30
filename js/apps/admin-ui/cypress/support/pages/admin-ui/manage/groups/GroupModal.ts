@@ -2,7 +2,7 @@ import ModalUtils from "../../../../util/ModalUtils";
 
 export default class GroupModal extends ModalUtils {
   #createGroupModalTitle = "Create a group";
-  #groupNameInput = "groupNameInput";
+  #groupNameInput = "name";
   #createGroupBnt = "createGroup";
   #renameButton = "renameGroup";
 

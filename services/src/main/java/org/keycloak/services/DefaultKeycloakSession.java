@@ -67,7 +67,7 @@ import java.util.stream.Collectors;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class DefaultKeycloakSession implements KeycloakSession {
+public abstract class DefaultKeycloakSession implements KeycloakSession {
 
     private final DefaultKeycloakSessionFactory factory;
     private final Map<Integer, Provider> providers = new HashMap<>();
@@ -253,6 +253,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
         return provider;
     }
 
+    @Override
     public <T extends Provider> Set<String> listProviderIds(Class<T> clazz) {
         return factory.getAllProviderIds(clazz);
     }
@@ -418,9 +419,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
         return String.format("session @ %08x", System.identityHashCode(this));
     }
 
-    protected DefaultKeycloakContext createKeycloakContext(KeycloakSession session) {
-        return new DefaultKeycloakContext(session);
-    }
+    protected abstract DefaultKeycloakContext createKeycloakContext(KeycloakSession session);
 
     public boolean isClosed() {
         return closed;

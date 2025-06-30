@@ -1,28 +1,48 @@
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
-import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import {
+  FormErrorText,
+  HelpItem,
+  KeycloakSelect,
+  SelectControl,
+  SelectVariant,
+} from "@keycloak/keycloak-ui-shared";
+import {
+  Alert,
+  Button,
   Divider,
   FormGroup,
+  Grid,
+  GridItem,
   Radio,
-  Select,
   SelectOption,
-  SelectVariant,
   Switch,
+  TextInput,
 } from "@patternfly/react-core";
+import { GlobeRouteIcon } from "@patternfly/react-icons";
 import { isEqual } from "lodash-es";
-import { useState } from "react";
-import { Controller, useFormContext, useWatch } from "react-hook-form";
+import { useEffect, useState } from "react";
+import {
+  Controller,
+  FormProvider,
+  useFormContext,
+  useWatch,
+} from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../../../admin-client";
+import { useAdminClient } from "../../../admin-client";
 import { FormAccess } from "../../../components/form/FormAccess";
 import { KeycloakSpinner } from "../../../components/keycloak-spinner/KeycloakSpinner";
-import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
+import { useRealm } from "../../../context/realm-context/RealmContext";
 import { useFetch } from "../../../utils/useFetch";
 import { useParams } from "../../../utils/useParams";
+import useToggle from "../../../utils/useToggle";
 import { USERNAME_EMAIL } from "../../NewAttributeSettings";
-import type { AttributeParams } from "../../routes/Attribute";
+import { AttributeParams } from "../../routes/Attribute";
+import {
+  AddTranslationsDialog,
+  TranslationsType,
+} from "./AddTranslationsDialog";
+import { DefaultSwitchControl } from "../../../components/SwitchControl";
 
 import "../../realm-settings-section.css";
 
@@ -32,18 +52,57 @@ const REQUIRED_FOR = [
   { label: "requiredForLabel.admins", value: ["admin"] },
 ] as const;
 
-export const AttributeGeneralSettings = () => {
+type TranslationForm = {
+  locale: string;
+  value: string;
+};
+
+type Translations = {
+  key: string;
+  translations: TranslationForm[];
+};
+
+export type AttributeGeneralSettingsProps = {
+  onHandlingTranslationData: (data: Translations) => void;
+  onHandlingGeneratedDisplayName: (displayName: string) => void;
+};
+
+export const AttributeGeneralSettings = ({
+  onHandlingTranslationData,
+  onHandlingGeneratedDisplayName,
+}: AttributeGeneralSettingsProps) => {
+  const { adminClient } = useAdminClient();
   const { t } = useTranslation();
+  const { realmRepresentation: realm } = useRealm();
   const form = useFormContext();
   const [clientScopes, setClientScopes] =
     useState<ClientScopeRepresentation[]>();
   const [config, setConfig] = useState<UserProfileConfig>();
   const [selectEnabledWhenOpen, setSelectEnabledWhenOpen] = useState(false);
   const [selectRequiredForOpen, setSelectRequiredForOpen] = useState(false);
-  const [isAttributeGroupDropdownOpen, setIsAttributeGroupDropdownOpen] =
-    useState(false);
+  const [addTranslationsModalOpen, toggleModal] = useToggle();
   const { attributeName } = useParams<AttributeParams>();
   const editMode = attributeName ? true : false;
+  const [newAttributeName, setNewAttributeName] = useState("");
+  const [generatedDisplayName, setGeneratedDisplayName] = useState("");
+  const [type, setType] = useState<TranslationsType>();
+  const [translationsData, setTranslationsData] = useState<Translations>({
+    key: "",
+    translations: [],
+  });
+  const displayNameRegex = /\$\{([^}]+)\}/;
+
+  const handleAttributeNameChange = (
+    _event: React.FormEvent<HTMLInputElement>,
+    value: string,
+  ) => {
+    setNewAttributeName(value);
+    const newDisplayName =
+      value !== "" && realm?.internationalizationEnabled
+        ? "${profile.attributes." + `${value}}`
+        : "";
+    setGeneratedDisplayName(newDisplayName);
+  };
 
   const hasSelector = useWatch({
     control: form.control,
@@ -61,8 +120,28 @@ export const AttributeGeneralSettings = () => {
     defaultValue: false,
   });
 
+  const attributeDisplayName = useWatch({
+    control: form.control,
+    name: "displayName",
+  });
+
+  const displayNamePatternMatch = displayNameRegex.test(attributeDisplayName);
+
   useFetch(() => adminClient.clientScopes.find(), setClientScopes, []);
   useFetch(() => adminClient.users.getProfile(), setConfig, []);
+
+  const handleTranslationsData = (translationsData: Translations) => {
+    onHandlingTranslationData(translationsData);
+  };
+
+  const handleGeneratedDisplayName = (displayName: string) => {
+    onHandlingGeneratedDisplayName(displayName);
+  };
+
+  useEffect(() => {
+    handleTranslationsData(translationsData);
+    handleGeneratedDisplayName(generatedDisplayName);
+  }, [translationsData, generatedDisplayName]);
 
   if (!clientScopes) {
     return <KeycloakSpinner />;
@@ -76,258 +155,185 @@ export const AttributeGeneralSettings = () => {
     form.setValue("hasRequiredScopes", hasRequiredScopes);
   }
 
-  return (
-    <FormAccess role="manage-realm" isHorizontal>
-      <FormGroup
-        label={t("attributeName")}
-        labelIcon={
-          <HelpItem
-            helpText={t("attributeNameHelp")}
-            fieldLabelId="attributeName"
-          />
-        }
-        fieldId="kc-attribute-name"
-        isRequired
-        validated={form.formState.errors.name ? "error" : "default"}
-        helperTextInvalid={t("validateAttributeName")}
-      >
-        <KeycloakTextInput
-          isRequired
-          id="kc-attribute-name"
-          defaultValue=""
-          data-testid="attribute-name"
-          isDisabled={editMode}
-          validated={form.formState.errors.name ? "error" : "default"}
-          {...form.register("name", { required: true })}
-        />
-      </FormGroup>
-      <FormGroup
-        label={t("attributeDisplayName")}
-        labelIcon={
-          <HelpItem
-            helpText={t("attributeDisplayNameHelp")}
-            fieldLabelId="attributeDisplayName"
-          />
-        }
-        fieldId="kc-attribute-display-name"
-      >
-        <KeycloakTextInput
-          id="kc-attribute-display-name"
-          defaultValue=""
-          data-testid="attribute-display-name"
-          {...form.register("displayName")}
-        />
-      </FormGroup>
-      <FormGroup
-        label={t("attributeGroup")}
-        labelIcon={
-          <HelpItem
-            helpText={t("attributeGroupHelp")}
-            fieldLabelId="realm-setting:attributeGroup"
-          />
-        }
-        fieldId="kc-attribute-group"
-      >
-        <Controller
-          name="group"
-          defaultValue=""
-          control={form.control}
-          render={({ field }) => (
-            <Select
-              toggleId="kc-attributeGroup"
-              onToggle={() =>
-                setIsAttributeGroupDropdownOpen(!isAttributeGroupDropdownOpen)
-              }
-              isOpen={isAttributeGroupDropdownOpen}
-              onSelect={(_, value) => {
-                field.onChange(value.toString());
-                setIsAttributeGroupDropdownOpen(false);
-              }}
-              selections={[field.value || t("none")]}
-              variant={SelectVariant.single}
-            >
-              {[
-                <SelectOption key="empty" value="">
-                  {t("none")}
-                </SelectOption>,
-                ...(config?.groups?.map((group) => (
-                  <SelectOption key={group.name} value={group.name}>
-                    {group.name}
-                  </SelectOption>
-                )) || []),
-              ]}
-            </Select>
-          )}
-        ></Controller>
-      </FormGroup>
-      {!USERNAME_EMAIL.includes(attributeName) && (
-        <>
-          <Divider />
-          <FormGroup
-            label={t("enabledWhen")}
-            fieldId="enabledWhen"
-            hasNoPaddingTop
-          >
-            <Radio
-              id="always"
-              data-testid="always"
-              isChecked={!hasSelector}
-              name="enabledWhen"
-              label={t("always")}
-              onChange={() => setHasSelector(false)}
-              className="pf-u-mb-md"
-            />
-            <Radio
-              id="scopesAsRequested"
-              data-testid="scopesAsRequested"
-              isChecked={hasSelector}
-              name="enabledWhen"
-              label={t("scopesAsRequested")}
-              onChange={() => setHasSelector(true)}
-              className="pf-u-mb-md"
-            />
-          </FormGroup>
-          {hasSelector && (
-            <FormGroup fieldId="kc-scope-enabled-when">
-              <Controller
-                name="selector.scopes"
-                control={form.control}
-                defaultValue={[]}
-                render={({ field }) => (
-                  <Select
-                    name="scopes"
-                    data-testid="enabled-when-scope-field"
-                    variant={SelectVariant.typeaheadMulti}
-                    typeAheadAriaLabel="Select"
-                    chipGroupProps={{
-                      numChips: 3,
-                      expandedText: t("hide"),
-                      collapsedText: t("showRemaining"),
-                    }}
-                    onToggle={(isOpen) => setSelectEnabledWhenOpen(isOpen)}
-                    selections={field.value}
-                    onSelect={(_, selectedValue) => {
-                      const option = selectedValue.toString();
-                      let changedValue = [""];
-                      if (field.value) {
-                        changedValue = field.value.includes(option)
-                          ? field.value.filter(
-                              (item: string) => item !== option,
-                            )
-                          : [...field.value, option];
-                      } else {
-                        changedValue = [option];
-                      }
+  const handleTranslationsAdded = (translationsData: Translations) => {
+    setTranslationsData(translationsData);
+  };
 
-                      field.onChange(changedValue);
-                    }}
-                    onClear={(selectedValues) => {
-                      selectedValues.stopPropagation();
-                      field.onChange([]);
-                    }}
-                    isOpen={selectEnabledWhenOpen}
-                    aria-labelledby={"scope"}
-                  >
-                    {clientScopes.map((option) => (
-                      <SelectOption key={option.name} value={option.name} />
-                    ))}
-                  </Select>
-                )}
-              />
-            </FormGroup>
-          )}
-          <Divider />
+  const handleToggleDialog = () => {
+    toggleModal();
+    handleTranslationsData(translationsData);
+    handleGeneratedDisplayName(generatedDisplayName);
+  };
+
+  const formattedAttributeDisplayName = attributeDisplayName?.substring(
+    2,
+    attributeDisplayName.length - 1,
+  );
+
+  return (
+    <>
+      {addTranslationsModalOpen && (
+        <AddTranslationsDialog
+          translationKey={
+            editMode
+              ? formattedAttributeDisplayName
+              : `profile.attributes.${newAttributeName}`
+          }
+          translations={translationsData}
+          type={type ?? "displayName"}
+          onTranslationsAdded={handleTranslationsAdded}
+          toggleDialog={handleToggleDialog}
+          onCancel={() => {
+            toggleModal();
+          }}
+        />
+      )}
+      <FormAccess role="manage-realm" isHorizontal>
+        <FormProvider {...form}>
           <FormGroup
-            label={t("required")}
+            label={t("attributeName")}
             labelIcon={
-              <HelpItem helpText={t("requiredHelp")} fieldLabelId="required" />
+              <HelpItem
+                helpText={t("upAttributeNameHelp")}
+                fieldLabelId="attributeName"
+              />
             }
-            fieldId="kc-required"
-            hasNoPaddingTop
+            fieldId="kc-attribute-name"
+            isRequired
           >
-            <Controller
-              name="isRequired"
-              data-testid="required"
-              defaultValue={false}
-              control={form.control}
-              render={({ field }) => (
-                <Switch
-                  id={"kc-required"}
-                  onChange={field.onChange}
-                  isChecked={field.value}
-                  label={t("on")}
-                  labelOff={t("off")}
-                  aria-label={t("required")}
-                />
-              )}
+            <TextInput
+              isRequired
+              id="kc-attribute-name"
+              defaultValue=""
+              data-testid="attribute-name"
+              isDisabled={editMode}
+              validated={form.formState.errors.name ? "error" : "default"}
+              {...form.register("name", { required: true })}
+              onChange={handleAttributeNameChange}
             />
+            {form.formState.errors.name && (
+              <FormErrorText message={t("validateAttributeName")} />
+            )}
           </FormGroup>
-          {required && (
+          <FormGroup
+            label={t("attributeDisplayName")}
+            labelIcon={
+              <HelpItem
+                helpText={t("attributeDisplayNameHelp")}
+                fieldLabelId="attributeDisplayName"
+              />
+            }
+            fieldId="kc-attribute-display-name"
+          >
+            <Grid hasGutter>
+              <GridItem span={realm?.internationalizationEnabled ? 11 : 12}>
+                <TextInput
+                  id="kc-attribute-display-name"
+                  data-testid="attribute-display-name"
+                  isDisabled={
+                    (realm?.internationalizationEnabled &&
+                      newAttributeName !== "") ||
+                    (editMode && displayNamePatternMatch)
+                  }
+                  value={
+                    editMode
+                      ? attributeDisplayName
+                      : realm?.internationalizationEnabled
+                        ? generatedDisplayName
+                        : undefined
+                  }
+                  {...form.register("displayName")}
+                />
+                {generatedDisplayName && (
+                  <Alert
+                    className="pf-v5-u-mt-sm"
+                    variant="info"
+                    isInline
+                    isPlain
+                    title={t("addAttributeTranslationInfo")}
+                  />
+                )}
+              </GridItem>
+              {realm?.internationalizationEnabled && (
+                <GridItem span={1}>
+                  <Button
+                    variant="link"
+                    className="pf-m-plain kc-attribute-display-name-iconBtn"
+                    data-testid="addAttributeTranslationBtn"
+                    aria-label={t("addAttributeTranslationBtn")}
+                    isDisabled={!newAttributeName && !editMode}
+                    onClick={() => {
+                      setType("displayName");
+                      toggleModal();
+                    }}
+                    icon={<GlobeRouteIcon />}
+                  />
+                </GridItem>
+              )}
+            </Grid>
+          </FormGroup>
+          <DefaultSwitchControl
+            name="multivalued"
+            label={t("multivalued")}
+            labelIcon={t("multivaluedHelp")}
+          />
+          <SelectControl
+            name="group"
+            label={t("attributeGroup")}
+            labelIcon={t("attributeGroupHelp")}
+            controller={{
+              defaultValue: "",
+            }}
+            options={[
+              { key: "", value: t("none") },
+              ...(config?.groups?.map((g) => ({
+                key: g.name!,
+                value: g.name!,
+              })) || []),
+            ]}
+          />
+          {!USERNAME_EMAIL.includes(attributeName) && (
             <>
+              <Divider />
               <FormGroup
-                label={t("requiredFor")}
-                fieldId="requiredFor"
-                hasNoPaddingTop
-              >
-                <Controller
-                  name="required.roles"
-                  data-testid="requiredFor"
-                  defaultValue={REQUIRED_FOR[0].value}
-                  control={form.control}
-                  render={({ field }) => (
-                    <div className="kc-requiredFor">
-                      {REQUIRED_FOR.map((option) => (
-                        <Radio
-                          id={option.label}
-                          key={option.label}
-                          data-testid={option.label}
-                          isChecked={isEqual(field.value, option.value)}
-                          name="roles"
-                          onChange={() => {
-                            field.onChange(option.value);
-                          }}
-                          label={t(option.label)}
-                          className="kc-requiredFor-option"
-                        />
-                      ))}
-                    </div>
-                  )}
-                />
-              </FormGroup>
-              <FormGroup
-                label={t("requiredWhen")}
-                fieldId="requiredWhen"
+                label={t("enabledWhen")}
+                labelIcon={
+                  <HelpItem
+                    helpText={t("enabledWhenTooltip")}
+                    fieldLabelId="enabled-when"
+                  />
+                }
+                fieldId="enabledWhen"
                 hasNoPaddingTop
               >
                 <Radio
-                  id="requiredAlways"
-                  data-testid="requiredAlways"
-                  isChecked={!hasRequiredScopes}
-                  name="requiredWhen"
+                  id="always"
+                  data-testid="always"
+                  isChecked={!hasSelector}
+                  name="enabledWhen"
                   label={t("always")}
-                  onChange={() => setHasRequiredScopes(false)}
-                  className="pf-u-mb-md"
+                  onChange={() => setHasSelector(false)}
+                  className="pf-v5-u-mb-md"
                 />
                 <Radio
-                  id="requiredScopesAsRequested"
-                  data-testid="requiredScopesAsRequested"
-                  isChecked={hasRequiredScopes}
-                  name="requiredWhen"
+                  id="scopesAsRequested"
+                  data-testid="scopesAsRequested"
+                  isChecked={hasSelector}
+                  name="enabledWhen"
                   label={t("scopesAsRequested")}
-                  onChange={() => setHasRequiredScopes(true)}
-                  className="pf-u-mb-md"
+                  onChange={() => setHasSelector(true)}
+                  className="pf-v5-u-mb-md"
                 />
               </FormGroup>
-              {hasRequiredScopes && (
-                <FormGroup fieldId="kc-scope-required-when">
+              {hasSelector && (
+                <FormGroup fieldId="kc-scope-enabled-when">
                   <Controller
-                    name="required.scopes"
+                    name="selector.scopes"
                     control={form.control}
                     defaultValue={[]}
                     render={({ field }) => (
-                      <Select
-                        name="scopeRequired"
-                        data-testid="required-when-scope-field"
+                      <KeycloakSelect
+                        data-testid="enabled-when-scope-field"
                         variant={SelectVariant.typeaheadMulti}
                         typeAheadAriaLabel="Select"
                         chipGroupProps={{
@@ -335,9 +341,9 @@ export const AttributeGeneralSettings = () => {
                           expandedText: t("hide"),
                           collapsedText: t("showRemaining"),
                         }}
-                        onToggle={(isOpen) => setSelectRequiredForOpen(isOpen)}
+                        onToggle={(isOpen) => setSelectEnabledWhenOpen(isOpen)}
                         selections={field.value}
-                        onSelect={(_, selectedValue) => {
+                        onSelect={(selectedValue) => {
                           const option = selectedValue.toString();
                           let changedValue = [""];
                           if (field.value) {
@@ -349,27 +355,179 @@ export const AttributeGeneralSettings = () => {
                           } else {
                             changedValue = [option];
                           }
+
                           field.onChange(changedValue);
                         }}
-                        onClear={(selectedValues) => {
-                          selectedValues.stopPropagation();
+                        onClear={() => {
                           field.onChange([]);
                         }}
-                        isOpen={selectRequiredForOpen}
+                        isOpen={selectEnabledWhenOpen}
                         aria-labelledby={"scope"}
                       >
                         {clientScopes.map((option) => (
-                          <SelectOption key={option.name} value={option.name} />
+                          <SelectOption key={option.name} value={option.name}>
+                            {option.name}
+                          </SelectOption>
                         ))}
-                      </Select>
+                      </KeycloakSelect>
                     )}
                   />
                 </FormGroup>
               )}
             </>
           )}
-        </>
-      )}
-    </FormAccess>
+          {attributeName !== "username" && (
+            <>
+              <Divider />
+              <FormGroup
+                label={t("required")}
+                labelIcon={
+                  <HelpItem
+                    helpText={t("requiredHelp")}
+                    fieldLabelId="required"
+                  />
+                }
+                fieldId="kc-required"
+                hasNoPaddingTop
+              >
+                <Controller
+                  name="isRequired"
+                  data-testid="required"
+                  defaultValue={false}
+                  control={form.control}
+                  render={({ field }) => (
+                    <Switch
+                      id={"kc-required"}
+                      onChange={field.onChange}
+                      isChecked={field.value}
+                      label={t("on")}
+                      labelOff={t("off")}
+                      aria-label={t("required")}
+                    />
+                  )}
+                />
+              </FormGroup>
+              {required && (
+                <>
+                  <FormGroup
+                    label={t("requiredFor")}
+                    fieldId="requiredFor"
+                    hasNoPaddingTop
+                  >
+                    <Controller
+                      name="required.roles"
+                      data-testid="requiredFor"
+                      defaultValue={REQUIRED_FOR[0].value}
+                      control={form.control}
+                      render={({ field }) => (
+                        <div className="kc-requiredFor">
+                          {REQUIRED_FOR.map((option) => (
+                            <Radio
+                              id={option.label}
+                              key={option.label}
+                              data-testid={option.label}
+                              isChecked={isEqual(field.value, option.value)}
+                              name="roles"
+                              onChange={() => {
+                                field.onChange(option.value);
+                              }}
+                              label={t(option.label)}
+                              className="kc-requiredFor-option"
+                            />
+                          ))}
+                        </div>
+                      )}
+                    />
+                  </FormGroup>
+                  <FormGroup
+                    label={t("requiredWhen")}
+                    labelIcon={
+                      <HelpItem
+                        helpText={t("requiredWhenTooltip")}
+                        fieldLabelId="required-when"
+                      />
+                    }
+                    fieldId="requiredWhen"
+                    hasNoPaddingTop
+                  >
+                    <Radio
+                      id="requiredAlways"
+                      data-testid="requiredAlways"
+                      isChecked={!hasRequiredScopes}
+                      name="requiredWhen"
+                      label={t("always")}
+                      onChange={() => setHasRequiredScopes(false)}
+                      className="pf-v5-u-mb-md"
+                    />
+                    <Radio
+                      id="requiredScopesAsRequested"
+                      data-testid="requiredScopesAsRequested"
+                      isChecked={hasRequiredScopes}
+                      name="requiredWhen"
+                      label={t("scopesAsRequested")}
+                      onChange={() => setHasRequiredScopes(true)}
+                      className="pf-v5-u-mb-md"
+                    />
+                  </FormGroup>
+                  {hasRequiredScopes && (
+                    <FormGroup fieldId="kc-scope-required-when">
+                      <Controller
+                        name="required.scopes"
+                        control={form.control}
+                        defaultValue={[]}
+                        render={({ field }) => (
+                          <KeycloakSelect
+                            data-testid="required-when-scope-field"
+                            variant={SelectVariant.typeaheadMulti}
+                            typeAheadAriaLabel="Select"
+                            chipGroupProps={{
+                              numChips: 3,
+                              expandedText: t("hide"),
+                              collapsedText: t("showRemaining"),
+                            }}
+                            onToggle={(isOpen) =>
+                              setSelectRequiredForOpen(isOpen)
+                            }
+                            selections={field.value}
+                            onSelect={(selectedValue) => {
+                              const option = selectedValue.toString();
+                              let changedValue = [""];
+                              if (field.value) {
+                                changedValue = field.value.includes(option)
+                                  ? field.value.filter(
+                                      (item: string) => item !== option,
+                                    )
+                                  : [...field.value, option];
+                              } else {
+                                changedValue = [option];
+                              }
+                              field.onChange(changedValue);
+                            }}
+                            onClear={() => {
+                              field.onChange([]);
+                            }}
+                            isOpen={selectRequiredForOpen}
+                            aria-labelledby={"scope"}
+                          >
+                            {clientScopes.map((option) => (
+                              <SelectOption
+                                key={option.name}
+                                value={option.name}
+                              >
+                                {option.name}
+                              </SelectOption>
+                            ))}
+                          </KeycloakSelect>
+                        )}
+                      />
+                    </FormGroup>
+                  )}
+                </>
+              )}
+            </>
+          )}
+        </FormProvider>
+      </FormAccess>
+    </>
   );
 };

@@ -3,10 +3,10 @@
 
 <@tmpl.guide
 title="Enabling and disabling features"
-summary="Understand how to configure Keycloak to use optional features"
+summary="Understand how to configure {project_name} to use optional features"
 includedOptions="features features-*">
 
-Keycloak has packed some functionality in features, including some disabled features, such as Technology Preview and deprecated features. Other features are enabled by default, but you can disable them if they do not apply to your use of Keycloak.
+{project_name} has packed some functionality in features, including some disabled features, such as Technology Preview and deprecated features. Other features are enabled by default, but you can disable them if they do not apply to your use of {project_name}.
 
 == Enabling features
 
@@ -22,6 +22,14 @@ To enable all preview features, enter this command:
 
 <@kc.build parameters="--features=\"preview\""/>
 
+Enabled feature may be versioned, or unversioned.  If you use a versioned feature name, e.g. feature:v1, that exact feature version will be enabled as long as it still exists in the runtime.  If you instead use an unversioned name, e.g. just feature, the selection of the particular supported feature version may change from release to release according to the following precedence:
+
+1. The highest default supported version
+1. The highest non-default supported version
+1. The highest deprecated version
+1. The highest preview version
+1. The highest experimental version
+
 == Disabling features
 
 To disable a feature that is enabled by default, enter this command:
@@ -32,12 +40,9 @@ For example to disable `impersonation`, enter this command:
 
 <@kc.build parameters="--features-disabled=\"impersonation\""/>
 
-You can disable all default features by entering this command:
+It is not allowed to have a feature in both the `features-disabled` list and the `features` list.
 
-<@kc.build parameters="--features-disabled=\"default\""/>
-
-This command can be used in combination with `features` to explicitly set what features should be available.
-If a feature is added both to the `features-disabled` list and the `features` list, it will be enabled.
+When a feature is disabled all versions of that feature are disabled.
 
 == Supported features
 
@@ -68,7 +73,7 @@ The following list contains deprecated features that will be removed in a future
 
 <#else>
 
-There are no deprecated features in this Keycloak release.
+There are no deprecated features in this {project_name} release.
 
 </#if>
 

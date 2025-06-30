@@ -21,9 +21,12 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.mappers.AbstractLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.AbstractLDAPStorageMapperFactory;
+import org.keycloak.storage.ldap.mappers.msad.MSADUserAccountControlStorageMapper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,9 +38,23 @@ import java.util.List;
 public class MSADLDSUserAccountControlStorageMapperFactory extends AbstractLDAPStorageMapperFactory {
 
     public static final String PROVIDER_ID = LDAPConstants.MSADLDS_USER_ACCOUNT_CONTROL_MAPPER;
-    protected static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
+    protected static final List<ProviderConfigProperty> configProperties;
 
     static {
+        configProperties = getConfigProps(null);
+    }
+
+    private static List<ProviderConfigProperty> getConfigProps(ComponentModel parentModel) {
+        UserStorageProviderModel parent = parentModel != null ? new UserStorageProviderModel(parentModel) : new UserStorageProviderModel();
+        if (parent.isImportEnabled()) {
+            ProviderConfigurationBuilder config = ProviderConfigurationBuilder.create()
+                    .property().name(MSADUserAccountControlStorageMapper.ALWAYS_READ_ENABLED_VALUE_FROM_LDAP).label("Always Read Enabled Value From LDAP")
+                    .helpText("If on, the user enabled/disabled state will always be read from MSAD LDS by checking the msDS-UserAccountDisabled attribute")
+                    .type(ProviderConfigProperty.BOOLEAN_TYPE).defaultValue("false").add();
+
+            return config.build();
+        }
+        return new ArrayList<>();
     }
 
     @Override
@@ -49,6 +66,11 @@ public class MSADLDSUserAccountControlStorageMapperFactory extends AbstractLDAPS
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
         return configProperties;
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigProperties(RealmModel realm, ComponentModel parent) {
+        return getConfigProps(parent);
     }
 
     @Override

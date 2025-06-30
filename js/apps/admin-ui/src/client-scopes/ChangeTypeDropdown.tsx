@@ -1,7 +1,12 @@
-import { AlertVariant, Select } from "@patternfly/react-core";
+import {
+  AlertVariant,
+  MenuToggle,
+  Select,
+  SelectList,
+} from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-
+import { useAdminClient } from "../admin-client";
 import type { Row } from "../clients/scopes/ClientScopes";
 import { useAlerts } from "../components/alert/Alerts";
 import {
@@ -23,6 +28,8 @@ export const ChangeTypeDropdown = ({
   selectedRows,
   refresh,
 }: ChangeTypeDropdownProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
@@ -30,25 +37,33 @@ export const ChangeTypeDropdown = ({
 
   return (
     <Select
-      toggleId="change-type-dropdown"
       aria-label="change-type-to"
+      onOpenChange={(isOpen) => setOpen(isOpen)}
       isOpen={open}
-      selections={[]}
-      isDisabled={selectedRows.length === 0}
-      placeholderText={t("changeTypeTo")}
-      onToggle={setOpen}
+      toggle={(ref) => (
+        <MenuToggle
+          id="change-type-dropdown"
+          isDisabled={selectedRows.length === 0}
+          ref={ref}
+          onClick={() => setOpen(!open)}
+          isExpanded={open}
+        >
+          {t("changeTypeTo")}
+        </MenuToggle>
+      )}
       onSelect={async (_, value) => {
         try {
           await Promise.all(
             selectedRows.map((row) => {
               return clientId
                 ? changeClientScope(
+                    adminClient,
                     clientId,
                     row,
                     row.type,
                     value as ClientScope,
                   )
-                : changeScope(row, value as ClientScope);
+                : changeScope(adminClient, row, value as ClientScope);
             }),
           );
           setOpen(false);
@@ -59,10 +74,12 @@ export const ChangeTypeDropdown = ({
         }
       }}
     >
-      {clientScopeTypesSelectOptions(
-        t,
-        !clientId ? allClientScopeTypes : undefined,
-      )}
+      <SelectList>
+        {clientScopeTypesSelectOptions(
+          t,
+          !clientId ? allClientScopeTypes : undefined,
+        )}
+      </SelectList>
     </Select>
   );
 };

@@ -20,22 +20,22 @@ package org.keycloak.connections.httpclient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
 import org.apache.http.conn.ssl.BrowserCompatHostnameVerifier;
+import org.apache.http.conn.ssl.DefaultHostnameVerifier;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.conn.ssl.SSLContexts;
 import org.apache.http.conn.ssl.StrictHostnameVerifier;
 import org.apache.http.conn.ssl.X509HostnameVerifier;
+import org.apache.http.conn.util.PublicSuffixMatcherLoader;
 import org.apache.http.impl.NoConnectionReuseStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.ssl.SSLContexts;
+import org.keycloak.common.enums.HostnameVerificationPolicy;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -53,35 +53,23 @@ import java.util.concurrent.TimeUnit;
  * @version $Revision: 1 $
  */
 public class HttpClientBuilder {
-    public enum HostnameVerificationPolicy {
-        /**
-         * Hostname verification is not done on the server's certificate
-         */
-        ANY,
-        /**
-         * Allows wildcards in subdomain names i.e. *.foo.com
-         */
-        WILDCARD,
-        /**
-         * CN must match hostname connecting to
-         */
-        STRICT
-    }
-
 
     /**
      * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
      * @version $Revision: 1 $
      */
     private static class PassthroughTrustManager implements X509TrustManager {
+        @Override
         public void checkClientTrusted(X509Certificate[] chain,
                                        String authType) throws CertificateException {
         }
 
+        @Override
         public void checkServerTrusted(X509Certificate[] chain,
                                        String authType) throws CertificateException {
         }
 
+        @Override
         public X509Certificate[] getAcceptedIssuers() {
             return null;
         }
@@ -91,7 +79,7 @@ public class HttpClientBuilder {
     protected KeyStore clientKeyStore;
     protected String clientPrivateKeyPassword;
     protected boolean disableTrustManager;
-    protected HostnameVerificationPolicy policy = HostnameVerificationPolicy.WILDCARD;
+    protected HostnameVerificationPolicy policy = HostnameVerificationPolicy.DEFAULT;
     protected SSLContext sslContext;
     protected int connectionPoolSize = 128;
     protected int maxPooledPerRoute = 64;
@@ -100,7 +88,6 @@ public class HttpClientBuilder {
     protected TimeUnit connectionTTLUnit = TimeUnit.MILLISECONDS;
     protected long maxConnectionIdleTime = 900000;
     protected TimeUnit maxConnectionIdleTimeUnit = TimeUnit.MILLISECONDS;
-    protected HostnameVerifier verifier = null;
     protected long socketTimeout = -1;
     protected TimeUnit socketTimeoutUnits = TimeUnit.MILLISECONDS;
     protected long establishConnectionTimeout = -1;
@@ -226,49 +213,21 @@ public class HttpClientBuilder {
         return this;
     }
 
-    static class VerifierWrapper implements X509HostnameVerifier {
-        protected HostnameVerifier verifier;
-
-        VerifierWrapper(HostnameVerifier verifier) {
-            this.verifier = verifier;
-        }
-
-        @Override
-        public void verify(String host, SSLSocket ssl) throws IOException {
-            if (!verifier.verify(host, ssl.getSession())) throw new SSLException("Hostname verification failure");
-        }
-
-        @Override
-        public void verify(String host, X509Certificate cert) throws SSLException {
-            throw new SSLException("This verification path not implemented");
-        }
-
-        @Override
-        public void verify(String host, String[] cns, String[] subjectAlts) throws SSLException {
-            throw new SSLException("This verification path not implemented");
-        }
-
-        @Override
-        public boolean verify(String s, SSLSession sslSession) {
-            return verifier.verify(s, sslSession);
-        }
-    }
-
     public CloseableHttpClient build() {
-        X509HostnameVerifier verifier = null;
-        if (this.verifier != null) verifier = new VerifierWrapper(this.verifier);
-        else {
-            switch (policy) {
-                case ANY:
-                    verifier = new AllowAllHostnameVerifier();
-                    break;
-                case WILDCARD:
-                    verifier = new BrowserCompatHostnameVerifier();
-                    break;
-                case STRICT:
-                    verifier = new StrictHostnameVerifier();
-                    break;
-            }
+        HostnameVerifier verifier = null;
+        switch (policy) {
+            case ANY:
+                verifier = new NoopHostnameVerifier();
+                break;
+            case WILDCARD:
+                verifier = new BrowserCompatHostnameVerifier();
+                break;
+            case STRICT:
+                verifier = new StrictHostnameVerifier();
+                break;
+            case DEFAULT:
+                verifier = new DefaultHostnameVerifier(PublicSuffixMatcherLoader.getDefault());
+                break;
         }
         try {
             SSLConnectionSocketFactory sslsf = null;
@@ -277,7 +236,7 @@ public class HttpClientBuilder {
                 theContext = SSLContext.getInstance("TLS");
                 theContext.init(null, new TrustManager[]{new PassthroughTrustManager()},
                         new SecureRandom());
-                verifier = new AllowAllHostnameVerifier();
+                verifier = new NoopHostnameVerifier();
                 sslsf = new SSLConnectionSocketFactory(theContext, verifier);
             } else if (theContext != null) {
                 sslsf = new SSLConnectionSocketFactory(theContext, verifier);
@@ -291,8 +250,8 @@ public class HttpClientBuilder {
             }
 
             RequestConfig requestConfig = RequestConfig.custom()
-                    .setConnectTimeout((int) establishConnectionTimeout)
-                    .setSocketTimeout((int) socketTimeout)
+                    .setConnectTimeout((int) TimeUnit.MILLISECONDS.convert(establishConnectionTimeout, establishConnectionTimeoutUnits))
+                    .setSocketTimeout((int) TimeUnit.MILLISECONDS.convert(socketTimeout, socketTimeoutUnits))
                     .setExpectContinueEnabled(expectContinueEnabled).build();
 
             org.apache.http.impl.client.HttpClientBuilder builder = HttpClients.custom()
@@ -335,10 +294,10 @@ public class HttpClientBuilder {
             final SecureRandom random)
             throws NoSuchAlgorithmException, KeyManagementException, KeyStoreException, UnrecoverableKeyException {
         return SSLContexts.custom()
-                        .useProtocol(algorithm)
+                        .setProtocol(algorithm)
                         .setSecureRandom(random)
                         .loadKeyMaterial(keystore, keyPassword != null ? keyPassword.toCharArray() : null)
-                        .loadTrustMaterial(truststore)
+                        .loadTrustMaterial(truststore, null)
                         .build();
     }
 

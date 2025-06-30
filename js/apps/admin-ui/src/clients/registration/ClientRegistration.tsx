@@ -1,6 +1,6 @@
 import { Tab, TabTitleText } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import {
   RoutableTabs,
   useRoutableTab,

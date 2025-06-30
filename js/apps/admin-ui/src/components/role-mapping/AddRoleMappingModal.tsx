@@ -2,7 +2,8 @@ import {
   Button,
   Dropdown,
   DropdownItem,
-  DropdownToggle,
+  DropdownList,
+  MenuToggle,
   Modal,
   ModalVariant,
   ToolbarItem,
@@ -10,7 +11,7 @@ import {
 import { FilterIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-
+import { useAdminClient } from "../../admin-client";
 import { useAccess } from "../../context/access/Access";
 import useLocaleSort from "../../utils/useLocaleSort";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
@@ -40,15 +41,15 @@ export const AddRoleMappingModal = ({
   onAssign,
   onClose,
 }: AddRoleMappingModalProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { hasAccess } = useAccess();
   const canViewRealmRoles = hasAccess("view-realm") || hasAccess("query-users");
 
   const [searchToggle, setSearchToggle] = useState(false);
 
-  const [filterType, setFilterType] = useState<FilterType>(
-    canViewRealmRoles ? "roles" : "clients",
-  );
+  const [filterType, setFilterType] = useState<FilterType>("clients");
   const [selectedRows, setSelectedRows] = useState<Row[]>([]);
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
@@ -70,7 +71,7 @@ export const AddRoleMappingModal = ({
       params.search = search;
     }
 
-    const roles = await getAvailableRoles(type, { ...params, id });
+    const roles = await getAvailableRoles(adminClient, type, { ...params, id });
     const sorted = localeSort(roles, compareRow);
     return sorted.map((row) => {
       return {
@@ -85,7 +86,7 @@ export const AddRoleMappingModal = ({
     max?: number,
     search?: string,
   ): Promise<Row[]> => {
-    const roles = await getAvailableClientRoles({
+    const roles = await getAvailableClientRoles(adminClient, {
       id,
       type,
       first: first || 0,
@@ -143,31 +144,34 @@ export const AddRoleMappingModal = ({
           canViewRealmRoles && (
             <ToolbarItem>
               <Dropdown
+                onOpenChange={(isOpen) => setSearchToggle(isOpen)}
                 onSelect={() => {
                   setFilterType(filterType === "roles" ? "clients" : "roles");
                   setSearchToggle(false);
                   refresh();
                 }}
-                data-testid="filter-type-dropdown"
-                toggle={
-                  <DropdownToggle
-                    onToggle={setSearchToggle}
+                toggle={(ref) => (
+                  <MenuToggle
+                    data-testid="filter-type-dropdown"
+                    ref={ref}
+                    onClick={() => setSearchToggle(!searchToggle)}
                     icon={<FilterIcon />}
                   >
                     {filterType === "roles"
                       ? t("filterByRoles")
                       : t("filterByClients")}
-                  </DropdownToggle>
-                }
+                  </MenuToggle>
+                )}
                 isOpen={searchToggle}
-                dropdownItems={[
+              >
+                <DropdownList>
                   <DropdownItem key="filter-type" data-testid={filterType}>
                     {filterType === "roles"
                       ? t("filterByClients")
                       : t("filterByRoles")}
-                  </DropdownItem>,
-                ]}
-              />
+                  </DropdownItem>
+                </DropdownList>
+              </Dropdown>
             </ToolbarItem>
           )
         }

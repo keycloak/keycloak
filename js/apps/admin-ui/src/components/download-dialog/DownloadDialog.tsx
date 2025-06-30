@@ -1,26 +1,27 @@
+import { fetchWithError } from "@keycloak/keycloak-admin-client";
+import { HelpItem, useHelp } from "@keycloak/keycloak-ui-shared";
 import {
   Form,
   FormGroup,
+  MenuToggle,
   ModalVariant,
   Select,
+  SelectList,
   SelectOption,
-  SelectVariant,
   Stack,
   StackItem,
+  TextArea,
 } from "@patternfly/react-core";
 import { saveAs } from "file-saver";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-
-import { HelpItem, useHelp } from "ui-shared";
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { addTrailingSlash, prettyPrintJSON } from "../../util";
 import { getAuthorizationHeaders } from "../../utils/getAuthorizationHeaders";
 import { useFetch } from "../../utils/useFetch";
 import { ConfirmDialogModal } from "../confirm-dialog/ConfirmDialog";
-import { KeycloakTextArea } from "../keycloak-text-area/KeycloakTextArea";
 
 type DownloadDialogProps = {
   id: string;
@@ -35,6 +36,8 @@ export const DownloadDialog = ({
   toggleDialog,
   protocol = "openid-connect",
 }: DownloadDialogProps) => {
+  const { adminClient } = useAdminClient();
+
   const { realm } = useRealm();
   const { t } = useTranslation();
   const { enabled } = useHelp();
@@ -61,7 +64,7 @@ export const DownloadDialog = ({
   useFetch(
     async () => {
       if (selectedConfig?.mediaType === "application/zip") {
-        const response = await fetch(
+        const response = await fetchWithError(
           `${addTrailingSlash(
             adminClient.baseUrl,
           )}admin/realms/${realm}/clients/${id}/installation/providers/${selected}`,
@@ -121,29 +124,40 @@ export const DownloadDialog = ({
               }
             >
               <Select
-                toggleId="type"
                 isOpen={openType}
-                onToggle={(isExpanded) => setOpenType(isExpanded)}
-                variant={SelectVariant.single}
-                value={selected}
-                selections={selected}
+                onOpenChange={(isOpen) => setOpenType(isOpen)}
+                toggle={(ref) => (
+                  <MenuToggle
+                    id="type"
+                    ref={ref}
+                    onClick={() => setOpenType(!openType)}
+                    isExpanded={openType}
+                  >
+                    {selected}
+                  </MenuToggle>
+                )}
+                selected={selected}
                 onSelect={(_, value) => {
-                  setSelected(value.toString());
+                  setSelected(value?.toString() || "");
                   setOpenType(false);
                 }}
-                aria-label="Select Input"
-                menuAppendTo={() => document.body}
+                aria-label={t("selectOne")}
+                popperProps={{
+                  appendTo: document.body,
+                }}
               >
-                {configFormats.map((configFormat) => (
-                  <SelectOption
-                    key={configFormat.id}
-                    value={configFormat.id}
-                    isSelected={selected === configFormat.id}
-                    description={enabled ? configFormat.helpText : undefined}
-                  >
-                    {configFormat.displayType}
-                  </SelectOption>
-                ))}
+                <SelectList>
+                  {configFormats.map((configFormat) => (
+                    <SelectOption
+                      key={configFormat.id}
+                      value={configFormat.id}
+                      isSelected={selected === configFormat.id}
+                      description={enabled ? configFormat.helpText : undefined}
+                    >
+                      {configFormat.displayType}
+                    </SelectOption>
+                  ))}
+                </SelectList>
               </Select>
             </FormGroup>
           </StackItem>
@@ -159,7 +173,7 @@ export const DownloadDialog = ({
                   />
                 }
               >
-                <KeycloakTextArea
+                <TextArea
                   id="details"
                   readOnly
                   rows={12}

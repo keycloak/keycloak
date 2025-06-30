@@ -57,7 +57,7 @@ public class ValidatorConfigValidator implements SimpleValidator {
 
     public static final ValidatorConfigValidator INSTANCE = new ValidatorConfigValidator();
 
-    private ValidatorConfigValidator() {
+    public ValidatorConfigValidator() {
     }
 
     @Override

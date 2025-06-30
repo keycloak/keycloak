@@ -58,6 +58,17 @@ describe("Realm settings client profiles tab tests", () => {
     realmSettingsPage.searchClientProfile(profileName);
   });
 
+  it("Should search non-existent client profile", () => {
+    realmSettingsPage.searchNonExistingClientProfile("nonExistentProfile");
+    cy.findByTestId("empty-state").should("be.visible");
+  });
+
+  it("Should navigate to client profile", () => {
+    realmSettingsPage.searchClientProfile(profileName);
+    realmSettingsPage.goToClientProfileByNameLink(profileName);
+    cy.findByTestId("view-header").should("have.text", profileName);
+  });
+
   it("Check navigating between Form View and JSON editor", () => {
     realmSettingsPage.shouldNavigateBetweenFormAndJSONView();
   });

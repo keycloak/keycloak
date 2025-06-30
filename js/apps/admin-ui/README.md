@@ -27,10 +27,10 @@ Now that the Keycloak sever is running it's time to run the development server f
 To start the development server run the following command:
 
 ```bash
-pnpm run dev
+pnpm dev
 ```
 
-Once the process of optimization is done your browser will automatically open your local host on port `8080`. From here you will be redirected to the Keycloak server to authenticate, which you can do with the default username and password (`admin`).
+Once the process of optimization is done your browser will automatically open your local host on port `8080`. From here you will be redirected to the Keycloak server to authenticate, which you can do with the default credentials (`admin`/`admin`).
 
 You can now start making changes to the source code, and they will be reflected in your browser.
 
@@ -43,7 +43,7 @@ If you want to build the application using Maven and produce a JAR that can be i
 Every time you create a commit it should be automatically linted and formatted for you. It is also possible to trigger the linting manually:
 
 ```bash
-pnpm run lint
+pnpm lint
 ```
 
 ## Integration testing with Cypress
@@ -59,13 +59,13 @@ Ensure the Keycloak and development server are running as [outlined previously](
 You can run the tests using the interactive graphical user interface using the following command:
 
 ```bash
-pnpm run cy:open
+pnpm cy:open
 ```
 
 Alternatively the tests can also run headless as follows:
 
 ```
-pnpm run cy:run
+pnpm cy:run
 ```
 
 For more information about the Cypress command-line interface consult [the documentation](https://docs.cypress.io/guides/guides/command-line).

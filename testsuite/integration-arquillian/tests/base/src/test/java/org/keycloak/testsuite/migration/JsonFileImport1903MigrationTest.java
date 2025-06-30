@@ -17,14 +17,26 @@
 package org.keycloak.testsuite.migration;
 
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.exportimport.util.ImportUtils;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testsuite.utils.io.IOUtil;
+import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertEquals;
+import static org.keycloak.userprofile.DeclarativeUserProfileProvider.UP_COMPONENT_CONFIG_KEY;
 
 /**
  * Tests that we can import json file from previous version. MigrationTest only tests DB.
@@ -37,6 +49,9 @@ public class JsonFileImport1903MigrationTest extends AbstractJsonFileImportMigra
         try {
             reps = ImportUtils.getRealmsFromStream(JsonSerialization.mapper, IOUtil.class.getResourceAsStream("/migration-test/migration-realm-19.0.3.json"));
             masterRep = reps.remove("master");
+
+            RealmRepresentation upRealm = JsonSerialization.readValue(IOUtil.class.getResourceAsStream("/migration-test/migration-realm-19.0.3-user-profile.json"), RealmRepresentation.class);
+            reps.put(upRealm.getRealm(), upRealm);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -52,6 +67,28 @@ public class JsonFileImport1903MigrationTest extends AbstractJsonFileImportMigra
         testMigrationTo21_x();
         testMigrationTo22_x();
         testMigrationTo23_x(true);
+        testMigrationTo24_x(true, true);
+        testMigrationTo25_0_0();
+    }
+
+    @Test
+    public void testUserProfileMigration() throws Exception {
+        List<ComponentRepresentation> userProfileComponents = adminClient.realm("migration-user-profile")
+                .components()
+                .query(null, "org.keycloak.userprofile.UserProfileProvider");
+        assertThat(userProfileComponents, hasSize(1));
+        ComponentRepresentation component = userProfileComponents.get(0);
+
+        // Test "street" attribute being presented with the expected scope selectors
+        UPConfig upConfig = UPConfigUtils.parseConfig(component.getConfig().getFirst(UP_COMPONENT_CONFIG_KEY));
+        UPAttribute streetAttr = upConfig.getAttribute("street");
+        assertThat(streetAttr, notNullValue());
+
+        assertThat(streetAttr.getSelector(), notNullValue());
+        assertEquals(Set.of(OAuth2Constants.SCOPE_ADDRESS), streetAttr.getSelector().getScopes());
+
+        assertThat(streetAttr.getSelector(), notNullValue());
+        assertEquals(Set.of(OAuth2Constants.SCOPE_PHONE), streetAttr.getRequired().getScopes());
     }
 
 }

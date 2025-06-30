@@ -23,10 +23,12 @@ import picocli.CommandLine;
 
 public final class HelpAllMixin {
 
+    public static final String HELP_ALL_OPTION = "--help-all";
+
     @CommandLine.Spec
     private CommandLine.Model.CommandSpec spec;
 
-    @CommandLine.Option(names = { "--help-all" }, usageHelp = true, description = "This same help message but with additional options.")
+    @CommandLine.Option(names = {HELP_ALL_OPTION}, usageHelp = true, description = "This same help message but with additional options.")
     public void setHelpAll(boolean allOptions) {
         Help help = (Help) spec.commandLine().getHelp();
         help.setAllOptions(true);

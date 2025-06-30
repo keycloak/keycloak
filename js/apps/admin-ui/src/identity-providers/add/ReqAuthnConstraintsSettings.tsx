@@ -1,14 +1,12 @@
 import {
-  FormGroup,
-  Select,
-  SelectOption,
+  HelpItem,
+  KeycloakSelect,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@keycloak/keycloak-ui-shared";
+import { FormGroup, SelectOption } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { HelpItem } from "ui-shared";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
 
 const comparisonValues = ["exact", "minimum", "maximum", "better"];
@@ -31,12 +29,11 @@ export const ReqAuthnConstraints = () => {
           defaultValue={comparisonValues[0]}
           control={control}
           render={({ field }) => (
-            <Select
+            <KeycloakSelect
               toggleId="comparison"
-              required
               direction="up"
               onToggle={(isExpanded) => setComparisonOpen(isExpanded)}
-              onSelect={(_, value) => {
+              onSelect={(value) => {
                 field.onChange(value.toString());
                 setComparisonOpen(false);
               }}
@@ -54,7 +51,7 @@ export const ReqAuthnConstraints = () => {
                   {t(option)}
                 </SelectOption>
               ))}
-            </Select>
+            </KeycloakSelect>
           )}
         />
       </FormGroup>

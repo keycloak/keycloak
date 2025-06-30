@@ -5,34 +5,13 @@ import org.keycloak.models.UserModel;
 import org.keycloak.userprofile.DeclarativeUserProfileProvider;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
-import org.keycloak.userprofile.UserProfileMetadata;
-import org.keycloak.userprofile.UserProfileProvider;
-import org.keycloak.userprofile.config.UPConfig;
 
 import java.util.Map;
 
 public class CustomUserProfileProvider extends DeclarativeUserProfileProvider {
 
-    public static final String ID = "custom-user-profile";
-
-    public CustomUserProfileProvider() {
-        super();
-    }
-
-    public CustomUserProfileProvider(KeycloakSession session,
-                                     Map<UserProfileContext, UserProfileMetadata> metadataRegistry, String defaultRawConfig, UPConfig parsedDefaultRawConfig) {
-        super(session, metadataRegistry, defaultRawConfig, parsedDefaultRawConfig);
-    }
-
-    @Override
-    protected UserProfileProvider create(KeycloakSession session,
-            Map<UserProfileContext, UserProfileMetadata> metadataRegistry) {
-        return new CustomUserProfileProvider(session, metadataRegistry, defaultRawConfig, parsedDefaultRawConfig);
-    }
-
-    @Override
-    public String getId() {
-        return ID;
+    public CustomUserProfileProvider(KeycloakSession session, CustomUserProfileProviderFactory factory) {
+        super(session, factory);
     }
 
     @Override
@@ -50,8 +29,4 @@ public class CustomUserProfileProvider extends DeclarativeUserProfileProvider {
         return this.create(context, attributes, (UserModel) null);
     }
 
-    @Override
-    public int order() {
-        return super.order() - 1;
-    }
 }

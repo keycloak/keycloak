@@ -17,8 +17,8 @@
 
 package org.keycloak.events.log;
 
-import org.keycloak.common.util.StackUtil;
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.StackUtil;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventListenerTransaction;
@@ -26,6 +26,7 @@ import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.utils.StringUtil;
 
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.HttpHeaders;
@@ -41,14 +42,18 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
     private final Logger logger;
     private final Logger.Level successLevel;
     private final Logger.Level errorLevel;
+    private final boolean sanitize;
+    private final Character quotes;
     private final EventListenerTransaction tx = new EventListenerTransaction(this::logAdminEvent, this::logEvent);
 
-    public JBossLoggingEventListenerProvider(KeycloakSession session, Logger logger, Logger.Level successLevel, Logger.Level errorLevel) {
+    public JBossLoggingEventListenerProvider(KeycloakSession session, Logger logger,
+            Logger.Level successLevel, Logger.Level errorLevel, Character quotes, boolean sanitize) {
         this.session = session;
         this.logger = logger;
         this.successLevel = successLevel;
         this.errorLevel = errorLevel;
-
+        this.sanitize = sanitize;
+        this.quotes = quotes;
         this.session.getTransactionManager().enlistAfterCompletion(tx);
     }
 
@@ -62,6 +67,19 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
         tx.addAdminEvent(adminEvent, includeRepresentation);
     }
 
+    private void sanitize(StringBuilder sb, String str) {
+        if (quotes != null) {
+            sb.append(quotes);
+        }
+        if (sanitize) {
+            str = StringUtil.sanitizeSpacesAndQuotes(str, quotes);
+        }
+        sb.append(str);
+        if (quotes != null) {
+            sb.append(quotes);
+        }
+    }
+
     private void logEvent(Event event) {
         Logger.Level level = event.getError() != null ? errorLevel : successLevel;
 
@@ -69,42 +87,42 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
             StringBuilder sb = new StringBuilder();
 
             sb.append("type=");
-            sb.append(event.getType());
+            sanitize(sb, event.getType().toString());
             sb.append(", realmId=");
-            sb.append(event.getRealmId());
+            sanitize(sb, event.getRealmId());
+            sb.append(", realmName=");
+            sanitize(sb, event.getRealmName());
             sb.append(", clientId=");
-            sb.append(event.getClientId());
+            sanitize(sb, event.getClientId());
             sb.append(", userId=");
-            sb.append(event.getUserId());
+            sanitize(sb, event.getUserId());
+            if (event.getSessionId() != null) {
+                sb.append(", sessionId=");
+                sanitize(sb, event.getSessionId());
+            }
             sb.append(", ipAddress=");
-            sb.append(event.getIpAddress());
+            sanitize(sb, event.getIpAddress());
 
             if (event.getError() != null) {
                 sb.append(", error=");
-                sb.append(event.getError());
+                sanitize(sb, event.getError());
             }
 
             if (event.getDetails() != null) {
                 for (Map.Entry<String, String> e : event.getDetails().entrySet()) {
                     sb.append(", ");
-                    sb.append(e.getKey());
-                    if (e.getValue() == null || e.getValue().indexOf(' ') == -1) {
-                        sb.append("=");
-                        sb.append(e.getValue());
-                    } else {
-                        sb.append("='");
-                        sb.append(e.getValue());
-                        sb.append("'");
-                    }
+                    sb.append(StringUtil.sanitizeSpacesAndQuotes(e.getKey(), null));
+                    sb.append("=");
+                    sanitize(sb, e.getValue());
                 }
             }
 
             AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
             if(authSession!=null) {
                 sb.append(", authSessionParentId=");
-                sb.append(authSession.getParentSession().getId());
+                sanitize(sb, authSession.getParentSession().getId());
                 sb.append(", authSessionTabId=");
-                sb.append(authSession.getTabId());
+                sanitize(sb, authSession.getTabId());
             }
 
             if(logger.isTraceEnabled()) {
@@ -126,23 +144,25 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
             StringBuilder sb = new StringBuilder();
 
             sb.append("operationType=");
-            sb.append(adminEvent.getOperationType());
+            sanitize(sb, adminEvent.getOperationType().toString());
             sb.append(", realmId=");
-            sb.append(adminEvent.getAuthDetails().getRealmId());
+            sanitize(sb, adminEvent.getAuthDetails().getRealmId());
+            sb.append(", realmName=");
+            sanitize(sb, adminEvent.getAuthDetails().getRealmName());
             sb.append(", clientId=");
-            sb.append(adminEvent.getAuthDetails().getClientId());
+            sanitize(sb, adminEvent.getAuthDetails().getClientId());
             sb.append(", userId=");
-            sb.append(adminEvent.getAuthDetails().getUserId());
+            sanitize(sb, adminEvent.getAuthDetails().getUserId());
             sb.append(", ipAddress=");
-            sb.append(adminEvent.getAuthDetails().getIpAddress());
+            sanitize(sb, adminEvent.getAuthDetails().getIpAddress());
             sb.append(", resourceType=");
-            sb.append(adminEvent.getResourceTypeAsString());
+            sanitize(sb, adminEvent.getResourceTypeAsString());
             sb.append(", resourcePath=");
-            sb.append(adminEvent.getResourcePath());
+            sanitize(sb, adminEvent.getResourcePath());
 
             if (adminEvent.getError() != null) {
                 sb.append(", error=");
-                sb.append(adminEvent.getError());
+                sanitize(sb, adminEvent.getError());
             }
 
             if(logger.isTraceEnabled()) {
@@ -163,7 +183,7 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
         HttpHeaders headers = context.getRequestHeaders();
         if (uriInfo != null) {
             sb.append(", requestUri=");
-            sb.append(uriInfo.getRequestUri().toString());
+            sanitize(sb, uriInfo.getRequestUri().toString());
         }
 
         if (headers != null) {
@@ -175,7 +195,7 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
                 } else {
                     sb.append(", ");
                 }
-                sb.append(e.getValue().toString());
+                sb.append(StringUtil.sanitizeSpacesAndQuotes(e.getValue().toString(), null));
             }
             sb.append("]");
         }

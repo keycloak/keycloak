@@ -15,7 +15,7 @@ image:images/client-scopes-evaluate.png[]
 
 [NOTE]
 ====
-To send a custom value for a *scope* parameter from your application, see the link:{adapterguide_link_latest}#_params_forwarding[parameters forwarding section], for servlet adapters or the link:{adapterguide_link_latest}#_javascript_adapter[javascript adapter section], for javascript adapters.
+To send a custom value for a *scope* parameter from your application, see the link:{adapterguide_link_latest}#_javascript_adapter[javascript adapter section], for javascript adapters.
 ====
 
 All examples are generated for the particular user and issued for the particular client, with the specified value of the *scope* parameter. The examples include all of the claims and role mappings used.

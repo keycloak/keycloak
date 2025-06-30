@@ -1,10 +1,13 @@
 import { FormGroup, Switch } from "@patternfly/react-core";
-import { Controller, UseFormReturn, useWatch } from "react-hook-form";
+import {
+  Controller,
+  FormProvider,
+  UseFormReturn,
+  useWatch,
+} from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
+import { HelpItem, TextControl } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
-import { HelpItem } from "ui-shared";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 
 export type LdapSettingsKerberosIntegrationProps = {
@@ -27,7 +30,7 @@ export const LdapSettingsKerberosIntegration = ({
   });
 
   return (
-    <>
+    <FormProvider {...form}>
       {showSectionHeading && (
         <WizardSectionHeader
           title={t("kerberosIntegration")}
@@ -57,7 +60,7 @@ export const LdapSettingsKerberosIntegration = ({
                 id="kc-allow-kerberos-authentication"
                 data-testid="allow-kerberos-auth"
                 isDisabled={false}
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 label={t("on")}
                 labelOff={t("off")}
@@ -69,149 +72,35 @@ export const LdapSettingsKerberosIntegration = ({
 
         {allowKerberosAuth[0] === "true" && (
           <>
-            <FormGroup
+            <TextControl
+              name="config.kerberosRealm.0"
               label={t("kerberosRealm")}
-              labelIcon={
-                <HelpItem
-                  helpText={t("kerberosRealmHelp")}
-                  fieldLabelId="kerberosRealm"
-                />
-              }
-              fieldId="kc-kerberos-realm"
-              isRequired
-              validated={
-                (form.formState.errors.config as any)?.kerberosRealm?.[0]
-                  ? "error"
-                  : "default"
-              }
-              helperTextInvalid={
-                (form.formState.errors.config as any)?.kerberosRealm?.[0]
-                  .message
-              }
-            >
-              <KeycloakTextInput
-                isRequired
-                id="kc-kerberos-realm"
-                data-testid="kerberos-realm"
-                validated={
-                  (form.formState.errors.config as any)?.kerberosRealm?.[0]
-                    ? "error"
-                    : "default"
-                }
-                {...form.register("config.kerberosRealm.0", {
-                  required: {
-                    value: true,
-                    message: t("validateRealm").toString(),
-                  },
-                })}
-              />
-            </FormGroup>
-
-            <FormGroup
+              labelIcon={t("kerberosRealmHelp")}
+              rules={{
+                required: t("validateRealm"),
+              }}
+            />
+            <TextControl
+              name="config.serverPrincipal.0"
               label={t("serverPrincipal")}
-              labelIcon={
-                <HelpItem
-                  helpText={t("serverPrincipalHelp")}
-                  fieldLabelId="serverPrincipal"
-                />
-              }
-              fieldId="kc-server-principal"
-              isRequired
-              validated={
-                (form.formState.errors.config as any)?.serverPrincipal?.[0]
-                  ? "error"
-                  : "default"
-              }
-              helperTextInvalid={
-                (form.formState.errors.config as any)?.serverPrincipal?.[0]
-                  .message
-              }
-            >
-              <KeycloakTextInput
-                isRequired
-                id="kc-server-principal"
-                data-testid="kerberos-principal"
-                validated={
-                  (form.formState.errors.config as any)?.serverPrincipal?.[0]
-                    ? "error"
-                    : "default"
-                }
-                {...form.register("config.serverPrincipal.0", {
-                  required: {
-                    value: true,
-                    message: `${t("validateServerPrincipal")}`,
-                  },
-                })}
-              />
-            </FormGroup>
-
-            <FormGroup
+              labelIcon={t("serverPrincipalHelp")}
+              rules={{
+                required: t("validateServerPrincipal"),
+              }}
+            />
+            <TextControl
+              name="config.keyTab.0"
               label={t("keyTab")}
-              labelIcon={
-                <HelpItem helpText={t("keyTabHelp")} fieldLabelId="keyTab" />
-              }
-              fieldId="kc-key-tab"
-              isRequired
-              validated={
-                (form.formState.errors.config as any)?.keyTab?.[0]
-                  ? "error"
-                  : "default"
-              }
-              helperTextInvalid={
-                (form.formState.errors.config as any)?.keyTab?.[0].message
-              }
-            >
-              <KeycloakTextInput
-                isRequired
-                id="kc-key-tab"
-                data-testid="kerberos-keytab"
-                validated={
-                  (form.formState.errors.config as any)?.keyTab?.[0]
-                    ? "error"
-                    : "default"
-                }
-                {...form.register("config.keyTab.0", {
-                  required: {
-                    value: true,
-                    message: `${t("validateKeyTab")}`,
-                  },
-                })}
-              />
-            </FormGroup>
-
-            <FormGroup
+              labelIcon={t("keyTabHelp")}
+              rules={{
+                required: t("validateKeyTab"),
+              }}
+            />
+            <TextControl
+              name="config.krbPrincipalAttribute.0"
               label={t("krbPrincipalAttribute")}
-              labelIcon={
-                <HelpItem
-                  helpText={t("krbPrincipalAttributeHelp")}
-                  fieldLabelId="krbPrincipalAttribute"
-                />
-              }
-              fieldId="kc-krb-principal-attribute"
-              validated={
-                (form.formState.errors.config as any)
-                  ?.krbPrincipalAttribute?.[0]
-                  ? "error"
-                  : "default"
-              }
-              helperTextInvalid={
-                (form.formState.errors.config as any)
-                  ?.krbPrincipalAttribute?.[0].message
-              }
-            >
-              <KeycloakTextInput
-                defaultValue="userPrincipalName"
-                id="kc-krb-principal-attribute"
-                data-testid="krb-principal-attribute"
-                validated={
-                  (form.formState.errors.config as any)
-                    ?.krbPrincipalAttribute?.[0]
-                    ? "error"
-                    : "default"
-                }
-                {...form.register("config.krbPrincipalAttribute.0")}
-              />
-            </FormGroup>
+              labelIcon={t("krbPrincipalAttributeHelp")}
+            />
 
             <FormGroup
               label={t("debug")}
@@ -221,7 +110,6 @@ export const LdapSettingsKerberosIntegration = ({
               fieldId="kc-debug"
               hasNoPaddingTop
             >
-              {" "}
               <Controller
                 name="config.debug"
                 defaultValue={["false"]}
@@ -231,14 +119,14 @@ export const LdapSettingsKerberosIntegration = ({
                     id="kc-debug"
                     data-testid="debug"
                     isDisabled={false}
-                    onChange={(value) => field.onChange([`${value}`])}
+                    onChange={(_event, value) => field.onChange([`${value}`])}
                     isChecked={field.value[0] === "true"}
                     label={t("on")}
                     labelOff={t("off")}
                     aria-label={t("debug")}
                   />
                 )}
-              ></Controller>
+              />
             </FormGroup>
           </>
         )}
@@ -262,7 +150,7 @@ export const LdapSettingsKerberosIntegration = ({
                 id="kc-use-kerberos-password-authentication"
                 data-testid="use-kerberos-pw-auth"
                 isDisabled={false}
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 label={t("on")}
                 labelOff={t("off")}
@@ -272,6 +160,6 @@ export const LdapSettingsKerberosIntegration = ({
           ></Controller>
         </FormGroup>
       </FormAccess>
-    </>
+    </FormProvider>
   );
 };

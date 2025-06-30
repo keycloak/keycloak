@@ -596,7 +596,7 @@ public class FAPI1Test extends AbstractFAPITest {
         oauth.codeChallenge("234567890_234567890123");
         oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_PLAIN);
         oauth.openLoginForm();
-        assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST,false, "Invalid parameter: code challenge method is not configured one");
+        assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST,false, "Invalid parameter: code challenge method is not matching the configured one");
     }
 
     // Assumption is that clientId is already set in "oauth" client when this method is called. Also assumption is that PKCE parameters are properly set (in case PKCE required for the client)

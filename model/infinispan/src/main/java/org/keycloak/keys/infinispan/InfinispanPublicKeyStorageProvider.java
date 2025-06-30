@@ -25,6 +25,8 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
@@ -52,16 +54,19 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
     private final Map<String, FutureTask<PublicKeysEntry>> tasksInProgress;
 
     private final int minTimeBetweenRequests ;
+    private final int maxCacheTime;
 
-    private Set<String> invalidations = new HashSet<>();
+    private final Set<String> invalidations = new HashSet<>();
 
     private boolean transactionEnlisted = false;
 
-    public InfinispanPublicKeyStorageProvider(KeycloakSession session, Cache<String, PublicKeysEntry> keys, Map<String, FutureTask<PublicKeysEntry>> tasksInProgress, int minTimeBetweenRequests) {
+    public InfinispanPublicKeyStorageProvider(KeycloakSession session, Cache<String, PublicKeysEntry> keys, Map<String, FutureTask<PublicKeysEntry>> tasksInProgress,
+            int minTimeBetweenRequests, int maxCacheTime) {
         this.session = session;
         this.keys = keys;
         this.tasksInProgress = tasksInProgress;
         this.minTimeBetweenRequests = minTimeBetweenRequests;
+        this.maxCacheTime = maxCacheTime;
     }
 
     void addInvalidation(String cacheKey) {
@@ -125,7 +130,7 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
     @Override
     public KeyWrapper getPublicKey(String modelKey, String kid, String algorithm, PublicKeyLoader loader) {
         PublicKeysEntry entry = keys.get(modelKey);
-        int lastRequestTime = entry==null ? 0 : entry.getLastRequestTime();
+        int lastRequestTime = entry == null? 0 : entry.getLastRequestTime();
         int currentTime = Time.currentTime();
         boolean isSendingRequestAllowed = currentTime > lastRequestTime + minTimeBetweenRequests;
 
@@ -139,28 +144,100 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
             }
         }
 
+        PublicKeysEntry updatedEntry = reloadKeys(modelKey, entry, currentTime, loader);
+        entry = updatedEntry == null? entry : updatedEntry;
+        KeyWrapper publicKey = entry == null? null : entry.getCurrentKeys().getKeyByKidAndAlg(kid, algorithm);
+        if (publicKey != null) {
+            // return a copy of the key to not modify the cached one
+            return publicKey.cloneKey();
+        }
+
+        List<String> availableKids = entry == null? Collections.emptyList() : entry.getCurrentKeys().getKids();
+        log.warnf("PublicKey wasn't found in the storage. Requested kid: '%s' . Available kids: '%s'", kid, availableKids);
+
+        return null;
+    }
+
+    /**
+     * If the key is found in the cache that is returned straight away. If not in cache,
+     * the keys are reloaded if allowed by the minTimeBetweenRequests and key
+     * is searched again.
+     *
+     * @param modelKey The model key
+     * @param predicate The predicate to search the key
+     * @param loader The loader to reload keys
+     * @return The key or null
+     */
+    @Override
+    public KeyWrapper getFirstPublicKey(String modelKey, Predicate<KeyWrapper> predicate, PublicKeyLoader loader) {
+        PublicKeysEntry entry = keys.get(modelKey);
+        if (entry != null) {
+            // if in cache just try to return if found
+            KeyWrapper key = entry.getCurrentKeys().getKeyByPredicate(predicate);
+            if (key != null) {
+                return key.cloneKey();
+            }
+        }
+        // if not found try a second time if reload allowed by minTimeBetweenRequests
+        int currentTime = Time.currentTime();
+        entry = reloadKeys(modelKey, entry, currentTime, loader);
+        if (entry != null) {
+            KeyWrapper key = entry.getCurrentKeys().getKeyByPredicate(predicate);
+            if (key != null) {
+                return key.cloneKey();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * return all keys under the model key. The maxCacheTime is used to reload the
+     * keys from time to time.
+     * @param modelKey The model key
+     * @param loader The loader to reload keys id maxCacheTime reached
+     * @return The keys in the model
+     */
+    @Override
+    public List<KeyWrapper> getKeys(String modelKey, PublicKeyLoader loader) {
+        PublicKeysEntry entry = keys.get(modelKey);
+        int currentTime = Time.currentTime();
+
+        if (entry == null || currentTime > entry.getLastRequestTime() + maxCacheTime) {
+            // reload preemptively
+            PublicKeysEntry updatedEntry = reloadKeys(modelKey, entry, currentTime, loader);
+            if (updatedEntry != null) {
+                entry = updatedEntry;
+            }
+        }
+
+        return entry == null
+                ? Collections.emptyList()
+                : entry.getCurrentKeys().getKeys().stream().map(KeyWrapper::cloneKey).collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean reloadKeys(String modelKey, PublicKeyLoader loader) {
+        PublicKeysEntry entry = keys.get(modelKey);
+        int currentTime = Time.currentTime();
+        return reloadKeys(modelKey, entry, currentTime, loader) != null;
+    }
+
+    private PublicKeysEntry reloadKeys(String modelKey, PublicKeysEntry entry, int currentTime, PublicKeyLoader loader) {
         // Check if we are allowed to send request
-        if (isSendingRequestAllowed) {
+        if (entry == null || currentTime > entry.getLastRequestTime() + minTimeBetweenRequests) {
             WrapperCallable wrapperCallable = new WrapperCallable(modelKey, loader);
             FutureTask<PublicKeysEntry> task = new FutureTask<>(wrapperCallable);
             FutureTask<PublicKeysEntry> existing = tasksInProgress.putIfAbsent(modelKey, task);
 
             if (existing == null) {
+                log.debugf("Reloading keys for model key '%s'.", modelKey);
                 task.run();
             } else {
                 task = existing;
             }
 
             try {
-                entry = task.get();
-
-                // Computation finished. Let's see if key is available
-                KeyWrapper publicKey = entry.getCurrentKeys().getKeyByKidAndAlg(kid, algorithm);
-                if (publicKey != null) {
-                    // return a copy of the key to not modify the cached one
-                    return publicKey.cloneKey();
-                }
-
+                return task.get();
             } catch (ExecutionException ee) {
                 throw new RuntimeException("Error when loading public keys: " + ee.getMessage(), ee);
             } catch (InterruptedException ie) {
@@ -172,12 +249,8 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
                 }
             }
         } else {
-            log.warnf("Won't load the keys for model '%s' . Last request time was %d", modelKey, lastRequestTime);
+            log.warnf("Won't load the keys for model '%s'. Last request time was %d", modelKey, entry.getLastRequestTime());
         }
-
-        List<String> availableKids = entry==null ? Collections.emptyList() : entry.getCurrentKeys().getKids();
-        log.warnf("PublicKey wasn't found in the storage. Requested kid: '%s' . Available kids: '%s'", kid, availableKids);
-
         return null;
     }
 

@@ -52,10 +52,9 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
 
     private Map<String, String> notes = new ConcurrentHashMap<>();
 
-    private String currentRefreshToken;
-    private int currentRefreshTokenUseCount;
-
     private final UUID id;
+
+    private transient String userSessionId;
 
     public AuthenticatedClientSessionEntity(UUID id) {
         this.id = id;
@@ -123,22 +122,6 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
         this.notes = notes;
     }
 
-    public String getCurrentRefreshToken() {
-        return currentRefreshToken;
-    }
-
-    public void setCurrentRefreshToken(String currentRefreshToken) {
-        this.currentRefreshToken = currentRefreshToken;
-    }
-
-    public int getCurrentRefreshTokenUseCount() {
-        return currentRefreshTokenUseCount;
-    }
-
-    public void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount) {
-        this.currentRefreshTokenUseCount = currentRefreshTokenUseCount;
-    }
-
     public UUID getId() {
         return id;
     }
@@ -190,6 +173,14 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
         return entityWrapper;
     }
 
+    public String getUserSessionId() {
+        return userSessionId;
+    }
+
+    public void setUserSessionId(String userSessionId) {
+        this.userSessionId = userSessionId;
+    }
+
     public static class ExternalizerImpl implements Externalizer<AuthenticatedClientSessionEntity> {
 
         @Override
@@ -204,8 +195,6 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
             Map<String, String> notes = session.getNotes();
             KeycloakMarshallUtil.writeMap(notes, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, output);
 
-            MarshallUtil.marshallString(session.getCurrentRefreshToken(), output);
-            KeycloakMarshallUtil.marshall(session.getCurrentRefreshTokenUseCount(), output);
         }
 
 
@@ -223,9 +212,6 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
             Map<String, String> notes = KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT,
                     new KeycloakMarshallUtil.ConcurrentHashMapBuilder<>());
             sessionEntity.setNotes(notes);
-
-            sessionEntity.setCurrentRefreshToken(MarshallUtil.unmarshallString(input));
-            sessionEntity.setCurrentRefreshTokenUseCount(KeycloakMarshallUtil.unmarshallInteger(input));
 
             return sessionEntity;
         }

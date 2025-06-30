@@ -82,7 +82,7 @@ public class ReadOnlyAttributeUnchangedValidator implements SimpleValidator {
         }
 
         if (!isUnchanged(existingValue, value)) {
-            logger.warnf("Attempt to edit denied for attribute '%s' with pattern '%s' of user '%s'", key, pattern, user == null ? "new user" : user.getFirstAttribute(UserModel.USERNAME));
+            logger.debugf("Attempt to edit denied for attribute '%s' with pattern '%s' of user '%s'", key, pattern, user == null ? "new user" : user.getFirstAttribute(UserModel.USERNAME));
             context.addError(new ValidationError(ID, key, UPDATE_READ_ONLY_ATTRIBUTES_REJECTED_MSG));
         }
 

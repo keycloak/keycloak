@@ -4,6 +4,7 @@ import {
   InputGroup,
   TextInput,
   TextInputProps,
+  InputGroupItem,
 } from "@patternfly/react-core";
 import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
 import { Fragment, useEffect, useMemo } from "react";
@@ -11,7 +12,7 @@ import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 function stringToMultiline(value?: string): string[] {
-  return typeof value === "string" ? value.split("##") : [];
+  return typeof value === "string" ? value.split("##") : [value || ""];
 }
 
 function toStringValue(formValue: string[]): string {
@@ -88,24 +89,28 @@ export const MultiLineInput = ({
       {fields.map((value, index) => (
         <Fragment key={index}>
           <InputGroup>
-            <TextInput
-              data-testid={name + index}
-              onChange={(value) => updateValue(index, value)}
-              name={`${name}.${index}.value`}
-              value={value}
-              isDisabled={isDisabled}
-              {...rest}
-            />
-            <Button
-              data-testid={"remove" + index}
-              variant={ButtonVariant.link}
-              onClick={() => remove(index)}
-              tabIndex={-1}
-              aria-label={t("remove")}
-              isDisabled={fields.length === 1 || isDisabled}
-            >
-              <MinusCircleIcon />
-            </Button>
+            <InputGroupItem isFill>
+              <TextInput
+                data-testid={name + index}
+                onChange={(_event, value) => updateValue(index, value)}
+                name={`${name}.${index}.value`}
+                value={value}
+                isDisabled={isDisabled}
+                {...rest}
+              />
+            </InputGroupItem>
+            <InputGroupItem>
+              <Button
+                data-testid={"remove" + index}
+                variant={ButtonVariant.link}
+                onClick={() => remove(index)}
+                tabIndex={-1}
+                aria-label={t("remove")}
+                isDisabled={fields.length === 1 || isDisabled}
+              >
+                <MinusCircleIcon />
+              </Button>
+            </InputGroupItem>
           </InputGroup>
           {index === fields.length - 1 && (
             <Button

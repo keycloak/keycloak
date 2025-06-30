@@ -3,3 +3,4 @@ org.keycloak.authentication.actiontoken.execactions.ExecuteActionsActionTokenHan
 org.keycloak.authentication.actiontoken.verifyemail.VerifyEmailActionTokenHandler
 org.keycloak.authentication.actiontoken.idpverifyemail.IdpVerifyAccountLinkActionTokenHandler
 org.keycloak.authentication.actiontoken.updateemail.UpdateEmailActionTokenHandler
+org.keycloak.authentication.actiontoken.inviteorg.InviteOrgActionTokenHandler

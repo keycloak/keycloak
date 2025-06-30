@@ -20,6 +20,8 @@ package org.keycloak.operator.testsuite.integration;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
@@ -36,6 +38,7 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.controllers.KeycloakAdminSecretDependentResource;
 import org.keycloak.operator.controllers.KeycloakDistConfigurator;
@@ -44,6 +47,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
+import org.keycloak.operator.testsuite.unit.WatchedResourcesTest;
 import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
@@ -53,7 +57,12 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
+
+import jakarta.inject.Inject;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -68,6 +77,10 @@ import static org.keycloak.operator.testsuite.utils.K8sUtils.waitForKeycloakToBe
 
 @QuarkusTest
 public class KeycloakDeploymentTest extends BaseOperatorTest {
+
+    @Inject
+    Config config;
+
     @Test
     public void testBasicKeycloakDeploymentAndDeletion() {
         // CR
@@ -107,7 +120,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         Resource<StatefulSet> stsResource = k8sclient.resources(StatefulSet.class).withName(deploymentName);
         Resource<Keycloak> keycloakResource = k8sclient.resources(Keycloak.class).withName(deploymentName);
         // expect no errors and not ready, which means we'll keep reconciling
-        Awaitility.await().untilAsserted(() -> {
+        Awaitility.await().ignoreExceptions().untilAsserted(() -> {
             assertThat(stsResource.get()).isNotNull();
             Keycloak keycloak = keycloakResource.get();
             CRAssert.assertKeycloakStatusCondition(keycloak, KeycloakStatusCondition.HAS_ERRORS, false);
@@ -148,20 +161,13 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         var defaultKCDeploy = getTestKeycloakDeployment(true);
 
         var valueSecretHealthProp = new ValueOrSecret("health-enabled", "false");
-        var valueSecretProxyProp = new ValueOrSecret("proxy", "reencrypt");
 
         var healthEnvVar = new EnvVarBuilder()
                 .withName(KeycloakDistConfigurator.getKeycloakOptionEnvVarName(valueSecretHealthProp.getName()))
                 .withValue(valueSecretHealthProp.getValue())
                 .build();
 
-        var proxyEnvVar = new EnvVarBuilder()
-                .withName(KeycloakDistConfigurator.getKeycloakOptionEnvVarName(valueSecretProxyProp.getName()))
-                .withValue(valueSecretProxyProp.getValue())
-                .build();
-
         defaultKCDeploy.getSpec().getAdditionalOptions().add(valueSecretHealthProp);
-        defaultKCDeploy.getSpec().getAdditionalOptions().add(valueSecretProxyProp);
 
         deployKeycloak(k8sclient, defaultKCDeploy, false);
 
@@ -172,14 +178,6 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                                                   .get()
                                                   .getValue()
         ).isEqualTo("true"); // just a sanity check default values did not change
-
-        assertThat(
-                Constants.DEFAULT_DIST_CONFIG_LIST.stream()
-                                                  .filter(oneValueOrSecret -> oneValueOrSecret.getName().equalsIgnoreCase(valueSecretProxyProp.getName()))
-                                                  .findFirst()
-                                                  .get()
-                                                  .getValue()
-        ).isEqualTo("passthrough"); // just a sanity check default values did not change
 
         Awaitility.await()
                 .ignoreExceptions()
@@ -202,10 +200,6 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                     assertThat(firstKCContainer.getEnv().stream()
                             .filter(oneEnvVar -> oneEnvVar.getName().equalsIgnoreCase(healthEnvVar.getName())))
                             .containsExactly(healthEnvVar);
-
-                    assertThat(firstKCContainer.getEnv().stream()
-                            .filter(oneEnvVar -> oneEnvVar.getName().equalsIgnoreCase(proxyEnvVar.getName())))
-                            .containsExactly(proxyEnvVar);
 
                 });
     }
@@ -251,7 +245,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
 
         // managed changes
         deployment.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(List.of(flandersEnvVar));
-        String originalAnnotationValue = deployment.getMetadata().getAnnotations().put(Constants.KEYCLOAK_WATCHING_ANNOTATION, "not-right");
+        String originalAnnotationValue = deployment.getMetadata().getAnnotations().put(WatchedResourcesTest.KEYCLOAK_WATCHING_ANNOTATION, "not-right");
 
         deployment.getMetadata().setResourceVersion(null);
         k8sclient.resource(deployment).update();
@@ -266,7 +260,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                     assertThat(d.getMetadata().getLabels().entrySet().containsAll(labels.entrySet())).isTrue();
                     // managed changes should get reverted
                     assertThat(d.getSpec()).isEqualTo(expectedSpec); // specs should be reconciled expected merged state
-                    assertThat(d.getMetadata().getAnnotations().get(Constants.KEYCLOAK_WATCHING_ANNOTATION)).isEqualTo(originalAnnotationValue);
+                    assertThat(d.getMetadata().getAnnotations().get(WatchedResourcesTest.KEYCLOAK_WATCHING_ANNOTATION)).isEqualTo(originalAnnotationValue);
                 });
     }
 
@@ -296,6 +290,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         deployKeycloak(k8sclient, kc, true);
 
         assertKeycloakAccessibleViaService(kc, false, Constants.KEYCLOAK_HTTP_PORT);
+        assertManagementInterfaceAccessibleViaService(kc, false);
     }
 
     @Test
@@ -305,6 +300,9 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         deployKeycloak(k8sclient, kc, true);
 
         assertKeycloakAccessibleViaService(kc, false, Constants.KEYCLOAK_HTTP_PORT);
+
+        // if TLS is enabled, management interface should use https
+        assertManagementInterfaceAccessibleViaService(kc, true);
     }
 
     @Test
@@ -330,7 +328,6 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         var kc = getTestKeycloakDeployment(true);
         var hostnameSpec = new HostnameSpecBuilder()
                 .withStrict(false)
-                .withStrictBackchannel(false)
                 .build();
         kc.getSpec().setHostnameSpec(hostnameSpec);
 
@@ -359,7 +356,6 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
 
         var hostnameSpec = new HostnameSpecBuilder()
                 .withStrict(false)
-                .withStrictBackchannel(false)
                 .build();
         kc.getSpec().setHostnameSpec(hostnameSpec);
 
@@ -380,7 +376,6 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
 
         var hostnameSpec = new HostnameSpecBuilder()
                 .withStrict(false)
-                .withStrictBackchannel(false)
                 .build();
         kc.getSpec().setHostnameSpec(hostnameSpec);
 
@@ -591,24 +586,25 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         deployKeycloak(k8sclient, kc, true);
 
         var stsGetter = k8sclient.apps().statefulSets().inNamespace(namespace).withName(kc.getMetadata().getName());
-        final String origImage = stsGetter.get().getSpec().getTemplate().getSpec().getContainers().get(0).getImage();
         final String newImage = "quay.io/keycloak/non-existing-keycloak";
 
         kc.getSpec().setImage(newImage);
+
+        var upgradeCondition = k8sclient.resource(kc).informOnCondition(kcs -> {
+            try {
+                assertKeycloakStatusCondition(kcs.get(0), KeycloakStatusCondition.READY, false, "Performing Keycloak upgrade");
+                return true;
+            } catch (AssertionError e) {
+                return false;
+            }
+        });
+
         deployKeycloak(k8sclient, kc, false);
-
-        Awaitility.await()
-                .ignoreExceptions()
-                .pollInterval(Duration.ZERO) // make the test super fast not to miss the moment when Operator changes the STS
-                .untilAsserted(() -> {
-                    var sts = stsGetter.get();
-                    assertEquals(1, sts.getStatus().getReplicas());
-                    assertEquals(origImage, sts.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
-
-                    var currentKc = k8sclient.resources(Keycloak.class)
-                                    .inNamespace(namespace).withName(kc.getMetadata().getName()).get();
-                    assertKeycloakStatusCondition(currentKc, KeycloakStatusCondition.READY, false, "Performing Keycloak upgrade");
-                });
+        try {
+            upgradeCondition.get(2, TimeUnit.MINUTES);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            throw new AssertionError(e);
+        }
 
         Awaitility.await()
                 .ignoreExceptions()
@@ -642,6 +638,79 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         assertThat(labels).containsAllEntriesOf(expected);
     }
 
+    @Test
+    public void testApplyingResourcesParametersContainer() {
+        var kc = getTestKeycloakDeployment(true);
+
+        var resourceRequirements = new ResourceRequirements();
+        resourceRequirements.setLimits(Map.of(
+                "memory", new Quantity("3", "G")));
+        resourceRequirements.setRequests(Map.of(
+                "memory", new Quantity("500", "M")));
+
+        kc.getSpec().setResourceRequirements(resourceRequirements);
+
+        deployKeycloak(k8sclient, kc, true);
+
+        var pods = k8sclient
+                .pods()
+                .inNamespace(namespace)
+                .withLabels(Constants.DEFAULT_LABELS)
+                .list()
+                .getItems();
+
+        assertThat(pods).isNotNull();
+        assertThat(pods).isNotEmpty();
+
+        var containers = pods.get(0).getSpec().getContainers();
+        assertThat(containers).isNotNull();
+        assertThat(containers).isNotEmpty();
+
+        var resources = containers.get(0).getResources();
+        assertThat(resources).isNotNull();
+
+        var requests = resources.getRequests();
+        assertThat(requests).isNotNull();
+        assertThat(requests.get("memory").getAmount()).isEqualTo("500");
+        assertThat(requests.get("memory").getFormat()).isEqualTo("M");
+
+        var limits = resources.getLimits();
+        assertThat(limits).isNotNull();
+        assertThat(limits.get("memory").getAmount()).isEqualTo("3");
+        assertThat(limits.get("memory").getFormat()).isEqualTo("G");
+    }
+
+    @Test
+    public void testApplyingResourcesDefaultValues() {
+        var kc = getTestKeycloakDeployment(true);
+        deployKeycloak(k8sclient, kc, true);
+
+        var pods = k8sclient
+                .pods()
+                .inNamespace(namespace)
+                .withLabels(Constants.DEFAULT_LABELS)
+                .list()
+                .getItems();
+
+        assertThat(pods).isNotNull();
+        assertThat(pods).isNotEmpty();
+
+        var containers = pods.get(0).getSpec().getContainers();
+        assertThat(containers).isNotNull();
+        assertThat(containers).isNotEmpty();
+
+        var resources = containers.get(0).getResources();
+        assertThat(resources).isNotNull();
+
+        var requests = resources.getRequests();
+        assertThat(requests).isNotNull();
+        assertThat(requests.get("memory")).isEqualTo(config.keycloak().resources().requests().memory());
+
+        var limits = resources.getLimits();
+        assertThat(limits).isNotNull();
+        assertThat(limits.get("memory")).isEqualTo(config.keycloak().resources().limits().memory());
+    }
+
     private void handleFakeImagePullSecretCreation(Keycloak keycloakCR,
                                                    String secretDescriptorFilename) {
 
@@ -659,9 +728,28 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
 
                     String serviceName = KeycloakServiceDependentResource.getServiceName(kc);
                     assertThat(k8sclient.resources(Service.class).withName(serviceName).require().getSpec().getPorts()
-                            .stream().map(ServicePort::getName).anyMatch(protocol::equals));
+                            .stream().map(ServicePort::getName).anyMatch(protocol::equals)).isTrue();
 
-                    String url = protocol + "://" + serviceName + "." + namespace + ":" + port;
+                    String url = protocol + "://" + serviceName + "." + namespace + ":" + port + "/admin/master/console/";
+                    Log.info("Checking url: " + url);
+
+                    var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, url);
+                    Log.info("Curl Output: " + curlOutput);
+
+                    assertEquals("200", curlOutput);
+                });
+    }
+
+    private void assertManagementInterfaceAccessibleViaService(Keycloak kc, boolean https) {
+        Awaitility.await()
+                .ignoreExceptions()
+                .untilAsserted(() -> {
+                    String serviceName = KeycloakServiceDependentResource.getServiceName(kc);
+                    assertThat(k8sclient.resources(Service.class).withName(serviceName).require().getSpec().getPorts()
+                            .stream().map(ServicePort::getName).anyMatch(Constants.KEYCLOAK_MANAGEMENT_PORT_NAME::equals)).isTrue();
+
+                    String protocol = https ? "https" : "http";
+                    String url = protocol + "://" + serviceName + "." + namespace + ":" + Constants.KEYCLOAK_MANAGEMENT_PORT;
                     Log.info("Checking url: " + url);
 
                     var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, url);

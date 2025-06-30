@@ -13,6 +13,21 @@ include::topics/templates/document-attributes.adoc[]
 :release_header_latest_link: {releasenotes_link_latest}
 include::topics/templates/release-header.adoc[]
 
+== {project_name_full} 25.0.0
+include::topics/25_0_0.adoc[leveloffset=2]
+
+== {project_name_full} 24.0.5
+include::topics/24_0_5.adoc[leveloffset=2]
+
+== {project_name_full} 24.0.4
+include::topics/24_0_4.adoc[leveloffset=2]
+
+== {project_name_full} 24.0.1
+include::topics/24_0_1.adoc[leveloffset=2]
+
+== {project_name_full} 24.0.0
+include::topics/24_0_0.adoc[leveloffset=2]
+
 == {project_name_full} 23.0.0
 include::topics/23_0_0.adoc[leveloffset=2]
 

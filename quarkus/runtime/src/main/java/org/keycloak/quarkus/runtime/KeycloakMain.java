@@ -29,25 +29,22 @@ import static org.keycloak.quarkus.runtime.cli.command.Start.isDevProfileNotAllo
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ForkJoinPool;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import org.keycloak.common.profile.ProfileException;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import picocli.CommandLine.ExitCode;
 
 import io.quarkus.runtime.ApplicationLifecycleManager;
 import io.quarkus.runtime.Quarkus;
 
 import org.jboss.logging.Logger;
-import org.keycloak.Config;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
-import org.keycloak.quarkus.runtime.cli.NonCliPropertyException;
+import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.common.Version;
 import org.keycloak.quarkus.runtime.cli.command.Start;
-import org.keycloak.services.ServicesLogger;
-import org.keycloak.services.managers.ApplianceBootstrap;
-import org.keycloak.services.resources.KeycloakApplication;
 
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.annotations.QuarkusMain;
@@ -59,35 +56,41 @@ import io.quarkus.runtime.annotations.QuarkusMain;
 @ApplicationScoped
 public class KeycloakMain implements QuarkusApplication {
 
-    private static final String KEYCLOAK_ADMIN_ENV_VAR = "KEYCLOAK_ADMIN";
-    private static final String KEYCLOAK_ADMIN_PASSWORD_ENV_VAR = "KEYCLOAK_ADMIN_PASSWORD";
-
     public static void main(String[] args) {
+        ensureForkJoinPoolThreadFactoryHasBeenSetToQuarkus();
+
         System.setProperty("kc.version", Version.VERSION);
-        List<String> cliArgs = Picocli.parseArgs(args);
+        List<String> cliArgs = null;
+        try {
+            cliArgs = Picocli.parseArgs(args);
+        } catch (PropertyException e) {
+            handleUsageError(e.getMessage());
+            return;
+        }
 
         if (cliArgs.isEmpty()) {
             cliArgs = new ArrayList<>(cliArgs);
             // default to show help message
             cliArgs.add("-h");
-        } else if (isFastStart(cliArgs)) {
-            // fast path for starting the server without bootstrapping CLI
-            ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
-            PrintWriter errStream = new PrintWriter(System.err, true);
+        } else if (isFastStart(cliArgs)) { // fast path for starting the server without bootstrapping CLI
 
             if (isDevProfileNotAllowed()) {
-                errorHandler.error(errStream, Messages.devProfileNotAllowedError(Start.NAME), null);
-                System.exit(ExitCode.USAGE);
+                handleUsageError(Messages.devProfileNotAllowedError(Start.NAME));
                 return;
             }
 
+            Environment.setParsedCommand(new Start());
+
             try {
-                Picocli.validateNonCliConfig(cliArgs, new Start(), new PrintWriter(System.out, true));
-            } catch (NonCliPropertyException e) {
-                errorHandler.error(errStream, e.getMessage(), null);
-                System.exit(ExitCode.USAGE);
+                PropertyMappers.sanitizeDisabledMappers();
+                Picocli.validateConfig(cliArgs, new Start());
+            } catch (PropertyException | ProfileException e) {
+                handleUsageError(e.getMessage(), e.getCause());
                 return;
             }
+
+            ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
+            PrintWriter errStream = new PrintWriter(System.err, true);
 
             start(errorHandler, errStream, args);
 
@@ -96,6 +99,36 @@ public class KeycloakMain implements QuarkusApplication {
 
         // parse arguments and execute any of the configured commands
         parseAndRun(cliArgs);
+    }
+
+    /**
+     * Verify that the property for the ForkJoinPool factory set by Quarkus matches the actual factory.
+     * If this is not the case, the classloader for those threads is not set correctly, and for example loading configurations
+     * via SmallRye is unreliable. This can happen if a Java Agent or JMX initializes the ForkJoinPool before Java's main method is run.
+     */
+    private static void ensureForkJoinPoolThreadFactoryHasBeenSetToQuarkus() {
+        // At this point, the settings from the CLI are no longer visible as they have been overwritten in the QuarkusEntryPoint.
+        // Therefore, the only thing we can do is to check if the thread pool class name is the same as in the configuration.
+        final String FORK_JOIN_POOL_COMMON_THREAD_FACTORY = "java.util.concurrent.ForkJoinPool.common.threadFactory";
+        String sf = System.getProperty(FORK_JOIN_POOL_COMMON_THREAD_FACTORY);
+        //noinspection resource
+        if (!ForkJoinPool.commonPool().getFactory().getClass().getName().equals(sf)) {
+            Logger.getLogger(KeycloakMain.class).errorf("The ForkJoinPool has been initialized with the wrong thread factory. The property '%s' should be set on the Java CLI to ensure Java's ForkJoinPool will always be initialized with '%s' even if there are Java agents which might initialize logging or other capabilities earlier than the main method.",
+                    FORK_JOIN_POOL_COMMON_THREAD_FACTORY,
+                    sf);
+            throw new RuntimeException("The ForkJoinPool has been initialized with the wrong thread factory");
+        }
+    }
+
+    private static void handleUsageError(String message) {
+        handleUsageError(message, null);
+    }
+
+    private static void handleUsageError(String message, Throwable cause) {
+        ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
+        PrintWriter errStream = new PrintWriter(System.err, true);
+        errorHandler.error(errStream, message, cause);
+        System.exit(ExitCode.USAGE);
     }
 
     private static boolean isFastStart(List<String> cliArgs) {
@@ -131,10 +164,6 @@ public class KeycloakMain implements QuarkusApplication {
      */
     @Override
     public int run(String... args) throws Exception {
-        if (!isImportExportMode()) {
-            createAdminUser();
-        }
-
         if (isDevProfile()) {
             Logger.getLogger(KeycloakMain.class).warnf("Running the server in development mode. DO NOT use this configuration in production.");
         }
@@ -152,23 +181,4 @@ public class KeycloakMain implements QuarkusApplication {
         return exitCode;
     }
 
-    private void createAdminUser() {
-        String adminUserName = System.getenv(KEYCLOAK_ADMIN_ENV_VAR);
-        String adminPassword = System.getenv(KEYCLOAK_ADMIN_PASSWORD_ENV_VAR);
-
-        if ((adminUserName == null || adminUserName.trim().length() == 0)
-                || (adminPassword == null || adminPassword.trim().length() == 0)) {
-            return;
-        }
-
-        KeycloakSessionFactory sessionFactory = KeycloakApplication.getSessionFactory();
-
-        try {
-            KeycloakModelUtils.runJobInTransaction(sessionFactory, session -> {
-                new ApplianceBootstrap(session).createMasterRealmUser(adminUserName, adminPassword);
-            });
-        } catch (Throwable t) {
-            ServicesLogger.LOGGER.addUserFailed(t, adminUserName, Config.getAdminRealm());
-        }
-    }
 }

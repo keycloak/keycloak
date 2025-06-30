@@ -91,8 +91,6 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
 
     @Before
     public void addProvidersBeforeTest() throws URISyntaxException, IOException {
-        Assume.assumeTrue("RealmProvider is not 'jpa'", isJpaRealmProvider());
-
         ComponentRepresentation dummyProvider = new ComponentRepresentation();
         dummyProvider.setName("dummy");
         dummyProvider.setId(componentId);

@@ -18,55 +18,57 @@
 
 package org.keycloak.protocol.oidc.grants.ciba;
 
-import jakarta.ws.rs.core.MultivaluedMap;
+import java.util.Map;
+
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 
 import org.jboss.logging.Logger;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuth2DeviceCodeModel;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.grants.OAuth2GrantType;
+import org.keycloak.protocol.oidc.grants.OAuth2GrantTypeBase;
 import org.keycloak.protocol.oidc.grants.ciba.channel.CIBAAuthenticationRequest;
 import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.context.BackchannelTokenRequestContext;
 import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.context.BackchannelTokenResponseContext;
 import org.keycloak.protocol.oidc.grants.ciba.endpoints.CibaRootEndpoint;
-import org.keycloak.protocol.oidc.TokenManager;
-import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
 import org.keycloak.protocol.oidc.grants.device.DeviceGrantType;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.resources.Cors;
+import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
-import org.keycloak.utils.ProfileHelper;
-
-import java.util.Map;
 
 /**
+ * OpenID Connect Client-Initiated Backchannel Authentication Flow
+ * https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html#rfc.section.10.1
+ *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class CibaGrantType {
+public class CibaGrantType extends OAuth2GrantTypeBase {
 
     private static final Logger logger = Logger.getLogger(CibaGrantType.class);
 
@@ -106,39 +108,25 @@ public class CibaGrantType {
         return uriBuilder.path(OIDCLoginProtocolService.class, "resolveExtension").resolveTemplate("extension", CibaRootEndpoint.PROVIDER_ID, false).path(CibaRootEndpoint.class, "authenticate");
     }
 
-    private final MultivaluedMap<String, String> formParams;
-    private final ClientModel client;
-    private final KeycloakSession session;
-    private final TokenEndpoint tokenEndpoint;
-    private final RealmModel realm;
-    private final EventBuilder event;
-    private final Cors cors;
-
-    public CibaGrantType(MultivaluedMap<String, String> formParams, ClientModel client, KeycloakSession session,
-            TokenEndpoint tokenEndpoint, RealmModel realm, EventBuilder event, Cors cors) {
-        this.formParams = formParams;
-        this.client = client;
-        this.session = session;
-        this.tokenEndpoint = tokenEndpoint;
-        this.realm = realm;
-        this.event = event;
-        this.cors = cors;
-    }
-
-    public Response cibaGrant() {
-        ProfileHelper.requireFeature(Profile.Feature.CIBA);
+    @Override
+    public Response process(Context context) {
+        setContext(context);
 
         if (!realm.getCibaPolicy().isOIDCCIBAGrantEnabled(client)) {
+            String errorMessage = "Client not allowed OIDC CIBA Grant";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.NOT_ALLOWED);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT,
-                "Client not allowed OIDC CIBA Grant", Response.Status.BAD_REQUEST);
+                    errorMessage, Response.Status.BAD_REQUEST);
         }
 
         String jwe = formParams.getFirst(AUTH_REQ_ID);
 
         if (jwe == null) {
+            String errorMessage = "Missing parameter: " + AUTH_REQ_ID;
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_CODE);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Missing parameter: " + AUTH_REQ_ID, Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, errorMessage, Response.Status.BAD_REQUEST);
         }
 
         logger.tracev("CIBA Grant :: authReqId = {0}", jwe);
@@ -201,8 +189,10 @@ public class CibaGrantType {
         if (!TokenManager
                 .verifyConsentStillAvailable(session,
                         user, client, TokenManager.getRequestedClientScopes(scopeParam, client))) {
+            String errorMessage = "Client no longer has requested consent from user";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.NOT_ALLOWED);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE, "Client no longer has requested consent from user", Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE, errorMessage, Response.Status.BAD_REQUEST);
         }
 
         ClientSessionContext clientSessionCtx = DefaultClientSessionContext
@@ -211,7 +201,7 @@ public class CibaGrantType {
         int authTime = Time.currentTime();
         userSession.setNote(AuthenticationManager.AUTH_TIME, String.valueOf(authTime));
 
-        return tokenEndpoint.createTokenResponse(user, userSession, clientSessionCtx, scopeParam, true,s -> {return new BackchannelTokenResponseContext(request, formParams, clientSessionCtx, s);});
+        return createTokenResponse(user, userSession, clientSessionCtx, scopeParam, true,s -> {return new BackchannelTokenResponseContext(request, formParams, clientSessionCtx, s);});
 
     }
 
@@ -252,8 +242,10 @@ public class CibaGrantType {
         authSession.setAuthenticatedUser(user);
 
         if (user.getRequiredActionsStream().count() > 0) {
+            String errorMessage = "Account is not fully set up";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.RESOLVE_REQUIRED_ACTIONS);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Account is not fully set up", Response.Status.BAD_REQUEST);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, errorMessage, Response.Status.BAD_REQUEST);
         }
 
         AuthenticationManager.setClientScopesInSession(authSession);
@@ -268,10 +260,10 @@ public class CibaGrantType {
         }
 
         // authorization (consent)
-        UserConsentModel grantedConsent = session.users().getConsentByClient(realm, user.getId(), client.getId());
+        UserConsentModel grantedConsent = UserConsentManager.getConsentByClient(session, realm, user, client.getId());
         if (grantedConsent == null) {
             grantedConsent = new UserConsentModel(client);
-            session.users().addConsent(realm, user.getId(), grantedConsent);
+            UserConsentManager.addConsent(session, realm, user, grantedConsent);
             if (logger.isTraceEnabled()) {
                 grantedConsent.getGrantedClientScopes().forEach(i->logger.tracef("CIBA Grant :: Consent granted. %s", i.getName()));
             }
@@ -288,7 +280,7 @@ public class CibaGrantType {
         }
 
         if (updateConsentRequired) {
-            session.users().updateConsent(realm, user.getId(), grantedConsent);
+            UserConsentManager.updateConsent(session, realm, user, grantedConsent);
             if (logger.isTraceEnabled()) {
                 grantedConsent.getGrantedClientScopes().forEach(i->logger.tracef("CIBA Grant :: Consent updated. %s", i.getName()));
             }
@@ -306,4 +298,10 @@ public class CibaGrantType {
     private static void logDebug(String message, CIBAAuthenticationRequest request) {
         logger.debugf("CIBA Grant :: authentication channel %s clientId = %s, authResultId = %s", message, request.getIssuedFor(), request.getAuthResultId());
     }
+
+    @Override
+    public EventType getEventType() {
+        return EventType.AUTHREQID_TO_TOKEN;
+    }
+
 }

@@ -50,7 +50,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -462,7 +461,7 @@ public class ConsentsTest extends AbstractKeycloakTest {
             Assert.assertEquals(OAuthErrorException.INVALID_SCOPE, refreshTokenResponse.getError());
             Assert.assertEquals("Client no longer has requested consent from user", refreshTokenResponse.getErrorDescription());
 
-            events.expectRefresh(accessTokenResponse.getRefreshToken(), sessionId).clearDetails().error(Errors.INVALID_TOKEN).assertEvent();
+            events.expectRefresh(accessTokenResponse.getRefreshToken(), sessionId).user((String) null).clearDetails().error(Errors.INVALID_TOKEN).assertEvent();
         } finally {
             clientRepresentation.setConsentRequired(false);
             adminClient.realm(TEST_REALM_NAME).clients().get(clientRepresentation.getId()).update(clientRepresentation);

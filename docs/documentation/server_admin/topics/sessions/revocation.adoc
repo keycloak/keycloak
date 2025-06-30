@@ -8,7 +8,7 @@ If your system is compromised, you can revoke all active sessions and access tok
 
 .Procedure
 . Click *Sessions* in the menu.
-. From the *Actions* list, select *Sign out all active sessions*.
+. From the *Actions* list, select *Revocation*.
 +
 .Revocation
 image:images/revocation.png[Revocation]

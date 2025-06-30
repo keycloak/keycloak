@@ -65,7 +65,7 @@ public final class Start extends AbstractStartCommand implements Runnable {
     }
 
     public static boolean isDevProfileNotAllowed() {
-        Optional<String> currentProfile = Optional.ofNullable(Environment.getProfile());
+        Optional<String> currentProfile = Optional.ofNullable(org.keycloak.common.util.Environment.getProfile());
         Optional<String> persistedProfile = getRawPersistedProperty("kc.profile");
 
         setProfile(currentProfile.orElse(persistedProfile.orElse("prod")));

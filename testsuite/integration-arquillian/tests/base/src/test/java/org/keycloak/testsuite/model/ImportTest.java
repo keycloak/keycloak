@@ -31,6 +31,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oidc.utils.AcrUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
@@ -38,16 +39,15 @@ import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.userprofile.UserProfileProvider;
-import org.keycloak.userprofile.config.UPAttribute;
-import org.keycloak.userprofile.config.UPAttributeSelector;
-import org.keycloak.userprofile.config.UPConfig;
-import org.keycloak.userprofile.config.UPConfigUtils;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributeSelector;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -66,7 +66,7 @@ public class ImportTest extends AbstractTestRealmKeycloakTest {
         // was having trouble deleting this realm from admin console
         removeRealm("demo-delete");
     }
-    
+
 	@Test
     public void install2() {
         testingClient.server().run(session -> {
@@ -140,8 +140,22 @@ public class ImportTest extends AbstractTestRealmKeycloakTest {
         });
     }
 
+    // https://github.com/keycloak/keycloak/issues/32799
     @Test
-    @EnableFeature(Profile.Feature.DECLARATIVE_USER_PROFILE)
+    public void importAcrToLoaMappingWithDefaultAcrValues() {
+        RealmRepresentation testRealm = loadJson(getClass().getResourceAsStream("/model/acr-values-import-bug.json"), RealmRepresentation.class);
+        adminClient.realms().create(testRealm);
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("acr-import-bug");
+            Map<String, Integer> acrLoaMap = AcrUtils.getAcrLoaMap(realm);
+            Assert.assertNotNull(acrLoaMap);
+
+            ClientModel clientSilverAcr = realm.getClientByClientId("client-silver");
+            Assert.assertEquals("silver", clientSilverAcr.getAttribute("default.acr.values"));
+        });
+    }
+
+    @Test
     public void importUserProfile() throws Exception {
         final String realmString = IOUtils.toString(getClass().getResourceAsStream("/model/import-userprofile.json"), StandardCharsets.UTF_8);
 
@@ -157,7 +171,7 @@ public class ImportTest extends AbstractTestRealmKeycloakTest {
             session.getContext().setRealm(realm);
 
             UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
-            UPConfig config = UPConfigUtils.readConfig(new ByteArrayInputStream(provider.getConfiguration().getBytes()));
+            UPConfig config = provider.getConfiguration();
 
             Assert.assertTrue(config.getAttributes().stream().map(UPAttribute::getName).anyMatch("email"::equals));
             Assert.assertTrue(config.getAttributes().stream().map(UPAttribute::getName).anyMatch("test"::equals));

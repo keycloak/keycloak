@@ -2,8 +2,7 @@ import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/r
 import { Tab, Tabs, TabTitleText } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useFetch } from "../../utils/useFetch";
@@ -13,6 +12,8 @@ import { PasswordPolicy } from "./PasswordPolicy";
 import { WebauthnPolicy } from "./WebauthnPolicy";
 
 export const Policies = () => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const [subTab, setSubTab] = useState(1);
   const { realm: realmName } = useRealm();

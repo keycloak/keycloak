@@ -28,8 +28,11 @@ public class IdpLinkEmailPage extends AbstractPage {
     @FindBy(id = "instruction1")
     private WebElement message;
 
-    @FindBy(linkText = "Click here")
+    @FindBy(xpath = "//p[@id='instruction2']/a[text() = 'Click here']")
     private WebElement resendEmailLink;
+
+    @FindBy(xpath = "//p[@id='instruction3']/a[text() = 'Click here']")
+    private WebElement continueLink;
 
     @Override
     public boolean isCurrent() {
@@ -47,5 +50,9 @@ public class IdpLinkEmailPage extends AbstractPage {
 
     public void resendEmail() {
         resendEmailLink.click();
+    }
+
+    public void continueLink() {
+        continueLink.click();
     }
 }

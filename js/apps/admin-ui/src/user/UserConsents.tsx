@@ -10,8 +10,7 @@ import { cellWidth } from "@patternfly/react-table";
 import { sortBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
@@ -24,6 +23,8 @@ import useFormatDate from "../utils/useFormatDate";
 import { useParams } from "../utils/useParams";
 
 export const UserConsents = () => {
+  const { adminClient } = useAdminClient();
+
   const [selectedClient, setSelectedClient] =
     useState<UserConsentRepresentation>();
   const { t } = useTranslation();

@@ -31,6 +31,12 @@ public class ExecuteActionsActionToken extends DefaultActionToken {
     private static final String JSON_FIELD_REQUIRED_ACTIONS = "rqac";
     private static final String JSON_FIELD_REDIRECT_URI = "reduri";
 
+    @JsonProperty(JSON_FIELD_REQUIRED_ACTIONS)
+    private List<String> requiredActions;
+
+    @JsonProperty(JSON_FIELD_REDIRECT_URI)
+    private String redirectUri;
+
     public ExecuteActionsActionToken(String userId, int absoluteExpirationInSecs, List<String> requiredActions, String redirectUri, String clientId) {
         super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null);
         setRequiredActions(requiredActions == null ? new LinkedList<>() : new LinkedList<>(requiredActions));
@@ -46,31 +52,19 @@ public class ExecuteActionsActionToken extends DefaultActionToken {
     private ExecuteActionsActionToken() {
     }
 
-    @JsonProperty(value = JSON_FIELD_REQUIRED_ACTIONS)
     public List<String> getRequiredActions() {
-        return (List<String>) getOtherClaims().get(JSON_FIELD_REQUIRED_ACTIONS);
+        return requiredActions;
     }
 
-    @JsonProperty(value = JSON_FIELD_REQUIRED_ACTIONS)
-    public final void setRequiredActions(List<String> requiredActions) {
-        if (requiredActions == null) {
-            getOtherClaims().remove(JSON_FIELD_REQUIRED_ACTIONS);
-        } else {
-            setOtherClaims(JSON_FIELD_REQUIRED_ACTIONS, requiredActions);
-        }
+    public void setRequiredActions(List<String> requiredActions) {
+        this.requiredActions = requiredActions;
     }
 
-    @JsonProperty(value = JSON_FIELD_REDIRECT_URI)
     public String getRedirectUri() {
-        return (String) getOtherClaims().get(JSON_FIELD_REDIRECT_URI);
+        return redirectUri;
     }
 
-    @JsonProperty(value = JSON_FIELD_REDIRECT_URI)
-    public final void setRedirectUri(String redirectUri) {
-        if (redirectUri == null) {
-            getOtherClaims().remove(JSON_FIELD_REDIRECT_URI);
-        } else {
-            setOtherClaims(JSON_FIELD_REDIRECT_URI, redirectUri);
-        }
+    public void setRedirectUri(String redirectUri) {
+        this.redirectUri = redirectUri;
     }
 }

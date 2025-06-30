@@ -1,3 +1,4 @@
+import Select from "../../../../forms/Select";
 import LegacyKeyValueInput from "../LegacyKeyValueInput";
 
 export default class AddMapperPage {
@@ -7,14 +8,14 @@ export default class AddMapperPage {
   #idpMapperSelect = "idp-mapper-select";
   #addMapperButton = "#add-mapper-button";
 
-  #mapperNameInput = "#kc-name";
-  #attribute = "user.attribute";
+  #mapperNameInput = "name";
+  #attribute = "config.user🍺attribute";
   #attributeName = "attribute.name";
   #attributeFriendlyName = "attribute.friendly.name";
   #claimInput = "claim";
   #socialProfileJSONfieldPath = "jsonField";
-  #userAttribute = "attribute";
-  #userAttributeName = "userAttribute";
+  #userAttribute = "config.attribute";
+  #userAttributeName = "config.userAttribute";
   #userAttributeValue = "attribute.value";
   #userSessionAttribute = "attribute";
   #userSessionAttributeValue = "attribute.value";
@@ -64,15 +65,15 @@ export default class AddMapperPage {
     return this;
   }
 
+  typeName(name: string) {
+    cy.findByTestId(this.#mapperNameInput).clear();
+    cy.findByTestId(this.#mapperNameInput).type(name);
+  }
+
   fillSocialMapper(name: string) {
-    cy.get(this.#mapperNameInput).clear();
+    this.typeName(name);
 
-    cy.get(this.#mapperNameInput).clear().type(name);
-
-    cy.get(this.#syncmodeSelectToggle).click();
-
-    cy.findByTestId("legacy").click();
-
+    Select.selectItem(cy.get(this.#syncmodeSelectToggle), "Legacy");
     cy.get(this.#idpMapperSelectToggle).click();
 
     cy.findByTestId(this.#idpMapperSelect)
@@ -101,13 +102,8 @@ export default class AddMapperPage {
   }
 
   addAdvancedAttrToRoleMapper(name: string) {
-    cy.get(this.#mapperNameInput).clear();
-
-    cy.get(this.#mapperNameInput).clear().type(name);
-
-    cy.get(this.#syncmodeSelectToggle).click();
-
-    cy.findByTestId("inherit").click();
+    this.typeName(name);
+    Select.selectItem(cy.get(this.#syncmodeSelectToggle), "Inherit");
 
     cy.get(this.#idpMapperSelectToggle).click();
 
@@ -115,6 +111,7 @@ export default class AddMapperPage {
       .contains("Advanced Attribute to Role")
       .click();
 
+    cy.findByTestId("attributes-add-row").click();
     cy.get(this.#attributesKeyInput).clear();
     cy.get(this.#attributesKeyInput).type("key");
 
@@ -131,13 +128,8 @@ export default class AddMapperPage {
   }
 
   addUsernameTemplateImporterMapper(name: string) {
-    cy.get(this.#mapperNameInput).clear();
-
-    cy.get(this.#mapperNameInput).clear().type(name);
-
-    cy.get(this.#syncmodeSelectToggle).click();
-
-    cy.findByTestId("inherit").click();
+    this.typeName(name);
+    Select.selectItem(cy.get(this.#syncmodeSelectToggle), "Inherit");
 
     cy.get(this.#idpMapperSelectToggle).click();
 
@@ -156,13 +148,8 @@ export default class AddMapperPage {
   }
 
   addHardcodedUserSessionAttrMapper(name: string) {
-    cy.get(this.#mapperNameInput).clear();
-
-    cy.get(this.#mapperNameInput).clear().type(name);
-
-    cy.get(this.#syncmodeSelectToggle).click();
-
-    cy.findByTestId("inherit").click();
+    this.typeName(name);
+    Select.selectItem(cy.get(this.#syncmodeSelectToggle), "Inherit");
 
     cy.get(this.#idpMapperSelectToggle).click();
 
@@ -184,13 +171,9 @@ export default class AddMapperPage {
   }
 
   addSAMLAttrImporterMapper(name: string) {
-    cy.get(this.#mapperNameInput).clear();
+    this.typeName(name);
 
-    cy.get(this.#mapperNameInput).clear().type(name);
-
-    cy.get(this.#syncmodeSelectToggle).click();
-
-    cy.findByTestId("inherit").click();
+    Select.selectItem(cy.get(this.#syncmodeSelectToggle), "Inherit");
 
     cy.get(this.#idpMapperSelectToggle).click();
 
@@ -214,14 +197,9 @@ export default class AddMapperPage {
   }
 
   addOIDCAttrImporterMapper(name: string) {
-    cy.get(this.#mapperNameInput).clear();
+    this.typeName(name);
 
-    cy.get(this.#mapperNameInput).clear().type(name);
-
-    cy.get(this.#syncmodeSelectToggle).click();
-
-    cy.findByTestId("inherit").click();
-
+    Select.selectItem(cy.get(this.#syncmodeSelectToggle), "Inherit");
     cy.get(this.#idpMapperSelectToggle).click();
 
     cy.findByTestId(this.#idpMapperSelect)
@@ -237,13 +215,8 @@ export default class AddMapperPage {
   }
 
   addHardcodedRoleMapper(name: string) {
-    cy.get(this.#mapperNameInput).clear();
-
-    cy.get(this.#mapperNameInput).clear().type(name);
-
-    cy.get(this.#syncmodeSelectToggle).click();
-
-    cy.findByTestId("inherit").click();
+    this.typeName(name);
+    Select.selectItem(cy.get(this.#syncmodeSelectToggle), "Inherit");
 
     cy.get(this.#idpMapperSelectToggle).click();
 
@@ -256,13 +229,8 @@ export default class AddMapperPage {
   }
 
   addHardcodedAttrMapper(name: string) {
-    cy.get(this.#mapperNameInput).clear();
-
-    cy.get(this.#mapperNameInput).clear().type(name);
-
-    cy.get(this.#syncmodeSelectToggle).click();
-
-    cy.findByTestId("inherit").click();
+    this.typeName(name);
+    Select.selectItem(cy.get(this.#syncmodeSelectToggle), "Inherit");
 
     cy.get(this.#idpMapperSelectToggle).click();
 
@@ -282,13 +250,9 @@ export default class AddMapperPage {
   }
 
   addSAMLAttributeToRoleMapper(name: string) {
-    cy.get(this.#mapperNameInput).clear();
+    this.typeName(name);
 
-    cy.get(this.#mapperNameInput).clear().type(name);
-
-    cy.get(this.#syncmodeSelectToggle).click();
-
-    cy.findByTestId("inherit").click();
+    Select.selectItem(cy.get(this.#syncmodeSelectToggle), "Inherit");
 
     cy.get(this.#idpMapperSelectToggle).click();
 
@@ -304,9 +268,7 @@ export default class AddMapperPage {
   }
 
   editUsernameTemplateImporterMapper() {
-    cy.get(this.#syncmodeSelectToggle).click();
-
-    cy.findByTestId("legacy").click();
+    Select.selectItem(cy.get(this.#syncmodeSelectToggle), "Legacy");
 
     cy.findByTestId(this.#template).type("_edited");
 
@@ -318,9 +280,7 @@ export default class AddMapperPage {
   }
 
   editSocialMapper() {
-    cy.get(this.#syncmodeSelectToggle).click();
-
-    cy.findByTestId("inherit").click();
+    Select.selectItem(cy.get(this.#syncmodeSelectToggle), "Inherit");
 
     cy.findByTestId(this.#socialProfileJSONfieldPath).clear();
 
@@ -338,9 +298,7 @@ export default class AddMapperPage {
   }
 
   editSAMLorOIDCMapper() {
-    cy.get(this.#syncmodeSelectToggle).click();
-
-    cy.findByTestId("legacy").click();
+    Select.selectItem(cy.get(this.#syncmodeSelectToggle), "Inherit");
 
     cy.get(this.#attributesKeyInput).clear();
     cy.get(this.#attributesKeyInput).type("key_edited");
@@ -356,14 +314,9 @@ export default class AddMapperPage {
   }
 
   addOIDCAttributeImporterMapper(name: string) {
-    cy.get(this.#mapperNameInput).clear();
+    this.typeName(name);
 
-    cy.get(this.#mapperNameInput).clear().type(name);
-
-    cy.get(this.#syncmodeSelectToggle).click();
-
-    cy.findByTestId("inherit").click();
-
+    Select.selectItem(cy.get(this.#syncmodeSelectToggle), "Inherit");
     cy.get(this.#idpMapperSelectToggle).click();
 
     cy.findByTestId(this.#idpMapperSelect)
@@ -382,18 +335,15 @@ export default class AddMapperPage {
   }
 
   addOIDCClaimToRoleMapper(name: string) {
-    cy.get(this.#mapperNameInput).clear();
+    this.typeName(name);
 
-    cy.get(this.#mapperNameInput).clear().type(name);
-
-    cy.get(this.#syncmodeSelectToggle).click();
-
-    cy.findByTestId("inherit").click();
+    Select.selectItem(cy.get(this.#syncmodeSelectToggle), "Inherit");
 
     cy.get(this.#idpMapperSelectToggle).click();
 
     cy.findByTestId(this.#idpMapperSelect).contains("Claim to Role").click();
 
+    cy.findByTestId("claims-add-row").click();
     const keyValue = new LegacyKeyValueInput("config.claims");
 
     keyValue.fillKeyValue({ key: "key", value: "value" });

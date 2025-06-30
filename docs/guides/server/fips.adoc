@@ -4,12 +4,12 @@
 
 <@tmpl.guide
 title="FIPS 140-2 support"
-summary="How to configure Keycloak server for FIPS compliance"
+summary="How to configure {project_name} server for FIPS compliance"
 includedOptions="">
 
-The Federal Information Processing Standard Publication 140-2, (FIPS 140-2), is a U.S. government computer security standard used to approve cryptographic modules. Keycloak supports running in FIPS 140-2 compliant mode. In this case, Keycloak will use only FIPS approved cryptography algorithms for its functionality.
+The Federal Information Processing Standard Publication 140-2, (FIPS 140-2), is a U.S. government computer security standard used to approve cryptographic modules. {project_name} supports running in FIPS 140-2 compliant mode. In this case, {project_name} will use only FIPS approved cryptography algorithms for its functionality.
 
-To run in FIPS 140-2, Keycloak should run on a FIPS 140-2 enabled system. This requirement usually assumes RHEL or Fedora where FIPS was enabled during installation.
+To run in FIPS 140-2, {project_name} should run on a FIPS 140-2 enabled system. This requirement usually assumes RHEL or Fedora where FIPS was enabled during installation.
 See https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html-single/security_hardening/index#assembly_installing-the-system-in-fips-mode_security-hardening[RHEL documentation]
 for the details. When the system is in FIPS mode, it makes sure that the underlying OpenJDK is in FIPS mode as well and would use only
 https://access.redhat.com/documentation/en-us/openjdk/17/html/configuring_openjdk_17_on_rhel_with_fips/openjdk-default-fips-configuration[FIPS enabled security providers].
@@ -30,29 +30,29 @@ fips-mode-setup --enable
 
 == BouncyCastle library
 
-Keycloak internally uses the BouncyCastle library for many cryptography utilities. Please note that the default version of the BouncyCastle library that shipped with Keycloak is not FIPS compliant; 
-however,  BouncyCastle also provides a FIPS validated version of its library. The FIPS validated BouncyCastle library cannot be shipped with Keycloak due to license constraints and
-Keycloak cannot provide official support of it. Therefore, to run in FIPS compliant mode, you need to download BouncyCastle-FIPS bits and add them to the Keycloak distribution.
-When Keycloak executes in fips mode, it will use the BCFIPS bits instead of the default BouncyCastle bits, which achieves FIPS compliance.
+{project_name} internally uses the BouncyCastle library for many cryptography utilities. Please note that the default version of the BouncyCastle library that shipped with {project_name} is not FIPS compliant;
+however,  BouncyCastle also provides a FIPS validated version of its library. The FIPS validated BouncyCastle library cannot be shipped with {project_name} due to license constraints and
+{project_name} cannot provide official support of it. Therefore, to run in FIPS compliant mode, you need to download BouncyCastle-FIPS bits and add them to the {project_name} distribution.
+When {project_name} executes in fips mode, it will use the BCFIPS bits instead of the default BouncyCastle bits, which achieves FIPS compliance.
 
 === BouncyCastle FIPS bits
 
 BouncyCastle FIPS can be downloaded from the https://www.bouncycastle.org/fips-java/[BouncyCastle official page]. Then you can add them to the directory
-`KEYCLOAK_HOME/providers` of your distribution. Make sure to use proper versions compatible with BouncyCastle Keycloak dependencies. The supported BCFIPS bits needed are:
+`KEYCLOAK_HOME/providers` of your distribution. Make sure to use proper versions compatible with BouncyCastle {project_name} dependencies. The supported BCFIPS bits needed are:
 
 * `bc-fips-1.0.2.3.jar`
-* `bctls-fips-1.0.16.jar`
+* `bctls-fips-1.0.18.jar`
 * `bcpkix-fips-1.0.7.jar`
 
 == Generating keystore
 
-You can create either `pkcs12` or `bcfks` keystore to be used for the Keycloak server SSL.
+You can create either `pkcs12` or `bcfks` keystore to be used for the {project_name} server SSL.
 
 === PKCS12 keystore
 
 The `p12` (or `pkcs12`) keystore (and/or truststore) works well in BCFIPS non-approved mode.
 
-PKCS12 keystore can be generated with OpenJDK 17 Java on RHEL 9 in the standard way. For instance,  the following command can be used to generate the keystore:
+PKCS12 keystore can be generated with OpenJDK 21 Java on RHEL 9 in the standard way. For instance, the following command can be used to generate the keystore:
 
 [source,bash]
 ----
@@ -62,7 +62,7 @@ keytool -genkeypair -sigalg SHA512withRSA -keyalg RSA -storepass passwordpasswor
   -dname CN=localhost -keypass passwordpassword
 ----
 
-When the system is in FIPS mode, the default `java.security` file is changed in order to use FIPS enabled security providers, so no additional configuration is needed. Additionally, in the PKCS12 keystore, you can store PBE (password-based encryption) keys simply by using the keytool command, which makes it ideal for using it with Keycloak KeyStore Vault and/or to store configuration properties in the KeyStore Config Source. For more details, see the <@links.server id="configuration"/> and the <@links.server id="vault"/>.
+When the system is in FIPS mode, the default `java.security` file is changed in order to use FIPS enabled security providers, so no additional configuration is needed. Additionally, in the PKCS12 keystore, you can store PBE (password-based encryption) keys simply by using the keytool command, which makes it ideal for using it with {project_name} KeyStore Vault and/or to store configuration properties in the KeyStore Config Source. For more details, see the <@links.server id="configuration"/> and the <@links.server id="vault"/>.
 
 === BCFKS keystore
 
@@ -125,12 +125,12 @@ KC(BCFIPS version 1.000203 Approved Mode, FIPS-JVM: enabled) version 1.0 - class
 === Cryptography restrictions in strict mode
 
 * As mentioned in the previous section, strict mode may not work with `pkcs12` keystore. It is required to use another keystore (like `bcfks`) as mentioned earlier. Also `jks` and `pkcs12` keystores are not
-supported in Keycloak when using strict mode. Some examples are importing or generating a keystore of an OIDC or SAML client in the Admin Console or for a `java-keystore` provider in the realm keys.
+supported in {project_name} when using strict mode. Some examples are importing or generating a keystore of an OIDC or SAML client in the Admin Console or for a `java-keystore` provider in the realm keys.
 
-* User passwords must be 14 characters or longer. Keycloak uses PBKDF2 based password encoding by default. BCFIPS approved mode requires passwords to be at least 112 bits
+* User passwords must be 14 characters or longer. {project_name} uses PBKDF2 based password encoding by default. BCFIPS approved mode requires passwords to be at least 112 bits
 (effectively 14 characters) with PBKDF2 algorithm. If you want to allow a shorter password, set the property `max-padding-length` of provider `pbkdf2-sha256` of SPI `password-hashing`
 to value 14 to provide additional padding when verifying a hash created by this algorithm. This setting is also backwards compatible with previously stored passwords.
-For example, if the user's database is in a non-FIPS environment and you have shorter passwords and you want to verify them now with Keycloak using BCFIPS in approved mode, the passwords should work.
+For example, if the user's database is in a non-FIPS environment and you have shorter passwords and you want to verify them now with {project_name} using BCFIPS in approved mode, the passwords should work.
 So effectively, you can use an option such as the following when starting the server:
 
 [source]
@@ -141,10 +141,10 @@ So effectively, you can use an option such as the following when starting the se
 NOTE: Using the option above does not break FIPS compliance. However, note that longer passwords are good practice anyway. For example, passwords auto-generated by modern browsers match this
 requirement as they are longer than 14 characters.
 
-* RSA keys of 1024 bits do not work (2048 is the minimum). This applies for keys used by the Keycloak realm itself (Realm keys from the `Keys` tab in the admin console), but also client keys and IDP keys
+* RSA keys of 1024 bits do not work (2048 is the minimum). This applies for keys used by the {project_name} realm itself (Realm keys from the `Keys` tab in the admin console), but also client keys and IDP keys
 
 * HMAC SHA-XXX keys must be at least 112 bits (or 14 characters long). For example if you use OIDC clients with the client authentication `Signed Jwt with Client Secret` (or `client-secret-jwt` in
-the OIDC notation), then your client secrets should be at least 14 characters long. Note that for good security, it is recommended to use client secrets generated by the Keycloak server, which
+the OIDC notation), then your client secrets should be at least 14 characters long. Note that for good security, it is recommended to use client secrets generated by the {project_name} server, which
 always fulfils this requirement.
 
 == Other restrictions
@@ -167,7 +167,7 @@ NOTE: It is recommended to look at `JAVA_HOME/conf/security/java.security` and c
 assumes that there are already 6 providers configured with prefix like `fips.provider.N` in this file.
 
 If you prefer not to edit your `java.security` file inside java itself, you can create a custom java security file (for example named `kc.java.security`) and add only the single
-property above for adding XMLDSig provider into that file. Then start your Keycloak server with this property file attached:
+property above for adding XMLDSig provider into that file. Then start your {project_name} server with this property file attached:
 
 [source]
 ----
@@ -175,12 +175,12 @@ property above for adding XMLDSig provider into that file. Then start your Keycl
 ----
 
 For Kerberos/SPNEGO, the security provider `SunJGSS` is not yet fully FIPS compliant. Hence it is not recommended to add it to your list of security providers
-if you want to be FIPS compliant. The `KERBEROS` feature is disabled by default in Keycloak when it is executed on FIPS platform and when security provider is not
+if you want to be FIPS compliant. The `KERBEROS` feature is disabled by default in {project_name} when it is executed on FIPS platform and when security provider is not
 available. Details are in the https://bugzilla.redhat.com/show_bug.cgi?id=2051628[bugzilla].
 
 == Run the CLI on the FIPS host
 
-If you want to run Client Registration CLI (`kcreg.sh|bat` script) or Admin CLI (`kcadm.sh|bat` script), 
+If you want to run Client Registration CLI (`kcreg.sh|bat` script) or Admin CLI (`kcadm.sh|bat` script),
  the CLI must also use the BouncyCastle FIPS dependencies instead of plain BouncyCastle dependencies. To achieve this, you may copy the
 jars to the CLI library folder and that is enough. CLI tool will automatically use BCFIPS dependencies instead of plain BC when
 it detects that corresponding BCFIPS jars are present (see above for the versions used). For example, use command such as the following before running the CLI:
@@ -201,15 +201,15 @@ fips.keystore.type=bcfks" > /tmp/kcadm.java.security
 export KC_OPTS="-Djava.security.properties=/tmp/kcadm.java.security"
 ----
 
-== Keycloak server in FIPS mode in containers
+== {project_name} server in FIPS mode in containers
 
-When you want Keycloak in FIPS mode to be executed inside a container, your "host" must be using FIPS mode as well. The container
+When you want {project_name} in FIPS mode to be executed inside a container, your "host" must be using FIPS mode as well. The container
 will then "inherit" FIPS mode from the parent host.
 See https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html/security_hardening/using-the-system-wide-cryptographic-policies_security-hardening#enabling-fips-mode-in-a-container_using-the-system-wide-cryptographic-policies[this section]
 in the RHEL documentation for the details.
 
-The keycloak container image will automatically be in fips mode when executed from the host in FIPS mode. 
-However, make sure that the Keycloak container also uses BCFIPS jars (instead of BC jars) and proper options when started.
+The {project_name} container image will automatically be in fips mode when executed from the host in FIPS mode.
+However, make sure that the {project_name} container also uses BCFIPS jars (instead of BC jars) and proper options when started.
 
 Regarding this, it is best to build your own container image as described in the <@links.server id="containers"/> and tweak it to use BCFIPS etc.
 
@@ -222,9 +222,9 @@ For example in the current directory, you can create sub-directory `files` and a
 Then create `Dockerfile` in the current directory similar to this:
 
 .Dockerfile:
-[source, dockerfile]
+[source,dockerfile,subs="attributes+"]
 ----
-FROM quay.io/keycloak/keycloak:latest as builder
+FROM quay.io/keycloak/keycloak:{containerlabel} as builder
 
 ADD files /tmp/files/
 
@@ -235,7 +235,7 @@ RUN cp /tmp/files/kc.java.security /opt/keycloak/conf/
 
 RUN /opt/keycloak/bin/kc.sh build --features=fips --fips-mode=strict
 
-FROM quay.io/keycloak/keycloak:latest
+FROM quay.io/keycloak/keycloak:{containerlabel}
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
 
 ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]
@@ -245,16 +245,16 @@ Then build FIPS as an optimized Docker image and start it as described in the <@
 
 == Migration from non-fips environment
 
-If you previously used Keycloak in a non-fips environment, it is possible to migrate it to a FIPS environment including its data. However, restrictions and considerations exist as
+If you previously used {project_name} in a non-fips environment, it is possible to migrate it to a FIPS environment including its data. However, restrictions and considerations exist as
 mentioned in previous sections, namely:
 
-* Make sure all the Keycloak functionality relying on keystores uses only supported keystore types. This differs based on whether strict or non-strict mode is used.
+* Make sure all the {project_name} functionality relying on keystores uses only supported keystore types. This differs based on whether strict or non-strict mode is used.
 * Kerberos authentication may not work. If your authentication flow uses `Kerberos` authenticator, this authenticator will be automatically switched to `DISABLED` when migrated to FIPS
 environment. It is recommended to remove any `Kerberos` user storage providers from your realm and disable `Kerberos` related functionality in LDAP providers before switching to FIPS environment.
 
 In addition to the preceding requirements, be sure to doublecheck this before switching to FIPS strict mode:
 
-* Make sure that all the Keycloak functionality relying on keys (for example, realm or client keys) use RSA keys of at least 2048 bits
+* Make sure that all the {project_name} functionality relying on keys (for example, realm or client keys) use RSA keys of at least 2048 bits
 
 * Make sure that clients relying on `Signed JWT with Client Secret` use at least 14 characters long secrets (ideally generated secrets)
 
@@ -262,15 +262,15 @@ In addition to the preceding requirements, be sure to doublecheck this before sw
 earlier. If you prefer to avoid this option, you can for instance ask all your users to reset their password (for example by the `Forgot password` link) during the first authentication in the new environment.
 
 
-== Keycloak FIPS mode on the non-fips system
+== {project_name} FIPS mode on the non-fips system
 
-Keycloak is tested on a FIPS enabled RHEL 8 system and `ubi8` image. It is supported with RHEL 9 (and `ubi9` image) as well. Running on
+{project_name} is supported and tested on a FIPS enabled RHEL 8 system and `ubi8` image. It is supported with RHEL 9 (and `ubi9` image) as well. Running on
 the non-RHEL compatible platform or on the non-FIPS enabled platform, the FIPS compliance cannot be strictly guaranteed and cannot be officially supported.
 
-If you are still restricted to running Keycloak on such a system, you can at least update your security providers configured in `java.security` file. This update does not amount to FIPS compliance, but
-at least the setup is closer to it. It can be done by providing a custom security file with only an overriden list of security providers as described earlier. For a list of recommended providers, 
-see the https://access.redhat.com/documentation/en-us/openjdk/17/html/configuring_openjdk_17_on_rhel_with_fips/openjdk-default-fips-configuration[OpenJDK 17 documentation].
+If you are still restricted to running {project_name} on such a system, you can at least update your security providers configured in `java.security` file. This update does not amount to FIPS compliance, but
+at least the setup is closer to it. It can be done by providing a custom security file with only an overridden list of security providers as described earlier. For a list of recommended providers,
+see the https://access.redhat.com/documentation/en-us/red_hat_build_of_openjdk/21/html/configuring_red_hat_build_of_openjdk_21_on_rhel_with_fips[OpenJDK 21 documentation].
 
-You can check the Keycloak server log at startup to see if the correct security providers are used. TRACE logging should be enabled for crypto-related Keycloak packages as described in the Keycloak startup command earlier.
+You can check the {project_name} server log at startup to see if the correct security providers are used. TRACE logging should be enabled for crypto-related {project_name} packages as described in the Keycloak startup command earlier.
 
 </@tmpl.guide>

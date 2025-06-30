@@ -9,7 +9,8 @@ import {
 } from "@patternfly/react-core";
 import {
   ExpandableRowContent,
-  TableComposable,
+  Table,
+  TableText,
   Tbody,
   Td,
   Th,
@@ -19,8 +20,7 @@ import {
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
@@ -37,6 +37,7 @@ import { SearchDropdown, SearchForm } from "./SearchDropdown";
 
 type ResourcesProps = {
   clientId: string;
+  isDisabled?: boolean;
 };
 
 type ExpandableResourceRepresentation = ResourceRepresentation & {
@@ -44,12 +45,17 @@ type ExpandableResourceRepresentation = ResourceRepresentation & {
 };
 
 const UriRenderer = ({ row }: { row: ResourceRepresentation }) => (
-  <>
+  <TableText wrapModifier="truncate">
     {row.uris?.[0]} <MoreLabel array={row.uris} />
-  </>
+  </TableText>
 );
 
-export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
+export const AuthorizationResources = ({
+  clientId,
+  isDisabled = false,
+}: ResourcesProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { addAlert, addError } = useAlerts();
@@ -107,11 +113,11 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
             isInline
             isPlain
             title={t("deleteResourceWarning")}
-            className="pf-u-pt-lg"
+            className="pf-v5-u-pt-lg"
           >
-            <p className="pf-u-pt-xs">
+            <p className="pf-v5-u-pt-xs">
               {permissions.map((permission) => (
-                <strong key={permission.id} className="pf-u-pr-md">
+                <strong key={permission.id} className="pf-v5-u-pr-md">
                   {permission.name}
                 </strong>
               ))}
@@ -142,7 +148,7 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
   const noData = resources.length === 0;
   const searching = Object.keys(search).length !== 0;
   return (
-    <PageSection variant="light" className="pf-u-p-0">
+    <PageSection variant="light" className="pf-v5-u-p-0">
       <DeleteConfirm />
       {(!noData || searching) && (
         <PaginatingTableToolbar
@@ -161,13 +167,14 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
                 <SearchDropdown
                   search={search}
                   onSearch={setSearch}
-                  isResource
+                  type="resource"
                 />
               </ToolbarItem>
 
               <ToolbarItem>
                 <Button
                   data-testid="createResource"
+                  isDisabled={isDisabled}
                   component={(props) => (
                     <Link
                       {...props}
@@ -182,7 +189,7 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
           }
         >
           {!noData && (
-            <TableComposable aria-label={t("resources")} variant="compact">
+            <Table aria-label={t("resources")} variant="compact">
               <Thead>
                 <Tr>
                   <Th aria-hidden="true" />
@@ -191,8 +198,12 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
                   <Th>{t("type")}</Th>
                   <Th>{t("owner")}</Th>
                   <Th>{t("uris")}</Th>
-                  <Th aria-hidden="true" />
-                  <Th aria-hidden="true" />
+                  {!isDisabled && (
+                    <>
+                      <Th aria-hidden="true" />
+                      <Th aria-hidden="true" />
+                    </>
+                  )}
                 </Tr>
               </Thead>
               {resources.map((resource, rowIndex) => (
@@ -216,56 +227,74 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
                       }}
                     />
                     <Td data-testid={`name-column-${resource.name}`}>
-                      <Link
-                        to={toResourceDetails({
-                          realm,
-                          id: clientId,
-                          resourceId: resource._id!,
-                        })}
-                      >
-                        {resource.name}
-                      </Link>
+                      <TableText wrapModifier="truncate">
+                        <Link
+                          to={toResourceDetails({
+                            realm,
+                            id: clientId,
+                            resourceId: resource._id!,
+                          })}
+                        >
+                          {resource.name}
+                        </Link>
+                      </TableText>
                     </Td>
-                    <Td>{resource.displayName}</Td>
-                    <Td>{resource.type}</Td>
-                    <Td>{resource.owner?.name}</Td>
+                    <Td>
+                      <TableText wrapModifier="truncate">
+                        {resource.displayName}
+                      </TableText>
+                    </Td>
+                    <Td>
+                      <TableText wrapModifier="truncate">
+                        {resource.type}
+                      </TableText>
+                    </Td>
+                    <Td>
+                      <TableText wrapModifier="truncate">
+                        {resource.owner?.name}
+                      </TableText>
+                    </Td>
                     <Td>
                       <UriRenderer row={resource} />
                     </Td>
-                    <Td width={10}>
-                      <Button
-                        variant="link"
-                        component={(props) => (
-                          <Link
-                            {...props}
-                            to={toNewPermission({
-                              realm,
-                              id: clientId,
-                              permissionType: "resource",
-                              selectedId: resource._id,
-                            })}
-                          />
-                        )}
-                      >
-                        {t("createPermission")}
-                      </Button>
-                    </Td>
-                    <Td
-                      actions={{
-                        items: [
-                          {
-                            title: t("delete"),
-                            onClick: async () => {
-                              setSelectedResource(resource);
-                              setPermission(
-                                await fetchPermissions(resource._id!),
-                              );
-                              toggleDeleteDialog();
-                            },
-                          },
-                        ],
-                      }}
-                    />
+                    {!isDisabled && (
+                      <>
+                        <Td width={10}>
+                          <Button
+                            variant="link"
+                            component={(props) => (
+                              <Link
+                                {...props}
+                                to={toNewPermission({
+                                  realm,
+                                  id: clientId,
+                                  permissionType: "resource",
+                                  selectedId: resource._id,
+                                })}
+                              />
+                            )}
+                          >
+                            {t("createPermission")}
+                          </Button>
+                        </Td>
+                        <Td
+                          actions={{
+                            items: [
+                              {
+                                title: t("delete"),
+                                onClick: async () => {
+                                  setSelectedResource(resource);
+                                  setPermission(
+                                    await fetchPermissions(resource._id!),
+                                  );
+                                  toggleDeleteDialog();
+                                },
+                              },
+                            ],
+                          }}
+                        />
+                      </>
+                    )}
                   </Tr>
                   <Tr
                     key={`child-${resource._id}`}
@@ -286,7 +315,7 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
                   </Tr>
                 </Tbody>
               ))}
-            </TableComposable>
+            </Table>
           )}
         </PaginatingTableToolbar>
       )}
@@ -301,6 +330,7 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
         <ListEmptyState
           message={t("emptyResources")}
           instructions={t("emptyResourcesInstructions")}
+          isDisabled={isDisabled}
           primaryActionText={t("createResource")}
           onPrimaryAction={() =>
             navigate(toCreateResource({ realm, id: clientId }))

@@ -17,6 +17,9 @@
 
 package org.keycloak.models.utils;
 
+import static java.util.Optional.ofNullable;
+import static org.keycloak.models.utils.StripSecretsUtils.stripSecrets;
+
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.otp.OTPApplicationProvider;
 import org.keycloak.authorization.AuthorizationProvider;
@@ -48,18 +51,17 @@ import org.keycloak.representations.idm.*;
 import org.keycloak.representations.idm.authorization.*;
 import org.keycloak.storage.StorageId;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.utils.StreamsUtil;
 import org.keycloak.utils.StringUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -79,6 +81,7 @@ public class ModelToRepresentation {
         REALM_EXCLUDED_ATTRIBUTES.add("defaultSignatureAlgorithm");
         REALM_EXCLUDED_ATTRIBUTES.add("bruteForceProtected");
         REALM_EXCLUDED_ATTRIBUTES.add("permanentLockout");
+        REALM_EXCLUDED_ATTRIBUTES.add("maxTemporaryLockouts");
         REALM_EXCLUDED_ATTRIBUTES.add("maxFailureWaitSeconds");
         REALM_EXCLUDED_ATTRIBUTES.add("waitIncrementSeconds");
         REALM_EXCLUDED_ATTRIBUTES.add("quickLoginCheckMilliSeconds");
@@ -114,6 +117,13 @@ public class ModelToRepresentation {
 
         REALM_EXCLUDED_ATTRIBUTES.add(Constants.CLIENT_POLICIES);
         REALM_EXCLUDED_ATTRIBUTES.add(Constants.CLIENT_PROFILES);
+
+        REALM_EXCLUDED_ATTRIBUTES.add("firstBrokerLoginFlowId");
+    }
+
+    public static Set<String> CLIENT_EXCLUDED_ATTRIBUTES = new HashSet<>();
+    static {
+        CLIENT_EXCLUDED_ATTRIBUTES.add(ClientModel.TYPE);
     }
 
     private static final Logger LOG = Logger.getLogger(ModelToRepresentation.class);
@@ -131,6 +141,7 @@ public class ModelToRepresentation {
         rep.setId(group.getId());
         rep.setName(group.getName());
         rep.setPath(buildGroupPath(group));
+        rep.setParentId(group.getParentId());
         if (!full) return rep;
         // Role mappings
         Set<RoleModel> roles = group.getRoleMappingsStream().collect(Collectors.toSet());
@@ -153,70 +164,18 @@ public class ModelToRepresentation {
         return rep;
     }
 
-    public static Stream<GroupRepresentation> searchGroupsByAttributes(KeycloakSession session, RealmModel realm, boolean full, boolean populateHierarchy, Map<String,String> attributes, Integer first, Integer max) {
-        Stream<GroupModel> groups = searchGroupModelsByAttributes(session, realm, full, populateHierarchy, attributes, first, max);
-        // and then turn the result into GroupRepresentations creating whole hierarchy of child groups for each root group
-        return groups.map(g -> toGroupHierarchy(g, full, attributes));
-
+    public static Stream<GroupModel> searchGroupModelsByAttributes(KeycloakSession session, RealmModel realm, Map<String,String> attributes, Integer first, Integer max) {
+        return session.groups().searchGroupsByAttributes(realm, attributes, first, max);
     }
 
-    public static Stream<GroupModel> searchGroupModelsByAttributes(KeycloakSession session, RealmModel realm, boolean full, boolean populateHierarchy, Map<String,String> attributes, Integer first, Integer max) {
-        Stream<GroupModel> groups = session.groups().searchGroupsByAttributes(realm, attributes, first, max);
-        if(populateHierarchy) {
-            groups = groups
-                // We need to return whole group hierarchy when any child group fulfills the attribute search,
-                // therefore for each group from the result, we need to find root group
-                .map(group -> {
-                    while (Objects.nonNull(group.getParentId())) {
-                        group = group.getParent();
-                    }
-                    return group;
-                })
-
-                // More child groups of one root can fulfill the search, so we need to filter duplicates
-                .filter(StreamsUtil.distinctByKey(GroupModel::getId));
-        }
-        return groups;
-    }
-
-    public static Stream<GroupRepresentation> searchForGroupByName(KeycloakSession session, RealmModel realm, boolean full, String search, Boolean exact, Integer first, Integer max) {
-        return searchForGroupModelByName(session, realm, full, search, exact, first, max)
-            .map(g -> toGroupHierarchy(g, full, search, exact));
-    }
-
-    public static Stream<GroupModel> searchForGroupModelByName(KeycloakSession session, RealmModel realm, boolean full, String search, Boolean exact, Integer first, Integer max) {
-        return session.groups().searchForGroupByNameStream(realm, search, exact, first, max);
-    }
-
-    public static Stream<GroupRepresentation> searchForGroupByName(UserModel user, boolean full, String search, Integer first, Integer max) {
-        return user.getGroupsStream(search, first, max)
-                .map(group -> toRepresentation(group, full));
-    }
-
-    public static Stream<GroupRepresentation> toGroupHierarchy(RealmModel realm, boolean full, Integer first, Integer max) {
-        return toGroupModelHierarchy(realm, full, first, max) 
-            .map(g -> toGroupHierarchy(g, full));
-    }
-
-    public static Stream<GroupModel> toGroupModelHierarchy(RealmModel realm, boolean full, Integer first, Integer max) {
-        return realm.getTopLevelGroupsStream(first, max);
-    }
-
-    public static Stream<GroupRepresentation> toGroupHierarchy(UserModel user, boolean full, Integer first, Integer max) {
-        return user.getGroupsStream(null, first, max)
-                .map(group -> toRepresentation(group, full));
-    }
-
-    public static Stream<GroupRepresentation> toGroupHierarchy(RealmModel realm, boolean full) {
-        return realm.getTopLevelGroupsStream()
+    @Deprecated
+    public static Stream<GroupRepresentation> toGroupHierarchy(KeycloakSession session, RealmModel realm, boolean full) {
+        return session.groups().getTopLevelGroupsStream(realm, null, null)
+                .filter(g -> !g.getAttributes().containsKey(OrganizationModel.ORGANIZATION_ATTRIBUTE))
                 .map(g -> toGroupHierarchy(g, full));
     }
 
-    public static Stream<GroupRepresentation> toGroupHierarchy(UserModel user, boolean full) {
-        return user.getGroupsStream()
-                .map(group -> toRepresentation(group, full));
-    }
-
+    @Deprecated
     public static GroupRepresentation toGroupHierarchy(GroupModel group, boolean full) {
         return toGroupHierarchy(group, full, (String) null);
     }
@@ -226,19 +185,16 @@ public class ModelToRepresentation {
         return toGroupHierarchy(group, full, search, false);
     }
 
+    @Deprecated
+    /**
+     * @deprecated This function is left in place to serve mostly for a full export of all groups.
+     * There is a GroupUtil class in the keycloak-services module to handle normal search operations
+     */
     public static GroupRepresentation toGroupHierarchy(GroupModel group, boolean full, String search, Boolean exact) {
         GroupRepresentation rep = toRepresentation(group, full);
         List<GroupRepresentation> subGroups = group.getSubGroupsStream()
                 .filter(g -> groupMatchesSearchOrIsPathElement(g, search, exact))
                 .map(subGroup -> toGroupHierarchy(subGroup, full, search, exact)).collect(Collectors.toList());
-        rep.setSubGroups(subGroups);
-        return rep;
-    }
-
-    public static GroupRepresentation toGroupHierarchy(GroupModel group, boolean full, Map<String,String> attributes) {
-        GroupRepresentation rep = toRepresentation(group, full);
-        List<GroupRepresentation> subGroups = group.getSubGroupsStream()
-                .map(subGroup -> toGroupHierarchy(subGroup, full, attributes)).collect(Collectors.toList());
         rep.setSubGroups(subGroups);
         return rep;
     }
@@ -388,6 +344,10 @@ public class ModelToRepresentation {
     }
 
     public static RealmRepresentation toRepresentation(KeycloakSession session, RealmModel realm, boolean internal) {
+        return toRepresentation(session, realm, internal, false);
+    }
+
+    public static RealmRepresentation toRepresentation(KeycloakSession session, RealmModel realm, boolean internal, boolean export) {
         RealmRepresentation rep = new RealmRepresentation();
         rep.setId(realm.getId());
         rep.setRealm(realm.getName());
@@ -401,6 +361,7 @@ public class ModelToRepresentation {
         rep.setRememberMe(realm.isRememberMe());
         rep.setBruteForceProtected(realm.isBruteForceProtected());
         rep.setPermanentLockout(realm.isPermanentLockout());
+        rep.setMaxTemporaryLockouts(realm.getMaxTemporaryLockouts());
         rep.setMaxFailureWaitSeconds(realm.getMaxFailureWaitSeconds());
         rep.setMinimumQuickLoginWaitSeconds(realm.getMinimumQuickLoginWaitSeconds());
         rep.setWaitIncrementSeconds(realm.getWaitIncrementSeconds());
@@ -430,6 +391,7 @@ public class ModelToRepresentation {
         rep.setDuplicateEmailsAllowed(realm.isDuplicateEmailsAllowed());
         rep.setResetPasswordAllowed(realm.isResetPasswordAllowed());
         rep.setEditUsernameAllowed(realm.isEditUsernameAllowed());
+        rep.setOrganizationsEnabled(realm.isOrganizationsEnabled());
         rep.setDefaultSignatureAlgorithm(realm.getDefaultSignatureAlgorithm());
         rep.setRevokeRefreshToken(realm.isRevokeRefreshToken());
         rep.setRefreshTokenMaxReuse(realm.getRefreshTokenMaxReuse());
@@ -507,7 +469,7 @@ public class ModelToRepresentation {
         rep.setWebAuthnPolicyPasswordlessExtraOrigins(webAuthnPolicy.getExtraOrigins());
 
         CibaConfig cibaPolicy = realm.getCibaPolicy();
-        Map<String, String> attrMap = Optional.ofNullable(rep.getAttributes()).orElse(new HashMap<>());
+        Map<String, String> attrMap = ofNullable(rep.getAttributes()).orElse(new HashMap<>());
         attrMap.put(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE, cibaPolicy.getBackchannelTokenDeliveryMode());
         attrMap.put(CibaConfig.CIBA_EXPIRES_IN, String.valueOf(cibaPolicy.getExpiresIn()));
         attrMap.put(CibaConfig.CIBA_INTERVAL, String.valueOf(cibaPolicy.getPoolingInterval()));
@@ -524,6 +486,7 @@ public class ModelToRepresentation {
         if (realm.getResetCredentialsFlow() != null) rep.setResetCredentialsFlow(realm.getResetCredentialsFlow().getAlias());
         if (realm.getClientAuthenticationFlow() != null) rep.setClientAuthenticationFlow(realm.getClientAuthenticationFlow().getAlias());
         if (realm.getDockerAuthenticationFlow() != null) rep.setDockerAuthenticationFlow(realm.getDockerAuthenticationFlow().getAlias());
+        if (realm.getFirstBrokerLoginFlow() != null) rep.setFirstBrokerLoginFlow(realm.getFirstBrokerLoginFlow().getAlias());
 
         rep.setDefaultRole(toBriefRepresentation(realm.getDefaultRole()));
 
@@ -541,7 +504,7 @@ public class ModelToRepresentation {
         }
 
         List<IdentityProviderRepresentation> identityProviders = realm.getIdentityProvidersStream()
-                .map(provider -> toRepresentation(realm, provider)).collect(Collectors.toList());
+                .map(provider -> toRepresentation(realm, provider, export)).collect(Collectors.toList());
         rep.setIdentityProviders(identityProviders);
 
         List<IdentityProviderMapperRepresentation> identityProviderMappers = realm.getIdentityProviderMappersStream()
@@ -554,7 +517,7 @@ public class ModelToRepresentation {
         if (internal) {
             exportAuthenticationFlows(session, realm, rep);
             exportRequiredActions(realm, rep);
-            exportGroups(realm, rep);
+            exportGroups(session, realm, rep);
         }
 
         session.clientPolicy().updateRealmRepresentationFromModel(realm, rep);
@@ -563,7 +526,7 @@ public class ModelToRepresentation {
         rep.getAttributes().putAll(stripRealmAttributesIncludedAsFields(realm.getAttributes()));
 
         if (!internal) {
-            rep = StripSecretsUtils.strip(rep);
+            rep = stripSecrets(session, rep);
         }
 
         return rep;
@@ -587,8 +550,21 @@ public class ModelToRepresentation {
         return a;
     }
 
-    public static void exportGroups(RealmModel realm, RealmRepresentation rep) {
-        rep.setGroups(toGroupHierarchy(realm, true).collect(Collectors.toList()));
+    public static Map<String, String> stripClientAttributesIncludedAsFields(Map<String, String> attributes) {
+        Map<String, String> a = new HashMap<>();
+
+        for (Map.Entry<String, String> e : attributes.entrySet()) {
+            if (CLIENT_EXCLUDED_ATTRIBUTES.contains(e.getKey())) {
+                continue;
+            }
+            a.put(e.getKey(), e.getValue());
+        }
+
+        return a;
+    }
+
+    public static void exportGroups(KeycloakSession session, RealmModel realm, RealmRepresentation rep) {
+        rep.setGroups(toGroupHierarchy(session, realm, true).collect(Collectors.toList()));
     }
 
     public static void exportAuthenticationFlows(KeycloakSession session, RealmModel realm, RealmRepresentation rep) {
@@ -709,6 +685,7 @@ public class ModelToRepresentation {
             ClientModel client = clientSession.getClient();
             rep.getClients().put(client.getId(), client.getClientId());
         }
+        rep.setTransientUser(LightweightUserAdapter.isLightweightUser(session.getUser().getId()));
         return rep;
     }
 
@@ -737,13 +714,14 @@ public class ModelToRepresentation {
         rep.setClientId(clientModel.getClientId());
         rep.setName(clientModel.getName());
         rep.setDescription(clientModel.getDescription());
+        rep.setType(clientModel.getType());
         rep.setEnabled(clientModel.isEnabled());
         rep.setAlwaysDisplayInConsole(clientModel.isAlwaysDisplayInConsole());
         rep.setAdminUrl(clientModel.getManagementUrl());
         rep.setPublicClient(clientModel.isPublicClient());
         rep.setFrontchannelLogout(clientModel.isFrontchannelLogout());
         rep.setProtocol(clientModel.getProtocol());
-        rep.setAttributes(clientModel.getAttributes());
+        rep.setAttributes(stripClientAttributesIncludedAsFields(clientModel.getAttributes()));
         rep.setAuthenticationFlowBindingOverrides(clientModel.getAuthenticationFlowBindingOverrides());
         rep.setFullScopeAllowed(clientModel.isFullScopeAllowed());
         rep.setBearerOnly(clientModel.isBearerOnly());
@@ -814,6 +792,10 @@ public class ModelToRepresentation {
     }
 
     public static IdentityProviderRepresentation toRepresentation(RealmModel realm, IdentityProviderModel identityProviderModel) {
+        return toRepresentation(realm, identityProviderModel, false);
+    }
+
+    public static IdentityProviderRepresentation toRepresentation(RealmModel realm, IdentityProviderModel identityProviderModel, boolean export) {
         IdentityProviderRepresentation providerRep = toBriefRepresentation(realm, identityProviderModel);
 
         providerRep.setLinkOnly(identityProviderModel.isLinkOnly());
@@ -823,6 +805,11 @@ public class ModelToRepresentation {
         Map<String, String> config = new HashMap<>(identityProviderModel.getConfig());
         providerRep.setConfig(config);
         providerRep.setAddReadTokenRoleOnCreate(identityProviderModel.isAddReadTokenRoleOnCreate());
+
+        String syncMode = config.get(IdentityProviderModel.SYNC_MODE);
+        if (syncMode == null) {
+            config.put(IdentityProviderModel.SYNC_MODE, "LEGACY");
+        }
 
         String firstBrokerLoginFlowId = identityProviderModel.getFirstBrokerLoginFlowId();
         if (firstBrokerLoginFlowId != null) {
@@ -842,6 +829,10 @@ public class ModelToRepresentation {
             providerRep.setPostBrokerLoginFlowAlias(flow.getAlias());
         }
 
+        if (export) {
+            providerRep.getConfig().remove(OrganizationModel.ORGANIZATION_ATTRIBUTE);
+        }
+
         return providerRep;
     }
 
@@ -849,7 +840,7 @@ public class ModelToRepresentation {
         ProtocolMapperRepresentation rep = new ProtocolMapperRepresentation();
         rep.setId(model.getId());
         rep.setProtocol(model.getProtocol());
-        Map<String, String> config = new HashMap<>(model.getConfig());
+        Map<String, String> config = new HashMap<>(ofNullable(model.getConfig()).orElse(Collections.emptyMap()));
         rep.setConfig(config);
         rep.setName(model.getName());
         rep.setProtocolMapper(model.getProtocolMapper());
@@ -917,6 +908,19 @@ public class ModelToRepresentation {
         return rep;
     }
 
+    public static AuthenticationExecutionRepresentation toRepresentation(AuthenticationExecutionModel model) {
+        AuthenticationExecutionRepresentation rep = new AuthenticationExecutionRepresentation();
+        rep.setId(model.getId());
+        rep.setAuthenticatorConfig(model.getAuthenticatorConfig());
+        rep.setAuthenticator(model.getAuthenticator());
+        rep.setFlowId(model.getFlowId());
+        rep.setAuthenticatorFlow(model.isAuthenticatorFlow());
+        rep.setRequirement(model.getRequirement().name());
+        rep.setPriority(model.getPriority());
+        rep.setParentFlow(model.getParentFlow());
+        return rep;
+    }
+
     public static AuthenticatorConfigRepresentation toRepresentation(AuthenticatorConfigModel model) {
         AuthenticatorConfigRepresentation rep = new AuthenticatorConfigRepresentation();
         rep.setId(model.getId());
@@ -962,7 +966,7 @@ public class ModelToRepresentation {
     public static ComponentRepresentation toRepresentation(KeycloakSession session, ComponentModel component, boolean internal) {
         ComponentRepresentation rep = toRepresentationWithoutConfig(component);
         if (!internal) {
-            rep = StripSecretsUtils.strip(session, rep);
+            return stripSecrets(session, rep);
         }
         return rep;
     }
@@ -1165,6 +1169,8 @@ public class ModelToRepresentation {
                 .stream().map(resource -> {
                     ResourceRepresentation rep = toRepresentation(resource, settingsModel, authorization);
 
+                    rep.setId(null);
+
                     if (rep.getOwner().getId().equals(settingsModel.getClientId())) {
                         rep.setOwner((ResourceOwnerRepresentation) null);
                     } else {
@@ -1185,16 +1191,25 @@ public class ModelToRepresentation {
 
         policies.addAll(policyStore.findByResourceServer(settingsModel)
                 .stream().filter(policy -> !policy.getType().equals("resource") && !policy.getType().equals("scope") && policy.getOwner() == null)
-                .map(policy -> toRepresentation(authorization, policy)).collect(Collectors.toList()));
+                .map(policy -> {
+                    PolicyRepresentation rep = toRepresentation(authorization, policy);
+                    rep.setId(null);
+                    return rep;
+                }).collect(Collectors.toList()));
         policies.addAll(policyStore.findByResourceServer(settingsModel)
                 .stream().filter(policy -> (policy.getType().equals("resource") || policy.getType().equals("scope") && policy.getOwner() == null))
-                .map(policy -> toRepresentation(authorization, policy)).collect(Collectors.toList()));
+                .map(policy -> {
+                    PolicyRepresentation rep = toRepresentation(authorization, policy);
+                    rep.setId(null);
+                    return rep;
+                }).collect(Collectors.toList()));
 
         representation.setPolicies(policies);
 
         List<ScopeRepresentation> scopes = storeFactory.getScopeStore().findByResourceServer(settingsModel).stream().map(scope -> {
             ScopeRepresentation rep = toRepresentation(scope);
 
+            rep.setId(null);
             rep.setPolicies(null);
             rep.setResources(null);
 
@@ -1240,4 +1255,9 @@ public class ModelToRepresentation {
         }
     }
 
+    public static RequiredActionConfigRepresentation toRepresentation(RequiredActionConfigModel model) {
+        RequiredActionConfigRepresentation rep = new RequiredActionConfigRepresentation();
+        rep.setConfig(model.getConfig());
+        return rep;
+    }
 }

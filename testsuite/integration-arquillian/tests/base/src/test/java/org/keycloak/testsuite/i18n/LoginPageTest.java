@@ -16,44 +16,48 @@
  */
 package org.keycloak.testsuite.i18n;
 
+import jakarta.ws.rs.core.Response;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.jboss.arquillian.graphene.page.Page;
+import org.jboss.resteasy.client.jaxrs.ResteasyClient;
+import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
+import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient43Engine;
+import org.junit.Assert;
+import org.junit.Rule;
+import org.junit.Test;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.cookie.CookieType;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
+import org.keycloak.forms.login.freemarker.DetachedInfoStateChecker;
+import org.keycloak.locale.LocaleSelectorProvider;
+import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.pages.ErrorPage;
+import org.keycloak.testsuite.pages.LanguageComboboxAwarePage;
+import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
+import org.keycloak.testsuite.pages.OAuthGrantPage;
+import org.keycloak.testsuite.util.IdentityProviderBuilder;
+import org.openqa.selenium.Cookie;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Locale;
 
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.jboss.resteasy.client.jaxrs.ResteasyClient;
-import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
-import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient43Engine;
-import org.junit.Assert;
-import org.junit.Test;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.adapters.HttpClientBuilder;
-import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.forms.login.freemarker.DetachedInfoStateChecker;
-import org.keycloak.locale.LocaleSelectorProvider;
-import org.keycloak.models.UserModel;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.ErrorPage;
-import org.keycloak.testsuite.pages.LanguageComboboxAwarePage;
-import org.keycloak.testsuite.pages.LoginPage;
-
-import jakarta.ws.rs.core.Response;
-import org.jboss.arquillian.graphene.page.Page;
-import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
-import org.keycloak.testsuite.pages.OAuthGrantPage;
-import org.keycloak.testsuite.util.IdentityProviderBuilder;
-import org.openqa.selenium.Cookie;
-
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:gerbermichi@me.com">Michael Gerber</a>
@@ -76,6 +80,8 @@ public class LoginPageTest extends AbstractI18NTest {
     @Page
     protected OAuthGrantPage grantPage;
 
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -140,7 +146,7 @@ public class LoginPageTest extends AbstractI18NTest {
 
     @Test
     public void acceptLanguageHeader() throws IOException {
-        try(CloseableHttpClient httpClient = (CloseableHttpClient) new HttpClientBuilder().build()) {
+        try(CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
             ApacheHttpClient43Engine engine = new ApacheHttpClient43Engine(httpClient);
             ResteasyClient client = ((ResteasyClientBuilder) ResteasyClientBuilder.newBuilder()).httpEngine(engine).build();
 
@@ -225,12 +231,23 @@ public class LoginPageTest extends AbstractI18NTest {
 
         assertEquals("Deutsch", loginPage.getLanguageDropdownText());
 
-        Cookie localeCookie = driver.manage().getCookieNamed(LocaleSelectorProvider.LOCALE_COOKIE);
+        Cookie localeCookie = driver.manage().getCookieNamed(CookieType.LOCALE.getName());
         assertEquals("de", localeCookie.getValue());
 
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        String userId = user.toRepresentation().getId();
         loginPage.login("test-user@localhost", "password");
 
-        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        events.expect(EventType.UPDATE_PROFILE)
+                .user(userId)
+                .client("test-app")
+                .detail(Details.PREF_UPDATED + UserModel.LOCALE, "de")
+                .assertEvent();
+        events.expectLogin()
+                .user(userId)
+                .client("test-app")
+                .assertEvent();
+
         UserRepresentation userRep = user.toRepresentation();
         assertEquals("de", userRep.getAttributes().get("locale").get(0));
 
@@ -259,7 +276,7 @@ public class LoginPageTest extends AbstractI18NTest {
         loginPage.open();
 
         // Cookie should be removed as last user to login didn't have a locale
-        localeCookie = driver.manage().getCookieNamed(LocaleSelectorProvider.LOCALE_COOKIE);
+        localeCookie = driver.manage().getCookieNamed(CookieType.LOCALE.getName());
         Assert.assertNull(localeCookie);
     }
 

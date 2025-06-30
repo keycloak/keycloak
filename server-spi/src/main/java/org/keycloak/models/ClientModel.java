@@ -24,7 +24,6 @@ import java.util.Set;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventManager;
-import org.keycloak.storage.SearchableModelField;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -40,21 +39,7 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
     String LOGO_URI ="logoUri";
     String POLICY_URI ="policyUri";
     String TOS_URI ="tosUri";
-
-    public static class SearchableFields {
-        public static final SearchableModelField<ClientModel> ID                 = new SearchableModelField<>("id", String.class);
-        public static final SearchableModelField<ClientModel> REALM_ID           = new SearchableModelField<>("realmId", String.class);
-        public static final SearchableModelField<ClientModel> CLIENT_ID          = new SearchableModelField<>("clientId", String.class);
-        public static final SearchableModelField<ClientModel> ENABLED            = new SearchableModelField<>("enabled", Boolean.class);
-        public static final SearchableModelField<ClientModel> SCOPE_MAPPING_ROLE = new SearchableModelField<>("scopeMappingRole", String.class);
-        public static final SearchableModelField<ClientModel> ALWAYS_DISPLAY_IN_CONSOLE = new SearchableModelField<>("alwaysDisplayInConsole", Boolean.class);
-
-        /**
-         * Search for attribute value. The parameters is a pair {@code (attribute_name, value)} where {@code attribute_name}
-         * is always checked for equality, and the value is checked per the operator.
-         */
-        public static final SearchableModelField<ClientModel> ATTRIBUTE          = new SearchableModelField<>("attribute", String[].class);
-    }
+    String TYPE = "type";
 
     interface ClientCreationEvent extends ProviderEvent {
         ClientModel getCreatedClient();
@@ -120,6 +105,14 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
     String getDescription();
 
     void setDescription(String description);
+
+    default String getType() {
+        return getAttribute(TYPE);
+    }
+
+    default void setType(String type) {
+        setAttribute(TYPE, type);
+    }
 
     boolean isEnabled();
 

@@ -30,7 +30,7 @@ import java.util.List;
 /**
  * Mappings UserModel property (the property name of a getter method) to an ID Token claim.  Token claim name can be a full qualified nested object name,
  * i.e. "address.country".  This will create a nested
- * json object within the toke claim.
+ * json object within the token claim.
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $

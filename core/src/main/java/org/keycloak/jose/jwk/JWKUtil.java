@@ -23,7 +23,7 @@ import java.util.Arrays;
 public class JWKUtil {
 
     /**
-     * Coverts {@code BigInteger} to 64-byte array removing the sign byte if
+     * Converts {@code BigInteger} to 64-byte array removing the sign byte if
      * necessary.
      *
      * @param bigInt {@code BigInteger} to be converted
@@ -34,7 +34,7 @@ public class JWKUtil {
     }
 
     /**
-     * Coverts {@code BigInteger} to 64-byte array but maintaining the length
+     * Converts {@code BigInteger} to 64-byte array but maintaining the length
      * to bitlen as specified in rfc7518 for certain fields (X and Y parameter
      * for EC keys).
      *

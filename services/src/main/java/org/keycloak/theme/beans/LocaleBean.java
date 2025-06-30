@@ -20,6 +20,7 @@ package org.keycloak.theme.beans;
 import org.keycloak.models.RealmModel;
 
 import jakarta.ws.rs.core.UriBuilder;
+import java.text.Collator;
 import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -37,12 +38,16 @@ public class LocaleBean {
         this.currentLanguageTag = current.toLanguageTag();
         this.current = messages.getProperty("locale_" + this.currentLanguageTag, this.currentLanguageTag);
 
+        Collator collator = Collator.getInstance(current);
+        collator.setStrength(Collator.PRIMARY); // ignore case and accents
+
         supported = realm.getSupportedLocalesStream()
                 .map(l -> {
                     String label = messages.getProperty("locale_" + l, l);
                     String url = uriBuilder.replaceQueryParam("kc_locale", l).build().toString();
                     return new Locale(l, label, url);
                 })
+                .sorted((o1, o2) -> collator.compare(o1.label, o2.label))
                 .collect(Collectors.toList());
     }
 

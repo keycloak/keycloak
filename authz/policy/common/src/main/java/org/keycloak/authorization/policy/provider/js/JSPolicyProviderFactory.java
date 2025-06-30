@@ -5,7 +5,6 @@ import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
-import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;

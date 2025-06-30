@@ -33,7 +33,10 @@ import org.keycloak.util.TokenUtil;
 import javax.crypto.SecretKey;
 
 import java.security.PublicKey;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -253,7 +256,6 @@ public class TokenVerifier<T extends JsonWebToken> {
     public TokenVerifier<T> withDefaultChecks()  {
         return withChecks(
           RealmUrlCheck.NULL_INSTANCE,
-          SUBJECT_EXISTS_CHECK,
           TokenTypeCheck.INSTANCE_DEFAULT_TOKEN_TYPE,
           IS_ACTIVE
         );

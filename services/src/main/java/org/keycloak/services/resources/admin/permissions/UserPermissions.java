@@ -29,16 +29,13 @@ import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceStore;
-import org.keycloak.common.Profile;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.authorization.Permission;
-import org.keycloak.services.ForbiddenException;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -50,6 +47,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
+
+import jakarta.ws.rs.ForbiddenException;
 
 /**
  * Manages default policies for all users.
@@ -529,41 +528,39 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
         ResourceServer server = root.realmResourceServer();
         if (server == null) return;
 
-        RealmModel realm = server.getRealm();
-
         Policy policy = managePermission();
         if (policy != null) {
-            policyStore.delete(realm, policy.getId());
+            policyStore.delete(policy.getId());
 
         }
         policy = viewPermission();
         if (policy != null) {
-            policyStore.delete(realm, policy.getId());
+            policyStore.delete(policy.getId());
 
         }
         policy = mapRolesPermission();
         if (policy != null) {
-            policyStore.delete(realm, policy.getId());
+            policyStore.delete(policy.getId());
 
         }
         policy = manageGroupMembershipPermission();
         if (policy != null) {
-            policyStore.delete(realm, policy.getId());
+            policyStore.delete(policy.getId());
 
         }
         policy = adminImpersonatingPermission();
         if (policy != null) {
-            policyStore.delete(realm, policy.getId());
+            policyStore.delete(policy.getId());
 
         }
         policy = userImpersonatedPermission();
         if (policy != null) {
-            policyStore.delete(realm, policy.getId());
+            policyStore.delete(policy.getId());
 
         }
         Resource usersResource = resourceStore.findByName(server, USERS_RESOURCE);
         if (usersResource != null) {
-            resourceStore.delete(realm, usersResource.getId());
+            resourceStore.delete(usersResource.getId());
         }
     }
 

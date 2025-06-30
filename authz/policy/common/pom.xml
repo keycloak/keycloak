@@ -51,6 +51,11 @@
             <artifactId>keycloak-server-spi-private</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
 </project>

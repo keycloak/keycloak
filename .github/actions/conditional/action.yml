@@ -10,12 +10,18 @@ outputs:
   ci:
     description: Should "ci.yml" execute
     value: ${{ steps.changes.outputs.ci }}
+  ci-quarkus:
+    description: Should "ci.yml" execute (Quarkus)
+    value: ${{ steps.changes.outputs.ci-quarkus }}
   ci-store:
-    description: Should "ci.yml" execute
+    description: Should "ci.yml" execute (Store)
     value: ${{ steps.changes.outputs.ci-store }}
   ci-sssd:
-    description: Should "ci.yml" execute
+    description: Should "ci.yml" execute (SSSD)
     value: ${{ steps.changes.outputs.ci-sssd }}
+  ci-webauthn:
+    description: Should "ci.yml" execute (WebAuthn)
+    value: ${{ steps.changes.outputs.ci-webauthn }}
   operator:
     description: Should "operator-ci.yml" execute
     value: ${{ steps.changes.outputs.operator }}

@@ -1,3 +1,4 @@
+import PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
 import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
 import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
 import type {
@@ -9,9 +10,7 @@ import {
   ButtonVariant,
   Chip,
   ChipGroup,
-  Select,
   SelectOption,
-  SelectVariant,
 } from "@patternfly/react-core";
 import { useState } from "react";
 import {
@@ -20,18 +19,21 @@ import {
   useFormContext,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
 import { Link, useNavigate } from "react-router-dom";
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
+import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
+import {
+  KeycloakSelect,
+  SelectVariant,
+  Variant,
+} from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useFetch } from "../../utils/useFetch";
-import { toPolicyDetails } from "../routes/PolicyDetails";
-import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { toCreatePolicy } from "../routes/NewPolicy";
-import { NewPolicyDialog } from "./NewPolicyDialog";
 import useToggle from "../../utils/useToggle";
-import PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
+import { toCreatePolicy } from "../routes/NewPolicy";
+import { toPolicyDetails } from "../routes/PolicyDetails";
 import { toResourceDetails } from "../routes/Resource";
+import { NewPolicyDialog } from "./NewPolicyDialog";
 
 type Type = "resources" | "policies";
 
@@ -39,7 +41,7 @@ type ResourcesPolicySelectProps = {
   name: Type;
   clientId: string;
   permissionId?: string;
-  variant?: SelectVariant;
+  variant?: Variant;
   preSelected?: string;
   isRequired?: boolean;
 };
@@ -79,6 +81,8 @@ export const ResourcesPolicySelect = ({
   preSelected,
   isRequired = false,
 }: ResourcesPolicySelectProps) => {
+  const { adminClient } = useAdminClient();
+
   const { realm } = useRealm();
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -232,11 +236,11 @@ export const ResourcesPolicySelect = ({
         control={control}
         rules={{ validate: (value) => !isRequired || value!.length > 0 }}
         render={({ field }) => (
-          <Select
+          <KeycloakSelect
             toggleId={name}
             variant={variant}
-            onToggle={setOpen}
-            onFilter={(_, filter) => {
+            onToggle={(val) => setOpen(val)}
+            onFilter={(filter) => {
               setSearch(filter);
               return toSelectOptions();
             }}
@@ -245,7 +249,7 @@ export const ResourcesPolicySelect = ({
               setSearch("");
             }}
             selections={field.value}
-            onSelect={(_, selectedValue) => {
+            onSelect={(selectedValue) => {
               const option = selectedValue.toString();
               if (variant === SelectVariant.typeaheadMulti) {
                 const changedValue = field.value?.find(
@@ -261,7 +265,7 @@ export const ResourcesPolicySelect = ({
               setSearch("");
             }}
             isOpen={open}
-            aria-labelledby={t(name)}
+            aria-label={t(name)}
             isDisabled={!!preSelected}
             validated={errors[name] ? "error" : "default"}
             typeAheadAriaLabel={t(name)}
@@ -289,7 +293,7 @@ export const ResourcesPolicySelect = ({
             }
           >
             {toSelectOptions()}
-          </Select>
+          </KeycloakSelect>
         )}
       />
     </>

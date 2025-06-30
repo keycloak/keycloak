@@ -26,7 +26,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * Key locator for a bunch of keys. It can be initializaed with or without
+ * Key locator for a bunch of keys. It can be initialized with or without
  * key names.
  *
  * @author <a href="mailto:hmlnarik@redhat.com">Hynek Mlnařík</a>
@@ -46,14 +46,14 @@ public class HardcodedKeyLocator implements KeyLocator, Iterable<Key> {
         Objects.requireNonNull(keys, "Keys must not be null");
         this.byName = Collections.emptyMap();
         this.byKey = Collections.unmodifiableMap(keys.stream().collect(
-                Collectors.toMap(k -> new KeyHash(k), k -> k)));
+                Collectors.toMap(k -> new KeyHash(k), k -> k, (k1, k2) -> k1)));
     }
 
     public HardcodedKeyLocator(Map<String, ? extends Key> keys) {
         Objects.requireNonNull(keys, "Keys must not be null");
         this.byName = Collections.unmodifiableMap(keys);
         this.byKey = Collections.unmodifiableMap(keys.values().stream().collect(
-                Collectors.toMap(k -> new KeyHash(k), k -> k)));
+                Collectors.toMap(k -> new KeyHash(k), k -> k, (k1, k2) -> k1)));
     }
 
     @Override

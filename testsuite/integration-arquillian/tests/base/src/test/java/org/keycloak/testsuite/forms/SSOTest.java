@@ -46,7 +46,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

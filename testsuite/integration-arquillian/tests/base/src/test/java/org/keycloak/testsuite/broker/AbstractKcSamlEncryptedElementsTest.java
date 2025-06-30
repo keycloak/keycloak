@@ -48,7 +48,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
-import static org.keycloak.broker.saml.SAMLEndpoint.ENCRYPTION_DEPRECATED_MODE_PROPERTY;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.testsuite.saml.AbstractSamlTest.SAML_CLIENT_ID_SALES_POST;
 import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
@@ -84,24 +83,6 @@ public abstract class AbstractKcSamlEncryptedElementsTest extends AbstractBroker
             KeysMetadataRepresentation.KeyMetadataRepresentation activeSignatureKey = KeyUtils.findActiveSigningKey(adminClient.realm(bc.consumerRealmName()));
             assertThat(activeSignatureKey.getProviderId(), equalTo(sigProviderId));
             sendDocumentWithEncryptedElement(PemUtils.decodePublicKey(activeSignatureKey.getPublicKey()), XMLCipher.RSA_OAEP, null, null, false);
-        }
-
-        @Test
-        public void testEncryptedElementIsReadableInDeprecatedMode() throws ConfigurationException, ParsingException, ProcessingException {
-            try {
-                // Set flag that enabled deprecated mode for encryption
-                testingClient.server().run(session -> {
-                    System.setProperty(ENCRYPTION_DEPRECATED_MODE_PROPERTY, "true");
-                });
-                KeysMetadataRepresentation.KeyMetadataRepresentation activeSignatureKey = KeyUtils.findActiveSigningKey(adminClient.realm(bc.consumerRealmName()));
-                assertThat(activeSignatureKey.getProviderId(), equalTo(sigProviderId));
-                sendDocumentWithEncryptedElement(PemUtils.decodePublicKey(activeSignatureKey.getPublicKey()), XMLCipher.RSA_OAEP, null, null, true);
-            } finally {
-                // Clear flag
-                testingClient.server().run(session -> {
-                    System.clearProperty(ENCRYPTION_DEPRECATED_MODE_PROPERTY);
-                });
-            }
         }
 
         @Test

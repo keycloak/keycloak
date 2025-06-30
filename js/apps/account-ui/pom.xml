@@ -16,6 +16,41 @@
     <name>Keycloak Account UI</name>
     <description>The user inferface to manage an account on the Keycloak server.</description>
 
+    <profiles>
+        <profile>
+            <id>withTranslations</id>
+            <activation>
+                <property>
+                    <name>!skipCommunityTranslations</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-resources</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>maven-resources-community</directory>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
     <build>
         <resources>
             <resource>
@@ -36,95 +71,28 @@
                 <artifactId>frontend-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>run-build</id>
+                        <id>lib-build</id>
                         <goals>
                             <goal>pnpm</goal>
                         </goals>
                         <configuration>
-                            <arguments>run build</arguments>
+                            <arguments>build</arguments>
+                            <environmentVariables>
+                                <LIB>true</LIB>
+                            </environmentVariables>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>pack</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>pnpm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>pack --pack-destination=target</arguments>
                         </configuration>
                     </execution>
                 </executions>
-                <configuration>
-                    <installDirectory>../..</installDirectory>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>com.google.code.maven-replacer-plugin</groupId>
-                <artifactId>maven-replacer-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>replace</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <file>dist/index.html</file>
-                    <outputFile>target/classes/theme/keycloak.v3/account/index.ftl</outputFile>
-                    <regex>false</regex>
-                    <replacements>
-                        <replacement>
-                            <token>src="./</token>
-                            <value>src="${resourceUrl}/</value>
-                        </replacement>
-                        <replacement>
-                            <token>href="./</token>
-                            <value>href="${resourceUrl}/</value>
-                        </replacement>
-                        <replacement>
-                            <token><![CDATA[<link rel="icon" type="image/svg+xml" href="${resourceUrl}/favicon.svg" />]]></token>
-                            <value xml:space="preserve"><![CDATA[<link rel="icon" type="${properties.favIconType!"image/svg+xml"}" href="${resourceUrl}${properties.favIcon!"/favicon.svg"}" />]]></value>
-                        </replacement>
-                        <replacement>
-                            <token><![CDATA[<title>Keycloak account console</title>]]></token>
-                            <value xml:space="preserve"><![CDATA[<title>${properties.title!"Keycloak account console"}</title>]]></value>
-                        </replacement>
-                        <replacement>
-                            <token><![CDATA[</body>]]></token>
-                            <value xml:space="preserve">
-<![CDATA[
-  <script id="environment" type="application/json">
-    {
-      "authUrl": "${authUrl}",
-      "realm": "${realm.name}",
-      "clientId": "${clientId}",
-      "resourceUrl": "${resourceUrl}",
-      "logo": "${properties.logo!""}",
-      "logoUrl": "${properties.logoUrl!""}",
-      "features": {
-            "isRegistrationEmailAsUsername": ${realm.registrationEmailAsUsername?c},
-            "isEditUserNameAllowed": ${realm.editUsernameAllowed?c},
-            "isInternationalizationEnabled": ${realm.isInternationalizationEnabled()?c},
-            "isLinkedAccountsEnabled": ${realm.identityFederationEnabled?c},
-            "isMyResourcesEnabled": ${(realm.userManagedAccessAllowed && isAuthorizationEnabled)?c},
-            "deleteAccountAllowed": ${deleteAccountAllowed?c},
-            "updateEmailFeatureEnabled": ${updateEmailFeatureEnabled?c},
-            "updateEmailActionEnabled": ${updateEmailActionEnabled?c},
-            "isViewGroupsEnabled": ${isViewGroupsEnabled?c}
-        }
-    }
-  </script>
-</body>
-]]>
-</value>
-                        </replacement>
-                        <replacement>
-                            <token><![CDATA[</head>]]></token>
-                            <value xml:space="preserve">
-<![CDATA[
-    <#if properties.styles?has_content>
-      <#list properties.styles?split(' ') as style>
-      <link href="${resourceUrl}/${style}" rel="stylesheet"/>
-      </#list>
-    </#if>
-  </head>
-]]>
-</value>
-                        </replacement>
-                    </replacements>
-                </configuration>
             </plugin>
         </plugins>
     </build>

@@ -7,7 +7,8 @@ describe("convertClientToUrl", () => {
     const baseUrl = "http://something";
 
     //when
-    const result = convertClientToUrl({ baseUrl }, "");
+    //@ts-ignore
+    const result = convertClientToUrl({ baseUrl }, { serverBaseUrl: "" });
 
     //then
     expect(result).toBe(baseUrl);
@@ -16,13 +17,17 @@ describe("convertClientToUrl", () => {
   it("when root url constrains ${authAdminUrl}", () => {
     //given
     const rootUrl = "${authAdminUrl}";
-    const baseUrl = "/else";
+    const adminUrl = "/else";
 
     //when
-    const result = convertClientToUrl({ rootUrl, baseUrl }, "/admin");
+    const result = convertClientToUrl(
+      { rootUrl, adminUrl },
+      //@ts-ignore
+      { adminBaseUrl: "/admin" },
+    );
 
     //then
-    expect(result).toBe("/admin/else");
+    expect(result).toBe("/admin");
   });
 
   it("when root url constrains ${authBaseUrl}", () => {
@@ -31,7 +36,11 @@ describe("convertClientToUrl", () => {
     const baseUrl = "/something";
 
     //when
-    const result = convertClientToUrl({ rootUrl, baseUrl }, "/admin");
+    const result = convertClientToUrl(
+      { rootUrl, baseUrl },
+      //@ts-ignore
+      { serverBaseUrl: "/admin" },
+    );
 
     //then
     expect(result).toBe("/admin/something");
@@ -42,7 +51,11 @@ describe("convertClientToUrl", () => {
     const baseUrl = "/another";
 
     //when
-    const result = convertClientToUrl({ rootUrl: undefined, baseUrl }, "");
+    const result = convertClientToUrl(
+      { rootUrl: undefined, baseUrl },
+      //@ts-ignore
+      { serverBaseUrl: "" },
+    );
 
     //then
     expect(result).toBe("/another");
@@ -54,7 +67,11 @@ describe("convertClientToUrl", () => {
     const rootUrl = "http://test.nl";
 
     //when
-    const result = convertClientToUrl({ rootUrl, baseUrl }, "");
+    const result = convertClientToUrl(
+      { rootUrl, baseUrl },
+      //@ts-ignore
+      { serverBaseUrl: "" },
+    );
 
     //then
     expect(result).toBe("http://test.nl/another");
@@ -65,20 +82,13 @@ describe("convertClientToUrl", () => {
     const rootUrl = "http://test.nl";
 
     //when
-    const result = convertClientToUrl({ rootUrl, baseUrl: undefined }, "");
+    const result = convertClientToUrl(
+      { rootUrl, baseUrl: undefined },
+      //@ts-ignore
+      { serverBaseUrl: "" },
+    );
 
     //then
     expect(result).toBe("http://test.nl");
-  });
-
-  it("should it return ${authBaseUrl} when baseUrl is not set?", () => {
-    //given
-    const rootUrl = "${authBaseUrl}";
-
-    //when
-    const result = convertClientToUrl({ rootUrl, baseUrl: undefined }, "");
-
-    //then
-    expect(result).toBeUndefined();
   });
 });

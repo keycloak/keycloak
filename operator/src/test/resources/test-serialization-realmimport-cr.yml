@@ -4,6 +4,10 @@ metadata:
   name: example-token-test-kc
 spec:
   keycloakCRName: example-kc
+  resources:
+    limits:
+      cpu: 4
+      memory: 8Gi
   realm:
     id: token-test
     realm: token-test
@@ -1087,7 +1091,20 @@ spec:
           name: Consent Required
           providerId: consent-required
           subType: anonymous
-          subComponents: {}
+          subComponents: 
+            level1:
+              - id: id1
+                name: Consent Required
+                providerId: consent-required
+                subType: anonymous
+                subComponents:
+                  level2:
+                    - id: id2
+                      name: Consent Required
+                      providerId: consent-required
+                      subType: anonymous
+                      config: {}    
+                config: {}
           config: {}
         - id: 7063fa94-4f9e-48cd-9659-bb46ccc09764
           name: Full Scope Disabled

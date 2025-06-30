@@ -22,7 +22,6 @@ import org.keycloak.common.enums.SslRequired;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderEvent;
-import org.keycloak.storage.SearchableModelField;
 
 import java.util.Map;
 import java.util.Set;
@@ -35,19 +34,6 @@ import java.util.stream.Stream;
 public interface RealmModel extends RoleContainerModel {
 
     Comparator<RealmModel> COMPARE_BY_NAME = Comparator.comparing(RealmModel::getName);
-
-    public static class SearchableFields {
-        public static final SearchableModelField<RealmModel> ID                     = new SearchableModelField<>("id", String.class);
-        public static final SearchableModelField<RealmModel> NAME                   = new SearchableModelField<>("name", String.class);
-        /**
-         * Search for realms that have some client initial access set.
-         */
-        public static final SearchableModelField<RealmModel> CLIENT_INITIAL_ACCESS  = new SearchableModelField<>("clientInitialAccess", Boolean.class);
-        /**
-         * Search for realms that have some component with 
-         */
-        public static final SearchableModelField<RealmModel> COMPONENT_PROVIDER_TYPE  = new SearchableModelField<>("componentProviderType", String.class);
-    }
 
     interface RealmCreationEvent extends ProviderEvent {
         RealmModel getCreatedRealm();
@@ -119,6 +105,10 @@ public interface RealmModel extends RoleContainerModel {
 
     void setUserManagedAccessAllowed(boolean userManagedAccessAllowed);
 
+    boolean isOrganizationsEnabled();
+
+    void setOrganizationsEnabled(boolean organizationsEnabled);
+
     void setAttribute(String name, String value);
     default void setAttribute(String name, Boolean value) {
         setAttribute(name, value.toString());
@@ -133,15 +123,15 @@ public interface RealmModel extends RoleContainerModel {
     String getAttribute(String name);
     default Integer getAttribute(String name, Integer defaultValue) {
         String v = getAttribute(name);
-        return v != null ? Integer.valueOf(v) : defaultValue;
+        return v != null && !v.isEmpty() ? Integer.valueOf(v) : defaultValue;
     }
     default Long getAttribute(String name, Long defaultValue) {
         String v = getAttribute(name);
-        return v != null ? Long.valueOf(v) : defaultValue;
+        return v != null && !v.isEmpty() ? Long.valueOf(v) : defaultValue;
     }
     default Boolean getAttribute(String name, Boolean defaultValue) {
         String v = getAttribute(name);
-        return v != null ? Boolean.valueOf(v) : defaultValue;
+        return v != null && !v.isEmpty() ? Boolean.valueOf(v) : defaultValue;
     }
     Map<String, String> getAttributes();
 
@@ -150,6 +140,8 @@ public interface RealmModel extends RoleContainerModel {
     void setBruteForceProtected(boolean value);
     boolean isPermanentLockout();
     void setPermanentLockout(boolean val);
+    int getMaxTemporaryLockouts();
+    void setMaxTemporaryLockouts(int val);
     int getMaxFailureWaitSeconds();
     void setMaxFailureWaitSeconds(int val);
     int getWaitIncrementSeconds();
@@ -358,6 +350,8 @@ public interface RealmModel extends RoleContainerModel {
 
     Stream<ClientModel> searchClientByAttributes(Map<String, String> attributes, Integer firstResult, Integer maxResults);
 
+    Stream<ClientModel> searchClientByAuthenticationFlowBindingOverrides(Map<String, String> overrides, Integer firstResult, Integer maxResults);
+
     void updateRequiredCredentials(Set<String> creds);
 
     Map<String, String> getBrowserSecurityHeaders();
@@ -384,6 +378,9 @@ public interface RealmModel extends RoleContainerModel {
 
     AuthenticationFlowModel getDockerAuthenticationFlow();
     void setDockerAuthenticationFlow(AuthenticationFlowModel flow);
+
+    AuthenticationFlowModel getFirstBrokerLoginFlow();
+    void setFirstBrokerLoginFlow(AuthenticationFlowModel flow);
 
     /**
      * Returns authentications flows as a stream.
@@ -422,6 +419,12 @@ public interface RealmModel extends RoleContainerModel {
     void removeAuthenticatorConfig(AuthenticatorConfigModel model);
     AuthenticatorConfigModel getAuthenticatorConfigById(String id);
     AuthenticatorConfigModel getAuthenticatorConfigByAlias(String alias);
+
+    RequiredActionConfigModel getRequiredActionConfigById(String id);
+    RequiredActionConfigModel getRequiredActionConfigByAlias(String alias);
+    void removeRequiredActionProviderConfig(RequiredActionConfigModel model);
+    void updateRequiredActionConfig(RequiredActionConfigModel model);
+    Stream<RequiredActionConfigModel> getRequiredActionConfigsStream();
 
     /**
      * Returns sorted {@link RequiredActionProviderModel RequiredActionProviderModel} as a stream.
@@ -653,13 +656,17 @@ public interface RealmModel extends RoleContainerModel {
     Long getGroupsCount(Boolean onlyTopGroups);
     Long getGroupsCountByNameContaining(String search);
 
+    @Deprecated
     /**
+     * @deprecated It is now preferable to use {@link GroupProvider} from a {@link KeycloakSession}
      * Returns top level groups as a stream.
      * @return Stream of {@link GroupModel}. Never returns {@code null}.
      */
     Stream<GroupModel> getTopLevelGroupsStream();
 
+    @Deprecated
     /**
+     * @deprecated It is now preferable to use {@link GroupProvider} from a {@link KeycloakSession}
      * Returns top level groups as a stream.
      * @param first {@code Integer} Index of the first desired group. Ignored if negative or {@code null}.
      * @param max {@code Integer} Maximum number of returned groups. Ignored if negative or {@code null}.

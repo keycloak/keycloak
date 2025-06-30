@@ -7,4 +7,4 @@ You can now log in to the Account Console to verify this user is configured corr
 
 As a user in the Account Console, you can manage your account including modifying your profile, adding two-factor authentication, and including identity provider accounts.
 
-image::account-console.png[Keycloak Account Console]
+image::account-console.png[{project_name} Account Console]

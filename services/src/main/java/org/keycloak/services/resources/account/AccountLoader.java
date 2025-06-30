@@ -17,7 +17,6 @@
 package org.keycloak.services.resources.account;
 
 import org.jboss.logging.Logger;
-import org.keycloak.common.Profile;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.common.enums.AccountRestApiVersion;
@@ -26,11 +25,16 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oidc.AccessTokenIntrospectionProvider;
+import org.keycloak.protocol.oidc.AccessTokenIntrospectionProviderFactory;
+import org.keycloak.protocol.oidc.TokenIntrospectionProvider;
+import org.keycloak.representations.AccessToken;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resource.AccountResourceProvider;
-import org.keycloak.services.resources.Cors;
+import org.keycloak.services.util.UserSessionUtil;
 import org.keycloak.theme.Theme;
 
 import jakarta.ws.rs.HttpMethod;
@@ -82,7 +86,7 @@ public class AccountLoader {
         AccountResourceProvider accountResourceProvider = getAccountResourceProvider(theme);
         
         if (request.getHttpMethod().equals(HttpMethod.OPTIONS)) {
-            return new CorsPreflightService(request);
+            return new CorsPreflightService();
         } else if ((accepts.contains(MediaType.APPLICATION_JSON_TYPE) || MediaType.APPLICATION_JSON_TYPE.equals(content)) && !uriInfo.getPath().endsWith("keycloak.json")) {
             return getAccountRestService(client, null);
         } else if (accountResourceProvider != null) {
@@ -96,7 +100,7 @@ public class AccountLoader {
     @Produces(MediaType.APPLICATION_JSON)
     public Object getVersionedAccountRestService(final @PathParam("version") String version) {
         if (request.getHttpMethod().equals(HttpMethod.OPTIONS)) {
-            return new CorsPreflightService(request);
+            return new CorsPreflightService();
         }
         return getAccountRestService(getAccountManagementClient(session.getContext().getRealm()), version);
     }
@@ -109,18 +113,31 @@ public class AccountLoader {
         }
     }
 
-
     private AccountRestService getAccountRestService(ClientModel client, String versionStr) {
         AuthenticationManager.AuthResult authResult = new AppAuthManager.BearerTokenAuthenticator(session)
-                .setAudience(client.getClientId())
                 .authenticate();
-
         if (authResult == null) {
             throw new NotAuthorizedException("Bearer token required");
         }
-        Auth auth = new Auth(session.getContext().getRealm(), authResult.getToken(), authResult.getUser(), client, authResult.getSession(), false);
 
-        Cors.add(request).allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().build(response);
+        AccessToken accessToken = authResult.getToken();
+
+        UserSessionUtil.checkTokenIssuedAt(client.getRealm(), accessToken, authResult.getSession(), event, authResult.getClient());
+
+        if (accessToken.getAudience() == null || accessToken.getResourceAccess(client.getClientId()) == null) {
+            // transform for introspection to get the required claims
+            AccessTokenIntrospectionProvider provider = (AccessTokenIntrospectionProvider) session.getProvider(TokenIntrospectionProvider.class,
+                    AccessTokenIntrospectionProviderFactory.ACCESS_TOKEN_TYPE);
+            accessToken = provider.transformAccessToken(accessToken, authResult.getSession());
+        }
+
+        if (!accessToken.hasAudience(client.getClientId())) {
+            throw new NotAuthorizedException("Invalid audience for client " + client.getClientId());
+        }
+
+        Auth auth = new Auth(session.getContext().getRealm(), accessToken, authResult.getUser(), client, authResult.getSession(), false);
+
+        Cors.builder().allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().add();
 
         if (authResult.getUser().getServiceAccountClientLink() != null) {
             throw new NotAuthorizedException("Service accounts are not allowed to access this service");

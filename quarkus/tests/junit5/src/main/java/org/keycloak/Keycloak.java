@@ -25,15 +25,15 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
+
+import io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.keycloak.common.Version;
 import org.keycloak.common.crypto.FipsMode;
-import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.HttpOptions;
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.config.Option;
 import org.keycloak.config.SecurityOptions;
-import org.keycloak.config.StorageOptions;
 import org.keycloak.platform.Platform;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.Picocli;
@@ -62,6 +62,7 @@ public class Keycloak {
         System.setProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager");
         System.setProperty("quarkus.http.test-port", "${kc.http-port}");
         System.setProperty("quarkus.http.test-ssl-port", "${kc.https-port}");
+        System.setProperty("java.util.concurrent.ForkJoinPool.common.threadFactory", QuarkusForkJoinWorkerThreadFactory.class.getName());
     }
 
     public static void main(String[] args) {
@@ -118,11 +119,7 @@ public class Keycloak {
             addOptionIfNotSet(args, HttpOptions.HTTP_PORT);
             addOptionIfNotSet(args, HttpOptions.HTTPS_PORT);
 
-            if (getOptionValue(args, DatabaseOptions.DB) == null) {
-                addOptionIfNotSet(args, StorageOptions.STORAGE, StorageOptions.StorageType.chm);
-            }
-
-            boolean isFipsEnabled = ofNullable(getOptionValue(args, SecurityOptions.FIPS_MODE)).orElse(FipsMode.DISABLED).isFipsEnabled();
+            boolean isFipsEnabled = ofNullable(getOptionValue(args, SecurityOptions.FIPS_MODE)).map(FipsMode::valueOf).orElse(FipsMode.DISABLED).isFipsEnabled();
 
             if (isFipsEnabled) {
                 String logLevel = getOptionValue(args, LoggingOptions.LOG_LEVEL);
@@ -140,41 +137,22 @@ public class Keycloak {
         }
 
         private <T> void addOptionIfNotSet(List<String> args, Option<T> option, T defaultValue) {
-            T value = getOptionValue(args, option);
+            String value = getOptionValue(args, option);
 
             if (value == null) {
                 defaultValue = ofNullable(defaultValue).orElseGet(option.getDefaultValue()::get);
-                args.add(Configuration.toCliFormat(option.getKey()) + "=" + defaultValue);
+                args.add(Configuration.toCliFormat(option.getKey()) + "=" + Option.getDefaultValueString(defaultValue));
             }
         }
 
-        private <T> T getOptionValue(List<String> args, Option<T> option) {
+        private String getOptionValue(List<String> args, Option<?> option) {
             for (String arg : args) {
                 if (arg.contains(option.getKey())) {
                     if (arg.endsWith(option.getKey())) {
                         throw new IllegalArgumentException("Option '" + arg + "' value must be set using '=' as a separator");
                     }
 
-                    String value = arg.substring(Picocli.ARG_PREFIX.length() + option.getKey().length() + 1);
-                    Class<T> type = option.getType();
-
-                    if (type.equals(String.class)) {
-                        return (T) value;
-                    }
-
-                    if (type.isEnum()) {
-                        return (T) Enum.valueOf((Class<Enum>) type, value);
-                    }
-
-                    if (Integer.class.isAssignableFrom(type)) {
-                        return (T) Integer.valueOf(value);
-                    }
-
-                    if (Boolean.class.isAssignableFrom(type)) {
-                        return (T) Boolean.valueOf(value);
-                    }
-
-                    throw new RuntimeException("Unsupported option type '" + type + "'");
+                    return arg.substring(Picocli.ARG_PREFIX.length() + option.getKey().length() + 1);
                 }
             }
 

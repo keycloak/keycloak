@@ -20,9 +20,7 @@
         <module>servlet-authz</module>
         <module>servlet-policy-enforcer</module>
         <module>servlets</module>
-        <module>app-profile-jee</module>
+        <module>servlets-jakarta</module>
         <module>cors</module>
-        <module>spring-boot-adapter-app</module>
-        <module>fuse</module>
     </modules>
 </project>

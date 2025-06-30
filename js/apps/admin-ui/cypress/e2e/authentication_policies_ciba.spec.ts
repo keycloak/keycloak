@@ -15,6 +15,7 @@ describe("Authentication - Policies - CIBA", () => {
   const realmName = uuid();
 
   before(() => adminClient.createRealm(realmName));
+
   after(() => adminClient.deleteRealm(realmName));
 
   beforeEach(() => {

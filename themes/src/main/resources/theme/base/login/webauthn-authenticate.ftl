@@ -1,5 +1,5 @@
-    <#import "template.ftl" as layout>
-    <@layout.registrationLayout; section>
+<#import "template.ftl" as layout>
+<@layout.registrationLayout displayInfo=(realm.registrationAllowed && !registrationDisabled??); section>
     <#if section = "title">
      title
     <#elseif section = "header">
@@ -30,18 +30,18 @@
 
                         <div class="${properties.kcFormClass!}">
                             <#list authenticators.authenticators as authenticator>
-                                <div id="kc-webauthn-authenticator" class="${properties.kcSelectAuthListItemClass!}">
+                                <div id="kc-webauthn-authenticator-item-${authenticator?index}" class="${properties.kcSelectAuthListItemClass!}">
                                     <div class="${properties.kcSelectAuthListItemIconClass!}">
                                         <i class="${(properties['${authenticator.transports.iconClass}'])!'${properties.kcWebAuthnDefaultIcon!}'} ${properties.kcSelectAuthListItemIconPropertyClass!}"></i>
                                     </div>
                                     <div class="${properties.kcSelectAuthListItemBodyClass!}">
-                                        <div id="kc-webauthn-authenticator-label"
+                                        <div id="kc-webauthn-authenticator-label-${authenticator?index}"
                                              class="${properties.kcSelectAuthListItemHeadingClass!}">
                                             ${kcSanitize(msg('${authenticator.label}'))?no_esc}
                                         </div>
 
                                         <#if authenticator.transports?? && authenticator.transports.displayNameProperties?has_content>
-                                            <div id="kc-webauthn-authenticator-transport"
+                                            <div id="kc-webauthn-authenticator-transport-${authenticator?index}"
                                                  class="${properties.kcSelectAuthListItemDescriptionClass!}">
                                                 <#list authenticator.transports.displayNameProperties as nameProperty>
                                                     <span>${kcSanitize(msg('${nameProperty!}'))?no_esc}</span>
@@ -53,10 +53,10 @@
                                         </#if>
 
                                         <div class="${properties.kcSelectAuthListItemDescriptionClass!}">
-                                            <span id="kc-webauthn-authenticator-created-label">
+                                            <span id="kc-webauthn-authenticator-createdlabel-${authenticator?index}">
                                                 ${kcSanitize(msg('webauthn-createdAt-label'))?no_esc}
                                             </span>
-                                            <span id="kc-webauthn-authenticator-created">
+                                            <span id="kc-webauthn-authenticator-created-${authenticator?index}">
                                                 ${kcSanitize(authenticator.createdAt)?no_esc}
                                             </span>
                                         </div>
@@ -69,100 +69,34 @@
                 </#if>
 
                 <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
-                    <input id="authenticateWebAuthnButton" type="button" onclick="webAuthnAuthenticate()" autofocus="autofocus"
+                    <input id="authenticateWebAuthnButton" type="button" autofocus="autofocus"
                            value="${kcSanitize(msg("webauthn-doAuthenticate"))}"
                            class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"/>
                 </div>
             </div>
         </div>
 
-    <script type="text/javascript" src="${url.resourcesCommonPath}/node_modules/jquery/dist/jquery.min.js"></script>
-    <script type="text/javascript" src="${url.resourcesPath}/js/base64url.js"></script>
-    <script type="text/javascript">
-        function webAuthnAuthenticate() {
-            let isUserIdentified = ${isUserIdentified};
-            if (!isUserIdentified) {
-                doAuthenticate([]);
-                return;
-            }
-            checkAllowCredentials();
-        }
-
-        function checkAllowCredentials() {
-            let allowCredentials = [];
-            let authn_use = document.forms['authn_select'].authn_use_chk;
-
-            if (authn_use !== undefined) {
-                if (authn_use.length === undefined) {
-                    allowCredentials.push({
-                        id: base64url.decode(authn_use.value, {loose: true}),
-                        type: 'public-key',
-                    });
-                } else {
-                    for (let i = 0; i < authn_use.length; i++) {
-                        allowCredentials.push({
-                            id: base64url.decode(authn_use[i].value, {loose: true}),
-                            type: 'public-key',
-                        });
-                    }
-                }
-            }
-            doAuthenticate(allowCredentials);
-        }
-
-
-    function doAuthenticate(allowCredentials) {
-
-        // Check if WebAuthn is supported by this browser
-        if (!window.PublicKeyCredential) {
-            $("#error").val("${msg("webauthn-unsupported-browser-text")?no_esc}");
-            $("#webauth").submit();
-            return;
-        }
-
-        let challenge = "${challenge}";
-        let userVerification = "${userVerification}";
-        let rpId = "${rpId}";
-        let publicKey = {
-            rpId : rpId,
-            challenge: base64url.decode(challenge, { loose: true })
-        };
-
-        let createTimeout = ${createTimeout};
-        if (createTimeout !== 0) publicKey.timeout = createTimeout * 1000;
-
-        if (allowCredentials.length) {
-            publicKey.allowCredentials = allowCredentials;
-        }
-
-        if (userVerification !== 'not specified') publicKey.userVerification = userVerification;
-
-        navigator.credentials.get({publicKey})
-            .then((result) => {
-                window.result = result;
-
-                let clientDataJSON = result.response.clientDataJSON;
-                let authenticatorData = result.response.authenticatorData;
-                let signature = result.response.signature;
-
-                $("#clientDataJSON").val(base64url.encode(new Uint8Array(clientDataJSON), { pad: false }));
-                $("#authenticatorData").val(base64url.encode(new Uint8Array(authenticatorData), { pad: false }));
-                $("#signature").val(base64url.encode(new Uint8Array(signature), { pad: false }));
-                $("#credentialId").val(result.id);
-                if(result.response.userHandle) {
-                    $("#userHandle").val(base64url.encode(new Uint8Array(result.response.userHandle), { pad: false }));
-                }
-                $("#webauth").submit();
-            })
-            .catch((err) => {
-                $("#error").val(err);
-                $("#webauth").submit();
-            })
-        ;
-    }
-
+    <script type="module">
+        import { authenticateByWebAuthn } from "${url.resourcesPath}/js/webauthnAuthenticate.js";
+        const authButton = document.getElementById('authenticateWebAuthnButton');
+        authButton.addEventListener("click", function() {
+            const input = {
+                isUserIdentified : ${isUserIdentified},
+                challenge : '${challenge}',
+                userVerification : '${userVerification}',
+                rpId : '${rpId}',
+                createTimeout : ${createTimeout},
+                errmsg : "${msg("webauthn-unsupported-browser-text")?no_esc}"
+            };
+            authenticateByWebAuthn(input);
+        });
     </script>
-    <#elseif section = "info">
 
+    <#elseif section = "info">
+        <#if realm.registrationAllowed && !registrationDisabled??>
+            <div id="kc-registration">
+                <span>${msg("noAccount")} <a tabindex="6" href="${url.registrationUrl}">${msg("doRegister")}</a></span>
+            </div>
+        </#if>
     </#if>
-    </@layout.registrationLayout>
+</@layout.registrationLayout>

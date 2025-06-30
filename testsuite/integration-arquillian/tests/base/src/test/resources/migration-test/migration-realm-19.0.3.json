@@ -600,7 +600,7 @@
       "saml.encrypt" : "false",
       "saml_assertion_consumer_url_post" : "http://localhost:8080/sales-post/saml",
       "saml.server.signature" : "true",
-      "saml_idp_initiated_sso_url_name" : "sales-post",
+      "saml_idp_initiated_sso_url_name" : "sales-post-very-long-name-greater-than-255-characters-0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901",
       "exclude.session.state.from.auth.response" : "false",
       "saml.artifact.binding.identifier" : "ZDisLXkadz6IlDoL8l343V44KP0=",
       "saml.artifact.binding" : "false",
@@ -1158,8 +1158,32 @@
       "consentRequired" : false,
       "config" : { }
     } ]
-  } ],
-  "defaultDefaultClientScopes" : [ "roles", "profile", "role_list", "email", "web-origins" ],
+  }, {
+    "id": "6e26ea6e-8d9e-4bb4-a335-df23baea8a89",
+    "name": "acr",
+    "description": "OpenID Connect scope for add acr (authentication context class reference) to the token",
+    "protocol": "openid-connect",
+    "attributes": {
+      "include.in.token.scope": "false",
+      "display.on.consent.screen": "false"
+    },
+    "protocolMappers": [
+      {
+        "id": "7b7b4a03-9b67-4a0c-a154-e36d8b2e251c",
+        "name": "acr loa level",
+        "protocol": "openid-connect",
+        "protocolMapper": "oidc-acr-mapper",
+        "consentRequired": false,
+        "config": {
+          "id.token.claim": "true",
+          "introspection.token.claim": "true",
+          "access.token.claim": "true"
+        }
+      }
+    ]
+  }
+  ],
+  "defaultDefaultClientScopes" : [ "roles", "profile", "role_list", "email", "web-origins", "acr" ],
   "defaultOptionalClientScopes" : [ "phone", "offline_access", "address", "microprofile-jwt" ],
   "browserSecurityHeaders" : {
     "contentSecurityPolicyReportOnly" : "",
@@ -2892,7 +2916,7 @@
       "config" : { }
     } ]
   } ],
-  "defaultDefaultClientScopes" : [ "web-origins", "roles", "role_list", "email", "profile" ],
+  "defaultDefaultClientScopes" : [ "web-origins", "roles", "role_list", "email", "profile", "acr" ],
   "defaultOptionalClientScopes" : [ "address", "offline_access", "microprofile-jwt", "phone" ],
   "browserSecurityHeaders" : {
     "contentSecurityPolicyReportOnly" : "",
@@ -2912,12 +2936,48 @@
   "identityProviders" : [ ],
   "identityProviderMappers" : [ ],
   "components" : {
+    "org.keycloak.storage.UserStorageProvider": [
+      {
+        "id": "307bba27-f8da-4c4d-a1b9-3c1bf49f824e",
+        "name": "ldap",
+        "providerId": "ldap",
+        "subComponents": {},
+        "config": {
+          "pagination": [ "false" ],
+          "fullSyncPeriod": [ "-1" ],
+          "startTls": [ "false" ],
+          "usersDn": [ "ou=People,dc=keycloak,dc=org" ],
+          "connectionPooling": [ "false" ],
+          "cachePolicy": [ "DEFAULT" ],
+          "useKerberosForPasswordAuthentication": [ "false" ],
+          "importEnabled": [ "true" ],
+          "enabled": [ "false" ],
+          "bindCredential": [ "anything" ],
+          "changedSyncPeriod": [ "-1" ],
+          "bindDn": [ "uid=admin,ou=system" ],
+          "usernameLDAPAttribute": [ "uid" ],
+          "vendor": [ "other" ],
+          "uuidLDAPAttribute": [ "entryUUID" ],
+          "connectionUrl": [ "ldap://localhost:10389" ],
+          "allowKerberosAuthentication": [ "false" ],
+          "syncRegistrations": [ "true" ],
+          "authType": [ "simple" ],
+          "useTruststoreSpi": [ "ldapsOnly" ],
+          "usePasswordModifyExtendedOp": [ "false" ],
+          "trustEmail": [ "false" ],
+          "userObjectClasses": [ "inetOrgPerson, organizationalPerson" ],
+          "rdnLDAPAttribute": [ "uid" ],
+          "editMode": [ "WRITABLE" ],
+          "validatePasswordPolicy": [ "false" ]
+        }
+      }
+    ],
     "org.keycloak.userprofile.UserProfileProvider": [
       {
         "id": "88cef18c-bcd8-40d2-9e7d-d257298317f2",
         "providerId": "declarative-user-profile",
         "subComponents": {},
-        "config": {        
+        "config": {
           "config-piece-0" : [ "{\"attributes\":[{\"name\":\"username\",\"displayName\":\"${username}\",\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"validations\":{\"length\":{\"min\":3,\"max\":255},\"username-prohibited-characters\":{},\"up-username-not-idn-homograph\":{}}},{\"name\":\"email\",\"displayName\":\"${email}\",\"permissions\":{\"edit\":[\"admin\",\"user\"],\"view\":[\"admin\",\"user\"]},\"validations\":{\"email\":{},\"length\":{\"max\":255},\"pattern\":{\"pattern\":\"[a-zA-Z0-9!#$%&'*+\/=?^_`{|}~.-]+@example.nl\",\"error-message\":\"Invalid domain selected\"}},\"annotations\":{\"\":\"\"},\"required\":{\"roles\":[\"user\"]},\"group\":null},{\"name\":\"firstName\",\"displayName\":\"${firstName}\",\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}}},{\"name\":\"lastName\",\"displayName\":\"${lastName}\",\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}}}]}" ],
           "config-pieces-count" : [ "1" ]
         }
@@ -5104,7 +5164,7 @@
       }
     } ]
   } ],
-  "defaultDefaultClientScopes" : [ "profile", "role_list", "roles", "web-origins", "email" ],
+  "defaultDefaultClientScopes" : [ "profile", "role_list", "roles", "web-origins", "email", "acr" ],
   "defaultOptionalClientScopes" : [ "offline_access", "phone", "microprofile-jwt", "address" ],
   "browserSecurityHeaders" : {
     "contentSecurityPolicyReportOnly" : "",

@@ -4,9 +4,9 @@ import {
   createNamedContext,
   useRequiredContext,
   useStoredState,
-} from "ui-shared";
+} from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "./realm-context/RealmContext";
-import { useRealms } from "./RealmsContext";
+import { RealmNameRepresentation, useRealms } from "./RealmsContext";
 
 const MAX_REALMS = 4;
 
@@ -43,12 +43,17 @@ export const RecentRealmsProvider = ({ children }: PropsWithChildren) => {
 
 export const useRecentRealms = () => useRequiredContext(RecentRealmsContext);
 
-function filterRealmNames(realms: string[], storedRealms: string[]) {
+function filterRealmNames(
+  realms: RealmNameRepresentation[],
+  storedRealms: string[],
+) {
   // If no realms have been set yet we can't filter out any non-existent realm names.
   if (realms.length === 0) {
     return storedRealms;
   }
 
   // Only keep realm names that actually still exist.
-  return storedRealms.filter((realm) => realms.includes(realm));
+  return storedRealms.filter((realm) => {
+    return realms.some((r) => r.name === realm);
+  });
 }

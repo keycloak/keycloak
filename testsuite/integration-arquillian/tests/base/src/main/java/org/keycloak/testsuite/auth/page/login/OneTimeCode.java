@@ -21,7 +21,6 @@ import org.keycloak.testsuite.util.URLUtils;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
-import org.openqa.selenium.support.ui.Select;
 
 import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 

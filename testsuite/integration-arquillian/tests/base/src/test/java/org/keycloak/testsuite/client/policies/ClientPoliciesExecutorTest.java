@@ -17,6 +17,8 @@
 
 package org.keycloak.testsuite.client.policies;
 
+import static org.hamcrest.Matchers.emptyOrNullString;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -948,7 +950,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
             clientRep.setIdTokenSignedResponseAlg(Algorithm.PS256);
             clientRep.setTokenEndpointAuthSigningAlg(Algorithm.PS256);
         });
-        events.expect(EventType.CLIENT_REGISTER).client(cAppDynamicClientId).user(Matchers.isEmptyOrNullString()).assertEvent();
+        events.expect(EventType.CLIENT_REGISTER).client(cAppDynamicClientId).user(is(emptyOrNullString())).assertEvent();
 
         // update dynamically - fail
         try {

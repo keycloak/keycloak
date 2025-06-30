@@ -77,7 +77,7 @@ The certificate identity mapping can map the extracted user identity to an exist
 
 . Click *Authentication* in the menu.
 . Click the *Browser* flow.
-. From the *Action* list, select *Duplicate*. 
+. From the *Action* list, select *Duplicate*.
 . Enter a name for the copy.
 . Click *Duplicate*.
 . Click *Add step*.
@@ -101,6 +101,7 @@ image:images/x509-browser-flow.png[X509 Browser Flow]
 .X509 browser flow bindings
 image:images/x509-browser-flow-bindings.png[X509 Browser Flow Bindings]
 
+[[_x509-config]]
 ==== Configuring X.509 client certificate authentication
 
 .X509 configuration
@@ -186,3 +187,37 @@ image:images/x509-directgrant-execution.png[X509 Direct Grant Execution]
 +
 .X509 direct grant flow bindings
 image:images/x509-directgrant-flow-bindings.png[X509 Direct Grant Flow Bindings]
+
+===== Example using CURL
+
+The following example shows how to obtain an access token for a user in the realm `test` with the direct grant flow. The example is using
+link:{adapterguide_link}#_resource_owner_password_credentials_flow[OAuth2 Resource Owner Password Credentials Grant] and the confidential client `resource-owner`:
+
+[source,bash,subs="attributes+"]
+----
+curl \
+  -d "client_id=resource-owner" \
+  -d "client_secret=40cc097b-2a57-4c17-b36a-8fdf3fc2d578" \
+  -d "grant_type=password" \
+  --cacert /tmp/truststore.pem \
+  --cert /tmp/keystore.pem:kssecret \
+  "https://localhost:8543/realms/test/protocol/openid-connect/token"
+----
+
+The file `/tmp/truststore.pem` points to the file with the truststore containing the certificate of the {project_name} server. The file `/tmp/keystore.pem` contains
+the private key and certificates corresponding to the {project_name} user, which would be successfully authenticated by this request. It is dependent on the configuration of the authenticator on how
+exactly is the content from the certificate mapped to the {project_name} user as described in <<_x509-config, the configuration section>>. The `kssecret` might be the password of this keystore file.
+
+According to your environment, it might be needed to use more options to CURL commands like for instance:
+
+* Option `--insecure` if you are using self-signed certificates
+* Option `--capath` to include the whole directory containing the certificate authority path
+* Options `--cert-type` or `--key-type` in case you want to use different files than `PEM`
+
+Please consult the documentation of the `curl` tool for the details if needed. If you are using other tools than `curl`, 
+consult the documentation of your tool. However, the setup would be similar.  A need exists to include keystore and truststore as well as client credentials in case you are using a confidential
+client.
+
+NOTE: If it is possible, it is preferred to use <<_service_accounts, Service accounts>> together with the MTLS client authentication (client authenticator `X509 Certificate`) rather than using
+the Direct grant with X.509 authentication as direct grant may require sharing of the user certificate with client applications. When using service account, the tokens are obtained on behalf
+of the client itself, which in general is better and more secure practice.

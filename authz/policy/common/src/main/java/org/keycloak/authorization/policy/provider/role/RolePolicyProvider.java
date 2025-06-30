@@ -20,14 +20,20 @@ package org.keycloak.authorization.policy.provider.role;
 import java.util.Set;
 import java.util.function.BiFunction;
 
+import org.jboss.logging.Logger;
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.attribute.Attributes.Entry;
 import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 
 /**
@@ -37,6 +43,8 @@ public class RolePolicyProvider implements PolicyProvider {
 
     private final BiFunction<Policy, AuthorizationProvider, RolePolicyRepresentation> representationFunction;
 
+    private static final Logger logger = Logger.getLogger(RolePolicyProvider.class);
+
     public RolePolicyProvider(BiFunction<Policy, AuthorizationProvider, RolePolicyRepresentation> representationFunction) {
         this.representationFunction = representationFunction;
     }
@@ -44,7 +52,8 @@ public class RolePolicyProvider implements PolicyProvider {
     @Override
     public void evaluate(Evaluation evaluation) {
         Policy policy = evaluation.getPolicy();
-        Set<RolePolicyRepresentation.RoleDefinition> roleIds = representationFunction.apply(policy, evaluation.getAuthorizationProvider()).getRoles();
+        RolePolicyRepresentation policyRep = representationFunction.apply(policy, evaluation.getAuthorizationProvider());
+        Set<RolePolicyRepresentation.RoleDefinition> roleIds = policyRep.getRoles();
         AuthorizationProvider authorizationProvider = evaluation.getAuthorizationProvider();
         RealmModel realm = authorizationProvider.getKeycloakSession().getContext().getRealm();
         Identity identity = evaluation.getContext().getIdentity();
@@ -53,7 +62,7 @@ public class RolePolicyProvider implements PolicyProvider {
             RoleModel role = realm.getRoleById(roleDefinition.getId());
 
             if (role != null) {
-                boolean hasRole = hasRole(identity, role, realm);
+                boolean hasRole = hasRole(identity, role, realm, authorizationProvider, policyRep.isFetchRoles());
 
                 if (!hasRole && roleDefinition.isRequired()) {
                     evaluation.deny();
@@ -63,15 +72,38 @@ public class RolePolicyProvider implements PolicyProvider {
                 }
             }
         }
+        logger.debugv("policy {} evaluated with status {} on identity {}", policy.getName(), evaluation.getEffect(), identity.getId());
     }
 
-    private boolean hasRole(Identity identity, RoleModel role, RealmModel realm) {
+    private boolean hasRole(Identity identity, RoleModel role, RealmModel realm, AuthorizationProvider authorizationProvider, boolean fetchRoles) {
+        if (fetchRoles) {
+            UserModel subject = getSubject(identity, realm, authorizationProvider);
+            return subject != null && subject.hasRole(role);
+        }
         String roleName = role.getName();
         if (role.isClientRole()) {
             ClientModel clientModel = realm.getClientById(role.getContainerId());
             return identity.hasClientRole(clientModel.getClientId(), roleName);
         }
         return identity.hasRealmRole(roleName);
+    }
+
+    private UserModel getSubject(Identity identity, RealmModel realm, AuthorizationProvider authorizationProvider) {
+        KeycloakSession session = authorizationProvider.getKeycloakSession();
+        UserProvider users = session.users();
+        UserModel user = users.getUserById(realm, identity.getId());
+
+        if (user == null) {
+            Entry sub = identity.getAttributes().getValue(JsonWebToken.SUBJECT);
+
+            if (sub == null || sub.isEmpty()) {
+                return null;
+            }
+
+            return users.getUserById(realm, sub.asString(0));
+        }
+
+        return user;
     }
 
     @Override

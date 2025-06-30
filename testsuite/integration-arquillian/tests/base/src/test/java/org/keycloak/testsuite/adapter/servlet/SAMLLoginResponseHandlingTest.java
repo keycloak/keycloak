@@ -5,7 +5,6 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.adapters.rotation.PublicKeyLocator;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
@@ -57,11 +56,7 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 @AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
-@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT8)
-@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT9)
-@AppServerContainer(ContainerConstants.APP_SERVER_JETTY94)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP8)
 public class SAMLLoginResponseHandlingTest extends AbstractSAMLServletAdapterTest {
 
     @Page
@@ -72,7 +67,7 @@ public class SAMLLoginResponseHandlingTest extends AbstractSAMLServletAdapterTes
 
     @Deployment(name = Employee2Servlet.DEPLOYMENT_NAME)
     protected static WebArchive employee2() {
-        return samlServletDeployment(Employee2Servlet.DEPLOYMENT_NAME, WEB_XML_WITH_ACTION_FILTER, SendUsernameServlet.class, AdapterActionsFilter.class, PublicKeyLocator.class);
+        return samlServletDeployment(Employee2Servlet.DEPLOYMENT_NAME, WEB_XML_WITH_ACTION_FILTER, SendUsernameServlet.class, AdapterActionsFilter.class);
     }
 
     @Deployment(name = EmployeeSigServlet.DEPLOYMENT_NAME)

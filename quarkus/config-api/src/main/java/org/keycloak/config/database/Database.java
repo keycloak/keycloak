@@ -18,6 +18,7 @@
 package org.keycloak.config.database;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -26,7 +27,6 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
 
@@ -50,6 +50,12 @@ public final class Database {
         }
 
         return false;
+    }
+
+    public static Optional<Vendor> getVendor(String vendor) {
+        return Arrays.stream(Vendor.values())
+                .filter(v -> v.isOfKind(vendor) || asList(v.aliases).contains(vendor))
+                .findAny();
     }
 
     public static Optional<String> getDatabaseKind(String alias) {
@@ -97,30 +103,17 @@ public final class Database {
     }
 
     /**
-     * @return List of aliases of databases enabled on legacy store.
+     * @return List of aliases of databases
      */
-    public static List<String> getLegacyStoreAliases() {
+    public static List<String> getDatabaseAliases() {
         return DATABASES.entrySet().stream()
-                .filter(e -> e.getValue().isEnabledOnLegacyStore())
                 .map(Entry::getKey)
                 .sorted()
                 .collect(Collectors.toList());
     }
 
-    /**
-     * @return List of aliases of databases enabled on jpa map store.
-     */
-    public static List<String> getAvailableMapStoreAliases() {
-        return Stream.of(Database.Vendor.values())
-                .filter(Database.Vendor::isEnabledOnNewStore)
-                .map(v -> v.aliases)// may be replaced by Database.Vendor::getAliases if we add the getter into Database.Vendor
-                .flatMap(Stream::of)
-                .collect(Collectors.toList());
-    }
-
     public enum Vendor {
         H2("h2",
-                Enabled.LEGACY_ONLY, 
                 "org.h2.jdbcx.JdbcDataSource",
                 "org.h2.Driver",
                 "org.hibernate.dialect.H2Dialect",
@@ -130,7 +123,7 @@ public final class Database {
                         if ("dev-file".equalsIgnoreCase(alias)) {
                             return addH2NonKeywords("jdbc:h2:file:${kc.home.dir:${kc.db-url-path:" + escapeReplacements(System.getProperty("user.home")) + "}}" + escapeReplacements(File.separator) + "${kc.data.dir:data}"
                                     + escapeReplacements(File.separator) + "h2" + escapeReplacements(File.separator)
-                                    + "keycloakdb${kc.db-url-properties:;;AUTO_SERVER=TRUE}");
+                                    + "keycloakdb${kc.db-url-properties:}");
                         }
                         return addH2NonKeywords("jdbc:h2:mem:keycloakdb${kc.db-url-properties:}");
                     }
@@ -167,7 +160,6 @@ public final class Database {
                 "dev-mem", "dev-file"
         ),
         MYSQL("mysql",
-                Enabled.LEGACY_ONLY,
                 "com.mysql.cj.jdbc.MysqlXADataSource",
                 "com.mysql.cj.jdbc.Driver",
                 "org.hibernate.dialect.MySQLDialect",
@@ -175,7 +167,6 @@ public final class Database {
                 asList("org.keycloak.connections.jpa.updater.liquibase.UpdatedMySqlDatabase")
         ),
         MARIADB("mariadb",
-                Enabled.LEGACY_ONLY,
                 "org.mariadb.jdbc.MariaDbDataSource",
                 "org.mariadb.jdbc.Driver",
                 "org.hibernate.dialect.MariaDBDialect",
@@ -183,7 +174,6 @@ public final class Database {
                 asList("org.keycloak.connections.jpa.updater.liquibase.UpdatedMariaDBDatabase")
         ),
         POSTGRES("postgresql",
-                Enabled.ENABLED,
                 "org.postgresql.xa.PGXADataSource",
                 "org.postgresql.Driver",
                 "org.hibernate.dialect.PostgreSQLDialect",
@@ -191,17 +181,7 @@ public final class Database {
                 asList("liquibase.database.core.PostgresDatabase", "org.keycloak.connections.jpa.updater.liquibase.PostgresPlusDatabase"),
                 "postgres"
         ),
-        COCKROACH(POSTGRES.databaseKind, //needs to be aligned with https://quarkus.io/guides/datasource#default-datasource
-                Enabled.MAP_STORE_ONLY,
-                POSTGRES.xaDriver,
-                POSTGRES.nonXaDriver,
-                "org.hibernate.dialect.CockroachDialect",
-                "jdbc:postgresql://${kc.db-url-host:localhost}:${kc.db-url-port:26257}/${kc.db-url-database:keycloak}${kc.db-url-properties:}",
-                List.of("liquibase.database.core.CockroachDatabase"),
-                "cockroach"
-        ),
         MSSQL("mssql",
-                Enabled.LEGACY_ONLY,
                 "com.microsoft.sqlserver.jdbc.SQLServerXADataSource",
                 "com.microsoft.sqlserver.jdbc.SQLServerDriver",
                 "org.hibernate.dialect.SQLServerDialect",
@@ -210,7 +190,6 @@ public final class Database {
                 "mssql"
         ),
         ORACLE("oracle",
-                Enabled.LEGACY_ONLY,
                 "oracle.jdbc.xa.client.OracleXADataSource",
                 "oracle.jdbc.driver.OracleDriver",
                 "org.hibernate.dialect.OracleDialect",
@@ -219,7 +198,6 @@ public final class Database {
         );
 
         final String databaseKind;
-        final Enabled enabled;
         final String xaDriver;
         final String nonXaDriver;
         final Function<String, String> dialect;
@@ -227,35 +205,26 @@ public final class Database {
         final List<String> liquibaseTypes;
         final String[] aliases;
 
-        Vendor(String databaseKind, Enabled enabled, String xaDriver, String nonXaDriver, String dialect, String defaultUrl, List<String> liquibaseTypes,
+        Vendor(String databaseKind, String xaDriver, String nonXaDriver, String dialect, String defaultUrl, List<String> liquibaseTypes,
                String... aliases) {
-            this(databaseKind, enabled, xaDriver, nonXaDriver, alias -> dialect, alias -> defaultUrl, liquibaseTypes, aliases);
+            this(databaseKind, xaDriver, nonXaDriver, alias -> dialect, alias -> defaultUrl, liquibaseTypes, aliases);
         }
 
-        Vendor(String databaseKind, Enabled enabled, String xaDriver, String nonXaDriver, String dialect, Function<String, String> defaultUrl,
+        Vendor(String databaseKind, String xaDriver, String nonXaDriver, String dialect, Function<String, String> defaultUrl,
                List<String> liquibaseTypes, String... aliases) {
-            this(databaseKind, enabled, xaDriver, nonXaDriver, alias -> dialect, defaultUrl, liquibaseTypes, aliases);
+            this(databaseKind, xaDriver, nonXaDriver, alias -> dialect, defaultUrl, liquibaseTypes, aliases);
         }
 
-        Vendor(String databaseKind, Enabled enabled, String xaDriver, String nonXaDriver, Function<String, String> dialect, Function<String, String> defaultUrl,
+        Vendor(String databaseKind, String xaDriver, String nonXaDriver, Function<String, String> dialect, Function<String, String> defaultUrl,
                List<String> liquibaseTypes,
                String... aliases) {
             this.databaseKind = databaseKind;
-            this.enabled = enabled;
             this.xaDriver = xaDriver;
             this.nonXaDriver = nonXaDriver;
             this.dialect = dialect;
             this.defaultUrl = defaultUrl;
             this.liquibaseTypes = liquibaseTypes;
             this.aliases = aliases.length == 0 ? new String[] { databaseKind } : aliases;
-        }
-
-        public boolean isEnabledOnLegacyStore() {
-            return enabled.legacyStore;
-        }
-
-        public boolean isEnabledOnNewStore() {
-            return enabled.jpaMapStore;
         }
 
         public boolean isOfKind(String dbKind) {
@@ -265,20 +234,6 @@ public final class Database {
         @Override
         public String toString() {
             return databaseKind.toLowerCase(Locale.ROOT);
-        }
-    }
-
-    private static class Enabled {
-        final static Enabled LEGACY_ONLY = new Enabled(true, false);
-        final static Enabled MAP_STORE_ONLY = new Enabled(false, true);
-        final static Enabled ENABLED = new Enabled(true, true);
-
-        final boolean legacyStore;
-        final boolean jpaMapStore;
-
-        private Enabled(boolean legacyStore, boolean jpaMapStore) {
-            this.legacyStore = legacyStore;
-            this.jpaMapStore = jpaMapStore;
         }
     }
 }

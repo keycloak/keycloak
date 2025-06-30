@@ -17,21 +17,27 @@
 
 package org.keycloak.testsuite.admin.client;
 
+import java.util.Map;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ClientScopesResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
+import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.exportimport.ExportImportUtil;
 import org.keycloak.testsuite.util.AdminEventPaths;
 
 import jakarta.ws.rs.NotFoundException;
@@ -169,6 +175,50 @@ public class ClientScopeProtocolMapperTest extends AbstractProtocolMapperTest {
 
         ProtocolMapperRepresentation updated = oidcMappersRsc.getMapperById(createdId);
         assertEqualMappers(rep, updated);
+    }
+
+    @Test
+    public void test08EffectiveMappers() {
+        ClientScopeResource rolesScope = ApiUtil.findClientScopeByName(testRealmResource(), "roles");
+        ProtocolMapperRepresentation audienceMapper = ExportImportUtil.findMapperByName(rolesScope.getProtocolMappers().getMappers(),
+                OIDCLoginProtocol.LOGIN_PROTOCOL, OIDCLoginProtocolFactory.AUDIENCE_RESOLVE);
+
+        String clientScopeID = rolesScope.toRepresentation().getId();
+        String protocolMapperId = audienceMapper.getId();
+        Map<String, String> origConfig = audienceMapper.getConfig();
+
+        try {
+            // Test default values available on the protocol mapper
+            Assert.assertEquals("true", audienceMapper.getConfig().get(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN));
+            Assert.assertEquals("true", audienceMapper.getConfig().get(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION));
+
+            // Update mapper to not contain default values
+            audienceMapper.getConfig().remove(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN);
+            audienceMapper.getConfig().remove(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION);
+            rolesScope.getProtocolMappers().update(protocolMapperId, audienceMapper);
+            assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientScopeProtocolMapperPath(clientScopeID, protocolMapperId), audienceMapper, ResourceType.PROTOCOL_MAPPER);
+
+            // Test configuration will contain "effective values", which are the default values of particular options
+            audienceMapper = rolesScope.getProtocolMappers().getMapperById(protocolMapperId);
+            Assert.assertEquals("true", audienceMapper.getConfig().get(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN));
+            Assert.assertEquals("true", audienceMapper.getConfig().get(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION));
+
+            // Override "includeInIntrospection"
+            audienceMapper.getConfig().put(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION, "false");
+            rolesScope.getProtocolMappers().update(protocolMapperId, audienceMapper);
+            assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientScopeProtocolMapperPath(clientScopeID, protocolMapperId), audienceMapper, ResourceType.PROTOCOL_MAPPER);
+
+            // Get mapper and check that "includeInIntrospection" is using overriden value instead of the default
+            audienceMapper = rolesScope.getProtocolMappers().getMapperById(protocolMapperId);
+            Assert.assertEquals("true", audienceMapper.getConfig().get(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN));
+            Assert.assertEquals("false", audienceMapper.getConfig().get(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION));
+
+        } finally {
+            audienceMapper.getConfig().putAll(origConfig);
+            rolesScope.getProtocolMappers().update(protocolMapperId, audienceMapper);
+            assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientScopeProtocolMapperPath(clientScopeID, protocolMapperId), audienceMapper, ResourceType.PROTOCOL_MAPPER);
+
+        }
     }
 
     @Test

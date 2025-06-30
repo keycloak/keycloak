@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.client;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,8 +30,6 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.OAuthClient;
-
-import com.google.common.base.Charsets;
 
 /**
  * Mutual TLS Client tests.
@@ -278,7 +277,7 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
       parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
       parameters.add(new BasicNameValuePair(OAuth2Constants.CODE, oauth.getCurrentQuery().get(OAuth2Constants.CODE)));
       parameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, oauth.getRedirectUri()));
-      UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, Charsets.UTF_8);
+      UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
       post.setEntity(formEntity);
 
       return new OAuthClient.AccessTokenResponse(client.execute(post));

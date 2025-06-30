@@ -11,7 +11,6 @@ import org.apache.http.util.EntityUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.protocol.ArtifactResolveType;
-import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.SamlService;
 import org.keycloak.protocol.saml.profile.util.Soap;

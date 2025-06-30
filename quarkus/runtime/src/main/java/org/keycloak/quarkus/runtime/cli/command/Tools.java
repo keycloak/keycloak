@@ -24,4 +24,6 @@ import picocli.CommandLine.Command;
         subcommands = {Completion.class})
 public class Tools {
 
+    public static final String NAME = "tools";
+
 }

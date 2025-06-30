@@ -1,11 +1,25 @@
 export default class AttributesTab {
   #saveAttributeBtn = "save-attributes";
-  #addAttributeBtn = "attributes-add-row";
   #attributesTab = "attributes";
-  #keyInput = "attributes-key";
-  #valueInput = "attributes-value";
-  #removeBtn = "attributes-remove";
   #emptyState = "attributes-empty-state";
+  #addAttributeBtn: string;
+  #keyInput: string;
+  #valueInput: string;
+  #removeBtn: string;
+
+  constructor(isForUser = false) {
+    if (isForUser) {
+      this.#addAttributeBtn = "unmanagedAttributes-add-row";
+      this.#keyInput = "unmanagedAttributes-key";
+      this.#valueInput = "unmanagedAttributes-value";
+      this.#removeBtn = "unmanagedAttributes-remove";
+    } else {
+      this.#addAttributeBtn = "attributes-add-row";
+      this.#keyInput = "attributes-key";
+      this.#valueInput = "attributes-value";
+      this.#removeBtn = "attributes-remove";
+    }
+  }
 
   public goToAttributesTab() {
     cy.findByTestId(this.#attributesTab).click();
@@ -26,13 +40,23 @@ export default class AttributesTab {
     return this;
   }
 
+  public checkAttribute(key: string, exist: boolean) {
+    cy.findByTestId(this.#keyInput).should((exist ? "" : "not.") + "exist");
+
+    if (exist) {
+      cy.findAllByTestId(this.#keyInput).invoke("val").should("eq", key);
+    }
+
+    return this;
+  }
+
   public save() {
     cy.findByTestId(this.#saveAttributeBtn).click();
     return this;
   }
 
   public revert() {
-    cy.get(".pf-c-button.pf-m-link").contains("Revert").click();
+    cy.get(".pf-v5-c-button.pf-m-link").contains("Revert").click();
     return this;
   }
 

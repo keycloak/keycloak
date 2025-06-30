@@ -35,10 +35,13 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import org.keycloak.common.Profile;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
+
 import org.keycloak.services.util.LocaleUtil;
 
 /**
@@ -266,6 +269,7 @@ public class DefaultThemeManager implements ThemeManager {
                     }
                 }
 
+                addlocaleTranslations(locale, currentMessages);
 
                 this.messages.putIfAbsent(baseBundlename, new ConcurrentHashMap<>());
                 this.messages.get(baseBundlename).putIfAbsent(locale, groupedMessages);
@@ -273,6 +277,53 @@ public class DefaultThemeManager implements ThemeManager {
                 return groupedMessages;
             } else {
                 return messages.get(baseBundlename).get(locale);
+            }
+        }
+
+        protected void addlocaleTranslations(Locale locale, Properties m) throws IOException {
+            for (String l : getProperties().getProperty("locales", "").split(",")) {
+                l = l.trim();
+                String key = "locale_" + l;
+                String label = m.getProperty(key);
+                if (label != null) {
+                    continue;
+                }
+                String rl = l;
+                // This is mapping old locale codes to the new locale codes for Simplified and Traditional Chinese.
+                // Once the existing locales have been moved, this code can be removed.
+                if (l.equals("zh-CN")) {
+                    rl = "zh-HANS";
+                } else if (l.equals("zh-TW")) {
+                    rl = "zh-HANT";
+                }
+                Locale loc = Locale.forLanguageTag(rl);
+                label = capitalize(loc.getDisplayName(locale), locale);
+                if (!Objects.equals(loc, locale)) {
+                    label += " (" + capitalize(loc.getDisplayName(loc), loc) + ")";
+                }
+                m.put(key, label);
+            }
+        }
+
+        private static final Pattern LATIN_CHARACTERS;
+
+        static {
+            Pattern p;
+            try {
+                p = Pattern.compile("(\\p{L1}|\\p{InLATIN_EXTENDED_A}|\\p{InLATIN_EXTENDED_B}|\\p{InLATIN_EXTENDED_C}|\\p{InLATIN_EXTENDED_D}|\\p{InLATIN_EXTENDED_E}).*");
+            } catch (PatternSyntaxException ex) {
+                log.warn("unable to create regex for latin characters", ex);
+                // just in case the JVM doesn't recognize the language patterns used above
+                p = Pattern.compile("[a-zA-Z]");
+            }
+            LATIN_CHARACTERS = p;
+        }
+
+        private String capitalize(String name, Locale locale) {
+            if (LATIN_CHARACTERS.matcher(name).matches()) {
+                return name.substring(0, 1).toUpperCase(locale) + name.substring(1);
+            } else {
+                return name;
             }
         }
 

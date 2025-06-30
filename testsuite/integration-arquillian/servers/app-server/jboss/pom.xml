@@ -34,10 +34,13 @@
         <common.resources>${project.parent.basedir}/common</common.resources>
         <assembly.xml>${project.parent.basedir}/assembly.xml</assembly.xml>
         <app.server.jboss.home>${containers.home}/${app.server.jboss.unpacked.folder.name}</app.server.jboss.home>
+        <app.server.jboss.unpacked.folder.path>${containers.home}</app.server.jboss.unpacked.folder.path>
+
         <oidc-adapter.version>${project.version}</oidc-adapter.version>
         <saml-adapter.version>${project.version}</saml-adapter.version>
         <skip.elytron.adapter.installation>true</skip.elytron.adapter.installation>
         <skip.adapter.offline.installation>true</skip.adapter.offline.installation>
+        <skip.oidc.adapter.installation>false</skip.oidc.adapter.installation>
         <skip.java17.enablement>true</skip.java17.enablement>
         <!-- Workaround for WFCORE-5335 issue -->
         <cli.executable>bash</cli.executable>
@@ -74,18 +77,6 @@
                 <!-- These ZIPs can be fetched from artifactItems, but we need to properly assess the Maven build execution order -->
                 <dependency>
                     <groupId>org.keycloak</groupId>
-                    <artifactId>${app.server.oidc.adapter.artifactId}</artifactId>
-                    <version>${oidc-adapter.version}</version>
-                    <type>zip</type>
-                    <exclusions>
-                        <exclusion>
-                            <groupId>*</groupId>
-                            <artifactId>*</artifactId>
-                        </exclusion>
-                    </exclusions>
-                </dependency>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
                     <artifactId>${app.server.saml.adapter.artifactId}</artifactId>
                     <version>${saml-adapter.version}</version>
                     <type>zip</type>
@@ -115,7 +106,6 @@
                                             <property>app.server.jboss.artifactId</property>
                                             <property>app.server.jboss.version</property>
                                             <property>app.server.jboss.unpacked.folder.name</property>
-                                            <property>app.server.oidc.adapter.artifactId</property>
                                         </requireProperty>
                                     </rules>
                                 </configuration>
@@ -127,7 +117,7 @@
                         <artifactId>maven-dependency-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>unpack-wildfly-and-oidc-adapter</id>
+                                <id>unpack-jboss-distribution</id>
                                 <phase>generate-resources</phase>
                                 <goals>
                                     <goal>unpack</goal>
@@ -139,14 +129,7 @@
                                             <artifactId>${app.server.jboss.artifactId}</artifactId>
                                             <version>${app.server.jboss.version}</version>
                                             <type>zip</type>
-                                            <outputDirectory>${containers.home}</outputDirectory>
-                                        </artifactItem>
-                                        <artifactItem>
-                                            <groupId>org.keycloak</groupId>
-                                            <artifactId>${app.server.oidc.adapter.artifactId}</artifactId>
-                                            <version>${oidc-adapter.version}</version>
-                                            <type>zip</type>
-                                            <outputDirectory>${app.server.jboss.home}</outputDirectory>
+                                            <outputDirectory>${app.server.jboss.unpacked.folder.path}</outputDirectory>
                                         </artifactItem>
                                     </artifactItems>
                                 </configuration>
@@ -295,7 +278,7 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <skip>${skip.apply.offline.cli}</skip><!--eap6-->
+                                    <skip>${skip.apply.offline.cli}</skip>
                                     <executable>${cli.executable}</executable>
                                     <workingDirectory>${cli.working.dir}</workingDirectory>
                                     <environmentVariables>
@@ -320,7 +303,7 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <skip>${skip.apply.offline.cli}</skip><!--eap6-->
+                                    <skip>${skip.apply.offline.cli}</skip>
                                     <executable>${cli.executable}</executable>
                                     <workingDirectory>${cli.working.dir}</workingDirectory>
                                     <environmentVariables>
@@ -340,59 +323,6 @@
                                 </configuration>
                             </execution>
 
-                            <execution>
-                                <!--OIDC: eap, wf11-->
-                                <id>adapter-elytron-install-offline-standalone</id>
-                                <phase>process-resources</phase>
-                                <goals>
-                                    <goal>exec</goal>
-                                </goals>
-                                <configuration>
-                                    <skip>${skip.elytron.adapter.installation}</skip>
-                                    <executable>${cli.executable}</executable>
-                                    <workingDirectory>${cli.working.dir}</workingDirectory>
-                                    <environmentVariables>
-                                        <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
-                                    </environmentVariables>
-                                    <arguments>
-                                        <argument>${cli.jboss-cli.arg}</argument>
-                                        <argument>--file=${app.server.jboss.home}/bin/adapter-elytron-install-offline.cli</argument>
-                                        <!--
-                                            following attribute is required just for windows
-                                            see ${common.resources}/win/run-jboss-cli.bat
-                                            !! the ordering is important, if you need to change it edit run-jboss-cli.bat !!
-                                        -->
-                                        <argument>${cli.win.working.dir}</argument>
-                                    </arguments>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <!--OIDC: eap, wf11-->
-                                <id>adapter-elytron-install-offline-standalone-ha</id>
-                                <phase>process-resources</phase>
-                                <goals>
-                                    <goal>exec</goal>
-                                </goals>
-                                <configuration>
-                                    <skip>${skip.elytron.adapter.installation}</skip>
-                                    <executable>${cli.executable}</executable>
-                                    <workingDirectory>${cli.working.dir}</workingDirectory>
-                                    <environmentVariables>
-                                        <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
-                                    </environmentVariables>
-                                    <arguments>
-                                        <argument>${cli.jboss-cli.arg}</argument>
-                                        <argument>--file=${app.server.jboss.home}/bin/adapter-elytron-install-offline.cli</argument>
-                                        <!--
-                                            following attribute is required just for windows
-                                            see ${common.resources}/win/run-jboss-cli.bat
-                                            !! the ordering is important, if you need to change it edit run-jboss-cli.bat !!
-                                        -->
-                                        <argument>${cli.win.working.dir}</argument>
-                                        <argument>-Dserver.config=standalone-ha.xml</argument>
-                                    </arguments>
-                                </configuration>
-                            </execution>
                             <execution>
                                 <!--SAML: eap, wf11-->
                                 <id>adapter-elytron-install-saml-offline-standalone</id>
@@ -447,59 +377,6 @@
                                 </configuration>
                             </execution>
 
-                            <execution>
-                                <!--OIDC: wf10, wf9-->
-                                <id>adapter-install-offline-standalone</id>
-                                <phase>process-resources</phase>
-                                <goals>
-                                    <goal>exec</goal>
-                                </goals>
-                                <configuration>
-                                    <skip>${skip.adapter.offline.installation}</skip>
-                                    <executable>${cli.executable}</executable>
-                                    <workingDirectory>${cli.working.dir}</workingDirectory>
-                                    <environmentVariables>
-                                        <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
-                                    </environmentVariables>
-                                    <arguments>
-                                        <argument>${cli.jboss-cli.arg}</argument>
-                                        <argument>--file=${app.server.jboss.home}/bin/adapter-install-offline.cli</argument>
-                                        <!--
-                                            following attribute is required just for windows
-                                            see ${common.resources}/win/run-jboss-cli.bat
-                                            !! the ordering is important, if you need to change it edit run-jboss-cli.bat !!
-                                        -->
-                                        <argument>${cli.win.working.dir}</argument>
-                                    </arguments>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <!--OIDC: wf10, wf9-->
-                                <id>adapter-install-offline-standalone-ha</id>
-                                <phase>process-resources</phase>
-                                <goals>
-                                    <goal>exec</goal>
-                                </goals>
-                                <configuration>
-                                    <skip>${skip.adapter.offline.installation}</skip>
-                                    <executable>${cli.executable}</executable>
-                                    <workingDirectory>${cli.working.dir}</workingDirectory>
-                                    <environmentVariables>
-                                        <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
-                                    </environmentVariables>
-                                    <arguments>
-                                        <argument>${cli.jboss-cli.arg}</argument>
-                                        <argument>--file=${app.server.jboss.home}/bin/adapter-install-offline.cli</argument>
-                                        <!--
-                                            following attribute is required just for windows
-                                            see ${common.resources}/win/run-jboss-cli.bat
-                                            !! the ordering is important, if you need to change it edit run-jboss-cli.bat !!
-                                        -->
-                                        <argument>${cli.win.working.dir}</argument>
-                                        <argument>-Dserver.config=standalone-ha.xml</argument>
-                                    </arguments>
-                                </configuration>
-                            </execution>
                             <execution>
                                 <!--SAML: wf10, wf9-->
                                 <id>adapter-install-saml-offline-standalone</id>
@@ -599,39 +476,13 @@
                             </execution>
 
                             <execution>
-                                <id>add-secured-deployments</id>
-                                <phase>generate-test-sources</phase>
-                                <goals>
-                                    <goal>exec</goal>
-                                </goals>
-                                <configuration>
-                                    <skip>${skip.apply.offline.cli}</skip><!--eap6-->
-                                    <executable>${cli.executable}</executable>
-                                    <workingDirectory>${cli.working.dir}</workingDirectory>
-                                    <environmentVariables>
-                                        <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
-                                    </environmentVariables>
-                                    <arguments>
-                                        <argument>${cli.jboss-cli.arg}</argument>
-                                        <argument>--file=${common.resources}/cli/add-secured-deployments.cli</argument>
-                                        <!--
-                                            following attribute is required just for windows
-                                            see ${common.resources}/win/run-jboss-cli.bat
-                                            !! the ordering is important, if you need to change it edit run-jboss-cli.bat !!
-                                        -->
-                                        <argument>${cli.win.working.dir}</argument>
-                                        <argument>-Djboss.server.config.dir=${app.server.jboss.home}/standalone-secured-deployments/configuration</argument>
-                                    </arguments>
-                                </configuration>
-                            </execution>
-                            <execution>
                                 <id>configure-cluster-config</id>
                                 <phase>generate-test-sources</phase>
                                 <goals>
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <skip>${skip.configure.clustered.scenario}</skip><!--eap6, wildfly9-->
+                                    <skip>${skip.configure.clustered.scenario}</skip><!--wildfly9-->
                                     <executable>${cli.executable}</executable>
                                     <workingDirectory>${cli.working.dir}</workingDirectory>
                                     <environmentVariables>
@@ -657,7 +508,7 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <skip>${skip.configure.clustered.scenario}</skip><!--eap6, wildfly9-->
+                                    <skip>${skip.configure.clustered.scenario}</skip><!--wildfly9-->
                                     <executable>${cli.executable}</executable>
                                     <workingDirectory>${cli.working.dir}</workingDirectory>
                                     <environmentVariables>
@@ -794,44 +645,20 @@
             </build>
         </profile>
 
-        <!-- Latest EAP (currently 7.2.X) -->
+        <!-- EAP8 (not available to community yet) -->
         <profile>
-            <id>app-server-eap</id>
+            <id>app-server-eap8</id>
             <activation>
                 <property>
                     <name>app.server</name>
-                    <value>eap</value>
+                    <value>eap8</value>
                 </property>
             </activation>
             <modules>
-                <module>eap</module>
+                <module>galleon</module>
             </modules>
         </profile>
 
-        <profile>
-            <id>app-server-eap71</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>eap71</value>
-                </property>
-            </activation>
-            <modules>
-                <module>eap</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>app-server-eap6</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>eap6</value>
-                </property>
-            </activation>
-            <modules>
-                <module>eap6</module>
-            </modules>
-        </profile>
         <profile>
             <id>app-server-wildfly</id>
             <activation>

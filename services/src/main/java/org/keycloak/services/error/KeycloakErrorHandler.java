@@ -1,12 +1,10 @@
 package org.keycloak.services.error;
 
-import static org.keycloak.common.util.Resteasy.getContextData;
 import static org.keycloak.services.resources.KeycloakApplication.getSessionFactory;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.Failure;
 import org.keycloak.Config;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
@@ -14,6 +12,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionTaskWithResult;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelIllegalStateException;
+import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
@@ -25,6 +25,7 @@ import org.keycloak.theme.beans.MessageBean;
 import org.keycloak.theme.beans.MessageFormatterMethod;
 import org.keycloak.forms.login.MessageType;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
+import org.keycloak.utils.KeycloakSessionUtil;
 import org.keycloak.utils.MediaType;
 import org.keycloak.utils.MediaTypeMatcher;
 
@@ -32,6 +33,8 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.Provider;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
@@ -40,6 +43,7 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@Provider
 public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
 
     private static final Logger logger = Logger.getLogger(KeycloakErrorHandler.class);
@@ -51,7 +55,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
 
     @Override
     public Response toResponse(Throwable throwable) {
-        KeycloakSession session = getContextData(KeycloakSession.class);
+        KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
 
         if (session == null) {
             // errors might be thrown when handling errors from JAX-RS before the session is available
@@ -85,7 +89,8 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
             OAuth2ErrorRepresentation error = new OAuth2ErrorRepresentation();
 
             error.setError(getErrorCode(throwable));
-            
+            error.setErrorDescription("For more on this error consult the server log at the debug level.");
+
             return Response.status(statusCode)
                     .header(HttpHeaders.CONTENT_TYPE, jakarta.ws.rs.core.MediaType.APPLICATION_JSON_TYPE.toString())
                     .entity(error)
@@ -118,18 +123,17 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
             WebApplicationException ex = (WebApplicationException) throwable;
             status = ex.getResponse().getStatus();
         }
-        if (throwable instanceof Failure) {
-            Failure f = (Failure) throwable;
-            status = f.getErrorCode();
-        }
-        if (throwable instanceof JsonProcessingException) {
+        if (throwable instanceof JsonProcessingException
+                || throwable instanceof ModelValidationException) {
             status = Response.Status.BAD_REQUEST.getStatusCode();
         }
-        
+        if (throwable instanceof ModelIllegalStateException) {
+            status = Response.Status.INTERNAL_SERVER_ERROR.getStatusCode();
+        }
         if (throwable instanceof ModelDuplicateException) {
             status = Response.Status.CONFLICT.getStatusCode();
         }
-        
+
         return status;
     }
 

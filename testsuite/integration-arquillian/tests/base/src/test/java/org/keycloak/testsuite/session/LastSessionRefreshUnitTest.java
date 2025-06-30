@@ -20,9 +20,7 @@ package org.keycloak.testsuite.session;
 import org.infinispan.Cache;
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -34,7 +32,6 @@ import org.keycloak.models.sessions.infinispan.changes.sessions.SessionData;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.timer.TimerProvider;
 
@@ -50,11 +47,6 @@ public class LastSessionRefreshUnitTest extends AbstractKeycloakTest {
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
 
-    }
-
-    @BeforeClass
-    public static void checkNotMapStorage() {
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
     }
 
     @After

@@ -18,24 +18,26 @@
 
 package org.keycloak.testsuite.forms;
 
-import java.util.List;
-import java.util.function.Consumer;
-
 import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.directgrant.ValidatePassword;
 import org.keycloak.authentication.authenticators.directgrant.ValidateUsername;
 import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.authentication.AbstractAuthenticationTest;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.openqa.selenium.WebDriver;
+
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
@@ -89,5 +91,22 @@ public class DirectGrantFlowTest extends AbstractTestRealmKeycloakTest {
         assertEquals("Account is not fully set up", response.getErrorDescription());
     }
 
+    public static void revertFlows(RealmResource realmResource, String flowToDeleteAlias) {
+        List<AuthenticationFlowRepresentation> flows = realmResource.flows().getFlows();
 
+        // Set default direct grant flow
+        RealmRepresentation realm = realmResource.toRepresentation();
+        realm.setDirectGrantFlow(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW);
+        realmResource.update(realm);
+
+        AuthenticationFlowRepresentation flowRepresentation = AbstractAuthenticationTest.findFlowByAlias(flowToDeleteAlias, flows);
+
+        // Throw error if flow doesn't exist to ensure we did not accidentally use different alias of non-existing flow when
+        // calling this method
+        if (flowRepresentation == null) {
+            throw new IllegalArgumentException("The flow with alias " + flowToDeleteAlias + " did not exist");
+        }
+
+        realmResource.flows().deleteFlow(flowRepresentation.getId());
+    }
 }

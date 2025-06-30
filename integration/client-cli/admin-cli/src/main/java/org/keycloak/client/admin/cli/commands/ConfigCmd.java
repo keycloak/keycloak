@@ -16,66 +16,35 @@
  */
 package org.keycloak.client.admin.cli.commands;
 
-import org.jboss.aesh.cl.GroupCommandDefinition;
-import org.jboss.aesh.console.command.CommandException;
-import org.jboss.aesh.console.command.CommandResult;
-import org.jboss.aesh.console.command.invocation.CommandInvocation;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import static org.keycloak.client.admin.cli.util.OsUtil.CMD;
-import static org.keycloak.client.admin.cli.util.OsUtil.EOL;
+import picocli.CommandLine.Command;
+
+import static org.keycloak.client.admin.cli.KcAdmMain.CMD;
 
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 
-@GroupCommandDefinition(name = "config", description = "COMMAND [ARGUMENTS]", groupCommands = {ConfigCredentialsCmd.class} )
+@Command(name = "config", description = "COMMAND [ARGUMENTS]", subcommands = {
+        ConfigCredentialsCmd.class,
+        ConfigTruststoreCmd.class
+} )
 public class ConfigCmd extends AbstractAuthOptionsCmd {
 
-    public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
-        try {
-            if (args != null && args.size() > 0) {
-                String cmd = args.get(0);
-                switch (cmd) {
-                    case "credentials": {
-                        args.remove(0);
-                        ConfigCredentialsCmd command = new ConfigCredentialsCmd();
-                        command.initFromParent(this);
-                        return command.execute(commandInvocation);
-                    }
-                    case "truststore": {
-                        args.remove(0);
-                        ConfigTruststoreCmd command = new ConfigTruststoreCmd();
-                        command.initFromParent(this);
-                        return command.execute(commandInvocation);
-                    }
-                    default: {
-                        if (printHelp()) {
-                            return help ? CommandResult.SUCCESS : CommandResult.FAILURE;
-                        }
-                        throw new IllegalArgumentException("Unknown sub-command: " + cmd + suggestHelp());
-                    }
-                }
-            }
+    @Override
+    protected void process() {
 
-            if (printHelp()) {
-                return help ? CommandResult.SUCCESS : CommandResult.FAILURE;
-            }
-
-            throw new IllegalArgumentException("Sub-command required by '" + CMD + " config' - one of: 'credentials', 'truststore'");
-
-        } finally {
-            commandInvocation.stop();
-        }
     }
 
-    protected String suggestHelp() {
-        return EOL + "Try '" + CMD + " help config' for more information";
+    @Override
+    protected boolean nothingToDo() {
+        return true;
     }
 
+    @Override
     protected String help() {
         return usage();
     }

@@ -26,10 +26,11 @@
                                autofocus autocomplete="new-password"
                                aria-invalid="<#if messagesPerField.existsError('password','password-confirm')>true</#if>"
                         />
-                        <button class="pf-c-button pf-m-control" type="button" aria-label="${msg('showPassword')}"
+                        <button class="${properties.kcFormPasswordVisibilityButtonClass!}" type="button" aria-label="${msg('showPassword')}"
                                 aria-controls="password-new"  data-password-toggle
+                                data-icon-show="${properties.kcFormPasswordVisibilityIconShow!}" data-icon-hide="${properties.kcFormPasswordVisibilityIconHide!}"
                                 data-label-show="${msg('showPassword')}" data-label-hide="${msg('hidePassword')}">
-                            <i class="fa fa-eye" aria-hidden="true"></i>
+                            <i class="${properties.kcFormPasswordVisibilityIconShow!}" aria-hidden="true"></i>
                         </button>
                     </div>
 
@@ -52,10 +53,11 @@
                                autocomplete="new-password"
                                aria-invalid="<#if messagesPerField.existsError('password-confirm')>true</#if>"
                         />
-                        <button class="pf-c-button pf-m-control" type="button" aria-label="${msg('showPassword')}"
+                        <button class="${properties.kcFormPasswordVisibilityButtonClass!}" type="button" aria-label="${msg('showPassword')}"
                                 aria-controls="password-confirm"  data-password-toggle
+                                data-icon-show="${properties.kcFormPasswordVisibilityIconShow!}" data-icon-hide="${properties.kcFormPasswordVisibilityIconHide!}"
                                 data-label-show="${msg('showPassword')}" data-label-hide="${msg('hidePassword')}">
-                            <i class="fa fa-eye" aria-hidden="true"></i>
+                            <i class="${properties.kcFormPasswordVisibilityIconShow!}" aria-hidden="true"></i>
                         </button>
                     </div>
 

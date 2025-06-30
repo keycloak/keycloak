@@ -37,7 +37,7 @@ public interface Authenticator extends Provider {
 
     /**
      * Initial call for the authenticator.  This method should check the current HTTP request to determine if the request
-     * satifies the Authenticator's requirements.  If it doesn't, it should send back a challenge response by calling
+     * satisfies the Authenticator's requirements.  If it doesn't, it should send back a challenge response by calling
      * the AuthenticationFlowContext.challenge(Response).  If this challenge is a authentication, the action URL
      * of the form must point to
      *

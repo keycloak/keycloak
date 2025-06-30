@@ -19,7 +19,6 @@
 package org.keycloak.testsuite.pages.x509;
 
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.keycloak.testsuite.pages.AbstractPage;
 import org.keycloak.testsuite.pages.LanguageComboboxAwarePage;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.openqa.selenium.WebElement;

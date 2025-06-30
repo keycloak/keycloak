@@ -23,3 +23,8 @@ dn: ou=Groups,dc=keycloak,dc=org
 objectclass: top
 objectclass: organizationalUnit
 ou: Groups
+
+dn: ou=OtherPeople,dc=keycloak,dc=org
+objectclass: top
+objectclass: organizationalUnit
+ou: People

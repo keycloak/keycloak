@@ -27,14 +27,12 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 
 import javax.security.auth.x500.X500Principal;
 
 import org.junit.Test;
-import org.keycloak.common.util.PemUtils;
-import org.keycloak.crypto.elytron.ElytronCertificateUtils;
+import org.keycloak.crypto.elytron.ElytronCertificateUtilsProvider;
 import org.wildfly.security.x500.GeneralName;
 import org.wildfly.security.x500.cert.CRLDistributionPoint;
 import org.wildfly.security.x500.cert.CRLDistributionPoint.DistributionPointName;
@@ -55,7 +53,7 @@ public class CRLDistributionPointTest {
          expect.add("http://crl0.test0.com");
          
 
-         ElytronCertificateUtils bcutil = new ElytronCertificateUtils();
+         ElytronCertificateUtilsProvider bcutil = new ElytronCertificateUtilsProvider();
           List<String> crldp = bcutil.getCRLDistributionPoints(cert);
 
           assertArrayEquals(expect.toArray(), crldp.toArray());
@@ -70,7 +68,7 @@ public class CRLDistributionPointTest {
          expect.add("http://crl0.test0.com");
          expect.add("http://crl0.test1.com");
          
-         ElytronCertificateUtils bcutil = new ElytronCertificateUtils();
+         ElytronCertificateUtilsProvider bcutil = new ElytronCertificateUtilsProvider();
           List<String> crldp = bcutil.getCRLDistributionPoints(cert);
 
           assertArrayEquals(expect.toArray(), crldp.toArray());
@@ -87,7 +85,7 @@ public class CRLDistributionPointTest {
          expect.add("http://crl1.test0.com");
          expect.add("http://crl1.test1.com");
          
-         ElytronCertificateUtils bcutil = new ElytronCertificateUtils();
+         ElytronCertificateUtilsProvider bcutil = new ElytronCertificateUtilsProvider();
           List<String> crldp = bcutil.getCRLDistributionPoints(cert);
 
           assertArrayEquals(expect.toArray(), crldp.toArray());
@@ -101,7 +99,7 @@ public class CRLDistributionPointTest {
          expect.add("http://localhost:8889/empty.crl");
          expect.add("http://localhost:8889/intermediate-ca.crl");
          
-         ElytronCertificateUtils bcutil = new ElytronCertificateUtils();
+         ElytronCertificateUtilsProvider bcutil = new ElytronCertificateUtilsProvider();
           List<String> crldp = bcutil.getCRLDistributionPoints(cert);
 
           assertArrayEquals(expect.toArray(), crldp.toArray());

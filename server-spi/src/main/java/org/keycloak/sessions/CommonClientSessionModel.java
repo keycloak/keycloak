@@ -24,7 +24,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.util.EnumWithStableIndex;
 
 /**
- * Predecesor of AuthenticationSessionModel, ClientLoginSessionModel and ClientSessionModel (then action tickets). Maybe we will remove it later...
+ * Predecessor of AuthenticationSessionModel, ClientLoginSessionModel and ClientSessionModel (then action tickets). Maybe we will remove it later...
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */

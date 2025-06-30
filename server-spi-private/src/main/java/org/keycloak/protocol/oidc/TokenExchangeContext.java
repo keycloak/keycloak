@@ -23,6 +23,7 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.services.cors.Cors;
 
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -40,7 +41,7 @@ public class TokenExchangeContext {
     private final MultivaluedMap<String, String> formParams;
 
     // TODO: resolve deps issue and use correct types
-    private final Object cors;
+    private final Cors cors;
     private final Object tokenManager;
 
     private final ClientModel client;
@@ -55,7 +56,7 @@ public class TokenExchangeContext {
 
     public TokenExchangeContext(KeycloakSession session,
             MultivaluedMap<String, String> formParams,
-            Object cors,
+            Cors cors,
             RealmModel realm,
             EventBuilder event,
             ClientModel client,
@@ -83,7 +84,7 @@ public class TokenExchangeContext {
         return formParams;
     }
 
-    public Object getCors() {
+    public Cors getCors() {
         return cors;
     }
 

@@ -5,16 +5,21 @@ const dagreGraph = new graphlib.Graph();
 dagreGraph.setDefaultEdgeLabel(() => ({}));
 
 const nodeWidth = 130;
-const nodeHeight = 28;
+const nodeHeight = 40;
+const nodeAfterConditionalHeight = 130;
 
 export const getLayoutedNodes = (nodes: Node[], direction = "LR"): Node[] => {
   const isHorizontal = direction === "LR";
   dagreGraph.setGraph({ rankdir: direction });
 
-  nodes.forEach((element) => {
+  nodes.forEach((element, index) => {
+    const prevNode = index > 0 ? nodes[index - 1] : undefined;
     dagreGraph.setNode(element.id, {
       width: nodeWidth,
-      height: nodeHeight,
+      height:
+        prevNode?.type === "conditional"
+          ? nodeAfterConditionalHeight
+          : nodeHeight,
     });
   });
 
@@ -26,7 +31,7 @@ export const getLayoutedNodes = (nodes: Node[], direction = "LR"): Node[] => {
     node.sourcePosition = isHorizontal ? Position.Right : Position.Bottom;
 
     node.position = {
-      x: nodeWithPosition.x - nodeWidth / 2 + Math.random() / 1000,
+      x: nodeWithPosition.x - nodeWidth / 2,
       y: nodeWithPosition.y - nodeHeight / 2,
     };
 

@@ -51,7 +51,7 @@ QUARKUS_BOM=$(curl -s "$QUARKUS_BOM_URL")
 echo "Setting Quarkus version: $QUARKUS_VERSION"
 $(mvn versions:set-property -f ../pom.xml -Dproperty=quarkus.version,quarkus.build.version -DnewVersion="$QUARKUS_VERSION" 1> /dev/null)
 
-DEPENDENCIES_LIST="resteasy jackson-bom hibernate-orm mysql-jdbc postgresql-jdbc microprofile-metrics-api wildfly-common wildfly-elytron"
+DEPENDENCIES_LIST=$(grep -oP '(?<=\</).*(?=\.version\>)' ../pom.xml)
 
 echo "Changing dependencies: $DEPENDENCIES_LIST"
 $(mvn -f ./pom.xml versions:revert 1> /dev/null)
@@ -60,9 +60,9 @@ for dependency in $DEPENDENCIES_LIST; do
     VERSION=$(grep -oP "(?<=<$dependency.version>).*(?=</$dependency.version)" <<< "$QUARKUS_BOM")
     if [ "$VERSION" == "" ]; then
         echo "Failed to resolve version for dependency '$dependency'"
-        exit 1
+        continue;
     fi
-    echo "Setting $VERSION to $dependency"
+    echo "Setting $dependency to $VERSION"
     mvn versions:set-property -f ../pom.xml -Dproperty="$dependency".version -DnewVersion="$VERSION" 1> /dev/null
     mvn versions:set-property -f ./pom.xml -Dproperty="$dependency".version -DnewVersion="$VERSION" 1> /dev/null
 done

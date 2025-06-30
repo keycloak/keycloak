@@ -48,7 +48,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-legacy</artifactId>
+            <artifactId>keycloak-model-storage</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -62,8 +62,8 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-core</artifactId>
+            <groupId>io.quarkus.resteasy.reactive</groupId>
+            <artifactId>resteasy-reactive-common</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -89,7 +89,7 @@
         <dependency>
             <!-- needed for InMemoryUserAdapter -->
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-legacy-private</artifactId>
+            <artifactId>keycloak-model-storage-private</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>

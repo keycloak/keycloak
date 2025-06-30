@@ -38,8 +38,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import org.junit.Assume;
-import org.junit.Before;
 
 /**
  * Test with Dummy providers
@@ -50,11 +48,6 @@ import org.junit.Before;
 public class SyncFederationTest extends AbstractAuthTest {
 
     private static final Logger log = Logger.getLogger(SyncFederationTest.class);
-
-    @Before
-    public void enabled() {
-        Assume.assumeTrue("RealmProvider is not 'jpa'", isJpaRealmProvider());
-    }
 
     /**
      * Test that period sync is triggered when creating a synchronized User Storage Provider
@@ -98,16 +91,15 @@ public class SyncFederationTest extends AbstractAuthTest {
             DummyUserFederationProviderFactory dummyFedFactory = (DummyUserFederationProviderFactory) sessionFactory.getProviderFactory(UserStorageProvider.class, DummyUserFederationProviderFactory.PROVIDER_NAME);
 
             // Assert that after some period was DummyUserFederationProvider triggered
-            UserStorageSyncManager usersSyncManager = new UserStorageSyncManager();
             sleep(1800);
 
             // Cancel timer
-            usersSyncManager.notifyToRefreshPeriodicSync(session, appRealm, dummyModel, true);
+            UserStorageSyncManager.notifyToRefreshPeriodicSync(session, appRealm, dummyModel, true);
             log.infof("Notified sync manager about cancel periodic sync");
 
             // This sync is here just to ensure that we have lock (doublecheck that periodic sync, which was possibly triggered before canceling timer is finished too)
             while (true) {
-                SynchronizationResult result = usersSyncManager.syncChangedUsers(session.getKeycloakSessionFactory(), appRealm.getId(), dummyModel);
+                SynchronizationResult result = UserStorageSyncManager.syncChangedUsers(session.getKeycloakSessionFactory(), appRealm.getId(), dummyModel);
                 if (result.isIgnored()) {
                     log.infof("Still waiting for lock before periodic sync is finished", result.toString());
                     sleep(1000);
@@ -343,6 +335,47 @@ public class SyncFederationTest extends AbstractAuthTest {
             model.setName("test-sync-dummy");
             model.setFullSyncPeriod(-1);
             model.setChangedSyncPeriod(-1);
+            model.setLastSync(0);
+            appRealm.addComponentModel(model);
+        });
+
+        // run both sync methods that will be ignored
+        testingClient.server().run(session -> {
+            RealmModel appRealm = session.realms().getRealmByName(AuthRealm.TEST);
+            UserStorageProviderModel dummyModel = findDummyProviderModel(appRealm);
+            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+            SynchronizationResult syncResult = UserStorageSyncManager.syncAllUsers(sessionFactory, appRealm.getId(), dummyModel);
+            Assert.assertTrue(syncResult.isIgnored());
+            syncResult = UserStorageSyncManager.syncChangedUsers(sessionFactory, appRealm.getId(), dummyModel);
+            Assert.assertTrue(syncResult.isIgnored());
+        });
+
+        // assert the last sync is not updated
+        testingClient.server().run(session -> {
+            RealmModel appRealm = session.realms().getRealmByName(AuthRealm.TEST);
+            UserStorageProviderModel dummyModel = findDummyProviderModel(appRealm);
+            Assert.assertEquals(0, dummyModel.getLastSync());
+        });
+
+        // remove provider
+        testingClient.server().run(session -> {
+            RealmModel appRealm = session.realms().getRealmByName(AuthRealm.TEST);
+            UserStorageProviderModel dummyModel = findDummyProviderModel(appRealm);
+            appRealm.removeComponent(dummyModel);
+        });
+    }
+
+    @Test
+    public void test05LongSync() throws Exception {
+        // Add IgnoredDummyUserFederationProviderFactory provider
+        testingClient.server().run(session -> {
+            RealmModel appRealm = session.realms().getRealmByName(AuthRealm.TEST);
+            UserStorageProviderModel model = new UserStorageProviderModel();
+            model.setProviderId(IgnoredDummyUserFederationProviderFactory.IGNORED_PROVIDER_ID);
+            model.setPriority(1);
+            model.setName("test-sync-dummy");
+            model.setFullSyncPeriod(2147484);
+            model.setChangedSyncPeriod(2147484);
             model.setLastSync(0);
             appRealm.addComponentModel(model);
         });

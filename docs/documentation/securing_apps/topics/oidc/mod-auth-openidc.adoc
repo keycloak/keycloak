@@ -1,6 +1,9 @@
 [[_mod_auth_openidc]]
 === mod_auth_openidc Apache HTTPD Module
 
+WARNING: {project_name} does not provide any official support to mod_auth_openidc. The instructions below are best-effort and may not be up-to-date.
+We recommend that you stick to official mod_auth_openidc documentation for more details.
+
 The https://github.com/OpenIDC/mod_auth_openidc[mod_auth_openidc] is an Apache HTTP plugin for OpenID Connect. If your language/environment supports using Apache HTTPD
 as a proxy, then you can use _mod_auth_openidc_ to secure your web application with OpenID Connect.  Configuration of this module
 is beyond the scope of this document.  Please see the _mod_auth_openidc_ GitHub repo for more details on configuration.
@@ -10,7 +13,7 @@ To configure _mod_auth_openidc_ you'll need
 * The client_id.
 * The client_secret.
 * The redirect_uri to your application.
-* The Keycloak openid-configuration url
+* The {project_name} openid-configuration url
 * _mod_auth_openidc_ specific Apache HTTPD module config.
 
 An example configuration would look like the following.

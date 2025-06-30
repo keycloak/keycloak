@@ -2,10 +2,13 @@ import {
   ActionList,
   ActionListItem,
   Button,
+  EmptyState,
+  EmptyStateBody,
   Flex,
   FlexItem,
   FormGroup,
   TextInput,
+  EmptyStateFooter,
 } from "@patternfly/react-core";
 import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
 import { useEffect, useState } from "react";
@@ -13,7 +16,7 @@ import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { generateId } from "../../util";
 
-import { HelpItem } from "ui-shared";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { KeyValueType } from "../key-value-form/key-value-convert";
 import type { ComponentProps } from "./components";
 import { convertToName } from "./DynamicComponents";
@@ -27,6 +30,7 @@ export const MapComponent = ({
   label,
   helpText,
   required,
+  isDisabled,
 }: ComponentProps) => {
   const { t } = useTranslation();
 
@@ -37,15 +41,20 @@ export const MapComponent = ({
   useEffect(() => {
     register(fieldName);
     const values: KeyValueType[] = JSON.parse(getValues(fieldName) || "[]");
-    if (!values.length) {
-      values.push({ key: "", value: "" });
-    }
     setMap(values.map((value) => ({ ...value, id: generateId() })));
-  }, [register, getValues]);
+  }, []);
+
+  const appendNew = () =>
+    setMap([...map, { key: "", value: "", id: generateId() }]);
 
   const update = (val = map) => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    setValue(fieldName, JSON.stringify(val.map(({ id, ...entry }) => entry)));
+    setValue(
+      fieldName,
+      JSON.stringify(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        val.filter((e) => e.key !== "").map(({ id, ...entry }) => entry),
+      ),
+    );
   };
 
   const updateKey = (index: number, key: string) => {
@@ -65,7 +74,7 @@ export const MapComponent = ({
     update(value);
   };
 
-  return (
+  return map.length !== 0 ? (
     <FormGroup
       label={t(label!)}
       labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
@@ -93,7 +102,7 @@ export const MapComponent = ({
                 aria-label={t("key")}
                 defaultValue={attribute.key}
                 data-testid={`${fieldName}.${index}.key`}
-                onChange={(value) => updateKey(index, value)}
+                onChange={(_event, value) => updateKey(index, value)}
                 onBlur={() => update()}
               />
             </FlexItem>
@@ -107,7 +116,7 @@ export const MapComponent = ({
                 aria-label={t("value")}
                 defaultValue={attribute.value}
                 data-testid={`${fieldName}.${index}.value`}
-                onChange={(value) => updateValue(index, value)}
+                onChange={(_event, value) => updateValue(index, value)}
                 onBlur={() => update()}
               />
             </FlexItem>
@@ -115,7 +124,7 @@ export const MapComponent = ({
               <Button
                 variant="link"
                 title={t("removeAttribute")}
-                isDisabled={map.length === 1}
+                isDisabled={isDisabled}
                 onClick={() => remove(index)}
                 data-testid={`${fieldName}.${index}.remove`}
               >
@@ -129,17 +138,35 @@ export const MapComponent = ({
         <ActionListItem>
           <Button
             data-testid={`${fieldName}-add-row`}
-            className="pf-u-px-0 pf-u-mt-sm"
+            className="pf-v5-u-px-0 pf-v5-u-mt-sm"
             variant="link"
             icon={<PlusCircleIcon />}
-            onClick={() =>
-              setMap([...map, { key: "", value: "", id: generateId() }])
-            }
+            onClick={() => appendNew()}
           >
-            {t("addAttribute")}
+            {t("addAttribute", { label })}
           </Button>
         </ActionListItem>
       </ActionList>
     </FormGroup>
+  ) : (
+    <EmptyState
+      data-testid={`${name}-empty-state`}
+      className="pf-v5-u-p-0"
+      variant="xs"
+    >
+      <EmptyStateBody>{t("missingAttributes", { label })}</EmptyStateBody>
+      <EmptyStateFooter>
+        <Button
+          data-testid={`${name}-add-row`}
+          variant="link"
+          icon={<PlusCircleIcon />}
+          size="sm"
+          onClick={appendNew}
+          isDisabled={isDisabled}
+        >
+          {t("addAttribute", { label })}
+        </Button>
+      </EmptyStateFooter>
+    </EmptyState>
   );
 };

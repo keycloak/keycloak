@@ -45,6 +45,12 @@ public class JsonConfigProvider implements Config.ConfigProvider {
     }
 
     @Override
+    public String getDefaultProvider(String spi) {
+        JsonNode n = getNode(config, spi, "provider-default");
+        return n != null ? replaceProperties(n.textValue()) : null;
+    }
+
+    @Override
     public Config.Scope scope(String... path) {
         return new JsonScope(getNode(config, path));
     }

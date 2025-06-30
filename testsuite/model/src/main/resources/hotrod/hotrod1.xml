@@ -1,5 +1,9 @@
 <infinispan>
     <jgroups>
+        <stack name="bridge" extends="udp">
+            <UDP mcast_addr="228.6.7.12"/>
+            <LOCAL_PING stack.combine="REPLACE" stack.position="PING"/>
+        </stack>
         <!-- Extends the default UDP stack. -->
         <stack name="xsite" extends="udp">
             <UDP bind_addr="${jgroups.bind.address,jgroups.udp.address:127.0.0.1}"
@@ -23,14 +27,14 @@
 
                  thread_pool.thread_dumps_threshold="${jgroups.thread_dumps_threshold:10000}"
             />
-
+            <LOCAL_PING stack.combine="REPLACE" stack.position="PING"/>
             <!-- Adds RELAY2 for cross-site replication. -->
             <!-- Names the local site as site-1. -->
             <!-- Specifies 1000 nodes as the maximum number of site masters. -->
             <relay.RELAY2 site="site-1" xmlns="urn:org:jgroups" max_site_masters="1000"/>
             <!-- Uses the default UDP stack for inter-cluster communication. -->
             <!-- Names all sites that act as backup locations. -->
-            <remote-sites default-stack="udp">
+            <remote-sites default-stack="bridge">
                 <remote-site name="site-1"/>
                 <remote-site name="site-2"/>
             </remote-sites>
@@ -38,7 +42,7 @@
     </jgroups>
     <cache-container name="site-1" statistics="true">
         <!-- Use the "xsite" stack for cluster transport. -->
-        <transport cluster="site-1" stack="xsite"/>
+        <transport cluster="external-site-1" stack="xsite"/>
 
         <serialization marshaller="org.infinispan.jboss.marshalling.commons.GenericJBossMarshaller"/>
     </cache-container>

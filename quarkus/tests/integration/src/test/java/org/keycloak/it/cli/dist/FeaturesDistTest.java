@@ -8,14 +8,17 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
+import org.keycloak.common.Profile;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.LegacyStore;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.cli.command.Start;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
+
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -25,10 +28,13 @@ import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTI
 @DistributionTest
 @RawDistOnly(reason = "Containers are immutable")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@LegacyStore
 public class FeaturesDistTest {
 
-    private static final String PREVIEW_FEATURES_EXPECTED_LOG = "Preview features enabled: account3, admin-fine-grained-authz, client-secret-rotation, declarative-user-profile, dpop, recovery-codes, scripts, token-exchange, transient-users, update-email";
+    private static final String PREVIEW_FEATURES_EXPECTED_LOG = "Preview features enabled: " + Arrays.stream(Profile.Feature.values())
+            .filter(feature -> feature.getType() == Profile.Feature.Type.PREVIEW)
+            .map(Profile.Feature::getVersionedKey)
+            .sorted()
+            .collect(Collectors.joining(", "));
 
     @Test
     public void testEnableOnBuild(KeycloakDistribution dist) {
@@ -69,10 +75,16 @@ public class FeaturesDistTest {
 
     @Test
     @Launch({StartDev.NAME, "--features=token-exchange", "--features-disabled=token-exchange"})
-    public void testEnablePrecedenceOverDisable(LaunchResult result) {
+    public void testEnableDisableConflict(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertStartedDevMode();
-        assertThat(cliResult.getOutput(), containsString("Preview features enabled: token-exchange"));
+        cliResult.assertError("token-exchange is in both the enabled and disabled feature lists");
+    }
+
+    @Test
+    @Launch({StartDev.NAME, "--features=token-exchange:v1", "--features-disabled=token-exchange"})
+    public void testEnableDisableConflictUsingVersioned(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertError("Versioned feature token-exchange:v1 is not expected as token-exchange is already disabled");
     }
 
     @Test
@@ -82,8 +94,8 @@ public class FeaturesDistTest {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStartedDevMode();
         assertThat(cliResult.getOutput(), CoreMatchers.allOf(
-                containsString("Preview features enabled: admin-fine-grained-authz, token-exchange")));
-        assertFalse(cliResult.getOutput().contains("declarative-user-profile"));
+                containsString("Preview features enabled: admin-fine-grained-authz:v1, token-exchange:v1")));
+        assertFalse(cliResult.getOutput().contains("recovery-codes"));
     }
 
     @Test
@@ -93,11 +105,12 @@ public class FeaturesDistTest {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStartedDevMode();
         assertThat(cliResult.getOutput(), CoreMatchers.allOf(
-                containsString("Preview features enabled: admin-fine-grained-authz, token-exchange")));
-        assertFalse(cliResult.getOutput().contains("declarative-user-profile"));
+                containsString("Preview features enabled: admin-fine-grained-authz:v1, token-exchange:v1")));
+        assertFalse(cliResult.getOutput().contains("recovery-codes"));
     }
 
     private void assertPreviewFeaturesEnabled(CLIResult result) {
+        assertThat("expecting at least one preview feature on the list", PREVIEW_FEATURES_EXPECTED_LOG, containsString(":"));
         assertThat(result.getOutput(), CoreMatchers.allOf(
                 containsString(PREVIEW_FEATURES_EXPECTED_LOG)));
     }

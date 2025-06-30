@@ -14,7 +14,6 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.ReverseProxy;
@@ -30,6 +29,7 @@ import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,7 +69,14 @@ public final class KcSamlBrokerFrontendUrlTest extends AbstractBrokerTest {
                 return realm;
             }
 
-            @Override 
+            @Override
+            public RealmRepresentation createProviderRealm() {
+                RealmRepresentation realm = super.createProviderRealm();
+                realm.setEventsListeners(Collections.singletonList("jboss-logging"));
+                return realm;
+            }
+
+            @Override
             public List<ClientRepresentation> createProviderClients() {
                 List<ClientRepresentation> clients = super.createProviderClients();
 

@@ -1,23 +1,32 @@
-import { TextInputProps, ValidatedOptions } from "@patternfly/react-core";
+import {
+  FormHelperText,
+  HelperText,
+  HelperTextItem,
+  TextInput,
+  TextInputProps,
+  ValidatedOptions,
+} from "@patternfly/react-core";
+import { ReactNode } from "react";
 import {
   FieldPath,
   FieldValues,
   PathValue,
-  useController,
   UseControllerProps,
+  useController,
 } from "react-hook-form";
 
-import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";
 import { FormLabel } from "./FormLabel";
 
 export type TextControlProps<
   T extends FieldValues,
   P extends FieldPath<T> = FieldPath<T>,
 > = UseControllerProps<T, P> &
-  TextInputProps & {
+  Omit<TextInputProps, "name" | "isRequired" | "required"> & {
     label: string;
-    labelIcon?: string;
+    labelIcon?: string | ReactNode;
     isDisabled?: boolean;
+    helperText?: string;
+    "data-testid"?: string;
   };
 
 export const TextControl = <
@@ -26,7 +35,7 @@ export const TextControl = <
 >(
   props: TextControlProps<T, P>,
 ) => {
-  const { labelIcon, ...rest } = props;
+  const { labelIcon, helperText, ...rest } = props;
   const required = !!props.rules?.required;
   const defaultValue = props.defaultValue ?? ("" as PathValue<T, P>);
 
@@ -43,10 +52,10 @@ export const TextControl = <
       isRequired={required}
       error={fieldState.error}
     >
-      <KeycloakTextInput
+      <TextInput
         isRequired={required}
         id={props.name}
-        data-testid={props.name}
+        data-testid={props["data-testid"] || props.name}
         validated={
           fieldState.error ? ValidatedOptions.error : ValidatedOptions.default
         }
@@ -54,6 +63,13 @@ export const TextControl = <
         {...rest}
         {...field}
       />
+      {helperText && (
+        <FormHelperText>
+          <HelperText>
+            <HelperTextItem>{helperText}</HelperTextItem>
+          </HelperText>
+        </FormHelperText>
+      )}
     </FormLabel>
   );
 };

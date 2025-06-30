@@ -253,10 +253,6 @@ public interface ServicesLogger extends BasicLogger {
     @Message(id=52, value="Failed processing type")
     void failedProcessingType(@Cause Exception e);
 
-    @LogMessage(level = WARN)
-    @Message(id=53, value="login failure for user %s from ip %s")
-    void loginFailure(String user, String ip);
-
     @LogMessage(level = ERROR)
     @Message(id=54, value="Unknown action: %s")
     void unknownAction(String action);
@@ -405,7 +401,7 @@ public interface ServicesLogger extends BasicLogger {
     @Message(id=90, value="Failed to close ProviderSession")
     void failedToCloseProviderSession(@Cause Throwable t);
 
-    @LogMessage(level = WARN)
+    @LogMessage(level = DEBUG)
     @Message(id=91, value="Request is missing scope 'openid' so it's not treated as OIDC, but just pure OAuth2 request.")
     @Once
     void oidcScopeMissing();

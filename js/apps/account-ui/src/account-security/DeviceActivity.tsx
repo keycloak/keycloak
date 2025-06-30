@@ -15,7 +15,6 @@ import {
   Split,
   SplitItem,
   Title,
-  Tooltip,
 } from "@patternfly/react-core";
 import {
   DesktopIcon,
@@ -24,7 +23,12 @@ import {
 } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ContinueCancelModal, useAlerts } from "ui-shared";
+import {
+  ContinueCancelModal,
+  useAlerts,
+  useEnvironment,
+  label,
+} from "@keycloak/keycloak-ui-shared";
 import { deleteSession, getDevices } from "../api/methods";
 import {
   ClientRepresentation,
@@ -32,13 +36,12 @@ import {
   SessionRepresentation,
 } from "../api/representations";
 import { Page } from "../components/page/Page";
-import { TFuncKey } from "../i18n";
-import { keycloak } from "../keycloak";
 import { formatDate } from "../utils/formatDate";
 import { usePromise } from "../utils/usePromise";
 
-const DeviceActivity = () => {
+export const DeviceActivity = () => {
   const { t } = useTranslation();
+  const context = useEnvironment();
   const { addAlert, addError } = useAlerts();
 
   const [devices, setDevices] = useState<DeviceRepresentation[]>();
@@ -59,11 +62,13 @@ const DeviceActivity = () => {
     setDevices(devices);
   };
 
-  usePromise((signal) => getDevices({ signal }), moveCurrentToTop, [key]);
+  usePromise((signal) => getDevices({ signal, context }), moveCurrentToTop, [
+    key,
+  ]);
 
   const signOutAll = async () => {
-    await deleteSession();
-    keycloak.logout();
+    await deleteSession(context);
+    context.keycloak.logout();
   };
 
   const signOutSession = async (
@@ -71,7 +76,7 @@ const DeviceActivity = () => {
     device: DeviceRepresentation,
   ) => {
     try {
-      await deleteSession(session.id);
+      await deleteSession(context, session.id);
       addAlert(
         t("signedOutSession", { browser: session.browser, os: device.os }),
       );
@@ -86,7 +91,7 @@ const DeviceActivity = () => {
     clients.forEach((client, index) => {
       let clientName: string;
       if (client.clientName !== "") {
-        clientName = t(client.clientName as TFuncKey);
+        clientName = label(t, client.clientName);
       } else {
         clientName = client.clientId;
       }
@@ -108,24 +113,21 @@ const DeviceActivity = () => {
       title={t("deviceActivity")}
       description={t("signedInDevicesExplanation")}
     >
-      <Split hasGutter className="pf-u-mb-lg">
+      <Split hasGutter className="pf-v5-u-mb-lg">
         <SplitItem isFilled>
           <Title headingLevel="h2" size="xl">
             {t("signedInDevices")}
           </Title>
         </SplitItem>
         <SplitItem>
-          <Tooltip content={t("refreshPage")}>
-            <Button
-              aria-describedby="refresh page"
-              id="refresh-page"
-              variant="link"
-              onClick={() => refresh()}
-              icon={<SyncAltIcon />}
-            >
-              {t("refreshPage")}
-            </Button>
-          </Tooltip>
+          <Button
+            id="refresh-page"
+            variant="link"
+            onClick={() => refresh()}
+            icon={<SyncAltIcon />}
+          >
+            {t("refreshPage")}
+          </Button>
 
           {(devices.length > 1 || devices[0].sessions.length > 1) && (
             <ContinueCancelModal
@@ -146,18 +148,18 @@ const DeviceActivity = () => {
       >
         <DataListItem aria-labelledby={`sessions-${key}`}>
           {devices.map((device) =>
-            device.sessions.map((session) => (
-              <DataListItemRow key={device.id}>
+            device.sessions.map((session, index) => (
+              <DataListItemRow key={device.id} data-testid={`row-${index}`}>
                 <DataListContent
                   aria-label="device-sessions-content"
-                  className="pf-u-flex-grow-1"
+                  className="pf-v5-u-flex-grow-1"
                 >
                   <Grid hasGutter>
                     <GridItem span={1} rowSpan={2}>
                       {device.mobile ? <MobileAltIcon /> : <DesktopIcon />}
                     </GridItem>
                     <GridItem sm={8} md={9} span={10}>
-                      <span className="pf-u-mr-md session-title">
+                      <span className="pf-v5-u-mr-md session-title">
                         {device.os.toLowerCase().includes("unknown")
                           ? t("unknownOperatingSystem")
                           : device.os}{" "}
@@ -170,7 +172,7 @@ const DeviceActivity = () => {
                       )}
                     </GridItem>
                     <GridItem
-                      className="pf-u-text-align-right"
+                      className="pf-v5-u-text-align-right"
                       sm={3}
                       md={2}
                       span={1}

@@ -78,6 +78,16 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-jdbc-oracle</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.oracle.database.jdbc</groupId>
+                    <artifactId>ojdbc11</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.oracle.database.nls</groupId>
+                    <artifactId>orai18n</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -98,6 +108,15 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-logging-json</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.apicatalog</groupId>
+            <artifactId>titanium-json-ld</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.setl</groupId>
+            <artifactId>rdf-urdna</artifactId>
         </dependency>
 
         <!-- SmallRye -->
@@ -239,7 +258,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-legacy</artifactId>
+            <artifactId>keycloak-model-storage</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -249,7 +268,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-legacy-private</artifactId>
+            <artifactId>keycloak-model-storage-private</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -259,7 +278,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-legacy-services</artifactId>
+            <artifactId>keycloak-model-storage-services</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -319,46 +338,6 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-map</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-map-jpa</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-map-hot-rod</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-map-file</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-account-ui</artifactId>
             <exclusions>
                 <exclusion>
@@ -391,12 +370,12 @@
 
         <!-- Keycloak Dependencies-->
         <dependency>
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-multipart-provider</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>commons-logging-jboss-logging</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
         </dependency>
         <dependency>
             <groupId>com.webauthn4j</groupId>
@@ -469,6 +448,26 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
+            <artifactId>java8-shim</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
+            <artifactId>java10-shim</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpcore</artifactId>
             <exclusions>
@@ -490,41 +489,7 @@
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-client-hotrod-jakarta</artifactId>
-            <version>${infinispan.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-query-dsl</artifactId>
-            <version>${infinispan.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-remote-query-client</artifactId>
-            <version>${infinispan.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.infinispan</groupId>
             <artifactId>infinispan-cachestore-remote</artifactId>
-            <version>${infinispan.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.github.ua-parser</groupId>
@@ -604,28 +569,6 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-core</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-simple</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.jboss.spec.javax.servlet</groupId>
-                    <artifactId>jboss-servlet-api_4.0_spec</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
         </dependency>
@@ -635,11 +578,11 @@
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-commons-jakarta</artifactId>
+            <artifactId>infinispan-commons</artifactId>
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-core-jakarta</artifactId>
+            <artifactId>infinispan-core</artifactId>
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
@@ -732,20 +675,6 @@
                 </property>
             </activation>
             <dependencies>
-                <dependency>
-                    <groupId>io.quarkus</groupId>
-                    <artifactId>quarkus-jdbc-oracle</artifactId>
-                    <exclusions>
-                        <exclusion>
-                            <groupId>com.oracle.database.jdbc</groupId>
-                            <artifactId>ojdbc11</artifactId>
-                        </exclusion>
-                        <exclusion>
-                            <groupId>com.oracle.database.nls</groupId>
-                            <artifactId>orai18n</artifactId>
-                        </exclusion>
-                    </exclusions>
-                </dependency>
                 <dependency>
                     <groupId>io.quarkus</groupId>
                     <artifactId>quarkus-jdbc-mssql</artifactId>

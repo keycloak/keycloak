@@ -21,26 +21,36 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.authentication.AuthenticationFlow;
+import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticator;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.browser.RecoveryAuthnCodesFormAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticator;
 import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticatorFactory;
+import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.models.Constants;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -48,19 +58,27 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.ClaimsRepresentation;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.account.AccountRestClient;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
+import org.keycloak.testsuite.pages.DeleteCredentialPage;
 import org.keycloak.testsuite.pages.ErrorPage;
+import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.PushTheButtonPage;
+import org.keycloak.testsuite.pages.SelectAuthenticatorPage;
+import org.keycloak.testsuite.pages.SetupRecoveryAuthnCodesPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -70,13 +88,18 @@ import org.keycloak.util.JsonSerialization;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.keycloak.common.Profile.Feature.RECOVERY_CODES;
+import static org.keycloak.testsuite.actions.AppInitiatedActionDeleteCredentialTest.getKcActionParamForDeleteCredential;
 
 /**
  * Tests for Level Of Assurance conditions in authentication flow.
  *
  * @author <a href="mailto:sebastian.zoescher@prime-sign.com">Sebastian Zoescher</a>
  */
+@EnableFeature(value = RECOVERY_CODES, skipRestart = true)
 public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
+
+    private static final String FLOW_NAME = "";
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -87,6 +110,15 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
     @Page
     protected LoginTotpPage loginTotpPage;
 
+    @Page
+    protected LoginConfigTotpPage totpSetupPage;
+
+    @Page
+    protected SetupRecoveryAuthnCodesPage setupRecoveryAuthnCodesPage;
+
+    @Page
+    protected SelectAuthenticatorPage selectAuthenticatorPage;
+
     private TimeBasedOTP totp = new TimeBasedOTP();
 
     @Page
@@ -94,6 +126,9 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected ErrorPage errorPage;
+
+    @Page
+    protected DeleteCredentialPage deleteCredentialPage;
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -107,6 +142,24 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Before
+    public void beforeTest() {
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        UserRepresentation userRep = user.toRepresentation();
+        user.remove();
+
+        userRep.setId(null);
+        UserBuilder.edit(userRep)
+                .password("password")
+                .totpSecret("totpSecret")
+                .otpEnabled();
+        Response response = testRealm().users().create(userRep);
+        Assert.assertEquals(201, response.getStatus());
+        response.close();
+
+        oauth.kcAction(null);
     }
 
     private String getAcrToLoaMappingForClient() throws IOException {
@@ -145,7 +198,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         testingClient.server(TEST_REALM_NAME)
                 .run(session -> FlowUtil.inCurrentRealm(session).selectFlow(newFlowAlias).inForms(forms -> forms.clear()
                         // level 1 authentication
-                        .addSubFlowExecution(Requirement.CONDITIONAL, subFlow -> {
+                        .addSubFlowExecution("level1-subflow", AuthenticationFlow.BASIC_FLOW, Requirement.CONDITIONAL, subFlow -> {
                             subFlow.addAuthenticatorExecution(Requirement.REQUIRED, ConditionalLoaAuthenticatorFactory.PROVIDER_ID,
                                     config -> {
                                         config.getConfig().put(ConditionalLoaAuthenticator.LEVEL, "1");
@@ -157,7 +210,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
                         })
 
                         // level 2 authentication
-                        .addSubFlowExecution(Requirement.CONDITIONAL, subFlow -> {
+                        .addSubFlowExecution("level2-subflow", AuthenticationFlow.BASIC_FLOW, Requirement.CONDITIONAL, subFlow -> {
                             subFlow.addAuthenticatorExecution(Requirement.REQUIRED, ConditionalLoaAuthenticatorFactory.PROVIDER_ID,
                                     config -> {
                                         config.getConfig().put(ConditionalLoaAuthenticator.LEVEL, "2");
@@ -169,7 +222,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
                         })
 
                         // level 3 authentication
-                        .addSubFlowExecution(Requirement.CONDITIONAL, subFlow -> {
+                        .addSubFlowExecution("level3-subflow", AuthenticationFlow.BASIC_FLOW, Requirement.CONDITIONAL, subFlow -> {
                             subFlow.addAuthenticatorExecution(Requirement.REQUIRED, ConditionalLoaAuthenticatorFactory.PROVIDER_ID,
                                     config -> {
                                         config.getConfig().put(ConditionalLoaAuthenticator.LEVEL, "3");
@@ -186,6 +239,21 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
     private void reconfigureStepUpFlow(int maxAge1, int maxAge2, int maxAge3) {
         BrowserFlowTest.revertFlows(testRealm(), "browser -  Level of Authentication FLow");
         configureStepUpFlow(testingClient, maxAge1, maxAge2, maxAge3);
+    }
+
+    private static void configureFlowsWithRecoveryCodes(KeycloakTestingClient testingClient) {
+        final String newFlowAlias = "browser -  Level of Authentication FLow";
+
+        testingClient.server(TEST_REALM_NAME)
+                .run(session -> {
+                    FlowUtil.inCurrentRealm(session).selectFlow(newFlowAlias).inForms(forms ->
+                                    // Remove "OTP" required execution
+                                    forms.selectFlow("level2-subflow")
+                                            .removeExecution(1)
+                                            .addAuthenticatorExecution(Requirement.ALTERNATIVE, OTPFormAuthenticatorFactory.PROVIDER_ID)
+                                            .addAuthenticatorExecution(Requirement.ALTERNATIVE, RecoveryAuthnCodesFormAuthenticatorFactory.PROVIDER_ID)
+                    );
+                });
     }
 
     @After
@@ -669,6 +737,172 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
+    @Test
+    public void testWithMultipleOTPCodes() throws Exception {
+        // Get regular authentication. Only level1 required.
+        oauth.openLoginForm();
+        // Authentication without specific LOA results in level 1 authentication
+        authenticateWithUsernamePassword();
+        TokenCtx token1 = assertLoggedInWithAcr("silver");
+
+        // Add "kc_action" for setup another OTP. Existing OTP authentication should be required. No offer for recovery-codes as they are different level
+        oauth.kcAction(UserModel.RequiredAction.CONFIGURE_TOTP.name());
+        oauth.openLoginForm();
+        loginTotpPage.assertCurrent();
+        loginTotpPage.assertOtpCredentialSelectorAvailability(false);
+
+        authenticateWithTotp();
+        totpSetupPage.assertCurrent();
+        totpSetupPage.configure(totp.generateTOTP(totpSetupPage.getTotpSecret()), "totp2-label");
+        events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent();
+        TokenCtx token2 = assertLoggedInWithAcr("gold");
+
+        // Trying to add another OTP by "kc_action". Level 2 should be required and user can choose between 2 OTP codes
+        oauth.kcAction(UserModel.RequiredAction.CONFIGURE_TOTP.name());
+        oauth.openLoginForm();
+        loginTotpPage.assertCurrent();
+        loginTotpPage.assertOtpCredentialSelectorAvailability(true);
+        List<String> availableOtps = loginTotpPage.getAvailableOtpCredentials();
+        Assert.assertNames(availableOtps, OTPFormAuthenticator.UNNAMED, "totp2-label");
+
+        // Removing 2nd OTP by account REST API with regular token. Should fail as acr=2 is required
+        String otpCredentialId;
+        try (AccountRestClient accountRestClient = AccountRestClient
+                .builder(suiteContext)
+                .accessToken(token1.accessToken)
+                .build()) {
+            otpCredentialId = accountRestClient.getCredentialByUserLabel("totp2-label").getId();
+            try (SimpleHttp.Response response = accountRestClient.removeCredential(otpCredentialId)) {
+                Assert.assertEquals(403, response.getStatus());
+            }
+        }
+
+        // Removing 2nd OTP by account REST API with level2 token. Should work as acr=2 is required
+        try (AccountRestClient accountRestClient = AccountRestClient
+                .builder(suiteContext)
+                .accessToken(token2.accessToken)
+                .build()) {
+            otpCredentialId = accountRestClient.getCredentialByUserLabel("totp2-label").getId();
+            try (SimpleHttp.Response response = accountRestClient.removeCredential(otpCredentialId)) {
+                Assert.assertEquals(204, response.getStatus());
+            }
+            Assert.assertNull(accountRestClient.getCredentialByUserLabel("totp2-label"));
+        }
+    }
+
+    @Test
+    public void testDeleteCredentialAction() throws Exception {
+        // Login level1
+        oauth.openLoginForm();
+        authenticateWithUsernamePassword();
+        TokenCtx token1 = assertLoggedInWithAcr("silver");
+
+        // Setup another OTP (requires login with existing OTP)
+        oauth.kcAction(UserModel.RequiredAction.CONFIGURE_TOTP.name());
+        oauth.openLoginForm();
+        authenticateWithTotp();
+        totpSetupPage.assertCurrent();
+        totpSetupPage.configure(totp.generateTOTP(totpSetupPage.getTotpSecret()), "totp2-label");
+        events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent();
+        TokenCtx token2 = assertLoggedInWithAcr("gold");
+
+        String otp2CredentialId = getCredentialIdByLabel("totp2-label");
+
+        // Delete OTP credential requires level2. Re-authentication is required (because of max_age=0 for level2 evaluated during re-authentication)
+        oauth.kcAction(getKcActionParamForDeleteCredential(otp2CredentialId));
+        oauth.openLoginForm();
+        loginTotpPage.assertCurrent();
+        authenticateWithTotp();
+
+        deleteCredentialPage.assertCurrent();
+        deleteCredentialPage.assertCredentialInMessage("totp2-label");
+        deleteCredentialPage.confirm();
+
+        events.expectRequiredAction(EventType.REMOVE_TOTP).assertEvent();
+        assertLoggedInWithAcr("gold");
+    }
+
+    @Test
+    public void testWithOTPAndRecoveryCodesAtLevel2() {
+        configureFlowsWithRecoveryCodes(testingClient);
+        try {
+            // Get regular authentication. Only level1 required.
+            oauth.openLoginForm();
+            authenticateWithUsernamePassword();
+            TokenCtx token1 = assertLoggedInWithAcr("silver");
+
+            // Trying to delete existing OTP. Should require authentication with this OTP
+            String otpCredentialId = getCredentialIdByType(OTPCredentialModel.TYPE);
+            oauth.kcAction(getKcActionParamForDeleteCredential(otpCredentialId));
+            oauth.openLoginForm();
+            Assert.assertEquals("Strong authentication required to continue", loginPage.getInfoMessage());
+            authenticateWithTotp();
+
+            deleteCredentialPage.assertCurrent();
+            deleteCredentialPage.assertCredentialInMessage("otp");
+            deleteCredentialPage.confirm();
+            events.expectRequiredAction(EventType.REMOVE_TOTP).assertEvent();
+            assertLoggedInWithAcr("gold");
+
+            // Trying to add OTP. No 2nd factor should be required as user doesn't have any
+            oauth.kcAction(UserModel.RequiredAction.CONFIGURE_TOTP.name());
+            oauth.openLoginForm();
+            totpSetupPage.assertCurrent();
+            String totp2Secret = totpSetupPage.getTotpSecret();
+            totpSetupPage.configure(totp.generateTOTP(totp2Secret), "totp2-label");
+            events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent();
+            assertLoggedInWithAcr("silver");
+
+            // set time offset for OTP as it is not permitted to authenticate with same OTP code multiple times
+            setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
+
+            // Add "kc_action" for setup recovery codes. OTP should be required
+            oauth.kcAction(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name());
+            oauth.openLoginForm();
+            loginTotpPage.assertCurrent();
+            loginTotpPage.login(totp.generateTOTP(totp2Secret));
+            setupRecoveryAuthnCodesPage.assertCurrent();
+            setupRecoveryAuthnCodesPage.clickSaveRecoveryAuthnCodesButton();
+            events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION).assertEvent();
+            assertLoggedInWithAcr("gold");
+
+            // Removing recovery-code credential. User required to authenticate with 2nd-factor. He can choose between OTP or recovery-codes
+            String recoveryCodesId = getCredentialIdByType(RecoveryAuthnCodesCredentialModel.TYPE);
+            oauth.kcAction(getKcActionParamForDeleteCredential(recoveryCodesId));
+            oauth.openLoginForm();
+            loginTotpPage.assertCurrent();
+            loginTotpPage.clickTryAnotherWayLink();
+            selectAuthenticatorPage.assertCurrent();
+            Assert.assertEquals(Arrays.asList(SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION, SelectAuthenticatorPage.RECOVERY_AUTHN_CODES), selectAuthenticatorPage.getAvailableLoginMethods());
+            selectAuthenticatorPage.selectLoginMethod(SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION);
+            loginTotpPage.assertCurrent();
+            loginTotpPage.login(totp.generateTOTP(totp2Secret));
+
+            deleteCredentialPage.assertCurrent();
+            deleteCredentialPage.assertCredentialInMessage("Recovery codes");
+            deleteCredentialPage.confirm();
+            events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION).assertEvent();
+            assertLoggedInWithAcr("gold");
+        } finally {
+            setOtpTimeOffset(0, totp);
+        }
+    }
+
+    private String getCredentialIdByLabel(String credentialLabel) {
+        return ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost").credentials()
+                .stream()
+                .filter(credential -> "totp2-label".equals(credential.getUserLabel()))
+                .map(CredentialRepresentation::getId)
+                .findFirst().orElseThrow(() -> new IllegalStateException("Did not found credential with label " + credentialLabel));
+    }
+
+    private String getCredentialIdByType(String credentialType) {
+        return ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost").credentials()
+                .stream()
+                .filter(credential -> credentialType.equals(credential.getType()))
+                .map(CredentialRepresentation::getId)
+                .findFirst().orElseThrow(() -> new IllegalStateException("Did not found credential with OTP type on the user"));
+    }
 
     public void openLoginFormWithAcrClaim(boolean essential, String... acrValues) {
         openLoginFormWithAcrClaim(oauth, essential, acrValues);
@@ -707,15 +941,27 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         pushTheButtonPage.submit();
     }
 
-    private void assertLoggedInWithAcr(String acr) {
+    private TokenCtx assertLoggedInWithAcr(String acr) {
         EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
-        IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
+        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+        IDToken idToken = oauth.verifyIDToken(tokenResponse.getIdToken());
         Assert.assertEquals(acr, idToken.getAcr());
+        return new TokenCtx(tokenResponse.getAccessToken(), idToken);
     }
 
     private void assertErrorPage(String expectedError) {
         assertThat(true, is(errorPage.isCurrent()));
         Assert.assertEquals(expectedError, errorPage.getError());
         events.clear();
+    }
+
+    private class TokenCtx {
+        private String accessToken;
+        private IDToken idToken;
+
+        private TokenCtx(String accessToken, IDToken idToken) {
+            this.accessToken = accessToken;
+            this.idToken = idToken;
+        }
     }
 }

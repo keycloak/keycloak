@@ -272,6 +272,7 @@ describe.skip("Events tests", () => {
     const realmName = uuid();
 
     before(() => adminClient.createRealm(realmName));
+
     after(() => adminClient.deleteRealm(realmName));
 
     beforeEach(() => {

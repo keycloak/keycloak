@@ -1,10 +1,10 @@
-import { saveAs } from "file-saver";
-import { cloneDeep } from "lodash-es";
-import { FieldValues, Path, PathValue, UseFormSetValue } from "react-hook-form";
-import { flatten } from "flat";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type { ProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
 import type { IFormatter, IFormatterValueType } from "@patternfly/react-table";
+import { saveAs } from "file-saver";
+import { flatten } from "flat";
+import { cloneDeep } from "lodash-es";
+import { FieldValues, Path, PathValue, UseFormSetValue } from "react-hook-form";
 
 import {
   arrayToKeyValue,
@@ -63,13 +63,10 @@ export const exportClient = (client: ClientRepresentation): void => {
 export const toUpperCase = <T extends string>(name: T) =>
   (name.charAt(0).toUpperCase() + name.slice(1)) as Capitalize<T>;
 
-const isAttributesObject = (value: any) => {
-  return (
-    Object.values(value).filter(
-      (value) => Array.isArray(value) && value.length >= 1,
-    ).length !== 0
-  );
-};
+const isAttributesObject = (value: any) =>
+  Object.values(value).filter(
+    (value) => Array.isArray(value) && value.length >= 1,
+  ).length !== 0;
 
 const isAttributeArray = (value: any) => {
   if (!Array.isArray(value)) {
@@ -87,15 +84,16 @@ export function convertAttributeNameToForm<T>(
   name: string,
 ): PathValue<T, Path<T>> {
   const index = name.indexOf(".");
-  return `${name.substring(0, index)}.${beerify(
-    name.substring(index + 1),
-  )}` as PathValue<T, Path<T>>;
+  return `${name.substring(0, index)}.${beerify(name.substring(index + 1))}` as PathValue<
+    T,
+    Path<T>
+  >;
 }
 
 export const beerify = <T extends string>(name: T) =>
   name.replaceAll(".", "🍺") as ReplaceString<T, ".", "🍺">;
 
-const debeerify = <T extends string>(name: T) =>
+export const debeerify = <T extends string>(name: T) =>
   name.replaceAll("🍺", ".") as ReplaceString<T, "🍺", ".">;
 
 export function convertToFormValues<T extends FieldValues>(
@@ -110,7 +108,9 @@ export function convertToFormValues<T extends FieldValues>(
       if (!isEmpty(value)) {
         const flattened: any = flatten(value, { safe: true });
         const convertedValues = Object.entries(flattened).map(([key, value]) =>
-          Array.isArray(value) ? [key, value[0]] : [key, value],
+          Array.isArray(value) && value.length === 1
+            ? [key, value[0]]
+            : [key, value],
         );
 
         convertedValues.forEach(([k, v]) =>
@@ -170,3 +170,34 @@ export const addTrailingSlash = (url: string) =>
   url.endsWith("/") ? url : url + "/";
 
 export const generateId = () => Math.floor(Math.random() * 1000);
+
+export const localeToDisplayName = (locale: string, displayLocale: string) => {
+  try {
+    return new Intl.DisplayNames([displayLocale], { type: "language" }).of(
+      // This is mapping old locale codes to the new locale codes for Simplified and Traditional Chinese.
+      // Once the existing locales have been moved, this code can be removed.
+      locale === "zh-CN" ? "zh-HANS" : locale === "zh-TW" ? "zh-HANT" : locale,
+    );
+  } catch (error) {
+    return locale;
+  }
+};
+
+const DARK_MODE_CLASS = "pf-v5-theme-dark";
+export const mediaQuery =
+  window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)");
+
+updateDarkMode(mediaQuery?.matches);
+mediaQuery?.addEventListener("change", (event: MediaQueryListEvent) =>
+  updateDarkMode(event.matches),
+);
+
+function updateDarkMode(isEnabled: boolean = false) {
+  const { classList } = document.documentElement;
+
+  if (isEnabled) {
+    classList.add(DARK_MODE_CLASS);
+  } else {
+    classList.remove(DARK_MODE_CLASS);
+  }
+}

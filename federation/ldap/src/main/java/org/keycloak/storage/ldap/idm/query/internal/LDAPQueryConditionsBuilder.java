@@ -17,9 +17,9 @@
 
 package org.keycloak.storage.ldap.idm.query.internal;
 
+import java.util.Arrays;
 import org.keycloak.models.ModelException;
 import org.keycloak.storage.ldap.idm.query.Condition;
-import org.keycloak.storage.ldap.idm.query.EscapeStrategy;
 import org.keycloak.storage.ldap.idm.query.Sort;
 
 /**
@@ -28,11 +28,7 @@ import org.keycloak.storage.ldap.idm.query.Sort;
 public class LDAPQueryConditionsBuilder {
 
     public Condition equal(String parameter, Object value) {
-        return new EqualCondition(parameter, value, EscapeStrategy.DEFAULT);
-    }
-
-    public Condition equal(String parameter, Object value, EscapeStrategy escapeStrategy) {
-        return new EqualCondition(parameter, value, escapeStrategy);
+        return new EqualCondition(parameter, value);
     }
 
     public Condition greaterThan(String paramName, Object x) {
@@ -64,6 +60,13 @@ public class LDAPQueryConditionsBuilder {
         return new OrCondition(conditions);
     }
 
+    public Condition andCondition(Condition... conditions) {
+        if (conditions == null || conditions.length == 0) {
+            throw new ModelException("At least one condition should be provided to AND query");
+        }
+        return new AndCondition(conditions);
+    }
+
     public Condition addCustomLDAPFilter(String filter) {
         filter = filter.trim();
         return new CustomLDAPFilter(filter);
@@ -71,6 +74,23 @@ public class LDAPQueryConditionsBuilder {
 
     public Condition in(String paramName, Object... x) {
         return new InCondition(paramName, x);
+    }
+
+    public Condition present(String paramName) {
+        return new PresentCondition(paramName);
+    }
+
+    public Condition substring(String paramName, String start, String[] middle, String end) {
+        if ((start == null || start.isEmpty())
+                && (end == null || end.isEmpty())
+                && (middle == null || middle.length == 0)) {
+            throw new ModelException("Invalid substring filter with no start, middle or end");
+        }
+        if (middle != null && middle.length > 0 && Arrays.stream(middle).filter(s -> s == null || s.isEmpty()).findAny().isPresent()) {
+            throw new ModelException("Invalid substring filter with an empty string in the middle array");
+        }
+
+        return new SubstringCondition(paramName, start, middle, end);
     }
 
     public Sort asc(String paramName) {

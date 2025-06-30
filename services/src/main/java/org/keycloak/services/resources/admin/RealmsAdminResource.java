@@ -19,9 +19,10 @@ package org.keycloak.services.resources.admin;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -29,6 +30,8 @@ import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.StripSecretsUtils;
@@ -36,7 +39,6 @@ import org.keycloak.policy.PasswordPolicyNotMetException;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
@@ -46,6 +48,7 @@ import org.keycloak.storage.ExportImportManager;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
@@ -134,6 +137,7 @@ public class RealmsAdminResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation(summary = "Import a realm. Imports a realm from a full representation of that realm.", description = "Realm name must be unique.")
+    @APIResponse(responseCode = "201", description = "Created")
     public Response importRealm(InputStream requestBody) {
         AdminPermissions.realms(session, auth).requireCreateRealm();
 
@@ -150,10 +154,9 @@ public class RealmsAdminResource {
             // The create event is associated with the realm of the user executing the operation,
             // instead of the realm being created.
             AdminEventBuilder adminEvent = new AdminEventBuilder(auth.getRealm(), auth, session, clientConnection);
-            adminEvent.resource(ResourceType.REALM).realm(auth.getRealm().getId()).operation(OperationType.CREATE)
+            adminEvent.resource(ResourceType.REALM).realm(auth.getRealm()).operation(OperationType.CREATE)
                     .resourcePath(realm.getName())
-                    .representation(
-                            StripSecretsUtils.strip(ModelToRepresentation.toRepresentation(session, realm, false)))
+                    .representation(ModelToRepresentation.toRepresentation(session, realm, false))
                     .success();
 
             return Response.created(location).build();
@@ -165,6 +168,11 @@ public class RealmsAdminResource {
             logger.error("Password policy not met for user " + e.getUsername(), e);
             if (session.getTransactionManager().isActive()) session.getTransactionManager().setRollbackOnly();
             throw ErrorResponse.error("Password policy not met. See logs for details", Response.Status.BAD_REQUEST);
+        } catch (ModelIllegalStateException e) {
+            logger.error(e.getMessage(), e);
+            throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
+        } catch (ModelException e) {
+            throw ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);
         }
     }
 

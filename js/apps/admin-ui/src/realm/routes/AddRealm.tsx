@@ -10,7 +10,7 @@ const NewRealmForm = lazy(() => import("../add/NewRealmForm"));
 export const AddRealmRoute: AppRouteObject = {
   path: "/:realm/add-realm",
   element: <NewRealmForm />,
-  breadcrumb: (t) => t("realm:createRealm"),
+  breadcrumb: (t) => t("createRealm"),
   handle: {
     access: "view-realm",
   },

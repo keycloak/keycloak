@@ -10,7 +10,7 @@ export default class PasswordPolicies {
   }
 
   addPolicy(name: string) {
-    cy.get(".pf-c-select").click().contains(name).click();
+    cy.findByTestId("add-policy").click().parent().contains(name).click();
     return this;
   }
 

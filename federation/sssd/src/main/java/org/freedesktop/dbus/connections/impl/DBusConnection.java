@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
 /**
  * Handles a connection to DBus.
  * <p>
- * This is a Singleton class, only 1 connection to the SYSTEM or SESSION busses can be made. Repeated calls to
+ * This is a Singleton class, only 1 connection to the SYSTEM or SESSION buses can be made. Repeated calls to
  * getConnection will return the same reference.
  * </p>
  * <p>
@@ -469,7 +469,7 @@ public final class DBusConnection extends AbstractConnection {
      * Return a reference to a remote object. This method will always refer to the well known name (if given) rather
      * than resolving it to a unique bus name. In particular this means that if a process providing the well known name
      * disappears and is taken over by another process proxy objects gained by this method will make calls on the new
-     * proccess.
+     * process.
      *
      * This method will use bus introspection to determine the interfaces on a remote object and so <b>may block</b> and
      * <b>may fail</b>. The resulting proxy object will, however, be castable to any interface it implements. It will
@@ -551,7 +551,7 @@ public final class DBusConnection extends AbstractConnection {
      * Return a reference to a remote object. This method will always refer to the well known name (if given) rather
      * than resolving it to a unique bus name. In particular this means that if a process providing the well known name
      * disappears and is taken over by another process proxy objects gained by this method will make calls on the new
-     * proccess.
+     * process.
      *
      * @param <I>
      *            class extending {@link DBusInterface}
@@ -578,7 +578,7 @@ public final class DBusConnection extends AbstractConnection {
      * Return a reference to a remote object. This method will always refer to the well known name (if given) rather
      * than resolving it to a unique bus name. In particular this means that if a process providing the well known name
      * disappears and is taken over by another process proxy objects gained by this method will make calls on the new
-     * proccess.
+     * process.
      *
      * @param <I>
      *            class extending {@link DBusInterface}

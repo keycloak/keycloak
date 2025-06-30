@@ -1,18 +1,16 @@
 import type IdentityProviderMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderMapperRepresentation";
 import type { IdentityProviderMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/identityProviderMapperTypeRepresentation";
 import {
-  FormGroup,
-  Select,
-  SelectOption,
+  HelpItem,
+  KeycloakSelect,
+  SelectControl,
   SelectVariant,
-  ValidatedOptions,
-} from "@patternfly/react-core";
+  TextControl,
+} from "@keycloak/keycloak-ui-shared";
+import { FormGroup, SelectOption } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { HelpItem } from "ui-shared";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import type { IdPMapperRepresentationWithAttributes } from "./AddMapper";
 
 type AddMapperFormProps = {
@@ -34,85 +32,33 @@ export const AddMapperForm = ({
 }: AddMapperFormProps) => {
   const { t } = useTranslation();
 
-  const {
-    control,
-    register,
-    formState: { errors },
-  } = form;
+  const { control } = form;
 
   const [mapperTypeOpen, setMapperTypeOpen] = useState(false);
 
   const syncModes = ["inherit", "import", "legacy", "force"];
-  const [syncModeOpen, setSyncModeOpen] = useState(false);
 
   return (
     <>
-      <FormGroup
+      <TextControl
+        name="name"
         label={t("name")}
-        labelIcon={
-          <HelpItem helpText={t("addIdpMapperName")} fieldLabelId="name" />
-        }
-        fieldId="kc-name"
-        isRequired
-        validated={
-          errors.name ? ValidatedOptions.error : ValidatedOptions.default
-        }
-        helperTextInvalid={t("required")}
-      >
-        <KeycloakTextInput
-          id="kc-name"
-          isDisabled={!!id}
-          validated={
-            errors.name ? ValidatedOptions.error : ValidatedOptions.default
-          }
-          {...register("name", { required: true })}
-        />
-      </FormGroup>
-      <FormGroup
+        labelIcon={t("addIdpMapperNameHelp")}
+        readOnly={!!id}
+        rules={{
+          required: t("required"),
+        }}
+      />
+      <SelectControl
+        name="config.syncMode"
         label={t("syncModeOverride")}
-        isRequired
-        labelIcon={
-          <HelpItem
-            helpText={t("syncModeOverrideHelp")}
-            fieldLabelId="syncModeOverride"
-          />
-        }
-        fieldId="syncMode"
-      >
-        <Controller
-          name="config.syncMode"
-          defaultValue={syncModes[0].toUpperCase()}
-          control={control}
-          render={({ field }) => (
-            <Select
-              toggleId="syncMode"
-              datatest-id="syncmode-select"
-              required
-              direction="down"
-              onToggle={() => setSyncModeOpen(!syncModeOpen)}
-              onSelect={(_, value) => {
-                field.onChange(value.toString().toUpperCase());
-                setSyncModeOpen(false);
-              }}
-              selections={t(`syncModes.${field.value.toLowerCase()}`)}
-              variant={SelectVariant.single}
-              aria-label={t("syncMode")}
-              isOpen={syncModeOpen}
-            >
-              {syncModes.map((option) => (
-                <SelectOption
-                  selected={option === field.value}
-                  key={option}
-                  data-testid={option}
-                  value={option.toUpperCase()}
-                >
-                  {t(`syncModes.${option}`)}
-                </SelectOption>
-              ))}
-            </Select>
-          )}
-        />
-      </FormGroup>
+        labelIcon={t("syncModeOverrideHelp")}
+        options={syncModes.map((option) => ({
+          key: option.toUpperCase(),
+          value: t(`syncModes.${option}`),
+        }))}
+        controller={{ defaultValue: syncModes[0].toUpperCase() }}
+      />
       <FormGroup
         label={t("mapperType")}
         labelIcon={
@@ -125,13 +71,12 @@ export const AddMapperForm = ({
           defaultValue={mapperTypes[0].id}
           control={control}
           render={({ field }) => (
-            <Select
+            <KeycloakSelect
               toggleId="identityProviderMapper"
               data-testid="idp-mapper-select"
               isDisabled={!!id}
-              required
               onToggle={() => setMapperTypeOpen(!mapperTypeOpen)}
-              onSelect={(_, value) => {
+              onSelect={(value) => {
                 const mapperType =
                   value as IdentityProviderMapperTypeRepresentation;
                 updateMapperType(mapperType);
@@ -153,7 +98,7 @@ export const AddMapperForm = ({
                   {option.name}
                 </SelectOption>
               ))}
-            </Select>
+            </KeycloakSelect>
           )}
         />
       </FormGroup>

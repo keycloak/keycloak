@@ -1,6 +1,7 @@
 import { lazy } from "react";
 import type { IndexRouteObject, RouteObject } from "react-router-dom";
 
+import { environment } from "./environment";
 import { ErrorPage } from "./root/ErrorPage";
 import { Root } from "./root/Root";
 
@@ -11,6 +12,8 @@ const Applications = lazy(() => import("./applications/Applications"));
 const Groups = lazy(() => import("./groups/Groups"));
 const PersonalInfo = lazy(() => import("./personal-info/PersonalInfo"));
 const Resources = lazy(() => import("./resources/Resources"));
+const ContentComponent = lazy(() => import("./content/ContentComponent"));
+const Oid4Vci = lazy(() => import("./oid4vci/Oid4Vci"));
 
 export const DeviceActivityRoute: RouteObject = {
   path: "account-security/device-activity",
@@ -42,13 +45,27 @@ export const ResourcesRoute: RouteObject = {
   element: <Resources />,
 };
 
+export type ContentComponentParams = {
+  componentId: string;
+};
+
+export const ContentRoute: RouteObject = {
+  path: "content/:componentId",
+  element: <ContentComponent />,
+};
+
 export const PersonalInfoRoute: IndexRouteObject = {
   index: true,
   element: <PersonalInfo />,
 };
 
+export const Oid4VciRoute: RouteObject = {
+  path: "oid4vci",
+  element: <Oid4Vci />,
+};
+
 export const RootRoute: RouteObject = {
-  path: "/",
+  path: decodeURIComponent(new URL(environment.baseUrl).pathname),
   element: <Root />,
   errorElement: <ErrorPage />,
   children: [
@@ -60,6 +77,8 @@ export const RootRoute: RouteObject = {
     GroupsRoute,
     PersonalInfoRoute,
     ResourcesRoute,
+    ContentRoute,
+    Oid4VciRoute,
   ],
 };
 

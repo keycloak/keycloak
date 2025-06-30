@@ -1,0 +1,243 @@
+Start the server.
+
+Usage:
+
+kc.sh start [OPTIONS]
+
+Use this command to run the server in production.
+
+Options:
+
+-h, --help           This help message.
+--help-all           This same help message but with additional options.
+--import-realm       Import realms during startup by reading any realm configuration file from the
+                       'data/import' directory.
+--optimized          Use this option to achieve an optimal startup time if you have previously
+                       built a server image using the 'build' command.
+-v, --verbose        Print out error details when running this command.
+
+Cache:
+
+--cache <type>       Defines the cache mechanism for high-availability. By default in production
+                       mode, a 'ispn' cache is used to create a cluster between multiple server
+                       nodes. By default in development mode, a 'local' cache disables clustering
+                       and is intended for development and testing purposes. Possible values are:
+                       ispn, local. Default: ispn.
+--cache-config-file <file>
+                     Defines the file from which cache configuration should be loaded from. The
+                       configuration file is relative to the 'conf/' directory.
+--cache-embedded-mtls-enabled <true|false>
+                     Encrypts the network communication between Keycloak servers. Default: false.
+--cache-embedded-mtls-key-store-file <file>
+                     The Keystore file path. The Keystore must contain the certificate to use by
+                       the TLS protocol. By default, it lookup 'cache-mtls-keystore.p12' under
+                       conf/ directory.
+--cache-embedded-mtls-key-store-password <password>
+                     The password to access the Keystore.
+--cache-embedded-mtls-trust-store-file <file>
+                     The Truststore file path. It should contain the trusted certificates or the
+                       Certificate Authority that signed the certificates. By default, it lookup
+                       'cache-mtls-truststore.p12' under conf/ directory.
+--cache-embedded-mtls-trust-store-password <password>
+                     The password to access the Truststore.
+--cache-remote-host <hostname>
+                     The hostname of the remote server for the remote store configuration. It
+                       replaces the 'host' attribute of 'remote-server' tag of the configuration
+                       specified via XML file (see 'cache-config-file' option.). If the option is
+                       specified, 'cache-remote-username' and 'cache-remote-password' are required
+                       as well and the related configuration in XML file should not be present.
+--cache-stack <stack>
+                     Define the default stack to use for cluster communication and node discovery.
+                       This option only takes effect if 'cache' is set to 'ispn'. Default: udp.
+                       Built-in values include: tcp, udp, kubernetes, ec2, azure, google
+
+Config:
+
+--config-keystore <config-keystore>
+                     Specifies a path to the KeyStore Configuration Source.
+--config-keystore-password <config-keystore-password>
+                     Specifies a password to the KeyStore Configuration Source.
+--config-keystore-type <config-keystore-type>
+                     Specifies a type of the KeyStore Configuration Source. Default: PKCS12.
+
+Database:
+
+--db-password <password>
+                     The password of the database user.
+--db-pool-initial-size <size>
+                     The initial size of the connection pool.
+--db-pool-max-size <size>
+                     The maximum size of the connection pool. Default: 100.
+--db-pool-min-size <size>
+                     The minimal size of the connection pool.
+--db-schema <schema> The database schema to be used.
+--db-url <jdbc-url>  The full database JDBC URL. If not provided, a default URL is set based on the
+                       selected database vendor. For instance, if using 'postgres', the default
+                       JDBC URL would be 'jdbc:postgresql://localhost/keycloak'.
+--db-url-database <dbname>
+                     Sets the database name of the default JDBC URL of the chosen vendor. If the
+                       `db-url` option is set, this option is ignored.
+--db-url-host <hostname>
+                     Sets the hostname of the default JDBC URL of the chosen vendor. If the
+                       `db-url` option is set, this option is ignored.
+--db-url-port <port> Sets the port of the default JDBC URL of the chosen vendor. If the `db-url`
+                       option is set, this option is ignored.
+--db-url-properties <properties>
+                     Sets the properties of the default JDBC URL of the chosen vendor. Make sure to
+                       set the properties accordingly to the format expected by the database
+                       vendor, as well as appending the right character at the beginning of this
+                       property value. If the `db-url` option is set, this option is ignored.
+--db-username <username>
+                     The username of the database user.
+
+Hostname v2:
+
+--hostname <hostname|URL>
+                     Address at which is the server exposed. Can be a full URL, or just a hostname.
+                       When only hostname is provided, scheme, port and context path are resolved
+                       from the request. Available only when hostname:v2 feature is enabled.
+--hostname-admin <URL>
+                     Address for accessing the administration console. Use this option if you are
+                       exposing the administration console using a reverse proxy on a different
+                       address than specified in the 'hostname' option. Available only when
+                       hostname:v2 feature is enabled.
+--hostname-backchannel-dynamic <true|false>
+                     Enables dynamic resolving of backchannel URLs, including hostname, scheme,
+                       port and context path. Set to true if your application accesses Keycloak via
+                       a private network. If set to true, 'hostname' option needs to be specified
+                       as a full URL. Default: false. Available only when hostname:v2 feature is
+                       enabled.
+--hostname-debug <true|false>
+                     Toggles the hostname debug page that is accessible at
+                       /realms/master/hostname-debug. Default: false. Available only when hostname:
+                       v2 feature is enabled.
+--hostname-strict <true|false>
+                     Disables dynamically resolving the hostname from request headers. Should
+                       always be set to true in production, unless your reverse proxy overwrites
+                       the Host header. If enabled, the 'hostname' option needs to be specified.
+                       Default: true. Available only when hostname:v2 feature is enabled.
+
+HTTP(S):
+
+--http-enabled <true|false>
+                     Enables the HTTP listener. Default: false.
+--http-host <host>   The used HTTP Host. Default: 0.0.0.0.
+--http-max-queued-requests <requests>
+                     Maximum number of queued HTTP requests. Use this to shed load in an overload
+                       situation. Excess requests will return a "503 Server not Available" response.
+--http-pool-max-threads <threads>
+                     The maximum number of threads. If this is not specified then it will be
+                       automatically sized to the greater of 4 * the number of available processors
+                       and 50. For example if there are 4 processors the max threads will be 50. If
+                       there are 48 processors it will be 192.
+--http-port <port>   The used HTTP port. Default: 8080.
+--https-certificate-file <file>
+                     The file path to a server certificate or certificate chain in PEM format.
+--https-certificate-key-file <file>
+                     The file path to a private key in PEM format.
+--https-cipher-suites <ciphers>
+                     The cipher suites to use. If none is given, a reasonable default is selected.
+--https-key-store-file <file>
+                     The key store which holds the certificate information instead of specifying
+                       separate files.
+--https-key-store-password <password>
+                     The password of the key store file. Default: password.
+--https-key-store-type <type>
+                     The type of the key store file. If not given, the type is automatically
+                       detected based on the file name. If 'fips-mode' is set to 'strict' and no
+                       value is set, it defaults to 'BCFKS'.
+--https-port <port>  The used HTTPS port. Default: 8443.
+--https-protocols <protocols>
+                     The list of protocols to explicitly enable. Default: TLSv1.3,TLSv1.2.
+--https-trust-store-file <file>
+                     DEPRECATED. The trust store which holds the certificate information of the
+                       certificates to trust. Use the System Truststore instead, see the docs for
+                       details.
+--https-trust-store-password <password>
+                     DEPRECATED. The password of the trust store file. Use the System Truststore
+                       instead, see the docs for details.
+--https-trust-store-type <type>
+                     DEPRECATED. The type of the trust store file. If not given, the type is
+                       automatically detected based on the file name. If 'fips-mode' is set to
+                       'strict' and no value is set, it defaults to 'BCFKS'. Use the System
+                       Truststore instead, see the docs for details.
+
+Management:
+
+--http-management-port <port>
+                     Port of the management interface. Default: 9000. Available only when
+                       Management interface is enabled.
+--https-management-certificate-file <file>
+                     The file path to a server certificate or certificate chain in PEM format for
+                       the management server. If not given, the value is inherited from HTTP
+                       options. Available only when Management interface is enabled.
+--https-management-certificate-key-file <file>
+                     The file path to a private key in PEM format for the management server. If not
+                       given, the value is inherited from HTTP options. Available only when
+                       Management interface is enabled.
+--https-management-key-store-file <file>
+                     The key store which holds the certificate information instead of specifying
+                       separate files for the management server. If not given, the value is
+                       inherited from HTTP options. Available only when Management interface is
+                       enabled.
+--https-management-key-store-password <password>
+                     The password of the key store file for the management server. If not given,
+                       the value is inherited from HTTP options. Default: password. Available only
+                       when Management interface is enabled.
+
+Proxy:
+
+--proxy <mode>       DEPRECATED. The proxy address forwarding mode if the server is behind a
+                       reverse proxy. Possible values are: none, edge, reencrypt, passthrough.
+                       Default: none. Use the following option instead: proxy-headers.
+--proxy-headers <headers>
+                     The proxy headers that should be accepted by the server. Misconfiguration
+                       might leave the server exposed to security vulnerabilities. Takes precedence
+                       over the deprecated proxy option. Possible values are: forwarded, xforwarded.
+
+Vault:
+
+--vault-dir <dir>    If set, secrets can be obtained by reading the content of files within the
+                       given directory.
+--vault-file <file>  Path to the keystore file.
+--vault-pass <pass>  Password for the vault keystore.
+--vault-type <type>  Specifies the type of the keystore file. Default: PKCS12.
+
+Logging:
+
+--log <handler>      Enable one or more log handlers in a comma-separated list. Possible values
+                       are: console, file, syslog, gelf (deprecated). Default: console.
+--log-console-color <true|false>
+                     Enable or disable colors when logging to console. Default: false. Available
+                       only when Console log handler is activated.
+--log-console-format <format>
+                     The format of unstructured console log entries. If the format has spaces in
+                       it, escape the value using "<format>". Default: %d{yyyy-MM-dd HH:mm:ss,SSS} %
+                       -5p [%c] (%t) %s%e%n. Available only when Console log handler is activated.
+--log-console-output <output>
+                     Set the log output to JSON or default (plain) unstructured logging. Possible
+                       values are: default, json. Default: default. Available only when Console log
+                       handler is activated.
+--log-level <category:level>
+                     The log level of the root category or a comma-separated list of individual
+                       categories and their levels. For the root category, you don't need to
+                       specify a category. Default: info.
+
+Truststore:
+
+--tls-hostname-verifier <tls-hostname-verifier>
+                     The TLS hostname verification policy for out-going HTTPS and SMTP requests.
+                       Possible values are: ANY, WILDCARD (deprecated), STRICT (deprecated),
+                       DEFAULT. Default: DEFAULT.
+--truststore-paths <truststore-paths>
+                     List of pkcs12 (p12 or pfx file extensions), PEM files, or directories
+                       containing those files that will be used as a system truststore.
+
+By default, this command tries to update the server configuration by running a
+'build' before starting the server. You can disable this behavior by using the
+'--optimized' option:
+
+      $ kc.sh start '--optimized'
+
+By doing that, the server should start faster based on any previous
+configuration you have set when manually running the 'build' command.

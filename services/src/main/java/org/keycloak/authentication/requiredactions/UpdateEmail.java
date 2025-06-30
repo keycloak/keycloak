@@ -25,6 +25,7 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.InitiatedActionSupport;
 import org.keycloak.authentication.RequiredActionContext;
@@ -124,11 +125,11 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
         AuthenticationSessionModel authenticationSession = context.getAuthenticationSession();
 
         UpdateEmailActionToken actionToken = new UpdateEmailActionToken(user.getId(), Time.currentTime() + validityInSecs,
-                oldEmail, newEmail, authenticationSession.getClient().getClientId(), logoutSessions);
+                oldEmail, newEmail, authenticationSession.getClient().getClientId(), logoutSessions, authenticationSession.getRedirectUri());
 
         String link = Urls
                 .actionTokenBuilder(uriInfo.getBaseUri(), actionToken.serialize(session, realm, uriInfo),
-                        authenticationSession.getClient().getClientId(), authenticationSession.getTabId())
+                        authenticationSession.getClient().getClientId(), authenticationSession.getTabId(), AuthenticationProcessor.getClientData(session, authenticationSession))
 
                 .build(realm.getName()).toString();
 
@@ -168,7 +169,7 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
     public static void updateEmailNow(EventBuilder event, UserModel user, UserProfile emailUpdateValidationResult) {
 
         String oldEmail = user.getEmail();
-        String newEmail = emailUpdateValidationResult.getAttributes().getFirstValue(UserModel.EMAIL);
+        String newEmail = emailUpdateValidationResult.getAttributes().getFirst(UserModel.EMAIL);
         event.event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, newEmail);
         emailUpdateValidationResult.update(false, new EventAuditingAttributeChangeListener(emailUpdateValidationResult, event));
     }
@@ -199,7 +200,7 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
     }
 
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL);
     }
 }

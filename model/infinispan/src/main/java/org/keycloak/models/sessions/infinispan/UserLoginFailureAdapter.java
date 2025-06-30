@@ -81,6 +81,25 @@ public class UserLoginFailureAdapter implements UserLoginFailureModel {
     }
 
     @Override
+    public int getNumTemporaryLockouts() {
+        return entity.getNumTemporaryLockouts();
+    }
+
+    @Override
+    public void incrementTemporaryLockouts() {
+        LoginFailuresUpdateTask task = new LoginFailuresUpdateTask() {
+
+            @Override
+            public void runUpdate(LoginFailureEntity entity) {
+                entity.setNumTemporaryLockouts(entity.getNumTemporaryLockouts() + 1);
+            }
+
+        };
+
+        update(task);
+    }
+
+    @Override
     public void clearFailures() {
         LoginFailuresUpdateTask task = new LoginFailuresUpdateTask() {
 

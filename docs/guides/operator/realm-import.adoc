@@ -4,19 +4,19 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Keycloak Realm Import"
+title="{project_name} Realm Import"
 priority=30
-summary="How to perform an automated Keycloak Realm Import using the operator">
+summary="How to perform an automated {project_name} Realm Import using the operator">
 
-== Importing a Keycloak Realm
+== Importing a {project_name} Realm
 
-Using the Keycloak Operator, you can perform a realm import for the Keycloak Deployment.
+Using the {project_name} Operator, you can perform a realm import for the Keycloak Deployment.
 
 [NOTE]
 ====
-* If a Realm with the same name already exists in Keycloak, it will not be overwritten.
+* If a Realm with the same name already exists in {project_name}, it will not be overwritten.
 
-* The Realm Import CR only supports creation of new realms and does not update or delete those. Changes to the realm performed directly on Keycloak are not synced back in the CR.
+* The Realm Import CR only supports creation of new realms and does not update or delete those. Changes to the realm performed directly on {project_name} are not synced back in the CR.
 ====
 
 === Creating a Realm Import Custom Resource
@@ -36,7 +36,7 @@ spec:
 ----
 
 This CR should be created in the same namespace as the Keycloak Deployment CR, defined in the field `keycloakCRName`.
-The `realm` field accepts a full https://www.keycloak.org/docs-api/{majorMinorVersion}/rest-api/index.html#_realmrepresentation[RealmRepresentation].
+The `realm` field accepts a full {apidocs_adminrest_link}/index.html#RealmRepresentation[RealmRepresentation].
 
 The recommended way to obtain a `RealmRepresentation` is by leveraging the export functionality <@links.server id="importExport"/>.
 

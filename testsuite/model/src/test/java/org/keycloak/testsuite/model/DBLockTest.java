@@ -50,7 +50,7 @@ public class DBLockTest extends KeycloakModelTest {
     private static final int LOCK_RECHECK_MILLIS = 10;
 
     @Before
-    public void before() throws Exception {
+    public void before() {
         inComittedTransaction(1, (session , i) -> {
             // Set timeouts for testing
             DBLockManager lockManager = new DBLockManager(session);
@@ -64,7 +64,7 @@ public class DBLockTest extends KeycloakModelTest {
     }
 
     @Test
-    public void simpleLockTest() throws Exception {
+    public void simpleLockTest() {
         inComittedTransaction(1, (session , i) -> {
             DBLockProvider dbLock = new DBLockManager(session).getDBLock();
             dbLock.waitForLock(DBLockProvider.Namespace.DATABASE);
@@ -79,7 +79,7 @@ public class DBLockTest extends KeycloakModelTest {
     }
 
     @Test
-    public void simpleNestedLockTest() throws Exception {
+    public void simpleNestedLockTest() {
         inComittedTransaction(1, (session , i) -> {
             // first session lock DATABASE
             DBLockProvider dbLock1 = new DBLockManager(session).getDBLock();
@@ -89,10 +89,10 @@ public class DBLockTest extends KeycloakModelTest {
                 KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionLC2) -> {
                     // a second session/dblock-provider can lock another namespace OFFLINE_SESSIONS
                     DBLockProvider dbLock2 = new DBLockManager(sessionLC2).getDBLock();
-                    dbLock2.waitForLock(DBLockProvider.Namespace.OFFLINE_SESSIONS);
+                    dbLock2.waitForLock(DBLockProvider.Namespace.KEYCLOAK_BOOT);
                     try {
                         // getCurrentLock is local, each provider instance has one
-                        Assert.assertEquals(DBLockProvider.Namespace.OFFLINE_SESSIONS, dbLock2.getCurrentLock());
+                        Assert.assertEquals(DBLockProvider.Namespace.KEYCLOAK_BOOT, dbLock2.getCurrentLock());
                     } finally {
                         dbLock2.releaseLock();
                     }
@@ -107,7 +107,7 @@ public class DBLockTest extends KeycloakModelTest {
     }
 
     @Test
-    public void testLockConcurrentlyGeneral() throws Exception {
+    public void testLockConcurrentlyGeneral() {
         inComittedTransaction(1, (session , i) -> {
             testLockConcurrentlyInternal(session, DBLockProvider.Namespace.DATABASE);
             return null;
@@ -115,23 +115,23 @@ public class DBLockTest extends KeycloakModelTest {
     }
 
     @Test
-    public void testLockConcurrentlyOffline() throws Exception {
+    public void testLockConcurrentlyKeycloakBoot() {
         inComittedTransaction(1, (session , i) -> {
-            testLockConcurrentlyInternal(session, DBLockProvider.Namespace.OFFLINE_SESSIONS);
+            testLockConcurrentlyInternal(session, DBLockProvider.Namespace.KEYCLOAK_BOOT);
             return null;
         });
     }
 
     @Test
-    public void testTwoLocksCurrently() throws Exception {
+    public void testTwoLocksCurrently() {
         inComittedTransaction(1, (session , i) -> {
-            testTwoLocksCurrentlyInternal(session, DBLockProvider.Namespace.DATABASE, DBLockProvider.Namespace.OFFLINE_SESSIONS);
+            testTwoLocksCurrentlyInternal(session, DBLockProvider.Namespace.DATABASE, DBLockProvider.Namespace.KEYCLOAK_BOOT);
             return null;
         });
     }
 
     @Test
-    public void testTwoNestedLocksCurrently() throws Exception {
+    public void testTwoNestedLocksCurrently() {
         inComittedTransaction(1, (session , i) -> {
             testTwoNestedLocksCurrentlyInternal(session, DBLockProvider.Namespace.KEYCLOAK_BOOT, DBLockProvider.Namespace.DATABASE);
             return null;

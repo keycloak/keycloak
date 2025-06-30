@@ -6,23 +6,23 @@ export default class CredentialsPage {
   readonly #setPasswordBtn = "confirm";
   readonly #credentialResetModal = "credential-reset-modal";
   readonly #resetModalActionsToggleBtn =
-    "[data-testid=credential-reset-modal] #actions-actions";
+    "[data-testid=credential-reset-modal] #actions";
 
   readonly #passwordField = "passwordField";
   readonly #passwordConfirmationField = "passwordConfirmationField";
   readonly #resetActions = [
-    "VERIFY_EMAIL-option",
-    "UPDATE_PROFILE-option",
-    "CONFIGURE_TOTP-option",
-    "UPDATE_PASSWORD-option",
-    "TERMS_AND_CONDITIONS-option",
+    "Verify Email",
+    "Update Profile",
+    "Configure OTP",
+    "Update Password",
+    "Terms and Conditions",
   ];
   readonly #confirmationButton = "confirm";
   readonly #editLabelBtn = "editUserLabelBtn";
   readonly #labelField = "userLabelFld";
   readonly #editConfirmationBtn = "editUserLabelAcceptBtn";
   readonly #showDataDialogBtn = "showDataBtn";
-  readonly #closeDataDialogBtn = '.pf-c-modal-box [aria-label^="Close"]';
+  readonly #closeDataDialogBtn = '.pf-v5-c-modal-box [aria-label^="Close"]';
 
   goToCredentialsTab() {
     cy.intercept("/admin/realms/*/users/*/credentials").as("load");
@@ -57,7 +57,9 @@ export default class CredentialsPage {
   }
 
   clickResetModalAction(index: number) {
-    cy.findByTestId(this.#resetActions[index]).click();
+    cy.get("[data-testid=credential-reset-modal] .pf-v5-c-menu__list")
+      .contains(this.#resetActions[index])
+      .click();
 
     return this;
   }

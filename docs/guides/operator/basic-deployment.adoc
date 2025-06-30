@@ -5,12 +5,12 @@
 <#import "/templates/profile.adoc" as profile>
 
 <@tmpl.guide
-title="Basic Keycloak deployment"
+title="Basic {project_name} deployment"
 priority=20
-summary="How to install Keycloak using the Operator">
+summary="How to install {project_name} using the Operator">
 
-== Performing a basic Keycloak deployment
-This {section} describes how to perform a basic Keycloak Deployment on
+== Performing a basic {project_name} deployment
+This {section} describes how to perform a basic {project_name} Deployment on
 <@profile.ifCommunity>
 Kubernetes or
 </@profile.ifCommunity>
@@ -18,7 +18,7 @@ OpenShift using the Operator.
 
 === Preparing for deployment
 
-Once the Keycloak Operator is installed and running in the cluster namespace, you can set up the other deployment prerequisites.
+Once the {project_name} Operator is installed and running in the cluster namespace, you can set up the other deployment prerequisites.
 
 * Database
 * Hostname
@@ -26,9 +26,9 @@ Once the Keycloak Operator is installed and running in the cluster namespace, yo
 
 ==== Database
 
-A database should be available and accessible from the cluster namespace where Keycloak is installed.
+A database should be available and accessible from the cluster namespace where {project_name} is installed.
 For a list of supported databases, see <@links.server id="db"/>.
-The Keycloak Operator does not manage the database and you need to provision it yourself. Consider verifying your cloud provider offering or using a database operator.
+The {project_name} Operator does not manage the database and you need to provision it yourself. Consider verifying your cloud provider offering or using a database operator.
 
 For development purposes, you can use an ephemeral PostgreSQL pod installation. To provision it, follow the approach below:
 
@@ -52,11 +52,13 @@ spec:
     spec:
       containers:
         - name: postgresql-db
-          image: postgres:latest
+          image: postgres:15
           volumeMounts:
             - mountPath: /data
               name: cache-volume
           env:
+            - name: POSTGRES_USER
+              value: testuser
             - name: POSTGRES_PASSWORD
               value: testpassword
             - name: PGDATA
@@ -89,7 +91,7 @@ kubectl apply -f example-postgres.yaml
 
 ==== Hostname
 
-For a production ready installation, you need a hostname that can be used to contact Keycloak.
+For a production ready installation, you need a hostname that can be used to contact {project_name}.
 See <@links.server id="hostname"/> for the available configurations.
 
 For development purposes, this {section} will use `test.keycloak.org`.
@@ -116,9 +118,9 @@ You should install it in the cluster namespace as a Secret by entering this comm
 kubectl create secret tls example-tls-secret --cert certificate.pem --key key.pem
 ----
 
-=== Deploying Keycloak
+=== Deploying {project_name}
 
-To deploy Keycloak, you create a Custom Resource (CR) based on the Keycloak Custom Resource Definition (CRD).
+To deploy {project_name}, you create a Custom Resource (CR) based on the Keycloak Custom Resource Definition (CRD).
 
 Consider storing the Database credentials in a separate Secret. Enter the following commands:
 [source,bash]
@@ -152,6 +154,8 @@ spec:
     tlsSecret: example-tls-secret
   hostname:
     hostname: test.keycloak.org
+  proxy:
+    headers: xforwarded # double check your reverse proxy sets and overwrites the X-Forwarded-* headers
 ----
 
 Apply the changes:
@@ -161,7 +165,7 @@ Apply the changes:
 kubectl apply -f example-kc.yaml
 ----
 
-To check that the Keycloak instance has been provisioned in the cluster, check the status of the created CR by entering the following command:
+To check that the {project_name} instance has been provisioned in the cluster, check the status of the created CR by entering the following command:
 
 [source,bash]
 ----
@@ -183,9 +187,9 @@ CONDITION: RollingUpdate
   MESSAGE:
 ----
 
-=== Accessing the Keycloak deployment
+=== Accessing the {project_name} deployment
 
-The Keycloak deployment is exposed through a basic Ingress and is accessible through the provided hostname.  On installations with multiple default IngressClass instances
+The {project_name} deployment is exposed through a basic Ingress and is accessible through the provided hostname.  On installations with multiple default IngressClass instances
 or when running on OpenShift 4.12+ you should provide an ingressClassName by setting `ingress` spec with `className` property to the desired class name:
 
 Edit YAML file `example-kc.yaml`:
@@ -226,20 +230,50 @@ kubectl apply -f example-kc.yaml
 ----
 You can provide an alternative ingress resource pointing to the service `<keycloak-cr-name>-service`.
 
-For debugging and development purposes, consider directly connecting to the Keycloak service using a port forward. For example, enter this command:
+For debugging and development purposes, consider directly connecting to the {project_name} service using a port forward. For example, enter this command:
 
 [source,bash]
 ----
 kubectl port-forward service/example-kc-service 8443:8443
 ----
 
+==== Configuring the reverse proxy settings matching your Ingress Controller
+
+The Operator supports configuring which of the reverse proxy headers should be accepted by server, which includes
+`Forwarded` and `X-Forwarded-*` headers.
+
+If you Ingress implementation sets and overwrites either `Forwarded` or `X-Forwarded-*` headers, you can reflect that
+in the Keycloak CR as follows:
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  ...
+  proxy:
+    headers: forwarded|xforwarded
+----
+NOTE: If the `proxy.headers` field is not specified, the Operator falls back to legacy behaviour by implicitly setting
+`proxy=passthrough` by default. This results in deprecation warnings in the server log. This fallback will be removed
+in a future release.
+
+WARNING: When using the `proxy.headers` field, make sure your Ingress properly sets and overwrites the `Forwarded` or `X-Forwarded-*` headers respectively. To set these headers, consult the documentation for your Ingress Controller. Consider configuring it for
+either reencrypt or edge TLS termination as passthrough TLS doesn't allow the Ingress to modify the requests headers.
+Misconfiguration will leave {project_name} exposed to security vulnerabilities.
+
+For more details refer to the <@links.server id="reverseproxy"/> guide.
+
+NOTE: In an edge scenario where you do not wish to set `proxy.headers`, you must set `proxy=edge` as an option in `additionalOptions` field to override the implied default of `proxy=passthrough`. This will not be necessary in subsequent major releases.
+
 === Accessing the Admin Console
 
-When deploying Keycloak, the operator generates an arbitrary initial admin `username` and `password` and stores those credentials as a basic-auth Secret object in the same namespace as the CR.
+When deploying {project_name}, the operator generates an arbitrary initial admin `username` and `password` and stores those credentials as a basic-auth Secret object in the same namespace as the CR.
 
 [WARNING]
 ====
-Change the default admin credentials and enable MFA in Keycloak before going to production.
+Change the default admin credentials and enable MFA in {project_name} before going to production.
 ====
 
 To fetch the initial admin credentials, you have to read and decode the Secret.

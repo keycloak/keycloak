@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -119,7 +120,12 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
             UserProvider userProvider = authorizationProvider.getKeycloakSession().users();
             RealmModel realm = authorizationProvider.getRealm();
 
-            config.put("users", JsonSerialization.writeValueAsString(userRep.getUsers().stream().map(id -> userProvider.getUserById(realm, id).getUsername()).collect(Collectors.toList())));
+            config.put("users", JsonSerialization.writeValueAsString(userRep.getUsers().stream()
+                    .map(id -> {
+                        UserModel user = userProvider.getUserById(realm, id);
+                        return user != null ? user.getUsername() : null;
+                    })
+                    .filter(Objects::nonNull).collect(Collectors.toList())));
         } catch (IOException cause) {
             throw new RuntimeException("Failed to export user policy [" + policy.getName() + "]", cause);
         }

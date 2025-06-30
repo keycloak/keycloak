@@ -4,6 +4,7 @@ import org.apache.commons.lang.RandomStringUtils;
 import org.junit.Before;
 import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.GroupsResource;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
@@ -43,6 +44,10 @@ public class GroupInvalidationClusterTest extends AbstractInvalidationClusterTes
 
     protected GroupsResource groups(ContainerInfo node) {
         return getAdminClientFor(node).realm(testRealmName).groups();
+    }
+
+    protected RealmResource realm(ContainerInfo node) {
+        return getAdminClientFor(node).realm(testRealmName);
     }
 
     @Override
@@ -129,7 +134,7 @@ public class GroupInvalidationClusterTest extends AbstractInvalidationClusterTes
         parentGroup = readEntityOnCurrentFailNode(parentGroup);
         group = readEntityOnCurrentFailNode(group);
 
-        assertTrue(ApiUtil.groupContainsSubgroup(parentGroup, group));
+        assertTrue(ApiUtil.groupContainsSubgroup(entityResourceOnCurrentFailNode(parentGroup), group));
         assertEquals(parentGroup.getPath() + "/" + group.getName(), group.getPath());
 
         verifyEntityUpdateDuringFailover(group, backendFailover);
@@ -149,8 +154,8 @@ public class GroupInvalidationClusterTest extends AbstractInvalidationClusterTes
 
         // Verify same child groups on both nodes
         GroupRepresentation parentGroupOnOtherNode = readEntityOnCurrentFailNode(parentGroup);
-        assertNames(parentGroup.getSubGroups(), group.getName(), "childGroup2");
-        assertNames(parentGroupOnOtherNode.getSubGroups(), group.getName(), "childGroup2");
+        assertNames(entityResourceOnCurrentFailNode(parentGroup).getSubGroups(0, 20, true), group.getName(), "childGroup2");
+        assertNames(entityResourceOnCurrentFailNode(parentGroupOnOtherNode).getSubGroups(0, 20, true), group.getName(), "childGroup2");
 
         // Remove childGroup2
         deleteEntityOnCurrentFailNode(childGroup2);

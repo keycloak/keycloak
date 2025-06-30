@@ -40,18 +40,18 @@ public final class AdminExtResource {
         return new EffectiveRoleMappingResource(session, realm, auth);
     }
 
-    @Path("/groups")
-    public GroupsResource groups() {
-        return new GroupsResource(session, realm, auth);
-    }
-
     @Path("/sessions")
     public SessionsResource sessions() {
         return new SessionsResource(session, realm, auth);
     }
 
     @Path("/realms")
-    public RealmResource realms() {
-        return new RealmResource(session);
+    public UIRealmsResource realms() {
+        return new UIRealmsResource(session, auth);
+    }
+
+    @Path("/")
+    public UIRealmResource realm() {
+        return new UIRealmResource(session, auth, adminEvent);
     }
 }

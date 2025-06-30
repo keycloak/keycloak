@@ -34,11 +34,11 @@ public class InstagramLoginPage extends AbstractSocialLoginPage {
     @FindBy(name = "password")
     private WebElement passwordInput;
 
-    @FindBy(xpath = "//button[text()='Save Info']")
+    @FindBy(xpath = "//button[text()='Save info']")
     private WebElement saveInfoBtn;
 
-    @FindBy(xpath = "//span[text()='Allow']")
-    private WebElement allowSpan;
+    @FindBy(xpath = "//div[@aria-label='Allow']")
+    private WebElement allowBtn;
 
     @Override
     public void login(String user, String password) {
@@ -54,7 +54,7 @@ public class InstagramLoginPage extends AbstractSocialLoginPage {
                 pause(3000);
             }
             catch (NoSuchElementException e) {
-                log.info("'Save Info' button not found, ignoring");
+                log.info("'Save info' button not found, ignoring");
                 pause(3000);
             }
         }
@@ -64,7 +64,7 @@ public class InstagramLoginPage extends AbstractSocialLoginPage {
 
         // Approval dialog
         try {
-            allowSpan.click();
+            allowBtn.click();
         } catch (NoSuchElementException e) {
             log.info("'Allow' button not found, ignoring");
         }

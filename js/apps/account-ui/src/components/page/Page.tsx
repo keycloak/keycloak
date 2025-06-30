@@ -15,7 +15,9 @@ export const Page = ({
     <>
       <PageSection variant="light">
         <TextContent>
-          <Title headingLevel="h1">{title}</Title>
+          <Title headingLevel="h1" data-testid="page-heading">
+            {title}
+          </Title>
           <Text component="p">{description}</Text>
         </TextContent>
       </PageSection>

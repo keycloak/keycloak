@@ -33,17 +33,20 @@ public class LoginFailureEntity extends SessionEntity {
     private String userId;
     private int failedLoginNotBefore;
     private int numFailures;
+
+    private int numTemporaryLockouts;
     private long lastFailure;
     private String lastIPFailure;
 
     public LoginFailureEntity() {
     }
 
-    private LoginFailureEntity(String realmId, String userId, int failedLoginNotBefore, int numFailures, long lastFailure, String lastIPFailure) {
+    private LoginFailureEntity(String realmId, String userId, int failedLoginNotBefore, int numFailures, int numTemporaryLockouts, long lastFailure, String lastIPFailure) {
         super(realmId);
         this.userId = userId;
         this.failedLoginNotBefore = failedLoginNotBefore;
         this.numFailures = numFailures;
+        this.numTemporaryLockouts = numTemporaryLockouts;
         this.lastFailure = lastFailure;
         this.lastIPFailure = lastIPFailure;
     }
@@ -61,7 +64,9 @@ public class LoginFailureEntity extends SessionEntity {
     }
 
     public void setFailedLoginNotBefore(int failedLoginNotBefore) {
-        this.failedLoginNotBefore = failedLoginNotBefore;
+        if(failedLoginNotBefore>this.failedLoginNotBefore) {
+            this.failedLoginNotBefore = failedLoginNotBefore;
+        }
     }
 
     public int getNumFailures() {
@@ -72,12 +77,22 @@ public class LoginFailureEntity extends SessionEntity {
         this.numFailures = numFailures;
     }
 
+    public int getNumTemporaryLockouts() {
+        return numTemporaryLockouts;
+    }
+
+    public void setNumTemporaryLockouts(int numTemporaryLockouts) {
+        this.numTemporaryLockouts = numTemporaryLockouts;
+    }
+
     public long getLastFailure() {
         return lastFailure;
     }
 
     public void setLastFailure(long lastFailure) {
-        this.lastFailure = lastFailure;
+        if(lastFailure>this.lastFailure) {
+            this.lastFailure = lastFailure;
+        }
     }
 
     public String getLastIPFailure() {
@@ -91,6 +106,7 @@ public class LoginFailureEntity extends SessionEntity {
     public void clearFailures() {
         this.failedLoginNotBefore = 0;
         this.numFailures = 0;
+        this.numTemporaryLockouts = 0;
         this.lastFailure = 0;
         this.lastIPFailure = null;
     }
@@ -133,6 +149,7 @@ public class LoginFailureEntity extends SessionEntity {
             MarshallUtil.marshallString(value.userId, output);
             output.writeInt(value.failedLoginNotBefore);
             output.writeInt(value.numFailures);
+            output.writeInt(value.numTemporaryLockouts);
             output.writeLong(value.lastFailure);
             MarshallUtil.marshallString(value.lastIPFailure, output);
         }
@@ -151,6 +168,7 @@ public class LoginFailureEntity extends SessionEntity {
             return new LoginFailureEntity(
               MarshallUtil.unmarshallString(input),
               MarshallUtil.unmarshallString(input),
+              input.readInt(),
               input.readInt(),
               input.readInt(),
               input.readLong(),

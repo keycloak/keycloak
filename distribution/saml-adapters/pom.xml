@@ -32,8 +32,6 @@
 
     <modules>
         <module>wildfly-adapter</module>
-        <module>jetty94-adapter-zip</module>
-        <module>tomcat-adapter-zip</module>
     </modules>
 
 </project>

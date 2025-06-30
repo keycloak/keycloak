@@ -31,8 +31,6 @@
     <description/>
 
     <properties>
-        <ant.jvm.args>-Dnone</ant.jvm.args>
-
         <jakarta-transformer-sources>${project.basedir}/../admin-client-jee/src</jakarta-transformer-sources>
         <jakarta-transformer-target>${project.basedir}/src</jakarta-transformer-target>
     </properties>
@@ -95,25 +93,14 @@
                         <configuration>
                             <target>
                                 <property name="plugin_classpath" refid="maven.plugin.classpath"/>
-                                <java classname="org.eclipse.transformer.jakarta.JakartaTransformer" fork="true">
-                                    <jvmarg value="${ant.jvm.args}"/>
-                                    <arg value="-o"/>
+                                <delete dir="${jakarta-transformer-target}"/>
+                                <java classname="org.eclipse.transformer.cli.JakartaTransformerCLI" fork="true">
                                     <arg value="${jakarta-transformer-sources}"/>
                                     <arg value="${jakarta-transformer-target}"/>
                                     <classpath>
                                         <pathelement path="${plugin_classpath}"/>
                                     </classpath>
                                 </java>
-                                <!-- Possibility to override classes for admin-client-jee -->
-                                <!-- Remove this comment in that case
-                                <touch>
-                                    <fileset dir="${jakarta-transformer-target}"/>
-                                </touch>
-                                <copy todir="${jakarta-transformer-target}" overwrite="false">
-                                    <fileset dir="${jakarta-transformer-target}/tmp"/>
-                                </copy>
-                                <delete dir="${jakarta-transformer-target}/tmp"/>
-                                -->
                             </target>
                         </configuration>
                     </execution>
@@ -122,35 +109,30 @@
                     <dependency>
                         <groupId>org.eclipse.transformer</groupId>
                         <artifactId>org.eclipse.transformer.cli</artifactId>
-                        <version>0.2.0</version>
+                        <version>0.5.0</version>
                     </dependency>
                     <dependency>
-                        <groupId>ant-contrib</groupId>
-                        <artifactId>ant-contrib</artifactId>
-                        <version>1.0b3</version>
-                        <exclusions>
-                            <exclusion>
-                                <groupId>ant</groupId>
-                                <artifactId>ant</artifactId>
-                            </exclusion>
-                        </exclusions>
+                        <groupId>org.apache.ant</groupId>
+                        <artifactId>ant</artifactId>
+                        <version>1.10.14</version>
                     </dependency>
                 </dependencies>
             </plugin>
+            <plugin>
+                <artifactId>maven-clean-plugin</artifactId>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <!-- delete the files created by the transformer -->
+                            <directory>src</directory>
+                            <includes>
+                                <include>**/*.java</include>
+                            </includes>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>jdk17+</id>
-            <activation>
-                <jdk>[17,)</jdk>
-            </activation>
-            <properties>
-                <!--For more information, see https://github.com/apache/ant/pull/200-->
-                <ant.jvm.args>-Djava.security.manager=allow</ant.jvm.args>
-            </properties>
-        </profile>
-    </profiles>
 
 </project>

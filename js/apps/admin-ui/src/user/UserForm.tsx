@@ -3,6 +3,14 @@ import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/r
 import { UserProfileMetadata } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
+  FormErrorText,
+  FormSubmitButton,
+  HelpItem,
+  SwitchControl,
+  TextControl,
+  UserProfileFields,
+} from "@keycloak/keycloak-ui-shared";
+import {
   ActionGroup,
   AlertVariant,
   Button,
@@ -10,24 +18,25 @@ import {
   ChipGroup,
   FormGroup,
   InputGroup,
+  InputGroupItem,
   Switch,
+  TextInput,
 } from "@patternfly/react-core";
-import { useState } from "react";
-import { Controller, UseFormReturn } from "react-hook-form";
+import { TFunction } from "i18next";
+import { useEffect, useState } from "react";
+import { Controller, FormProvider, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
+import { DefaultSwitchControl } from "../components/SwitchControl";
 import { useAlerts } from "../components/alert/Alerts";
 import { FormAccess } from "../components/form/FormAccess";
 import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
-import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { useAccess } from "../context/access/Access";
+import { useWhoAmI } from "../context/whoami/WhoAmI";
 import { emailRegexPattern } from "../util";
 import useFormatDate from "../utils/useFormatDate";
 import { FederatedUserLink } from "./FederatedUserLink";
-import { UserProfileFields } from "./UserProfileFields";
 import { UserFormFields, toUserFormFields } from "./form-state";
 import { toUsers } from "./routes/Users";
 import { RequiredActionMultiSelect } from "./user-credentials/RequiredActionMultiSelect";
@@ -44,6 +53,7 @@ export type UserFormProps = {
   bruteForce?: BruteForced;
   userProfileMetadata?: UserProfileMetadata;
   save: (user: UserFormFields) => void;
+  refresh?: () => void;
   onGroupsUpdate?: (groups: GroupRepresentation[]) => void;
 };
 
@@ -57,23 +67,23 @@ export const UserForm = ({
   },
   userProfileMetadata,
   save,
+  refresh,
   onGroupsUpdate,
 }: UserFormProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const formatDate = useFormatDate();
   const { addAlert, addError } = useAlerts();
   const { hasAccess } = useAccess();
   const isManager = hasAccess("manage-users");
   const canViewFederationLink = hasAccess("view-realm");
+  const { whoAmI } = useWhoAmI();
+  const currentLocale = whoAmI.getLocale();
 
-  const {
-    handleSubmit,
-    register,
-    watch,
-    control,
-    reset,
-    formState: { errors },
-  } = form;
+  const { handleSubmit, setValue, watch, control, reset, formState } = form;
+  const { errors } = formState;
+
   const watchUsernameInput = watch("username");
   const [selectedGroups, setSelectedGroups] = useState<GroupRepresentation[]>(
     [],
@@ -81,10 +91,17 @@ export const UserForm = ({
   const [open, setOpen] = useState(false);
   const [locked, setLocked] = useState(isLocked);
 
+  useEffect(() => {
+    setValue("requiredActions", user?.requiredActions || []);
+  }, [user, setValue]);
+
   const unLockUser = async () => {
     try {
-      await adminClient.attackDetection.del({ id: user!.id! });
+      await adminClient.users.update({ id: user!.id! }, { enabled: true });
       addAlert(t("unlockSuccess"), AlertVariant.success);
+      if (refresh) {
+        refresh();
+      }
     } catch (error) {
       addError("unlockError", error);
     }
@@ -126,256 +143,223 @@ export const UserForm = ({
       onSubmit={handleSubmit(save)}
       role="query-users"
       fineGrainedAccess={user?.access?.manage}
-      className="pf-u-mt-lg"
+      className="pf-v5-u-mt-lg"
     >
-      {open && (
-        <GroupPickerDialog
-          type="selectMany"
-          text={{
-            title: "selectGroups",
-            ok: "join",
-          }}
-          canBrowse={isManager}
-          onConfirm={(groups) => {
-            user?.id ? addGroups(groups || []) : addChips(groups || []);
-            setOpen(false);
-          }}
-          onClose={() => setOpen(false)}
-          filterGroups={selectedGroups}
-        />
-      )}
-      {user?.id && (
-        <>
-          <FormGroup label={t("id")} fieldId="kc-id" isRequired>
-            <KeycloakTextInput
-              id={user.id}
-              aria-label={t("userID")}
-              value={user.id}
-              type="text"
-              isReadOnly
-            />
-          </FormGroup>
-          <FormGroup label={t("createdAt")} fieldId="kc-created-at" isRequired>
-            <KeycloakTextInput
-              value={formatDate(new Date(user.createdTimestamp!))}
-              type="text"
-              id="kc-created-at"
-              aria-label={t("createdAt")}
-              name="createdTimestamp"
-              isReadOnly
-            />
-          </FormGroup>
-        </>
-      )}
-      <RequiredActionMultiSelect
-        control={control}
-        name="requiredActions"
-        label="requiredUserActions"
-        help="requiredUserActionsHelp"
-      />
-      {(user?.federationLink || user?.origin) && canViewFederationLink && (
-        <FormGroup
-          label={t("federationLink")}
-          labelIcon={
-            <HelpItem
-              helpText={t("federationLinkHelp")}
-              fieldLabelId="federationLink"
-            />
-          }
-        >
-          <FederatedUserLink user={user} />
-        </FormGroup>
-      )}
-      {userProfileMetadata ? (
-        <UserProfileFields
-          form={form}
-          userProfileMetadata={userProfileMetadata}
-          hideReadOnly={!user}
-        />
-      ) : (
-        <>
-          {!realm.registrationEmailAsUsername && (
+      <FormProvider {...form}>
+        {open && (
+          <GroupPickerDialog
+            type="selectMany"
+            text={{
+              title: "selectGroups",
+              ok: "join",
+            }}
+            canBrowse={isManager}
+            onConfirm={(groups) => {
+              user?.id ? addGroups(groups || []) : addChips(groups || []);
+              setOpen(false);
+            }}
+            onClose={() => setOpen(false)}
+            filterGroups={selectedGroups}
+          />
+        )}
+        {user?.id && (
+          <>
+            <FormGroup label={t("id")} fieldId="kc-id" isRequired>
+              <TextInput
+                id={user.id}
+                aria-label={t("userID")}
+                value={user.id}
+                readOnly
+              />
+            </FormGroup>
             <FormGroup
-              label={t("username")}
-              fieldId="kc-username"
+              label={t("createdAt")}
+              fieldId="kc-created-at"
               isRequired
-              validated={errors.username ? "error" : "default"}
-              helperTextInvalid={t("required")}
             >
-              <KeycloakTextInput
-                id="kc-username"
-                isReadOnly={
+              <TextInput
+                value={formatDate(new Date(user.createdTimestamp!))}
+                id="kc-created-at"
+                readOnly
+              />
+            </FormGroup>
+          </>
+        )}
+        <RequiredActionMultiSelect
+          name="requiredActions"
+          label="requiredUserActions"
+          help="requiredUserActionsHelp"
+        />
+        {(user?.federationLink || user?.origin) && canViewFederationLink && (
+          <FormGroup
+            label={t("federationLink")}
+            labelIcon={
+              <HelpItem
+                helpText={t("federationLinkHelp")}
+                fieldLabelId="federationLink"
+              />
+            }
+          >
+            <FederatedUserLink user={user} />
+          </FormGroup>
+        )}
+        {userProfileMetadata ? (
+          <>
+            <DefaultSwitchControl
+              name="emailVerified"
+              label={t("emailVerified")}
+              labelIcon={t("emailVerifiedHelp")}
+            />
+            <UserProfileFields
+              form={form}
+              userProfileMetadata={userProfileMetadata}
+              hideReadOnly={!user}
+              supportedLocales={realm.supportedLocales || []}
+              currentLocale={currentLocale}
+              t={
+                ((key: unknown, params) =>
+                  t(key as string, params as any)) as TFunction
+              }
+            />
+          </>
+        ) : (
+          <>
+            {!realm.registrationEmailAsUsername && (
+              <TextControl
+                name="username"
+                label={t("username")}
+                readOnly={
                   !!user?.id &&
                   !realm.editUsernameAllowed &&
                   realm.editUsernameAllowed !== undefined
                 }
-                {...register("username")}
+                rules={{
+                  required: t("required"),
+                }}
               />
-            </FormGroup>
-          )}
-          <FormGroup
-            label={t("email")}
-            fieldId="kc-email"
-            validated={errors.email ? "error" : "default"}
-            helperTextInvalid={t("emailInvalid")}
-          >
-            <KeycloakTextInput
+            )}
+            <TextControl
+              name="email"
+              label={t("email")}
               type="email"
-              id="kc-email"
-              data-testid="email-input"
-              {...register("email", {
-                pattern: emailRegexPattern,
-              })}
+              rules={{
+                pattern: {
+                  value: emailRegexPattern,
+                  message: t("emailInvalid"),
+                },
+              }}
             />
-          </FormGroup>
+            <SwitchControl
+              name="emailVerified"
+              label={t("emailVerified")}
+              labelIcon={t("emailVerifiedHelp")}
+              labelOn={t("yes")}
+              labelOff={t("no")}
+            />
+            <TextControl name="firstName" label={t("firstName")} />
+            <TextControl name="lastName" label={t("lastName")} />
+          </>
+        )}
+        {isBruteForceProtected && (
           <FormGroup
-            label={t("emailVerified")}
-            fieldId="kc-email-verified"
-            helperTextInvalid={t("required")}
+            label={t("temporaryLocked")}
+            fieldId="temporaryLocked"
             labelIcon={
               <HelpItem
-                helpText={t("emailVerifiedHelp")}
-                fieldLabelId="emailVerified"
+                helpText={t("temporaryLockedHelp")}
+                fieldLabelId="temporaryLocked"
               />
             }
           >
+            <Switch
+              data-testid="user-locked-switch"
+              id="temporaryLocked"
+              onChange={(_event, value) => {
+                unLockUser();
+                setLocked(value);
+              }}
+              isChecked={locked}
+              isDisabled={!locked}
+              label={t("on")}
+              labelOff={t("off")}
+            />
+          </FormGroup>
+        )}
+        {!user?.id && (
+          <FormGroup
+            label={t("groups")}
+            fieldId="kc-groups"
+            labelIcon={
+              <HelpItem helpText={t("groupsHelp")} fieldLabelId="groups" />
+            }
+          >
             <Controller
-              name="emailVerified"
-              defaultValue={false}
+              name="groups"
+              defaultValue={[]}
               control={control}
-              render={({ field }) => (
-                <Switch
-                  data-testid="email-verified-switch"
-                  id="kc-user-email-verified"
-                  onChange={(value) => field.onChange(value)}
-                  isChecked={field.value}
-                  label={t("yes")}
-                  labelOff={t("no")}
-                />
+              render={() => (
+                <InputGroup>
+                  <InputGroupItem>
+                    <ChipGroup categoryName={" "}>
+                      {selectedGroups.map((currentChip) => (
+                        <Chip
+                          key={currentChip.id}
+                          onClick={() => deleteItem(currentChip.name!)}
+                        >
+                          {currentChip.path}
+                        </Chip>
+                      ))}
+                    </ChipGroup>
+                  </InputGroupItem>
+                  <InputGroupItem>
+                    <Button
+                      id="kc-join-groups-button"
+                      onClick={toggleModal}
+                      variant="secondary"
+                      data-testid="join-groups-button"
+                    >
+                      {t("joinGroups")}
+                    </Button>
+                  </InputGroupItem>
+                </InputGroup>
               )}
             />
-          </FormGroup>
-          <FormGroup
-            label={t("firstName")}
-            fieldId="kc-firstName"
-            validated={errors.firstName ? "error" : "default"}
-            helperTextInvalid={t("required")}
-          >
-            <KeycloakTextInput
-              data-testid="firstName-input"
-              id="kc-firstName"
-              {...register("firstName")}
-            />
-          </FormGroup>
-          <FormGroup
-            label={t("lastName")}
-            fieldId="kc-lastName"
-            validated={errors.lastName ? "error" : "default"}
-          >
-            <KeycloakTextInput
-              data-testid="lastName-input"
-              id="kc-lastName"
-              aria-label={t("lastName")}
-              {...register("lastName")}
-            />
-          </FormGroup>
-        </>
-      )}
-      {isBruteForceProtected && (
-        <FormGroup
-          label={t("temporaryLocked")}
-          fieldId="temporaryLocked"
-          labelIcon={
-            <HelpItem
-              helpText={t("temporaryLockedHelp")}
-              fieldLabelId="temporaryLocked"
-            />
-          }
-        >
-          <Switch
-            data-testid="user-locked-switch"
-            id="temporaryLocked"
-            onChange={(value) => {
-              unLockUser();
-              setLocked(value);
-            }}
-            isChecked={locked}
-            isDisabled={!locked}
-            label={t("on")}
-            labelOff={t("off")}
-          />
-        </FormGroup>
-      )}
-      {!user?.id && (
-        <FormGroup
-          label={t("groups")}
-          fieldId="kc-groups"
-          validated={errors.requiredActions ? "error" : "default"}
-          helperTextInvalid={t("required")}
-          labelIcon={<HelpItem helpText={t("groups")} fieldLabelId="groups" />}
-        >
-          <Controller
-            name="groups"
-            defaultValue={[]}
-            control={control}
-            render={() => (
-              <InputGroup>
-                <ChipGroup categoryName={" "}>
-                  {selectedGroups.map((currentChip) => (
-                    <Chip
-                      key={currentChip.id}
-                      onClick={() => deleteItem(currentChip.name!)}
-                    >
-                      {currentChip.path}
-                    </Chip>
-                  ))}
-                </ChipGroup>
-                <Button
-                  id="kc-join-groups-button"
-                  onClick={toggleModal}
-                  variant="secondary"
-                  data-testid="join-groups-button"
-                >
-                  {t("joinGroups")}
-                </Button>
-              </InputGroup>
+            {errors.requiredActions && (
+              <FormErrorText message={t("required")} />
             )}
-          />
-        </FormGroup>
-      )}
+          </FormGroup>
+        )}
 
-      <ActionGroup>
-        <Button
-          data-testid={!user?.id ? "create-user" : "save-user"}
-          isDisabled={
-            !user?.id &&
-            !watchUsernameInput &&
-            !realm.registrationEmailAsUsername
-          }
-          variant="primary"
-          type="submit"
-        >
-          {user?.id ? t("save") : t("create")}
-        </Button>
-        <Button
-          data-testid="cancel-create-user"
-          variant="link"
-          onClick={
-            user?.id
-              ? () => reset(toUserFormFields(user, !!userProfileMetadata))
-              : undefined
-          }
-          component={
-            !user?.id
-              ? (props) => (
-                  <Link {...props} to={toUsers({ realm: realm.id! })} />
-                )
-              : undefined
-          }
-        >
-          {user?.id ? t("revert") : t("cancel")}
-        </Button>
-      </ActionGroup>
+        <ActionGroup>
+          <FormSubmitButton
+            formState={formState}
+            data-testid={!user?.id ? "create-user" : "save-user"}
+            isDisabled={
+              !user?.id &&
+              !watchUsernameInput &&
+              realm.registrationEmailAsUsername === false
+            }
+            allowNonDirty
+            allowInvalid
+          >
+            {user?.id ? t("save") : t("create")}
+          </FormSubmitButton>
+          <Button
+            data-testid="cancel-create-user"
+            variant="link"
+            onClick={user?.id ? () => reset(toUserFormFields(user)) : undefined}
+            component={
+              !user?.id
+                ? (props) => (
+                    <Link {...props} to={toUsers({ realm: realm.realm! })} />
+                  )
+                : undefined
+            }
+          >
+            {user?.id ? t("revert") : t("cancel")}
+          </Button>
+        </ActionGroup>
+      </FormProvider>
     </FormAccess>
   );
 };

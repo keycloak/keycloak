@@ -15,7 +15,6 @@
 
     <modules>
         <module>undertow-adapter-spi-jakarta</module>
-        <module>undertow-adapter-jakarta</module>
         <module>undertow-adapter-saml-jakarta</module>
     </modules>
 

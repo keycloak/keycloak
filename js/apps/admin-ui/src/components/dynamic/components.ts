@@ -1,4 +1,5 @@
 import type { ConfigPropertyRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigInfoRepresentation";
+import { FunctionComponent } from "react";
 
 import { BooleanComponent } from "./BooleanComponent";
 import { ClientSelectComponent } from "./ClientSelectComponent";
@@ -13,6 +14,8 @@ import { RoleComponent } from "./RoleComponent";
 import { ScriptComponent } from "./ScriptComponent";
 import { StringComponent } from "./StringComponent";
 import { TextComponent } from "./TextComponent";
+import { UrlComponent } from "./UrlComponent";
+import { UserProfileAttributeListComponent } from "./UserProfileAttributeListComponent";
 
 export type ComponentProps = Omit<ConfigPropertyRepresentation, "type"> & {
   isDisabled?: boolean;
@@ -31,15 +34,17 @@ const ComponentTypes = [
   "Group",
   "MultivaluedList",
   "ClientList",
+  "UserProfileAttributeList",
   "MultivaluedString",
   "File",
   "Password",
+  "Url",
 ] as const;
 
 export type Components = (typeof ComponentTypes)[number];
 
 export const COMPONENTS: {
-  [index in Components]: (props: ComponentProps) => JSX.Element;
+  [index in Components]: FunctionComponent<ComponentProps>;
 } = {
   String: StringComponent,
   Text: TextComponent,
@@ -50,10 +55,12 @@ export const COMPONENTS: {
   Map: MapComponent,
   Group: GroupComponent,
   ClientList: ClientSelectComponent,
+  UserProfileAttributeList: UserProfileAttributeListComponent,
   MultivaluedList: MultiValuedListComponent,
   MultivaluedString: MultiValuedStringComponent,
   File: FileComponent,
   Password: PasswordComponent,
+  Url: UrlComponent,
 } as const;
 
 export const isValidComponentType = (value: string): value is Components =>

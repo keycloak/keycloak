@@ -4,16 +4,17 @@ import {
   ButtonVariant,
   Dropdown,
   DropdownItem,
-  KebabToggle,
+  DropdownList,
+  MenuToggle,
   PageSection,
   ToolbarItem,
 } from "@patternfly/react-core";
+import { EllipsisVIcon } from "@patternfly/react-icons";
 import { cellWidth } from "@patternfly/react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import type { Row } from "../clients/scopes/ClientScopes";
 import { getProtocolName } from "../clients/utils";
 import { useAlerts } from "../components/alert/Alerts";
@@ -54,6 +55,8 @@ type TypeSelectorProps = ClientScopeDefaultOptionalType & {
 };
 
 const TypeSelector = (scope: TypeSelectorProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
@@ -64,7 +67,7 @@ const TypeSelector = (scope: TypeSelectorProps) => {
       all
       onSelect={async (value) => {
         try {
-          await changeScope(scope, value as AllClientScopeType);
+          await changeScope(adminClient, scope, value as AllClientScopeType);
           addAlert(t("clientScopeSuccess"), AlertVariant.success);
           scope.refresh();
         } catch (error) {
@@ -88,6 +91,8 @@ const ClientScopeDetailLink = ({
 };
 
 export default function ClientScopesSection() {
+  const { adminClient } = useAdminClient();
+
   const { realm } = useRealm();
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
@@ -121,8 +126,8 @@ export default function ClientScopesSection() {
       searchType === "name"
         ? nameFilter(search)
         : searchType === "type"
-        ? typeFilter(searchTypeType)
-        : protocolFilter(searchProtocol);
+          ? typeFilter(searchTypeType)
+          : protocolFilter(searchProtocol);
 
     const transformed = clientScopes
       .map((scope) => {
@@ -133,10 +138,10 @@ export default function ClientScopesSection() {
           )
             ? ClientScope.default
             : optionalScopes.find(
-                (optionalScope) => optionalScope.name === scope.name,
-              )
-            ? ClientScope.optional
-            : AllClientScopes.none,
+                  (optionalScope) => optionalScope.name === scope.name,
+                )
+              ? ClientScope.optional
+              : AllClientScopes.none,
         };
         return row;
       })
@@ -157,22 +162,28 @@ export default function ClientScopesSection() {
     continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
-      try {
-        for (const scope of selectedScopes) {
-          try {
-            await removeScope(scope);
-          } catch (error: any) {
-            console.warn(
-              "could not remove scope",
-              error.response?.data?.errorMessage || error,
-            );
+      const clientScopes = await adminClient.clientScopes.find();
+      const clientScopeLength = Object.keys(clientScopes).length;
+      if (clientScopeLength - selectedScopes.length > 0) {
+        try {
+          for (const scope of selectedScopes) {
+            try {
+              await removeScope(adminClient, scope);
+            } catch (error: any) {
+              console.warn(
+                "could not remove scope",
+                error.response?.data?.errorMessage || error,
+              );
+            }
+            await adminClient.clientScopes.del({ id: scope.id! });
           }
-          await adminClient.clientScopes.del({ id: scope.id! });
+          addAlert(t("deletedSuccessClientScope"), AlertVariant.success);
+          refresh();
+        } catch (error) {
+          addError("deleteErrorClientScope", error);
         }
-        addAlert(t("deletedSuccessClientScope"), AlertVariant.success);
-        refresh();
-      } catch (error) {
-        addError("deleteErrorClientScope", error);
+      } else {
+        addError(t("notAllowedToDeleteAllClientScopes"), "error");
       }
     },
   });
@@ -185,7 +196,7 @@ export default function ClientScopesSection() {
         subKey="clientScopeExplain"
         helpUrl={helpUrls.clientScopesUrl}
       />
-      <PageSection variant="light" className="pf-u-p-0">
+      <PageSection variant="light" className="pf-v5-u-p-0">
         <KeycloakDataTable
           key={key}
           loader={loader}
@@ -245,13 +256,24 @@ export default function ClientScopesSection() {
               </ToolbarItem>
               <ToolbarItem>
                 <Dropdown
-                  toggle={<KebabToggle onToggle={setKebabOpen} />}
+                  shouldFocusToggleOnSelect
+                  onOpenChange={(isOpen) => setKebabOpen(isOpen)}
+                  toggle={(ref) => (
+                    <MenuToggle
+                      data-testid="kebab"
+                      aria-label="Kebab toggle"
+                      ref={ref}
+                      onClick={() => setKebabOpen(!kebabOpen)}
+                      variant="plain"
+                    >
+                      <EllipsisVIcon />
+                    </MenuToggle>
+                  )}
                   isOpen={kebabOpen}
-                  isPlain
-                  dropdownItems={[
+                >
+                  <DropdownList>
                     <DropdownItem
-                      key="action"
-                      component="button"
+                      data-testid="delete"
                       isDisabled={selectedScopes.length === 0}
                       onClick={() => {
                         toggleDeleteDialog();
@@ -259,9 +281,9 @@ export default function ClientScopesSection() {
                       }}
                     >
                       {t("delete")}
-                    </DropdownItem>,
-                  ]}
-                />
+                    </DropdownItem>
+                  </DropdownList>
+                </Dropdown>
               </ToolbarItem>
             </>
           }

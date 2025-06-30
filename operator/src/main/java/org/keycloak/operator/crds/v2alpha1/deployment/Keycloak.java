@@ -22,7 +22,7 @@ import io.fabric8.kubernetes.model.annotation.Group;
 import io.fabric8.kubernetes.model.annotation.Plural;
 import io.fabric8.kubernetes.model.annotation.ShortNames;
 import io.fabric8.kubernetes.model.annotation.Version;
-import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadata;
+import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
 import io.sundr.builder.annotations.Buildable;
 import io.sundr.builder.annotations.BuildableReference;
 import org.keycloak.operator.Constants;

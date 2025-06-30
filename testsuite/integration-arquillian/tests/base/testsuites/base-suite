@@ -1,6 +1,6 @@
 account,4
 actions,1
-adapter,2
+adapter,IGNORED
 admin,1
 authz,3
 broker,2
@@ -19,7 +19,6 @@ feature,4
 federation,5
 forms,5
 i18n,5
-jaas,5
 javascript,5
 keys,4
 login,4
@@ -27,12 +26,15 @@ metrics,4
 migration,4
 model,6
 oauth,6
+oid4vc,6
 oidc,6
+organization,3
 policy,6
 providers,4
 runonserver,6
 saml,6
 script,6
+securityprofile,4
 session,6
 sessionlimits,6
 ssl,6
@@ -43,6 +45,6 @@ user,4
 util,4
 validation,6
 vault,4
+webauthn,IGNORED
 welcomepage,6
 x509,4
-zerodowntime,1

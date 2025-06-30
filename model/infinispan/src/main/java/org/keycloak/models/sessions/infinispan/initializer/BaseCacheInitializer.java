@@ -17,17 +17,13 @@
 
 package org.keycloak.models.sessions.infinispan.initializer;
 
-import java.io.Serializable;
-
 import org.infinispan.Cache;
 import org.infinispan.context.Flag;
 import org.infinispan.lifecycle.ComponentStatus;
-import org.infinispan.remoting.transport.Transport;
 import org.jboss.logging.Logger;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.KeycloakSessionTask;
-import org.keycloak.models.utils.KeycloakModelUtils;
+
+import java.io.Serializable;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -40,27 +36,19 @@ public abstract class BaseCacheInitializer extends CacheInitializer {
 
     protected final KeycloakSessionFactory sessionFactory;
     protected final Cache<String, Serializable> workCache;
-    protected final SessionLoader sessionLoader;
-    protected final int sessionsPerSegment;
+    protected final SessionLoader<SessionLoader.LoaderContext, SessionLoader.WorkerContext, SessionLoader.WorkerResult> sessionLoader;
     protected final String stateKey;
 
-    public BaseCacheInitializer(KeycloakSessionFactory sessionFactory, Cache<String, Serializable> workCache, SessionLoader sessionLoader, String stateKeySuffix, int sessionsPerSegment) {
+    public BaseCacheInitializer(KeycloakSessionFactory sessionFactory, Cache<String, Serializable> workCache, SessionLoader<SessionLoader.LoaderContext, SessionLoader.WorkerContext, SessionLoader.WorkerResult> sessionLoader, String stateKeySuffix) {
         this.sessionFactory = sessionFactory;
         this.workCache = workCache;
         this.sessionLoader = sessionLoader;
-        this.sessionsPerSegment = sessionsPerSegment;
         this.stateKey = STATE_KEY_PREFIX + stateKeySuffix;
     }
 
 
     @Override
     protected boolean isFinished() {
-        // Check if we should skipLoadingSessions. This can happen if someone else already did the task (For example in cross-dc environment, it was done by different DC)
-        boolean isFinishedAlready = this.sessionLoader.isFinished(this);
-        if (isFinishedAlready) {
-            return true;
-        }
-
         InitializerState state = getStateFromCache();
         return state != null && state.isFinished();
     }
@@ -68,8 +56,7 @@ public abstract class BaseCacheInitializer extends CacheInitializer {
 
     @Override
     protected boolean isCoordinator() {
-        Transport transport = workCache.getCacheManager().getTransport();
-        return transport == null || transport.isCoordinator();
+        return workCache.getCacheManager().isCoordinator();
     }
 
     @Override
@@ -86,21 +73,15 @@ public abstract class BaseCacheInitializer extends CacheInitializer {
     }
 
 
-    protected void saveStateToCache(final InitializerState state) {
+    protected void saveStateToCache(InitializerState state) {
 
         // 3 attempts to send the message (it may fail if some node fails in the meantime)
-        retry(3, new Runnable() {
-
-            @Override
-            public void run() {
-
-                // Save this synchronously to ensure all nodes read correct state
-                // We ignore cacheStore for now, so that in Cross-DC scenario (with RemoteStore enabled) is the remoteStore ignored.
-                BaseCacheInitializer.this.workCache.getAdvancedCache().
-                        withFlags(Flag.IGNORE_RETURN_VALUES, Flag.FORCE_SYNCHRONOUS, Flag.SKIP_CACHE_STORE, Flag.SKIP_CACHE_LOAD)
-                        .put(stateKey, state);
-            }
-
+        retry(3, () -> {
+            // Save this synchronously to ensure all nodes read correct state
+            // We ignore cacheStore for now, so that in Cross-DC scenario (with RemoteStore enabled) is the remoteStore ignored.
+            BaseCacheInitializer.this.workCache.getAdvancedCache().
+                    withFlags(Flag.IGNORE_RETURN_VALUES, Flag.FORCE_SYNCHRONOUS, Flag.SKIP_CACHE_STORE, Flag.SKIP_CACHE_LOAD)
+                    .put(stateKey, state);
         });
     }
 
@@ -125,8 +106,4 @@ public abstract class BaseCacheInitializer extends CacheInitializer {
         }
     }
 
-
-    public Cache<String, Serializable> getWorkCache() {
-        return workCache;
-    }
 }

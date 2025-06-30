@@ -151,6 +151,11 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
         return isMandatoryInLdap? Collections.singleton(getLdapAttributeName()) : null;
     }
 
+    @Override
+    public Set<String> getUserAttributes() {
+        return Collections.singleton(getUserModelAttribute());
+    }
+
     // throw ModelDuplicateException if there is different user in model with same email
     protected void checkDuplicateEmail(String userModelAttrName, String email, RealmModel realm, KeycloakSession session, UserModel user) {
         if (email == null || realm.isDuplicateEmailsAllowed()) return;

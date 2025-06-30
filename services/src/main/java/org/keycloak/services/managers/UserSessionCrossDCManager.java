@@ -17,18 +17,14 @@
 
 package org.keycloak.services.managers;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-
 import org.jboss.logging.Logger;
-import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.ImpersonationSessionNote;
 
 import static org.keycloak.services.managers.AuthenticationManager.authenticateIdentityCookie;
-import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -49,6 +45,9 @@ public class UserSessionCrossDCManager {
         return kcSession.sessions().getUserSessionWithPredicate(realm, id, offline, userSession -> userSession.getAuthenticatedClientSessionByClient(clientUUID) != null);
     }
 
+    public UserSessionModel getUserSessionWithImpersonatorClient(RealmModel realm, String id, boolean offline, String clientUUID) {
+       return kcSession.sessions().getUserSessionWithPredicate(realm, id, offline, userSession -> clientUUID.equals(userSession.getNote(ImpersonationSessionNote.IMPERSONATOR_CLIENT.toString())));
+    }
 
     // get userSession if it has "authenticatedClientSession" of specified client attached to it. Otherwise download it from remoteCache
     // TODO Probably remove this method once AuthenticatedClientSession.getAction is removed and information is moved to OAuth code JWT instead
@@ -65,35 +64,36 @@ public class UserSessionCrossDCManager {
 
     // Just check if userSession also exists on remoteCache. It can happen that logout happened on 2nd DC and userSession is already removed on remoteCache and this DC wasn't yet notified
     public UserSessionModel getUserSessionIfExistsRemotely(AuthenticationSessionManager asm, RealmModel realm) {
-        List<String> sessionCookies = asm.getAuthSessionCookies(realm);
+        String oldEncodedId = asm.getAuthSessionCookies(realm);
 
-        if (sessionCookies.isEmpty()) {
+        if (oldEncodedId == null) {
             // ideally, we should not rely on auth session id to retrieve user sessions
             // in case the auth session was removed, we fall back to the identity cookie
             // we are here doing the user session lookup twice, however the second lookup is going to make sure the
             // session exists in remote caches
-            AuthenticationManager.AuthResult authResult = lockUserSessionsForModification(kcSession, () -> authenticateIdentityCookie(kcSession, realm, true));
+            AuthenticationManager.AuthResult authResult = authenticateIdentityCookie(kcSession, realm, true);
 
             if (authResult != null && authResult.getSession() != null) {
-                sessionCookies = Collections.singletonList(authResult.getSession().getId());
+                oldEncodedId = authResult.getSession().getId();
+            } else {
+                return null;
             }
         }
 
-        return sessionCookies.stream().map(oldEncodedId -> {
-            AuthSessionId authSessionId = asm.decodeAuthSessionId(oldEncodedId);
-            String sessionId = authSessionId.getDecodedId();
+        AuthSessionId authSessionId = asm.decodeAuthSessionId(oldEncodedId);
+        String sessionId = authSessionId.getDecodedId();
 
-            // This will remove userSession "locally" if it doesn't exist on remoteCache
-            lockUserSessionsForModification(kcSession, () -> kcSession.sessions().getUserSessionWithPredicate(realm, sessionId, false, (UserSessionModel userSession2) -> userSession2 == null));
+        // TODO: remove this code once InfinispanUserSessionProvider is removed or no longer using any remote caches, as other implementations don't need this call.
+        // This will remove userSession "locally" if it doesn't exist on remoteCache
+        kcSession.sessions().getUserSessionWithPredicate(realm, sessionId, false, (UserSessionModel userSession2) -> userSession2 == null);
 
-            UserSessionModel userSession = lockUserSessionsForModification(kcSession, () -> kcSession.sessions().getUserSession(realm, sessionId));
+        UserSessionModel userSession = kcSession.sessions().getUserSession(realm, sessionId);
 
-            if (userSession != null) {
-                asm.reencodeAuthSessionCookie(oldEncodedId, authSessionId, realm);
-                return userSession;
-            }
-
+        if (userSession != null) {
+            asm.reencodeAuthSessionCookie(oldEncodedId, authSessionId, realm);
+            return userSession;
+        } else {
             return null;
-        }).filter(userSession -> Objects.nonNull(userSession)).findFirst().orElse(null);
+        }
     }
 }

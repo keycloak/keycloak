@@ -32,10 +32,13 @@ import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.events.Errors;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -52,7 +55,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.HashSet;
 import java.util.Set;
@@ -70,7 +75,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import static org.keycloak.services.clientregistration.ErrorCodes.INVALID_CLIENT_METADATA;
 import static org.keycloak.services.clientregistration.ErrorCodes.INVALID_REDIRECT_URI;
 import static org.keycloak.utils.MediaType.APPLICATION_JSON;
@@ -243,6 +247,34 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
+    public void updateClientScopes() throws ClientRegistrationException {
+        authManageClients();
+        ClientRepresentation client = buildClient();
+        ArrayList<String> optionalClientScopes = new ArrayList<>(List.of("address"));
+        client.setOptionalClientScopes(optionalClientScopes);
+        ClientRepresentation createdClient = registerClient(client);
+        Set<String> requestedClientScopes = new HashSet<>(optionalClientScopes);
+        Set<String> registeredClientScopes = new HashSet<>(createdClient.getOptionalClientScopes());
+        assertEquals(requestedClientScopes, registeredClientScopes);
+        assertTrue(CollectionUtil.collectionEquals(createdClient.getDefaultClientScopes(), Set.of("basic")));
+
+        authManageClients();
+        ClientRepresentation obtainedClient = reg.get(CLIENT_ID);
+        registeredClientScopes = new HashSet<>(obtainedClient.getOptionalClientScopes());
+        assertEquals(requestedClientScopes, registeredClientScopes);
+        assertTrue(CollectionUtil.collectionEquals(obtainedClient.getDefaultClientScopes(), Set.of("basic")));
+
+
+        optionalClientScopes = new ArrayList<>(List.of("address", "phone"));
+        obtainedClient.setOptionalClientScopes(optionalClientScopes);
+        ClientRepresentation updatedClient = reg.update(obtainedClient);
+        requestedClientScopes = new HashSet<>(optionalClientScopes);
+        registeredClientScopes = new HashSet<>(updatedClient.getOptionalClientScopes());
+        assertEquals(requestedClientScopes, registeredClientScopes);
+        assertTrue(CollectionUtil.collectionEquals(updatedClient.getDefaultClientScopes(), Set.of("basic")));
+    }
+
+    @Test
     public void testInvalidUrlClientValidation() {
         testClientUriValidation("Root URL is not a valid URL",
                 "Base URL is not a valid URL",
@@ -271,6 +303,48 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
                 "Redirect URIs must not contain an URI fragment",
                 "http://redhat.com/abcd#someFragment"
         );
+    }
+
+    @Test
+    public void testSamlSpecificUrls() throws ClientRegistrationException {
+        testSamlSpecificUrls(true, "javascript:alert('TEST')", "data:text/html;base64,PHNjcmlwdD5jb25maXJtKGRvY3VtZW50LmRvbWFpbik7PC9zY3JpcHQ+");
+        testSamlSpecificUrls(false, "javascript:alert('TEST')", "data:text/html;base64,PHNjcmlwdD5jb25maXJtKGRvY3VtZW50LmRvbWFpbik7PC9zY3JpcHQ+");
+    }
+
+    private void testSamlSpecificUrls(boolean register, String... testUrls) throws ClientRegistrationException {
+        ClientRepresentation rep = buildClient();
+        rep.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
+        if (register) {
+            authCreateClients();
+        } else {
+            authManageClients();
+            registerClient(rep);
+            rep = reg.get(CLIENT_ID);
+        }
+        rep.setAttributes(new HashMap<>());
+
+        Map<String, String> attrs = Map.of(
+                    SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, "Assertion Consumer Service POST Binding URL",
+                    SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE, "Assertion Consumer Service Redirect Binding URL",
+                    SamlProtocol.SAML_ASSERTION_CONSUMER_URL_ARTIFACT_ATTRIBUTE, "Artifact Binding URL",
+                    SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, "Logout Service POST Binding URL",
+                    SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_ARTIFACT_ATTRIBUTE, "Logout Service ARTIFACT Binding URL",
+                    SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, "Logout Service Redirect Binding URL",
+                    SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_SOAP_ATTRIBUTE, "Logout Service SOAP Binding URL",
+                    SamlProtocol.SAML_ARTIFACT_RESOLUTION_SERVICE_URL_ATTRIBUTE, "Artifact Resolution Service");
+
+        for (String testUrl : testUrls) {
+            // admin url
+            rep.setAdminUrl(testUrl);
+            registerOrUpdateClientExpectingValidationErrors(rep, register, false, "Master SAML Processing URL uses an illegal scheme");
+            rep.setAdminUrl(null);
+            // attributes
+            for (Map.Entry<String, String> entry : attrs.entrySet()) {
+                rep.getAttributes().put(entry.getKey(), testUrl);
+                registerOrUpdateClientExpectingValidationErrors(rep, register, false, entry.getValue() + " uses an illegal scheme");
+                rep.getAttributes().remove(entry.getKey());
+            }
+        }
     }
 
     @Test
@@ -656,7 +730,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
         Set<String> requestedClientScopes = new HashSet<>(optionalClientScopes);
         Set<String> registeredClientScopes = new HashSet<>(client.getOptionalClientScopes());
         assertTrue(requestedClientScopes.equals(registeredClientScopes));
-        assertTrue(client.getDefaultClientScopes().isEmpty());
+        assertTrue(CollectionUtil.collectionEquals(client.getDefaultClientScopes(), Set.of("basic")));
     }
 
     @Test

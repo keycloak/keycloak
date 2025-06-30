@@ -18,6 +18,8 @@ package org.keycloak.crypto.elytron;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.security.interfaces.ECPrivateKey;
+import java.security.interfaces.ECPublicKey;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.crypto.ECDSACryptoProvider;
@@ -51,7 +53,7 @@ public class ElytronECDSACryptoProvider implements ECDSACryptoProvider {
         seq.endSequence();
 
         return seq.getEncoded();
-        
+
     }
 
     @Override
@@ -60,8 +62,8 @@ public class ElytronECDSACryptoProvider implements ECDSACryptoProvider {
 
         DERDecoder der = new DERDecoder(derEncodedSignatureValue);
         der.startSequence();
-        byte[] r = convertToBytes(der.decodeInteger(),len);
-        byte[] s = convertToBytes(der.decodeInteger(),len);
+        byte[] r = convertToBytes(der.decodeInteger(), len);
+        byte[] s = convertToBytes(der.decodeInteger(), len);
         der.endSequence();
         byte[] concatenatedSignatureValue = new byte[signLength];
 
@@ -71,13 +73,18 @@ public class ElytronECDSACryptoProvider implements ECDSACryptoProvider {
         return concatenatedSignatureValue;
     }
 
+    @Override
+    public ECPublicKey getPublicFromPrivate(ECPrivateKey ecPrivateKey) {
+        throw new UnsupportedOperationException("Elytron Crypto Provider currently does not support extraction of EC Public Keys.");
+    }
+
     // If byte array length doesn't match expected length, copy to new
     // byte array of the expected length
     private byte[] convertToBytes(BigInteger decodeInteger, int len) {
 
         byte[] bytes = decodeInteger.toByteArray();
 
-        if(len < bytes.length) {
+        if (len < bytes.length) {
             log.debug("Decoded integer byte length greater than expected.");
             byte[] t = new byte[len];
             System.arraycopy(bytes, bytes.length - len, t, 0, len);

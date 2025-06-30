@@ -1,12 +1,10 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { FormGroup, PageSection, Switch } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../admin-client";
+import { FormPanel, HelpItem } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { FormAccess } from "../components/form/FormAccess";
-import { FormPanel } from "../components/scroll-form/FormPanel";
 import { useRealm } from "../context/realm-context/RealmContext";
 
 type RealmSettingsLoginTabProps = {
@@ -20,6 +18,8 @@ export const RealmSettingsLoginTab = ({
   realm,
   refresh,
 }: RealmSettingsLoginTabProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
 
   const { addAlert, addError } = useAlerts();
@@ -71,7 +71,7 @@ export const RealmSettingsLoginTab = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={realm.registrationAllowed}
-              onChange={(value) => {
+              onChange={(_event, value) => {
                 updateSwitchValue({ registrationAllowed: value });
               }}
               aria-label={t("registrationAllowed")}
@@ -96,7 +96,7 @@ export const RealmSettingsLoginTab = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={realm.resetPasswordAllowed}
-              onChange={(value) => {
+              onChange={(_event, value) => {
                 updateSwitchValue({ resetPasswordAllowed: value });
               }}
               aria-label={t("resetPasswordAllowed")}
@@ -120,7 +120,7 @@ export const RealmSettingsLoginTab = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={realm.rememberMe}
-              onChange={(value) => {
+              onChange={(_event, value) => {
                 updateSwitchValue({ rememberMe: value });
               }}
               aria-label={t("rememberMe")}
@@ -148,7 +148,7 @@ export const RealmSettingsLoginTab = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={realm.registrationEmailAsUsername}
-              onChange={(value) => {
+              onChange={(_event, value) => {
                 updateSwitchValue([
                   {
                     registrationEmailAsUsername: value,
@@ -179,7 +179,7 @@ export const RealmSettingsLoginTab = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={realm.loginWithEmailAllowed}
-              onChange={(value) => {
+              onChange={(_event, value) => {
                 updateSwitchValue([
                   {
                     loginWithEmailAllowed: value,
@@ -206,12 +206,8 @@ export const RealmSettingsLoginTab = ({
               data-testid="duplicate-emails-switch"
               label={t("on")}
               labelOff={t("off")}
-              isChecked={
-                realm.duplicateEmailsAllowed ||
-                (realm.loginWithEmailAllowed &&
-                  realm.registrationEmailAsUsername)
-              }
-              onChange={(value) => {
+              isChecked={realm.duplicateEmailsAllowed}
+              onChange={(_event, value) => {
                 updateSwitchValue({
                   duplicateEmailsAllowed: value,
                 });
@@ -241,7 +237,7 @@ export const RealmSettingsLoginTab = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={realm.verifyEmail}
-              onChange={(value) => {
+              onChange={(_event, value) => {
                 updateSwitchValue({ verifyEmail: value });
               }}
               aria-label={t("verifyEmail")}
@@ -272,7 +268,7 @@ export const RealmSettingsLoginTab = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={realm.editUsernameAllowed}
-              onChange={(value) => {
+              onChange={(_event, value) => {
                 updateSwitchValue({ editUsernameAllowed: value });
               }}
               aria-label={t("editUsernameAllowed")}

@@ -1,42 +1,30 @@
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import { AlertVariant, Tab, Tabs, TabTitleText } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
-import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { RoleMapping } from "../components/role-mapping/RoleMapping";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { useFetch } from "../utils/useFetch";
 import { DefaultsGroupsTab } from "./DefaultGroupsTab";
 
 export const UserRegistration = () => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
-  const [realm, setRealm] = useState<RealmRepresentation>();
   const [activeTab, setActiveTab] = useState(10);
+  const { realmRepresentation: realm } = useRealm();
   const [key, setKey] = useState(0);
 
   const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();
-
-  useFetch(
-    () => adminClient.realms.findOne({ realm: realmName }),
-    setRealm,
-    [],
-  );
-
-  if (!realm) {
-    return <KeycloakSpinner />;
-  }
 
   const addComposites = async (composites: RoleRepresentation[]) => {
     const compositeArray = composites;
 
     try {
       await adminClient.roles.createComposite(
-        { roleId: realm.defaultRole!.id!, realm: realmName },
+        { roleId: realm?.defaultRole!.id!, realm: realmName },
         compositeArray,
       );
       setKey(key + 1);
@@ -56,10 +44,11 @@ export const UserRegistration = () => {
         id="roles"
         eventKey={10}
         title={<TabTitleText>{t("defaultRoles")}</TabTitleText>}
+        data-testid="default-roles-tab"
       >
         <RoleMapping
-          name={realm.defaultRole!.name!}
-          id={realm.defaultRole!.id!}
+          name={realm?.defaultRole!.name!}
+          id={realm?.defaultRole!.id!}
           type="roles"
           isManager
           save={(rows) => addComposites(rows.map((r) => r.role))}
@@ -69,6 +58,7 @@ export const UserRegistration = () => {
         id="groups"
         eventKey={20}
         title={<TabTitleText>{t("defaultGroups")}</TabTitleText>}
+        data-testid="default-groups-tab"
       >
         <DefaultsGroupsTab />
       </Tab>

@@ -134,7 +134,7 @@ public class UndertowDeployerHelper {
 
                     });
 
-                    return new URLResource(myResourceUrl, myResourceUrl.openConnection(), path);
+                    return new URLResource(myResourceUrl, path);
                 }
             }
 

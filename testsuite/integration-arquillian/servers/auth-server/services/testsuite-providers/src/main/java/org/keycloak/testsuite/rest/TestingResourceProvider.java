@@ -17,14 +17,29 @@
 
 package org.keycloak.testsuite.rest;
 
-import org.infinispan.client.hotrod.RemoteCache;
-import org.jboss.resteasy.annotations.cache.NoCache;
-import org.keycloak.http.HttpRequest;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.CacheControl;
+import jakarta.ws.rs.core.Response;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
+import org.keycloak.common.enums.HostnameVerificationPolicy;
+import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.common.util.HtmlUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.cookie.CookieProvider;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventStoreProvider;
@@ -33,6 +48,8 @@ import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AdminEventQuery;
 import org.keycloak.events.admin.AuthDetails;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.http.HttpRequest;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -46,15 +63,11 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.UserSessionSpi;
-import org.keycloak.models.map.common.AbstractMapProviderFactory;
-import org.keycloak.models.map.storage.hotRod.connections.DefaultHotRodConnectionProviderFactory;
-import org.keycloak.models.map.storage.hotRod.connections.HotRodConnectionProvider;
-import org.keycloak.models.map.userSession.MapUserSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshStoreFactory;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.ResetTimeOffsetEvent;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
@@ -65,10 +78,8 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.scheduled.ClearExpiredUserSessions;
-import org.keycloak.services.util.CookieHelper;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.datastore.PeriodicEventInvalidation;
@@ -92,34 +103,20 @@ import org.keycloak.testsuite.util.FeatureDeployerUtil;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.truststore.FileTruststoreProvider;
 import org.keycloak.truststore.FileTruststoreProviderFactory;
-import org.keycloak.truststore.HostnameVerificationPolicy;
 import org.keycloak.truststore.TruststoreProvider;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
 
-import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Cookie;
-import jakarta.ws.rs.core.Response;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.nio.file.Files;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -127,10 +124,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.UUID;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -256,18 +255,6 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, String> setTimeOffset(Map<String, String> time) {
         int offset = Integer.parseInt(time.get("offset"));
-
-        // move time on Hot Rod server if present
-        // determine usage of Infinispan based on user sessions config
-        String userSessionProvider = Config.scope(UserSessionSpi.NAME, MapUserSessionProviderFactory.PROVIDER_ID, AbstractMapProviderFactory.CONFIG_STORAGE).get("provider");
-        if (Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE) && "hotrod".equals(userSessionProvider)) {
-            RemoteCache<Object, Object> scriptCache = session.getProvider(HotRodConnectionProvider.class).getRemoteCache(DefaultHotRodConnectionProviderFactory.SCRIPT_CACHE);
-            if (scriptCache != null) {
-                Map<String, Object> param = new HashMap<>();
-                param.put("timeService", offset);
-                scriptCache.execute("InfinispanTimeServiceTask", param);
-            }
-        }
 
         Time.setOffset(offset);
 
@@ -467,14 +454,14 @@ public class TestingResourceProvider implements RealmResourceProvider {
 
     /**
      * Get admin events
-     *
+     * <p>
      * Returns all admin events, or filters events based on URL query parameters listed here
      *
      * @param realmId
      * @param operationTypes
      * @param authRealm
      * @param authClient
-     * @param authUser user id
+     * @param authUser       user id
      * @param authIpAddress
      * @param resourcePath
      * @param dateFrom
@@ -488,10 +475,10 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Stream<AdminEventRepresentation> getAdminEvents(@QueryParam("realmId") String realmId, @QueryParam("operationTypes") List<String> operationTypes, @QueryParam("authRealm") String authRealm, @QueryParam("authClient") String authClient,
-                                                         @QueryParam("authUser") String authUser, @QueryParam("authIpAddress") String authIpAddress,
-                                                         @QueryParam("resourcePath") String resourcePath, @QueryParam("dateFrom") String dateFrom,
-                                                         @QueryParam("dateTo") String dateTo, @QueryParam("first") Integer firstResult,
-                                                         @QueryParam("max") Integer maxResults) {
+                                                           @QueryParam("authUser") String authUser, @QueryParam("authIpAddress") String authIpAddress,
+                                                           @QueryParam("resourcePath") String resourcePath, @QueryParam("dateFrom") String dateFrom,
+                                                           @QueryParam("dateTo") String dateTo, @QueryParam("first") Integer firstResult,
+                                                           @QueryParam("max") Integer maxResults) {
 
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         AdminEventQuery query = eventStore.createAdminQuery();
@@ -598,10 +585,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/get-sso-cookie")
     @Produces(MediaType.APPLICATION_JSON)
     public String getSSOCookieValue() {
-        Map<String, Cookie> cookies = request.getHttpHeaders().getCookies();
-        Cookie cookie = CookieHelper.getCookie(cookies, AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE);
-        if (cookie == null) return null;
-        return cookie.getValue();
+        return session.getProvider(CookieProvider.class).get(CookieType.IDENTITY);
     }
 
 
@@ -700,7 +684,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Produces(MediaType.APPLICATION_JSON)
     public UserRepresentation getUserByServiceAccountClient(@QueryParam("realmName") String realmName, @QueryParam("clientId") String clientId) {
         RealmModel realm = getRealmByName(realmName);
-        ClientModel client =  realm.getClientByClientId(clientId);
+        ClientModel client = realm.getClientByClientId(clientId);
         UserModel user = session.users().getServiceAccount(client);
         if (user == null) return null;
         return ModelToRepresentation.toRepresentation(session, realm, user);
@@ -720,10 +704,10 @@ public class TestingResourceProvider implements RealmResourceProvider {
                 .collect(Collectors.toMap(ComponentModel::getName,
                         componentModel -> {
                             ProviderFactory<TestProvider> f = session.getKeycloakSessionFactory()
-                                .getProviderFactory(TestProvider.class, componentModel.getProviderId());
-                        TestProviderFactory factory = (TestProviderFactory) f;
-                        TestProvider p = (TestProvider) factory.create(session, componentModel);
-                        return p.getDetails();
+                                    .getProviderFactory(TestProvider.class, componentModel.getProviderId());
+                            TestProviderFactory factory = (TestProviderFactory) f;
+                            TestProvider p = (TestProvider) factory.create(session, componentModel);
+                            return p.getDetails();
                         }));
     }
 
@@ -734,11 +718,11 @@ public class TestingResourceProvider implements RealmResourceProvider {
         RealmModel realm = session.getContext().getRealm();
         return realm.getComponentsStream(realm.getId(), TestAmphibianProvider.class.getName())
                 .collect(Collectors.toMap(
-                  ComponentModel::getName,
-                  componentModel -> {
-                      TestAmphibianProvider t = session.getComponentProvider(TestAmphibianProvider.class, componentModel.getId());
-                      return t == null ? null : t.getDetails();
-                  }));
+                        ComponentModel::getName,
+                        componentModel -> {
+                            TestAmphibianProvider t = session.getComponentProvider(TestAmphibianProvider.class, componentModel.getId());
+                            return t == null ? null : t.getDetails();
+                        }));
     }
 
 
@@ -816,13 +800,13 @@ public class TestingResourceProvider implements RealmResourceProvider {
             }
 
             ClientScopeModel clientScopeModel = realm.addClientScope(clientId);
-            clientScopeModel.setProtocol(serviceClient.getProtocol()==null ? OIDCLoginProtocol.LOGIN_PROTOCOL : serviceClient.getProtocol());
+            clientScopeModel.setProtocol(serviceClient.getProtocol() == null ? OIDCLoginProtocol.LOGIN_PROTOCOL : serviceClient.getProtocol());
             clientScopeModel.setDisplayOnConsentScreen(true);
             clientScopeModel.setConsentScreenText(clientId);
             clientScopeModel.setIncludeInTokenScope(true);
 
             // Add audience protocol mapper
-            ProtocolMapperModel audienceMapper = AudienceProtocolMapper.createClaimMapper("Audience for " + clientId, clientId, null,true, false, true );
+            ProtocolMapperModel audienceMapper = AudienceProtocolMapper.createClaimMapper("Audience for " + clientId, clientId, null, true, false, true);
             clientScopeModel.addProtocolMapper(audienceMapper);
 
             return clientScopeModel.getId();
@@ -886,13 +870,13 @@ public class TestingResourceProvider implements RealmResourceProvider {
 
     private void setFeatureInProfileFile(File file, Profile.Feature featureProfile, String newState) {
         doWithProperties(file, props -> {
-            props.setProperty("feature." + featureProfile.toString().toLowerCase(), newState);
+            props.setProperty(PropertiesProfileConfigResolver.getPropertyKey(featureProfile), newState);
         });
     }
 
     private void unsetFeatureInProfileFile(File file, Profile.Feature featureProfile) {
         doWithProperties(file, props -> {
-            props.remove("feature." + featureProfile.toString().toLowerCase());
+            props.remove(PropertiesProfileConfigResolver.getPropertyKey(featureProfile));
         });
     }
 
@@ -968,36 +952,48 @@ public class TestingResourceProvider implements RealmResourceProvider {
     }
 
     private Set<Profile.Feature> updateFeature(String featureKey, boolean shouldEnable) {
-        Profile.Feature feature;
+        Collection<Profile.Feature> features = null;
 
         try {
-            feature = Profile.Feature.valueOf(featureKey);
+            features = Arrays.asList(Profile.Feature.valueOf(featureKey));
         } catch (IllegalArgumentException e) {
+            Set<Feature> featureVersions = Profile.getFeatureVersions(featureKey);
+            if (!shouldEnable) {
+                features = featureVersions;
+            } else if (!featureVersions.isEmpty()) {
+                // the set is ordered by preferred feature
+                features = Arrays.asList(featureVersions.iterator().next());
+            }
+        }
+
+        if (features == null || features.isEmpty()) {
             System.err.printf("Feature '%s' doesn't exist!!\n", featureKey);
             throw new BadRequestException();
         }
 
-        if (Profile.getInstance().getFeatures().get(feature) != shouldEnable) {
-            FeatureDeployerUtil.initBeforeChangeFeature(feature);
+        for (Feature feature : features) {
+            if (Profile.getInstance().getFeatures().get(feature) != shouldEnable) {
+                FeatureDeployerUtil.initBeforeChangeFeature(feature);
 
-            String jbossServerConfigDir = System.getProperty("jboss.server.config.dir");
-            // If we are in jboss-based container, we need to write profile.properties file, otherwise the change in system property will disappear after restart
-            if (jbossServerConfigDir != null) {
-                setFeatureInProfileFile(new File(jbossServerConfigDir, "profile.properties"), feature, shouldEnable ? "enabled" : "disabled");
-            }
+                String jbossServerConfigDir = System.getProperty("jboss.server.config.dir");
+                // If we are in jboss-based container, we need to write profile.properties file, otherwise the change in system property will disappear after restart
+                if (jbossServerConfigDir != null) {
+                    setFeatureInProfileFile(new File(jbossServerConfigDir, "profile.properties"), feature, shouldEnable ? "enabled" : "disabled");
+                }
 
-            Profile current = Profile.getInstance();
+                Profile current = Profile.getInstance();
 
-            Map<Profile.Feature, Boolean> updatedFeatures = new HashMap<>();
-            updatedFeatures.putAll(current.getFeatures());
-            updatedFeatures.put(feature, shouldEnable);
+                Map<Profile.Feature, Boolean> updatedFeatures = new HashMap<>();
+                updatedFeatures.putAll(current.getFeatures());
+                updatedFeatures.put(feature, shouldEnable);
 
-            Profile.init(current.getName(), updatedFeatures);
+                Profile.init(current.getName(), updatedFeatures);
 
-            if (shouldEnable) {
-                FeatureDeployerUtil.deployFactoriesAfterFeatureEnabled(feature);
-            } else {
-                FeatureDeployerUtil.undeployFactoriesAfterFeatureDisabled(feature);
+                if (shouldEnable) {
+                    FeatureDeployerUtil.deployFactoriesAfterFeatureEnabled(feature);
+                } else {
+                    FeatureDeployerUtil.undeployFactoriesAfterFeatureDisabled(feature);
+                }
             }
         }
 
@@ -1021,7 +1017,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/reinitialize-provider-factory-with-system-properties-scope")
     @Consumes(MediaType.TEXT_HTML_UTF_8)
     public void reinitializeProviderFactoryWithSystemPropertiesScope(@QueryParam("provider-type") String providerType, @QueryParam("provider-id") String providerId,
-                                                              @QueryParam("system-properties-prefix") String systemPropertiesPrefix) throws Exception {
+                                                                     @QueryParam("system-properties-prefix") String systemPropertiesPrefix) throws Exception {
         Class<? extends Provider> providerClass = (Class<? extends Provider>) Class.forName(providerType);
         ProviderFactory factory = session.getKeycloakSessionFactory().getProviderFactory(providerClass, providerId);
         factory.init(new Config.SystemPropertiesScope(systemPropertiesPrefix));
@@ -1030,10 +1026,10 @@ public class TestingResourceProvider implements RealmResourceProvider {
     /**
      * This will send POST request to specified URL with specified form parameters. It's not easily possible to "trick" web driver to send POST
      * request with custom parameters, which are not directly available in the form.
-     *
+     * <p>
      * See URLUtils.sendPOSTWithWebDriver for more details
      *
-     * @param postRequestUrl Absolute URL. It can include query parameters etc. The POST request will be send to this URL
+     * @param postRequestUrl        Absolute URL. It can include query parameters etc. The POST request will be send to this URL
      * @param encodedFormParameters Encoded parameters in the form of "param1=value1&param2=value2"
      * @return
      */
@@ -1041,7 +1037,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/simulate-post-request")
     @Produces(MediaType.TEXT_HTML_UTF_8)
     public Response simulatePostRequest(@QueryParam("postRequestUrl") String postRequestUrl,
-                                         @QueryParam("encodedFormParameters") String encodedFormParameters) {
+                                        @QueryParam("encodedFormParameters") String encodedFormParameters) {
         Map<String, String> params = new HashMap<>();
 
         // Parse parameters to use in the POST request
@@ -1165,5 +1161,38 @@ public class TestingResourceProvider implements RealmResourceProvider {
         return rootAuthSession.getAuthenticationSessions().size();
     }
 
+    @GET
+    @Path("/no-cache-annotated-endpoint")
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    public Response getNoCacheAnnotatedEndpointResponse(@QueryParam("programmatic_max_age_value") Integer programmaticMaxAgeValue) {
+        requireNonNull(programmaticMaxAgeValue);
 
+        CacheControl cacheControl = new CacheControl();
+        cacheControl.setMaxAge(programmaticMaxAgeValue);
+
+        return Response.noContent().cacheControl(cacheControl).build();
+    }
+
+    @GET
+    @Path("/blank")
+    @Produces(MediaType.TEXT_HTML_UTF_8)
+    public Response getBlankPage() {
+        return Response.ok("<html><body></body></html>").build();
+    }
+
+    @GET
+    @Path("/pre-authorized-code")
+    @NoCache
+    public String getPreAuthorizedCode(@QueryParam("realm") final String realmName, @QueryParam("userSessionId") final String userSessionId, @QueryParam("clientId") final String clientId, @QueryParam("expiration") final int expiration) {
+        RealmModel realm = getRealmByName(realmName);
+        AuthenticatedClientSessionModel ascm = session.sessions()
+                .getUserSession(realm, userSessionId)
+                .getAuthenticatedClientSessions()
+                .values()
+                .stream().filter(acsm -> acsm.getClient().getClientId().equals(clientId))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("No authenticatedClientSession found."));
+        return PreAuthorizedCodeGrantType.getPreAuthorizedCode(session, ascm, expiration);
+    }
 }

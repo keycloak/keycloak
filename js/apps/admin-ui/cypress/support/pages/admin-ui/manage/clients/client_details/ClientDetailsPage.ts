@@ -29,6 +29,13 @@ export default class ClientDetailsPage extends CommonPage {
   #clientScopesTab = new ClientScopesTab();
   #authorizationTab = new AuthorizationTab();
   #advancedTab = new AdvancedTab();
+  #clientScopesSetupTab = "clientScopesSetupTab";
+  #clientScopesEvaluateTab = "clientScopesEvaluateTab";
+  #evaluateEffectiveProtocolMappersTab = "effective-protocol-mappers-tab";
+  #evaluateEffectiveRoleScopeMappingsTab = "effective-role-scope-mappings-tab";
+  #evaluateGeneratedAccessTokenTab = "generated-access-token-tab";
+  #evaluateGeneratedIdTokenTab = "generated-id-token-tab";
+  #evaluateGeneratedUserInfoTab = "generated-user-info-tab";
 
   goToSettingsTab() {
     this.tabUtils().clickTab(ClientsDetailsTab.Settings);
@@ -63,5 +70,41 @@ export default class ClientDetailsPage extends CommonPage {
   goToAdvancedTab() {
     this.tabUtils().clickTab(ClientsDetailsTab.Advanced);
     return this.#advancedTab;
+  }
+
+  goToClientScopesSetupTab() {
+    cy.findByTestId(this.#clientScopesSetupTab).click();
+    return this;
+  }
+
+  goToClientScopesEvaluateTab() {
+    this.goToClientScopesTab();
+    cy.findByTestId(this.#clientScopesEvaluateTab).click();
+    return this;
+  }
+
+  goToClientScopesEvaluateEffectiveProtocolMappersTab() {
+    cy.findByTestId(this.#evaluateEffectiveProtocolMappersTab).click();
+    return this;
+  }
+
+  goToClientScopesEvaluateEffectiveRoleScopeMappingsTab() {
+    cy.findByTestId(this.#evaluateEffectiveRoleScopeMappingsTab).click();
+    return this;
+  }
+
+  goToClientScopesEvaluateGeneratedAccessTokenTab() {
+    cy.findByTestId(this.#evaluateGeneratedAccessTokenTab).click();
+    return this;
+  }
+
+  goToClientScopesEvaluateGeneratedIdTokenTab() {
+    cy.findByTestId(this.#evaluateGeneratedIdTokenTab).click();
+    return this;
+  }
+
+  goToClientScopesEvaluateGeneratedUserInfoTab() {
+    cy.findByTestId(this.#evaluateGeneratedUserInfoTab).click();
+    return this;
   }
 }

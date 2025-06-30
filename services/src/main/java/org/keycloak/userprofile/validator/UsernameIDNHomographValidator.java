@@ -16,13 +16,15 @@
  */
 package org.keycloak.userprofile.validator;
 
-import org.keycloak.services.messages.Messages;
+import org.keycloak.provider.ConfiguredProvider;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.validate.SimpleValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidatorConfig;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -31,9 +33,25 @@ import java.util.List;
  * @author Vlastimil Elias <velias@redhat.com>
  *
  */
-public class UsernameIDNHomographValidator implements SimpleValidator {
+public class UsernameIDNHomographValidator implements SimpleValidator, ConfiguredProvider {
 
     public static final String ID = "up-username-not-idn-homograph";
+
+    public static final String CFG_ERROR_MESSAGE = "error-message";
+
+    public static final String MESSAGE_NO_MATCH = "error-username-invalid-character";
+
+    private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
+
+    static {
+        ProviderConfigProperty property;
+        property = new ProviderConfigProperty();
+        property.setName(CFG_ERROR_MESSAGE);
+        property.setLabel("Error message key");
+        property.setHelpText("Key of the error message in i18n bundle. Default message key is " + MESSAGE_NO_MATCH);
+        property.setType(ProviderConfigProperty.STRING_TYPE);
+        configProperties.add(property);
+    }
 
     @Override
     public String getId() {
@@ -52,10 +70,24 @@ public class UsernameIDNHomographValidator implements SimpleValidator {
         }
 
         if (!Validation.isBlank(value) && !Validation.isUsernameValid(value)) {
-            context.addError(new ValidationError(ID, value, Messages.INVALID_USERNAME));
+            context.addError(new ValidationError(ID, inputHint, getErrorMessageKey(inputHint, config)));
         }
 
         return context;
     }
 
+    protected String getErrorMessageKey(String inputHint, ValidatorConfig config) {
+        String cfg = config.getString(CFG_ERROR_MESSAGE);
+        return (cfg != null && !cfg.isBlank()) ? cfg : MESSAGE_NO_MATCH;
+    }
+
+    @Override
+    public String getHelpText() {
+        return "The field can contain only latin characters and common unicode characters. Useful for the fields, which can be subject of IDN homograph attacks (typically username).";
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigProperties() {
+        return configProperties;
+    }
 }

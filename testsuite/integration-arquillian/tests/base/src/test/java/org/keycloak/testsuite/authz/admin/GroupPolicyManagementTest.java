@@ -18,7 +18,6 @@ package org.keycloak.testsuite.authz.admin;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -232,25 +231,8 @@ public class GroupPolicyManagementTest extends AbstractPolicyManagementTest {
         
         groups.group(group.getId()).remove();
 
-        try {
-            getClient().authorization().policies().group().findByName(representation.getName());
-        } catch (NotFoundException e) {
-        }
-        
-        representation.getGroups().clear();
-        representation.addGroupPath("/Group H/Group I/Group K");
-        representation.addGroupPath("/Group F");
-        
-        assertCreated(authorization, representation);
-
-        group = groups.groups("Group K", null, null).get(0);
-
-        groups.group(group.getId()).remove();
-
-        GroupPolicyRepresentation policy = getClient().authorization().policies().group().findByName(representation.getName());
-
-        assertNotNull(policy);
-        assertEquals(1, policy.getGroups().size());
+        GroupPolicyRepresentation actual = getClient().authorization().policies().group().findByName(representation.getName());
+        assertEquals(0, actual.getGroups().size());
     }
 
     private void assertCreated(AuthorizationResource authorization, GroupPolicyRepresentation representation) {

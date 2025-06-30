@@ -1,0 +1,4 @@
+pass1!word
+1Password!
+Password1!
+!Password1

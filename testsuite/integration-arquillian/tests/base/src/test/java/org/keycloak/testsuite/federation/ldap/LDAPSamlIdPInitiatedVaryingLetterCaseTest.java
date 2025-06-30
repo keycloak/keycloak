@@ -144,9 +144,6 @@ public class LDAPSamlIdPInitiatedVaryingLetterCaseTest extends AbstractLDAPTest 
 
     @Before
     public void setupIdentityProvider() {
-        // don't run this test when map storage is enabled, as map storage doesn't support LDAP, yet
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
-
         // Configure autolink flow
         AuthenticationFlowRepresentation newFlow = new AuthenticationFlowRepresentation();
         newFlow.setAlias(FLOW_AUTO_LINK);

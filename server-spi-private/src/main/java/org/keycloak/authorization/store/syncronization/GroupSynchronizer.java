@@ -29,7 +29,6 @@ import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 
@@ -46,14 +45,13 @@ public class GroupSynchronizer implements Synchronizer<GroupModel.GroupRemovedEv
         StoreFactory storeFactory = authorizationProvider.getStoreFactory();
         PolicyStore policyStore = storeFactory.getPolicyStore();
         GroupModel group = event.getGroup();
-        RealmModel realm = event.getRealm();
         Map<Policy.FilterOption, String[]> attributes = new EnumMap<>(Policy.FilterOption.class);
 
         attributes.put(Policy.FilterOption.TYPE, new String[] {"group"});
         attributes.put(Policy.FilterOption.CONFIG, new String[] {"groups", group.getId()});
         attributes.put(Policy.FilterOption.ANY_OWNER, Policy.FilterOption.EMPTY_FILTER);
 
-        List<Policy> search = policyStore.find(realm, null, attributes, null, null);
+        List<Policy> search = policyStore.find(null, attributes, null, null);
 
         for (Policy policy : search) {
             PolicyProviderFactory policyFactory = authorizationProvider.getProviderFactory(policy.getType());
@@ -62,12 +60,7 @@ public class GroupSynchronizer implements Synchronizer<GroupModel.GroupRemovedEv
 
             groups.removeIf(groupDefinition -> groupDefinition.getId().equals(group.getId()));
 
-            if (groups.isEmpty()) {
-                policyFactory.onRemove(policy, authorizationProvider);
-                policyStore.delete(realm, policy.getId());
-            } else {
-                policyFactory.onUpdate(policy, representation, authorizationProvider);
-            }
+            policyFactory.onUpdate(policy, representation, authorizationProvider);
         }
     }
 }

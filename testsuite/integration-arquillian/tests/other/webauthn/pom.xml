@@ -13,43 +13,17 @@
     <name>WebAuthn tests</name>
 
     <properties>
-        <selenium.version>4.1.0</selenium.version>
-        <graphene.webdriver.version>3.0.0-alpha.3</graphene.webdriver.version>
-        <htmlunit.driver.version>3.58.0</htmlunit.driver.version>
-        <arquillian.drone.version>3.0.0-alpha.4</arquillian.drone.version>
-        <firefoxUserPreferences>${project.build.directory}/dependency/firefox-user-preferences.js
-        </firefoxUserPreferences>
-        <selenium.firefox.driver.version>4.1.2</selenium.firefox.driver.version>
+        <firefoxUserPreferences>${project.build.directory}/dependency/firefox-user-preferences.js</firefoxUserPreferences>
+        <maven.compiler.release>17</maven.compiler.release>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>org.keycloak.testsuite</groupId>
-            <artifactId>integration-arquillian-tests-base-ui</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.arquillian.extension</groupId>
-            <artifactId>arquillian-drone-bom</artifactId>
-            <version>${arquillian.drone.version}</version>
-            <type>pom</type>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.arquillian.extension</groupId>
-            <artifactId>arquillian-drone-webdriver</artifactId>
-            <version>${arquillian.drone.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.arquillian.graphene</groupId>
-            <artifactId>graphene-webdriver</artifactId>
-            <version>${graphene.webdriver.version}</version>
-            <type>pom</type>
-        </dependency>
-        <dependency>
             <groupId>org.seleniumhq.selenium</groupId>
-            <artifactId>htmlunit-driver</artifactId>
-            <version>${htmlunit.driver.version}</version>
+            <artifactId>htmlunit3-driver</artifactId>
+            <version>${selenium.version}</version>
         </dependency>
 
         <dependency>
@@ -73,13 +47,6 @@
                     <value>firefox</value>
                 </property>
             </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>org.seleniumhq.selenium</groupId>
-                    <artifactId>selenium-firefox-driver</artifactId>
-                    <version>${selenium.firefox.driver.version}</version>
-                </dependency>
-            </dependencies>
             <build>
                 <plugins>
                     <plugin>

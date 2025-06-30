@@ -3,46 +3,46 @@
 
 .Procedure
 . Click *Identity Providers* in the menu.
-. From the `Add provider` list, select `Instagram`. {project_name} displays the configuration page for the Instagram identity provider.
+. From the *Add provider* list, select *Instagram*.
 +
 .Add identity provider
 image:images/instagram-add-identity-provider.png[Add Identity Provider]
 . Copy the value of *Redirect URI* to your clipboard.
-. In a separate browser tab, open the https://developers.facebook.com/[Facebook Developer Console].
+. In a separate browser tab, open the https://developers.facebook.com/[Meta for Developers].
 .. Click *My Apps*.
-.. Select *Add a New App*.
+.. Select *Create App*.
 +
-.Add a new app
-image:images/instagram-add-new-app.png[Add a New App]
+.Add a use case
+image:images/meta-add-use-case.png[Add a use case]
 +
-.. Select `For Everything Else`.
+.. Select *Other*.
 +
-.Create a new app ID
-image:images/instagram-create-app-id.png[]
+.Select an app type
+image:images/meta-select-app-type.png[Select an app type]
++
+.. Select *Consumer*.
++
+.Create an app
+image:images/meta-create-app.png[Create an app]
 +
 .. Fill in all required fields. 
-.. Click *Create App*. Facebook then brings you to the dashboard.
-.. In the navigation panel, select *Settings* - *Basic*.
-+
-.Add platform
-image:images/instagram-add-platform.png[Add Platform]
-+
-.. Select *+ Add Platform*.
+.. Click *Create app*. Meta then brings you to the dashboard.
+.. In the navigation panel, select *App settings* - *Basic*.
+.. Select *+ Add Platform* at the bottom of the page.
 .. Click *[Website]*.
 .. Enter a URL for your site.
 +
 .Add a product
-image:images/instagram-add-product.png[]
+image:images/meta-add-product.png[Add Product]
 +
-.. Select `Dashboard` from the menu.
-.. Click *Set Up* in the Instagram box. 
-.. Select *Instagram* - *Basic Display* from the menu.
+.. Select *Dashboard* from the menu.
+.. Click *Set Up* in the *Instagram Basic Display* box.
 .. Click *Create New App*.
 +
-.Create a new Instagram app ID
+.Create a New Instagram App ID
 image:images/instagram-create-instagram-app-id.png[Create a New Instagram App ID]
 +
-.. Enter a value into *Display Name*.
+.. Enter a value into the *Display name* field.
 +
 .Set up the app
 image:images/instagram-app-settings.png[Setup the App]
@@ -54,8 +54,8 @@ image:images/instagram-app-settings.png[Setup the App]
 .. Note the *Instagram App ID* and the *Instagram App Secret*.
 .. Click *App Review* - *Requests*.
 .. Follow the instructions on the screen.
-. In {project_name}, paste the value of the *Instagram App ID* into the *Client ID* field.
-. In {project_name}, paste the value of the *Instagram App Secret* into the *Client Secret* field.
+. In {project_name}, paste the value of the `Instagram App ID` into the *Client ID* field.
+. In {project_name}, paste the value of the `Instagram App Secret` into the *Client Secret* field.
 
 . Click *Add*.
 

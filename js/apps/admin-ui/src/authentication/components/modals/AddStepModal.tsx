@@ -10,12 +10,11 @@ import {
 } from "@patternfly/react-core";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../../../admin-client";
 import { PaginatingTableToolbar } from "../../../components/table-toolbar/PaginatingTableToolbar";
 import { useFetch } from "../../../utils/useFetch";
 import useLocaleSort, { mapByKey } from "../../../utils/useLocaleSort";
 import { providerConditionFilter } from "../../FlowDetails";
+import { useAdminClient } from "../../../admin-client";
 
 type AuthenticationProviderListProps = {
   list?: AuthenticationProviderRepresentation[];
@@ -27,7 +26,7 @@ const AuthenticationProviderList = ({
   setValue,
 }: AuthenticationProviderListProps) => {
   return (
-    <PageSection variant="light" className="pf-u-py-lg">
+    <PageSection variant="light" className="pf-v5-u-py-lg">
       <Form isHorizontal>
         {list?.map((provider) => (
           <Radio
@@ -56,6 +55,8 @@ type AddStepModalProps = {
 };
 
 export const AddStepModal = ({ name, type, onSelect }: AddStepModalProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
 
   const [value, setValue] = useState<AuthenticationProviderRepresentation>();

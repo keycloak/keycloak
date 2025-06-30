@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.client;
 
 import jakarta.ws.rs.core.Response;
-
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
@@ -33,10 +32,7 @@ import org.keycloak.testsuite.runonserver.*;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.util.JsonSerialization;
 
-import java.util.List;
 import java.util.Set;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -50,16 +46,21 @@ public class KeycloakTestingClient implements AutoCloseable {
         if (resteasyClient != null) {
             client = resteasyClient;
         } else {
-            ResteasyClientBuilder resteasyClientBuilder = (ResteasyClientBuilder) ResteasyClientBuilder.newBuilder();
-            resteasyClientBuilder.connectionPoolSize(10);
-            if (serverUrl.startsWith("https")) {
-                // Disable PKIX path validation errors when running tests using SSL
-                resteasyClientBuilder.disableTrustManager().hostnameVerification(ResteasyClientBuilder.HostnameVerificationPolicy.ANY);
-            }
-            resteasyClientBuilder.httpEngine(AdminClientUtil.getCustomClientHttpEngine(resteasyClientBuilder, 10, null));
+            ResteasyClientBuilder resteasyClientBuilder = getRestEasyClientBuilder(serverUrl);
             client = resteasyClientBuilder.build();
         }
         target = client.target(serverUrl);
+    }
+
+    public static ResteasyClientBuilder getRestEasyClientBuilder(String serverUrl) {
+        ResteasyClientBuilder resteasyClientBuilder = (ResteasyClientBuilder) ResteasyClientBuilder.newBuilder();
+        resteasyClientBuilder.connectionPoolSize(10);
+        if (serverUrl.startsWith("https")) {
+            // Disable PKIX path validation errors when running tests using SSL
+            resteasyClientBuilder.disableTrustManager().hostnameVerification(ResteasyClientBuilder.HostnameVerificationPolicy.ANY);
+        }
+        resteasyClientBuilder.httpEngine(AdminClientUtil.getCustomClientHttpEngine(resteasyClientBuilder, 10, null));
+        return resteasyClientBuilder;
     }
 
     public static KeycloakTestingClient getInstance(String serverUrl) {
@@ -169,6 +170,11 @@ public class KeycloakTestingClient implements AutoCloseable {
                     throw new RunOnServerException(t);
                 }
             }
+        }
+
+        public Response runWithResponse(RunOnServer function) throws RunOnServerException {
+            String encoded = SerializationUtil.encode(function);
+            return testing(realm != null ? realm : "master").runOnServerWithResponse(encoded);
         }
 
         public void runModelTest(String testClassName, String testMethodName) throws RunOnServerException {

@@ -20,12 +20,10 @@ package org.keycloak.protocol.oidc.endpoints;
 import static org.keycloak.models.UserSessionModel.State.LOGGED_OUT;
 import static org.keycloak.models.UserSessionModel.State.LOGGING_OUT;
 import static org.keycloak.services.resources.LoginActionsService.SESSION_CODE;
-import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.http.HttpRequest;
-import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenVerifier;
@@ -64,12 +62,12 @@ import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.LogoutRequestContext;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.LogoutSessionCodeChecks;
 import org.keycloak.services.resources.SessionCodeChecks;
 import org.keycloak.services.util.LocaleUtil;
@@ -116,9 +114,6 @@ public class LogoutEndpoint {
     private final EventBuilder event;
     private final OIDCProviderConfig providerConfig;
 
-    // When enabled we cannot search offline sessions by brokerSessionId. We need to search by federated userId and then filter by brokerSessionId.
-    private final boolean offlineSessionsLazyLoadingEnabled;
-
     private Cors cors;
 
     public LogoutEndpoint(KeycloakSession session, TokenManager tokenManager, EventBuilder event, OIDCProviderConfig providerConfig) {
@@ -128,7 +123,6 @@ public class LogoutEndpoint {
         this.realm = session.getContext().getRealm();
         this.event = event;
         this.providerConfig = providerConfig;
-        this.offlineSessionsLazyLoadingEnabled = !Config.scope("userSessions").scope("infinispan").getBoolean("preloadOfflineSessionsFromDatabase", false);
         this.request = session.getContext().getHttpRequest();
         this.headers = session.getContext().getRequestHeaders();
     }
@@ -136,7 +130,7 @@ public class LogoutEndpoint {
     @Path("/")
     @OPTIONS
     public Response issueUserInfoPreflight() {
-        return Cors.add(this.request, Response.ok()).auth().preflight().build();
+        return Cors.builder().auth().preflight().add(Response.ok());
     }
 
     /**
@@ -171,17 +165,20 @@ public class LogoutEndpoint {
         if (!providerConfig.isLegacyLogoutRedirectUri()) {
             if (deprecatedRedirectUri != null) {
                 event.event(EventType.LOGOUT);
+                String errorMessage = "Parameter 'redirect_uri' no longer supported.";
+                event.detail(Details.REASON, errorMessage);
                 event.error(Errors.INVALID_REQUEST);
-                logger.warnf("Parameter 'redirect_uri' no longer supported. Please use 'post_logout_redirect_uri' with 'id_token_hint' for this endpoint. Alternatively you can enable backwards compatibility option '%s' of oidc login protocol in the server configuration.",
-                        OIDCLoginProtocolFactory.CONFIG_LEGACY_LOGOUT_REDIRECT_URI);
+                logger.warnf("%s Please use 'post_logout_redirect_uri' with 'id_token_hint' for this endpoint. Alternatively you can enable backwards compatibility option '%s' of oidc login protocol in the server configuration.",
+                        errorMessage, OIDCLoginProtocolFactory.CONFIG_LEGACY_LOGOUT_REDIRECT_URI);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.REDIRECT_URI_PARAM);
             }
 
             if (postLogoutRedirectUri != null && encodedIdToken == null && clientId == null) {
                 event.event(EventType.LOGOUT);
+                String errorMessage = "Either the parameter 'client_id' or the parameter 'id_token_hint' is required when 'post_logout_redirect_uri' is used.";
+                event.detail(Details.REASON, errorMessage);
                 event.error(Errors.INVALID_REQUEST);
-                logger.warnf(
-                        "Either the parameter 'client_id' or the parameter 'id_token_hint' is required when 'post_logout_redirect_uri' is used.");
+                logger.warnf(errorMessage);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.MISSING_PARAMETER,
                         OIDCLoginProtocol.ID_TOKEN_HINT);
             }
@@ -205,6 +202,7 @@ public class LogoutEndpoint {
                 TokenVerifier.createWithoutSignature(idToken).tokenType(Arrays.asList(TokenUtil.TOKEN_TYPE_ID)).verify();
             } catch (OAuthErrorException | VerificationException e) {
                 event.event(EventType.LOGOUT);
+                event.detail(Details.REASON, e.getMessage());
                 event.error(Errors.INVALID_TOKEN);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.ID_TOKEN_HINT);
             }
@@ -222,8 +220,10 @@ public class LogoutEndpoint {
                 if (!idToken.getIssuedFor().equals(clientId)) {
                     event.event(EventType.LOGOUT);
                     event.client(clientId);
+                    String errorMessage = "Parameter client_id is different than the client for which ID Token was issued.";
+                    event.detail(Details.REASON, errorMessage);
                     event.error(Errors.INVALID_TOKEN);
-                    logger.warnf("Parameter client_id is different than the client for which ID Token was issued. Parameter client_id: '%s', ID Token issued for: '%s'.", clientId, idToken.getIssuedFor());
+                    logger.warnf("%s Parameter client_id: '%s', ID Token issued for: '%s'.", errorMessage, clientId, idToken.getIssuedFor());
                     return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.ID_TOKEN_HINT);
                 } else {
                     confirmationNeeded = false;
@@ -365,14 +365,13 @@ public class LogoutEndpoint {
         checks.initialVerify();
         if (!checks.verifyActiveAndValidAction(AuthenticationSessionModel.Action.LOGGING_OUT.name(), ClientSessionCode.ActionType.USER) || !checks.isActionRequest() || !formData.containsKey("confirmLogout")) {
             AuthenticationSessionModel logoutSession = checks.getAuthenticationSession();
-            logger.debugf("Failed verification during logout. logoutSessionId=%s, clientId=%s, tabId=%s",
-                    logoutSession != null ? logoutSession.getParentSession().getId() : "unknown", clientId, tabId);
+            String errorMessage = "Failed verification during logout.";
+            logger.debugf( "%s logoutSessionId=%s, clientId=%s, tabId=%s",
+                    errorMessage, logoutSession != null ? logoutSession.getParentSession().getId() : "unknown", clientId, tabId);
 
-            if (logoutSession == null || logoutSession.getClient().equals(SystemClientUtil.getSystemClient(logoutSession.getRealm()))) {
-                // Cleanup system client URL to avoid links to account management
-                session.getProvider(LoginFormsProvider.class).setAttribute(Constants.SKIP_LINK, true);
-            }
+            SystemClientUtil.checkSkipLink(session, logoutSession);
 
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.SESSION_EXPIRED);
 
             return ErrorPage.error(session, logoutSession, Response.Status.BAD_REQUEST, Messages.FAILED_LOGOUT);
@@ -400,21 +399,19 @@ public class LogoutEndpoint {
         SessionCodeChecks checks = new LogoutSessionCodeChecks(realm, session.getContext().getUri(), request, clientConnection, session, event, null, clientId, tabId);
         AuthenticationSessionModel logoutSession = checks.initialVerifyAuthSession();
         if (logoutSession == null) {
-            logger.debugf("Failed verification when changing locale logout. clientId=%s, tabId=%s", clientId, tabId);
+            String errorMessage = "Failed verification when changing locale during logout.";
+            logger.debugf("%s clientId=%s, tabId=%s", errorMessage, clientId, tabId);
 
-            LoginFormsProvider loginForm = session.getProvider(LoginFormsProvider.class);
-            if (clientId == null || clientId.equals(SystemClientUtil.getSystemClient(realm).getClientId())) {
-                // Cleanup system client URL to avoid links to account management
-                loginForm.setAttribute(Constants.SKIP_LINK, true);
-            }
+            SystemClientUtil.checkSkipLink(session, logoutSession);
 
             AuthenticationManager.AuthResult authResult = AuthenticationManager.authenticateIdentityCookie(session, realm, false);
             if (authResult != null) {
+                event.detail(Details.REASON, errorMessage);
                 event.error(Errors.LOGOUT_FAILED);
                 return ErrorPage.error(session, logoutSession, Response.Status.BAD_REQUEST, Messages.FAILED_LOGOUT);
             } else {
                 // Probably changing locale on logout screen after logout was already performed. If there is no session in the browser, we can just display that logout was already finished
-                return loginForm.setSuccess(Messages.SUCCESS_LOGOUT).createInfoPage();
+                return session.getProvider(LoginFormsProvider.class).setSuccess(Messages.SUCCESS_LOGOUT).createInfoPage();
             }
         }
 
@@ -435,7 +432,7 @@ public class LogoutEndpoint {
         String idTokenIssuedAtStr = logoutSession.getAuthNote(OIDCLoginProtocol.LOGOUT_VALIDATED_ID_TOKEN_ISSUED_AT);
         if (userSessionIdFromIdToken != null && idTokenIssuedAtStr != null) {
             try {
-                userSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, userSessionIdFromIdToken));
+                userSession = session.sessions().getUserSession(realm, userSessionIdFromIdToken);
 
                 if (userSession == null) {
                     event.event(EventType.LOGOUT);
@@ -446,14 +443,14 @@ public class LogoutEndpoint {
                 }
             } catch (OAuthErrorException e) {
                 event.event(EventType.LOGOUT);
+                event.detail(Details.REASON, e.getDescription());
                 event.error(Errors.INVALID_TOKEN);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.SESSION_NOT_ACTIVE);
             }
         }
 
         // authenticate identity cookie, but ignore an access token timeout as we're logging out anyways.
-        AuthenticationManager.AuthResult authResult = lockUserSessionsForModification(session,
-                () -> AuthenticationManager.authenticateIdentityCookie(session, realm, false));
+        AuthenticationManager.AuthResult authResult = AuthenticationManager.authenticateIdentityCookie(session, realm, false);
         if (authResult != null) {
             userSession = userSession != null ? userSession : authResult.getSession();
             return initiateBrowserLogout(userSession);
@@ -499,7 +496,7 @@ public class LogoutEndpoint {
      * @return
      */
     private Response logoutToken() {
-        cors = Cors.add(request).auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
+        cors = Cors.builder().auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 
         MultivaluedMap<String, String> form = request.getDecodedFormParameters();
         checkSsl();
@@ -533,25 +530,27 @@ public class LogoutEndpoint {
                 userSessionModel = sessionManager.findOfflineUserSession(realm, token.getSessionState());
             } else {
                 String sessionState = token.getSessionState();
-                userSessionModel = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, sessionState));
+                userSessionModel = session.sessions().getUserSession(realm, sessionState);
             }
 
             if (userSessionModel != null) {
-                checkTokenIssuedAt(token.getIssuedAt(), userSessionModel);
+                checkTokenIssuedAt(token.getIat(), userSessionModel);
                 logout(userSessionModel, offline);
             }
         } catch (OAuthErrorException e) {
             // KEYCLOAK-6771 Certificate Bound Token
             if (MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC.equals(e.getDescription())) {
+                event.detail(Details.REASON, e.getDescription());
                 event.error(Errors.NOT_ALLOWED);
                 throw new CorsErrorResponseException(cors, e.getError(), e.getDescription(), Response.Status.UNAUTHORIZED);
             } else {
+                event.detail(Details.REASON, e.getDescription());
                 event.error(Errors.INVALID_TOKEN);
                 throw new CorsErrorResponseException(cors, e.getError(), e.getDescription(), Response.Status.BAD_REQUEST);
             }
         }
 
-        return cors.builder(Response.noContent()).build();
+        return cors.add(Response.noContent());
     }
 
     /**
@@ -573,15 +572,19 @@ public class LogoutEndpoint {
 
         String encodedLogoutToken = form.getFirst(OAuth2Constants.LOGOUT_TOKEN);
         if (encodedLogoutToken == null) {
+            String errorMessage = "No logout token";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_TOKEN);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "No logout token",
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, errorMessage,
                     Response.Status.BAD_REQUEST);
         }
 
         LogoutTokenValidationCode validationCode = tokenManager.verifyLogoutToken(session, realm, encodedLogoutToken);
         if (!validationCode.equals(LogoutTokenValidationCode.VALIDATION_SUCCESS)) {
+            String errorMessage = validationCode.getErrorMessage();
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_TOKEN);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, validationCode.getErrorMessage(),
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, errorMessage,
                     Response.Status.BAD_REQUEST);
         }
 
@@ -605,27 +608,26 @@ public class LogoutEndpoint {
         }
 
         if (!backchannelLogoutResponse.getLocalLogoutSucceeded()) {
+            String errorMessage = "There was an error during the local logout";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.LOGOUT_FAILED);
-            throw new ErrorResponseException(OAuthErrorException.SERVER_ERROR,
-                    "There was an error in the local logout",
+            throw new ErrorResponseException(OAuthErrorException.SERVER_ERROR, errorMessage,
                     Response.Status.NOT_IMPLEMENTED);
         }
 
         session.getProvider(SecurityHeadersProvider.class).options().allowEmptyContentType();
 
         if (oneOrMoreDownstreamLogoutsFailed(backchannelLogoutResponse)) {
-            return Cors.add(request)
+            return Cors.builder()
                     .auth()
-                    .builder(Response.status(Response.Status.GATEWAY_TIMEOUT)
-                            .type(MediaType.APPLICATION_JSON_TYPE))
-                    .build();
+                    .add(Response.status(Response.Status.GATEWAY_TIMEOUT)
+                            .type(MediaType.APPLICATION_JSON_TYPE));
         }
 
-        return Cors.add(request)
+        return Cors.builder()
                 .auth()
-                .builder(Response.ok()
-                        .type(MediaType.APPLICATION_JSON_TYPE))
-                .build();
+                .add(Response.ok()
+                        .type(MediaType.APPLICATION_JSON_TYPE));
     }
 
     private BackchannelLogoutResponse backchannelLogoutWithSessionId(String sessionId,
@@ -633,15 +635,10 @@ public class LogoutEndpoint {
         AtomicReference<BackchannelLogoutResponse> backchannelLogoutResponse = new AtomicReference<>(new BackchannelLogoutResponse());
         backchannelLogoutResponse.get().setLocalLogoutSucceeded(true);
         identityProviderAliases.forEach(identityProviderAlias -> {
-            UserSessionModel userSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSessionByBrokerSessionId(realm,
-                    identityProviderAlias + "." + sessionId));
+            UserSessionModel userSession = session.sessions().getUserSessionByBrokerSessionId(realm, identityProviderAlias + "." + sessionId);
 
             if (logoutOfflineSessions) {
-                if (offlineSessionsLazyLoadingEnabled) {
-                    logoutOfflineUserSessionByBrokerUserId(identityProviderAlias + "." + federatedUserId, identityProviderAlias + "." + sessionId);
-                } else {
-                    logoutOfflineUserSession(identityProviderAlias + "." + sessionId);
-                }
+                logoutOfflineUserSessionByBrokerUserId(identityProviderAlias + "." + federatedUserId, identityProviderAlias + "." + sessionId);
             }
 
             if (userSession != null) {
@@ -650,14 +647,6 @@ public class LogoutEndpoint {
         });
 
         return backchannelLogoutResponse.get();
-    }
-
-    private void logoutOfflineUserSession(String brokerSessionId) {
-        UserSessionModel offlineUserSession =
-                session.sessions().getOfflineUserSessionByBrokerSessionId(realm, brokerSessionId);
-        if (offlineUserSession != null) {
-            new UserSessionManager(session).revokeOfflineUserSession(offlineUserSession);
-        }
     }
 
     private BackchannelLogoutResponse backchannelLogoutFederatedUserId(String federatedUserId,
@@ -751,7 +740,7 @@ public class LogoutEndpoint {
         }
     }
 
-    private void checkTokenIssuedAt(int idTokenIssuedAt, UserSessionModel userSession) throws OAuthErrorException {
+    private void checkTokenIssuedAt(long idTokenIssuedAt, UserSessionModel userSession) throws OAuthErrorException {
         if (idTokenIssuedAt + 1 < userSession.getStarted()) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Toked issued before the user session started");
         }

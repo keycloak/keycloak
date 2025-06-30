@@ -26,8 +26,7 @@ please take a look at link:{upgradingguide_link_latest}[{upgradingguide_name}].
 The `SameSite` value `None` for `JSESSIONID` cookie is necessary for correct behavior of the {project_name} SAML adapter.
 Usage of a different value is causing resetting of the container's session with each request to {project_name}, when
 the SAML POST binging is used. Refer to the following steps for
-link:{adapterguide_link}#_saml-jboss-adapter-samesite-setting[Wildfly] and
-link:{adapterguide_link}#_saml-tomcat-adapter-samesite-setting[Tomcat] to keep the correct behavior. Notice, that this
+link:{adapterguide_link}#_saml-jboss-adapter-samesite-setting[Wildfly] to keep the correct behavior. Notice, that this
 workaround should be working also with the previous versions of the adapter.
 
 == Other improvements

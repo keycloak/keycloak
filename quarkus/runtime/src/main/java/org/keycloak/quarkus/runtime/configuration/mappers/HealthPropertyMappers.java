@@ -9,13 +9,11 @@ final class HealthPropertyMappers {
 
     private HealthPropertyMappers(){}
 
-    public static PropertyMapper[] getHealthPropertyMappers() {
+    public static PropertyMapper<?>[] getHealthPropertyMappers() {
         return new PropertyMapper[] {
                 fromOption(HealthOptions.HEALTH_ENABLED)
                         .to("quarkus.health.extensions.enabled")
                         .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
-                        .build(),
-                fromOption(HealthOptions.HEALTH_CLASSIC_PROBES_ENABLED)
                         .build()
         };
     }

@@ -1,5 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
+import { getAccountUrl } from "./test/utils";
+
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
@@ -9,17 +11,18 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: 1,
-  reporter: "html",
+  reporter: process.env.CI ? [["github"], ["html"]] : "list",
+  expect: {
+    timeout: 20 * 1000,
+  },
+
   use: {
-    baseURL: process.env.CI
-      ? "http://localhost:8080/realms/master/account/"
-      : "http://localhost:8080/",
+    baseURL: getAccountUrl(),
     trace: "on-first-retry",
   },
 
   /* Configure projects for major browsers */
   projects: [
-    { name: "setup", testMatch: /.auth\.setup\.ts/ },
     {
       name: "import realms",
       testMatch: /realm\.setup\.ts/,
@@ -33,18 +36,9 @@ export default defineConfig({
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
-        storageState: ".auth/user.json",
-      },
-      dependencies: ["setup", "import realms"],
-      testIgnore: ["**/personal-info.spec.ts"],
-    },
-    {
-      name: "personal-info",
-      use: {
-        ...devices["Desktop Chrome"],
+        viewport: { width: 1920, height: 1200 },
       },
       dependencies: ["import realms"],
-      testMatch: ["**/personal-info.spec.ts"],
     },
   ],
 });

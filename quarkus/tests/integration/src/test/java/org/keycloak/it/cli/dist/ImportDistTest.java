@@ -43,5 +43,8 @@ public class ImportDistTest {
         cliResult.assertMessage("Import finished successfully");
         cliResult.assertNoMessage("Changes detected in configuration");
         cliResult.assertNoMessage("Listening on: http");
+
+        cliResult = dist.run("import");
+        cliResult.assertError("Must specify either --dir or --file options.");
     }
 }

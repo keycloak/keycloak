@@ -65,7 +65,7 @@ public class TimeOffsetTest extends KeycloakModelTest {
 
             setTimeOffset(5);
 
-            // legacy store requires explicit expiration of expired events
+            // store requires explicit expiration of expired events
             ProviderFactory<EventStoreProvider> providerFactory = session.getKeycloakSessionFactory().getProviderFactory(EventStoreProvider.class);
             if ("jpa".equals(providerFactory.getId())) {
                 provider.clearExpiredEvents();

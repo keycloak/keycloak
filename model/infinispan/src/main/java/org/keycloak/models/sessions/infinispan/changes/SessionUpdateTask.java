@@ -26,7 +26,7 @@ public interface SessionUpdateTask<S extends SessionEntity> {
 
     void runUpdate(S entity);
 
-    CacheOperation getOperation(S entity);
+    CacheOperation getOperation();
 
     CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<S> sessionWrapper);
 

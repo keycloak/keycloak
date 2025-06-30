@@ -1,17 +1,39 @@
-import { generatePath } from "react-router-dom";
+import { generatePath, type PathParam } from "react-router-dom";
 
-export type PathParam = { [key: string]: string };
+/**
+ * Represents an object that contains the parameters to be included in a path.
+ *
+ * @example
+ * const params: PathParams<"/user/:id"> = { id: "123" };
+ */
+export type PathParams<Path extends string> = {
+  [key in PathParam<Path>]: string;
+};
 
+/**
+ * Generates a path that represents the given path template with parameters interpolated and encoded in it, so that it can safely used in a URL.
+ *
+ * @param originalPath - The path template to use to generate the path.
+ * @param params - An object that contains the parameters to be included in the path.
+ *
+ * @example
+ * const path = "/user/:id";
+ * const params = { id: "123" };
+ * const encodedPath = generateEncodedPath(path, params);
+ * // encodedPath will be "/user/123"
+ */
 export function generateEncodedPath<Path extends string>(
   originalPath: Path,
-  params: PathParam,
+  params: PathParams<Path>,
 ): string {
-  const encodedParams: PathParam = {};
+  // Clone the params object so we don't mutate the original.
+  const encodedParams = structuredClone(params);
 
-  Object.entries(params).forEach(
-    ([k, v]) => (encodedParams[k] = encodeURIComponent(v)),
-  );
+  // Encode each param in the path so that it can be used in a URL.
+  for (const key in encodedParams) {
+    const pathKey = key as PathParam<Path>;
+    encodedParams[pathKey] = encodeURIComponent(encodedParams[pathKey]);
+  }
 
-  //TODO: Fix type once https://github.com/remix-run/react-router/pull/10719 is merged.
-  return generatePath(originalPath, encodedParams as any);
+  return generatePath(originalPath, encodedParams);
 }

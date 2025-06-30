@@ -28,15 +28,6 @@ public interface SessionLoader<LOADER_CONTEXT extends SessionLoader.LoaderContex
         WORKER_CONTEXT extends SessionLoader.WorkerContext,
         WORKER_RESULT extends SessionLoader.WorkerResult> extends Serializable {
 
-    /**
-     * Will be triggered just once on cluster coordinator node to perform some generic initialization tasks (Eg. update DB before starting load).
-     *
-     * NOTE: This shouldn't be used for the initialization of loader instance itself!
-     *
-     * @param session
-     */
-    void init(KeycloakSession session);
-
 
     /**
      *
@@ -45,22 +36,18 @@ public interface SessionLoader<LOADER_CONTEXT extends SessionLoader.LoaderContex
      *
      * This method could be expensive to call, so the "computed" loaderContext object is passed among workers/loaders and needs to be serializable
      *
-     * @param session
      * @return
      */
-    LOADER_CONTEXT computeLoaderContext(KeycloakSession session);
+    LOADER_CONTEXT computeLoaderContext();
 
 
     /**
      * Compute the worker context for current iteration
      *
-     * @param loaderCtx global loader context
      * @param segment the current segment (page) to compute
-     * @param workerId ID of worker for current worker iteration. Usually the number 0-8 (with single cluster node)
-     * @param previousResult last workerResult from previous computation. Can be empty list in case of the operation is triggered for the 1st time
      * @return
      */
-    WORKER_CONTEXT computeWorkerContext(LOADER_CONTEXT loaderCtx, int segment, int workerId, WORKER_RESULT previousResult);
+    WORKER_CONTEXT computeWorkerContext(int segment);
 
 
     /**
@@ -75,30 +62,9 @@ public interface SessionLoader<LOADER_CONTEXT extends SessionLoader.LoaderContex
 
 
     /**
-     * Called when it's not possible to compute current iteration and load session for some reason (EG. infinispan not yet fully initialized)
-     *
-     * @param loaderContext
-     * @param workerContext
-     * @return
-     */
-    WORKER_RESULT createFailedWorkerResult(LOADER_CONTEXT loaderContext, WORKER_CONTEXT workerContext);
-
-
-    /**
-     * This will be called on nodes to check if loading is finished. It allows loader to notify that loading is finished for some reason.
-     *
-     * @param initializer
-     * @return
-     */
-    boolean isFinished(BaseCacheInitializer initializer);
-
-
-    /**
      * Callback triggered on cluster coordinator once it recognize that all sessions were successfully loaded
-     *
-     * @param initializer
      */
-    void afterAllSessionsLoaded(BaseCacheInitializer initializer);
+    void afterAllSessionsLoaded();
 
 
     /**
@@ -125,58 +91,13 @@ public interface SessionLoader<LOADER_CONTEXT extends SessionLoader.LoaderContex
      * Object, which is computed before each worker iteration and contains some data to be used by the corresponding worker iteration.
      * For example info about which segment/page should be loaded by current worker.
      */
-    class WorkerContext implements Serializable {
-
-        private final int segment;
-        private final int workerId;
-
-        public WorkerContext(int segment, int workerId) {
-            this.segment = segment;
-            this.workerId = workerId;
-        }
-
-
-        public int getSegment() {
-            return this.segment;
-        }
-
-
-        public int getWorkerId() {
-            return this.workerId;
-        }
+    record WorkerContext(int segment) implements Serializable {
     }
 
 
     /**
      * Result of single worker iteration
      */
-    class WorkerResult implements Serializable {
-
-        private final boolean success;
-        private final int segment;
-        private final int workerId;
-
-
-        public WorkerResult(boolean success, int segment, int workerId) {
-            this.success = success;
-            this.segment = segment;
-            this.workerId = workerId;
-        }
-
-
-        public boolean isSuccess() {
-            return success;
-        }
-
-
-        public int getSegment() {
-            return segment;
-        }
-
-
-        public int getWorkerId() {
-            return workerId;
-        }
-
+    record WorkerResult(boolean success, int segment) implements Serializable {
     }
 }

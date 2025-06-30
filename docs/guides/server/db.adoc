@@ -9,7 +9,7 @@
     summary="An overview about how to configure relational databases"
     includedOptions="db db-* transaction-xa-enabled">
 
-This {section} explains how to configure the Keycloak server to store data in a relational database.
+This {section} explains how to configure the {project_name} server to store data in a relational database.
 
 == Supported databases
 
@@ -24,22 +24,34 @@ The server has built-in support for different databases. You can query the avail
 |MySQL | `mysql` | ${properties["mysql.version"]}
 |Oracle Database | `oracle` | ${properties["oracledb.version"]}
 |PostgreSQL | `postgres` | ${properties["postgresql.version"]}
+|Amazon Aurora PostgreSQL | `postgres` | ${properties["aurora-postgresql.version"]}
 |===
 
 By default, the server uses the `dev-file` database. This is the default database that the server will use to persist data and
 only exists for development use-cases. The `dev-file` database is not suitable for production use-cases, and must be replaced before deploying to production.
 
-<@profile.ifProduct>
-
 == Installing a database driver
 
-Database drivers are shipped as part of Keycloak except for the Oracle Database and Micrsoft SQL Server drivers which need to be installed separately.
+Database drivers are shipped as part of {project_name} except for the
+<@profile.ifProduct>
+Oracle Database and Microsoft SQL Server drivers.
+</@profile.ifProduct>
+<@profile.ifCommunity>
+Oracle Database driver.
+</@profile.ifCommunity>
 
-Install the necessary driver if you want to connect to one of these databases or skip this section if you want to connect to a different database for which the database driver is already included.
+Install the necessary missing driver manually if you want to connect to
+<@profile.ifProduct>
+one of these databases
+</@profile.ifProduct>
+<@profile.ifCommunity>
+this database
+</@profile.ifCommunity>
+or skip this section if you want to connect to a different database for which the database driver is already included.
 
 === Installing the Oracle Database driver
 
-To install the Oracle Database driver for Keycloak:
+To install the Oracle Database driver for {project_name}:
 
 . Download the `ojdbc11` and `orai18n` JAR files from one of the following sources:
 
@@ -49,23 +61,23 @@ To install the Oracle Database driver for Keycloak:
 
 .. Installation media recommended by the database vendor for the specific database in use.
 
-. When running the unzipped distribution: Place the `ojdbc11` and `orai18n` JAR files in Keycloak's `providers` folder
+. When running the unzipped distribution: Place the `ojdbc11` and `orai18n` JAR files in {project_name}'s `providers` folder
 
-. When running containers: Build a custom Keycloak image and add the JARs in the `providers` folder. When building a custom image for the Keycloak Operator, those images need to be optimized images with all build-time options of Keycloak set.
+. When running containers: Build a custom {project_name} image and add the JARs in the `providers` folder. When building a custom image for the Operator, those images need to be optimized images with all build-time options of {project_name} set.
 +
-A minimal Dockerfile to build an image which can be used with the Keycloak Operator and includes Oracle Database JDBC drivers downloaded from Maven Central looks like the following:
+A minimal Dockerfile to build an image which can be used with the {project_name} Operator and includes Oracle Database JDBC drivers downloaded from Maven Central looks like the following:
 +
-[source,dockerfile]
+[source,dockerfile,subs="attributes+"]
 ----
-FROM quay.io/keycloak/keycloak:latest
-ADD --chown=keycloak:keycloak https://repo1.maven.org/maven2/com/oracle/database/jdbc/ojdbc11/${properties["oracle-jdbc.version"]}/ojdbc11-${properties["oracle-jdbc.version"]}.jar /opt/keycloak/providers/ojdbc11.jar
-ADD --chown=keycloak:keycloak https://repo1.maven.org/maven2/com/oracle/database/nls/orai18n/${properties["oracle-jdbc.version"]}/orai18n-${properties["oracle-jdbc.version"]}.jar /opt/keycloak/providers/orai18n.jar
+FROM quay.io/keycloak/keycloak:{containerlabel}
+ADD --chown=keycloak:keycloak --chmod=644 https://repo1.maven.org/maven2/com/oracle/database/jdbc/ojdbc11/${properties["oracle-jdbc.version"]}/ojdbc11-${properties["oracle-jdbc.version"]}.jar /opt/keycloak/providers/ojdbc11.jar
+ADD --chown=keycloak:keycloak --chmod=644 https://repo1.maven.org/maven2/com/oracle/database/nls/orai18n/${properties["oracle-jdbc.version"]}/orai18n-${properties["oracle-jdbc.version"]}.jar /opt/keycloak/providers/orai18n.jar
 # Setting the build parameter for the database:
 ENV KC_DB=oracle
 # Add all other build parameters needed, for example enable health and metrics:
 ENV KC_HEALTH_ENABLED=true
 ENV KC_METRICS_ENABLED=true
-# To be able to use the image with the Keycloak Operator, it needs to be optimized, which requires Keycloak's build step:
+# To be able to use the image with the {project_name} Operator, it needs to be optimized, which requires {project_name}'s build step:
 RUN /opt/keycloak/bin/kc.sh build
 ----
 +
@@ -73,9 +85,11 @@ See the <@links.server id="containers" /> {section} for details on how to build 
 
 Then continue configuring the database as described in the next section.
 
+<@profile.ifProduct>
+
 === Installing the Microsoft SQL Server driver
 
-To install the Microsoft SQL Server driver for Keycloak:
+To install the Microsoft SQL Server driver for {project_name}:
 
 . Download the `mssql-jdbc` JAR file from one of the following sources:
 
@@ -85,22 +99,22 @@ To install the Microsoft SQL Server driver for Keycloak:
 
 .. Installation media recommended by the database vendor for the specific database in use.
 
-. When running the unzipped distribution: Place the `mssql-jdbc` in Keycloak's `providers` folder
+. When running the unzipped distribution: Place the `mssql-jdbc` in {project_name}'s `providers` folder
 
-. When running containers: Build a custom Keycloak image and add the JARs in the `providers` folder. When building a custom image for the Keycloak Operator, those images need to be optimized images with all build-time options of Keycloak set.
+. When running containers: Build a custom {project_name} image and add the JARs in the `providers` folder. When building a custom image for the {project_name} Operator, those images need to be optimized images with all build-time options of {project_name} set.
 +
-A minimal Dockerfile to build an image which can be used with the Keycloak Operator and includes Microsoft SQL Server JDBC drivers downloaded from Maven Central looks like the following:
+A minimal Dockerfile to build an image which can be used with the {project_name} Operator and includes Microsoft SQL Server JDBC drivers downloaded from Maven Central looks like the following:
 +
-[source,dockerfile]
+[source,dockerfile,subs="attributes+"]
 ----
-FROM quay.io/keycloak/keycloak:latest
-ADD --chown=keycloak:keycloak https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/${properties["mssql-jdbc.version"]}/mssql-jdbc-${properties["mssql-jdbc.version"]}.jar /opt/keycloak/providers/mssql-jdbc.jar
+FROM quay.io/keycloak/keycloak:{containerlabel}
+ADD --chown=keycloak:keycloak --chmod=644 https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/${properties["mssql-jdbc.version"]}/mssql-jdbc-${properties["mssql-jdbc.version"]}.jar /opt/keycloak/providers/mssql-jdbc.jar
 # Setting the build parameter for the database:
 ENV KC_DB=mssql
 # Add all other build parameters needed, for example enable health and metrics:
 ENV KC_HEALTH_ENABLED=true
 ENV KC_METRICS_ENABLED=true
-# To be able to use the image with the Keycloak Operator, it needs to be optimized, which requires Keycloak's build step:
+# To be able to use the image with the {project_name} Operator, it needs to be optimized, which requires {project_name}'s build step:
 RUN /opt/keycloak/bin/kc.sh build
 ----
 +
@@ -227,6 +241,37 @@ show server_encoding;
 create database keycloak with encoding 'UTF8';
 ----
 
+[[preparing-keycloak-for-amazon-aurora-postgresql]]
+== Preparing for Amazon Aurora PostgreSQL
+
+When using Amazon Aurora PostgreSQL, the https://github.com/awslabs/aws-advanced-jdbc-wrapper[Amazon Web Services JDBC Driver] offers additional features like transfer of database connections when a writer instance changes in a Multi-AZ setup.
+This driver is not part of the distribution and needs to be installed before it can be used.
+
+To install this driver, apply the following steps:
+
+. When running the unzipped distribution: Download the JAR file from the https://github.com/awslabs/aws-advanced-jdbc-wrapper/releases/[Amazon Web Services JDBC Driver releases page] and place it in {project_name}'s `providers` folder.
+
+. When running containers: Build a custom {project_name} image and add the JAR in the `providers` folder.
++
+A minimal Dockerfile to build an image which can be used with the {project_name} Operator looks like the following:
++
+[source,dockerfile,subs="attributes+"]
+----
+FROM quay.io/keycloak/keycloak:{containerlabel}
+ADD --chmod=0666 https://github.com/awslabs/aws-advanced-jdbc-wrapper/releases/download/${properties["aws-jdbc-wrapper.version"]}/aws-advanced-jdbc-wrapper-${properties["aws-jdbc-wrapper.version"]}.jar /opt/keycloak/providers/aws-advanced-jdbc-wrapper.jar
+----
++
+See the <@links.server id="containers" /> {section} for details on how to build optimized images, and the <@links.operator id="customizing-keycloak" /> {section} on how to run optimized and non-optimized images with the {project_name} Operator.
+. Configure {project_name} to run with the following parameters:
+`db-url`:: Insert `aws-wrapper` to the regular PostgreSQL JDBC URL resulting in a URL like `+jdbc:aws-wrapper:postgresql://...+`.
+`db-driver`:: Set to `software.amazon.jdbc.Driver` to use the AWS JDBC wrapper.
+
+== Preparing for MySQL server
+
+Beginning with MySQL 8.0.30, MySQL supports generated invisible primary keys for any InnoDB table that is created without an explicit primary key (more information https://dev.mysql.com/doc/refman/8.0/en/create-table-gipks.html[here]).
+If this feature is enabled, the database schema initialization and also migrations will fail with the error message `Multiple primary key defined (1068)`.
+You then need to disable it by setting the parameter `sql_generate_invisible_primary_key` to `OFF` in your MySQL server configuration before installing or upgrading {project_name}.
+
 == Changing database locking timeout in a cluster configuration
 
 Because cluster nodes can boot concurrently, they take extra time for database actions. For example, a booting server instance may perform some database migration, importing, or first time initializations. A database lock prevents start actions from conflicting with each other when cluster nodes boot up concurrently.
@@ -235,28 +280,36 @@ The maximum timeout for this lock is 900 seconds. If a node waits on this lock f
 
 <@kc.start parameters="--spi-dblock-jpa-lock-wait-timeout 900"/>
 
-== Using Database Vendors without XA transaction support
-Keycloak uses XA transactions and the appropriate database drivers by default. Certain vendors, such as Azure SQL and MariaDB Galera, do not support or rely on the XA transaction mechanism. To use Keycloak without XA transaction support using the appropriate JDBC driver, enter the following command:
+== Using Database Vendors with XA transaction support
+{project_name} uses non-XA transactions and the appropriate database drivers by default.
 
-<@kc.build parameters="--db=<vendor> --transaction-xa-enabled=false"/>
+If you wish to use the XA transaction support offered by your driver, enter the following command:
 
-Keycloak automatically chooses the appropriate JDBC driver for your vendor.
+<@kc.build parameters="--db=<vendor> --transaction-xa-enabled=true"/>
+
+{project_name} automatically chooses the appropriate JDBC driver for your vendor.
+
+NOTE: Certain vendors, such as Azure SQL and MariaDB Galera, do not support or rely on the XA transaction mechanism.
+
+XA recovery defaults to enabled and will use the file system location `KEYCLOAK_HOME/data/transaction-logs` to store transaction logs.
+
+NOTE: Enabling XA transactions in a containerized environment does not fully support XA recovery unless stable storage is available at that path.
 
 == Setting JPA provider configuration option for migrationStrategy
 
 To setup the JPA migrationStrategy (manual/update/validate) you should setup JPA provider as follows:
 
 .Setting the `migration-strategy` for the `quarkus` provider of the `connections-jpa` SPI
-<@kc.start parameters="--spi-connections-jpa-legacy-migration-strategy=manual"/>
+<@kc.start parameters="--spi-connections-jpa-quarkus-migration-strategy=manual"/>
 
 If you want to get a SQL file for DB initialization, too, you have to add this additional SPI initializeEmpty (true/false):
 
 .Setting the `initialize-empty` for the `quarkus` provider of the `connections-jpa` SPI
-<@kc.start parameters="--spi-connections-jpa-legacy-initialize-empty=false"/>
+<@kc.start parameters="--spi-connections-jpa-quarkus-initialize-empty=false"/>
 
 In the same way the migrationExport to point to a specific file and location:
 
 .Setting the `migration-export` for the `quarkus` provider of the `connections-jpa` SPI
-<@kc.start parameters="--spi-connections-jpa-legacy-migration-export=<path>/<file.sql>"/>
+<@kc.start parameters="--spi-connections-jpa-quarkus-migration-export=<path>/<file.sql>"/>
 
 </@tmpl.guide>

@@ -6,10 +6,9 @@ export default class InitialAccessTokenTab extends CommonPage {
   #emptyAction = "no-initial-access-tokens-empty-action";
 
   #expirationNumberInput = "expiration";
-  #expirationInput = 'input[name="count"]';
-  #expirationText = "#expiration-helper";
-  #countInput = '[data-testid="count"] input';
-  #countPlusBtn = '[data-testid="count"] [aria-label="Plus"]';
+  #expirationText = ".pf-v5-c-helper-text__item-text";
+  #countInput = "#count input";
+  #countPlusBtn = '#count [aria-label="Plus"]';
   #saveBtn = "save";
 
   goToInitialAccessTokenTab() {
@@ -28,7 +27,7 @@ export default class InitialAccessTokenTab extends CommonPage {
   }
 
   getFirstId(callback: (id: string) => void) {
-    cy.get('tbody > tr:first-child > [data-label="ID"]')
+    cy.get("tbody > tr:first-child > td:first-child")
       .invoke("text")
       .then((text) => {
         callback(text);
@@ -42,7 +41,8 @@ export default class InitialAccessTokenTab extends CommonPage {
   }
 
   fillNewTokenData(expiration: number, count: number) {
-    cy.findByTestId(this.#expirationNumberInput).clear().type(`${expiration}`);
+    cy.findByTestId(this.#expirationNumberInput).clear();
+    cy.findByTestId(this.#expirationNumberInput).type(`${expiration}`);
     cy.get(this.#countInput).clear();
 
     for (let i = 0; i < count; i++) {
@@ -66,7 +66,7 @@ export default class InitialAccessTokenTab extends CommonPage {
   }
 
   checkCountValue(value: number) {
-    cy.get(this.#expirationInput).should("have.value", value);
+    cy.get(this.#countInput).should("have.value", value);
     return this;
   }
 

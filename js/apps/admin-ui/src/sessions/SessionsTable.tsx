@@ -1,17 +1,20 @@
 import type UserSessionRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userSessionRepresentation";
+import { useEnvironment } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
+  Label,
   List,
   ListItem,
   ListVariant,
   ToolbarItem,
+  Tooltip,
 } from "@patternfly/react-core";
-import { CubesIcon } from "@patternfly/react-icons";
+import { CubesIcon, InfoCircleIcon } from "@patternfly/react-icons";
+import { IRowData } from "@patternfly/react-table";
 import { ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
+import { Link, useMatch, useNavigate } from "react-router-dom";
+import { useAdminClient } from "../admin-client";
 import { toClient } from "../clients/routes/Client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
@@ -24,8 +27,9 @@ import {
 } from "../components/table-toolbar/KeycloakDataTable";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
-import { keycloak } from "../keycloak";
-import { toUser } from "../user/routes/User";
+import { UserRoute, toUser } from "../user/routes/User";
+import { toUsers } from "../user/routes/Users";
+import { isLightweightUser } from "../user/utils";
 import useFormatDate from "../utils/useFormatDate";
 
 export type ColumnName =
@@ -47,9 +51,24 @@ export type SessionsTableProps = {
 
 const UsernameCell = (row: UserSessionRepresentation) => {
   const { realm } = useRealm();
+  const { t } = useTranslation();
   return (
     <Link to={toUser({ realm, id: row.userId!, tab: "sessions" })}>
       {row.username}
+      {row.transientUser && (
+        <>
+          {" "}
+          <Tooltip content={t("transientUserTooltip")}>
+            <Label
+              data-testid="user-details-label-transient-user"
+              icon={<InfoCircleIcon />}
+              isCompact
+            >
+              {t("transientUser")}
+            </Label>
+          </Tooltip>
+        </>
+      )}
     </Link>
   );
 };
@@ -78,13 +97,18 @@ export default function SessionsTable({
   isSearching,
   isPaginated,
 }: SessionsTableProps) {
+  const { keycloak } = useEnvironment();
+  const { adminClient } = useAdminClient();
+
   const { realm } = useRealm();
   const { whoAmI } = useWhoAmI();
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const { addError } = useAlerts();
   const formatDate = useFormatDate();
   const [key, setKey] = useState(0);
   const refresh = () => setKey((value) => value + 1);
+  const isOnUserPage = !!useMatch(UserRoute.path);
 
   const columns = useMemo(() => {
     const defaultColumns: Field<UserSessionRepresentation>[] = [
@@ -130,18 +154,40 @@ export default function SessionsTable({
     onConfirm: async () => {
       try {
         await adminClient.users.logout({ id: logoutUser! });
-        refresh();
+        if (isOnUserPage && isLightweightUser(logoutUser)) {
+          navigate(toUsers({ realm: realm }));
+        } else {
+          refresh();
+        }
       } catch (error) {
         addError("logoutAllSessionsError", error);
       }
     },
   });
 
-  async function onClickSignOut(session: UserSessionRepresentation) {
-    await adminClient.realms.deleteSession({ realm, session: session.id! });
+  async function onClickRevoke(rowData: IRowData) {
+    const session = rowData.data as UserSessionRepresentation;
+    await adminClient.realms.deleteSession({
+      realm,
+      session: session.id!,
+      isOffline: true,
+    });
+
+    refresh();
+  }
+
+  async function onClickSignOut(rowData: IRowData) {
+    const session = rowData.data as UserSessionRepresentation;
+    await adminClient.realms.deleteSession({
+      realm,
+      session: session.id!,
+      isOffline: false,
+    });
 
     if (session.userId === whoAmI.getUserId()) {
       await keycloak.logout({ redirectUri: "" });
+    } else if (isOnUserPage && isLightweightUser(session.userId)) {
+      navigate(toUsers({ realm: realm }));
     } else {
       refresh();
     }
@@ -168,12 +214,25 @@ export default function SessionsTable({
           )
         }
         columns={columns}
-        actions={[
-          {
-            title: t("signOut"),
-            onRowClick: onClickSignOut,
-          } as Action<UserSessionRepresentation>,
-        ]}
+        actionResolver={(rowData: IRowData) => {
+          if (
+            rowData.data.type === "Offline" ||
+            rowData.data.type === "OFFLINE"
+          ) {
+            return [
+              {
+                title: t("revoke"),
+                onClick: () => onClickRevoke(rowData),
+              } as Action<UserSessionRepresentation>,
+            ];
+          }
+          return [
+            {
+              title: t("signOut"),
+              onClick: () => onClickSignOut(rowData),
+            } as Action<UserSessionRepresentation>,
+          ];
+        }}
         emptyState={
           <ListEmptyState
             hasIcon

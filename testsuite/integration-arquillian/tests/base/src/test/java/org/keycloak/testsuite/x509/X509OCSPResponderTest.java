@@ -18,7 +18,6 @@
 
 package org.keycloak.testsuite.x509;
 
-import com.google.common.base.Charsets;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.junit.After;
 import org.junit.Assert;
@@ -39,13 +38,13 @@ import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorC
 
 import io.undertow.Undertow;
 import io.undertow.server.handlers.BlockingHandler;
-import org.keycloak.testsuite.util.PhantomJSBrowser;
-import org.openqa.selenium.WebDriver;
+
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.function.Supplier;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.keycloak.testsuite.util.PhantomJSBrowser;
+import org.keycloak.testsuite.util.HtmlUnitBrowser;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -66,12 +65,12 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
     private Undertow ocspResponder;
 
     @Drone
-    @PhantomJSBrowser
-    private WebDriver phantomJS;
+    @HtmlUnitBrowser
+    private WebDriver htmlUnit;
 
     @Before
     public void replaceTheDefaultDriver() {
-        replaceDefaultWebDriver(phantomJS);
+        replaceDefaultWebDriver(htmlUnit);
     }
 
     @Test
@@ -165,7 +164,7 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
                         .setMappingSourceType(SUBJECTDN_EMAIL)
                         .setOCSPResponder("http://" + OCSP_RESPONDER_HOST + ":" + OCSP_RESPONDER_PORT + "/oscp")
                         .setOCSPResponderCertificate(
-                                IOUtils.toString(this.getClass().getResourceAsStream(OcspHandler.OCSP_RESPONDER_CERT_PATH), Charsets.UTF_8)
+                                IOUtils.toString(this.getClass().getResourceAsStream(OcspHandler.OCSP_RESPONDER_CERT_PATH), StandardCharsets.UTF_8)
                                         .replace(PemUtils.BEGIN_CERT, "")
                                         .replace(PemUtils.END_CERT, ""))
                         .setUserIdentityMapperType(USERNAME_EMAIL);

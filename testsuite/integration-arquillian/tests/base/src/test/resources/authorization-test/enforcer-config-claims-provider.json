@@ -1,105 +1,101 @@
 {
   "realm": "test-realm-authz",
   "auth-server-url": "http://localhost:8180/auth",
-  "ssl-required": "external",
   "resource": "test-app-authz",
-  "bearer-only": true,
   "credentials": {
     "secret": "secret"
   },
-  "policy-enforcer": {
-    "paths": [
-      {
-        "path": "/claims-provider",
-        "methods": [
-          {
-            "method": "POST",
-            "scopes": [
-              "create"
-            ]
-          }
-        ],
-        "claim-information-point": {
+  "paths": [
+    {
+      "path": "/claims-provider",
+      "methods": [
+        {
+          "method": "POST",
+          "scopes": [
+            "create"
+          ]
+        }
+      ],
+      "claim-information-point": {
+        "claims": {
+          "claim-from-request-parameter": "{request.parameter['a']}",
+          "claim-from-header": "{request.header['b']}",
+          "claim-from-cookie": "{request.cookie['c']}",
+          "claim-from-remoteAddr": "{request.remoteAddr}",
+          "claim-from-method": "{request.method}",
+          "claim-from-uri": "{request.uri}",
+          "claim-from-relativePath": "{request.relativePath}",
+          "claim-from-secure": "{request.secure}",
+          "claim-from-json-body-object": "{request.body['/a/b/c']}",
+          "claim-from-json-body-array": "{request.body['/d/1']}",
+          "claim-from-json-body-number": "{request.body['/e/number']}",
+          "claim-from-body": "{request.body}",
+          "claim-from-static-value": "static value",
+          "claim-from-multiple-static-value": ["static", "value"],
+          "param-replace-multiple-placeholder": "Test {keycloak.access_token['/custom_claim/0']} and {request.parameter['a']} "
+        }
+      }
+    },
+    {
+      "path": "/claims-from-body-json-object",
+      "methods": [
+        {
+          "method": "POST",
+          "scopes": [
+            "create"
+          ]
+        }
+      ],
+      "claim-information-point": {
+        "claims": {
+          "individualRoles": "{request.body['/Individual/individualRoles']}"
+        }
+      }
+    },
+    {
+      "path": "/http-post-claim-provider",
+      "claim-information-point": {
+        "http": {
           "claims": {
-            "claim-from-request-parameter": "{request.parameter['a']}",
-            "claim-from-header": "{request.header['b']}",
-            "claim-from-cookie": "{request.cookie['c']}",
-            "claim-from-remoteAddr": "{request.remoteAddr}",
-            "claim-from-method": "{request.method}",
-            "claim-from-uri": "{request.uri}",
-            "claim-from-relativePath": "{request.relativePath}",
-            "claim-from-secure": "{request.secure}",
-            "claim-from-json-body-object": "{request.body['/a/b/c']}",
-            "claim-from-json-body-array": "{request.body['/d/1']}",
-            "claim-from-json-body-number": "{request.body['/e/number']}",
-            "claim-from-body": "{request.body}",
-            "claim-from-static-value": "static value",
-            "claim-from-multiple-static-value": ["static", "value"],
-            "param-replace-multiple-placeholder": "Test {keycloak.access_token['/custom_claim/0']} and {request.parameter['a']} "
-          }
-        }
-      },
-      {
-        "path": "/claims-from-body-json-object",
-        "methods": [
-          {
-            "method": "POST",
-            "scopes": [
-              "create"
-            ]
-          }
-        ],
-        "claim-information-point": {
-          "claims": {
-            "individualRoles": "{request.body['/Individual/individualRoles']}"
-          }
-        }
-      },
-      {
-        "path": "/http-post-claim-provider",
-        "claim-information-point": {
-          "http": {
-            "claims": {
-              "claim-a": "/a",
-              "claim-d": "/d",
-              "claim-d0": "/d/0",
-              "claim-d-all": ["/d/0", "/d/1"]
-            },
-            "url": "http://localhost:8989/post-claim-information-provider",
-            "method": "POST",
-            "headers": {
-              "Content-Type": "application/x-www-form-urlencoded",
-              "header-b": ["header-b-value1", "header-b-value2"],
-              "Authorization": "Bearer {keycloak.access_token}"
-            },
-            "parameters": {
-              "param-a": ["param-a-value1", "param-a-value2"],
-              "param-subject": "{keycloak.access_token['/sub']}",
-              "param-user-name": "{keycloak.access_token['/preferred_username']}",
-              "param-other-claims": "{keycloak.access_token['/custom_claim']}"
-            }
-          }
-        }
-      },
-      {
-        "path": "/http-get-claim-provider",
-        "claim-information-point": {
-          "http": {
-            "url": "http://localhost:8989/get-claim-information-provider",
-            "method": "get",
-            "headers": {
-              "Content-Type": "application/x-www-form-urlencoded",
-              "header-b": ["header-b-value1", "header-b-value2"],
-              "Authorization": "Bearer {keycloak.access_token}"
-            },
-            "parameters": {
-              "param-a": ["param-a-value1", "param-a-value2"],
-              "param-subject": "{keycloak.access_token['/sub']}",
-              "param-user-name": "{keycloak.access_token['/preferred_username']}"
-            }
+            "claim-a": "/a",
+            "claim-d": "/d",
+            "claim-d0": "/d/0",
+            "claim-d-all": ["/d/0", "/d/1"]
+          },
+          "url": "http://localhost:8989/post-claim-information-provider",
+          "method": "POST",
+          "headers": {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "header-b": ["header-b-value1", "header-b-value2"],
+            "Authorization": "Bearer {keycloak.access_token}"
+          },
+          "parameters": {
+            "param-a": ["param-a-value1", "param-a-value2"],
+            "param-subject": "{keycloak.access_token['/sub']}",
+            "param-user-name": "{keycloak.access_token['/preferred_username']}",
+            "param-other-claims": "{keycloak.access_token['/custom_claim']}"
           }
         }
       }
-    ]
-  }
+    },
+    {
+      "path": "/http-get-claim-provider",
+      "claim-information-point": {
+        "http": {
+          "url": "http://localhost:8989/get-claim-information-provider",
+          "method": "get",
+          "headers": {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "header-b": ["header-b-value1", "header-b-value2"],
+            "Authorization": "Bearer {keycloak.access_token}"
+          },
+          "parameters": {
+            "param-a": ["param-a-value1", "param-a-value2"],
+            "param-subject": "{keycloak.access_token['/sub']}",
+            "param-user-name": "{keycloak.access_token['/preferred_username']}"
+          }
+        }
+      }
+    }
+  ]
 }

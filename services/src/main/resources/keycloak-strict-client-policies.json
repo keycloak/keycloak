@@ -1,0 +1,68 @@
+{
+    "policies": [
+        {
+           "name": "Openid-connect OAuth 2.1 confidential client",
+           "description": "Openid-connect confidential client policy to ensure OAuth 2.1 specification.",
+           "enabled": true,
+           "conditions": [
+               {
+                   "condition": "client-type",
+                   "configuration": {
+                       "protocol": "openid-connect"
+                   }
+               },
+               {
+                   "condition": "client-access-type",
+                   "configuration": {
+                       "type": [
+                           "confidential"
+                       ]
+                   }
+               }
+           ],
+           "profiles": [
+               "oauth-2-1-for-confidential-client"
+           ]
+       },
+       {
+           "name": "Openid-connect OAuth 2.1 public client",
+           "description": "Openid-connect confidential client policy to ensure OAuth 2.1 specification.",
+           "enabled": true,
+           "conditions": [
+               {
+                   "condition": "client-type",
+                   "configuration": {
+                       "protocol": "openid-connect"
+                   }
+               },
+               {
+                   "condition": "client-access-type",
+                   "configuration": {
+                       "type": [
+                           "public"
+                       ]
+                   }
+               }
+           ],
+           "profiles": [
+               "oauth-2-1-for-public-client"
+           ]
+       },
+       {
+           "name": "Saml secure client (signatures, post, https)",
+           "description": "Saml policy to ensure signatures, POST binding and https URLs.",
+           "enabled": true,
+           "conditions": [
+               {
+                   "condition": "client-type",
+                   "configuration": {
+                       "protocol": "saml"
+                   }
+               }
+           ],
+           "profiles": [
+               "saml-security-profile"
+           ]
+       }
+   ]
+}

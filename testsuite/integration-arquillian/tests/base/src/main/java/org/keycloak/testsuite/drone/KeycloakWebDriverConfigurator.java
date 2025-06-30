@@ -27,7 +27,6 @@ import org.jboss.arquillian.drone.webdriver.spi.BrowserCapabilities;
 import org.jboss.arquillian.drone.webdriver.spi.BrowserCapabilitiesRegistry;
 import org.jboss.logging.Logger;
 import org.openqa.selenium.Capabilities;
-import org.openqa.selenium.phantomjs.PhantomJSDriverService;
 import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.DesiredCapabilities;
 
@@ -53,7 +52,6 @@ public class KeycloakWebDriverConfigurator {
         DesiredCapabilities capabilitiesToAdd = new DesiredCapabilities();
         updateCapabilityKeys("htmlUnit", webDriverCfg, capabilitiesToAdd);
         updateCapabilityKeys("appium", webDriverCfg, capabilitiesToAdd);
-        configurePhantomJSDriver(webDriverCfg, capabilitiesToAdd);
         acceptAllSSLCerts(webDriverCfg, capabilitiesToAdd);
 
         BrowserCapabilities browserCap = registryInstance.get().getEntryFor(webDriverCfg.getBrowser());
@@ -61,24 +59,8 @@ public class KeycloakWebDriverConfigurator {
     }
 
     private void acceptAllSSLCerts(WebDriverConfiguration webDriverCfg, DesiredCapabilities capabilitiesToAdd) {
-        capabilitiesToAdd.setCapability(CapabilityType.ACCEPT_SSL_CERTS, true);
         capabilitiesToAdd.setCapability(CapabilityType.ACCEPT_INSECURE_CERTS, true);
     }
-
-    private void configurePhantomJSDriver(WebDriverConfiguration webDriverCfg, DesiredCapabilities capabilitiesToAdd) {
-        if (!webDriverCfg.getBrowser().equals("phantomjs")) {
-            return;
-        }
-
-        String cliArgs = System.getProperty("keycloak.phantomjs.cli.args");
-
-        if (cliArgs == null) {
-            cliArgs = "--ignore-ssl-errors=true --web-security=false";
-        }
-
-        capabilitiesToAdd.setCapability(PhantomJSDriverService.PHANTOMJS_CLI_ARGS, cliArgs);
-    }
-
 
     // This is to ensure that default value of capabilities like "version" will be used just for the HtmlUnitDriver, but not for other drivers.
     // Hence in configs we have "htmlUnit.version" instead of "version"

@@ -59,8 +59,6 @@ public class FederatedStorageExportImportTest extends AbstractAuthTest {
 
     @Before
     public void setDirs() {
-        Assume.assumeTrue("RealmProvider is not 'jpa'", isJpaRealmProvider());
-
         File baseDir = new File(System.getProperty("auth.server.config.dir", "target"));
 
         exportFileAbsolutePath = new File (baseDir, "singleFile-full.json").getAbsolutePath();
@@ -86,11 +84,11 @@ public class FederatedStorageExportImportTest extends AbstractAuthTest {
     }
 
     public static PasswordHashProvider getHashProvider(KeycloakSession session, PasswordPolicy policy) {
-        PasswordHashProvider hash = session.getProvider(PasswordHashProvider.class, policy.getHashAlgorithm());
-        if (hash == null) {
-            return session.getProvider(PasswordHashProvider.class, PasswordPolicy.HASH_ALGORITHM_DEFAULT);
+        if (policy != null && policy.getHashAlgorithm() != null) {
+            return session.getProvider(PasswordHashProvider.class, policy.getHashAlgorithm());
+        } else {
+            return session.getProvider(PasswordHashProvider.class);
         }
-        return hash;
     }
 
 

@@ -83,4 +83,8 @@ public interface IdentityProviderResource {
     @DELETE
     @Path("mappers/{id}")
     void delete(@PathParam("id") String id);
+
+    @GET
+    @Path("reload-keys")
+    boolean reloadKeys();
 }

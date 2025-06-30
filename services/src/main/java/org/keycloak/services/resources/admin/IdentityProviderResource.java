@@ -23,7 +23,7 @@ import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import jakarta.ws.rs.NotFoundException;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
@@ -48,6 +48,7 @@ import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
@@ -64,6 +65,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
@@ -111,8 +113,7 @@ public class IdentityProviderResource {
             throw new jakarta.ws.rs.NotFoundException();
         }
 
-        IdentityProviderRepresentation rep = ModelToRepresentation.toRepresentation(realm, this.identityProviderModel);
-        return StripSecretsUtils.strip(rep);
+        return StripSecretsUtils.stripSecrets(session, ModelToRepresentation.toRepresentation(realm, this.identityProviderModel));
     }
 
     /**
@@ -494,5 +495,18 @@ public class IdentityProviderResource {
         } else {
             return new ManagementPermissionReference();
         }
+    }
+
+    @GET
+    @Path("reload-keys")
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
+    @Operation(summary = "Reaload keys for the identity provider if the provider supports it, \"true\" is returned if reload was performed, \"false\" if not.")
+    public boolean reloadKeys() {
+        this.auth.realm().requireManageIdentityProviders();
+        IdentityProviderFactory<?> providerFactory = IdentityBrokerService.getIdentityProviderFactory(session, identityProviderModel);
+        IdentityProvider provider = providerFactory.create(session, identityProviderModel);
+        return provider.reloadKeys();
     }
 }

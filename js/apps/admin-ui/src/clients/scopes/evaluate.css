@@ -3,9 +3,9 @@
 }
 
 .keycloak__scopes_evaluate__tabs {
-  padding-top: var(--pf-global--spacer--2xl);
+  padding-top: var(--pf-v5-global--spacer--2xl);
 }
 
-#tabs .pf-c-tabs__list {
+#tabs .pf-v5-c-tabs__list {
   max-width: 300px;
 }

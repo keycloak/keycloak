@@ -1,4 +1,6 @@
 import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
+import type { IdentityProvidersQuery } from "@keycloak/keycloak-admin-client/lib/resources/identityProviders";
+import { IconMapper } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   Badge,
@@ -8,10 +10,10 @@ import {
   Dropdown,
   DropdownGroup,
   DropdownItem,
-  DropdownToggle,
+  DropdownList,
   Gallery,
+  MenuToggle,
   PageSection,
-  Spinner,
   Split,
   SplitItem,
   Text,
@@ -19,13 +21,12 @@ import {
   TextVariants,
   ToolbarItem,
 } from "@patternfly/react-core";
+import { IFormatterValueType } from "@patternfly/react-table";
 import { groupBy, sortBy } from "lodash-es";
 import { Fragment, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-import { IconMapper } from "ui-shared";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ClickableCard } from "../components/keycloak-card/ClickableCard";
@@ -62,7 +63,7 @@ const DetailLink = (identityProvider: IdentityProviderRepresentation) => {
         <Badge
           key={`${identityProvider.providerId}-disabled`}
           isRead
-          className="pf-u-ml-sm"
+          className="pf-v5-u-ml-sm"
         >
           {t("disabled")}
         </Badge>
@@ -72,6 +73,8 @@ const DetailLink = (identityProvider: IdentityProviderRepresentation) => {
 };
 
 export default function IdentityProvidersSection() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const identityProviders = groupBy(
     useServerInfo().identityProviders,
@@ -84,25 +87,30 @@ export default function IdentityProvidersSection() {
 
   const [addProviderOpen, setAddProviderOpen] = useState(false);
   const [manageDisplayDialog, setManageDisplayDialog] = useState(false);
-  const [providers, setProviders] =
-    useState<IdentityProviderRepresentation[]>();
+  const [hasProviders, setHasProviders] = useState(false);
   const [selectedProvider, setSelectedProvider] =
     useState<IdentityProviderRepresentation>();
   const { addAlert, addError } = useAlerts();
 
   useFetch(
-    async () => {
-      const provider = await adminClient.realms.findOne({ realm });
-      if (!provider) {
-        throw new Error(t("notFound"));
-      }
-      return provider.identityProviders!;
-    },
+    async () => adminClient.identityProviders.find({ max: 1 }),
     (providers) => {
-      setProviders(sortBy(providers, ["config.guiOrder", "alias"]));
+      setHasProviders(providers.length === 1);
     },
     [key],
   );
+
+  const loader = async (first?: number, max?: number, search?: string) => {
+    const params: IdentityProvidersQuery = {
+      first: first!,
+      max: max!,
+    };
+    if (search) {
+      params.search = search;
+    }
+    const providers = await adminClient.identityProviders.find(params);
+    return sortBy(providers, "alias");
+  };
 
   const navigateToCreate = (providerId: string) =>
     navigate(
@@ -119,18 +127,19 @@ export default function IdentityProvidersSection() {
           <DropdownItem
             key={provider.id}
             value={provider.id}
-            component={
-              <Link
-                to={toIdentityProviderCreate({
+            component="a"
+            data-testid={provider.id}
+            onClick={() =>
+              navigate(
+                toIdentityProviderCreate({
                   realm,
                   providerId: provider.id,
-                })}
-                data-testid={provider.id}
-              >
-                {provider.name}
-              </Link>
+                }),
+              )
             }
-          />
+          >
+            {provider.name}
+          </DropdownItem>
         ))}
       </DropdownGroup>
     ));
@@ -145,9 +154,6 @@ export default function IdentityProvidersSection() {
         await adminClient.identityProviders.del({
           alias: selectedProvider!.alias!,
         });
-        setProviders([
-          ...providers!.filter((p) => p.alias !== selectedProvider?.alias),
-        ]);
         refresh();
         addAlert(t("deletedSuccessIdentityProvider"), AlertVariant.success);
       } catch (error) {
@@ -155,10 +161,6 @@ export default function IdentityProvidersSection() {
       }
     },
   });
-
-  if (!providers) {
-    return <Spinner />;
-  }
 
   return (
     <>
@@ -169,7 +171,6 @@ export default function IdentityProvidersSection() {
             setManageDisplayDialog(false);
             refresh();
           }}
-          providers={providers.filter((p) => p.enabled)}
         />
       )}
       <ViewHeader
@@ -178,10 +179,10 @@ export default function IdentityProvidersSection() {
         helpUrl={helpUrls.identityProvidersUrl}
       />
       <PageSection
-        variant={providers.length === 0 ? "default" : "light"}
-        className={providers.length === 0 ? "" : "pf-u-p-0"}
+        variant={!hasProviders ? "default" : "light"}
+        className={!hasProviders ? "" : "pf-v5-u-p-0"}
       >
-        {providers.length === 0 && (
+        {!hasProviders && (
           <>
             <TextContent>
               <Text component={TextVariants.p}>{t("getStarted")}</Text>
@@ -189,11 +190,11 @@ export default function IdentityProvidersSection() {
             {Object.keys(identityProviders).map((group) => (
               <Fragment key={group}>
                 <TextContent>
-                  <Text className="pf-u-mt-lg" component={TextVariants.h2}>
+                  <Text className="pf-v5-u-mt-lg" component={TextVariants.h2}>
                     {group}:
                   </Text>
                 </TextContent>
-                <hr className="pf-u-mb-lg" />
+                <hr className="pf-v5-u-mb-lg" />
                 <Gallery hasGutter>
                   {sortBy(identityProviders[group], "name").map((provider) => (
                     <ClickableCard
@@ -216,9 +217,11 @@ export default function IdentityProvidersSection() {
             ))}
           </>
         )}
-        {providers.length !== 0 && (
+        {hasProviders && (
           <KeycloakDataTable
-            loader={providers}
+            key={key}
+            loader={loader}
+            isPaginated
             ariaLabelKey="identityProviders"
             searchPlaceholderKey="searchForProvider"
             toolbarItem={
@@ -226,17 +229,20 @@ export default function IdentityProvidersSection() {
                 <ToolbarItem>
                   <Dropdown
                     data-testid="addProviderDropdown"
-                    toggle={
-                      <DropdownToggle
-                        onToggle={() => setAddProviderOpen(!addProviderOpen)}
-                        isPrimary
+                    onOpenChange={(isOpen) => setAddProviderOpen(isOpen)}
+                    toggle={(ref) => (
+                      <MenuToggle
+                        ref={ref}
+                        onClick={() => setAddProviderOpen(!addProviderOpen)}
+                        variant="primary"
                       >
                         {t("addProvider")}
-                      </DropdownToggle>
-                    }
+                      </MenuToggle>
+                    )}
                     isOpen={addProviderOpen}
-                    dropdownItems={identityProviderOptions()}
-                  />
+                  >
+                    <DropdownList>{identityProviderOptions()}</DropdownList>
+                  </Dropdown>
                 </ToolbarItem>
 
                 <ToolbarItem>
@@ -269,6 +275,15 @@ export default function IdentityProvidersSection() {
                 name: "providerId",
                 displayKey: "providerDetails",
                 cellFormatters: [upperCaseFormatter()],
+              },
+              {
+                name: "config['kc.org']",
+                displayKey: "linkedOrganization",
+                cellFormatters: [
+                  (data?: IFormatterValueType) => {
+                    return data ? "X" : "—";
+                  },
+                ],
               },
             ]}
           />

@@ -24,25 +24,22 @@ import jakarta.persistence.IdClass;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
+
 import java.io.Serializable;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @NamedQueries({
-        // sub-query with deletion performs very slow in MySQL/MariaDB databases
-        // It is removed from here and added manually in JpaUtils to give a native implementation if needed
-        // @NamedQuery(name="deleteClientSessionsByRealm", query="delete from PersistentClientSessionEntity sess where sess.userSessionId IN (select u.userSessionId from PersistentUserSessionEntity u where u.realmId = :realmId)"),
+        @NamedQuery(name="deleteClientSessionsByRealm", query="delete from PersistentClientSessionEntity sess where sess.userSessionId IN (select u.userSessionId from PersistentUserSessionEntity u where u.realmId = :realmId)"),
         @NamedQuery(name="deleteClientSessionsByClient", query="delete from PersistentClientSessionEntity sess where sess.clientId = :clientId"),
         @NamedQuery(name="deleteClientSessionsByExternalClient", query="delete from PersistentClientSessionEntity sess where sess.clientStorageProvider = :clientStorageProvider and sess.externalClientId = :externalClientId"),
         @NamedQuery(name="deleteClientSessionsByClientStorageProvider", query="delete from PersistentClientSessionEntity sess where sess.clientStorageProvider = :clientStorageProvider"),
-        // sub-query with deletion performs very slow in MySQL/MariaDB databases
-        // It is removed from here and added manually in JpaUtils to give a native implementation if needed
-        // @NamedQuery(name="deleteClientSessionsByUser", query="delete from PersistentClientSessionEntity sess where sess.userSessionId IN (select u.userSessionId from PersistentUserSessionEntity u where u.userId = :userId)"),
+        @NamedQuery(name="deleteClientSessionsByUser", query="delete from PersistentClientSessionEntity sess where sess.userSessionId IN (select u.userSessionId from PersistentUserSessionEntity u where u.userId = :userId)"),
         @NamedQuery(name="deleteClientSessionsByUserSession", query="delete from PersistentClientSessionEntity sess where sess.userSessionId = :userSessionId and sess.offline = :offline"),
-        // KEYCLOAK-18842: The deleteExpiredClientSessions performs very slow in MySQL/MariaDB databases
-        //                 It is removed from here and added manually in JpaUtils to give a native implementation if needed
-        //@NamedQuery(name="deleteExpiredClientSessions", query="delete from PersistentClientSessionEntity sess where sess.userSessionId IN (select u.userSessionId from PersistentUserSessionEntity u where u.realmId = :realmId AND u.offline = :offline AND u.lastSessionRefresh < :lastSessionRefresh)"),
+        @NamedQuery(name="deleteExpiredClientSessions", query="delete from PersistentClientSessionEntity sess where sess.offline = :offline AND sess.userSessionId IN (select u.userSessionId from PersistentUserSessionEntity u where u.realmId = :realmId AND u.offline = :offline AND u.lastSessionRefresh < :lastSessionRefresh)"),
+        @NamedQuery(name="deleteClientSessionsByRealmSessionType", query="delete from PersistentClientSessionEntity sess where sess.offline = :offline AND sess.userSessionId IN (select u.userSessionId from PersistentUserSessionEntity u where u.realmId = :realmId and u.offline = :offline)"),
         @NamedQuery(name="findClientSessionsByUserSession", query="select sess from PersistentClientSessionEntity sess where sess.userSessionId=:userSessionId and sess.offline = :offline"),
         @NamedQuery(name="findClientSessionsOrderedByIdInterval", query="select sess from PersistentClientSessionEntity sess where sess.offline = :offline and sess.userSessionId >= :fromSessionId and sess.userSessionId <= :toSessionId order by sess.userSessionId"),
         @NamedQuery(name="findClientSessionsOrderedByIdExact", query="select sess from PersistentClientSessionEntity sess where sess.offline = :offline and sess.userSessionId IN (:userSessionIds)"),
@@ -76,6 +73,10 @@ public class PersistentClientSessionEntity {
 
     @Column(name="TIMESTAMP")
     protected int timestamp;
+
+    @Version
+    @Column(name="VERSION")
+    private int version;
 
     @Id
     @Column(name = "OFFLINE_FLAG")
@@ -205,6 +206,17 @@ public class PersistentClientSessionEntity {
             result = 37 * result + (this.clientStorageProvider != null ? this.clientStorageProvider.hashCode() : 0);
             result = 31 * result + (this.offline != null ? this.offline.hashCode() : 0);
             return result;
+        }
+
+        @Override
+        public String toString() {
+            return "PersistentClientSessionEntity$Key[" +
+                   "userSessionId='" + userSessionId + '\'' +
+                   ", clientId='" + clientId + '\'' +
+                   ", clientStorageProvider='" + clientStorageProvider + '\'' +
+                   ", externalClientId='" + externalClientId + '\'' +
+                   ", offline='" + offline + '\'' +
+                   ']';
         }
     }
 }

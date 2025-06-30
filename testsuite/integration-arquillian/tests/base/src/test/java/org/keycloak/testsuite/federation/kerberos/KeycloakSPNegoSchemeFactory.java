@@ -32,7 +32,6 @@ import org.keycloak.federation.kerberos.CommonKerberosConfig;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
 
 import javax.security.auth.Subject;
-import javax.security.auth.login.LoginException;
 
 import java.security.PrivilegedExceptionAction;
 

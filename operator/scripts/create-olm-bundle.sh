@@ -34,7 +34,7 @@ yq ea -i ".spec.install.spec.deployments[0].spec.template.spec.containers[0].ima
 
 # Edit the CSV version, replaces, etc.
 
-yq ea -i ".metadata.annotations.createdAt = \"$(date "+%D %T")\"" "$CSV_PATH"
+yq ea -i ".metadata.annotations.createdAt = \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\"" "$CSV_PATH"
 yq ea -i ".spec.version = \"$VERSION\"" "$CSV_PATH"
 yq ea -i ".metadata.name = \"keycloak-operator.v$VERSION\"" "$CSV_PATH"
 yq ea -i '.metadata.namespace = "placeholder"' "$CSV_PATH"
@@ -67,7 +67,6 @@ yq ea -i '.spec.apiservicedefinitions = {}' "$CSV_PATH"
 yq ea -i '.spec.install.spec.deployments[0].spec.selector.matchLabels.name = "keycloak-operator"' "$CSV_PATH"
 yq ea -i '.spec.install.spec.deployments[0].spec.template.metadata.labels.name = "keycloak-operator"' "$CSV_PATH"
 
-yq ea -i '.spec.install.spec.deployments[0].spec.template.spec.containers[0].env += [{"name": "QUARKUS_OPERATOR_SDK_NAMESPACES", "valueFrom": {"fieldRef": {"fieldPath": "metadata.annotations['"'"'olm.targetNamespaces'"'"']"}}}]' "$CSV_PATH"
 yq ea -i '.spec.install.spec.deployments[0].spec.template.spec.containers[0].env += [{"name": "POD_NAME", "valueFrom": {"fieldRef": {"fieldPath": "metadata.name"}}}]' "$CSV_PATH"
 yq ea -i '.spec.install.spec.deployments[0].spec.template.spec.containers[0].env += [{"name": "OPERATOR_NAME", "value": "keycloak-operator"}]' "$CSV_PATH"
 

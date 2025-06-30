@@ -64,7 +64,7 @@ do
     # Windows won't like it if : is used as a separator
     filename="$groupid,$artifactid,$version,$name.txt"
     echo "$filename"
-    curl -LsS -o "$output_dir/$filename" "$url"
+    curl -LfsS -o "$output_dir/$filename" "$url"
 done
 
 xmlstarlet sel -T -t -m "/licenseSummary/others/other/licenses/license" -v "../../description/text()" -o $'\t' -v "name/text()" -o $'\t' -v "url/text()" --nl "$xml" | \
@@ -73,7 +73,7 @@ do
     # Windows won't like it if : is used as a separator
     filename="$description,$name.txt"
     echo "$filename"
-    curl -LsS -o "$output_dir/$filename" "$url"
+    curl -LfsS -o "$output_dir/$filename" "$url"
 done
 
 echo "==> Normalizing license line endings" >&2

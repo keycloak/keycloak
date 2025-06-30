@@ -17,7 +17,7 @@
 
 package org.keycloak.example.oauth;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;

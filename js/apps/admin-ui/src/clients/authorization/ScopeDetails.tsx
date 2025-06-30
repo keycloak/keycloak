@@ -5,20 +5,16 @@ import {
   Button,
   ButtonVariant,
   DropdownItem,
-  FormGroup,
   PageSection,
-  ValidatedOptions,
 } from "@patternfly/react-core";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
+import { TextControl } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useFetch } from "../../utils/useFetch";
 import { useParams } from "../../utils/useParams";
@@ -30,22 +26,18 @@ import { DeleteScopeDialog } from "./DeleteScopeDialog";
 type FormFields = Omit<ScopeRepresentation, "resources">;
 
 export default function ScopeDetails() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { id, scopeId, realm } = useParams<ScopeDetailsParams>();
   const navigate = useNavigate();
-
   const { addAlert, addError } = useAlerts();
-
   const [deleteDialog, toggleDeleteDialog] = useToggle();
   const [scope, setScope] = useState<ScopeRepresentation>();
-  const {
-    register,
-    reset,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<FormFields>({
+  const form = useForm<FormFields>({
     mode: "onChange",
   });
+  const { reset, handleSubmit } = form;
 
   useFetch(
     async () => {
@@ -123,92 +115,68 @@ export default function ScopeDetails() {
         }
       />
       <PageSection variant="light">
-        <FormAccess
-          isHorizontal
-          role="view-clients"
-          onSubmit={handleSubmit(onSubmit)}
-        >
-          <FormGroup
-            label={t("name")}
-            fieldId="name"
-            labelIcon={
-              <HelpItem helpText={t("scopeNameHelp")} fieldLabelId="name" />
-            }
-            helperTextInvalid={t("required")}
-            validated={
-              errors.name ? ValidatedOptions.error : ValidatedOptions.default
-            }
-            isRequired
+        <FormProvider {...form}>
+          <FormAccess
+            isHorizontal
+            role="manage-authorization"
+            onSubmit={handleSubmit(onSubmit)}
           >
-            <KeycloakTextInput
-              id="name"
-              validated={
-                errors.name ? ValidatedOptions.error : ValidatedOptions.default
-              }
-              isRequired
-              {...register("name", { required: true })}
+            <TextControl
+              name="name"
+              label={t("name")}
+              labelIcon={t("scopeNameHelp")}
+              rules={{ required: t("required") }}
             />
-          </FormGroup>
-          <FormGroup
-            label={t("displayName")}
-            fieldId="displayName"
-            labelIcon={
-              <HelpItem
-                helpText={t("scopeDisplayNameHelp")}
-                fieldLabelId="displayName"
-              />
-            }
-          >
-            <KeycloakTextInput id="displayName" {...register("displayName")} />
-          </FormGroup>
-          <FormGroup
-            label={t("iconUri")}
-            fieldId="iconUri"
-            labelIcon={
-              <HelpItem helpText={t("iconUriHelp")} fieldLabelId="iconUri" />
-            }
-          >
-            <KeycloakTextInput id="iconUri" {...register("iconUri")} />
-          </FormGroup>
-          <ActionGroup>
-            <div className="pf-u-mt-md">
-              <Button
-                variant={ButtonVariant.primary}
-                type="submit"
-                data-testid="save"
-              >
-                {t("save")}
-              </Button>
+            <TextControl
+              name="displayName"
+              label={t("displayName")}
+              labelIcon={t("scopeDisplayNameHelp")}
+            />
+            <TextControl
+              name="iconUri"
+              label={t("iconUri")}
+              labelIcon={t("iconUriHelp")}
+            />
+            <ActionGroup>
+              <div className="pf-v5-u-mt-md">
+                <Button
+                  variant={ButtonVariant.primary}
+                  type="submit"
+                  data-testid="save"
+                >
+                  {t("save")}
+                </Button>
 
-              {!scope ? (
-                <Button
-                  variant="link"
-                  data-testid="cancel"
-                  component={(props) => (
-                    <Link
-                      {...props}
-                      to={toAuthorizationTab({
-                        realm,
-                        clientId: id,
-                        tab: "scopes",
-                      })}
-                    ></Link>
-                  )}
-                >
-                  {t("cancel")}
-                </Button>
-              ) : (
-                <Button
-                  variant="link"
-                  data-testid="revert"
-                  onClick={() => reset({ ...scope })}
-                >
-                  {t("revert")}
-                </Button>
-              )}
-            </div>
-          </ActionGroup>
-        </FormAccess>
+                {!scope ? (
+                  <Button
+                    variant="link"
+                    data-testid="cancel"
+                    component={(props) => (
+                      <Link
+                        {...props}
+                        to={toAuthorizationTab({
+                          realm,
+                          clientId: id,
+                          tab: "scopes",
+                        })}
+                      ></Link>
+                    )}
+                  >
+                    {t("cancel")}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="link"
+                    data-testid="revert"
+                    onClick={() => reset({ ...scope })}
+                  >
+                    {t("revert")}
+                  </Button>
+                )}
+              </div>
+            </ActionGroup>
+          </FormAccess>
+        </FormProvider>
       </PageSection>
     </>
   );

@@ -32,12 +32,6 @@
     <properties>
         <script.suffix>sh</script.suffix>
 
-        <!--app container versions-->
-        <eap.version>7.4.9.GA-redhat-00003</eap.version>
-        <eap6.version>7.5.21.Final-redhat-1</eap6.version>
-        <eap71.version>7.1.5.GA-redhat-00002</eap71.version>
-        <jboss.as.version>7.1.1.Final</jboss.as.version>
-
         <jboss.default.worker.io-threads>16</jboss.default.worker.io-threads>
         <jboss.default.worker.task-max-threads>128</jboss.default.worker.task-max-threads>
         <jboss.default.http.max-connections>500</jboss.default.http.max-connections>
@@ -47,9 +41,6 @@
         <hotrod.sasl.mechanism>DIGEST-MD5</hotrod.sasl.mechanism>
 
         <jboss.cli.executable>jboss-cli.sh</jboss.cli.executable>
-
-        <!-- Tomcat versions needs to be overwritten to newer versions because of https://issues.redhat.com/browse/KEYCLOAK-14103 -->
-        <tomcat9.version>9.0.29</tomcat9.version>
     </properties>
 
     <modules>

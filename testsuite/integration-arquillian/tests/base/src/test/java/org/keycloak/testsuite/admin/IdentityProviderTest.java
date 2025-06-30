@@ -17,6 +17,48 @@
 
 package org.keycloak.testsuite.admin;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.XMLDSIG_NSURI;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.PublicKey;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+import javax.xml.crypto.dsig.XMLSignature;
+
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
@@ -47,6 +89,7 @@ import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.DocumentUtil;
+import org.keycloak.saml.common.util.XmlKeyInfoKeyNameTransformer;
 import org.keycloak.saml.processing.api.saml.v2.sig.SAML2Signature;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
@@ -56,55 +99,16 @@ import org.keycloak.testsuite.broker.oidc.OverwrittenMappersTestIdentityProvider
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.KeyUtils;
+import org.keycloak.utils.ReservedCharValidator.ReservedCharException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import javax.xml.crypto.dsig.XMLSignature;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.security.PublicKey;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertNotNull;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.XMLDSIG_NSURI;
-
-import org.keycloak.saml.common.util.XmlKeyInfoKeyNameTransformer;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -172,7 +176,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         Response response = realm.identityProviders().create(newIdentityProvider);
         Assert.assertEquals(400, response.getStatus());
     }
-    
+
     @Test
     public void testCreate() {
         IdentityProviderRepresentation newIdentityProvider = createRep("new-identity-provider", "oidc");
@@ -200,6 +204,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertTrue(representation.isEnabled());
         assertFalse(representation.isStoreToken());
         assertFalse(representation.isTrustEmail());
+        assertNull(representation.getFirstBrokerLoginFlowAlias());
 
         assertEquals("some secret value", testingClient.testing("admin-client-test").getIdentityProviderConfig("new-identity-provider").get("clientSecret"));
 
@@ -273,6 +278,22 @@ public class IdentityProviderTest extends AbstractAdminTest {
     }
 
     @Test
+    public void shouldFailWhenAliasHasSpaceDuringCreation() {
+        IdentityProviderRepresentation newIdentityProvider = createRep("New Identity Provider", "oidc");
+
+        newIdentityProvider.getConfig().put(IdentityProviderModel.SYNC_MODE, "IMPORT");
+        newIdentityProvider.getConfig().put("clientId", "clientId");
+        newIdentityProvider.getConfig().put("clientSecret", "some secret value");
+        newIdentityProvider.getConfig().put("clientAuthMethod",OIDCLoginProtocol.CLIENT_SECRET_BASIC);
+
+        try (Response response = this.realm.identityProviders().create(newIdentityProvider)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            String error = response.readEntity(String.class);
+            assertTrue(error.contains("Empty Space not allowed."));
+        }
+    }
+
+    @Test
     public void testCreateWithBasicAuth() {
         IdentityProviderRepresentation newIdentityProvider = createRep("new-identity-provider", "oidc");
 
@@ -334,6 +355,39 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertEquals("clientId", representation.getConfig().get("clientId"));
         assertNull(representation.getConfig().get("clientSecret"));
         assertEquals(OIDCLoginProtocol.PRIVATE_KEY_JWT, representation.getConfig().get("clientAuthMethod"));
+        assertNull(representation.getConfig().get("jwtX509HeadersEnabled"));
+        assertTrue(representation.isEnabled());
+        assertFalse(representation.isStoreToken());
+        assertFalse(representation.isTrustEmail());
+    }
+
+    @Test
+    public void testCreateWithJWTAndX509Headers() {
+        IdentityProviderRepresentation newIdentityProvider = createRep("new-identity-provider", "oidc");
+
+        newIdentityProvider.getConfig().put(IdentityProviderModel.SYNC_MODE, "IMPORT");
+        newIdentityProvider.getConfig().put("clientId", "clientId");
+        newIdentityProvider.getConfig().put("clientAuthMethod", OIDCLoginProtocol.PRIVATE_KEY_JWT);
+        newIdentityProvider.getConfig().put("jwtX509HeadersEnabled", "true");
+
+        create(newIdentityProvider);
+
+        IdentityProviderResource identityProviderResource = realm.identityProviders().get("new-identity-provider");
+
+        assertNotNull(identityProviderResource);
+
+        IdentityProviderRepresentation representation = identityProviderResource.toRepresentation();
+
+        assertNotNull(representation);
+
+        assertNotNull(representation.getInternalId());
+        assertEquals("new-identity-provider", representation.getAlias());
+        assertEquals("oidc", representation.getProviderId());
+        assertEquals("IMPORT", representation.getConfig().get(IdentityProviderMapperModel.SYNC_MODE));
+        assertEquals("clientId", representation.getConfig().get("clientId"));
+        assertNull(representation.getConfig().get("clientSecret"));
+        assertEquals(OIDCLoginProtocol.PRIVATE_KEY_JWT, representation.getConfig().get("clientAuthMethod"));
+        assertEquals("true", representation.getConfig().get("jwtX509HeadersEnabled"));
         assertTrue(representation.isEnabled());
         assertFalse(representation.isStoreToken());
         assertFalse(representation.isTrustEmail());
@@ -397,14 +451,13 @@ public class IdentityProviderTest extends AbstractAdminTest {
                 .updateWith(r -> r.setSslRequired(SslRequired.ALL.name()))
                 .update()
         ) {
+            assertAdminEvents.poll(); // realm update
             IdentityProviderRepresentation representation = createRep(UUID.randomUUID().toString(), "oidc");
 
             representation.getConfig().put("clientId", "clientId");
             representation.getConfig().put("clientSecret", "some secret value");
 
-            try (Response response = realm.identityProviders().create(representation)) {
-                assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
-            }
+            create(representation);
 
             IdentityProviderResource resource = this.realm.identityProviders().get(representation.getAlias());
             representation = resource.toRepresentation();
@@ -521,7 +574,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         getCleanup().addIdentityProviderAlias(idpRep.getAlias());
 
         String secret = idpRep.getConfig() != null ? idpRep.getConfig().get("clientSecret") : null;
-        idpRep = StripSecretsUtils.strip(idpRep);
+        idpRep = StripSecretsUtils.stripSecrets(null, idpRep);
 
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.identityProviderPath(idpRep.getAlias()), idpRep, ResourceType.IDENTITY_PROVIDER);
 
@@ -649,17 +702,60 @@ public class IdentityProviderTest extends AbstractAdminTest {
     }
 
     @Test
-    public void testSamlImportAndExport() throws URISyntaxException, IOException, ParsingException {
+    public void importShouldFailDueAliasWithSpace() {
 
+        Map<String, Object> data = new HashMap<>();
+        data.put("providerId", "saml");
+        data.put("alias", "Alias With Space");
+        data.put("fromUrl", "http://");
+
+       assertThrows(BadRequestException.class, () -> {
+            realm.identityProviders().importFrom(data);
+        });
+
+    }
+
+    @Test
+    public void testSamlImportAndExport() throws URISyntaxException, IOException, ParsingException {
+        testSamlImport("saml-idp-metadata.xml");
+
+        // Perform export, and make sure some of the values are like they're supposed to be
+        Response response = realm.identityProviders().get("saml").export("xml");
+        Assert.assertEquals(200, response.getStatus());
+        String body = response.readEntity(String.class);
+        response.close();
+
+        assertSamlExport(body);
+    }
+
+    @Test
+    public void testSamlImportWithBom() throws URISyntaxException, IOException, ParsingException {
+        testSamlImport("saml-idp-metadata_utf8_bom.xml");
+
+        // Perform export, and make sure some of the values are like they're supposed to be
+        Response response = realm.identityProviders().get("saml").export("xml");
+        Assert.assertEquals(200, response.getStatus());
+        String body = response.readEntity(String.class);
+        response.close();
+
+        assertSamlExport(body);
+    }
+
+    @Test
+    public void testSamlImportWithAnyEncryptionMethod() throws URISyntaxException, IOException, ParsingException {
+        testSamlImport("saml-idp-metadata-encryption-methods.xml");
+    }
+
+    private void testSamlImport(String fileName) throws URISyntaxException, IOException, ParsingException {
         // Use import-config to convert IDPSSODescriptor file into key value pairs
         // to use when creating a SAML Identity Provider
         MultipartFormDataOutput form = new MultipartFormDataOutput();
         form.addFormData("providerId", "saml", MediaType.TEXT_PLAIN_TYPE);
 
-        URL idpMeta = getClass().getClassLoader().getResource("admin-test/saml-idp-metadata.xml");
+        URL idpMeta = getClass().getClassLoader().getResource("admin-test/"+fileName);
         byte [] content = Files.readAllBytes(Paths.get(idpMeta.toURI()));
         String body = new String(content, Charset.forName("utf-8"));
-        form.addFormData("file", body, MediaType.APPLICATION_XML_TYPE, "saml-idp-metadata.xml");
+        form.addFormData("file", body, MediaType.APPLICATION_XML_TYPE, fileName);
 
         Map<String, String> result = realm.identityProviders().importFrom(form);
         assertSamlImport(result, SIGNING_CERT_1,true);
@@ -677,15 +773,8 @@ public class IdentityProviderTest extends AbstractAdminTest {
         Assert.assertEquals("identityProviders instance count", 1, providers.size());
         assertEqual(rep, providers.get(0));
 
-        // Perform export, and make sure some of the values are like they're supposed to be
-        Response response = realm.identityProviders().get("saml").export("xml");
-        Assert.assertEquals(200, response.getStatus());
-        body = response.readEntity(String.class);
-        response.close();
-
-        assertSamlExport(body);
     }
-    
+
     @Test
     public void testSamlImportAndExportDisabled() throws URISyntaxException, IOException, ParsingException {
 
@@ -708,7 +797,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         IdentityProviderResource provider = realm.identityProviders().get("saml");
         IdentityProviderRepresentation rep = provider.toRepresentation();
         assertCreatedSamlIdp(rep, false);
-        
+
     }
 
 
@@ -919,7 +1008,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         response = realm.identityProviders().getIdentityProviders("linkedin-openid-connect");
         Assert.assertEquals("Status", 200, response.getStatus());
         body = response.readEntity(Map.class);
-        assertProviderInfo(body, "linkedin-openid-connect", "LinkedIn OpenID Connect");
+        assertProviderInfo(body, "linkedin-openid-connect", "LinkedIn");
 
         response = realm.identityProviders().getIdentityProviders("microsoft");
         Assert.assertEquals("Status", 200, response.getStatus());
@@ -955,7 +1044,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         Assert.assertEquals("alias", "saml", idp.getAlias());
         Assert.assertEquals("providerId", "saml", idp.getProviderId());
         Assert.assertEquals("enabled",enabled, idp.isEnabled());
-        Assert.assertEquals("firstBrokerLoginFlowAlias", "first broker login",idp.getFirstBrokerLoginFlowAlias());
+        Assert.assertNull("firstBrokerLoginFlowAlias", idp.getFirstBrokerLoginFlowAlias());
         assertSamlConfig(idp.getConfig());
     }
 
@@ -964,6 +1053,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         // check that saml-idp-metadata.xml was properly converted into key value pairs
         //System.out.println(config);
         assertThat(config.keySet(), containsInAnyOrder(
+          "syncMode",
           "validateSignature",
           "singleLogoutServiceUrl",
           "postBindingLogout",
@@ -1149,7 +1239,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
 
         X509Certificate activeX509SigCert = XMLSignatureUtil.getX509CertificateFromKeyInfoString(activeSigCert);
         assertThat("KeyName matches subject DN",
-                keyNameElement.getTextContent().trim(), equalTo(activeX509SigCert.getSubjectDN().getName()));
+                keyNameElement.getTextContent().trim(), equalTo(activeX509SigCert.getSubjectX500Principal().getName()));
 
         assertThat("Signing cert matches active realm cert",
                 x509CertificateElement.getTextContent().trim(), equalTo(Base64.getEncoder().encodeToString(activeX509SigCert.getEncoded())));

@@ -17,6 +17,8 @@
 
 package org.keycloak.truststore;
 
+import org.keycloak.common.enums.HostnameVerificationPolicy;
+
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.util.Map;

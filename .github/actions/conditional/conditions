@@ -2,31 +2,46 @@
 #
 # To test a pattern run '.github/actions/conditional/conditional.sh <remote name> <branch>'
 
-.github/actions/                            ci ci-store ci-sssd operator js codeql-java codeql-themes guides documentation
-.github/scripts/                            ci ci-sssd
+.github/actions/                            ci ci-quarkus ci-store ci-sssd operator js codeql-java codeql-themes guides documentation
+.github/scripts/                            ci ci-quarkus ci-sssd
+.github/scripts/ansible/                    ci-store
+.github/scripts/aws/                        ci-store
 
-.github/workflows/ci.yml                    ci ci-store ci-sssd
+.github/workflows/ci.yml                    ci ci-quarkus ci-store ci-sssd ci-webauthn
 .github/workflows/operator-ci.yml           operator
 .github/workflows/js-ci.yml                 js
 .github/workflows/codeql-analysis.yml       codeql-java codeql-themes
 .github/workflows/guides.yml                guides
 .github/workflows/documentation.yml         documentation
 
-.mvn/                                       ci ci-store ci-sssd operator js codeql-java codeql-themes guides documentation
-mvnw                                        ci ci-store ci-sssd operator js codeql-java codeql-themes guides documentation
-mvnw.cmd                                    ci ci-store ci-sssd operator js codeql-java codeql-themes guides documentation
+.mvn/                                       ci ci-quarkus ci-store ci-sssd ci-webauthn operator js codeql-java codeql-themes guides documentation
+mvnw                                        ci ci-quarkus ci-store ci-sssd ci-webauthn operator js codeql-java codeql-themes guides documentation
+mvnw.cmd                                    ci ci-quarkus ci-store ci-sssd ci-webauthn operator js codeql-java codeql-themes guides documentation
 
-*/src/main/                                 ci operator
-*/src/test/                                 ci operator
-pom.xml                                     ci ci-store operator
+*/src/main/                                 ci ci-webauthn operator
+*/src/test/                                 ci ci-webauthn operator
+pom.xml                                     ci ci-quarkus ci-store ci-webauthn operator
 federation/sssd/                            ci ci-sssd
 
+quarkus/                                    ci-quarkus guides
+
 model/                                      ci-store
+testsuite/model/                            ci-store
+operator/                                   operator
 
 docs/guides/                                guides
 docs/documentation/                         documentation
 
+eslint.config.js                            js
+package.json                                js
+pnpm-lock.yaml                              js
+pnpm-workspace.yaml                         js
+tsconfig.eslint.json                        js
+tsconfig.json                               js
 js/                                         js
+rest/admin-ui-ext/                          js
+js/apps/account-ui/                         ci ci-webauthn
+js/libs/ui-shared/                          ci ci-webauthn
 
 *.java                                      codeql-java
 themes/                                     codeql-themes

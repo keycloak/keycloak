@@ -138,7 +138,7 @@ public class CryptoPerfTest {
         perfTest(new Runnable() {
             @Override
             public void run() {
-                provider.encode("password", -1);
+                provider.encodedCredential("password", -1);
             }
         }, "testPbkdf512", 1);
     }

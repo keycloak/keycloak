@@ -84,10 +84,42 @@
         <class>org.keycloak.storage.jpa.entity.FederatedUserRequiredActionEntity</class>
         <class>org.keycloak.storage.jpa.entity.FederatedUserRoleMappingEntity</class>
 
+        <!-- Organization -->
+        <class>org.keycloak.models.jpa.entities.OrganizationEntity</class>
+        <class>org.keycloak.models.jpa.entities.OrganizationDomainEntity</class>
+
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
 
         <properties>
             <property name="jboss.as.jpa.managed" value="false"/>
+
+            <!-- Execute multiple insert and update statements in a single call to improve bulk insert / update performance.
+            See https://docs.jboss.org/hibernate/orm/6.2/userguide/html_single/Hibernate_User_Guide.html#best-practices-jdbc-batching
+            and https://docs.jboss.org/hibernate/orm/6.2/userguide/html_single/Hibernate_User_Guide.html#batch-session-batch:
+            recommendation between 10 and 50 -->
+            <property name="hibernate.jdbc.batch_size" value="32" />
+
+            <!-- (optional) Allows for more batching for nested objects and less deadlocks, but according to
+            https://docs.jboss.org/hibernate/orm/6.2/userguide/html_single/Hibernate_User_Guide.html#batch-jdbcbatch
+            may also hava a negative impact on performance.
+            See also https://docs.jboss.org/hibernate/orm/6.2/userguide/html_single/Hibernate_User_Guide.html#best-practices-jdbc-batching.
+            Keycloak uses many nested objects spread across multiple tables, so a benefit is likely.
+            -->
+            <property name="hibernate.order_inserts" value="true" />
+            <property name="hibernate.order_updates" value="true" />
+
+            <!-- Batch fetching collections of entity proxies, default 1. Eases N+1 issues to some extent.
+            See https://docs.jboss.org/hibernate/orm/6.2/userguide/html_single/Hibernate_User_Guide.html#fetching-batch -->
+            <property name="hibernate.default_batch_fetch_size" value="8" />
+
+            <!-- Improve cache hits for execution plans.
+            See https://docs.jboss.org/hibernate/orm/6.1/userguide/html_single/Hibernate_User_Guide.html#configurations-query -->
+            <property name="hibernate.query.in_clause_parameter_padding" value="true"/>
+
+            <!-- Increase number of elements fetched at once from Oracle database query result up from 10.
+            MSSQL returns the whole result at once.
+            See https://docs.oracle.com/en/database/oracle/oracle-database/21/jjdbc/resultset.html -->
+            <property name="hibernate.jdbc.fetch_size" value="64" />
         </properties>
     </persistence-unit>
 </persistence>

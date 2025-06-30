@@ -31,6 +31,7 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -59,6 +60,7 @@ import org.jboss.shrinkwrap.descriptor.api.Descriptor;
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.model.StoreProvider;
+import org.keycloak.utils.StringUtil;
 
 public abstract class AbstractQuarkusDeployableContainer implements DeployableContainer<KeycloakQuarkusConfiguration> {
 
@@ -162,6 +164,8 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
         if (suiteContext.get().isAuthServerMigrationEnabled()) {
             commands.add("--hostname-strict=false");
             commands.add("--hostname-strict-https=false");
+        } else { // Do not set management port for older versions of Keycloak for migration tests - available since Keycloak ~22
+            commands.add("--http-management-port=" + configuration.getManagementPort());
         }
 
         if (configuration.getRoute() != null) {
@@ -181,24 +185,19 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
         final String cacheMode = System.getProperty("auth.server.quarkus.cluster.config", "local");
 
         if ("local".equals(cacheMode)) {
+            commands.add("--cache=local");
             // Save ~2s for each Quarkus startup, when we know ISPN cluster is empty. See https://github.com/keycloak/keycloak/issues/21033
             commands.add("-Djgroups.join_timeout=10");
+        } else {
+            commands.add("--cache=ispn");
+            commands.add("--cache-config-file=cluster-" + cacheMode + ".xml");
         }
 
         log.debugf("FIPS Mode: %s", configuration.getFipsMode());
 
         // only run build during first execution of the server (if the DB is specified), restarts or when running cluster tests
         if (restart.get() || "ha".equals(cacheMode) || shouldSetUpDb.get() || configuration.getFipsMode() != FipsMode.DISABLED) {
-            commands.removeIf("--optimized"::equals);
-            commands.add("--http-relative-path=/auth");
-
-            if (!storeProvider.isMapStore()) {
-                if ("local".equals(cacheMode)) {
-                    commands.add("--cache=local");
-                } else {
-                    commands.add("--cache-config-file=cluster-" + cacheMode + ".xml");
-                }
-            }
+            prepareCommandsForRebuilding(commands);
 
             if (configuration.getFipsMode() != FipsMode.DISABLED) {
                 addFipsOptions(commands);
@@ -206,8 +205,49 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
         }
 
         addStorageOptions(storeProvider, commands);
+        addFeaturesOption(commands);
 
         return commands;
+    }
+
+    /**
+     * When enabling automatic rebuilding of the image, the `--optimized` argument must be removed,
+     * and all original build time parameters must be added.
+     */
+    private static void prepareCommandsForRebuilding(List<String> commands) {
+        commands.removeIf("--optimized"::equals);
+        commands.add("--http-relative-path=/auth");
+    }
+
+    protected void addFeaturesOption(List<String> commands) {
+        String defaultFeatures = configuration.getDefaultFeatures();
+
+        if (StringUtil.isBlank(defaultFeatures)) {
+            return;
+        }
+
+        if (commands.stream().anyMatch(List.of("import", "export")::contains)) {
+            return;
+        }
+
+        StringBuilder featuresOption = new StringBuilder("--features=").append(defaultFeatures);
+        Iterator<String> iterator = commands.iterator();
+
+        while (iterator.hasNext()) {
+            String command = iterator.next();
+
+            if (command.startsWith("--features")) {
+                featuresOption = new StringBuilder(command);
+                featuresOption.append(",").append(defaultFeatures);
+                iterator.remove();
+                break;
+            }
+        }
+
+        // enabling or disabling features requires rebuilding the image
+        prepareCommandsForRebuilding(commands);
+
+        commands.add(featuresOption.toString());
     }
 
     protected List<String> configureArgs(List<String> commands) {
@@ -240,7 +280,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
         additionalBuildArgs = Collections.emptyList();
     }
 
-    protected void waitForReadiness() throws MalformedURLException, LifecycleException {
+    protected void waitForReadiness() throws Exception {
         SuiteContext suiteContext = this.suiteContext.get();
         //TODO: not sure if the best endpoint but it makes sure that everything is properly initialized. Once we have
         // support for MP Health this should change
@@ -253,6 +293,8 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
                 stop();
                 throw new IllegalStateException("Timeout [" + getStartTimeout() + "] while waiting for Quarkus server");
             }
+
+            checkLiveness();
 
             try {
                 // wait before checking for opening a new connection
@@ -280,6 +322,8 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
 
         log.infof("Keycloak is ready at %s", contextRoot);
     }
+
+    protected abstract void checkLiveness() throws Exception;
 
     private URL getBaseUrl(SuiteContext suiteContext) throws MalformedURLException {
         URL baseUrl = suiteContext.getAuthServerInfo().getContextRoot();

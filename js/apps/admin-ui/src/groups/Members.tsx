@@ -1,20 +1,21 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
+import { SubGroupQuery } from "@keycloak/keycloak-admin-client/lib/resources/groups";
 import {
-  AlertVariant,
   Button,
   Checkbox,
   Dropdown,
   DropdownItem,
-  KebabToggle,
+  DropdownList,
+  MenuToggle,
   ToolbarItem,
 } from "@patternfly/react-core";
+import { EllipsisVIcon } from "@patternfly/react-icons";
 import { uniqBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { GroupPath } from "../components/group/GroupPath";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
@@ -41,7 +42,7 @@ const MemberOfRenderer = (member: MembersOf) => {
     <>
       {member.membership.map((group, index) => (
         <>
-          <GroupPath key={group.id} group={group} />
+          <GroupPath key={group.id + "-" + member.id} group={group} />
           {member.membership[index + 1] ? ", " : ""}
         </>
       ))}
@@ -59,6 +60,8 @@ const UserDetailLink = (user: MembersOf) => {
 };
 
 export const Members = () => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
 
   const { addAlert, addError } = useAlerts();
@@ -87,30 +90,51 @@ export const Members = () => {
   const getMembership = async (id: string) =>
     await adminClient.users.listGroups({ id: id! });
 
-  const getSubGroups = (groups: GroupRepresentation[]) => {
-    let subGroups: GroupRepresentation[] = [];
-    for (const group of groups!) {
-      subGroups.push(group);
-      const subs = getSubGroups(group.subGroups!);
-      subGroups = subGroups.concat(subs);
+  // this queries the subgroups using the new search paradigm but doesn't
+  // account for pagination and therefore isn't going to scale well
+  const getSubGroups = async (groupId?: string, count = 0) => {
+    let nestedGroups: GroupRepresentation[] = [];
+    if (!count || !groupId) {
+      return nestedGroups;
     }
-    return subGroups;
+    const args: SubGroupQuery = {
+      parentId: groupId,
+      first: 0,
+      max: count,
+    };
+    const subGroups: GroupRepresentation[] =
+      await adminClient.groups.listSubGroups(args);
+    nestedGroups = nestedGroups.concat(subGroups);
+
+    await Promise.all(
+      subGroups.map((g) => getSubGroups(g.id, g.subGroupCount)),
+    ).then((values: GroupRepresentation[][]) => {
+      values.forEach((groups) => (nestedGroups = nestedGroups.concat(groups)));
+    });
+    return nestedGroups;
   };
 
   const loader = async (first?: number, max?: number) => {
+    if (!id) {
+      return [];
+    }
+
     let members = await adminClient.groups.listMembers({
       id: id!,
       first,
       max,
     });
 
-    if (includeSubGroup) {
-      const subGroups = getSubGroups(currentGroup?.subGroups || []);
-      for (const group of subGroups) {
-        members = members.concat(
-          await adminClient.groups.listMembers({ id: group.id! }),
-        );
-      }
+    if (includeSubGroup && currentGroup?.subGroupCount && currentGroup.id) {
+      const subGroups = await getSubGroups(
+        currentGroup.id,
+        currentGroup.subGroupCount,
+      );
+      await Promise.all(
+        subGroups.map((g) => adminClient.groups.listMembers({ id: g.id! })),
+      ).then((values: UserRepresentation[][]) => {
+        values.forEach((users) => (members = members.concat(users)));
+      });
       members = uniqBy(members, (member) => member.username);
     }
 
@@ -130,7 +154,21 @@ export const Members = () => {
     <>
       {addMembers && (
         <MemberModal
-          groupId={id!}
+          membersQuery={async () =>
+            await adminClient.groups.listMembers({ id: id! })
+          }
+          onAdd={async (selectedRows) => {
+            try {
+              await Promise.all(
+                selectedRows.map((user) =>
+                  adminClient.users.addToGroup({ id: user.id!, groupId: id! }),
+                ),
+              );
+              addAlert(t("usersAdded", { count: selectedRows.length }));
+            } catch (error) {
+              addError("usersAddedError", error);
+            }
+          }}
           onClose={() => {
             setAddMembers(false);
             refresh();
@@ -168,15 +206,23 @@ export const Members = () => {
               </ToolbarItem>
               <ToolbarItem>
                 <Dropdown
-                  toggle={
-                    <KebabToggle
-                      onToggle={() => setIsKebabOpen(!isKebabOpen)}
+                  onOpenChange={(isOpen) => setIsKebabOpen(isOpen)}
+                  toggle={(ref) => (
+                    <MenuToggle
+                      ref={ref}
+                      variant="plain"
+                      onClick={() => setIsKebabOpen(!isKebabOpen)}
+                      isExpanded={isKebabOpen}
                       isDisabled={selectedRows.length === 0}
-                    />
-                  }
+                      aria-label="Actions"
+                    >
+                      <EllipsisVIcon />
+                    </MenuToggle>
+                  )}
+                  shouldFocusToggleOnSelect
                   isOpen={isKebabOpen}
-                  isPlain
-                  dropdownItems={[
+                >
+                  <DropdownList>
                     <DropdownItem
                       key="action"
                       component="button"
@@ -193,7 +239,6 @@ export const Members = () => {
                           setIsKebabOpen(false);
                           addAlert(
                             t("usersLeft", { count: selectedRows.length }),
-                            AlertVariant.success,
                           );
                         } catch (error) {
                           addError("usersLeftError", error);
@@ -203,9 +248,9 @@ export const Members = () => {
                       }}
                     >
                       {t("leave")}
-                    </DropdownItem>,
-                  ]}
-                />
+                    </DropdownItem>
+                  </DropdownList>
+                </Dropdown>
               </ToolbarItem>
             </>
           )
@@ -221,10 +266,7 @@ export const Members = () => {
                         id: user.id!,
                         groupId: id!,
                       });
-                      addAlert(
-                        t("usersLeft", { count: 1 }),
-                        AlertVariant.success,
-                      );
+                      addAlert(t("usersLeft", { count: 1 }));
                     } catch (error) {
                       addError("usersLeftError", error);
                     }

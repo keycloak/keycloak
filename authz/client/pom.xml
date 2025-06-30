@@ -23,16 +23,6 @@
         </keycloak.osgi.export>
         <keycloak.osgi.import>
             org.keycloak.*;version="${project.version}",
-            org.apache.http.auth.*;version=${apache.httpcomponents.fuse.version},
-            org.apache.http.client.*;version=${apache.httpcomponents.fuse.version},
-            org.apache.http.conn.*;version=${apache.httpcomponents.fuse.version},
-            org.apache.http.cookie.*;version=${apache.httpcomponents.fuse.version},
-            org.apache.http.impl.auth.*;version=${apache.httpcomponents.fuse.version},
-            org.apache.http.impl.client.*;version=${apache.httpcomponents.fuse.version},
-            org.apache.http.impl.conn.*;version=${apache.httpcomponents.fuse.version},
-            org.apache.http.impl.cookie.*;version=${apache.httpcomponents.fuse.version},
-            org.apache.http.impl.execchain.*;version=${apache.httpcomponents.fuse.version},
-            org.apache.http.*;version=${apache.httpcomponents.httpcore.fuse.version},
             *;resolution:=optional
         </keycloak.osgi.import>
     </properties>
@@ -46,7 +36,11 @@
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
         </dependency>
-
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>commons-logging-jboss-logging</artifactId>
+            <scope>runtime</scope>
+        </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>

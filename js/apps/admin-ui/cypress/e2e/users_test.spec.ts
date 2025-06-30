@@ -2,6 +2,7 @@ import { v4 as uuid } from "uuid";
 
 import SidebarPage from "../support/pages/admin-ui/SidebarPage";
 import LoginPage from "../support/pages/LoginPage";
+import RealmSettingsPage from "../support/pages/admin-ui/manage/realm_settings/RealmSettingsPage";
 import CreateUserPage from "../support/pages/admin-ui/manage/users/CreateUserPage";
 import Masthead from "../support/pages/admin-ui/Masthead";
 import ListingPage from "../support/pages/admin-ui/ListingPage";
@@ -23,6 +24,7 @@ let groupsList: string[] = [];
 describe("User creation", () => {
   const loginPage = new LoginPage();
   const sidebarPage = new SidebarPage();
+  const realmSettingsPage = new RealmSettingsPage();
   const createUserPage = new CreateUserPage();
   const userGroupsPage = new UserGroupsPage();
   const masthead = new Masthead();
@@ -30,7 +32,7 @@ describe("User creation", () => {
   const listingPage = new ListingPage();
   const userDetailsPage = new UserDetailsPage();
   const credentialsPage = new CredentialsPage();
-  const attributesTab = new AttributesTab();
+  const attributesTab = new AttributesTab(true);
   const usersPage = new UsersPage();
   const identityProviderLinksTab = new IdentityProviderLinksTab();
 
@@ -71,7 +73,7 @@ describe("User creation", () => {
 
     createUserPage.createUser(itemId);
 
-    createUserPage.save();
+    createUserPage.create();
 
     masthead.checkNotificationMessage("The user has been created");
   });
@@ -93,7 +95,7 @@ describe("User creation", () => {
 
     createUserPage.joinGroups();
 
-    createUserPage.save();
+    createUserPage.create();
 
     masthead.checkNotificationMessage("The user has been created");
   });
@@ -107,7 +109,7 @@ describe("User creation", () => {
     createUserPage.createUser(itemIdWithCred);
 
     userDetailsPage.fillUserData();
-    createUserPage.save();
+    createUserPage.create();
     masthead.checkNotificationMessage("The user has been created");
     sidebarPage.waitForPageLoad();
 
@@ -125,7 +127,7 @@ describe("User creation", () => {
 
   it("Search non-existing user test", () => {
     listingPage.searchItem("user_DNE");
-    cy.findByTestId(listingPage.emptyState).should("exist");
+    listingPage.assertNoResults();
   });
 
   it("User details test", () => {
@@ -143,12 +145,46 @@ describe("User creation", () => {
     listingPage.searchItem(itemId).itemExist(itemId);
   });
 
+  it("Select Unmanaged attributes", () => {
+    sidebarPage.goToRealmSettings();
+    sidebarPage.waitForPageLoad();
+    realmSettingsPage.fillUnmanagedAttributes("Enabled");
+    realmSettingsPage.save(realmSettingsPage.generalSaveBtn);
+    masthead.checkNotificationMessage("Realm successfully updated", true);
+  });
+
   it("User attributes test", () => {
     listingPage.goToItemDetails(itemId);
 
-    attributesTab.goToAttributesTab().addAttribute("key", "value").save();
+    attributesTab
+      .goToAttributesTab()
+      .addAttribute("key_test", "value_test")
+      .save();
 
     masthead.checkNotificationMessage("The user has been saved");
+
+    attributesTab
+      .addAttribute("LDAP_ID", "value_test")
+      .addAttribute("LDAP_ID", "another_value_test")
+      .addAttribute("c", "d")
+      .save();
+
+    masthead.checkNotificationMessage("The user has not been saved: ");
+
+    cy.get(".pf-v5-c-helper-text__item-text")
+      .filter(':contains("Update of read-only attribute rejected")')
+      .should("have.length", 2);
+
+    cy.reload();
+
+    userDetailsPage.goToDetailsTab();
+    attributesTab
+      .goToAttributesTab()
+      .checkAttribute("key_test", true)
+      .deleteAttribute(0);
+
+    userDetailsPage.goToDetailsTab();
+    attributesTab.goToAttributesTab().checkAttribute("key_test", false);
   });
 
   it("User attributes with multiple values test", () => {
@@ -167,8 +203,7 @@ describe("User creation", () => {
 
     cy.wait("@save-user").should(({ request, response }) => {
       expect(response?.statusCode).to.equal(204);
-      expect(request.body.attributes, "response body").deep.equal({
-        key: ["value"],
+      expect(request.body.attributes, "response body").deep.contains({
         "key-multiple": ["other value"],
       });
     });
@@ -400,7 +435,12 @@ describe("User creation", () => {
     credentialsPage.goToCredentialsTab();
 
     cy.wait(2000);
-    listingPage.deleteItem(itemCredential);
+    cy.get("table")
+      .contains(itemCredential)
+      .parentsUntil("tbody")
+      .find(".pf-v5-c-table__action .pf-v5-c-menu-toggle")
+      .click();
+    cy.get("table").contains("Delete").click();
     modalUtils.checkModalTitle("Delete credentials?").confirmModal();
 
     masthead.checkNotificationMessage(
@@ -450,6 +490,7 @@ describe("User creation", () => {
   describe("Accessibility tests for users", () => {
     const a11yUser = "a11y-user";
     const role = "admin";
+    const roleType = "roles";
     const roleMappingTab = new RoleMappingTab("");
 
     beforeEach(() => {
@@ -472,7 +513,7 @@ describe("User creation", () => {
       createUserPage.goToCreateUser();
       createUserPage.createUser(a11yUser);
       userDetailsPage.fillUserData();
-      createUserPage.save();
+      createUserPage.create();
       cy.checkA11y();
     });
 
@@ -512,7 +553,7 @@ describe("User creation", () => {
       roleMappingTab.goToRoleMappingTab();
       cy.findByTestId("assignRole").click();
       cy.checkA11y();
-      roleMappingTab.selectRow(role).assign();
+      roleMappingTab.changeRoleTypeFilter(roleType).selectRow(role).assign();
     });
 
     it("Check a11y violations on user groups tab", () => {

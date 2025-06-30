@@ -50,16 +50,9 @@ public class DatabaseContainer {
     }
 
     void configureDistribution(KeycloakDistribution dist) {
-        if (alias.equals("infinispan")) {
-            dist.setProperty("storage-hotrod-username", getUsername());
-            dist.setProperty("storage-hotrod-password", getPassword());
-            dist.setProperty("storage-hotrod-host", container.getHost());
-            dist.setProperty("storage-hotrod-port", String.valueOf(container.getMappedPort(11222)));
-        } else {
-            dist.setProperty("db-username", getUsername());
-            dist.setProperty("db-password", getPassword());
-            dist.setProperty("db-url", getJdbcUrl());
-        }
+        dist.setProperty("db-username", getUsername());
+        dist.setProperty("db-password", getPassword());
+        dist.setProperty("db-url", getJdbcUrl());
     }
 
     private String getJdbcUrl() {
@@ -97,24 +90,10 @@ public class DatabaseContainer {
                 .withInitScript(resolveInitScript());
     }
 
-    private GenericContainer<?> configureInfinispanUser(GenericContainer<?> infinispanContainer) {
-        infinispanContainer.addEnv("USER", getUsername());
-        infinispanContainer.addEnv("PASS", getPassword());
-        return infinispanContainer;
-    }
-
     private GenericContainer<?> createContainer() {
         String POSTGRES_IMAGE = System.getProperty("kc.db.postgresql.container.image");
         String MARIADB_IMAGE = System.getProperty("kc.db.mariadb.container.image");
         String MYSQL_IMAGE = System.getProperty("kc.db.mysql.container.image");
-        String INFINISPAN_IMAGE = System.getProperty("kc.infinispan.container.image");
-        if (INFINISPAN_IMAGE.matches("quay.io/infinispan/.*-SNAPSHOT")) {
-            // If the image name ends with SNAPSHOT, someone is trying to use a snapshot release of Infinispan.
-            // Then switch to the closest match of the Infinispan test container
-            INFINISPAN_IMAGE = INFINISPAN_IMAGE.replaceAll("quay.io/infinispan/", "quay.io/infinispan-test/");
-            INFINISPAN_IMAGE = INFINISPAN_IMAGE.replaceAll("[0-9]*-SNAPSHOT$", "x");
-        }
-
         String MSSQL_IMAGE = System.getProperty("kc.db.mssql.container.image");
 
         switch (alias) {
@@ -130,14 +109,6 @@ public class DatabaseContainer {
             case "mssql":
                 DockerImageName MSSQL = DockerImageName.parse(MSSQL_IMAGE).asCompatibleSubstituteFor("sqlserver");
                 return configureJdbcContainer(new MSSQLServerContainer<>(MSSQL));
-            case "infinispan":
-                GenericContainer<?> infinispanContainer = configureInfinispanUser(new GenericContainer<>(INFINISPAN_IMAGE))
-                        .withExposedPorts(11222);
-                // the images in the 'infinispan-test' repository point to tags that are frequently refreshed, therefore, always pull them
-                if (infinispanContainer.getDockerImageName().startsWith("quay.io/infinispan-test")) {
-                    infinispanContainer.withImagePullPolicy(PullPolicy.alwaysPull());
-                }
-                return infinispanContainer;
             default:
                 throw new RuntimeException("Unsupported database: " + alias);
         }

@@ -1,0 +1,21 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Concepts for database connection pools"
+summary="Understand these concepts to avoid resource exhaustion and congestion"
+tileVisible="false" >
+
+This section is intended when you want to understand considerations and best practices on how to configure database connection pools for {project_name}.
+For a configuration where this is applied, visit <@links.ha id="deploy-keycloak-kubernetes" />.
+
+== Concepts
+
+Creating new database connections is expensive as it takes time.
+Creating them when a request arrives will delay the response, so it is good to have them created before the request arrives.
+It can also contribute to a https://en.wikipedia.org/wiki/Cache_stampede[stampede effect] where creating a lot of connections in a short time makes things worse as it slows down the system and blocks threads.
+Closing a connection also invalidates all server side statements caching for that connection.
+
+include::partials/database-connections/configure-db-connection-pool-best-practices.adoc[]
+
+</@tmpl.guide>

@@ -5,12 +5,10 @@ import io.quarkus.test.junit.main.LaunchResult;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.LegacyStore;
 import org.keycloak.it.junit5.extension.WithDatabase;
 
 @DistributionTest
 @WithDatabase(alias = "mssql")
-@LegacyStore
 public class TransactionConfigurationDistTest {
 
     @Test

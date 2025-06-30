@@ -1,15 +1,10 @@
 import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
-import {
-  Dropdown,
-  DropdownItem,
-  DropdownToggle,
-  Tooltip,
-} from "@patternfly/react-core";
+import { DropdownList, Tooltip } from "@patternfly/react-core";
+import { Dropdown, DropdownItem, MenuToggle } from "@patternfly/react-core";
 import { PlusIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useFetch } from "../../utils/useFetch";
 import type { ExpandableExecution } from "../execution-model";
 import { AddStepModal, FlowType } from "./modals/AddStepModal";
@@ -29,6 +24,8 @@ export const AddFlowDropdown = ({
   onAddExecution,
   onAddFlow,
 }: AddFlowDropdownProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
 
   const [open, setOpen] = useState(false);
@@ -48,16 +45,25 @@ export const AddFlowDropdown = ({
     <Tooltip content={t("add")}>
       <>
         <Dropdown
-          isPlain
-          position="right"
-          data-testid={`${execution.displayName}-edit-dropdown`}
+          popperProps={{
+            position: "right",
+          }}
           isOpen={open}
-          toggle={
-            <DropdownToggle onToggle={setOpen} aria-label={t("add")}>
+          onOpenChange={(isOpen) => setOpen(isOpen)}
+          toggle={(ref) => (
+            <MenuToggle
+              ref={ref}
+              variant="plain"
+              onClick={() => setOpen(!open)}
+              aria-label={t("add")}
+              data-testid={`${execution.displayName}-edit-dropdown`}
+            >
               <PlusIcon />
-            </DropdownToggle>
-          }
-          dropdownItems={[
+            </MenuToggle>
+          )}
+          onSelect={() => setOpen(false)}
+        >
+          <DropdownList>
             <DropdownItem
               key="addStep"
               onClick={() =>
@@ -65,19 +71,18 @@ export const AddFlowDropdown = ({
               }
             >
               {t("addStep")}
-            </DropdownItem>,
+            </DropdownItem>
             <DropdownItem
               key="addCondition"
               onClick={() => setType("condition")}
             >
               {t("addCondition")}
-            </DropdownItem>,
+            </DropdownItem>
             <DropdownItem key="addSubFlow" onClick={() => setType("subFlow")}>
               {t("addSubFlow")}
-            </DropdownItem>,
-          ]}
-          onSelect={() => setOpen(false)}
-        />
+            </DropdownItem>
+          </DropdownList>
+        </Dropdown>
         {type && type !== "subFlow" && (
           <AddStepModal
             name={execution.displayName!}

@@ -33,6 +33,7 @@ public class UserSessionRepresentation {
     private long lastAccess;
     private boolean rememberMe;
     private Map<String, String> clients = new HashMap<>();
+    private boolean transientUser;
 
     public String getId() {
         return id;
@@ -96,5 +97,13 @@ public class UserSessionRepresentation {
 
     public void setClients(Map<String, String> clients) {
         this.clients = clients;
+    }
+
+    public boolean isTransientUser() {
+        return transientUser;
+    }
+
+    public void setTransientUser(boolean transientUser) {
+        this.transientUser = transientUser;
     }
 }

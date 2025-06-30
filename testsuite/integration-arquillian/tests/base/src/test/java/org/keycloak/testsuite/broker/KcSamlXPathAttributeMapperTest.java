@@ -1,10 +1,8 @@
 package org.keycloak.testsuite.broker;
 
 import com.google.common.collect.ImmutableMap;
-import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.broker.saml.mappers.UserAttributeMapper;
 import org.keycloak.broker.saml.mappers.XPathAttributeMapper;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.models.IdentityProviderMapperModel;

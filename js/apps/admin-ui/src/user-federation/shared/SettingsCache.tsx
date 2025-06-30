@@ -1,16 +1,14 @@
 import {
-  FormGroup,
-  NumberInput,
-  Select,
-  SelectOption,
+  HelpItem,
+  KeycloakSelect,
+  SelectControl,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@keycloak/keycloak-ui-shared";
+import { FormGroup, NumberInput, SelectOption } from "@patternfly/react-core";
 import { isEqual } from "lodash-es";
 import { Controller, UseFormReturn, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
 import { FormAccess } from "../../components/form/FormAccess";
-import { HelpItem } from "ui-shared";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 import useToggle from "../../utils/useToggle";
 
@@ -28,16 +26,14 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
   const [isEvictionHourOpen, toggleEvictionHour] = useToggle();
   const [isEvictionMinuteOpen, toggleEvictionMinute] = useToggle();
 
-  const [isEvictionDayOpen, toggleEvictionDay] = useToggle();
-
   const cachePolicyType = useWatch({
     control: form.control,
     name: "config.cachePolicy",
   });
 
   const hourOptions = [
-    <SelectOption key={0} value={[`${0}`]} isPlaceholder>
-      {[`0${0}`]}
+    <SelectOption key={0} value={[`0`]}>
+      {[`00`]}
     </SelectOption>,
   ];
   let hourDisplay = "";
@@ -55,8 +51,8 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
   }
 
   const minuteOptions = [
-    <SelectOption key={0} value={[`${0}`]} isPlaceholder>
-      {[`0${0}`]}
+    <SelectOption key={0} value={[`0`]}>
+      {[`00`]}
     </SelectOption>,
   ];
   let minuteDisplay = "";
@@ -90,83 +86,58 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
           defaultValue={["DEFAULT"]}
           control={form.control}
           render={({ field }) => (
-            <Select
+            <KeycloakSelect
               toggleId="kc-cache-policy"
-              required
               onToggle={toggleCachePolicy}
               isOpen={isCachePolicyOpen}
-              onSelect={(_, value) => {
+              onSelect={(value) => {
                 field.onChange(value as string);
                 toggleCachePolicy();
               }}
               selections={field.value}
               variant={SelectVariant.single}
               data-testid="kerberos-cache-policy"
+              aria-label={t("selectCachePolicy")}
             >
-              <SelectOption key={0} value={["DEFAULT"]} isPlaceholder />
-              <SelectOption key={1} value={["EVICT_DAILY"]} />
-              <SelectOption key={2} value={["EVICT_WEEKLY"]} />
-              <SelectOption key={3} value={["MAX_LIFESPAN"]} />
-              <SelectOption key={4} value={["NO_CACHE"]} />
-            </Select>
+              <SelectOption key={0} value={["DEFAULT"]}>
+                DEFAULT
+              </SelectOption>
+              <SelectOption key={1} value={["EVICT_DAILY"]}>
+                EVICT_DAILY
+              </SelectOption>
+              <SelectOption key={2} value={["EVICT_WEEKLY"]}>
+                EVICT_WEEKLY
+              </SelectOption>
+              <SelectOption key={3} value={["MAX_LIFESPAN"]}>
+                MAX_LIFESPAN
+              </SelectOption>
+              <SelectOption key={4} value={["NO_CACHE"]}>
+                NO_CACHE
+              </SelectOption>
+            </KeycloakSelect>
           )}
         />
       </FormGroup>
       {isEqual(cachePolicyType, ["EVICT_WEEKLY"]) ? (
-        <FormGroup
+        <SelectControl
+          id="kc-eviction-day"
+          name="config.evictionDay[0]"
           label={t("evictionDay")}
-          labelIcon={
-            <HelpItem
-              helpText={t("evictionDayHelp")}
-              fieldLabelId="evictionDay"
-            />
-          }
-          isRequired
-          fieldId="kc-eviction-day"
-        >
-          <Controller
-            name="config.evictionDay[0]"
-            defaultValue={"1"}
-            control={form.control}
-            render={({ field }) => (
-              <Select
-                data-testid="cache-day"
-                toggleId="kc-eviction-day"
-                required
-                onToggle={toggleEvictionDay}
-                isOpen={isEvictionDayOpen}
-                onSelect={(_, value) => {
-                  field.onChange(value as string);
-                  toggleEvictionDay();
-                }}
-                selections={field.value}
-                variant={SelectVariant.single}
-              >
-                <SelectOption key={0} value="1" isPlaceholder>
-                  {t("Sunday")}
-                </SelectOption>
-                <SelectOption key={1} value="2">
-                  {t("Monday")}
-                </SelectOption>
-                <SelectOption key={2} value="3">
-                  {t("Tuesday")}
-                </SelectOption>
-                <SelectOption key={3} value="4">
-                  {t("Wednesday")}
-                </SelectOption>
-                <SelectOption key={4} value="5">
-                  {t("Thursday")}
-                </SelectOption>
-                <SelectOption key={5} value="6">
-                  {t("Friday")}
-                </SelectOption>
-                <SelectOption key={6} value="7">
-                  {t("Saturday")}
-                </SelectOption>
-              </Select>
-            )}
-          />
-        </FormGroup>
+          labelIcon={t("evictionDayHelp")}
+          controller={{
+            defaultValue: "1",
+          }}
+          aria-label={t("selectEvictionDay")}
+          options={[
+            { key: "1", value: t("Sunday") },
+            { key: "2", value: t("Monday") },
+            { key: "3", value: t("Tuesday") },
+            { key: "4", value: t("Wednesday") },
+            { key: "5", value: t("Thursday") },
+            { key: "6", value: t("Friday") },
+            { key: "7", value: t("Saturday") },
+          ]}
+        />
       ) : null}
       {isEqual(cachePolicyType, ["EVICT_DAILY"]) ||
       isEqual(cachePolicyType, ["EVICT_WEEKLY"]) ? (
@@ -187,19 +158,20 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
               defaultValue={["0"]}
               control={form.control}
               render={({ field }) => (
-                <Select
+                <KeycloakSelect
                   toggleId="kc-eviction-hour"
                   onToggle={toggleEvictionHour}
                   isOpen={isEvictionHourOpen}
-                  onSelect={(_, value) => {
+                  onSelect={(value) => {
                     field.onChange(value as string);
                     toggleEvictionHour();
                   }}
                   selections={field.value}
                   variant={SelectVariant.single}
+                  aria-label={t("selectEvictionHour")}
                 >
                   {hourOptions}
-                </Select>
+                </KeycloakSelect>
               )}
             />
           </FormGroup>
@@ -219,19 +191,20 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
               defaultValue={["0"]}
               control={form.control}
               render={({ field }) => (
-                <Select
+                <KeycloakSelect
                   toggleId="kc-eviction-minute"
                   onToggle={toggleEvictionMinute}
                   isOpen={isEvictionMinuteOpen}
-                  onSelect={(_, value) => {
+                  onSelect={(value) => {
                     field.onChange(value as string);
                     toggleEvictionMinute();
                   }}
                   selections={field.value}
                   variant={SelectVariant.single}
+                  aria-label={t("selectEvictionMinute")}
                 >
                   {minuteOptions}
-                </Select>
+                </KeycloakSelect>
               )}
             />
           </FormGroup>

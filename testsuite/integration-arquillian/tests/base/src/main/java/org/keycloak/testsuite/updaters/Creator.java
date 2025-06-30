@@ -45,7 +45,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import jakarta.ws.rs.core.Response;
 import org.hamcrest.Matchers;
 import org.jboss.logging.Logger;
-import org.junit.Assert;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.admin.ApiUtil.getCreatedId;
@@ -179,7 +178,7 @@ public class Creator<T> implements AutoCloseable {
         }
 
         public AuthenticationExecutionInfoRepresentation addExecution(String providerId) {
-            Map<String, String> c = new HashMap<>();
+            Map<String, Object> c = new HashMap<>();
             c.put("provider", providerId);
             resource().addExecution(alias, c);  // addExecution only handles "provider" in data
             return resource().getExecutions(alias).stream()

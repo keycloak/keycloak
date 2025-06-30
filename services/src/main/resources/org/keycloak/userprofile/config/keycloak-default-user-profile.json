@@ -52,5 +52,12 @@
 				"person-name-prohibited-characters": {}
 			}
 		}
+	],
+	"groups": [
+		{
+			"name": "user-metadata",
+			"displayHeader": "User metadata",
+			"displayDescription": "Attributes, which refer to user metadata"
+		}
 	]
 }

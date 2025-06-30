@@ -7,29 +7,18 @@ With {project_name}, you can perform administration tasks from the command-line 
 
 {project_name} packages the Admin CLI server distribution with the execution scripts in the `bin` directory.
 
-ifeval::[{project_product}==true]
-The script is called `kcadm.sh`.
-endif::[]
-
-ifeval::[{project_product}!=true]
-The Linux script is called `kcadm.sh`, and the script for Windows is called `kcadm.bat`.
-endif::[]
-
-Add the {project_name} server directory to your `PATH` to use the client from any location on your file system.
+The Linux script is called `kcadm.sh`, and the script for Windows is called `kcadm.bat`. Add the {project_name} server directory to your `PATH` to use the client from any location on your file system.
 
 For example:
 
-ifeval::[{project_product}!=true]
 * Linux:
 +
-endif::[]
 [options="nowrap"]
 ----
 $ export PATH=$PATH:$KEYCLOAK_HOME/bin
 $ kcadm.sh
 ----
 
-ifeval::[{project_product}!=true]
 * Windows:
 +
 [options="nowrap"]
@@ -37,15 +26,12 @@ ifeval::[{project_product}!=true]
 c:\> set PATH=%PATH%;%KEYCLOAK_HOME%\bin
 c:\> kcadm
 ----
-endif::[]
 
 [NOTE]
 ====
 You must set the `KEYCLOAK_HOME` environment variable to the path where you extracted the {project_name} Server distribution.
 
-ifeval::[{project_product}!=true]
 To avoid repetition, the rest of this document only uses Windows examples in places where the CLI differences are more than just in the `kcadm` command name.
-endif::[]
 ====
 
 
@@ -62,10 +48,8 @@ Consult the Admin REST API documentation for details about JSON attributes for s
 +
 For example:
 +
-ifeval::[{project_product}!=true]
 * Linux:
 +
-endif::[]
 [options="nowrap",subs="attributes+"]
 ----
 $ kcadm.sh config credentials --server http://localhost:8080{kc_base_path} --realm demo --user admin --client admin
@@ -73,7 +57,6 @@ $ kcadm.sh create realms -s realm=demorealm -s enabled=true -o
 $ CID=$(kcadm.sh create clients -r demorealm -s clientId=my_client -s 'redirectUris=["http://localhost:8980/myapp/*"]' -i)
 $ kcadm.sh get clients/$CID/installation/providers/keycloak-oidc-keycloak-json
 ----
-ifeval::[{project_product}!=true]
 +
 * Windows:
 +
@@ -85,21 +68,17 @@ c:\> kcadm create clients -r demorealm -s clientId=my_client -s "redirectUris=[\
 c:\> set /p CID=<clientid.txt
 c:\> kcadm get clients/%CID%/installation/providers/keycloak-oidc-keycloak-json
 ----
-endif::[]
 
 . In a production environment, access {project_name} by using `https:` to avoid exposing tokens. If a trusted certificate authority, included in Java's default certificate truststore, has not issued a server's certificate, prepare a `truststore.jks` file and instruct the Admin CLI to use it.
 +
 For example:
 +
-ifeval::[{project_product}!=true]
 * Linux:
 +
-endif::[]
 [options="nowrap"]
 ----
 $ kcadm.sh config truststore --trustpass $PASSWORD ~/.keycloak/truststore.jks
 ----
-ifeval::[{project_product}!=true]
 +
 * Windows:
 +
@@ -107,7 +86,10 @@ ifeval::[{project_product}!=true]
 ----
 c:\> kcadm config truststore --trustpass %PASSWORD% %HOMEPATH%\.keycloak\truststore.jks
 ----
-endif::[]
+
+=== Sensitive Options
+
+Sensitive values, such as passwords, may be specified as command options. That is generally not recommended. There are also mechanisms by which you can be prompted for the sensitive value - by either omitting the option or providing a value or -. Finally all will have a corresponding env variable that can be used instead - check the help of the command you are running to see all possible options.
 
 === Authenticating
 
@@ -127,7 +109,7 @@ Two primary mechanisms are available for authentication. One mechanism uses `kca
 
 [options="nowrap",subs="attributes+"]
 ----
-$ kcadm.sh config credentials --server http://localhost:8080{kc_base_path} --realm master --user admin --password admin
+$ kcadm.sh config credentials --server http://localhost:8080{kc_base_path} --realm master --user admin
 ----
 
 This mechanism maintains an authenticated session between the `kcadm` command invocations by saving the obtained access token and its associated refresh token. It can maintain other secrets in a private configuration file. See the <<_working_with_alternative_configurations, next chapter>> for more information.
@@ -137,22 +119,21 @@ The second mechanism authenticates each command invocation for the duration of t
 For example, when performing an operation, specify all the information required for authentication.
 [options="nowrap",subs="attributes+"]
 ----
-$ kcadm.sh get realms --no-config --server http://localhost:8080{kc_base_path} --realm master --user admin --password admin
+$ kcadm.sh get realms --no-config --server http://localhost:8080{kc_base_path} --realm master --user admin 
 ----
 
 Run the `kcadm.sh help` command for more information on using the Admin CLI.
 
 Run the `kcadm.sh config credentials --help` command for more information about starting an authenticated session.
 
+If you do not specify the --password option (it is generally recommended to not provide passwords as part of the command), you will be prompted for a password unless one is specified as the environment variable KC_CLI_PASSWORD.
 
 [[_working_with_alternative_configurations]]
 === Working with alternative configurations
 
 By default, the Admin CLI maintains a configuration file named `kcadm.config`. {project_name} places this file in the user's home directory. 
-In Linux-based systems, the full pathname is `$HOME/.keycloak/kcadm.config`.
-ifeval::[{project_product}!=true]
-In Windows, the full pathname is `%HOMEPATH%\.keycloak\kcadm.config`.
-endif::[]
+In Linux-based systems, the full pathname is `$HOME/.keycloak/kcadm.config`. 
+In Windows, the full pathname is `%HOMEPATH%\.keycloak\kcadm.config`. 
 
 You can use the `--config` option to point to a different file or location so you can maintain multiple authenticated sessions in parallel.
 
@@ -208,13 +189,20 @@ SERVER_URI/admin/realms/TARGET_REALM/ENDPOINT
 For example:
 [options="nowrap",subs="attributes+"]
 ----
-$ kcadm.sh config credentials --server http://localhost:8080{kc_base_path} --realm master --user admin --password admin
+$ kcadm.sh config credentials --server http://localhost:8080{kc_base_path} --realm master --user admin
 $ kcadm.sh create users -s username=testuser -s enabled=true -r demorealm
 ----
 
 In this example, you start a session authenticated as the `admin` user in the `master` realm. You then perform a POST call against the resource URL `http://localhost:8080{kc_admins_path}/realms/demorealm/users`.
 
 The `create` and `update` commands send a JSON body to the server. You can use `-f FILENAME` to read a pre-made document from a file. When you can use the `-f -` option, {project_name} reads the message body from the standard input. You can specify individual attributes and their values, as seen in the `create users` example. {project_name} composes the attributes into a JSON body and sends them to the server.
+
+[NOTE]
+====
+The value in name=value pairs used in --set, -s options, are assumed to be JSON. If it cannot be parsed as valid JSON, then it will be sent to the server as a text value. 
+
+If the value is enclosed in quotes after shell processing, but is not valid JSON, the quotes will be stripped and the rest of the value will be sent as text. This behavior is deprecated, please consider specifying your value without quotes or a valid JSON string literal with double quotes.
+====
 
 Several methods are available in {project_name} to update a resource using the `update` command. You can determine the current state of a resource and save it to a file, edit that file, and send it to the server for an update.
 
@@ -264,10 +252,8 @@ You can send a JSON document with realm attributes directly from a file or pipe 
 
 For example:
 
-ifeval::[{project_product}!=true]
 * Linux:
 +
-endif::[]
 [options="nowrap"]
 ----
 $ kcadm.sh create realms -f - << EOF
@@ -275,14 +261,12 @@ $ kcadm.sh create realms -f - << EOF
 EOF
 ----
 
-ifeval::[{project_product}!=true]
 * Windows:
 +
 [options="nowrap"]
 ----
 c:\> echo { "realm": "demorealm", "enabled": true } | kcadm create realms -f -
 ----
-endif::[]
 
 [discrete]
 ==== Listing existing realms
@@ -389,22 +373,18 @@ $ kcadm.sh get realms/demorealm --fields id --format csv --noquotes
 +
 For example:
 +
-ifeval::[{project_product}!=true]
 * Linux:
 +
-endif::[]
 [options="nowrap"]
 ----
 $ kcadm.sh create components -r demorealm -s name=rsa-generated -s providerId=rsa-generated -s providerType=org.keycloak.keys.KeyProvider -s parentId=959844c1-d149-41d7-8359-6aa527fca0b0 -s 'config.priority=["101"]' -s 'config.enabled=["true"]' -s 'config.active=["true"]' -s 'config.keySize=["2048"]'
 ----
-ifeval::[{project_product}!=true]
 * Windows:
 +
 [options="nowrap"]
 ----
 c:\> kcadm create components -r demorealm -s name=rsa-generated -s providerId=rsa-generated -s providerType=org.keycloak.keys.KeyProvider -s parentId=959844c1-d149-41d7-8359-6aa527fca0b0 -s "config.priority=[\"101\"]" -s "config.enabled=[\"true\"]" -s "config.active=[\"true\"]" -s "config.keySize=[\"2048\"]"
 ----
-endif::[]
 . Set the `parentId` attribute to the value of the target realm's ID.
 +
 The newly added key is now the active key, as revealed by `kcadm.sh get keys -r demorealm`.
@@ -416,22 +396,18 @@ The newly added key is now the active key, as revealed by `kcadm.sh get keys -r 
 +
 For example, on:
 +
-ifeval::[{project_product}!=true]
 * Linux:
 +
-endif::[]
 [options="nowrap"]
 ----
 $ kcadm.sh create components -r demorealm -s name=java-keystore -s providerId=java-keystore -s providerType=org.keycloak.keys.KeyProvider -s parentId=959844c1-d149-41d7-8359-6aa527fca0b0 -s 'config.priority=["101"]' -s 'config.enabled=["true"]' -s 'config.active=["true"]' -s 'config.keystore=["/opt/keycloak/keystore.jks"]' -s 'config.keystorePassword=["secret"]' -s 'config.keyPassword=["secret"]' -s 'config.keyAlias=["localhost"]'
 ----
-ifeval::[{project_product}!=true]
 * Windows:
 +
 [options="nowrap"]
 ----
 c:\> kcadm create components -r demorealm -s name=java-keystore -s providerId=java-keystore -s providerType=org.keycloak.keys.KeyProvider -s parentId=959844c1-d149-41d7-8359-6aa527fca0b0 -s "config.priority=[\"101\"]" -s "config.enabled=[\"true\"]" -s "config.active=[\"true\"]" -s "config.keystore=[\"/opt/keycloak/keystore.jks\"]" -s "config.keystorePassword=[\"secret\"]" -s "config.keyPassword=[\"secret\"]" -s "config.keyAlias=[\"localhost\"]"
 ----
-endif::[]
 . Ensure you change the attribute values for `keystore`, `keystorePassword`, `keyPassword`, and `alias` to match your specific keystore.
 . Set the `parentId` attribute to the value of the target realm's ID.
 
@@ -449,22 +425,18 @@ $ kcadm.sh get keys -r demorealm
 +
 For example:
 +
-ifeval::[{project_product}!=true]
 * Linux:
 +
-endif::[]
 [options="nowrap"]
 ----
 $ kcadm.sh update components/PROVIDER_ID -r demorealm -s 'config.active=["false"]'
 ----
-ifeval::[{project_product}!=true]
 * Windows:
 +
 [options="nowrap"]
 ----
 c:\> kcadm update components/PROVIDER_ID -r demorealm -s "config.active=[\"false\"]"
 ----
-endif::[]
 +
 You can update other key attributes:
 
@@ -499,44 +471,35 @@ You can set up a built-in event listener that receives all events and logs the e
 
 For example:
 
-ifeval::[{project_product}!=true]
 * Linux:
 +
 [options="nowrap"]
-+
-endif::[]
 ----
 $ kcadm.sh update events/config -r demorealm -s 'eventsListeners=["jboss-logging"]'
 ----
-ifeval::[{project_product}!=true]
 * Windows:
 +
 [options="nowrap"]
 ----
 c:\> kcadm update events/config -r demorealm -s "eventsListeners=[\"jboss-logging\"]"
 ----
-endif::[]
 
 For example:
 
 You can turn on storage for all available ERROR events, not including auditing events, for two days so you can retrieve the events through Admin REST.
 
-ifeval::[{project_product}!=true]
 * Linux:
 +
-endif::[]
 [options="nowrap"]
 ----
 $ kcadm.sh update events/config -r demorealm -s eventsEnabled=true -s 'enabledEventTypes=["LOGIN_ERROR","REGISTER_ERROR","LOGOUT_ERROR","CODE_TO_TOKEN_ERROR","CLIENT_LOGIN_ERROR","FEDERATED_IDENTITY_LINK_ERROR","REMOVE_FEDERATED_IDENTITY_ERROR","UPDATE_EMAIL_ERROR","UPDATE_PROFILE_ERROR","UPDATE_PASSWORD_ERROR","UPDATE_TOTP_ERROR","VERIFY_EMAIL_ERROR","REMOVE_TOTP_ERROR","SEND_VERIFY_EMAIL_ERROR","SEND_RESET_PASSWORD_ERROR","SEND_IDENTITY_PROVIDER_LINK_ERROR","RESET_PASSWORD_ERROR","IDENTITY_PROVIDER_FIRST_LOGIN_ERROR","IDENTITY_PROVIDER_POST_LOGIN_ERROR","CUSTOM_REQUIRED_ACTION_ERROR","EXECUTE_ACTIONS_ERROR","CLIENT_REGISTER_ERROR","CLIENT_UPDATE_ERROR","CLIENT_DELETE_ERROR"]' -s eventsExpiration=172800
 ----
-ifeval::[{project_product}!=true]
 * Windows:
 +
 [options="nowrap"]
 ----
 c:\> kcadm update events/config -r demorealm -s eventsEnabled=true -s "enabledEventTypes=[\"LOGIN_ERROR\",\"REGISTER_ERROR\",\"LOGOUT_ERROR\",\"CODE_TO_TOKEN_ERROR\",\"CLIENT_LOGIN_ERROR\",\"FEDERATED_IDENTITY_LINK_ERROR\",\"REMOVE_FEDERATED_IDENTITY_ERROR\",\"UPDATE_EMAIL_ERROR\",\"UPDATE_PROFILE_ERROR\",\"UPDATE_PASSWORD_ERROR\",\"UPDATE_TOTP_ERROR\",\"VERIFY_EMAIL_ERROR\",\"REMOVE_TOTP_ERROR\",\"SEND_VERIFY_EMAIL_ERROR\",\"SEND_RESET_PASSWORD_ERROR\",\"SEND_IDENTITY_PROVIDER_LINK_ERROR\",\"RESET_PASSWORD_ERROR\",\"IDENTITY_PROVIDER_FIRST_LOGIN_ERROR\",\"IDENTITY_PROVIDER_POST_LOGIN_ERROR\",\"CUSTOM_REQUIRED_ACTION_ERROR\",\"EXECUTE_ACTIONS_ERROR\",\"CLIENT_REGISTER_ERROR\",\"CLIENT_UPDATE_ERROR\",\"CLIENT_DELETE_ERROR\"]" -s eventsExpiration=172800
 ----
-endif::[]
 
 You can reset stored event types to *all available event types*. Setting the value to an empty list is the same as enumerating all.
 [options="nowrap"]
@@ -948,7 +911,7 @@ Use the client ID to construct an endpoint URI, such as `clients/ID/client-secre
 For example:
 [options="nowrap"]
 ----
-$ kcadm.sh get clients/$CID/client-secret
+$ kcadm.sh get clients/$CID/client-secret -r demorealm
 ----
 
 [discrete]
@@ -959,7 +922,7 @@ Use the client ID to construct an endpoint URI, such as `clients/ID/client-secre
 For example:
 [options="nowrap"]
 ----
-$ kcadm.sh create clients/$CID/client-secret
+$ kcadm.sh create clients/$CID/client-secret -r demorealm
 ----
 
 [discrete]
@@ -970,7 +933,7 @@ Use the client ID to construct an endpoint URI, such as `clients/ID`.
 For example:
 [options="nowrap"]
 ----
-$ kcadm.sh update clients/$CID -s "secret=newSecret"
+$ kcadm.sh update clients/$CID -s "secret=newSecret" -r demorealm
 ----
 
 [discrete]
@@ -1015,23 +978,18 @@ Use the `update` command with the same endpoint URI that you use to get a specif
 
 For example:
 
-ifeval::[{project_product}!=true]
 * Linux:
 +
-endif::[]
 [options="nowrap"]
 ----
 $ kcadm.sh update clients/c7b8547f-e748-4333-95d0-410b76b3f4a3 -r demorealm -s enabled=false -s publicClient=true -s 'redirectUris=["http://localhost:8080/myapp/*"]' -s baseUrl=http://localhost:8080/myapp -s adminUrl=http://localhost:8080/myapp
 ----
-
-ifeval::[{project_product}!=true]
 * Windows:
 +
 [options="nowrap"]
 ----
 c:\> kcadm update clients/c7b8547f-e748-4333-95d0-410b76b3f4a3 -r demorealm -s enabled=false -s publicClient=true -s "redirectUris=[\"http://localhost:8080/myapp/*\"]" -s baseUrl=http://localhost:8080/myapp -s adminUrl=http://localhost:8080/myapp
 ----
-endif::[]
 
 [discrete]
 ==== Deleting a client
@@ -1078,15 +1036,15 @@ You can filter users by `username`, `firstName`, `lastName`, or `email`.
 For example:
 [options="nowrap"]
 ----
-$ kcadm.sh get users -r demorealm -q email=google.com
-$ kcadm.sh get users -r demorealm -q username=testuser
+$ kcadm.sh get users -r demorealm -q q=email:google.com
+$ kcadm.sh get users -r demorealm -q q=username:testuser
 ----
 [NOTE]
 ====
 Filtering does not use exact matching. This example matches the value of the `username` attribute against the `\*testuser*` pattern.
 ====
 
-You can filter across multiple attributes by specifying multiple `-q` options. {project_name} returns users that match the condition for all the attributes only.
+For clients, groups, and users you can filter across multiple attributes by specifying a more complex `q` query parameter.  you may use something like -q q="field1:value1 field2:value2". {project_name} returns users that match the condition for all the attributes only.
 
 [discrete]
 ==== Getting a specific user
@@ -1106,22 +1064,18 @@ Use the `update` command with the same endpoint URI that you use to get a specif
 
 For example:
 
-ifeval::[{project_product}!=true]
 * Linux:
 +
-endif::[]
 [options="nowrap"]
 ----
 $ kcadm.sh update users/0ba7a3fd-6fd8-48cd-a60b-2e8fd82d56e2 -r demorealm -s 'requiredActions=["VERIFY_EMAIL","UPDATE_PROFILE","CONFIGURE_TOTP","UPDATE_PASSWORD"]'
 ----
-ifeval::[{project_product}!=true]
 * Windows:
 +
 [options="nowrap"]
 ----
 c:\> kcadm update users/0ba7a3fd-6fd8-48cd-a60b-2e8fd82d56e2 -r demorealm -s "requiredActions=[\"VERIFY_EMAIL\",\"UPDATE_PROFILE\",\"CONFIGURE_TOTP\",\"UPDATE_PASSWORD\"]"
 ----
-endif::[]
 
 [discrete]
 ==== Deleting a user
@@ -1272,7 +1226,7 @@ For example:
 +
 [options="nowrap"]
 ----
-$kcadm get users/6da5ab89-3397-4205-afaa-e201ff638f9e/sessions
+$ kcadm.sh get users/6da5ab89-3397-4205-afaa-e201ff638f9e/sessions -r demorealm
 ----
 
 [discrete]
@@ -1286,7 +1240,7 @@ For example:
 +
 [options="nowrap"]
 ----
-$ kcadm.sh delete sessions/d0eaa7cc-8c5d-489d-811a-69d3c4ec84d1
+$ kcadm.sh delete sessions/d0eaa7cc-8c5d-489d-811a-69d3c4ec84d1 -r demorealm
 ----
 
 [discrete]
@@ -1836,7 +1790,7 @@ $ kcadm.sh create components -r demorealm -s name=full-name-ldap-mapper -s provi
 . Set the realm's `passwordPolicy` attribute to an enumeration expression that includes the specific policy provider ID and optional configuration.
 . Use the following example to set a password policy to default values. The default values include:
 
-* 27,500 hashing iterations
+* 210,000 hashing iterations
 * at least one special character
 * at least one uppercase character
 * at least one digit character
@@ -1850,7 +1804,7 @@ $ kcadm.sh update realms/demorealm -s 'passwordPolicy="hashIterations and specia
 . To use values different from defaults, pass the configuration in brackets.
 . Use the following example to set a password policy to:
 
-* 25,000 hash iterations
+* 300,000 hash iterations
 * at least two special characters
 * at least two uppercase characters
 * at least two lowercase characters
@@ -1861,7 +1815,7 @@ $ kcadm.sh update realms/demorealm -s 'passwordPolicy="hashIterations and specia
 +
 [options="nowrap"]
 ----
-$ kcadm.sh update realms/demorealm -s 'passwordPolicy="hashIterations(25000) and specialChars(2) and upperCase(2) and lowerCase(2) and digits(2) and length(9) and notUsername and passwordHistory(4)"'
+$ kcadm.sh update realms/demorealm -s 'passwordPolicy="hashIterations(300000) and specialChars(2) and upperCase(2) and lowerCase(2) and digits(2) and length(9) and notUsername and passwordHistory(4)"'
 ----
 
 [discrete]
@@ -1919,7 +1873,7 @@ $ kcadm.sh get authentication/flows/Copy%20of%20browser/executions -r demorealm
 For example:
 [options="nowrap"]
 ----
-$ kcadm create "authentication/executions/a3147129-c402-4760-86d9-3f2345e401c7/config" -r examplerealm -b '{"config":{"x509-cert-auth.mapping-source-selection":"Match SubjectDN using regular expression","x509-cert-auth.regular-expression":"(.*?)(?:$)","x509-cert-auth.mapper-selection":"Custom Attribute Mapper","x509-cert-auth.mapper-selection.user-attribute-name":"usercertificate","x509-cert-auth.crl-checking-enabled":"","x509-cert-auth.crldp-checking-enabled":false,"x509-cert-auth.crl-relative-path":"crl.pem","x509-cert-auth.ocsp-checking-enabled":"","x509-cert-auth.ocsp-responder-uri":"","x509-cert-auth.keyusage":"","x509-cert-auth.extendedkeyusage":"","x509-cert-auth.confirmation-page-disallowed":""},"alias":"my_otp_config"}'
+$ kcadm.sh create "authentication/executions/a3147129-c402-4760-86d9-3f2345e401c7/config" -r demorealm -b '{"config":{"x509-cert-auth.mapping-source-selection":"Match SubjectDN using regular expression","x509-cert-auth.regular-expression":"(.*?)(?:$)","x509-cert-auth.mapper-selection":"Custom Attribute Mapper","x509-cert-auth.mapper-selection.user-attribute-name":"usercertificate","x509-cert-auth.crl-checking-enabled":"","x509-cert-auth.crldp-checking-enabled":false,"x509-cert-auth.crl-relative-path":"crl.pem","x509-cert-auth.ocsp-checking-enabled":"","x509-cert-auth.ocsp-responder-uri":"","x509-cert-auth.keyusage":"","x509-cert-auth.extendedkeyusage":"","x509-cert-auth.confirmation-page-disallowed":""},"alias":"my_otp_config"}'
 ----
 
 
@@ -1933,7 +1887,7 @@ $ kcadm create "authentication/executions/a3147129-c402-4760-86d9-3f2345e401c7/c
 For example:
 [options="nowrap"]
 ----
-$ kcadm get "authentication/config/dd91611a-d25c-421a-87e2-227c18421833" -r examplerealm
+$ kcadm get "authentication/config/dd91611a-d25c-421a-87e2-227c18421833" -r demorealm
 ----
 
 
@@ -1948,7 +1902,7 @@ $ kcadm get "authentication/config/dd91611a-d25c-421a-87e2-227c18421833" -r exam
 For example:
 [options="nowrap"]
 ----
-$ kcadm update "authentication/config/dd91611a-d25c-421a-87e2-227c18421833" -r examplerealm -b '{"id":"dd91611a-d25c-421a-87e2-227c18421833","alias":"my_otp_config","config":{"x509-cert-auth.extendedkeyusage":"","x509-cert-auth.mapper-selection.user-attribute-name":"usercertificate","x509-cert-auth.ocsp-responder-uri":"","x509-cert-auth.regular-expression":"(.*?)(?:$)","x509-cert-auth.crl-checking-enabled":"true","x509-cert-auth.confirmation-page-disallowed":"","x509-cert-auth.keyusage":"","x509-cert-auth.mapper-selection":"Custom Attribute Mapper","x509-cert-auth.crl-relative-path":"crl.pem","x509-cert-auth.crldp-checking-enabled":"false","x509-cert-auth.mapping-source-selection":"Match SubjectDN using regular expression","x509-cert-auth.ocsp-checking-enabled":""}}'
+$ kcadm update "authentication/config/dd91611a-d25c-421a-87e2-227c18421833" -r demorealm -b '{"id":"dd91611a-d25c-421a-87e2-227c18421833","alias":"my_otp_config","config":{"x509-cert-auth.extendedkeyusage":"","x509-cert-auth.mapper-selection.user-attribute-name":"usercertificate","x509-cert-auth.ocsp-responder-uri":"","x509-cert-auth.regular-expression":"(.*?)(?:$)","x509-cert-auth.crl-checking-enabled":"true","x509-cert-auth.confirmation-page-disallowed":"","x509-cert-auth.keyusage":"","x509-cert-auth.mapper-selection":"Custom Attribute Mapper","x509-cert-auth.crl-relative-path":"crl.pem","x509-cert-auth.crldp-checking-enabled":"false","x509-cert-auth.mapping-source-selection":"Match SubjectDN using regular expression","x509-cert-auth.ocsp-checking-enabled":""}}'
 ----
 
 
@@ -1963,5 +1917,5 @@ $ kcadm update "authentication/config/dd91611a-d25c-421a-87e2-227c18421833" -r e
 For example:
 [options="nowrap"]
 ----
-$ kcadm delete "authentication/config/dd91611a-d25c-421a-87e2-227c18421833" -r examplerealm
+$ kcadm delete "authentication/config/dd91611a-d25c-421a-87e2-227c18421833" -r demorealm
 ----

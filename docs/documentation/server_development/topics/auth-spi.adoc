@@ -1,6 +1,7 @@
 [[_auth_spi]]
 == Authentication SPI
 
+
 {project_name} includes a range of different authentication mechanisms: kerberos, password, otp and others.
 These mechanisms may not meet all of your requirements and you may want to plug in your own custom ones.
 {project_name} provides an authentication SPI that you can use to write new plugins.
@@ -8,7 +9,7 @@ The Admin Console supports applying, ordering, and configuring these new mechani
 
 {project_name} also supports a simple registration form.
 Different aspects of this form can be enabled and disabled for example
-Recaptcha support can be turned off and on.
+reCAPTCHA support can be turned off and on.
 The same authentication SPI can be used to add another page to the registration flow or reimplement it entirely.
 There's also an additional fine-grained SPI you can use to add specific validations and user extensions to the built-in registration form.
 
@@ -18,7 +19,7 @@ After the action is performed successfully, the user doesn't have to perform the
 You can write and plug in your own required actions.
 
 WARNING: If your authenticator or required action implementation is using some user attributes as the metadata attributes for linking/establishing the user identity,
-then please make sure that users are not able to edit the attributes and the corresponding attributes are read-only. See the details in the link:{adminguide_link}#_read_only_user_attributes[Threat model mitigation chapter].
+then please make sure that users are not able to edit the attributes and the corresponding attributes are read-only. See the details in the link:{adminguide_link}#read_only_user_attributes[Threat model mitigation chapter].
 
 === Terms
 
@@ -150,7 +151,7 @@ Let's walk through the steps from when a client first redirects to keycloak to a
 
 In this section, we'll take a look at the Authenticator interface.
 For this, we are going to implement an authenticator that requires that a user enter in the answer to a secret question like "What is your mother's maiden name?".
-This example is fully implemented and contained in the examples/providers/authenticator directory of the demo distribution of {project_name}.
+This example is fully implemented and contained in the {quickstartRepo_link}[{quickstartRepo_name}] repository under `extension/authenticator`.
 
 To create an authenticator, you must at minimum implement the org.keycloak.authentication.AuthenticatorFactory and Authenticator interfaces.
 The Authenticator interface defines the logic. The AuthenticatorFactory is responsible for creating instances of an Authenticator.
@@ -940,7 +941,7 @@ It is entirely possible for you to implement your own flow with a set of Authent
 But what you'll usually want to do is just add a bit of validation to the out-of-the-box registration page.
 An additional SPI was created to be able to do this.
 It basically allows you to add validation of form elements on the page as well as to initialize UserModel attributes and data after the user has been registered.
-We'll look at both the implementation of the user profile registration processing as well as the registration Google Recaptcha plugin.
+We'll look at both the implementation of the user profile registration processing as well as the registration Google reCAPTCHA Enterprise plugin.
 
 ==== Implementation FormAction interface
 
@@ -953,18 +954,24 @@ Rendering is done in the buildPage() method, validation is done in the validate(
 
     @Override
     public void buildPage(FormContext context, LoginFormsProvider form) {
-        AuthenticatorConfigModel captchaConfig = context.getAuthenticatorConfig();
-        if (captchaConfig == null || captchaConfig.getConfig() == null
-                || captchaConfig.getConfig().get(SITE_KEY) == null
-                || captchaConfig.getConfig().get(SITE_SECRET) == null
-                ) {
+        Map<String, String> config = context.getAuthenticatorConfig().getConfig();
+        if (config == null
+                || Stream.of(PROJECT_ID, SITE_KEY, API_KEY, ACTION)
+                        .anyMatch(key -> Strings.isNullOrEmpty(config.get(key)))
+                || parseDoubleFromConfig(config, SCORE_THRESHOLD) == null) {
             form.addError(new FormMessage(null, Messages.RECAPTCHA_NOT_CONFIGURED));
             return;
         }
-        String siteKey = captchaConfig.getConfig().get(SITE_KEY);
+
+        String userLanguageTag = context.getSession().getContext().resolveLocale(context.getUser())
+                .toLanguageTag();
+        boolean invisible = Boolean.parseBoolean(config.getOrDefault(INVISIBLE, "true"));
+
         form.setAttribute("recaptchaRequired", true);
-        form.setAttribute("recaptchaSiteKey", siteKey);
-        form.addScript("https://www.google.com/recaptcha/api.js");
+        form.setAttribute("recaptchaSiteKey", config.get(SITE_KEY));
+        form.setAttribute("recaptchaAction", config.get(ACTION));
+        form.setAttribute("recaptchaVisible", !invisible);
+        form.addScript("https://www.google.com/recaptcha/enterprise.js?hl=" + userLanguageTag);
     }
 ----
 
@@ -975,11 +982,11 @@ You can add additional attributes to the form provider so that they can be displ
 The code above is from the registration recaptcha plugin.
 Recaptcha requires some specific settings that must be obtained from configuration.
 FormActions are configured in the exact same as Authenticators are.
-In this example, we pull the Google Recaptcha site key from configuration and add it as an attribute to the form provider.
-Our registration template file can read this attribute now.
+In this example, we pull the Google Recaptcha site key and other options from Recaptcha configuration and add them as attributes to the form provider.
+Our registration template file, register.ftl, can now have access to those attributes.
 
 Recaptcha also has the requirement of loading a JavaScript script.
-You can do this by calling LoginFormsProvider.addScript() passing in the URL.
+You can do this by calling LoginFormsProvider.addScript(), passing in the URL.
 
 For user profile processing, there is no additional information that it needs to add to the form, so its buildPage() method is empty.
 
@@ -993,33 +1000,25 @@ Let's look at the Recaptcha's plugin first.
     @Override
     public void validate(ValidationContext context) {
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
-        List<FormMessage> errors = new ArrayList<>();
-        boolean success = false;
-
         String captcha = formData.getFirst(G_RECAPTCHA_RESPONSE);
-        if (!Validation.isBlank(captcha)) {
-            AuthenticatorConfigModel captchaConfig = context.getAuthenticatorConfig();
-            String secret = captchaConfig.getConfig().get(SITE_SECRET);
 
-            success = validateRecaptcha(context, success, captcha, secret);
-        }
-        if (success) {
+        if (!Validation.isBlank(captcha) && validateRecaptcha(context, captcha)) {
             context.success();
         } else {
+            List<FormMessage> errors = new ArrayList<>();
             errors.add(new FormMessage(null, Messages.RECAPTCHA_FAILED));
             formData.remove(G_RECAPTCHA_RESPONSE);
             context.validationError(formData, errors);
-            return;
-
-
         }
     }
+
 ----
 
 Here we obtain the form data that the Recaptcha widget adds to the form.
 We obtain the Recaptcha secret key from configuration.
 We then validate the recaptcha.
 If successful, ValidationContext.success() is called.
+We clear the captcha token from the form using formData.remove, but keep other form data untouched.
 If not, we invoke ValidationContext.validationError() passing in the formData (so the user doesn't have to re-enter data), we also specify an error message we want displayed.
 The error message must point to a message bundle property in the internationalized message bundles.
 For other registration extensions validate() might be validating the format of a form element, for example an alternative email attribute.

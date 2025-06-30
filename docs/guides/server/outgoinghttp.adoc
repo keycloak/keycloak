@@ -7,10 +7,10 @@ title="Configuring outgoing HTTP requests"
 summary="How to configure the client used for outgoing HTTP requests."
 includedOptions="">
 
-Keycloak often needs to make requests to the applications and services that it secures. Keycloak manages these outgoing connections using an HTTP client. This {section} shows how to configure the client, connection pool, proxy environment settings, timeouts, and more.
+{project_name} often needs to make requests to the applications and services that it secures. {project_name} manages these outgoing connections using an HTTP client. This {section} shows how to configure the client, connection pool, proxy environment settings, timeouts, and more.
 
 == Client Configuration Command
-The HTTP client that Keycloak uses for outgoing communication is highly configurable. To configure the Keycloak outgoing HTTP client, enter this command:
+The HTTP client that {project_name} uses for outgoing communication is highly configurable. To configure the {project_name} outgoing HTTP client, enter this command:
 
 <@kc.start parameters="--spi-connections-http-client-default-<configurationoption>=<value>"/>
 
@@ -55,7 +55,7 @@ If an outgoing request requires HTTPS and this configuration option is set to tr
 == Proxy mappings for outgoing HTTP requests
 To configure outgoing requests to use a proxy, you can use the following standard proxy environment variables to configure the proxy mappings: `HTTP_PROXY`, `HTTPS_PROXY`, and `NO_PROXY`.
 
-* The `HTTP_PROXY` and `HTTPS_PROXY` variables represent the proxy server that is used for outgoing HTTP requests. Keycloak does not differentiate between the two variables. If you define both variables, `HTTPS_PROXY` takes precedence regardless of the actual scheme that the proxy server uses.
+* The `HTTP_PROXY` and `HTTPS_PROXY` variables represent the proxy server that is used for outgoing HTTP requests. {project_name} does not differentiate between the two variables. If you define both variables, `HTTPS_PROXY` takes precedence regardless of the actual scheme that the proxy server uses.
 
 * The `NO_PROXY` variable defines a comma separated list of hostnames that should not use the proxy. For each hostname that you specify, all its subdomains are also excluded from using proxy.
 
@@ -74,7 +74,7 @@ In this example, the following results occur:
 
 == Proxy mappings using regular expressions
 
-An alternative to using environment variables for proxy mappings is to configure a comma-delimited list of proxy-mappings for outgoing requests sent by Keycloak. A proxy-mapping consists of a regex-based hostname pattern and a proxy-uri, using the format `hostname-pattern;proxy-uri`.
+An alternative to using environment variables for proxy mappings is to configure a comma-delimited list of proxy-mappings for outgoing requests sent by {project_name}. A proxy-mapping consists of a regex-based hostname pattern and a proxy-uri, using the format `hostname-pattern;proxy-uri`.
 
 For example, consider the following regex:
 
@@ -85,7 +85,9 @@ For example, consider the following regex:
 
 You apply a regex-based hostname pattern by entering this command:
 
-<@kc.start parameters="--spi-connections-http-client-default-proxy-mappings=\"\'*\\\\\\.(google|googleapis)\\\\\\.com;http://www-proxy.acme.com:8080\'\""/>
+<@kc.start parameters="--spi-connections-http-client-default-proxy-mappings=\'.*\\\\.(google|googleapis)\\\\.com;http://www-proxy.acme.com:8080\'"/>
+
+The backslash character `\` is escaped again because micro-profile config is used to parse the array of mappings.
 
 To determine the proxy for the outgoing HTTP request, the following occurs:
 
@@ -121,6 +123,6 @@ In this example, the following occurs:
 == Configuring trusted certificates for TLS connections
 
 See <@links.server id="keycloak-truststore"/> for how
-to configure a Keycloak Truststore so that Keycloak is able to perform outgoing requests using TLS.
+to configure a {project_name} Truststore so that {project_name} is able to perform outgoing requests using TLS.
 
 </@tmpl.guide>

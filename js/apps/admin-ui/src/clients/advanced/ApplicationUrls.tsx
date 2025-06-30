@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { TextControl } from "ui-shared";
+import { TextControl } from "@keycloak/keycloak-ui-shared";
 
 type ApplicationUrlsProps = {
   isDisabled?: boolean;

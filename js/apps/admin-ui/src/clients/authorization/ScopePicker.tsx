@@ -1,16 +1,15 @@
 import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
 import {
-  FormGroup,
-  Select,
-  SelectOption,
+  HelpItem,
+  KeycloakSelect,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@keycloak/keycloak-ui-shared";
+import { FormGroup, SelectOption } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
+import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { useFetch } from "../../utils/useFetch";
 
 type Scope = {
@@ -19,6 +18,8 @@ type Scope = {
 };
 
 export const ScopePicker = ({ clientId }: { clientId: string }) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { control } = useFormContext();
 
@@ -41,13 +42,14 @@ export const ScopePicker = ({ clientId }: { clientId: string }) => {
     [search],
   );
 
-  const renderScopes = (scopes?: ScopeRepresentation[]) =>
-    scopes?.map((option) => (
+  const renderScopes = (scopes: ScopeRepresentation[]) =>
+    scopes.map((option) => (
       <SelectOption key={option.id} value={option}>
         {option.name}
       </SelectOption>
     ));
 
+  if (!scopes) return <KeycloakSpinner />;
   return (
     <FormGroup
       label={t("authorizationScopes")}
@@ -61,7 +63,7 @@ export const ScopePicker = ({ clientId }: { clientId: string }) => {
         defaultValue={[]}
         control={control}
         render={({ field }) => (
-          <Select
+          <KeycloakSelect
             toggleId="scopes"
             variant={SelectVariant.typeaheadMulti}
             chipGroupProps={{
@@ -69,14 +71,14 @@ export const ScopePicker = ({ clientId }: { clientId: string }) => {
               expandedText: t("hide"),
               collapsedText: t("showRemaining"),
             }}
-            onToggle={setOpen}
+            onToggle={(val) => setOpen(val)}
             isOpen={open}
             selections={field.value.map((o: Scope) => o.name)}
-            onFilter={(_, value) => {
+            onFilter={(value) => {
               setSearch(value);
               return renderScopes(scopes);
             }}
-            onSelect={(_, selectedValue) => {
+            onSelect={(selectedValue) => {
               const option =
                 typeof selectedValue === "string"
                   ? selectedValue
@@ -88,15 +90,14 @@ export const ScopePicker = ({ clientId }: { clientId: string }) => {
                 : [...field.value, selectedValue];
               field.onChange(changedValue);
             }}
-            onClear={(event) => {
-              event.stopPropagation();
+            onClear={() => {
               setSearch("");
               field.onChange([]);
             }}
             typeAheadAriaLabel={t("authorizationScopes")}
           >
             {renderScopes(scopes)}
-          </Select>
+          </KeycloakSelect>
         )}
       />
     </FormGroup>

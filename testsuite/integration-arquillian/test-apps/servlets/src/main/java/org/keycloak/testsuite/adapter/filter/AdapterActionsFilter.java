@@ -19,18 +19,13 @@ package org.keycloak.testsuite.adapter.filter;
 
 
 import org.jboss.logging.Logger;
-import org.keycloak.adapters.AdapterDeploymentContext;
-import org.keycloak.adapters.KeycloakDeployment;
-import org.keycloak.adapters.rotation.JWKPublicKeyLocator;
 import org.keycloak.common.util.Time;
-import org.keycloak.common.util.reflections.Reflections;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.reflect.Field;
 
 /**
  * Filter to handle "special" requests to perform actions on adapter side (for example setting time offset )
@@ -40,7 +35,6 @@ import java.lang.reflect.Field;
 public class AdapterActionsFilter implements Filter {
 
     public static final String TIME_OFFSET_PARAM = "timeOffset";
-    public static final String RESET_DEPLOYMENT_PARAM = "resetDeployment";
 
     private static final Logger log = Logger.getLogger(AdapterActionsFilter.class);
 
@@ -56,28 +50,12 @@ public class AdapterActionsFilter implements Filter {
 
         //Accept timeOffset as argument to enforce timeouts
         String timeOffsetParam = request.getParameter(TIME_OFFSET_PARAM);
-        String resetDeploymentParam = request.getParameter(RESET_DEPLOYMENT_PARAM);
 
         if (timeOffsetParam != null && !timeOffsetParam.isEmpty()) {
             int timeOffset = Integer.parseInt(timeOffsetParam);
             log.infof("Time offset updated to %d for application %s", timeOffset, servletReq.getRequestURI());
             Time.setOffset(timeOffset);
             writeResponse(servletResp, "Offset set successfully");
-        } else if (resetDeploymentParam != null && !resetDeploymentParam.isEmpty()) {
-            AdapterDeploymentContext deploymentContext = (AdapterDeploymentContext) request.getServletContext().getAttribute(AdapterDeploymentContext.class.getName());
-
-            Field field = Reflections.findDeclaredField(AdapterDeploymentContext.class, "deployment");
-            Reflections.setAccessible(field);
-            KeycloakDeployment deployment = (KeycloakDeployment) Reflections.getFieldValue(field, deploymentContext);
-
-            Time.setOffset(0);
-            deployment.setNotBefore(0);
-            if (deployment.getPublicKeyLocator() instanceof JWKPublicKeyLocator) {
-                deployment.setPublicKeyLocator(new JWKPublicKeyLocator());
-            }
-
-            log.infof("Restarted PublicKeyLocator, notBefore and timeOffset for application %s", servletReq.getRequestURI());
-            writeResponse(servletResp, "Restarted PublicKeyLocator, notBefore and timeOffset successfully");
         } else {
             // Continue request
             chain.doFilter(request, response);

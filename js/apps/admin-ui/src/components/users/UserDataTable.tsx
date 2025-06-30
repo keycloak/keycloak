@@ -1,6 +1,5 @@
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
   AlertVariant,
@@ -27,8 +26,7 @@ import type { IRowData } from "@patternfly/react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { SearchType } from "../../user/details/SearchFilter";
 import { toAddUser } from "../../user/routes/AddUser";
@@ -49,16 +47,63 @@ export type UserAttribute = {
   value: string;
 };
 
+const UserDetailLink = (user: BruteUser) => {
+  const { realm } = useRealm();
+  return (
+    <Link to={toUser({ realm, id: user.id!, tab: "settings" })}>
+      {user.username} <StatusRow user={user} />
+    </Link>
+  );
+};
+
+type StatusRowProps = {
+  user: BruteUser;
+};
+
+const StatusRow = ({ user }: StatusRowProps) => {
+  const { t } = useTranslation();
+  return (
+    <>
+      {!user.enabled && (
+        <Label color="red" icon={<InfoCircleIcon />}>
+          {t("disabled")}
+        </Label>
+      )}
+      {user.bruteForceStatus?.disabled && (
+        <Label color="orange" icon={<WarningTriangleIcon />}>
+          {t("temporaryLocked")}
+        </Label>
+      )}
+    </>
+  );
+};
+
+const ValidatedEmail = (user: UserRepresentation) => {
+  const { t } = useTranslation();
+  return (
+    <>
+      {!user.emailVerified && (
+        <Tooltip content={t("notVerified")}>
+          <ExclamationCircleIcon className="keycloak__user-section__email-verified" />
+        </Tooltip>
+      )}{" "}
+      {emptyFormatter()(user.email)}
+    </>
+  );
+};
+
 export function UserDataTable() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
-  const { realm: realmName } = useRealm();
+  const { realm: realmName, realmRepresentation: realm } = useRealm();
   const navigate = useNavigate();
   const [userStorage, setUserStorage] = useState<ComponentRepresentation[]>();
   const [searchUser, setSearchUser] = useState("");
-  const [realm, setRealm] = useState<RealmRepresentation | undefined>();
   const [selectedRows, setSelectedRows] = useState<UserRepresentation[]>([]);
   const [searchType, setSearchType] = useState<SearchType>("default");
+  const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<UserAttribute[]>([]);
   const [profile, setProfile] = useState<UserProfileConfig>({});
   const [query, setQuery] = useState("");
@@ -75,34 +120,19 @@ export function UserDataTable() {
       try {
         return await Promise.all([
           adminClient.components.find(testParams),
-          adminClient.realms.findOne({ realm: realmName }),
           adminClient.users.getProfile(),
         ]);
       } catch {
-        return [[], {}, {}] as [
-          ComponentRepresentation[],
-          RealmRepresentation | undefined,
-          UserProfileConfig,
-        ];
+        return [[], {}] as [ComponentRepresentation[], UserProfileConfig];
       }
     },
-    ([storageProviders, realm, profile]) => {
+    ([storageProviders, profile]) => {
       setUserStorage(
-        storageProviders.filter((p) => p.config?.enabled[0] === "true"),
+        storageProviders.filter((p) => p.config?.enabled?.[0] === "true"),
       );
-      setRealm(realm);
       setProfile(profile);
     },
     [],
-  );
-
-  const UserDetailLink = (user: UserRepresentation) => (
-    <Link
-      key={user.username}
-      to={toUser({ realm: realmName, id: user.id!, tab: "settings" })}
-    >
-      {user.username}
-    </Link>
   );
 
   const loader = async (first?: number, max?: number, search?: string) => {
@@ -117,12 +147,12 @@ export function UserDataTable() {
       params.search = searchParam;
     }
 
-    if (!listUsers && !searchParam) {
+    if (!listUsers && !(params.search || params.q)) {
       return [];
     }
 
     try {
-      return await findUsers({
+      return await findUsers(adminClient, {
         briefRepresentation: true,
         ...params,
       });
@@ -170,40 +200,6 @@ export function UserDataTable() {
     },
   });
 
-  const StatusRow = (user: BruteUser) => {
-    return (
-      <>
-        {!user.enabled && (
-          <Label key={user.id} color="red" icon={<InfoCircleIcon />}>
-            {t("disabled")}
-          </Label>
-        )}
-        {user.bruteForceStatus?.disabled && (
-          <Label key={user.id} color="orange" icon={<WarningTriangleIcon />}>
-            {t("temporaryLocked")}
-          </Label>
-        )}
-        {user.enabled && !user.bruteForceStatus?.disabled && "—"}
-      </>
-    );
-  };
-
-  const ValidatedEmail = (user: UserRepresentation) => {
-    return (
-      <>
-        {!user.emailVerified && (
-          <Tooltip
-            key={`email-verified-${user.id}`}
-            content={<>{t("notVerified")}</>}
-          >
-            <ExclamationCircleIcon className="keycloak__user-section__email-verified" />
-          </Tooltip>
-        )}{" "}
-        {emptyFormatter()(user.email)}
-      </>
-    );
-  };
-
   const goToCreate = () => navigate(toAddUser({ realm: realmName }));
 
   if (!userStorage || !realm) {
@@ -241,7 +237,7 @@ export function UserDataTable() {
             {Object.values(activeFilters).map((entry) => {
               return (
                 <ChipGroup
-                  className="pf-u-mt-md pf-u-mr-md"
+                  className="pf-v5-u-mt-md pf-v5-u-mr-md"
                   key={entry.name}
                   categoryName={
                     entry.displayName.length ? entry.displayName : entry.name
@@ -275,6 +271,8 @@ export function UserDataTable() {
   const toolbar = () => {
     return (
       <UserDataTableToolbarItems
+        searchDropdownOpen={searchDropdownOpen}
+        setSearchDropdownOpen={setSearchDropdownOpen}
         realm={realm}
         hasSelectedRows={selectedRows.length === 0}
         toggleDeleteDialog={toggleDeleteDialog}
@@ -321,7 +319,7 @@ export function UserDataTable() {
       <DeleteConfirm />
       <UnlockUsersConfirm />
       <KeycloakDataTable
-        isSearching
+        isSearching={searchUser !== "" || activeFilters.length !== 0}
         key={key}
         loader={loader}
         isPaginated
@@ -334,7 +332,7 @@ export function UserDataTable() {
               <Toolbar>
                 <ToolbarContent>{toolbar()}</ToolbarContent>
               </Toolbar>
-              <EmptyState data-testid="empty-state" variant="large">
+              <EmptyState data-testid="empty-state" variant="lg">
                 <TextContent className="kc-search-users-text">
                   <Text>{t("searchForUserDescription")}</Text>
                 </TextContent>
@@ -385,11 +383,6 @@ export function UserDataTable() {
             name: "firstName",
             displayKey: "firstName",
             cellFormatters: [emptyFormatter()],
-          },
-          {
-            name: "status",
-            displayKey: "status",
-            cellRenderer: StatusRow,
           },
         ]}
       />

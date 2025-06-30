@@ -16,26 +16,8 @@
  */
 package org.keycloak.services.resources;
 
-import org.jboss.logging.Logger;
-import org.keycloak.common.ClientConnection;
-import org.keycloak.common.Profile;
-import org.keycloak.common.Version;
-import org.keycloak.common.util.Base64Url;
-import org.keycloak.common.util.MimeTypeUtil;
-import org.keycloak.common.util.SecretGenerator;
-import org.keycloak.http.HttpRequest;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.services.ForbiddenException;
-import org.keycloak.services.ServicesLogger;
-import org.keycloak.services.managers.ApplianceBootstrap;
-import org.keycloak.services.util.CacheControlUtil;
-import org.keycloak.services.util.CookieHelper;
-import org.keycloak.theme.Theme;
-import org.keycloak.theme.freemarker.FreeMarkerProvider;
-import org.keycloak.urls.UrlType;
-import org.keycloak.utils.MediaType;
-
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -43,12 +25,32 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.ResponseBuilder;
 import jakarta.ws.rs.core.Response.Status;
+import jakarta.ws.rs.ext.Provider;
+
+import org.jboss.logging.Logger;
+import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
+import org.keycloak.common.Version;
+import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.MimeTypeUtil;
+import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.cookie.CookieProvider;
+import org.keycloak.cookie.CookieType;
+import org.keycloak.http.HttpRequest;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.managers.ApplianceBootstrap;
+import org.keycloak.services.util.CacheControlUtil;
+import org.keycloak.theme.Theme;
+import org.keycloak.theme.freemarker.FreeMarkerProvider;
+import org.keycloak.urls.UrlType;
+import org.keycloak.utils.MediaType;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
@@ -58,11 +60,13 @@ import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@Provider
 @Path("/")
 public class WelcomeResource {
 
@@ -177,23 +181,33 @@ public class WelcomeResource {
                 return rb.build();
             }
 
-            Map<String, Object> map = new HashMap<>();
-
-            map.put("adminConsoleEnabled", isAdminConsoleEnabled());
-            map.put("productName", Version.NAME);
-
-            map.put("properties", theme.getProperties());
-            map.put("adminUrl", session.getContext().getUri(UrlType.ADMIN).getBaseUriBuilder().path("/admin/").build());
-
-            map.put("resourcesPath", "resources/" + Version.RESOURCES_VERSION + "/" + theme.getType().toString().toLowerCase() +"/" + theme.getName());
-            map.put("resourcesCommonPath", "resources/" + Version.RESOURCES_VERSION + "/common/keycloak");
-
             boolean bootstrap = shouldBootstrap();
-            map.put("bootstrap", bootstrap);
-            if (bootstrap) {
-                boolean isLocal = isLocal();
-                map.put("localUser", isLocal);
+            boolean adminConsoleEnabled = isAdminConsoleEnabled();
+            Properties themeProperties = theme.getProperties();
+            boolean redirectToAdmin = Boolean.parseBoolean(themeProperties.getProperty("redirectToAdmin", "false"));
+            URI adminUrl = session.getContext().getUri(UrlType.ADMIN).getBaseUriBuilder().path("/admin/").build();
 
+            // Redirect to the Administration Console if the administrative user already exists.
+            if (redirectToAdmin && !bootstrap && adminConsoleEnabled && successMessage == null) {
+                return Response.status(302).location(adminUrl).build();
+            }
+
+            Map<String, Object> map = new HashMap<>();
+            String commonPath = themeProperties.getProperty("common", "common/keycloak");
+
+            map.put("bootstrap", bootstrap);
+            map.put("adminConsoleEnabled", adminConsoleEnabled);
+            map.put("properties", themeProperties);
+            map.put("adminUrl", adminUrl);
+            map.put("baseUrl", session.getContext().getUri(UrlType.FRONTEND).getBaseUri());
+            map.put("productName", Version.NAME);
+            map.put("resourcesPath", "resources/" + Version.RESOURCES_VERSION + "/" + theme.getType().toString().toLowerCase() +"/" + theme.getName());
+            map.put("resourcesCommonPath", "resources/" + Version.RESOURCES_VERSION + "/" + commonPath);
+
+            boolean isLocal = isLocal();
+            map.put("localUser", isLocal);
+
+            if (bootstrap) {
                 String localAdminUrl = session.getContext().getUri(UrlType.LOCAL_ADMIN).getBaseUri().toString();
                 String adminCreationMessage = getAdminCreationMessage();
                 map.put("localAdminUrl", localAdminUrl);
@@ -273,28 +287,17 @@ public class WelcomeResource {
 
     private String setCsrfCookie() {
         String stateChecker = Base64Url.encode(SecretGenerator.getInstance().randomBytes());
-        String cookiePath = session.getContext().getUri().getPath();
-        boolean secureOnly = session.getContext().getUri().getRequestUri().getScheme().equalsIgnoreCase("https");
-        CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, stateChecker, cookiePath, null, null, 300, secureOnly, true, session);
+        session.getProvider(CookieProvider.class).set(CookieType.WELCOME_CSRF, stateChecker);
         return stateChecker;
     }
 
     private void expireCsrfCookie() {
-        String cookiePath = session.getContext().getUri().getPath();
-        boolean secureOnly = session.getContext().getUri().getRequestUri().getScheme().equalsIgnoreCase("https");
-        CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, "", cookiePath, null, null, 0, secureOnly, true, session);
+        session.getProvider(CookieProvider.class).expire(CookieType.WELCOME_CSRF);
     }
 
     private void csrfCheck(final MultivaluedMap<String, String> formData) {
         String formStateChecker = formData.getFirst("stateChecker");
-        HttpRequest request = session.getContext().getHttpRequest();
-        HttpHeaders headers = request.getHttpHeaders();
-        Cookie cookie = headers.getCookies().get(KEYCLOAK_STATE_CHECKER);
-        if (cookie == null) {
-            throw new ForbiddenException();
-        }
-
-        String cookieStateChecker = cookie.getValue();
+        String cookieStateChecker = session.getProvider(CookieProvider.class).get(CookieType.WELCOME_CSRF);
 
         if (cookieStateChecker == null || !cookieStateChecker.equals(formStateChecker)) {
             throw new ForbiddenException();

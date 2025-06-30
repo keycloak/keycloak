@@ -214,11 +214,79 @@
         ]
       },
       "annotations": {
-        "inputType": "html5-email"
+        "inputType": "html5-email",
+        "inputHelperTextBefore": "${locale_es}",
+        "inputHelperTextAfter": "${locale_fr}",
+        "inputTypePlaceholder": "${locale_de}"
       },
       "validations": {
         "email": {}
       },
+      "group": "group"
+    },
+    {
+      "name": "alternatelang",
+      "displayName": "Alternate Language",
+      "validations": {
+        "options": {
+          "options": [
+            "ar",
+            "ca",
+            "cs",
+            "de",
+            "en",
+            "es",
+            "fr",
+            "hu",
+            "fa",
+            "it",
+            "ja",
+            "lt",
+            "nl",
+            "no",
+            "pl",
+            "pt",
+            "ru",
+            "sk",
+            "sv",
+            "th",
+            "tr",
+            "uk",
+            "zh",
+            "fi"
+          ]
+        }
+      },
+      "annotations": {
+        "inputType": "select",
+        "inputOptionLabels": {
+          "ar": "${locale_ar}",
+          "ca": "${locale_ca}",
+          "cs": "${locale_cs}",
+          "de": "${locale_de}",
+          "en": "${locale_en}",
+          "es": "${locale_es}",
+          "fr": "${locale_fr}",
+          "hu": "${locale_hu}",
+          "fa": "${locale_fa}",
+          "it": "${locale_it}",
+          "ja": "${locale_ja}",
+          "lt": "${locale_lt}",
+          "nl": "${locale_nl}",
+          "no": "${locale_no}",
+          "pl": "${locale_pl}",
+          "pt": "${locale_pt}",
+          "ru": "${locale_ru}",
+          "sk": "${locale_sk}",
+          "sv": "${locale_sv}",
+          "th": "${locale_th}",
+          "tr": "${locale_tr}",
+          "uk": "${locale_uk}",
+          "zh": "${locale_zh}",
+          "fi": "${locale_fi}"
+       }
+      },
+      "permissions": { "view": ["admin", "user"], "edit": ["admin", "user"] },
       "group": "group"
     }
   ],

@@ -1,11 +1,10 @@
 import type ResourceServerRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
 import { DescriptionList } from "@patternfly/react-core";
 import { useState } from "react";
-import { adminClient } from "../../admin-client";
-
+import { useAdminClient } from "../../admin-client";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { useFetch } from "../../utils/useFetch";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import { useFetch } from "../../utils/useFetch";
 import { toPermissionDetails } from "../routes/PermissionDetails";
 import { toScopeDetails } from "../routes/Scope";
 import { DetailDescription, DetailDescriptionLink } from "./DetailDescription";
@@ -21,6 +20,8 @@ type DetailCellProps = {
 };
 
 export const DetailCell = ({ id, clientId, uris }: DetailCellProps) => {
+  const { adminClient } = useAdminClient();
+
   const { realm } = useRealm();
   const [scope, setScope] = useState<Scope>();
   const [permissions, setPermissions] =

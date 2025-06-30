@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.TextNode;
 
+import jakarta.ws.rs.core.HttpHeaders;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -36,6 +37,7 @@ import org.keycloak.admin.client.resource.ClientScopesResource;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -63,15 +65,18 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
 import jakarta.ws.rs.core.UriBuilder;
+import org.keycloak.utils.MediaType;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -92,6 +97,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         ClientRepresentation confApp = KeycloakModelUtils.createClient(testRealm, "confidential-cli");
         confApp.setSecret("secret1");
         confApp.setServiceAccountsEnabled(Boolean.TRUE);
+        confApp.setAttributes(Map.of(Constants.SUPPORT_JWT_CLAIM_IN_INTROSPECTION_RESPONSE_ENABLED,"true"));
 
         ClientRepresentation pubApp = KeycloakModelUtils.createClient(testRealm, "public-cli");
         pubApp.setPublicClient(Boolean.TRUE);
@@ -170,9 +176,9 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         assertTrue(rep.isActive());
         assertEquals("test-user@localhost", rep.getUserName());
         assertEquals("test-app", rep.getClientId());
-        assertEquals(jsonNode.get("exp").asInt(), rep.getExpiration());
-        assertEquals(jsonNode.get("iat").asInt(), rep.getIssuedAt());
-        assertEquals(jsonNode.get("nbf"), rep.getNbf());
+        assertEquals(Long.valueOf(jsonNode.get("exp").asLong()), rep.getExp());
+        assertEquals(Long.valueOf(jsonNode.get("iat").asLong()), rep.getIat());
+        assertEquals(Optional.ofNullable(jsonNode.get("nbf")).map(JsonNode::asLong).orElse(null), rep.getNbf());
         assertEquals(jsonNode.get("sub").asText(), rep.getSubject());
 
         List<String> audiences = new ArrayList<>();
@@ -210,7 +216,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         JsonNode jsonNode = objectMapper.readTree(tokenResponse);
 
         assertTrue(jsonNode.get("active").asBoolean());
-        assertEquals(sessionId, jsonNode.get("session_state").asText());
+        assertEquals(sessionId, jsonNode.get("sid").asText());
         assertEquals("test-app", jsonNode.get("client_id").asText());
         assertTrue(jsonNode.has("exp"));
         assertTrue(jsonNode.has("iat"));
@@ -225,10 +231,10 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
 
         assertTrue(rep.isActive());
         assertEquals("test-app", rep.getClientId());
-        assertEquals(jsonNode.get("session_state").asText(), rep.getSessionState());
-        assertEquals(jsonNode.get("exp").asInt(), rep.getExpiration());
-        assertEquals(jsonNode.get("iat").asInt(), rep.getIssuedAt());
-        assertEquals(jsonNode.get("nbf"), rep.getNbf());
+        assertEquals(jsonNode.get("sid").asText(), rep.getSessionState());
+        assertEquals(Long.valueOf(jsonNode.get("exp").asLong()), rep.getExp());
+        assertEquals(Long.valueOf(jsonNode.get("iat").asLong()), rep.getIat());
+        assertEquals(Optional.ofNullable(jsonNode.get("nbf")).map(JsonNode::asLong).orElse(null), rep.getNbf());
         assertEquals(jsonNode.get("iss").asText(), rep.getIssuer());
         assertEquals(jsonNode.get("jti").asText(), rep.getId());
         assertEquals(jsonNode.get("typ").asText(), "Refresh");
@@ -244,8 +250,8 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
 
         setTimeOffset(2);
 
-        WaitUtils.waitForPageToLoad();
-        loginPage.login("password");
+        driver.navigate().refresh();
+        oauth.fillLoginForm("test-user@localhost", "password");
         events.expectLogin().assertEvent();
 
         Assert.assertFalse(loginPage.isCurrent());
@@ -349,12 +355,34 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
             assertTrue(rep.isActive());
             assertEquals("test-user@localhost", rep.getUserName());
             assertEquals("no-scope", rep.getClientId());
-            assertEquals(loginEvent.getUserId(), rep.getSubject());
             assertNull(rep.getScope());
         } finally {
             testRealm.setClientScopes(preExistingClientScopes);
             adminClient.realm("test").update(testRealm);
         }
+    }
+
+    @Test
+    public void testIntrospectAccessTokenReturnedAsJwt() throws Exception {
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code, "password");
+
+        // request the introspection result to be returned as JWT
+        oauth.requestHeaders(Map.of(HttpHeaders.ACCEPT, MediaType.APPLICATION_JWT));
+
+        String tokenResponse = oauth.introspectAccessTokenWithClientCredential("confidential-cli", "secret1", accessTokenResponse.getAccessToken());
+        TokenMetadataRepresentation rep = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
+
+        assertTrue(rep.isActive());
+        assertEquals("test-user@localhost", rep.getUserName());
+        assertEquals("test-app", rep.getClientId());
+        assertEquals(loginEvent.getUserId(), rep.getSubject());
+        assertNotNull(rep.getOtherClaims().get("jwt"));
+
+        // Assert expected scope
+        AbstractOIDCScopeTest.assertScopes("openid email profile", rep.getScope());
     }
 
     @Test

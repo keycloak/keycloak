@@ -381,7 +381,7 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
                 .append("</HEAD>")
                 .append("<BODY Onload=\"document.forms[0].submit()\">")
 
-                .append("<FORM METHOD=\"POST\" ACTION=\"").append(actionUrl).append("\">");
+                .append("<FORM METHOD=\"POST\" ACTION=\"").append(escapeAttribute(actionUrl)).append("\">");
 
         builder.append("<p>Redirecting, please wait.</p>");
 

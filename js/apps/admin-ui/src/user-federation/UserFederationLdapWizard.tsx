@@ -1,9 +1,11 @@
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import {
   Button,
+  useWizardContext,
   Wizard,
-  WizardContextConsumer,
   WizardFooter,
+  WizardFooterWrapper,
+  WizardStep,
 } from "@patternfly/react-core";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -17,173 +19,120 @@ import { LdapSettingsSearching } from "./ldap/LdapSettingsSearching";
 import { LdapSettingsSynchronization } from "./ldap/LdapSettingsSynchronization";
 import { SettingsCache } from "./shared/SettingsCache";
 
+const UserFedLdapFooter = () => {
+  const { t } = useTranslation();
+  const { activeStep, goToNextStep, goToPrevStep, close } = useWizardContext();
+  return (
+    <WizardFooter
+      activeStep={activeStep}
+      onNext={goToNextStep}
+      onBack={goToPrevStep}
+      onClose={close}
+      isBackDisabled={activeStep.index === 1}
+      backButtonText={t("back")}
+      nextButtonText={t("next")}
+      cancelButtonText={t("cancel")}
+    />
+  );
+};
+const SkipCustomizationFooter = () => {
+  const { goToNextStep, goToPrevStep, close } = useWizardContext();
+  const { t } = useTranslation();
+  return (
+    <WizardFooterWrapper>
+      <Button variant="secondary" onClick={goToPrevStep}>
+        {t("back")}
+      </Button>
+      <Button variant="primary" type="submit" onClick={goToNextStep}>
+        {t("next")}
+      </Button>
+      {/* TODO: validate last step and finish */}
+      <Button variant="link">{t("skipCustomizationAndFinish")}</Button>
+      <Button variant="link" onClick={close}>
+        {t("cancel")}
+      </Button>
+    </WizardFooterWrapper>
+  );
+};
 export const UserFederationLdapWizard = () => {
   const form = useForm<ComponentRepresentation>();
   const { t } = useTranslation();
   const isFeatureEnabled = useIsFeatureEnabled();
 
-  const steps = [
-    {
-      name: t("requiredSettings"),
-      id: "ldapRequiredSettingsStep",
-      component: (
+  return (
+    <Wizard height="100%" footer={<UserFedLdapFooter />}>
+      <WizardStep name={t("requiredSettings")} id="ldapRequiredSettingsStep">
         <LdapSettingsGeneral
           form={form}
           showSectionHeading
           showSectionDescription
         />
-      ),
-    },
-    {
-      name: t("connectionAndAuthenticationSettings"),
-      id: "ldapConnectionSettingsStep",
-      component: (
+      </WizardStep>
+      <WizardStep
+        name={t("connectionAndAuthenticationSettings")}
+        id="ldapConnectionSettingsStep"
+      >
         <LdapSettingsConnection
           form={form}
           showSectionHeading
           showSectionDescription
         />
-      ),
-    },
-    {
-      name: t("ldapSearchingAndUpdatingSettings"),
-      id: "ldapSearchingSettingsStep",
-      component: (
+      </WizardStep>
+      <WizardStep
+        name={t("ldapSearchingAndUpdatingSettings")}
+        id="ldapSearchingSettingsStep"
+      >
         <LdapSettingsSearching
           form={form}
           showSectionHeading
           showSectionDescription
         />
-      ),
-    },
-    {
-      name: t("synchronizationSettings"),
-      id: "ldapSynchronizationSettingsStep",
-      component: (
+      </WizardStep>
+      <WizardStep
+        name={t("synchronizationSettings")}
+        id="ldapSynchronizationSettingsStep"
+        footer={<SkipCustomizationFooter />}
+      >
         <LdapSettingsSynchronization
           form={form}
           showSectionHeading
           showSectionDescription
         />
-      ),
-    },
-    {
-      name: t("kerberosIntegration"),
-      id: "ldapKerberosIntegrationSettingsStep",
-      component: (
+      </WizardStep>
+      <WizardStep
+        name={t("kerberosIntegration")}
+        id="ldapKerberosIntegrationSettingsStep"
+        isDisabled={!isFeatureEnabled(Feature.Kerberos)}
+        footer={<SkipCustomizationFooter />}
+      >
         <LdapSettingsKerberosIntegration
           form={form}
           showSectionHeading
           showSectionDescription
         />
-      ),
-      isDisabled: !isFeatureEnabled(Feature.Kerberos),
-    },
-    {
-      name: t("cacheSettings"),
-      id: "ldapCacheSettingsStep",
-      component: (
+      </WizardStep>
+      <WizardStep
+        name={t("cacheSettings")}
+        id="ldapCacheSettingsStep"
+        footer={<SkipCustomizationFooter />}
+      >
         <SettingsCache form={form} showSectionHeading showSectionDescription />
-      ),
-    },
-    {
-      name: t("advancedSettings"),
-      id: "ldapAdvancedSettingsStep",
-      component: (
+      </WizardStep>
+      <WizardStep
+        name={t("advancedSettings")}
+        id="ldapAdvancedSettingsStep"
+        footer={{
+          backButtonText: t("back"),
+          nextButtonText: t("finish"),
+          cancelButtonText: t("cancel"),
+        }}
+      >
         <LdapSettingsAdvanced
           form={form}
           showSectionHeading
           showSectionDescription
         />
-      ),
-    },
-  ];
-
-  const footer = (
-    <WizardFooter>
-      <WizardContextConsumer>
-        {({ activeStep, onNext, onBack, onClose }) => {
-          // First step buttons
-          if (activeStep.id === "ldapRequiredSettingsStep") {
-            return (
-              <>
-                <Button variant="primary" type="submit" onClick={onNext}>
-                  {t("next")}
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={onBack}
-                  className="pf-m-disabled"
-                >
-                  {t("back")}
-                </Button>
-                <Button variant="link" onClick={onClose}>
-                  {t("cancel")}
-                </Button>
-              </>
-            );
-          }
-          // Other required step buttons
-          else if (
-            activeStep.id === "ldapConnectionSettingsStep" ||
-            activeStep.id === "ldapSearchingSettingsStep"
-          ) {
-            return (
-              <>
-                <Button variant="primary" type="submit" onClick={onNext}>
-                  {t("next")}
-                </Button>
-                <Button variant="secondary" onClick={onBack}>
-                  {t("back")}
-                </Button>
-                <Button variant="link" onClick={onClose}>
-                  {t("cancel")}
-                </Button>
-              </>
-            );
-          }
-          // Last step buttons
-          else if (activeStep.id === "ldapAdvancedSettingsStep") {
-            return (
-              <>
-                {/* TODO: close the wizard and finish */}
-                <Button>{t("finish")}</Button>
-                <Button variant="secondary" onClick={onBack}>
-                  {t("back")}
-                </Button>
-                <Button variant="link" onClick={onClose}>
-                  {t("cancel")}
-                </Button>
-              </>
-            );
-          }
-          // All the other steps buttons
-          return (
-            <>
-              <Button onClick={onNext}>Next</Button>
-              <Button variant="secondary" onClick={onBack}>
-                Back
-              </Button>
-              {/* TODO: validate last step and finish */}
-              <Button variant="link">{t("skipCustomizationAndFinish")}</Button>
-              <Button variant="link" onClick={onClose}>
-                {t("cancel")}
-              </Button>
-            </>
-          );
-        }}
-      </WizardContextConsumer>
-    </WizardFooter>
-  );
-
-  return (
-    <Wizard
-      // Because this is an inline wizard, this title and description should be put into the page. Specifying them here causes the wizard component to make a header that would be used on a modal.
-      // title={t("addLdapWizardTitle")}
-      // description={helpText("addLdapWizardDescription")}
-      height="100%"
-      steps={steps}
-      footer={footer}
-    />
+      </WizardStep>
+    </Wizard>
   );
 };

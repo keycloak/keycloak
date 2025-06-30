@@ -84,8 +84,16 @@ itself.
 |Validate Signature
 |When *ON*, the realm expects SAML requests and responses from the external IDP to be digitally signed.
 
-|Validating X509 Certificate
-|The public certificate {project_name} uses to validate the signatures of SAML requests and responses from the external IDP.
+|Metadata descriptor URL
+|External URL where Identity Provider publishes the `IDPSSODescriptor` metadata. This URL is used to download the Identity Provider certificates when the `Reload keys` or `Import keys` actions are clicked.
+
+|Use metadata descriptor URL
+|When *ON*, the certificates to validate signatures are automatically downloaded from the `Metadata descriptor URL` and cached in {project_name}. The SAML provider can validate signatures in two different ways. If a specific certificate is requested (usually in `POST` binding) and it is not in the cache, certificates are automatically refreshed from the URL. If all certificates are requested to validate the signature (`REDIRECT` binding) the refresh is only done after a max cache time (see https://www.keycloak.org/server/all-provider-config[public-key-storage] spi in the all provider config guide for more information about how the cache works). The cache can also be manually updated using the action `Reload Keys` in the identity provider page.
+
+When the option is *OFF*, the certificates in `Validating X509 Certificates` are used to validate signatures.
+
+|Validating X509 Certificates
+|The public certificates {project_name} uses to validate the signatures of SAML requests and responses from the external IDP when `Use metadata descriptor URL` is *OFF*. Multiple certificates can be entered separated by comma (`,`). The certificates can be re-imported from the `Metadata descriptor URL` clicking the `Import Keys` action in the identity provider page. The action downloads the current certificates in the metadata endpoint and assigns them to the config in this same option. You need to click `Save` to definitely store the re-imported certificates.
 
 |Sign Service Provider Metadata
 |When *ON*, {project_name} uses the realm's key pair to sign the <<_identity_broker_saml_sp_descriptor, SAML Service Provider Metadata descriptor>>.

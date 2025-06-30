@@ -1,0 +1,68 @@
+- name: Get Ansible Control Host's public IP
+  shell: curl -fks --ipv4 https://ifconfig.me
+  register: control_host_ip
+  no_log: "{{ no_log_sensitive }}"
+
+- debug: var=cidr_ip
+
+- name: Create Security Group
+  amazon.aws.ec2_group:
+    state: present
+    region: '{{ region }}'
+    name: '{{ cluster_name }}'
+    description: '{{ cluster_name }}'
+    rules:
+      - proto: tcp
+        from_port: 22
+        to_port: 22
+        cidr_ip: '{{cidr_ip}}'
+  register: group
+  no_log: "{{ no_log_sensitive }}"
+
+- name: Create Key
+  amazon.aws.ec2_key:
+    state: present
+    region: '{{ region }}'
+    name: '{{ cluster_name }}'
+  register: key
+  no_log: "{{ no_log_sensitive }}"
+
+- name: Save Private Key on Ansible Control Machine
+  when: key.changed
+  copy:
+    content: '{{ key.key.private_key }}'
+    dest: '{{ cluster_name }}_{{ region }}.pem'
+    mode: 0600
+  no_log: "{{ no_log_sensitive }}"
+
+- name: Look up AMI '{{ ami_name }}'
+  amazon.aws.ec2_ami_info:
+    region: '{{ region}}'
+    filters:
+      name: '{{ ami_name }}'
+  register: ami_info
+
+- name: Create {{ cluster_size }} EC2 Instances
+  amazon.aws.ec2_instance:
+    state: started
+    region: '{{ region }}'
+    name: "{{ cluster_name }}"
+    exact_count: "{{ cluster_size }}"
+    instance_type: '{{ instance_type }}'
+    image_id: '{{ ami_info.images[0].image_id }}'
+    key_name: '{{ cluster_name }}'
+    security_group: '{{ group.group_id }}'
+    network:
+      assign_public_ip: yes
+    volumes:
+      - device_name: '{{ instance_device }}'
+        ebs:
+          volume_size: '{{ instance_volume_size }}'
+          delete_on_termination: true
+  register: instances
+  no_log: "{{ no_log_sensitive }}"
+
+- name: Create Inventory File
+  template:
+    src: inventory.yml.j2
+    dest: '{{ cluster_name }}_{{ region }}_inventory.yml'

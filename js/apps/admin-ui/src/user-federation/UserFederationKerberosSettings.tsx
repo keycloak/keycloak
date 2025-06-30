@@ -9,8 +9,7 @@ import {
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useFetch } from "../utils/useFetch";
@@ -21,6 +20,8 @@ import { Header } from "./shared/Header";
 import { SettingsCache } from "./shared/SettingsCache";
 
 export default function UserFederationKerberosSettings() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const form = useForm<ComponentRepresentation>({ mode: "onChange" });
   const navigate = useNavigate();
@@ -65,17 +66,15 @@ export default function UserFederationKerberosSettings() {
       );
     } catch (error) {
       addError(
-        `${!id ? "createUserProviderError" : "userProviderSaveError"}`,
+        !id ? "createUserProviderError" : "userProviderSaveError",
         error,
       );
     }
   };
 
   return (
-    <>
-      <FormProvider {...form}>
-        <Header provider="Kerberos" save={() => form.handleSubmit(save)()} />
-      </FormProvider>
+    <FormProvider {...form}>
+      <Header provider="Kerberos" save={() => form.handleSubmit(save)()} />
       <PageSection variant="light">
         <KerberosSettingsRequired form={form} showSectionHeading />
       </PageSection>
@@ -101,6 +100,6 @@ export default function UserFederationKerberosSettings() {
           </ActionGroup>
         </Form>
       </PageSection>
-    </>
+    </FormProvider>
   );
 }

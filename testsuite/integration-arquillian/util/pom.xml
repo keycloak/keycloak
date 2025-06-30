@@ -39,10 +39,6 @@
             <artifactId>keycloak-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-servlet-filter-adapter</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.keycloak.testsuite</groupId>
             <artifactId>integration-arquillian-testsuite-providers</artifactId>
             <version>${project.version}</version>
@@ -51,34 +47,10 @@
             <groupId>org.jboss.shrinkwrap.resolver</groupId>
             <artifactId>shrinkwrap-resolver-api-maven</artifactId>
         </dependency>
-        <!-- Fuse adapter dependencies -->
-        <dependency>
-            <groupId>org.jboss.arquillian.container</groupId>
-            <artifactId>arquillian-container-karaf-managed</artifactId>
-            <exclusions>
-                <exclusion>
-                   <groupId>org.slf4j</groupId>
-                   <artifactId>slf4j-log4j12</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.osgi</groupId>
-            <artifactId>org.osgi.enterprise</artifactId>
-            <scope>provided</scope>
-        </dependency>
 
         <dependency>
             <groupId>org.apache.maven.resolver</groupId>
             <artifactId>maven-resolver-api</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.jboss.arquillian</groupId>
-            <artifactId>arquillian-bom</artifactId>
-            <version>${arquillian-core.version}</version>
-            <type>pom</type>
-            <scope>import</scope>
         </dependency>
 
         <dependency>
@@ -119,24 +91,13 @@
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-adapter-spi</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-policy-enforcer</artifactId>
+        </dependency>
     </dependencies>
-
-    <!-- Temporary solution for blocked http repository (required for Fuse adapter dependency only) https://github.com/arquillian/arquillian-container-osgi/blob/c7c15f67bc1f6c97fe60c1b7831427cd9e37195d/pom.xml#L251
-    Once there will be a new release of arquillian-container-osgi the repository section can be removed    -->
-    <repositories>
-        <repository>
-            <id>jboss-public-repository-group</id>
-            <name>JBoss Public Repository Group</name>
-            <url>https://repository.jboss.org/nexus/content/groups/public/</url>
-            <layout>default</layout>
-            <releases>
-                <enabled>true</enabled>
-                <updatePolicy>never</updatePolicy>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-                <updatePolicy>never</updatePolicy>
-            </snapshots>
-        </repository>
-    </repositories>
 </project>

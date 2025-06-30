@@ -1,17 +1,17 @@
 import CommonElements from "../CommonElements";
 export default class Masthead extends CommonElements {
-  #logoBtn = ".pf-c-page__header-brand-link img";
+  #logoBtn = ".pf-v5-c-page__header-brand-link img";
   #helpBtn = "#help";
-  #closeAlertMessageBtn = ".pf-c-alert__action button";
-  #closeLastAlertMessageBtn = "li:first-child .pf-c-alert__action button";
+  #closeAlertMessageBtn = ".pf-v5-c-alert__action button";
+  #closeLastAlertMessageBtn = "li:first-child .pf-v5-c-alert__action button";
 
-  #alertMessage = ".pf-c-alert__title";
+  #alertMessage = ".pf-v5-c-alert__title";
   #userDrpDwn = "#user-dropdown";
   #userDrpDwnKebab = "#user-dropdown-kebab";
   #globalAlerts = "global-alerts";
   #documentationLink = "#link";
-  #backToAdminConsoleLink = "#landingReferrerLink";
-  #userDrpdwnItem = ".pf-c-dropdown__menu-item";
+  #backToAdminConsoleLink = "referrer-link";
+  #userDrpdwnItem = ".pf-v5-c-menu__item";
 
   #getAlertsContainer() {
     return cy.findByTestId(this.#globalAlerts);
@@ -70,7 +70,7 @@ export default class Masthead extends CommonElements {
   }
 
   goToAdminConsole() {
-    cy.get(this.#backToAdminConsoleLink).click({ force: true });
+    cy.findByTestId(this.#backToAdminConsoleLink).click({ force: true });
     return this;
   }
 
@@ -94,16 +94,27 @@ export default class Masthead extends CommonElements {
     cy.get("#manage-account").click();
   }
 
-  checkNotificationMessage(message: string, closeNotification = true) {
-    this.#getAlertsContainer()
-      .find(this.#alertMessage)
-      .should("contain.text", message);
-
-    if (closeNotification) {
+  checkNotificationMessage(message: string | RegExp, closeNotification = true) {
+    if (typeof message === "string") {
       this.#getAlertsContainer()
-        .find(`button[title="` + message.replaceAll('"', '\\"') + `"]`)
-        .last()
-        .click({ force: true });
+        .find(this.#alertMessage)
+        .should("contain.text", message);
+
+      if (closeNotification) {
+        this.#getAlertsContainer()
+          .find(`button[title="` + message.replaceAll('"', '\\"') + `"]`)
+          .last()
+          .click({ force: true });
+      }
+    } else {
+      this.#getAlertsContainer()
+        .find(this.#alertMessage)
+        .invoke("text")
+        .should("match", message);
+
+      if (closeNotification) {
+        this.#getAlertsContainer().find("button").last().click({ force: true });
+      }
     }
     return this;
   }

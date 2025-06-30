@@ -28,6 +28,7 @@ import io.smallrye.config.SmallRyeConfig;
 
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
+import org.keycloak.config.Option;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
@@ -47,6 +48,26 @@ public final class Configuration {
 
     }
 
+    public static boolean isTrue(Option<Boolean> option) {
+        return getOptionalBooleanValue(NS_KEYCLOAK_PREFIX + option.getKey()).orElse(false);
+    }
+
+    public static boolean isTrue(String propertyName) {
+        return getOptionalBooleanValue(propertyName).orElse(false);
+    }
+
+    public static boolean contains(Option<?> option, String value) {
+        return getOptionalValue(NS_KEYCLOAK_PREFIX + option.getKey())
+                .filter(f -> f.contains(value))
+                .isPresent();
+    }
+
+    public static boolean equals(Option<?> option, String value) {
+        return getOptionalValue(NS_KEYCLOAK_PREFIX + option.getKey())
+                .filter(f -> f.equals(value))
+                .isPresent();
+    }
+
     public static synchronized SmallRyeConfig getConfig() {
         return (SmallRyeConfig) ConfigProviderResolver.instance().getConfig();
     }
@@ -55,14 +76,22 @@ public final class Configuration {
         Optional<String> value = getRawPersistedProperty(name);
 
         if (value.isEmpty()) {
-            value = getRawPersistedProperty(getMappedPropertyName(name));
+            PropertyMapper<?> mapper = PropertyMappers.getMapper(name);
+
+            if (mapper != null) {
+                value = getRawPersistedProperty(mapper.getFrom());
+
+                if (value.isEmpty() && mapper.getTo() != null) {
+                    value = getRawPersistedProperty(mapper.getTo());
+                }
+            }
         }
 
         if (value.isEmpty()) {
-            String profile = Environment.getProfile();
+            String profile = org.keycloak.common.util.Environment.getProfile();
 
             if (profile == null) {
-                profile = getConfig().getRawValue(Environment.PROFILE);
+                profile = getConfig().getRawValue(org.keycloak.common.util.Environment.PROFILE);
             }
 
             value = getRawPersistedProperty("%" + profile + "." + name);
@@ -108,13 +137,7 @@ public final class Configuration {
     }
 
     public static Optional<Boolean> getOptionalBooleanKcValue(String propertyName) {
-        Optional<String> value = getOptionalValue(NS_KEYCLOAK_PREFIX.concat(propertyName));
-
-        if (value.isPresent()) {
-            return value.map(Boolean::parseBoolean);
-        }
-
-        return Optional.empty();
+        return getOptionalValue(NS_KEYCLOAK_PREFIX.concat(propertyName)).map(Boolean::parseBoolean);
     }
 
     public static Optional<Boolean> getOptionalBooleanValue(String name) {
@@ -122,7 +145,7 @@ public final class Configuration {
     }
 
     public static String getMappedPropertyName(String key) {
-        PropertyMapper mapper = PropertyMappers.getMapper(key);
+        PropertyMapper<?> mapper = PropertyMappers.getMapper(key);
 
         if (mapper == null) {
             return key;
@@ -214,13 +237,6 @@ public final class Configuration {
     }
 
     public static ConfigValue getCurrentBuiltTimeProperty(String name) {
-        PersistedConfigSource persistedConfigSource = PersistedConfigSource.getInstance();
-
-        try {
-            persistedConfigSource.enable(false);
-            return getConfigValue(name);
-        } finally {
-            persistedConfigSource.enable(true);
-        }
+        return PersistedConfigSource.getInstance().runWithDisabled(() -> getConfigValue(name));
     }
 }

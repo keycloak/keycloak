@@ -23,7 +23,6 @@ import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
-import org.keycloak.federation.kerberos.KerberosConfig;
 import org.keycloak.federation.kerberos.impl.KerberosServerSubjectAuthenticator;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
 import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
@@ -60,6 +59,7 @@ import org.keycloak.storage.ldap.mappers.LDAPMappersComparator;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapperFactory;
+import org.keycloak.storage.ldap.mappers.msad.MSADUserAccountControlStorageMapper;
 import org.keycloak.storage.ldap.mappers.msad.MSADUserAccountControlStorageMapperFactory;
 import org.keycloak.storage.user.ImportSynchronization;
 import org.keycloak.storage.user.SynchronizationResult;
@@ -202,6 +202,9 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 .property().name(LDAPConstants.PAGINATION)
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
                 .defaultValue("true")
+                .add()
+                .property().name(LDAPConstants.REFERRAL)
+                .type(ProviderConfigProperty.STRING_TYPE)
                 .add()
                 .property().name(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION)
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
@@ -431,7 +434,8 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
 
         // MSAD specific mapper for account state propagation
         if (activeDirectory) {
-            mapperModel = KeycloakModelUtils.createComponentModel("MSAD account controls", model.getId(), MSADUserAccountControlStorageMapperFactory.PROVIDER_ID,LDAPStorageMapper.class.getName());
+            mapperModel = KeycloakModelUtils.createComponentModel("MSAD account controls", model.getId(), MSADUserAccountControlStorageMapperFactory.PROVIDER_ID,LDAPStorageMapper.class.getName(),
+                    MSADUserAccountControlStorageMapper.ALWAYS_READ_ENABLED_VALUE_FROM_LDAP, alwaysReadValueFromLDAP);
             realm.addComponentModel(mapperModel);
         }
 
@@ -468,6 +472,19 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
             CredentialHelper.setOrReplaceAuthenticationRequirement(session, realm, CredentialRepresentation.KERBEROS,
                     AuthenticationExecutionModel.Requirement.DISABLED, AuthenticationExecutionModel.Requirement.ALTERNATIVE);
         } // else: keep current settings
+
+        LDAPConfig oldConfig = new LDAPConfig(oldModel.getConfig());
+        LDAPConfig newConfig = new LDAPConfig(newModel.getConfig());
+        if (!oldConfig.getUsernameLdapAttribute().equals(newConfig.getUsernameLdapAttribute())) {
+            // propagate username LDAP attribute change to the username mapper.
+            ComponentModel usernameMapperModel = realm.getComponentsStream(oldModel.getId(), LDAPStorageMapper.class.getName())
+                    .filter(mapper -> "username".equals(mapper.getName()))
+                    .findFirst().orElse(null);
+            if (usernameMapperModel != null) {
+                usernameMapperModel.getConfig().putSingle(UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE, newConfig.getUsernameLdapAttribute());
+                realm.updateComponent(usernameMapperModel);
+            }
+        }
     }
 
     @Override

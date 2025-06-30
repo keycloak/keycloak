@@ -20,7 +20,6 @@ package org.keycloak.authorization.model;
 
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
-import org.keycloak.storage.SearchableModelField;
 
 import java.util.Map;
 import java.util.Set;
@@ -32,46 +31,26 @@ import java.util.Set;
  */
 public interface Policy {
 
-    public static class SearchableFields {
-        public static final SearchableModelField<Policy> ID = new SearchableModelField<>("id", String.class);
-        public static final SearchableModelField<Policy> NAME = new SearchableModelField<>("name", String.class);
-        public static final SearchableModelField<Policy> RESOURCE_SERVER_ID = new SearchableModelField<>("resourceServerId", String.class);
-        public static final SearchableModelField<Policy> RESOURCE_ID = new SearchableModelField<>("resourceId", String.class);
-        public static final SearchableModelField<Policy> SCOPE_ID = new SearchableModelField<>("scopeId", String.class);
-        public static final SearchableModelField<Policy> TYPE = new SearchableModelField<>("type", String.class);
-        public static final SearchableModelField<Policy> OWNER = new SearchableModelField<>("owner", String.class);
-        public static final SearchableModelField<Policy> CONFIG = new SearchableModelField<>("config", String.class);
-        public static final SearchableModelField<Policy> ASSOCIATED_POLICY_ID = new SearchableModelField<>("associatedPolicyId", String.class);
-        public static final SearchableModelField<Policy> REALM_ID = new SearchableModelField<>("realmId", String.class);
-    }
-
     public static enum FilterOption {
-        ID("id", SearchableFields.ID),
-        PERMISSION("permission", SearchableFields.TYPE),
-        OWNER("owner", SearchableFields.OWNER),
-        ANY_OWNER("owner.any", SearchableFields.OWNER),
-        RESOURCE_ID("resources.id", SearchableFields.RESOURCE_ID),
-        SCOPE_ID("scopes.id", SearchableFields.SCOPE_ID),
-        CONFIG("config", SearchableFields.CONFIG),
-        TYPE("type", SearchableFields.TYPE),
-        NAME("name", SearchableFields.NAME);
+        ID("id"),
+        PERMISSION("permission"),
+        OWNER("owner"),
+        ANY_OWNER("owner.any"),
+        RESOURCE_ID("resources.id"),
+        SCOPE_ID("scopes.id"),
+        CONFIG("config"),
+        TYPE("type"),
+        NAME("name");
 
         public static final String[] EMPTY_FILTER = new String[0];
         private final String name;
-        private final SearchableModelField<Policy> searchableModelField;
 
-        FilterOption(String name, SearchableModelField<Policy> searchableModelField) {
+        FilterOption(String name) {
             this.name = name;
-            this.searchableModelField = searchableModelField;
         }
-
 
         public String getName() {
             return name;
-        }
-
-        public SearchableModelField<Policy> getSearchableModelField() {
-            return searchableModelField;
         }
     }
     

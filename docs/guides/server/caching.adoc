@@ -8,27 +8,27 @@ title="Configuring distributed caches"
 summary="Understand how to configure the caching layer"
 includedOptions="cache cache-*">
 
-Keycloak is designed for high availability and multi-node clustered setups.
+{project_name} is designed for high availability and multi-node clustered setups.
 The current distributed cache implementation is built on top of https://infinispan.org[Infinispan], a high-performance, distributable in-memory data grid.
 
 == Enable distributed caching
-When you start Keycloak in production mode, by using the `start` command, caching is enabled and all Keycloak nodes in your network are discovered.
+When you start {project_name} in production mode, by using the `start` command, caching is enabled and all {project_name} nodes in your network are discovered.
 
-By default, caches are using a `UDP` transport stack so that nodes are discovered using IP multicast transport based on UDP. For most production environments, there are better discovery alternatives to UDP available. Keycloak allows you to either choose from a set of pre-defined default transport stacks, or to define your own custom stack, as you will see later in this {section}.
+By default, caches are using a UDP transport stack so that nodes are discovered using IP multicast transport based on UDP. For most production environments, there are better discovery alternatives to UDP available. {project_name} allows you to either choose from a set of pre-defined default transport stacks, or to define your own custom stack, as you will see later in this {section}.
 
 To explicitly enable distributed infinispan caching, enter this command:
 
-<@kc.build parameters="--cache=ispn"/>
+<@kc.start parameters="--cache=ispn"/>
 
-When you start Keycloak in development mode, by using the `start-dev` command, Keycloak uses only local caches and distributed caches are completely disabled by implicitly setting the `--cache=local` option.
+When you start {project_name} in development mode, by using the `start-dev` command, {project_name} uses only local caches and distributed caches are completely disabled by implicitly setting the `--cache=local` option.
 The `local` cache mode is intended only for development and testing purposes.
 
 == Configuring caches
-Keycloak provides a cache configuration file with sensible defaults located at `conf/cache-ispn.xml`.
+{project_name} provides a cache configuration file with sensible defaults located at `conf/cache-ispn.xml`.
 
 The cache configuration is a regular https://infinispan.org/docs/stable/titles/configuring/configuring.html[Infinispan configuration file].
 
-The following table gives an overview of the specific caches Keycloak uses.
+The following table gives an overview of the specific caches {project_name} uses.
 You configure these caches in `conf/cache-ispn.xml`:
 
 [%autowidth]
@@ -52,7 +52,7 @@ You configure these caches in `conf/cache-ispn.xml`:
 === Cache types and defaults
 
 .Local caches
-Keycloak caches persistent data locally to avoid unnecessary round-trips to the database.
+{project_name} caches persistent data locally to avoid unnecessary round-trips to the database.
 
 The following data is kept local to each node in the cluster using local caches:
 
@@ -72,7 +72,7 @@ you can cache, less often the server needs to fetch data from the database. You 
 .Invalidation of local caches
 Local caching improves performance, but adds a challenge in multi-node setups.
 
-When one Keycloak node updates data in the shared database, all other nodes need to be aware of it, so they invalidate that data from their caches.
+When one {project_name} node updates data in the shared database, all other nodes need to be aware of it, so they invalidate that data from their caches.
 
 The `work` cache is a replicated cache and used for sending these invalidation messages. The entries/messages in this cache are very short-lived,
 and you should not expect this cache growing in size over time.
@@ -90,7 +90,6 @@ to the node where their sessions were initially created. By doing that, you are 
 CPU, memory, and network utilization.
 
 .User sessions
-
 Once the user is authenticated, a user session is created. The user session tracks your active users and their state so that they can seamlessly
 authenticate to any application without being asked for their credentials again. For each application, the user authenticates with a client session
 is created too, so that the server can track the applications the user is authenticated with and their state on a per-application basis.
@@ -103,10 +102,37 @@ The following caches are used to store both user and client sessions:
 * clientSessions
 
 By relying on a distributable cache, user and client sessions are available to any node in the cluster so that users can be redirected
-to any node without loosing their state. However, production-ready deployments should always consider session affinity and favor redirecting users
+to any node without losing their state. However, production-ready deployments should always consider session affinity and favor redirecting users
 to the node where their sessions were initially created. By doing that, you are going to avoid unnecessary state transfer between nodes and improve
 CPU, memory, and network utilization.
 
+ifeval::[{project_community}==true]
+
+.Persistent user sessions
+The feature `persistent-user-sessions` stores online user and client sessions also in the database.
+This will allow a user to stay logged in even if all instances of {project_name} are restarted or upgraded.
+
+The feature is disabled by default. To use it, enable the feature:
+
+----
+bin/kc.sh start --features=persistent-user-sessions ...
+----
+
+With this feature enabled, the in-memory caches for online user sessions and online client sessions are limited to, by default, 10000 entries per node which will reduce the overall memory usage of {project_name} for larger installations.
+The internal caches will run with only a single owner for each cache entry.
+Items which are evicted from memory will be loaded on-demand from the database when needed.
+To set different sizes for the caches, edit {project_name}'s cache config file to set a `+<memory max-count="..."/>+` for those caches.
+
+[WARNING]
+====
+Enabling this feature via a rolling configuration upgrade can result in an undefined behavior of {project_name} related to sessions if both persisted and non-persisted sessions co-exist.
+To prevent that, remove all online user and client sessions before the first node is started with this feature enabled.
+This means all {project_name} nodes need to be stopped and, if used, {jdgserver_name} remote cache store and embedded Infinispan JDBC persistence need to be cleared.
+====
+
+endif::[]
+
+.Offline user sessions
 As an OpenID Connect Provider, the server is also capable of authenticating users and issuing offline tokens. Similarly to regular user and client sessions,
 when an offline token is issued by the server upon successful authentication, the server also creates an offline user session and an offline client session. However, due to the nature
 of offline tokens, offline sessions are handled differently as they are long-lived and should survive a complete cluster shutdown. Because of that, they are also persisted to the database.
@@ -118,9 +144,17 @@ The following caches are used to store offline sessions:
 
 Upon a cluster restart, offline sessions are lazily loaded from the database and kept in a shared cache using the two caches above.
 
+ifeval::[{project_community}==true]
+
+With feature `persistent-user-sessions` enabled, the in-memory caches for offline user sessions and offline client sessions are limited to 10000 entries which will reduce the overall memory usage of Keycloak for larger installations.
+Items which are evicted from memory will be loaded on-demand from the database when needed.
+To set different sizes for the caches, edit {project_name}'s cache config file to set a `+<memory max-count="..."/>+` for those caches.
+
+endif::[]
+
 .Password brute force detection
 The `loginFailures` distributed cache is used to track data about failed login attempts.
-This cache is needed for the Brute Force Protection feature to work in a multi-node Keycloak setup.
+This cache is needed for the Brute Force Protection feature to work in a multi-node {project_name} setup.
 
 .Action tokens
 Action tokens are used for scenarios when a user needs to confirm an action asynchronously, for example in the emails sent by the forgot password flow.
@@ -142,21 +176,37 @@ to change the number of owners accordingly to better fit into your availability 
 
 To specify your own cache configuration file, enter this command:
 
-<@kc.build parameters="--cache-config-file=my-cache-file.xml"/>
+<@kc.start parameters="--cache-config-file=my-cache-file.xml"/>
 
 The configuration file is relative to the `conf/` directory.
 
+=== CLI options for remote server
+
+For configuration of {project_name} server for high availability and multi-node clustered setup there was introduced following CLI options `cache-remote-host`, `cache-remote-port`, `cache-remote-username` and `cache-remote-password` simplifying configuration within the XML file.
+Once any of declared CLI parameters are present, it is expected there is no configuration related to remote store present in the XML file.
+
+==== Connecting to an insecure Infinispan server
+
+WARNING: Disabling security is not recommended in production!
+
+In a development or test environment, it is easier to start an unsecured Infinispan server.
+For these use case, the CLI options `cache-remote-tls-enabled` disables the encryption (TLS) between {project_name} and Infinispan.
+{project_name} will fail to start if the Infinispan server is configured to accept only encrypted connections.
+
+The CLI options `cache-remote-username` and `cache-remote-password` are optional and, if not set, {project_name} will connect to the Infinispan server without presenting any credentials.
+If the Infinispan server has authentication enabled, {project_name} will fail to start.
+
 == Transport stacks
 Transport stacks ensure that distributed cache nodes in a cluster communicate in a reliable fashion.
-Keycloak supports a wide range of transport stacks:
+{project_name} supports a wide range of transport stacks:
 
 <@opts.expectedValues option="cache-stack"/>
 
 To apply a specific cache stack, enter this command:
 
-<@kc.build parameters="--cache-stack=<stack>"/>
+<@kc.start parameters="--cache-stack=<stack>"/>
 
-The default stack is set to `UDP` when distributed caches are enabled.
+The default stack is set to `udp` when distributed caches are enabled.
 
 === Available transport stacks
 
@@ -170,7 +220,7 @@ The following table shows transport stacks that are available without any furthe
 |udp|UDP|UDP multicast
 |===
 
-The following table shows transport stacks that are available using the `--cache-stack` build option and a minimum configuration:
+The following table shows transport stacks that are available using the `--cache-stack` runtime option and a minimum configuration:
 
 [%autowidth]
 |===
@@ -180,10 +230,10 @@ The following table shows transport stacks that are available using the `--cache
 |===
 
 === Additional transport stacks
-The following table shows transport stacks that are supported by Keycloak, but need some extra steps to work.
-Note that _none_  of these stacks are Kubernetes / OpenShift stacks, so no need exists to enable the "google" stack if you want to run Keycloak on top of the Google Kubernetes engine.
+The following table shows transport stacks that are supported by {project_name}, but need some extra steps to work.
+Note that _none_  of these stacks are Kubernetes / OpenShift stacks, so no need exists to enable the `google` stack if you want to run {project_name} on top of the Google Kubernetes engine.
 In that case, use the `kubernetes` stack.
-Instead, when you have a distributed cache setup running on AWS EC2 instances, you would need to set the stack to `ec2`, because ec2 does not support a default discovery mechanism such as `UDP`.
+Instead, when you have a distributed cache setup running on AWS EC2 instances, you would need to set the stack to `ec2`, because ec2 does not support a default discovery mechanism such as UDP.
 
 [%autowidth]
 |===
@@ -194,12 +244,12 @@ Instead, when you have a distributed cache setup running on AWS EC2 instances, y
 |azure|TCP|AZURE_PING
 |===
 
-Cloud vendor specific stacks have additional dependencies for Keycloak.
+Cloud vendor specific stacks have additional dependencies for {project_name}.
 For more information and links to repositories with these dependencies, see the https://infinispan.org/docs/dev/titles/embedding/embedding.html#jgroups-cloud-discovery-protocols_cluster-transport[Infinispan documentation].
 
-To provide the dependencies to Keycloak, put the respective JAR in the `providers` directory and `build` Keycloak by entering this command:
+To provide the dependencies to {project_name}, put the respective JAR in the `providers` directory and build {project_name} by entering this command:
 
-<@kc.build parameters="--cache-stack=<ec2|google|azure>"/>
+<@kc.start parameters="--cache-stack=<ec2|google|azure>"/>
 
 === Custom transport stacks
 If none of the available transport stacks are enough for your deployment, you are able to change your cache configuration file
@@ -236,30 +286,29 @@ By default, the value set to the `cache-stack` option has precedence over the tr
 If you are defining a custom stack, make sure the `cache-stack` option is not used for the custom changes to take effect.
 
 == Securing cache communication
-The current Infinispan cache implementation should be secured by various security measures such as RBAC, ACLs, and Transport stack encryption. For more information about securing cache communication, see the https://infinispan.org/docs/dev/titles/security/security.html#[Infinispan security guide].
+The current Infinispan cache implementation should be secured by various security measures such as RBAC, ACLs, and transport stack encryption.
+
+JGroups handles all the communication between {project_name} server, and it supports Java SSL sockets for TCP communication.
+{project_name} uses CLI options to configure the TLS communication without having to create a customized JGroups stack or modifying the cache XML file.
+
+To enable TLS, `cache-embedded-mtls-enabled` must be set to `true`.
+It requires a keystore with the certificate to use: `cache-embedded-mtls-key-store-file` sets the path to the keystore, and `cache-embedded-mtls-key-store-password` sets the password to decrypt it.
+The truststore contains the valid certificates to accept connection from, and it can be configured with `cache-embedded-mtls-trust-store-file` (path to the truststore), and `cache-embedded-mtls-trust-store-password` (password to decrypt it).
+To restrict unauthorized access, use a self-signed certificate for each {project_name} deployment.
+
+For JGroups stacks with `UDP` or `TCP_NIO2`, see the http://jgroups.org/manual5/index.html#ENCRYPT[JGroups Encryption documentation] on how to set up the protocol stack.
+
+For more information about securing cache communication, see the https://infinispan.org/docs/stable/titles/security/security.html#[Infinispan security guide].
 
 == Exposing metrics from caches
 
-By default, metrics from caches are not automatically exposed when the metrics are enabled.
+Metrics from caches are automatically exposed when the metrics are enabled.
+
+To enable histograms for the cache metrics, set `cache-metrics-histograms-enabled` to `true`.
+While these metrics provide more insights into the latency distribution, collecting them might have a performance impact, so you should be cautious to activate them in an already saturated system.
+
+<@kc.start parameters="--metrics-enabled true --cache-metrics-histograms-enabled true"/>
+
 For more details about how to enable metrics, see <@links.server id="configuration-metrics"/>.
-
-To enable global metrics for all caches within the `cache-container`, you need to change your cache configuration file (e.g.: `conf/cache-ispn.xml`) to enable `statistics` at the `cache-container` level as follows:
-
-.enabling metrics for all caches
-[source]
-----
-<cache-container name="keycloak" statistics="true">
-    ...
-</cache-container>
-----
-
-Similarly, you can enable metrics individually for each cache by enabling `statistics` as follows:
-
-.enabling metrics for a specific cache
-----
-<local-cache name="realms" statistics="true">
-    ...
-</local-cache>
-----
 
 </@tmpl.guide>

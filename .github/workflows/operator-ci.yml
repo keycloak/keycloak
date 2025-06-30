@@ -9,8 +9,10 @@ on:
   workflow_dispatch:
 
 env:
-  MINIKUBE_VERSION: v1.31.2
-  KUBERNETES_VERSION: v1.24.17 # OCP 4.11
+  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
+  MINIKUBE_VERSION: v1.32.0
+  KUBERNETES_VERSION: v1.27.10 # OCP 4.14
+  MINIKUBE_MEMORY: 4096 # Without explicitly setting memory, minikube uses ~25% of available memory which might be too little on smaller GitHub runners for running the tests
 
 defaults:
   run:
@@ -65,17 +67,17 @@ jobs:
         uses: ./.github/actions/java-setup
 
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@v2.9.0
+        uses: manusa/actions-setup-minikube@v2.11.0
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
           github token: ${{ secrets.GITHUB_TOKEN }}
           driver: docker
-          start args: --addons=ingress
+          start args: --addons=ingress --memory=${{ env.MINIKUBE_MEMORY }}
 
       - name: Download keycloak distribution
         id: download-keycloak-dist
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: keycloak-dist
           path: quarkus/container
@@ -88,12 +90,11 @@ jobs:
 
       - name: Test operator running locally
         run: |
-          ./mvnw install --batch-mode -Poperator -pl :keycloak-operator -am \
+          ./mvnw install -Poperator -pl :keycloak-operator -am \
               -Dquarkus.kubernetes.image-pull-policy=IfNotPresent \
-              -Doperator.keycloak.image=keycloak:${{ env.version_local }} \
+              -Dkc.operator.keycloak.image=keycloak:${{ env.version_local }} \
               -Dtest.operator.custom.image=custom-keycloak:${{ env.version_local }} \
-              -Doperator.keycloak.image-pull-policy=Never \
-              -Dtest.operator.kubernetes.ip=$(minikube ip)
+              -Dkc.operator.keycloak.image-pull-policy=Never
 
   test-remote:
     name: Test remote
@@ -110,17 +111,17 @@ jobs:
         uses: ./.github/actions/java-setup
 
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@v2.9.0
+        uses: manusa/actions-setup-minikube@v2.11.0
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
           github token: ${{ secrets.GITHUB_TOKEN }}
           driver: docker
-          start args: --addons=ingress
+          start args: --addons=ingress --memory=${{ env.MINIKUBE_MEMORY }}
 
       - name: Download keycloak distribution
         id: download-keycloak-dist
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: keycloak-dist
           path: quarkus/container
@@ -134,14 +135,13 @@ jobs:
       - name: Test operator running in cluster
         run: |
           eval $(minikube -p minikube docker-env)
-          ./mvnw install --batch-mode -Poperator -pl :keycloak-operator -am \
+          ./mvnw install -Poperator -pl :keycloak-operator -am \
               -Dquarkus.container-image.build=true \
               -Dquarkus.kubernetes.image-pull-policy=IfNotPresent \
-              -Doperator.keycloak.image=keycloak:${{ env.version_remote }} \
-              -Dquarkus.kubernetes.env.vars.operator-keycloak-image-pull-policy=Never \
+              -Dkc.operator.keycloak.image=keycloak:${{ env.version_remote }} \
+              -Dquarkus.kubernetes.env.vars.kc-operator-keycloak-image-pull-policy=Never \
               -Dtest.operator.custom.image=custom-keycloak:${{ env.version_remote }} \
-              --no-transfer-progress -Dtest.operator.deployment=remote \
-              -Dtest.operator.kubernetes.ip=$(minikube ip)
+              --no-transfer-progress -Dtest.operator.deployment=remote
 
   test-olm:
     name: Test OLM installation
@@ -154,12 +154,13 @@ jobs:
         uses: ./.github/actions/java-setup
 
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@v2.9.0
+        uses: manusa/actions-setup-minikube@v2.11.0
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
           github token: ${{ secrets.GITHUB_TOKEN }}
           driver: docker
+          start args: --memory=${{ env.MINIKUBE_MEMORY }}
 
       - name: Install OPM
         uses: redhat-actions/openshift-tools-installer@v1
@@ -176,7 +177,7 @@ jobs:
 
       - name: Download keycloak distribution
         id: download-keycloak-dist
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: keycloak-dist
           path: quarkus/container
@@ -231,6 +232,7 @@ jobs:
     if: always()
     needs:
       - conditional
+      - build
       - test-local
       - test-remote
       - test-olm

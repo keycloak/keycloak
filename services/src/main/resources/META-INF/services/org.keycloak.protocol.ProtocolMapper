@@ -25,9 +25,11 @@ org.keycloak.protocol.oidc.mappers.RoleNameMapper
 org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper
 org.keycloak.protocol.oidc.mappers.GroupMembershipMapper
 org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper
+org.keycloak.organization.protocol.mappers.oidc.OrganizationMembershipMapper
 org.keycloak.protocol.oidc.mappers.AudienceResolveProtocolMapper
 org.keycloak.protocol.oidc.mappers.AllowedWebOriginsProtocolMapper
 org.keycloak.protocol.oidc.mappers.AcrProtocolMapper
+org.keycloak.protocol.oidc.mappers.AmrProtocolMapper
 org.keycloak.protocol.saml.mappers.RoleListMapper
 org.keycloak.protocol.saml.mappers.RoleNameMapper
 org.keycloak.protocol.saml.mappers.HardcodedRole
@@ -45,3 +47,13 @@ org.keycloak.protocol.saml.mappers.SAMLAudienceResolveProtocolMapper
 org.keycloak.protocol.oidc.mappers.ClaimsParameterTokenMapper
 org.keycloak.protocol.saml.mappers.UserAttributeNameIdMapper
 org.keycloak.protocol.oidc.mappers.ClaimsParameterWithValueIdTokenMapper
+org.keycloak.protocol.oidc.mappers.NonceBackwardsCompatibleMapper
+org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCSubjectIdMapper
+org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCStaticClaimMapper
+org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCTargetRoleMapper
+org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCUserAttributeMapper
+org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCTypeMapper
+org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCContextMapper
+org.keycloak.protocol.oidc.mappers.SessionStateMapper
+org.keycloak.protocol.oidc.mappers.SubMapper
+org.keycloak.organization.protocol.mappers.saml.OrganizationMembershipMapper

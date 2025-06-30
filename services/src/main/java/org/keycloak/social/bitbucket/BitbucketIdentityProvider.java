@@ -132,13 +132,10 @@ public class BitbucketIdentityProvider extends AbstractOAuth2IdentityProvider im
 	}
 
 	private BrokeredIdentityContext extractUserInfo(String subjectToken, JsonNode profile) {
-		BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "account_id"));
-
-
+		BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "account_id"), getConfig());
 		String username = getJsonProperty(profile, "username");
 		user.setUsername(username);
 		user.setName(getJsonProperty(profile, "display_name"));
-		user.setIdpConfig(getConfig());
 		user.setIdp(this);
 
 		AbstractJsonUserAttributeMapper.storeUserProfileForMapper(user, profile, getConfig().getAlias());

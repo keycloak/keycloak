@@ -10,7 +10,7 @@ if [ "$DEP" == "" ]; then
     exit 1
 fi
 
-mvn -q dependency:tree -Dincludes=$DEP -DoutputFile=$TMP -DappendOutput=true -Poperator
+./mvnw -q dependency:tree -Dincludes=$DEP -DoutputFile=$TMP -DappendOutput=true -Poperator
 
 echo ""
 echo "==================================================================================================="

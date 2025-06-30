@@ -64,7 +64,7 @@ share HTTP sessions).
 
 To cover this case, the SAML session cache described <<_saml_logout_in_cluster,above>> needs to be replicated
 not only within individual clusters but across all the data centers for example
-https://access.redhat.com/documentation/en-us/red_hat_data_grid/6.6/html/administration_and_configuration_guide/chap-externalize_sessions#Externalize_HTTP_Session_from_JBoss_EAP_6.x_to_JBoss_Data_Grid[via standalone Infinispan/JDG server]:
+https://docs.redhat.com/en/documentation/red_hat_data_grid/6.6/html/administration_and_configuration_guide/chap-externalize_sessions#Externalize_HTTP_Session_from_JBoss_EAP_6.x_to_JBoss_Data_Grid[via standalone Infinispan/JDG server]:
 
 1. A cache has to be added to the standalone Infinispan/JDG server.
 

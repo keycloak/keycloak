@@ -32,6 +32,7 @@
     <description></description>
 
     <properties>
+        <arquillian.protocol.default>Servlet 3.0</arquillian.protocol.default>
         <cli.log.output>false</cli.log.output>
         <test.intermittent>false</test.intermittent>
         <exclude.test>-</exclude.test>
@@ -41,13 +42,13 @@
         <!--exclude cluster tests by default, enabled by 'auth-server-*-cluster' profiles in tests/pom.xml-->
         <exclude.cluster>**/cluster/**/*Test.java</exclude.cluster>
         <exclude.crossdc>**/crossdc/**/*Test.java</exclude.crossdc>
-        <mvel.version>2.4.0.Final</mvel.version>
+        <mvel.version>2.5.2.Final</mvel.version>
         <systemrules.version>1.19.0</systemrules.version>
         <common.resources>${basedir}/../../servers/auth-server/common</common.resources>
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
-        <maven.compiler.release>11</maven.compiler.release>
-        <maven.compiler.target>11</maven.compiler.target>
-        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.release>17</maven.compiler.release>
+        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
     </properties>
     
     <dependencies>
@@ -109,17 +110,6 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers</artifactId>
-            <version>${testcontainers.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>postgresql</artifactId>
-            <version>${testcontainers.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>cockroachdb</artifactId>
-            <version>${testcontainers.version}</version>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
@@ -127,11 +117,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-map</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-legacy-services</artifactId>
+            <artifactId>keycloak-model-storage-services</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak.testsuite</groupId>
@@ -165,8 +151,7 @@
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-server-hotrod-jakarta</artifactId>
-            <version>${infinispan.version}</version>
+            <artifactId>infinispan-server-hotrod</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -185,6 +170,16 @@
         <dependency>
             <groupId>jakarta.ws.rs</groupId>
             <artifactId>jakarta.ws.rs-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.apicatalog</groupId>
+            <artifactId>titanium-json-ld</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.setl</groupId>
+            <artifactId>rdf-urdna</artifactId>
             <scope>provided</scope>
         </dependency>
 
@@ -212,6 +207,11 @@
                     <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>commons-validator</groupId>
+            <artifactId>commons-validator</artifactId>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
     
@@ -243,24 +243,36 @@
             </plugin>
 
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>xml-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <phase>process-test-resources</phase>
+                        <id>arquillian-default-protocol</id>
+                        <phase>process-resources</phase>
                         <goals>
-                            <goal>run</goal>
+                            <goal>transform</goal>
                         </goals>
                         <configuration>
-                            <target>
-                                <delete>
-                                    <fileset dir="${project.build.directory}" includes="map-*.json"/>
-                                </delete>
-                            </target>
+                            <transformationSets>
+                                <transformationSet>
+                                    <dir>src/test/resources</dir>
+                                    <includes>
+                                        <include>arquillian.xml</include>
+                                    </includes>
+                                    <stylesheet>src/test/resources/arquillian.xsl</stylesheet>
+                                    <outputDir>${project.build.directory}/dependency</outputDir>
+                                    <parameters>
+                                        <parameter>
+                                            <name>defaultProtocol</name>
+                                            <value>${arquillian.protocol.default}</value>
+                                        </parameter>
+                                    </parameters>
+                                </transformationSet>
+                            </transformationSets>
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>                        
+            </plugin>
 
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -295,14 +307,12 @@
                                 <resource>
                                     <directory>src/test/resources</directory>
                                     <includes>
-                                        <include>arquillian.xml</include>
                                         <include>wildfly-config.xml</include>
                                         <include>password-blacklists/**</include>
                                         <include>log4j.properties</include>
                                         <include>vault/**</include>
                                         <include>firefox-cookies-prefs.js</include>
                                     </includes>
-                                    <!--<filtering>true</filtering>-->
                                 </resource>
                             </resources>
                         </configuration>
@@ -404,7 +414,7 @@
 
                                             <!-- MSSQL -->
                                             <ACCEPT_EULA>Y</ACCEPT_EULA>
-                                            <SA_PASSWORD>${keycloak.connectionsJpa.password}</SA_PASSWORD>
+                                            <MSSQL_SA_PASSWORD>${keycloak.connectionsJpa.password}</MSSQL_SA_PASSWORD>
 
                                             <!-- Oracle -->
                                             <ORACLE_SID>${keycloak.connectionsJpa.database}</ORACLE_SID>
@@ -467,35 +477,6 @@
         </profile>
 
         <profile>
-            <id>app-server-jetty94</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>jetty94</value>
-                </property>
-            </activation>
-            <properties>
-                <app.server>jetty94</app.server> <!--in case the profile is called directly-->
-                <app.server.skip.unpack>true</app.server.skip.unpack>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-servers-app-server-jetty-94</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.commonjava.maven.plugins</groupId>
-                        <artifactId>directory-maven-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
             <id>app-server-undertow</id>
             <activation>
                 <property>
@@ -518,7 +499,6 @@
         <profile>
             <id>app-server-wildfly</id>
             <activation>
-                <activeByDefault>true</activeByDefault>
                 <property>
                     <name>app.server</name>
                     <value>wildfly</value>
@@ -554,22 +534,24 @@
             </build>
         </profile>
         <profile>
-            <id>app-server-eap</id>
+            <id>app-server-eap8</id>
             <activation>
                 <property>
                     <name>app.server</name>
-                    <value>eap</value>
+                    <value>eap8</value>
                 </property>
             </activation>
             <properties>
-                <app.server>eap</app.server> <!--in case the profile is called directly-->
+                <app.server>eap8</app.server>
                 <app.server.skip.unpack>false</app.server.skip.unpack>
+                <app.server.artifactId>integration-arquillian-servers-app-server-jboss-galleon</app.server.artifactId>
+                <arquillian.protocol.default>Servlet 5.0</arquillian.protocol.default>
                 <wildfly.core.version>${tests.wildfly.core.version}</wildfly.core.version>
             </properties>
             <dependencies>
                 <dependency>
                     <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-servers-app-server-eap</artifactId>
+                    <artifactId>integration-arquillian-servers-app-server-jboss-galleon</artifactId>
                     <version>${project.version}</version>
                     <scope>runtime</scope>
                 </dependency>
@@ -591,319 +573,6 @@
             </build>
         </profile>
 
-        <profile>
-            <id>app-server-eap71</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>eap71</value>
-                </property>
-            </activation>
-            <properties>
-                <app.server>eap71</app.server> <!--in case the profile is called directly-->
-                <app.server.skip.unpack>false</app.server.skip.unpack>
-                <app.server.artifactId>integration-arquillian-servers-app-server-eap</app.server.artifactId><!-- Need to override -->
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-servers-app-server-eap</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
-                <!--required by creaper-core-->
-                <dependency>
-                    <groupId>org.wildfly.core</groupId>
-                    <artifactId>wildfly-cli</artifactId>
-                    <scope>test</scope>
-                    <version>3.0.10.Final</version>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.commonjava.maven.plugins</groupId>
-                        <artifactId>directory-maven-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <!-- EAP6, Fuse 6.x and Fuse 7.x adapter profiles, can be removed once there will be no need for supporting these adapters  -->
-        <profile>
-            <id>app-server-eap6</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>eap6</value>
-                </property>
-            </activation>
-            <properties>
-                <app.server>eap6</app.server> <!--in case the profile is called directly-->
-                <app.server.skip.unpack>false</app.server.skip.unpack>
-
-                <arquillian-wildfly-container.version>2.0.0.Final</arquillian-wildfly-container.version>
-                <!--TODO: check it when KEYCLOAK-8529 is resolved-->
-                <!--<infinispan.version>8.2.5.Final</infinispan.version>     KEYCLOAK-5302 -->
-
-                <app.server.management.protocol>remote</app.server.management.protocol>
-                <app.server.management.port>10199</app.server.management.port>
-                <app.server.1.management.port>10299</app.server.1.management.port>
-                <app.server.2.management.port>10399</app.server.2.management.port>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-servers-app-server-eap6</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
-                <!--required by creaper-core-->
-                <dependency>
-                    <groupId>org.wildfly.core</groupId>
-                    <artifactId>wildfly-cli</artifactId>
-                    <scope>test</scope>
-                    <version>2.0.10.Final</version>
-                    <exclusions>
-                        <exclusion>
-                            <groupId>org.jboss.modules</groupId>
-                            <artifactId>jboss-modules</artifactId>  
-                        </exclusion>
-                    </exclusions>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.commonjava.maven.plugins</groupId>
-                        <artifactId>directory-maven-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>app-server-fuse63</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>fuse63</value>
-                </property>
-            </activation>
-            <properties>
-                <app.server>fuse63</app.server> <!--in case the profile is called directly-->
-                <app.server.skip.unpack>false</app.server.skip.unpack>
-
-                <!--fuse examples expect auth server on 8080-->
-                <auth.server.port.offset>0</auth.server.port.offset>
-                <auth.server.http.port>8080</auth.server.http.port>
-                <auth.server.management.port>9990</auth.server.management.port>
-                <!--fuse examples expect default karaf http port 8181-->
-                <app.server.http.port>8181</app.server.http.port>
-
-                <app.server.management.user>admin</app.server.management.user>
-                <app.server.management.password>password</app.server.management.password>
-                <app.server.karaf.jvm.debug.args>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${app.server.debug.suspend},address=localhost:${app.server.debug.port}</app.server.karaf.jvm.debug.args>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-servers-app-server-fuse63</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-test-apps-fuse-parent</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                    <type>pom</type>
-                </dependency>
-                <dependency>
-                    <groupId>org.jboss.arquillian.container</groupId>
-                    <artifactId>arquillian-container-karaf-managed</artifactId>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-enforcer-plugin</artifactId>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <requireProperty>
-                                    <message>When running fuse tests 'additional.fuse.repos' is expected to be set.</message>
-                                    <property>additional.fuse.repos</property>
-                                </requireProperty>
-                                <requireProperty>
-                                    <message>When running fuse tests 'fuse.adapter.version' is expected to be set.</message>
-                                    <property>fuse.adapter.version</property>
-                                </requireProperty>
-                            </rules>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.commonjava.maven.plugins</groupId>
-                        <artifactId>directory-maven-plugin</artifactId>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <systemPropertyVariables>
-                                <app.server.management.user>${app.server.management.user}</app.server.management.user>
-                                <app.server.management.password>${app.server.management.password}</app.server.management.password>
-                                <app.server.karaf.jvm.debug.args>${app.server.karaf.jvm.debug.args}</app.server.karaf.jvm.debug.args>
-                            </systemPropertyVariables>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>app-server-fuse7x</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>fuse7x</value>
-                </property>
-            </activation>
-            <properties>
-                <app.server>fuse7x</app.server> <!--in case the profile is called directly-->
-                <app.server.skip.unpack>false</app.server.skip.unpack>
-
-                <!--fuse examples expect auth server on 8080-->
-                <auth.server.port.offset>0</auth.server.port.offset>
-                <auth.server.http.port>8080</auth.server.http.port>
-                <auth.server.management.port>9990</auth.server.management.port>
-                <!--fuse examples expect default karaf http port 8181-->
-                <app.server.http.port>8181</app.server.http.port>
-
-                <app.server.management.user>admin</app.server.management.user>
-                <app.server.management.password>password</app.server.management.password>
-                <app.server.karaf.jvm.debug.args>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${app.server.debug.suspend},address=localhost:${app.server.debug.port}</app.server.karaf.jvm.debug.args>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-servers-app-server-fuse7x</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-test-apps-fuse-parent</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                    <type>pom</type>
-                </dependency>
-                <dependency>
-                    <groupId>org.jboss.arquillian.container</groupId>
-                    <artifactId>arquillian-container-karaf-managed</artifactId>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-enforcer-plugin</artifactId>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <requireProperty>
-                                    <message>When running fuse tests 'additional.fuse.repos' is expected to be set.</message>
-                                    <property>additional.fuse.repos</property>
-                                </requireProperty>
-                            </rules>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.commonjava.maven.plugins</groupId>
-                        <artifactId>directory-maven-plugin</artifactId>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <systemPropertyVariables>
-                                <app.server.management.user>${app.server.management.user}</app.server.management.user>
-                                <app.server.management.password>${app.server.management.password}</app.server.management.password>
-                                <app.server.karaf.jvm.debug.args>${app.server.karaf.jvm.debug.args}</app.server.karaf.jvm.debug.args>
-                            </systemPropertyVariables>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <!-- EAP6, Fuse 6.x and Fuse 7.x adapter profiles END -->
-
-        <profile>
-            <id>app-server-tomcat8</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>tomcat8</value>
-                </property>
-            </activation>
-            <properties>
-                <app.server>tomcat8</app.server> <!--in case the profile is called directly-->
-                <app.server.skip.unpack>false</app.server.skip.unpack>
-                <app.server.artifactId>integration-arquillian-servers-app-server-tomcat8</app.server.artifactId><!-- Need to override -->
-                <app.server.port.offset>0</app.server.port.offset>
-                <app.server.http.port>8080</app.server.http.port>
-                <app.server.management.port>9990</app.server.management.port>
-                <app.server.keystore.dir>${app.server.home}/lib</app.server.keystore.dir>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-servers-app-server-tomcat8</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.commonjava.maven.plugins</groupId>
-                        <artifactId>directory-maven-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>app-server-tomcat9</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>tomcat9</value>
-                </property>
-            </activation>
-            <properties>
-                <app.server>tomcat9</app.server> <!--in case the profile is called directly-->
-                <app.server.skip.unpack>false</app.server.skip.unpack>
-                <app.server.artifactId>integration-arquillian-servers-app-server-tomcat9</app.server.artifactId><!-- Need to override -->
-                <app.server.port.offset>0</app.server.port.offset>
-                <app.server.http.port>8080</app.server.http.port>
-                <app.server.management.port>9990</app.server.management.port>
-                <app.server.keystore.dir>${app.server.home}/lib</app.server.keystore.dir>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-servers-app-server-tomcat9</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.commonjava.maven.plugins</groupId>
-                        <artifactId>directory-maven-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
         <profile>
             <id>auth-servers-crossdc-undertow</id>
             <properties>
@@ -1058,304 +727,6 @@
                 </pluginManagement>
             </build>
         </profile>
-        <profile>
-            <id>map-storage-chm</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <systemPropertyVariables>
-                                <!--
-                                The following properties needs to be synchronized across all map-storage profiles
-                                -->
-                                <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
-                                <keycloak.realm.provider>map</keycloak.realm.provider>
-                                <keycloak.client.provider>map</keycloak.client.provider>
-                                <keycloak.clientScope.provider>map</keycloak.clientScope.provider>
-                                <keycloak.group.provider>map</keycloak.group.provider>
-                                <keycloak.role.provider>map</keycloak.role.provider>
-                                <keycloak.user.provider>map</keycloak.user.provider>
-                                <keycloak.deploymentState.provider>map</keycloak.deploymentState.provider>
-                                <keycloak.authSession.provider>map</keycloak.authSession.provider>
-                                <keycloak.userSession.provider>map</keycloak.userSession.provider>
-                                <keycloak.loginFailure.provider>map</keycloak.loginFailure.provider>
-                                <keycloak.authorization.provider>map</keycloak.authorization.provider>
-                                <keycloak.eventsStore.provider>map</keycloak.eventsStore.provider>
-                                <keycloak.singleUseObject.provider>map</keycloak.singleUseObject.provider>
-                                <keycloak.publicKeyStorage.provider>map</keycloak.publicKeyStorage.provider>
-                                <keycloak.authorizationCache.enabled>false</keycloak.authorizationCache.enabled>
-                                <keycloak.realmCache.enabled>false</keycloak.realmCache.enabled>
-                                <keycloak.userCache.enabled>false</keycloak.userCache.enabled>
-                                <keycloak.publicKeyCache.enabled>false</keycloak.publicKeyCache.enabled>
-                                <keycloak.userSessionPersister.provider></keycloak.userSessionPersister.provider>
-                                <keycloak.userFederatedStorage.provider></keycloak.userFederatedStorage.provider>
-                                <!--
-                                The end of the block synchronized across all map-storage profiles
-                                -->
-                                <keycloak.mapStorage.provider>concurrenthashmap</keycloak.mapStorage.provider>
-                                <auth.server.quarkus.mapStorage.profile.config>chm</auth.server.quarkus.mapStorage.profile.config>
-                                <keycloak.globalLock.provider>none</keycloak.globalLock.provider>
-                            </systemPropertyVariables>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>map-storage-jpa-postgres</id>
-            <properties>
-                <postgres.start-container>true</postgres.start-container>
-            </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <systemPropertyVariables>
-                                <!--
-                                The following properties needs to be synchronized across all map-storage profiles
-                                -->
-                                <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
-                                <keycloak.realm.provider>map</keycloak.realm.provider>
-                                <keycloak.client.provider>map</keycloak.client.provider>
-                                <keycloak.clientScope.provider>map</keycloak.clientScope.provider>
-                                <keycloak.group.provider>map</keycloak.group.provider>
-                                <keycloak.role.provider>map</keycloak.role.provider>
-                                <keycloak.user.provider>map</keycloak.user.provider>
-                                <keycloak.deploymentState.provider>map</keycloak.deploymentState.provider>
-                                <keycloak.authSession.provider>map</keycloak.authSession.provider>
-                                <keycloak.userSession.provider>map</keycloak.userSession.provider>
-                                <keycloak.loginFailure.provider>map</keycloak.loginFailure.provider>
-                                <keycloak.authorization.provider>map</keycloak.authorization.provider>
-                                <keycloak.eventsStore.provider>map</keycloak.eventsStore.provider>
-                                <keycloak.singleUseObject.provider>map</keycloak.singleUseObject.provider>
-                                <keycloak.publicKeyStorage.provider>map</keycloak.publicKeyStorage.provider>
-                                <keycloak.authorizationCache.enabled>false</keycloak.authorizationCache.enabled>
-                                <keycloak.realmCache.enabled>false</keycloak.realmCache.enabled>
-                                <keycloak.userCache.enabled>false</keycloak.userCache.enabled>
-                                <keycloak.publicKeyCache.enabled>false</keycloak.publicKeyCache.enabled>
-                                <keycloak.userSessionPersister.provider></keycloak.userSessionPersister.provider>
-                                <keycloak.userFederatedStorage.provider></keycloak.userFederatedStorage.provider>
-                                <!--
-                                The end of the block synchronized across all map-storage profiles
-                                -->
-                                <postgres.start-container>${postgres.start-container}</postgres.start-container>
-
-                                <keycloak.map.storage.connectionsJpa.url>${keycloak.map.storage.connectionsJpa.url}</keycloak.map.storage.connectionsJpa.url>
-                                <keycloak.map.storage.connectionsJpa.user>${keycloak.map.storage.connectionsJpa.user}</keycloak.map.storage.connectionsJpa.user>
-                                <keycloak.map.storage.connectionsJpa.password>${keycloak.map.storage.connectionsJpa.password}</keycloak.map.storage.connectionsJpa.password>
-
-                                <keycloak.storage.connections.vendor>postgres</keycloak.storage.connections.vendor>
-
-                                <keycloak.authorization.map.storage.provider>jpa</keycloak.authorization.map.storage.provider>
-                                <keycloak.authSession.map.storage.provider>jpa</keycloak.authSession.map.storage.provider>
-                                <keycloak.client.map.storage.provider>jpa</keycloak.client.map.storage.provider>
-                                <keycloak.clientScope.map.storage.provider>jpa</keycloak.clientScope.map.storage.provider>
-                                <keycloak.adminEventsStore.map.storage.provider>jpa</keycloak.adminEventsStore.map.storage.provider>
-                                <keycloak.authEventsStore.map.storage.provider>jpa</keycloak.authEventsStore.map.storage.provider>
-                                <keycloak.group.map.storage.provider>jpa</keycloak.group.map.storage.provider>
-                                <keycloak.loginFailure.map.storage.provider>jpa</keycloak.loginFailure.map.storage.provider>
-                                <keycloak.realm.map.storage.provider>jpa</keycloak.realm.map.storage.provider>
-                                <keycloak.role.map.storage.provider>jpa</keycloak.role.map.storage.provider>
-                                <keycloak.singleUseObject.map.storage.provider>jpa</keycloak.singleUseObject.map.storage.provider>
-                                <keycloak.user.map.storage.provider>jpa</keycloak.user.map.storage.provider>
-                                <keycloak.userSession.map.storage.provider>jpa</keycloak.userSession.map.storage.provider>
-                                <auth.server.quarkus.mapStorage.profile.config>jpa</auth.server.quarkus.mapStorage.profile.config>
-                                <keycloak.globalLock.provider>map</keycloak.globalLock.provider>
-                                <keycloak.lock.map.storage.provider>jpa</keycloak.lock.map.storage.provider>
-                            </systemPropertyVariables>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <profile>
-            <id>map-storage-hot-rod</id>
-            <properties>
-                <keycloak.testsuite.start-hotrod-container>true</keycloak.testsuite.start-hotrod-container>
-            </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <systemPropertyVariables>
-                                <!--
-                                The following properties needs to be synchronized across all map-storage profiles
-                                -->
-                                <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
-                                <keycloak.realm.provider>map</keycloak.realm.provider>
-                                <keycloak.client.provider>map</keycloak.client.provider>
-                                <keycloak.clientScope.provider>map</keycloak.clientScope.provider>
-                                <keycloak.group.provider>map</keycloak.group.provider>
-                                <keycloak.role.provider>map</keycloak.role.provider>
-                                <keycloak.user.provider>map</keycloak.user.provider>
-                                <keycloak.deploymentState.provider>map</keycloak.deploymentState.provider>
-                                <keycloak.authSession.provider>map</keycloak.authSession.provider>
-                                <keycloak.userSession.provider>map</keycloak.userSession.provider>
-                                <keycloak.loginFailure.provider>map</keycloak.loginFailure.provider>
-                                <keycloak.authorization.provider>map</keycloak.authorization.provider>
-                                <keycloak.eventsStore.provider>map</keycloak.eventsStore.provider>
-                                <keycloak.singleUseObject.provider>map</keycloak.singleUseObject.provider>
-                                <keycloak.publicKeyStorage.provider>map</keycloak.publicKeyStorage.provider>
-                                <keycloak.authorizationCache.enabled>false</keycloak.authorizationCache.enabled>
-                                <keycloak.realmCache.enabled>false</keycloak.realmCache.enabled>
-                                <keycloak.userCache.enabled>false</keycloak.userCache.enabled>
-                                <keycloak.publicKeyCache.enabled>false</keycloak.publicKeyCache.enabled>
-                                <keycloak.userSessionPersister.provider></keycloak.userSessionPersister.provider>
-                                <keycloak.userFederatedStorage.provider></keycloak.userFederatedStorage.provider>
-                                <!--
-                                The end of the block synchronized across all map-storage profiles
-                                -->
-                                <keycloak.authSession.map.storage.provider>hotrod</keycloak.authSession.map.storage.provider>
-                                <keycloak.client.map.storage.provider>hotrod</keycloak.client.map.storage.provider>
-                                <keycloak.clientScope.map.storage.provider>hotrod</keycloak.clientScope.map.storage.provider>
-                                <keycloak.group.map.storage.provider>hotrod</keycloak.group.map.storage.provider>
-                                <keycloak.role.map.storage.provider>hotrod</keycloak.role.map.storage.provider>
-                                <keycloak.user.map.storage.provider>hotrod</keycloak.user.map.storage.provider>
-                                <keycloak.loginFailure.map.storage.provider>hotrod</keycloak.loginFailure.map.storage.provider>
-                                <keycloak.realm.map.storage.provider>hotrod</keycloak.realm.map.storage.provider>
-                                <keycloak.userSession.map.storage.provider>hotrod</keycloak.userSession.map.storage.provider>
-                                <keycloak.authorization.map.storage.provider>hotrod</keycloak.authorization.map.storage.provider>
-                                <keycloak.adminEventsStore.map.storage.provider>hotrod</keycloak.adminEventsStore.map.storage.provider>
-                                <keycloak.authEventsStore.map.storage.provider>hotrod</keycloak.authEventsStore.map.storage.provider>
-                                <keycloak.singleUseObject.map.storage.provider>hotrod</keycloak.singleUseObject.map.storage.provider>
-                                <infinispan.version>${infinispan.version}</infinispan.version>
-                                <project.version>${project.version}</project.version>
-                                <keycloak.testsuite.start-hotrod-container>${keycloak.testsuite.start-hotrod-container}</keycloak.testsuite.start-hotrod-container>
-                                <auth.server.quarkus.mapStorage.profile.config>hotrod</auth.server.quarkus.mapStorage.profile.config>
-                                <keycloak.globalLock.provider>hotrod</keycloak.globalLock.provider>
-                            </systemPropertyVariables>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <profile>
-            <id>map-storage-file</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <systemPropertyVariables>
-                                <!--
-                                The following properties needs to be synchronized across all map-storage profiles
-                                -->
-                                <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
-                                <keycloak.realm.provider>map</keycloak.realm.provider>
-                                <keycloak.client.provider>map</keycloak.client.provider>
-                                <keycloak.clientScope.provider>map</keycloak.clientScope.provider>
-                                <keycloak.group.provider>map</keycloak.group.provider>
-                                <keycloak.role.provider>map</keycloak.role.provider>
-                                <keycloak.user.provider>map</keycloak.user.provider>
-                                <keycloak.deploymentState.provider>map</keycloak.deploymentState.provider>
-                                <keycloak.authSession.provider>map</keycloak.authSession.provider>
-                                <keycloak.userSession.provider>map</keycloak.userSession.provider>
-                                <keycloak.loginFailure.provider>map</keycloak.loginFailure.provider>
-                                <keycloak.authorization.provider>map</keycloak.authorization.provider>
-                                <keycloak.eventsStore.provider>map</keycloak.eventsStore.provider>
-                                <keycloak.singleUseObject.provider>map</keycloak.singleUseObject.provider>
-                                <keycloak.publicKeyStorage.provider>map</keycloak.publicKeyStorage.provider>
-                                <keycloak.authorizationCache.enabled>false</keycloak.authorizationCache.enabled>
-                                <keycloak.realmCache.enabled>false</keycloak.realmCache.enabled>
-                                <keycloak.userCache.enabled>false</keycloak.userCache.enabled>
-                                <keycloak.publicKeyCache.enabled>false</keycloak.publicKeyCache.enabled>
-                                <keycloak.userSessionPersister.provider></keycloak.userSessionPersister.provider>
-                                <keycloak.userFederatedStorage.provider></keycloak.userFederatedStorage.provider>
-                                <!--
-                                The end of the block synchronized across all map-storage profiles
-                                -->
-                                <keycloak.mapStorage.provider.default>file</keycloak.mapStorage.provider.default>
-                                <keycloak.singleUseObject.map.storage.provider>concurrenthashmap</keycloak.singleUseObject.map.storage.provider>
-                                <project.version>${project.version}</project.version>
-                                <auth.server.quarkus.mapStorage.profile.config>file</auth.server.quarkus.mapStorage.profile.config>
-                                <keycloak.globalLock.provider>none</keycloak.globalLock.provider>
-                            </systemPropertyVariables>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <profile>
-            <id>map-storage-jpa-cockroach</id>
-            <properties>
-                <cockroachdb.start-container>true</cockroachdb.start-container>
-                <keycloak.map.storage.connectionsJpa.url>jdbc:postgresql://localhost:26257/keycloak</keycloak.map.storage.connectionsJpa.url>
-            </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <systemPropertyVariables>
-                                <!--
-                                The following properties needs to be synchronized across all map-storage profiles
-                                -->
-                                <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
-                                <keycloak.realm.provider>map</keycloak.realm.provider>
-                                <keycloak.client.provider>map</keycloak.client.provider>
-                                <keycloak.clientScope.provider>map</keycloak.clientScope.provider>
-                                <keycloak.group.provider>map</keycloak.group.provider>
-                                <keycloak.role.provider>map</keycloak.role.provider>
-                                <keycloak.user.provider>map</keycloak.user.provider>
-                                <keycloak.deploymentState.provider>map</keycloak.deploymentState.provider>
-                                <keycloak.authSession.provider>map</keycloak.authSession.provider>
-                                <keycloak.userSession.provider>map</keycloak.userSession.provider>
-                                <keycloak.loginFailure.provider>map</keycloak.loginFailure.provider>
-                                <keycloak.authorization.provider>map</keycloak.authorization.provider>
-                                <keycloak.eventsStore.provider>map</keycloak.eventsStore.provider>
-                                <keycloak.singleUseObject.provider>map</keycloak.singleUseObject.provider>
-                                <keycloak.publicKeyStorage.provider>map</keycloak.publicKeyStorage.provider>
-                                <keycloak.authorizationCache.enabled>false</keycloak.authorizationCache.enabled>
-                                <keycloak.realmCache.enabled>false</keycloak.realmCache.enabled>
-                                <keycloak.userCache.enabled>false</keycloak.userCache.enabled>
-                                <keycloak.publicKeyCache.enabled>false</keycloak.publicKeyCache.enabled>
-                                <keycloak.userSessionPersister.provider></keycloak.userSessionPersister.provider>
-                                <keycloak.userFederatedStorage.provider></keycloak.userFederatedStorage.provider>
-                                <!--
-                                The end of the block synchronized across all map-storage profiles
-                                -->
-                                <cockroachdb.start-container>${cockroachdb.start-container}</cockroachdb.start-container>
-
-                                <keycloak.map.storage.connectionsJpa.url>${keycloak.map.storage.connectionsJpa.url}</keycloak.map.storage.connectionsJpa.url>
-                                <keycloak.map.storage.connectionsJpa.user>${keycloak.map.storage.connectionsJpa.user}</keycloak.map.storage.connectionsJpa.user>
-                                <keycloak.map.storage.connectionsJpa.password>${keycloak.map.storage.connectionsJpa.password}</keycloak.map.storage.connectionsJpa.password>
-
-                                <keycloak.storage.connections.vendor>cockroach</keycloak.storage.connections.vendor>
-
-                                <keycloak.authorization.map.storage.provider>jpa</keycloak.authorization.map.storage.provider>
-                                <keycloak.authSession.map.storage.provider>jpa</keycloak.authSession.map.storage.provider>
-                                <keycloak.client.map.storage.provider>jpa</keycloak.client.map.storage.provider>
-                                <keycloak.clientScope.map.storage.provider>jpa</keycloak.clientScope.map.storage.provider>
-                                <keycloak.adminEventsStore.map.storage.provider>jpa</keycloak.adminEventsStore.map.storage.provider>
-                                <keycloak.authEventsStore.map.storage.provider>jpa</keycloak.authEventsStore.map.storage.provider>
-                                <keycloak.group.map.storage.provider>jpa</keycloak.group.map.storage.provider>
-                                <keycloak.loginFailure.map.storage.provider>jpa</keycloak.loginFailure.map.storage.provider>
-                                <keycloak.realm.map.storage.provider>jpa</keycloak.realm.map.storage.provider>
-                                <keycloak.role.map.storage.provider>jpa</keycloak.role.map.storage.provider>
-                                <keycloak.singleUseObject.map.storage.provider>jpa</keycloak.singleUseObject.map.storage.provider>
-                                <keycloak.user.map.storage.provider>jpa</keycloak.user.map.storage.provider>
-                                <keycloak.userSession.map.storage.provider>jpa</keycloak.userSession.map.storage.provider>
-                                <auth.server.quarkus.mapStorage.profile.config>jpa</auth.server.quarkus.mapStorage.profile.config>
-                                <keycloak.globalLock.provider>map</keycloak.globalLock.provider>
-                                <keycloak.lock.map.storage.provider>jpa</keycloak.lock.map.storage.provider>
-                            </systemPropertyVariables>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
 
         <profile>
             <id>auth-server-fips140-2</id>
@@ -1426,7 +797,7 @@
                 <dependency>
                     <groupId>net.bytebuddy</groupId>
                     <artifactId>byte-buddy</artifactId>
-                    <version>1.12.18</version>
+                    <version>${byte-buddy.version}</version>
                 </dependency>
             </dependencies>
         </profile>

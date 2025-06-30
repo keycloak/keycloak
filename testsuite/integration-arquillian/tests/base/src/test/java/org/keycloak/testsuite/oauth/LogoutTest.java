@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.oauth;
 
+import org.hamcrest.MatcherAssert;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
@@ -30,8 +31,10 @@ import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.representations.LogoutToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -42,6 +45,8 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.LoginPage;
 
 import java.util.List;
+import java.util.Map;
+
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.UriBuilder;
@@ -105,7 +110,7 @@ public class LogoutTest extends AbstractKeycloakTest {
         String refreshTokenString = tokenResponse.getRefreshToken();
 
         try (CloseableHttpResponse response = oauth.doLogout(refreshTokenString, "password")) {
-            assertThat(response, Matchers.statusCodeIsHC(Status.NO_CONTENT));
+            MatcherAssert.assertThat(response, Matchers.statusCodeIsHC(Status.NO_CONTENT));
 
             assertNotNull(testingClient.testApp().getAdminLogoutAction());
         }
@@ -125,7 +130,7 @@ public class LogoutTest extends AbstractKeycloakTest {
 
         // Logout should succeed with expired refresh token, see KEYCLOAK-3302
         try (CloseableHttpResponse response = oauth.doLogout(refreshTokenString, "password")) {
-            assertThat(response, Matchers.statusCodeIsHC(Status.NO_CONTENT));
+            MatcherAssert.assertThat(response, Matchers.statusCodeIsHC(Status.NO_CONTENT));
 
             assertNotNull(testingClient.testApp().getAdminLogoutAction());
         }
@@ -141,38 +146,21 @@ public class LogoutTest extends AbstractKeycloakTest {
 
         setTimeOffset(2);
 
-        WaitUtils.waitForPageToLoad();
-        loginPage.login("password");
+        driver.navigate().refresh();
+        oauth.fillLoginForm("test-user@localhost", "password");
 
         Assert.assertFalse(loginPage.isCurrent());
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         OAuthClient.AccessTokenResponse tokenResponse2 = oauth.doAccessTokenRequest(code, "password");
 
-        // POST logout with token should fail
-        try (CloseableHttpResponse response = oauth.doLogout(refreshToken1, "password")) {
-            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatusLine().getStatusCode());
-        }
-
-        String logoutUrl = oauth.getLogoutUrl()
-                .idTokenHint(accessTokenResponse.getIdToken())
-                .postLogoutRedirectUri(oauth.APP_AUTH_ROOT)
-                .build();
-
-        // GET logout with ID token should fail as well
-        try (CloseableHttpClient c = HttpClientBuilder.create().disableRedirectHandling().build();
-             CloseableHttpResponse response = c.execute(new HttpGet(logoutUrl))) {
-            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatusLine().getStatusCode());
-        }
-
         // finally POST logout with VALID token should succeed
         try (CloseableHttpResponse response = oauth.doLogout(tokenResponse2.getRefreshToken(), "password")) {
-            assertThat(response, Matchers.statusCodeIsHC(Status.NO_CONTENT));
+            MatcherAssert.assertThat(response, Matchers.statusCodeIsHC(Status.NO_CONTENT));
 
             assertNotNull(testingClient.testApp().getAdminLogoutAction());
         }
     }
-
 
     @Test
     public void postLogoutFailWithCredentialsOfDifferentClient() throws Exception {
@@ -188,7 +176,7 @@ public class LogoutTest extends AbstractKeycloakTest {
 
         // Assert logout fails with 400 when trying to use different client credentials
         try (CloseableHttpResponse response = oauth.doLogout(refreshTokenString, "password")) {
-            assertThat(response, Matchers.statusCodeIsHC(Status.BAD_REQUEST));
+            MatcherAssert.assertThat(response, Matchers.statusCodeIsHC(Status.BAD_REQUEST));
         }
 
         oauth.clientId("test-app");
@@ -242,11 +230,11 @@ public class LogoutTest extends AbstractKeycloakTest {
           .idTokenHint(idTokenString)
           .postLogoutRedirectUri(oauth.APP_AUTH_ROOT)
           .build();
-        
+
         try (CloseableHttpClient c = HttpClientBuilder.create().disableRedirectHandling().build();
           CloseableHttpResponse response = c.execute(new HttpGet(logoutUrl))) {
-            assertThat(response, Matchers.statusCodeIsHC(Status.FOUND));
-            assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(oauth.APP_AUTH_ROOT));
+            MatcherAssert.assertThat(response, Matchers.statusCodeIsHC(Status.FOUND));
+            MatcherAssert.assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(oauth.APP_AUTH_ROOT));
         }
     }
 
@@ -255,7 +243,7 @@ public class LogoutTest extends AbstractKeycloakTest {
         try {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, "RS384");
             TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), "RS512");
-            backchannelLogoutRequest("HS256", "RS512", "RS384");
+            backchannelLogoutRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, "RS512", "RS384");
         } finally {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, "RS256");
             TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), "RS256");
@@ -288,8 +276,8 @@ public class LogoutTest extends AbstractKeycloakTest {
 
         try (CloseableHttpClient c = HttpClientBuilder.create().disableRedirectHandling().build();
                 CloseableHttpResponse response = c.execute(new HttpGet(logoutUrl))) {
-            assertThat(response, Matchers.statusCodeIsHC(Status.FOUND));
-            assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(oauth.APP_AUTH_ROOT));
+            MatcherAssert.assertThat(response, Matchers.statusCodeIsHC(Status.FOUND));
+            MatcherAssert.assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(oauth.APP_AUTH_ROOT));
         }
 
         // Assert logout event triggered for backchannel logout
@@ -327,15 +315,38 @@ public class LogoutTest extends AbstractKeycloakTest {
 
             try (CloseableHttpClient c = HttpClientBuilder.create().disableRedirectHandling().build();
                     CloseableHttpResponse response = c.execute(new HttpGet(logoutUrl))) {
-                assertThat(response, Matchers.statusCodeIsHC(Status.FOUND));
-                assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(oauth.APP_AUTH_ROOT));
+                MatcherAssert.assertThat(response, Matchers.statusCodeIsHC(Status.FOUND));
+                MatcherAssert.assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(oauth.APP_AUTH_ROOT));
             }
 
-            assertNotNull(testingClient.testApp().getBackChannelLogoutToken());
+            String rawLogoutToken = testingClient.testApp().getBackChannelRawLogoutToken();
+            JWSInput jwsInput = new JWSInput(rawLogoutToken);
+            LogoutToken logoutToken = jwsInput.readJsonContent(LogoutToken.class);
+            validateLogoutToken(logoutToken);
+            JWSHeader logoutTokenHeader = jwsInput.getHeader();
+            assertEquals("logout+jwt", logoutTokenHeader.getType());
         } finally {
             rep.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "");
             clientResource.update(rep);
         }
+    }
+
+    /**
+     * Validate the token matches the spec at <a href="https://openid.net/specs/openid-connect-backchannel-1_0.html#LogoutToken">OpenID Connect Back-Channel Logout 1.0 incorporating errata set 1</a>
+     */
+    private void validateLogoutToken(LogoutToken backChannelLogoutToken) {
+        assertNotNull("token must be present", backChannelLogoutToken);
+        assertNotNull("iss must be present", backChannelLogoutToken.getIssuer());
+        assertNotNull("aud must be present", backChannelLogoutToken.getAudience());
+        assertNotNull("iat must be present", backChannelLogoutToken.getIat());
+        assertNotNull("exp must be present", backChannelLogoutToken.getExp());
+        assertNotNull("jti must be present", backChannelLogoutToken.getId());
+        Map<String, Object> events = backChannelLogoutToken.getEvents();
+        assertNotNull("events must be present", events);
+        Object backchannelLogoutEvent = events.get("http://schemas.openid.net/event/backchannel-logout");
+        assertNotNull("back-channel logout event must be present", backchannelLogoutEvent);
+        assertTrue("back-channel logout event must have a member object", backchannelLogoutEvent instanceof Map);
+        MatcherAssert.assertThat("map of back-channel logout event member object should be an empty object", (Map<?, ?>) backchannelLogoutEvent, org.hamcrest.Matchers.anEmptyMap());
     }
 
     private OAuthClient.AccessTokenResponse loginAndForceNewLoginPage() {

@@ -5,31 +5,31 @@
 <#import "/templates/profile.adoc" as profile>
 
 <@tmpl.guide
-title="Running Keycloak in a container"
-summary="Learn how to run Keycloak from a container image"
+title="Running {project_name} in a container"
+summary="Learn how to run {project_name} from a container image"
 includedOptions="db db-url db-username db-password features hostname https-key-store-file https-key-store-password health-enabled metrics-enabled">
 
-This {section} describes how to optimize and run the Keycloak container image to provide the best experience running a Keycloak container.
+This {section} describes how to optimize and run the {project_name} container image to provide the best experience running a container.
 
 <@profile.ifProduct>
 
-NOTE: The procedure in this chapter is intended for building an image that you run in a containerized environment such as OpenShift.  The image is not intended to be run in other Kubernetes distributions.
+WARNING: This chapter applies only for building an image that you run in a OpenShift environment. Only an OpenShift environment is supported for this image. It is not supported if you run it in other Kubernetes distributions. 
 
 </@profile.ifProduct>
 
 == Creating a customized and optimized container image
-The default Keycloak container image ships ready to be configured and optimized.
+The default {project_name} container image ships ready to be configured and optimized.
 
-For the best start up of your Keycloak container, build an image by running the `build` step during the container build.
+For the best start up of your {project_name} container, build an image by running the `build` step during the container build.
 This step will save time in every subsequent start phase of the container image.
 
-=== Writing your optimized Keycloak Dockerfile
-The following `Dockerfile` creates a pre-configured Keycloak image that enables the health and metrics endpoints, enables the token exchange feature, and uses a PostgreSQL database.
+=== Writing your optimized {project_name} Dockerfile
+The following `Dockerfile` creates a pre-configured {project_name} image that enables the health and metrics endpoints, enables the token exchange feature, and uses a PostgreSQL database.
 
 .Dockerfile:
-[source, dockerfile]
+[source,dockerfile,subs="attributes+"]
 ----
-FROM quay.io/keycloak/keycloak:latest as builder
+FROM quay.io/keycloak/keycloak:{containerlabel} as builder
 
 # Enable health and metrics support
 ENV KC_HEALTH_ENABLED=true
@@ -43,7 +43,7 @@ WORKDIR /opt/keycloak
 RUN keytool -genkeypair -storepass password -storetype PKCS12 -keyalg RSA -keysize 2048 -dname "CN=server" -alias server -ext "SAN:c=DNS:localhost,IP:127.0.0.1" -keystore conf/server.keystore
 RUN /opt/keycloak/bin/kc.sh build
 
-FROM quay.io/keycloak/keycloak:latest
+FROM quay.io/keycloak/keycloak:{containerlabel}
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
 
 # change these values to point to a running postgres instance
@@ -64,15 +64,15 @@ The build process includes multiple stages:
 To install custom providers, you just need to define a step to include the JAR file(s) into the `/opt/keycloak/providers` directory.
 This step must be placed before the line that `RUNs` the `build` command, as below: 
 
-[source, dockerfile]
+[source,dockerfile,subs="attributes+"]
 ----
 # A example build step that downloads a JAR file from a URL and adds it to the providers directory
-FROM quay.io/keycloak/keycloak:latest as builder
+FROM quay.io/keycloak/keycloak:{containerlabel} as builder
 
 ...
 
 # Add the provider JAR file to the providers directory
-ADD --chown=keycloak:keycloak <MY_PROVIDER_JAR_URL> /opt/keycloak/providers/myprovider.jar
+ADD --chown=keycloak:keycloak --chmod=644 <MY_PROVIDER_JAR_URL> /opt/keycloak/providers/myprovider.jar
 
 ...
 
@@ -82,7 +82,7 @@ RUN /opt/keycloak/bin/kc.sh build
 
 === Installing additional RPM packages
 
-If you try to install new software in a stage `+FROM quay.io/keycloak/keycloak+`, you will notice that `+microdnf+`, `+dnf+`, and even `+rpm+` are not installed. Also, very few packages are available, only enough for a `+bash+` shell, and to run Keycloak itself. This is due to security hardening measures, which reduce the attack surface of the Keycloak container.
+If you try to install new software in a stage `+FROM quay.io/keycloak/keycloak+`, you will notice that `+microdnf+`, `+dnf+`, and even `+rpm+` are not installed. Also, very few packages are available, only enough for a `+bash+` shell, and to run {project_name} itself. This is due to security hardening measures, which reduce the attack surface of the {project_name} container.
 
 First, consider if your use case can be implemented in a different way, and so avoid installing new RPMs into the final container:
 
@@ -120,30 +120,30 @@ This approach uses a chroot, `+/mnt/rootfs+`, so that only the packages you spec
 
 WARNING: Some packages have a large tree of dependencies. By installing new RPMs you may unintentionally increase the container's attack surface. Check the list of installed packages carefully.
 
-=== Building the docker image
-To build the actual docker image, run the following command from the directory containing your Dockerfile:
+=== Building the container image
+To build the actual container image, run the following command from the directory containing your Dockerfile:
 
 [source,bash]
 ----
 podman|docker build . -t mykeycloak
 ----
 
-=== Starting the optimized Keycloak docker image
+=== Starting the optimized {project_name} container image
 To start the image, run:
 
 [source, bash]
 ----
-podman|docker run --name mykeycloak -p 8443:8443 \
+podman|docker run --name mykeycloak -p 8443:8443 -p 9000:9000 \
         -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=change_me \
         mykeycloak \
         start --optimized
 ----
 
-Keycloak starts in production mode, using only secured HTTPS communication, and is available on `https://localhost:8443`.
+{project_name} starts in production mode, using only secured HTTPS communication, and is available on `https://localhost:8443`.
 
-Health check endpoints are available at `https://localhost:8443/health`, `https://localhost:8443/health/ready` and `https://localhost:8443/health/live`.
+Health check endpoints are available at `https://localhost:9000/health`, `https://localhost:9000/health/ready` and `https://localhost:9000/health/live`.
 
-Opening up `https://localhost:8443/metrics` leads to a page containing operational metrics that could be used by your monitoring solution.
+Opening up `https://localhost:9000/metrics` leads to a page containing operational metrics that could be used by your monitoring solution.
 
 == Exposing the container to a different port
 
@@ -162,48 +162,48 @@ podman|docker run --name mykeycloak -p 3000:8443 \
 
 By setting the `hostname-port` option you can now access the server at `https://localhost:3000`.
 
-== Trying Keycloak in development mode
-The easiest way to try Keycloak from a container for development or testing purposes is to use the Development mode.
+== Trying {project_name} in development mode
+The easiest way to try {project_name} from a container for development or testing purposes is to use the Development mode.
 You use the `start-dev` command:
 
-[source,bash]
+[source,bash,subs="attributes+"]
 ----
 podman|docker run --name mykeycloak -p 8080:8080 \
         -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=change_me \
-        quay.io/keycloak/keycloak:latest \
+        quay.io/keycloak/keycloak:{containerlabel} \
         start-dev
 ----
 
-Invoking this command starts the Keycloak server in development mode.
+Invoking this command starts the {project_name} server in development mode.
 
 This mode should be strictly avoided in production environments because it has insecure defaults.
-For more information about running Keycloak in production, see <@links.server id="configuration-production"/>.
+For more information about running {project_name} in production, see <@links.server id="configuration-production"/>.
 
-== Running a standard keycloak container
+== Running a standard {project_name} container
 In keeping with concepts such as immutable infrastructure, containers need to be re-provisioned routinely.
 In these environments, you need containers that start fast, therefore you need to create an optimized image as described in the preceding section.
-However, if your environment has different requirements, you can run a standard Keycloak image by just running the `start` command.
+However, if your environment has different requirements, you can run a standard {project_name} image by just running the `start` command.
 For example:
 
-[source, bash]
+[source,bash,subs="attributes+"]
 ----
 podman|docker run --name mykeycloak -p 8080:8080 \
         -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=change_me \
-        quay.io/keycloak/keycloak:latest \
+        quay.io/keycloak/keycloak:{containerlabel} \
         start \
         --db=postgres --features=token-exchange \
         --db-url=<JDBC-URL> --db-username=<DB-USER> --db-password=<DB-PASSWORD> \
         --https-key-store-file=<file> --https-key-store-password=<password>
 ----
 
-Running this command starts a Keycloak server that detects and applies the build options first.
+Running this command starts a {project_name} server that detects and applies the build options first.
 In the example, the line  `--db=postgres --features=token-exchange` sets the database vendor to PostgreSQL and enables the token exchange feature.
 
-Keycloak then starts up and applies the configuration for the specific environment.
+{project_name} then starts up and applies the configuration for the specific environment.
 This approach significantly increases startup time and creates an image that is mutable, which is not the best practice.
 
 == Provide initial admin credentials when running in a container
-Keycloak only allows to create the initial admin user from a local network connection. This is not the case when running in a container, so you have to provide the following environment variables when you run the image:
+{project_name} only allows to create the initial admin user from a local network connection. This is not the case when running in a container, so you have to provide the following environment variables when you run the image:
 
 [source, bash]
 ----
@@ -216,17 +216,47 @@ Keycloak only allows to create the initial admin user from a local network conne
 
 == Importing A Realm On Startup
 
-The Keycloak containers have a directory `/opt/keycloak/data/import`. If you put one or more import files in that directory via a volume mount or other means and add the startup argument `--import-realm`, the Keycloak container will import that data on startup! This may only make sense to do in Dev mode.
+The {project_name} containers have a directory `/opt/keycloak/data/import`. If you put one or more import files in that directory via a volume mount or other means and add the startup argument `--import-realm`, the {project_name} container will import that data on startup! This may only make sense to do in Dev mode.
 
-[source, bash]
+[source,bash,subs="attributes+"]
 ----
 podman|docker run --name keycloak_unoptimized -p 8080:8080 \
         -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=change_me \
         -v /path/to/realm/data:/opt/keycloak/data/import \
-        quay.io/keycloak/keycloak:latest \
+        quay.io/keycloak/keycloak:{containerlabel} \
         start-dev --import-realm
 ----
 
 Feel free to join the open https://github.com/keycloak/keycloak/discussions/8549[GitHub Discussion] around enhancements of the admin bootstrapping process.
+
+== Specifying different memory settings
+
+The {project_name} container, instead of specifying hardcoded values for the initial and maximum heap size, uses relative values to the total memory of a container.
+This behavior is achieved by JVM options `-XX:MaxRAMPercentage=70`, and `-XX:InitialRAMPercentage=50`.
+
+The `-XX:MaxRAMPercentage` option represents the maximum heap size as 70% of the total container memory.
+The `-XX:InitialRAMPercentage` option represents the initial heap size as 50% of the total container memory.
+These values were chosen based on a deeper analysis of {project_name} memory management.
+
+As the heap size is dynamically calculated based on the total container memory, you should *always set the memory limit* for the container.
+Previously, the maximum heap size was set to 512 MB, and in order to approach similar values, you should set the memory limit to at least 750 MB.
+For smaller production-ready deployments, the recommended memory limit is 2 GB.
+
+The JVM options related to the heap might be overridden by setting the environment variable `JAVA_OPTS_KC_HEAP`.
+You can find the default values of the `JAVA_OPTS_KC_HEAP` in the source code of the `kc.sh`, or `kc.bat` script.
+
+For example, you can specify the environment variable and memory limit as follows:
+
+[source,bash,subs="attributes+"]
+----
+podman|docker run --name mykeycloak -p 8080:8080 -m 1g \
+        -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=change_me \
+        -e JAVA_OPTS_KC_HEAP="-XX:MaxHeapFreeRatio=30 -XX:MaxRAMPercentage=65" \
+        quay.io/keycloak/keycloak:{containerlabel} \
+        start-dev
+----
+
+WARNING: If the memory limit is not set, the memory consumption rapidly increases as the heap size can grow up to 70% of the total container memory.
+Once the JVM allocates the memory, it is returned to the OS reluctantly with the current {project_name} GC settings.
 
 </@tmpl.guide>

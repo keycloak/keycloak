@@ -67,7 +67,6 @@ public class FrontChannelLogoutHandler {
             allowFrameSrc.append(client.frontChannelLogoutUrl.getAuthority()).append(' ');
         }
 
-        session.getProvider(SecurityHeadersProvider.class).options().allowAnyFrameAncestor();
         session.getProvider(SecurityHeadersProvider.class).options().allowFrameSrc(allowFrameSrc.toString());
     }
 

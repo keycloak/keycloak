@@ -133,6 +133,66 @@ describe("Authentication management", () => {
       );
     });
 
+    it("should fetch config description for required action", async () => {
+      const configDescription =
+        await kcAdminClient.authenticationManagement.getRequiredActionConfigDescription(
+          {
+            alias: "UPDATE_PASSWORD",
+          },
+        );
+
+      expect(configDescription).is.ok;
+      expect(configDescription.properties).is.ok;
+    });
+
+    it("should fetch required action config for update password", async () => {
+      const actionConfig =
+        await kcAdminClient.authenticationManagement.getRequiredActionConfig({
+          alias: "UPDATE_PASSWORD",
+        });
+
+      expect(actionConfig).is.ok;
+      expect(actionConfig.config).is.ok;
+      expect(actionConfig.config!["max_auth_age"]).to.be.eq(300); // default max_auth_age for update password
+    });
+
+    it("should update required action config for update password", async () => {
+      await kcAdminClient.authenticationManagement.updateRequiredActionConfig(
+        {
+          alias: "UPDATE_PASSWORD",
+        },
+        {
+          config: {
+            max_auth_age: "301",
+          },
+        },
+      );
+
+      const actionConfig =
+        await kcAdminClient.authenticationManagement.getRequiredActionConfig({
+          alias: "UPDATE_PASSWORD",
+        });
+
+      expect(actionConfig).is.ok;
+      expect(actionConfig.config).is.ok;
+      expect(actionConfig.config!["max_auth_age"]).to.be.eq(301); // updated value max_auth_age for update password
+    });
+
+    it("should reset required action config for update password", async () => {
+      await kcAdminClient.authenticationManagement.removeRequiredActionConfig({
+        alias: "UPDATE_PASSWORD",
+      });
+
+      const actionConfig =
+        await kcAdminClient.authenticationManagement.getRequiredActionConfig({
+          alias: "UPDATE_PASSWORD",
+        });
+
+      expect(actionConfig).is.ok;
+      expect(actionConfig.config).is.ok;
+      expect(actionConfig.config!["max_auth_age"]).to.be.eq(300); // default max_auth_age for update password
+    });
+
     it("should get client authenticator providers", async () => {
       const authenticationProviders =
         await kcAdminClient.authenticationManagement.getClientAuthenticatorProviders();
@@ -176,7 +236,6 @@ describe("Authentication management", () => {
         "clients",
         "first broker login",
         "docker auth",
-        "http challenge",
       ]);
     });
 

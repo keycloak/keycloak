@@ -34,6 +34,7 @@ import org.keycloak.admin.client.resource.PolicyResource;
 import org.keycloak.admin.client.resource.RolePoliciesResource;
 import org.keycloak.admin.client.resource.RolePolicyResource;
 import org.keycloak.admin.client.resource.RolesResource;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
@@ -41,6 +42,7 @@ import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
 
 /**
@@ -67,6 +69,19 @@ public class RolePolicyManagementTest extends AbstractPolicyManagementTest {
         representation.setDescription("description");
         representation.setDecisionStrategy(DecisionStrategy.CONSENSUS);
         representation.setLogic(Logic.NEGATIVE);
+        representation.addRole("Role A", false);
+        representation.addRole("Role B", true);
+
+        assertCreated(authorization, representation);
+    }
+
+    @Test
+    public void testCreateFetchRoles() {
+        AuthorizationResource authorization = getClient().authorization();
+        RolePolicyRepresentation representation = new RolePolicyRepresentation();
+
+        representation.setName(KeycloakModelUtils.generateId());
+        representation.setFetchRoles(true);
         representation.addRole("Role A", false);
         representation.addRole("Role B", true);
 
@@ -115,6 +130,7 @@ public class RolePolicyManagementTest extends AbstractPolicyManagementTest {
 
         representation.setName("changed");
         representation.setDescription("changed");
+        representation.setFetchRoles(true);
         representation.setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
         representation.setLogic(Logic.POSITIVE);
         representation.setRoles(representation.getRoles().stream().filter(roleDefinition -> !roleDefinition.getId().equals("Resource A")).collect(Collectors.toSet()));
@@ -165,6 +181,30 @@ public class RolePolicyManagementTest extends AbstractPolicyManagementTest {
     }
 
     @Test
+    public void testDeleteRole() {
+        RoleRepresentation role = RoleBuilder.create().name(KeycloakModelUtils.generateId()).build();
+        getRealm().roles().create(role);
+        AuthorizationResource authorization = getClient().authorization();
+        RolePolicyRepresentation representation = new RolePolicyRepresentation();
+
+        representation.setName(KeycloakModelUtils.generateId());
+        representation.addRole(role.getName(), false);
+
+        RolePoliciesResource policies = authorization.policies().role();
+
+        try (Response response = policies.create(representation)) {
+            RolePolicyRepresentation created = response.readEntity(RolePolicyRepresentation.class);
+            RolePolicyResource rolePolicy = policies.findById(created.getId());
+            RolePolicyRepresentation rolePolicyRep = rolePolicy.toRepresentation();
+            assertEquals(1, rolePolicyRep.getRoles().size());
+
+            getRealm().roles().deleteRole(role.getName());
+            rolePolicyRep = rolePolicy.toRepresentation();
+            assertTrue(rolePolicyRep.getRoles().isEmpty());
+        }
+    }
+
+    @Test
     public void testGenericConfig() {
         AuthorizationResource authorization = getClient().authorization();
         RolePolicyRepresentation representation = new RolePolicyRepresentation();
@@ -208,6 +248,7 @@ public class RolePolicyManagementTest extends AbstractPolicyManagementTest {
                 .filter(roleDefinition -> (getRoleName(actualDefinition.getId()).equals(roleDefinition.getId()) || (clientRep.getClientId() + "/" + getRoleName(actualDefinition.getId())).equals(roleDefinition.getId())) && actualDefinition.isRequired() == roleDefinition.isRequired())
                 .findFirst().isPresent())
                 .count());
+        assertEquals(representation.isFetchRoles(), actual.isFetchRoles());
     }
 
     private String getRoleName(String id) {

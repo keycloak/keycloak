@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.util;
 
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
@@ -89,6 +90,12 @@ public class LDAPTestUtils {
 
     public static LDAPObject addLDAPUser(LDAPStorageProvider ldapProvider, RealmModel realm, final String username,
                                          final String firstName, final String lastName, final String email, final String street, final String... postalCode) {
+        return addLDAPUser(ldapProvider, realm, username, firstName, lastName, email, street, new MultivaluedHashMap<>(), postalCode);
+    }
+
+    public static LDAPObject addLDAPUser(LDAPStorageProvider ldapProvider, RealmModel realm, final String username,
+                                         final String firstName, final String lastName, final String email, final String street,
+                                         final MultivaluedHashMap<String, String> otherAttrs, final String... postalCode) {
         UserModel helperUser = new UserModelDelegate(null) {
 
             @Override
@@ -121,6 +128,8 @@ public class LDAPTestUtils {
                     return email;
                 } else if (UserModel.USERNAME.equals(name)) {
                     return username;
+                } else if (otherAttrs.containsKey(name)) {
+                    return otherAttrs.getFirst(name);
                 }
                 return super.getFirstAttribute(name);
             }
@@ -139,6 +148,8 @@ public class LDAPTestUtils {
                     return Stream.of(postalCode);
                 } else if ("street".equals(name) && street != null) {
                     return Stream.of(street);
+                } else if (otherAttrs.containsKey(name)) {
+                    return otherAttrs.getList(name).stream();
                 } else {
                     return Stream.empty();
                 }
@@ -176,6 +187,14 @@ public class LDAPTestUtils {
                 .orElse(null);
     }
 
+    public static ComponentModel getLdapProviderModel(RealmModel realm, String providerName) {
+        return realm.getComponentsStream(realm.getId(), UserStorageProvider.class.getName())
+                .filter(component -> Objects.equals(component.getProviderId(), LDAPStorageProviderFactory.PROVIDER_NAME))
+                .filter(component -> providerName == null || component.getName().equals(providerName))
+                .findFirst()
+                .orElse(null);
+    }
+
     public static LDAPStorageProvider getLdapProvider(KeycloakSession keycloakSession, ComponentModel ldapFedModel) {
         return (LDAPStorageProvider)keycloakSession.getProvider(UserStorageProvider.class, ldapFedModel);
     }
@@ -185,6 +204,10 @@ public class LDAPTestUtils {
 
     public static void addZipCodeLDAPMapper(RealmModel realm, ComponentModel providerModel) {
         addUserAttributeMapper(realm, providerModel, "zipCodeMapper", "postal_code", LDAPConstants.POSTAL_CODE);
+    }
+
+    public static void addPostalAddressLDAPMapper(RealmModel realm, ComponentModel providerModel) {
+        addUserAttributeMapper(realm, providerModel, "postalAddressMapper", "postalAddress", "postalAddress");
     }
 
     public static ComponentModel addUserAttributeMapper(RealmModel realm, ComponentModel providerModel, String mapperName, String userModelAttributeName, String ldapAttributeName) {

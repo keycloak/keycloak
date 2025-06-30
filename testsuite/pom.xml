@@ -31,12 +31,6 @@
     <name>Keycloak TestSuite</name>
     <description />
 
-    <properties>
-        <keycloak.map.storage.connectionsJpa.url>jdbc:postgresql://localhost:5432/keycloak</keycloak.map.storage.connectionsJpa.url>
-        <keycloak.map.storage.connectionsJpa.user>keycloak</keycloak.map.storage.connectionsJpa.user>
-        <keycloak.map.storage.connectionsJpa.password>pass</keycloak.map.storage.connectionsJpa.password>
-    </properties>
-
     <build>
         <plugins>
             <plugin>

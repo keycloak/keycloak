@@ -40,6 +40,7 @@ import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -54,6 +55,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
+import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -147,7 +149,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         assertNotNull(response.getClientId());
         assertNotNull(response.getClientSecret());
         assertEquals(0, response.getClientSecretExpiresAt().intValue());
-        assertNotNull(response.getRegistrationClientUri());
+        assertEquals(AUTH_SERVER_ROOT + "/realms/" + REALM_NAME + "/clients-registrations/openid-connect/" + response.getClientId(), response.getRegistrationClientUri());
         assertEquals("RegistrationAccessTokenTest", response.getClientName());
         assertEquals("http://root", response.getClientUri());
         assertEquals(1, response.getRedirectUris().size());
@@ -173,22 +175,32 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         assertNotNull(response.getClientSecret());
         assertEquals(0, response.getClientSecretExpiresAt().intValue());
         assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, response.getTokenEndpointAuthMethod());
+        assertEquals(AUTH_SERVER_ROOT + "/realms/" + REALM_NAME + "/clients-registrations/openid-connect/" + response.getClientId(), response.getRegistrationClientUri());
     }
 
     @Test
     public void updateClient() throws ClientRegistrationException {
+        Set<String> realmDefaultClientScopes = adminClient.realm(REALM_NAME).getDefaultDefaultClientScopes().stream()
+                .filter(scope -> Objects.equals(scope.getProtocol(), OIDCLoginProtocol.LOGIN_PROTOCOL))
+                .map(ClientScopeRepresentation::getName).collect(Collectors.toSet());
+
         OIDCClientRepresentation response = create();
         reg.auth(Auth.token(response));
 
         response.setRedirectUris(Collections.singletonList("http://newredirect"));
         response.setResponseTypes(Arrays.asList("code", "id_token token", "code id_token token"));
         response.setGrantTypes(Arrays.asList(OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.REFRESH_TOKEN, OAuth2Constants.PASSWORD));
-
         OIDCClientRepresentation updated = reg.oidc().update(response);
 
+        ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(response.getClientId());
+        ClientRepresentation rep = clientResource.toRepresentation();
+        Set<String> registeredDefaultClientScopes = new HashSet<>(rep.getDefaultClientScopes());
+
+        assertEquals(AUTH_SERVER_ROOT + "/realms/" + REALM_NAME + "/clients-registrations/openid-connect/" + updated.getClientId(), updated.getRegistrationClientUri());
         assertTrue(CollectionUtil.collectionEquals(Collections.singletonList("http://newredirect"), updated.getRedirectUris()));
         assertTrue(CollectionUtil.collectionEquals(Arrays.asList(OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.IMPLICIT, OAuth2Constants.REFRESH_TOKEN, OAuth2Constants.PASSWORD), updated.getGrantTypes()));
         assertTrue(CollectionUtil.collectionEquals(Arrays.asList(OAuth2Constants.CODE, OIDCResponseType.NONE, OIDCResponseType.ID_TOKEN, "id_token token", "code id_token", "code token", "code id_token token"), updated.getResponseTypes()));
+        assertTrue(CollectionUtil.collectionEquals(realmDefaultClientScopes, registeredDefaultClientScopes));
     }
 
     @Test
@@ -475,6 +487,40 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
+    public void testIdTokenSignedResponse() throws Exception {
+        OIDCClientRepresentation response = null;
+        OIDCClientRepresentation updated = null;
+        try {
+             // create (no specification)
+             OIDCClientRepresentation clientRep = createRep();
+
+             response = reg.oidc().create(clientRep);
+             Assert.assertNull(response.getIdTokenSignedResponseAlg());
+
+             // Test Keycloak representation
+             ClientRepresentation kcClient = getClient(response.getClientId());
+             OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+             Assert.assertNull(config.getIdTokenSignedResponseAlg());
+
+             // update
+             reg.auth(Auth.token(response));
+             response.setIdTokenSignedResponseAlg(Algorithm.ES256);
+             updated = reg.oidc().update(response);
+             Assert.assertEquals(Algorithm.ES256, updated.getIdTokenSignedResponseAlg());
+
+             // Test Keycloak representation
+             kcClient = getClient(updated.getClientId());
+             config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+             Assert.assertEquals(Algorithm.ES256, config.getIdTokenSignedResponseAlg());
+        } finally {
+            // revert
+            reg.auth(Auth.token(updated));
+            updated.setIdTokenSignedResponseAlg(null);
+            reg.oidc().update(updated);
+        }
+    }
+
+    @Test
     public void testTokenEndpointSigningAlg() throws Exception {
         OIDCClientRepresentation response = null;
         OIDCClientRepresentation updated = null;
@@ -706,8 +752,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         assertTrue(clientScopes.equals(registeredClientScopes));
 
         ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(response.getClientId());
-        assertTrue(clientResource.toRepresentation().getDefaultClientScopes().isEmpty());
-
+        assertTrue(CollectionUtil.collectionEquals(clientResource.toRepresentation().getDefaultClientScopes(), Set.of("basic")));
     }
 
     @Test

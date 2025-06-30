@@ -31,6 +31,8 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.events.admin.OperationType;
@@ -46,6 +48,7 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
@@ -54,6 +57,7 @@ import java.util.Collections;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class ResourceServerService {
 
     private final AuthorizationProvider authorization;
@@ -91,8 +95,9 @@ public class ResourceServerService {
     }
 
     @PUT
-    @Consumes("application/json")
-    @Produces("application/json")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @APIResponse(responseCode = "204", description = "No Content")
     public Response update(ResourceServerRepresentation server) {
         this.auth.realm().requireManageAuthorization();
         this.resourceServer.setAllowRemoteResourceManagement(server.isAllowRemoteResourceManagement());
@@ -111,23 +116,24 @@ public class ResourceServerService {
     }
 
     @GET
-    @Produces("application/json")
-    public Response findById() {
+    @Produces(MediaType.APPLICATION_JSON)
+    public ResourceServerRepresentation findById() {
         this.auth.realm().requireViewAuthorization();
-        return Response.ok(toRepresentation(this.resourceServer, this.client)).build();
+        return toRepresentation(this.resourceServer, this.client);
     }
 
     @Path("/settings")
     @GET
-    @Produces("application/json")
-    public Response exportSettings() {
+    @Produces(MediaType.APPLICATION_JSON)
+    public ResourceServerRepresentation exportSettings() {
         this.auth.realm().requireManageAuthorization();
-        return Response.ok(ModelToRepresentation.toResourceServerRepresentation(session, client)).build();
+        return ModelToRepresentation.toResourceServerRepresentation(session, client);
     }
 
     @Path("/import")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
+    @APIResponse(responseCode = "204", description = "No Content")
     public Response importSettings(ResourceServerRepresentation rep) {
         this.auth.realm().requireManageAuthorization();
 
@@ -156,7 +162,7 @@ public class ResourceServerService {
     }
 
     @Path("/permission")
-    public Object getPermissionTypeResource() {
+    public PermissionService getPermissionTypeResource() {
         this.auth.realm().requireViewAuthorization();
         return new PermissionService(this.resourceServer, this.authorization, this.auth, adminEvent);
     }

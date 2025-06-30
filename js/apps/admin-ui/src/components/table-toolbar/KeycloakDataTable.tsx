@@ -1,17 +1,23 @@
-import { ButtonVariant } from "@patternfly/react-core";
+import { Button, ButtonVariant, ToolbarItem } from "@patternfly/react-core";
 import type { SVGIconProps } from "@patternfly/react-icons/dist/js/createIcon";
 import {
+  ActionsColumn,
+  ExpandableRowContent,
   IAction,
   IActions,
   IActionsResolver,
   IFormatter,
   IRow,
+  IRowCell,
   ITransform,
   Table,
-  TableBody,
-  TableHeader,
   TableProps,
   TableVariant,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  Tr,
 } from "@patternfly/react-table";
 import { cloneDeep, differenceBy, get } from "lodash-es";
 import {
@@ -26,11 +32,12 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 
-import { useStoredState } from "ui-shared";
+import { useStoredState } from "@keycloak/keycloak-ui-shared";
 import { useFetch } from "../../utils/useFetch";
 import { KeycloakSpinner } from "../keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 import { PaginatingTableToolbar } from "./PaginatingTableToolbar";
+import { SyncAltIcon } from "@patternfly/react-icons";
 
 type TitleCell = { title: JSX.Element };
 type Cell<T> = keyof T | JSX.Element | TitleCell;
@@ -64,6 +71,18 @@ type DataTableProps<T> = {
   isRadio?: boolean;
 };
 
+type CellRendererProps = {
+  row: IRow;
+};
+
+const CellRenderer = ({ row }: CellRendererProps) => {
+  const isRow = (c: ReactNode | IRowCell): c is IRowCell =>
+    !!c && (c as IRowCell).title !== undefined;
+  return row.cells!.map((c, i) => (
+    <Td key={`cell-${i}`}>{(isRow(c) ? c.title : c) as ReactNode}</Td>
+  ));
+};
+
 function DataTable<T>({
   columns,
   rows,
@@ -78,32 +97,128 @@ function DataTable<T>({
   ...props
 }: DataTableProps<T>) {
   const { t } = useTranslation();
+
+  const [selectedRows, setSelectedRows] = useState<boolean[]>([]);
+  const [expandedRows, setExpandedRows] = useState<boolean[]>([]);
+
+  const updateState = (rowIndex: number, isSelected: boolean) => {
+    const items = [
+      ...(rowIndex === -1 ? Array(rows.length).fill(isSelected) : selectedRows),
+    ];
+    items[rowIndex] = isSelected;
+    setSelectedRows(items);
+  };
+
+  useEffect(() => {
+    if (canSelectAll) {
+      const selectAllCheckbox = document.getElementsByName("check-all").item(0);
+      if (selectAllCheckbox) {
+        const checkbox = selectAllCheckbox as HTMLInputElement;
+        const selected = selectedRows.filter((r) => r === true);
+        checkbox.indeterminate =
+          selected.length < rows.length && selected.length > 0;
+      }
+    }
+  }, [selectedRows]);
+
   return (
     <Table
       {...props}
       variant={isNotCompact ? undefined : TableVariant.compact}
-      onSelect={
-        onSelect
-          ? (_, isSelected, rowIndex) => onSelect(isSelected, rowIndex)
-          : undefined
-      }
-      onCollapse={
-        onCollapse
-          ? (_, rowIndex, isOpen) => onCollapse(isOpen, rowIndex)
-          : undefined
-      }
-      selectVariant={isRadio ? "radio" : "checkbox"}
-      canSelectAll={canSelectAll}
-      cells={columns.map((column) => {
-        return { ...column, title: t(column.displayKey || column.name) };
-      })}
-      rows={rows as IRow[]}
-      actions={actions}
-      actionResolver={actionResolver}
       aria-label={t(ariaLabelKey)}
     >
-      <TableHeader />
-      <TableBody />
+      <Thead>
+        <Tr>
+          {onCollapse && <Th />}
+          {canSelectAll && (
+            <Th
+              select={
+                !isRadio
+                  ? {
+                      onSelect: (_, isSelected, rowIndex) => {
+                        onSelect!(isSelected, rowIndex);
+                        updateState(-1, isSelected);
+                      },
+                      isSelected:
+                        selectedRows.filter((r) => r === true).length ===
+                        rows.length,
+                    }
+                  : undefined
+              }
+            />
+          )}
+          {columns.map((column) => (
+            <Th
+              key={column.displayKey}
+              className={column.transforms?.[0]().className}
+            >
+              {t(column.displayKey || column.name)}
+            </Th>
+          ))}
+        </Tr>
+      </Thead>
+      {!onCollapse ? (
+        <Tbody>
+          {(rows as IRow[]).map((row, index) => (
+            <Tr key={index} isExpanded={expandedRows[index]}>
+              {onSelect && (
+                <Td
+                  select={{
+                    rowIndex: index,
+                    onSelect: (_, isSelected, rowIndex) => {
+                      onSelect!(isSelected, rowIndex);
+                      updateState(rowIndex, isSelected);
+                    },
+                    isSelected: selectedRows[index],
+                    variant: isRadio ? "radio" : "checkbox",
+                  }}
+                />
+              )}
+              <CellRenderer row={row} />
+              {(actions || actionResolver) && (
+                <Td isActionCell>
+                  <ActionsColumn
+                    items={actions || actionResolver?.(row, {})!}
+                    extraData={{ rowIndex: index }}
+                  />
+                </Td>
+              )}
+            </Tr>
+          ))}
+        </Tbody>
+      ) : (
+        (rows as IRow[]).map((row, index) => (
+          <Tbody key={index}>
+            {index % 2 === 0 ? (
+              <Tr>
+                <Td
+                  expand={{
+                    isExpanded: !!expandedRows[index],
+                    rowIndex: index,
+                    expandId: `${index}`,
+                    onToggle: (_, rowIndex, isOpen) => {
+                      onCollapse(isOpen, rowIndex);
+                      const expand = [...expandedRows];
+                      expand[index] = isOpen;
+                      setExpandedRows(expand);
+                    },
+                  }}
+                />
+                <CellRenderer row={row} />
+              </Tr>
+            ) : (
+              <Tr isExpanded={!!expandedRows[index - 1]}>
+                <Td />
+                <Td colSpan={columns.length}>
+                  <ExpandableRowContent>
+                    <CellRenderer row={row} />
+                  </ExpandableRowContent>
+                </Td>
+              </Tr>
+            )}
+          </Tbody>
+        ))
+      )}
     </Table>
   );
 }
@@ -220,11 +335,16 @@ export function KeycloakDataTable<T>({
   const prevSearch = useRef<string>();
 
   const [key, setKey] = useState(0);
-  const refresh = () => setKey(new Date().getTime());
+  const prevKey = useRef<number>();
+  const refresh = () => setKey(key + 1);
   const id = useId();
 
   const renderCell = (columns: (Field<T> | DetailField<T>)[], value: T) => {
     return columns.map((col) => {
+      if ("cellFormatters" in col) {
+        const v = get(value, col.name);
+        return col.cellFormatters?.reduce((s, f) => f(s), v);
+      }
       if (col.cellRenderer) {
         const Component = col.cellRenderer;
         //@ts-ignore
@@ -298,22 +418,6 @@ export function KeycloakDataTable<T>({
     [search, first, max],
   );
 
-  useEffect(() => {
-    if (canSelectAll) {
-      const checkboxes = document
-        .getElementsByClassName("pf-c-table__check")
-        .item(0);
-      if (checkboxes) {
-        const checkAllCheckbox = checkboxes.children!.item(
-          0,
-        )! as HTMLInputElement;
-        checkAllCheckbox.indeterminate =
-          selected.length > 0 &&
-          selected.length < (filteredData || rows)!.length;
-      }
-    }
-  }, [selected]);
-
   useFetch(
     async () => {
       setLoading(true);
@@ -324,11 +428,13 @@ export function KeycloakDataTable<T>({
       }
       prevSearch.current = search;
       return typeof loader === "function"
-        ? unPaginatedData ||
-            (await loader(newSearch ? 0 : first, max + 1, search))
+        ? key === prevKey.current && unPaginatedData
+          ? unPaginatedData
+          : await loader(newSearch ? 0 : first, max + 1, search)
         : loader;
     },
     (data) => {
+      prevKey.current = key;
       if (!isPaginated) {
         setUnPaginatedData(data);
         if (data.length > first) {
@@ -434,7 +540,16 @@ export function KeycloakDataTable<T>({
           inputGroupOnEnter={setSearch}
           inputGroupPlaceholder={t(searchPlaceholderKey || "")}
           searchTypeComponent={searchTypeComponent}
-          toolbarItem={toolbarItem}
+          toolbarItem={
+            <>
+              {toolbarItem} <ToolbarItem variant="separator" />{" "}
+              <ToolbarItem>
+                <Button variant="link" onClick={refresh}>
+                  <SyncAltIcon /> {t("refresh")}
+                </Button>
+              </ToolbarItem>
+            </>
+          }
           subToolbar={subToolbar}
         >
           {!loading && !noData && (

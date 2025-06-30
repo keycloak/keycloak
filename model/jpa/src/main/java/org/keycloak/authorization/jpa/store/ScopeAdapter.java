@@ -88,7 +88,7 @@ public class ScopeAdapter extends AbstractAuthorizationModel implements Scope, J
 
     @Override
     public ResourceServer getResourceServer() {
-        return storeFactory.getResourceServerStore().findById(JPAAuthorizationStoreFactory.NULL_REALM, entity.getResourceServer().getId());
+        return storeFactory.getResourceServerStore().findById(entity.getResourceServer().getId());
     }
 
     public static ScopeEntity toEntity(EntityManager em, Scope scope) {

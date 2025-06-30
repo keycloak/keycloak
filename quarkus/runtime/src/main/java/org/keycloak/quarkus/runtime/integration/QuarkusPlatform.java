@@ -19,23 +19,13 @@ package org.keycloak.quarkus.runtime.integration;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Stream;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.platform.Platform;
 import org.keycloak.platform.PlatformProvider;
-import org.keycloak.quarkus.runtime.InitializationException;
 import org.keycloak.quarkus.runtime.Environment;
 
 import io.quarkus.runtime.Quarkus;
@@ -49,36 +39,7 @@ public class QuarkusPlatform implements PlatformProvider {
         return "Quarkus";
     }
 
-    public static void addInitializationException(Throwable throwable) {
-        QuarkusPlatform platform = (QuarkusPlatform) Platform.getPlatform();
-        platform.addDeferredException(throwable);
-    }
-
-    /**
-     * <p>Throws a {@link InitializationException} exception to indicate errors during the startup.
-     * 
-     * <p>Calling this method after the server is started has no effect but just the exception being thrown.
-     * 
-     * @throws InitializationException the exception holding all errors during startup.
-     */
-    public static void exitOnError() throws InitializationException {
-        QuarkusPlatform platform = (QuarkusPlatform) Platform.getPlatform();
-        
-        // Check if we had any exceptions during initialization phase
-        if (!platform.getDeferredExceptions().isEmpty()) {
-            InitializationException quarkusException = new InitializationException();
-            for (Throwable inner : platform.getDeferredExceptions()) {
-                quarkusException.addSuppressed(inner);
-            }
-            // reset this instance, mainly deferred exceptions, so that the subsequent starts do not fail due to previous errors
-            // this is mainly important when the server is running in test mode
-            platform.reset();
-            throw quarkusException;
-        }
-    }
-
     private AtomicBoolean started = new AtomicBoolean(false);
-    private List<Throwable> deferredExceptions = new CopyOnWriteArrayList<>();
     private File tmpDir;
 
     @Override
@@ -95,19 +56,6 @@ public class QuarkusPlatform implements PlatformProvider {
 
     public boolean isStarted() {
         return started.get();
-    }
-
-    /**
-     * Add the exception, which  won't be thrown right-away, but should be thrown later after QuarkusPlatform is initialized (including proper logging)
-     *
-     * @param t
-     */
-    private void addDeferredException(Throwable t) {
-        deferredExceptions.add(t);
-    }
-
-    List<Throwable> getDeferredExceptions() {
-        return deferredExceptions;
     }
 
     @Override
@@ -153,10 +101,6 @@ public class QuarkusPlatform implements PlatformProvider {
             }
         }
         return tmpDir;
-    }
-
-    private void reset() {
-        deferredExceptions.clear();
     }
 
     @Override

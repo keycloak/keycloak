@@ -1,0 +1,14 @@
+[[_install_new_version]]
+
+== Downloading the {project_name} server
+
+Once you have prepared for the upgrade, you can download the server.
+
+.Procedure
+
+. Download and extract {archivedownloadurl}[{archivebasename}-{project_version}.zip]
+from the {project_name} website.
++
+After extracting this file, you should have a directory that is named `{archivebasename}-{project_version}`.
+. Move this directory to the desired location.
+. Copy `conf/`, `providers/` and `themes/` from the previous installation to the new installation.

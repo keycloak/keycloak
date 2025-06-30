@@ -5,13 +5,25 @@ import type IdentityProviderRepresentation from "../defs/identityProviderReprese
 import type { ManagementPermissionReference } from "../defs/managementPermissionReference.js";
 import Resource from "./resource.js";
 
+export interface PaginatedQuery {
+  first?: number;
+  max?: number;
+}
+
+export interface IdentityProvidersQuery extends PaginatedQuery {
+  search?: string;
+}
+
 export class IdentityProviders extends Resource<{ realm?: string }> {
   /**
    * Identity provider
    * https://www.keycloak.org/docs-api/11.0/rest-api/#_identity_providers_resource
    */
 
-  public find = this.makeRequest<{}, IdentityProviderRepresentation[]>({
+  public find = this.makeRequest<
+    IdentityProvidersQuery,
+    IdentityProviderRepresentation[]
+  >({
     method: "GET",
     path: "/instances",
   });
@@ -143,6 +155,12 @@ export class IdentityProviders extends Resource<{ realm?: string }> {
   >({
     method: "GET",
     path: "/instances/{alias}/management/permissions",
+    urlParamKeys: ["alias"],
+  });
+
+  public reloadKeys = this.makeRequest<{ alias: string }, boolean>({
+    method: "GET",
+    path: "/instances/{alias}/reload-keys",
     urlParamKeys: ["alias"],
   });
 

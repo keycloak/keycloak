@@ -13,12 +13,6 @@ ifeval::[{project_community}==true]
 ===== Java
 * {quickstartRepo_link}/tree/latest/jakarta/servlet-authz-client[Wildfly Elytron OIDC]
 * {quickstartRepo_link}/tree/latest/spring/rest-authz-resource-server[Spring Boot]
-* <<_jboss_adapter, {project_name} Wildfly Adapter>> (Deprecated)
-* <<_tomcat_adapter,{project_name} Tomcat Adapter>> (Deprecated)
-* <<_jetty9_adapter,{project_name} Jetty 9>> (Deprecated)
-* <<_servlet_filter_adapter,{project_name} Servlet Filter>> (Deprecated)
-* <<_spring_boot_adapter,{project_name} Spring Boot>> (Deprecated)
-* <<_spring_security_adapter,{project_name} Spring Security>> (Deprecated)
 endif::[]
 
 ===== JavaScript (client-side)
@@ -52,13 +46,10 @@ endif::[]
 * <<_saml_jboss_adapter,JBoss EAP>>
 ifeval::[{project_community}==true]
 * <<_saml_jboss_adapter,WildFly>>
-* <<_saml-tomcat-adapter,Tomcat>>
-endif::[]
-* <<_java-servlet-filter-adapter,Servlet filter>>
-ifeval::[{project_community}==true]
-* <<_jetty_saml_adapter,Jetty>>
 endif::[]
 
+ifeval::[{project_community}==true]
 ===== Apache HTTP Server
 
 * <<_mod_auth_mellon,mod_auth_mellon>>
+endif::[]

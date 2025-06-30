@@ -1,8 +1,7 @@
 import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import { AlertVariant } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { RoleMapping, Row } from "../components/role-mapping/RoleMapping";
 
@@ -12,6 +11,8 @@ type UserRoleMappingProps = {
 };
 
 export const UserRoleMapping = ({ id, name }: UserRoleMappingProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 

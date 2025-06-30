@@ -37,7 +37,7 @@ describe("Clients SAML tests", () => {
     });
 
     it("should display the saml sections on details screen", () => {
-      cy.get(".pf-c-jump-links__list").should(($ul) => {
+      cy.get(".pf-v5-c-jump-links__list").should(($ul) => {
         expect($ul)
           .to.contain("SAML capabilities")
           .to.contain("Signature and Encryption");
@@ -45,9 +45,9 @@ describe("Clients SAML tests", () => {
     });
 
     it("should save force name id format", () => {
-      cy.get(".pf-c-jump-links__list").contains("SAML capabilities").click();
+      cy.get(".pf-v5-c-jump-links__list").contains("SAML capabilities").click();
 
-      cy.findByTestId("forceNameIdFormat").click({
+      cy.findByTestId("attributes.saml🍺force🍺post🍺binding").click({
         force: true,
       });
       cy.findByTestId("settings-save").click();
@@ -137,14 +137,14 @@ describe("Clients SAML tests", () => {
     });
 
     it("should check SAML capabilities", () => {
-      cy.get(".pf-c-jump-links__list").contains("SAML capabilities").click();
+      cy.get(".pf-v5-c-jump-links__list").contains("SAML capabilities").click();
 
       settingsTab.assertNameIdFormatDropdown();
       settingsTab.assertSAMLCapabilitiesSwitches();
     });
 
     it("should check signature and encryption", () => {
-      cy.get(".pf-c-jump-links__list")
+      cy.get(".pf-v5-c-jump-links__list")
         .contains("Signature and Encryption")
         .click();
 
@@ -156,7 +156,7 @@ describe("Clients SAML tests", () => {
     });
 
     it("should check access settings", () => {
-      cy.get(".pf-c-jump-links__list").contains("Access settings").click();
+      cy.get(".pf-v5-c-jump-links__list").contains("Access settings").click();
 
       const validUrl =
         "http://localhost:8180/realms/master/protocol/" +
@@ -167,18 +167,18 @@ describe("Clients SAML tests", () => {
       const homeUrlError =
         "Client could not be updated: Base URL is not a valid URL";
 
-      cy.get("#kc-root-url").type("Invalid URL");
+      cy.findByTestId("rootUrl").type("Invalid URL");
       settingsTab.clickSaveBtn();
       masthead.checkNotificationMessage(rootUrlError);
-      cy.get("#kc-root-url").clear();
+      cy.findByTestId("rootUrl").clear();
 
-      cy.get("#kc-home-url").type("Invalid URL");
+      cy.findByTestId("baseUrl").type("Invalid URL");
       settingsTab.clickSaveBtn();
       masthead.checkNotificationMessage(homeUrlError);
-      cy.get("#kc-home-url").clear();
+      cy.findByTestId("baseUrl").clear();
 
-      cy.get("#kc-root-url").type(validUrl);
-      cy.get("#kc-home-url").type(validUrl);
+      cy.findByTestId("rootUrl").type(validUrl);
+      cy.findByTestId("baseUrl").type(validUrl);
       settingsTab.clickSaveBtn();
       masthead.checkNotificationMessage("Client successfully updated");
 
@@ -186,7 +186,7 @@ describe("Clients SAML tests", () => {
     });
 
     it("should check login settings", () => {
-      cy.get(".pf-c-jump-links__list").contains("Login settings").click();
+      cy.get(".pf-v5-c-jump-links__list").contains("Login settings").click();
 
       settingsTab.assertLoginThemeDropdown();
       settingsTab.assertLoginSettings();

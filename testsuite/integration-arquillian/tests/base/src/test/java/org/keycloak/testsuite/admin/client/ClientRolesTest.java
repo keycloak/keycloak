@@ -111,6 +111,12 @@ public class ClientRolesTest extends AbstractClientTest {
     }
 
     @Test
+    public void createRoleWithNamePattern() {
+        RoleRepresentation role = RoleBuilder.create().name("role-a-{pattern}").build();
+        rolesRsc.create(role);
+    }
+
+    @Test
     public void testRemoveRole() {
         RoleRepresentation role2 = makeRole("role2");
         rolesRsc.create(role2);

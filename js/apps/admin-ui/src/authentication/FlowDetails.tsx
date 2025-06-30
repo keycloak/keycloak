@@ -1,4 +1,3 @@
-import AuthenticationExecutionInfoRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationExecutionInfoRepresentation";
 import AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
 import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
 import AuthenticatorConfigRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
@@ -7,7 +6,9 @@ import {
   Button,
   ButtonVariant,
   DataList,
+  DragDrop,
   DropdownItem,
+  Droppable,
   Label,
   PageSection,
   ToggleGroup,
@@ -20,8 +21,7 @@ import { DomainIcon, TableIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ViewHeader } from "../components/view-header/ViewHeader";
@@ -45,13 +45,15 @@ import {
   LevelChange,
 } from "./execution-model";
 import { toAuthentication } from "./routes/Authentication";
-import type { FlowParams } from "./routes/Flow";
+import { toFlow, type FlowParams } from "./routes/Flow";
 
 export const providerConditionFilter = (
   value: AuthenticationProviderRepresentation,
 ) => value.displayName?.startsWith("Condition ");
 
 export default function FlowDetails() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
@@ -63,8 +65,6 @@ export default function FlowDetails() {
   const [tableView, setTableView] = useState(true);
   const [flow, setFlow] = useState<AuthenticationFlowRepresentation>();
   const [executionList, setExecutionList] = useState<ExecutionList>();
-  const [dragged, setDragged] =
-    useState<AuthenticationExecutionInfoRepresentation>();
   const [liveText, setLiveText] = useState("");
 
   const [showAddExecutionDialog, setShowAddExecutionDialog] =
@@ -98,7 +98,7 @@ export default function FlowDetails() {
   );
 
   const executeChange = async (
-    ex: AuthenticationFlowRepresentation,
+    ex: AuthenticationFlowRepresentation | ExpandableExecution,
     change: LevelChange | IndexChange,
   ) => {
     try {
@@ -111,23 +111,47 @@ export default function FlowDetails() {
           });
         }
 
-        await adminClient.authenticationManagement.delExecution({ id });
-        const result =
-          await adminClient.authenticationManagement.addExecutionToFlow({
-            flow: change.parent?.displayName! || flow?.alias!,
-            provider: ex.providerId!,
-          });
-
-        if (config.id) {
-          const newConfig = {
-            id: result.id,
-            alias: config.alias,
-            config: config.config,
-          };
-          await adminClient.authenticationManagement.createConfig(newConfig);
+        try {
+          await adminClient.authenticationManagement.delExecution({ id });
+        } catch {
+          // skipping already deleted execution
         }
+        if ("authenticationFlow" in ex) {
+          const executionFlow = ex as ExpandableExecution;
+          const result =
+            await adminClient.authenticationManagement.addFlowToFlow({
+              flow: change.parent?.displayName! || flow?.alias!,
+              alias: executionFlow.displayName!,
+              description: executionFlow.description!,
+              provider: ex.providerId!,
+              type: "basic-flow",
+            });
+          id = result.id!;
+          ex.executionList?.forEach((e, i) =>
+            executeChange(e, {
+              parent: { ...ex, id: result.id },
+              newIndex: i,
+              oldIndex: i,
+            }),
+          );
+        } else {
+          const result =
+            await adminClient.authenticationManagement.addExecutionToFlow({
+              flow: change.parent?.displayName! || flow?.alias!,
+              provider: ex.providerId!,
+            });
 
-        id = result.id!;
+          if (config.id) {
+            const newConfig = {
+              id: result.id,
+              alias: config.alias,
+              config: config.config,
+            };
+            await adminClient.authenticationManagement.createConfig(newConfig);
+          }
+
+          id = result.id!;
+        }
       }
       const times = change.newIndex - change.oldIndex;
       for (let index = 0; index < Math.abs(times); index++) {
@@ -286,9 +310,16 @@ export default function FlowDetails() {
       {bindFlowOpen && (
         <BindFlowDialog
           flowAlias={flow?.alias!}
-          onClose={() => {
+          onClose={(usedBy) => {
             toggleBindFlow();
-            refresh();
+            navigate(
+              toFlow({
+                realm,
+                id: id!,
+                usedBy: usedBy ? "DEFAULT" : "notInUse",
+                builtIn: builtIn ? "builtIn" : undefined,
+              }),
+            );
           }}
         />
       )}
@@ -372,63 +403,69 @@ export default function FlowDetails() {
             </Toolbar>
             <DeleteConfirm />
             {tableView && (
-              <DataList
-                aria-label={t("flows")}
-                onDragFinish={(order) => {
-                  const withoutHeaderId = order.slice(1);
-                  setLiveText(
-                    t("onDragFinish", { list: dragged?.displayName }),
-                  );
-                  const change = executionList.getChange(
-                    dragged!,
-                    withoutHeaderId,
-                  );
-                  executeChange(dragged!, change);
-                }}
-                onDragStart={(id) => {
-                  const item = executionList.findExecution(id)!;
+              <DragDrop
+                onDrag={({ index }) => {
+                  const item = executionList.findExecution(index)!;
                   setLiveText(t("onDragStart", { item: item.displayName }));
-                  setDragged(item);
                   if (!item.isCollapsed) {
                     item.isCollapsed = true;
                     setExecutionList(executionList.clone());
                   }
+                  return true;
                 }}
-                onDragMove={() =>
-                  setLiveText(t("onDragMove", { item: dragged?.displayName }))
-                }
-                onDragCancel={() => setLiveText(t("onDragCancel"))}
-                itemOrder={[
-                  "header",
-                  ...executionList.order().map((ex) => ex.id!),
-                ]}
+                onDragMove={({ index }) => {
+                  const dragged = executionList.findExecution(index);
+                  setLiveText(t("onDragMove", { item: dragged?.displayName }));
+                }}
+                onDrop={(source, dest) => {
+                  if (dest) {
+                    const dragged = executionList.findExecution(source.index)!;
+                    const order = executionList.order().map((ex) => ex.id!);
+                    setLiveText(
+                      t("onDragFinish", { list: dragged.displayName }),
+                    );
+
+                    const [removed] = order.splice(source.index, 1);
+                    order.splice(dest.index, 0, removed);
+                    const change = executionList.getChange(dragged, order);
+                    executeChange(dragged, change);
+                    return true;
+                  } else {
+                    setLiveText(t("onDragCancel"));
+                    return false;
+                  }
+                }}
               >
-                <FlowHeader />
-                <>
-                  {executionList.expandableList.map((execution) => (
-                    <FlowRow
-                      builtIn={!!builtIn}
-                      key={execution.id}
-                      execution={execution}
-                      onRowClick={(execution) => {
-                        execution.isCollapsed = !execution.isCollapsed;
-                        setExecutionList(executionList.clone());
-                      }}
-                      onRowChange={update}
-                      onAddExecution={(execution, type) =>
-                        addExecution(execution.displayName!, type)
-                      }
-                      onAddFlow={(execution, flow) =>
-                        addFlow(execution.displayName!, flow)
-                      }
-                      onDelete={(execution) => {
-                        setSelectedExecution(execution);
-                        toggleDeleteDialog();
-                      }}
-                    />
-                  ))}
-                </>
-              </DataList>
+                <Droppable hasNoWrapper>
+                  <DataList aria-label={t("flows")}>
+                    <FlowHeader />
+                    <>
+                      {executionList.expandableList.map((execution) => (
+                        <FlowRow
+                          builtIn={!!builtIn}
+                          key={execution.id}
+                          execution={execution}
+                          onRowClick={(execution) => {
+                            execution.isCollapsed = !execution.isCollapsed;
+                            setExecutionList(executionList.clone());
+                          }}
+                          onRowChange={update}
+                          onAddExecution={(execution, type) =>
+                            addExecution(execution.displayName!, type)
+                          }
+                          onAddFlow={(execution, flow) =>
+                            addFlow(execution.displayName!, flow)
+                          }
+                          onDelete={(execution) => {
+                            setSelectedExecution(execution);
+                            toggleDeleteDialog();
+                          }}
+                        />
+                      ))}
+                    </>
+                  </DataList>
+                </Droppable>
+              </DragDrop>
             )}
             {flow && (
               <>
@@ -458,7 +495,7 @@ export default function FlowDetails() {
                 )}
               </>
             )}
-            <div className="pf-screen-reader" aria-live="assertive">
+            <div className="pf-v5-screen-reader" aria-live="assertive">
               {liveText}
             </div>
           </>

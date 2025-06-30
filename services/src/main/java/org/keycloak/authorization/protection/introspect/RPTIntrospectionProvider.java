@@ -28,6 +28,9 @@ import jakarta.ws.rs.core.Response;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.jboss.logging.Logger;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.AccessTokenIntrospectionProvider;
 import org.keycloak.representations.AccessToken;
@@ -49,11 +52,10 @@ public class RPTIntrospectionProvider extends AccessTokenIntrospectionProvider {
     }
 
     @Override
-    public Response introspect(String token) {
+    public Response introspect(String token, EventBuilder eventBuilder) {
         LOGGER.debug("Introspecting requesting party token");
         try {
-            AccessToken accessToken = verifyAccessToken(token);
-
+            AccessToken accessToken = verifyAccessToken(token, eventBuilder, true);
             ObjectNode tokenMetadata;
 
             if (accessToken != null) {
@@ -62,10 +64,10 @@ public class RPTIntrospectionProvider extends AccessTokenIntrospectionProvider {
                 metadata.id(accessToken.getId());
                 metadata.setAcr(accessToken.getAcr());
                 metadata.type(accessToken.getType());
-                metadata.expiration(accessToken.getExpiration());
-                metadata.issuedAt(accessToken.getIssuedAt());
+                metadata.exp(accessToken.getExp());
+                metadata.iat(accessToken.getIat());
                 metadata.audience(accessToken.getAudience());
-                metadata.notBefore(accessToken.getNotBefore());
+                metadata.nbf(accessToken.getNbf());
                 metadata.setRealmAccess(null);
                 metadata.setResourceAccess(null);
 
@@ -85,12 +87,15 @@ public class RPTIntrospectionProvider extends AccessTokenIntrospectionProvider {
                 }
             } else {
                 tokenMetadata = JsonSerialization.createObjectNode();
+                eventBuilder.error(Errors.TOKEN_INTROSPECTION_FAILED);
             }
 
             tokenMetadata.put("active", accessToken != null);
 
             return Response.ok(JsonSerialization.writeValueAsBytes(tokenMetadata)).type(MediaType.APPLICATION_JSON_TYPE).build();
         } catch (Exception e) {
+            eventBuilder.detail(Details.REASON, e.getMessage());
+            eventBuilder.error(Errors.TOKEN_INTROSPECTION_FAILED);
             throw new RuntimeException("Error creating token introspection response.", e);
         }
     }

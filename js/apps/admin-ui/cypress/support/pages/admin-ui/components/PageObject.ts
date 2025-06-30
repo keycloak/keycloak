@@ -1,19 +1,19 @@
 export default class PageObject {
-  #selectItemSelectedIcon = ".pf-c-select__menu-item-icon";
-  #drpDwnMenuList = ".pf-c-dropdown__menu";
-  #drpDwnMenuItem = ".pf-c-dropdown__menu-item";
-  #drpDwnMenuToggleBtn = ".pf-c-dropdown__toggle";
-  #selectMenuList = ".pf-c-select__menu";
-  #selectMenuItem = ".pf-c-select__menu-item";
-  #selectMenuToggleBtn = ".pf-c-select__toggle";
-  #switchInput = ".pf-c-switch__input";
-  #formLabel = ".pf-c-form__label";
-  #chipGroup = ".pf-c-chip-group";
-  #chipGroupCloseBtn = ".pf-c-chip-group__close";
-  #chipItem = ".pf-c-chip-group__list-item";
-  #emptyStateDiv = ".pf-c-empty-state:visible";
-  #toolbarActionsButton = ".pf-c-toolbar button[aria-label='Actions']";
-  #breadcrumbItem = ".pf-c-breadcrumb .pf-c-breadcrumb__item";
+  #selectItemSelectedIcon = ".pf-v5-c-menu-toggle__toggle-icon";
+  #drpDwnMenuList = ".pf-v5-c-menu__list";
+  #drpDwnMenuItem = ".pf-v5-c-menu__item";
+  #drpDwnMenuToggleBtn = ".pf-v5-c-menu-toggle";
+  #selectMenuList = ".pf-v5-c-menu__list";
+  #selectMenuItem = ".pf-v5-c-menu__list-item";
+  #selectMenuToggleBtn = ".pf-v5-c-menu-toggle";
+  #switchInput = ".pf-v5-c-switch__input";
+  #formLabel = ".pf-v5-c-form__label";
+  #chipGroup = ".pf-v5-c-chip-group";
+  #chipGroupCloseBtn = ".pf-v5-c-chip-group__close";
+  #chipItem = ".pf-v5-c-chip-group__list-item";
+  #emptyStateDiv = ".pf-v5-c-empty-state:visible";
+  #toolbarActionsButton = ".pf-v5-c-toolbar button[aria-label='Actions']";
+  #breadcrumbItem = ".pf-v5-c-breadcrumb .pf-v5-c-breadcrumb__item";
 
   protected assertExist(element: Cypress.Chainable<JQuery>, exist: boolean) {
     element.should((!exist ? "not." : "") + "exist");
@@ -103,7 +103,12 @@ export default class PageObject {
   ) {
     element =
       element ??
-      cy.get(this.#drpDwnMenuToggleBtn).contains(itemName).parent().parent();
+      cy
+        .get(this.#drpDwnMenuToggleBtn)
+        .parent()
+        .contains(itemName)
+        .parent()
+        .parent();
     element.click();
     return this;
   }
@@ -114,7 +119,12 @@ export default class PageObject {
   ) {
     element =
       element ??
-      cy.get(this.#drpDwnMenuToggleBtn).contains(itemName).parent().parent();
+      cy
+        .get(this.#drpDwnMenuToggleBtn)
+        .parent()
+        .contains(itemName)
+        .parent()
+        .parent();
     this.clickDropdownMenuToggleButton(itemName, element);
     this.assertDropdownMenuIsOpen(true);
     return this;
@@ -126,7 +136,12 @@ export default class PageObject {
   ) {
     element =
       element ??
-      cy.get(this.#drpDwnMenuToggleBtn).contains(itemName).parent().parent();
+      cy
+        .get(this.#drpDwnMenuToggleBtn)
+        .parent()
+        .contains(itemName)
+        .parent()
+        .parent();
     this.clickDropdownMenuToggleButton(itemName, element);
     this.assertDropdownMenuIsOpen(false);
     return this;
@@ -329,7 +344,7 @@ export default class PageObject {
     return this;
   }
 
-  protected assertEmptyStateExist(exist: boolean) {
+  assertEmptyStateExist(exist: boolean) {
     if (exist) {
       cy.get(this.#emptyStateDiv).should("exist").should("be.visible");
     } else {

@@ -1,22 +1,17 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
+import {
+  FormErrorText,
+  HelpItem,
+  TextControl,
+} from "@keycloak/keycloak-ui-shared";
 import { Button, Checkbox, FormGroup } from "@patternfly/react-core";
 import { MinusCircleIcon } from "@patternfly/react-icons";
-import {
-  TableComposable,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
-} from "@patternfly/react-table";
+import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../../../admin-client";
+import { useAdminClient } from "../../../admin-client";
 import { GroupPickerDialog } from "../../../components/group/GroupPickerDialog";
-import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 import { useFetch } from "../../../utils/useFetch";
 
 type GroupForm = {
@@ -30,10 +25,11 @@ export type GroupValue = {
 };
 
 export const Group = () => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const {
     control,
-    register,
     getValues,
     setValue,
     formState: { errors },
@@ -62,31 +58,17 @@ export const Group = () => {
 
   return (
     <>
-      <FormGroup
+      <TextControl
+        name="groupsClaim"
         label={t("groupsClaim")}
-        labelIcon={
-          <HelpItem
-            helpText={t("groupsClaimHelp")}
-            fieldLabelId="groupsClaim"
-          />
-        }
-        fieldId="groups"
-      >
-        <KeycloakTextInput
-          type="text"
-          id="groupsClaim"
-          data-testid="groupsClaim"
-          {...register("groupsClaim")}
-        />
-      </FormGroup>
+        labelIcon={t("groupsClaimHelp")}
+      />
       <FormGroup
         label={t("groups")}
         labelIcon={
           <HelpItem helpText={t("policyGroupsHelp")} fieldLabelId="groups" />
         }
         fieldId="groups"
-        helperTextInvalid={t("requiredGroups")}
-        validated={errors.groups ? "error" : "default"}
         isRequired
       >
         <Controller
@@ -133,7 +115,7 @@ export const Group = () => {
           )}
         />
         {selectedGroups.length > 0 && (
-          <TableComposable variant="compact">
+          <Table variant="compact">
             <Thead>
               <Tr>
                 <Th>{t("groups")}</Th>
@@ -157,7 +139,7 @@ export const Group = () => {
                           name="extendChildren"
                           isChecked={field.value}
                           onChange={field.onChange}
-                          isDisabled={group.subGroups?.length === 0}
+                          isDisabled={group.subGroupCount === 0}
                         />
                       )}
                     />
@@ -180,8 +162,9 @@ export const Group = () => {
                 </Tr>
               ))}
             </Tbody>
-          </TableComposable>
+          </Table>
         )}
+        {errors.groups && <FormErrorText message={t("requiredGroups")} />}
       </FormGroup>
     </>
   );

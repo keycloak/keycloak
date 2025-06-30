@@ -194,13 +194,15 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         return syncResult;
     }
 
-    private void syncExistingGroup(GroupModel kcExistingGroup, Map.Entry<String, LDAPObject> groupEntry,
+    private void syncExistingGroup(RealmModel realm, GroupModel kcExistingGroup, Map.Entry<String, LDAPObject> groupEntry,
                                    SynchronizationResult syncResult, Set<String> visitedGroupIds, String groupName) {
         try {
             // Update each existing group to be synced in its own inner transaction to prevent race condition when
             // the groups intended to be updated was already deleted via other channel in the meantime
             KeycloakModelUtils.runJobInTransaction(ldapProvider.getSession().getKeycloakSessionFactory(), session -> {
-                updateAttributesOfKCGroup(kcExistingGroup, groupEntry.getValue());
+                RealmModel innerTransactionRealm = session.realms().getRealm(realm.getId());
+                GroupModel innerTransactionGroup = session.groups().getGroupById(innerTransactionRealm, kcExistingGroup.getId());
+                updateAttributesOfKCGroup(innerTransactionGroup, groupEntry.getValue());
                 syncResult.increaseUpdated();
                 visitedGroupIds.add(kcExistingGroup.getId());
             });
@@ -278,9 +280,9 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
                     GroupModel kcExistingGroup = transactionGroupPathGroups.get(groupName);
 
                     if (kcExistingGroup != null) {
-                        syncExistingGroup(kcExistingGroup, groupEntry, syncResult, visitedGroupIds, groupName);
+                        syncExistingGroup(currentRealm, kcExistingGroup, groupEntry, syncResult, visitedGroupIds, groupName);
                     } else {
-                        syncNonExistingGroup(realm, groupEntry, syncResult, visitedGroupIds, groupName);
+                        syncNonExistingGroup(currentRealm, groupEntry, syncResult, visitedGroupIds, groupName);
                     }
                 }
             });
@@ -814,7 +816,8 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         if (parentGroup == null) {
             parentGroup = getKcGroupsPathGroup(realm);
         }
-        return parentGroup == null ? realm.getTopLevelGroupsStream() : parentGroup.getSubGroupsStream();
+        return parentGroup == null ? session.groups().getTopLevelGroupsStream(realm) :
+            parentGroup.getSubGroupsStream();
     }
 
     /**

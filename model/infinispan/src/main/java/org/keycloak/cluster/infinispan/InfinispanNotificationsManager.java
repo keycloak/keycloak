@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
@@ -36,6 +37,7 @@ import org.infinispan.client.hotrod.annotation.ClientListener;
 import org.infinispan.client.hotrod.event.ClientCacheEntryCreatedEvent;
 import org.infinispan.client.hotrod.event.ClientCacheEntryModifiedEvent;
 import org.infinispan.client.hotrod.event.ClientCacheEntryRemovedEvent;
+import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 import org.infinispan.context.Flag;
 import org.infinispan.notifications.Listener;
 import org.infinispan.notifications.cachelistener.annotation.CacheEntryCreated;
@@ -54,7 +56,8 @@ import org.keycloak.common.util.Retry;
 import org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory;
 import org.keycloak.executors.ExecutorsProvider;
 import org.keycloak.models.KeycloakSession;
-import org.infinispan.client.hotrod.exceptions.HotRodClientException;
+
+import static org.keycloak.cluster.infinispan.InfinispanClusterProvider.TASK_KEY_PREFIX;
 
 /**
  * Impl for sending infinispan messages across cluster and listening to them
@@ -65,13 +68,16 @@ public class InfinispanNotificationsManager {
 
     protected static final Logger logger = Logger.getLogger(InfinispanNotificationsManager.class);
 
+    private static final int BACKOFF_BASE_MILLIS = 10;
+    private static final int MAX_BACKOFF_RETRIES = 10;
+
     private final ConcurrentMultivaluedHashMap<String, ClusterListener> listeners = new ConcurrentMultivaluedHashMap<>();
 
     private final ConcurrentMap<String, TaskCallback> taskCallbacks = new ConcurrentHashMap<>();
 
     private final Cache<String, Serializable> workCache;
 
-    private final RemoteCache workRemoteCache;
+    private final RemoteCache<Object, Serializable> workRemoteCache;
 
     private final String myAddress;
 
@@ -79,8 +85,7 @@ public class InfinispanNotificationsManager {
 
     private final ExecutorService listenersExecutor;
 
-
-    protected InfinispanNotificationsManager(Cache<String, Serializable> workCache, RemoteCache workRemoteCache, String myAddress, String mySite, ExecutorService listenersExecutor) {
+    protected InfinispanNotificationsManager(Cache<String, Serializable> workCache, RemoteCache<Object, Serializable> workRemoteCache, String myAddress, String mySite, ExecutorService listenersExecutor) {
         this.workCache = workCache;
         this.workRemoteCache = workRemoteCache;
         this.myAddress = myAddress;
@@ -91,7 +96,7 @@ public class InfinispanNotificationsManager {
 
     // Create and init manager including all listeners etc
     public static InfinispanNotificationsManager create(KeycloakSession session, Cache<String, Serializable> workCache, String myAddress, String mySite, Set<RemoteStore> remoteStores) {
-        RemoteCache workRemoteCache = null;
+        RemoteCache<Object, Serializable> workRemoteCache = null;
 
         if (!remoteStores.isEmpty()) {
             RemoteStore remoteStore = remoteStores.iterator().next();
@@ -158,17 +163,9 @@ public class InfinispanNotificationsManager {
             // Add directly to remoteCache. Will notify remote listeners on all nodes in all DCs
             Retry.executeWithBackoff((int iteration) -> {
                 try {
-                    /*
-                        workaround for Infinispan 12.1.7.Final to prevent a deadlock while
-                        DefaultInfinispanConnectionProviderFactory is shutting down PersistenceManagerImpl
-                        that acquires a writeLock and this put that acquires a readLock.
-                        First seen with https://issues.redhat.com/browse/ISPN-13664 and still occurs probably due to
-                        https://issues.redhat.com/browse/ISPN-13666 in 13.0.10
-                        Tracked in https://github.com/keycloak/keycloak/issues/9871
-                    */
-                    synchronized (DefaultInfinispanConnectionProviderFactory.class) {
-                        workRemoteCache.put(eventKey, wrappedEvent, 120, TimeUnit.SECONDS);
-                    }
+                    DefaultInfinispanConnectionProviderFactory.runWithReadLockOnCacheManager(() ->
+                            workRemoteCache.put(eventKey, wrappedEvent, 120, TimeUnit.SECONDS)
+                    );
                 } catch (HotRodClientException re) {
                 if (logger.isDebugEnabled()) {
                     logger.debugf(re, "Failed sending notification to remote cache '%s'. Key: '%s', iteration '%s'. Will try to retry the task",
@@ -195,12 +192,12 @@ public class InfinispanNotificationsManager {
 
         @CacheEntryModified
         public void cacheEntryModified(CacheEntryModifiedEvent<String, Serializable> event) {
-            eventReceived(event.getKey(), event.getValue());
+            eventReceived(event.getKey(), event.getNewValue());
         }
 
         @CacheEntryRemoved
         public void cacheEntryRemoved(CacheEntryRemovedEvent<String, Serializable> event) {
-            taskFinished(event.getKey(), true);
+            taskFinished(event.getKey());
         }
 
     }
@@ -209,31 +206,28 @@ public class InfinispanNotificationsManager {
     @ClientListener
     public class HotRodListener {
 
-        private final RemoteCache<Object, Object> remoteCache;
+        private final RemoteCache<Object, Serializable> remoteCache;
 
-        public HotRodListener(RemoteCache<Object, Object> remoteCache) {
+        public HotRodListener(RemoteCache<Object, Serializable> remoteCache) {
             this.remoteCache = remoteCache;
         }
 
 
         @ClientCacheEntryCreated
-        public void created(ClientCacheEntryCreatedEvent event) {
-            String key = event.getKey().toString();
-            hotrodEventReceived(key);
+        public void created(ClientCacheEntryCreatedEvent<String> event) {
+            hotrodEventReceived(event.getKey());
         }
 
 
         @ClientCacheEntryModified
-        public void updated(ClientCacheEntryModifiedEvent event) {
-            String key = event.getKey().toString();
-            hotrodEventReceived(key);
+        public void updated(ClientCacheEntryModifiedEvent<String> event) {
+            hotrodEventReceived(event.getKey());
         }
 
 
         @ClientCacheEntryRemoved
-        public void removed(ClientCacheEntryRemovedEvent event) {
-            String key = event.getKey().toString();
-            taskFinished(key, true);
+        public void removed(ClientCacheEntryRemovedEvent<String> event) {
+            taskFinished(event.getKey());
         }
 
 
@@ -241,20 +235,22 @@ public class InfinispanNotificationsManager {
             // TODO: Look at CacheEventConverter stuff to possibly include value in the event and avoid additional remoteCache request
             try {
                 listenersExecutor.submit(() -> {
-
-                    /*
-                        workaround for Infinispan 12.1.7.Final to prevent a deadlock while
-                        DefaultInfinispanConnectionProviderFactory is shutting down PersistenceManagerImpl
-                        that acquires a writeLock and this get that acquires a readLock.
-                        First seen with https://issues.redhat.com/browse/ISPN-13664 and still occurs probably due to
-                        https://issues.redhat.com/browse/ISPN-13666 in 13.0.10
-                        Tracked in https://github.com/keycloak/keycloak/issues/9871
-                    */
-                    Object value;
-                    synchronized (DefaultInfinispanConnectionProviderFactory.class) {
-                        value = remoteCache.get(key);
+                    Supplier<Serializable> fetchEvent = () -> remoteCache.get(key);
+                    Serializable event = DefaultInfinispanConnectionProviderFactory.runWithReadLockOnCacheManager(fetchEvent);
+                    int iteration = 0;
+                    // Event might have been generated from a node which is more up-to-date, so the fetch might return null.
+                    // Retry until we find a node that is up-to-date and has the entry.
+                    while (event == null && iteration < MAX_BACKOFF_RETRIES) {
+                        ++iteration;
+                        try {
+                            Thread.sleep(Retry.computeBackoffInterval(BACKOFF_BASE_MILLIS, iteration));
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            return;
+                        }
+                        event = DefaultInfinispanConnectionProviderFactory.runWithReadLockOnCacheManager(fetchEvent);
                     }
-                    eventReceived(key, (Serializable) value);
+                    eventReceived(key, event);
 
                 });
             } catch (RejectedExecutionException ree) {
@@ -269,18 +265,17 @@ public class InfinispanNotificationsManager {
                 }
             }
         }
-
     }
 
     private void eventReceived(String key, Serializable obj) {
-        if (!(obj instanceof WrapperClusterEvent)) {
-            if (obj == null) {
+        if (!(obj instanceof WrapperClusterEvent event)) {
+            // Items with the TASK_KEY_PREFIX might be gone fast once the locking is complete, therefore, don't log them.
+            // It is still good to have the warning in case of real events return null because they have been, for example, expired
+            if (obj == null && !key.startsWith(TASK_KEY_PREFIX)) {
                 logger.warnf("Event object wasn't available in remote cache after event was received. Event key: %s", key);
             }
             return;
         }
-
-        WrapperClusterEvent event = (WrapperClusterEvent) obj;
 
         if (event.isIgnoreSender()) {
             if (this.myAddress.equals(event.getSender())) {
@@ -311,16 +306,15 @@ public class InfinispanNotificationsManager {
     }
 
 
-    void taskFinished(String taskKey, boolean success) {
+    void taskFinished(String taskKey) {
         TaskCallback callback = taskCallbacks.remove(taskKey);
 
         if (callback != null) {
             if (logger.isDebugEnabled()) {
-                logger.debugf("Finished task '%s' with '%b'", taskKey, success);
+                logger.debugf("Finished task '%s' with '%b'", taskKey, true);
             }
-            callback.setSuccess(success);
+            callback.setSuccess(true);
             callback.getTaskCompletedLatch().countDown();
         }
-
     }
 }

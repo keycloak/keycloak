@@ -23,22 +23,27 @@ import org.keycloak.models.GroupProvider;
 import org.keycloak.models.GroupProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.ProviderConfigProperty;
 
 import jakarta.persistence.EntityManager;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_ID;
 import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_PRIORITY;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 
 public class JpaGroupProviderFactory implements GroupProviderFactory {
 
     private Set<String> groupSearchableAttributes = null;
+    private boolean escapeSlashesInGroupPath;
 
     @Override
     public void init(Config.Scope config) {
+        escapeSlashesInGroupPath = config.getBoolean("escapeSlashesInGroupPath", GroupProvider.DEFAULT_ESCAPE_SLASHES);
         String[] searchableAttrsArr = config.getArray("searchableAttributes");
         if (searchableAttrsArr == null) {
             String s = System.getProperty("keycloak.group.searchableAttributes");
@@ -77,4 +82,25 @@ public class JpaGroupProviderFactory implements GroupProviderFactory {
         return PROVIDER_PRIORITY;
     }
 
+    @Override
+    public boolean escapeSlashesInGroupPath() {
+        return escapeSlashesInGroupPath;
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name("escapeSlashesInGroupPath")
+                .helpText("If true slashes `/` in group names are escaped with the character `~` when converted to paths.")
+                .type("boolean")
+                .defaultValue(false)
+                .add()
+                .property()
+                .name("searchableAttributes")
+                .helpText("The list of attributes separated by comma that are allowed in client attribute searches.")
+                .type("string")
+                .add()
+                .build();
+    }
 }

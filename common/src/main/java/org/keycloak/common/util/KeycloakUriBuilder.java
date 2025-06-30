@@ -150,7 +150,7 @@ public class KeycloakUriBuilder {
             if (at > -1) {
                 String user = host.substring(0, at);
                 host = host.substring(at + 1);
-                this.userInfo = user;
+                replaceUserInfo(user, template);
             }
             Matcher hostPortMatch = hostPortPattern.matcher(host);
             if (hostPortMatch.matches()) {
@@ -459,7 +459,7 @@ public class KeycloakUriBuilder {
         } else if (userInfo != null || host != null || port != -1) {
             buffer.append("//");
             if (userInfo != null)
-                replaceParameter(paramMap, fromEncodedMap, isTemplate, userInfo, buffer, encodeSlash).append("@");
+                replaceUserInfoParameter(paramMap, fromEncodedMap, isTemplate, userInfo, buffer).append("@");
             if (host != null) {
                 if ("".equals(host)) throw new RuntimeException("empty host name");
                 replaceParameter(paramMap, fromEncodedMap, isTemplate, host, buffer, encodeSlash);
@@ -561,6 +561,33 @@ public class KeycloakUriBuilder {
                     value = Encode.encodeQueryParamAsIs(value);
                 } else {
                     value = Encode.encodeQueryParamSaveEncodings(value);
+                }
+                matcher.appendReplacement(buffer, value);
+            } else {
+                throw new IllegalArgumentException("path param " + param + " has not been provided by the parameter map");
+            }
+        }
+        matcher.appendTail(buffer);
+        return buffer;
+    }
+
+    protected StringBuffer replaceUserInfoParameter(Map<String, ?> paramMap, boolean fromEncodedMap, boolean isTemplate, String string, StringBuffer buffer) {
+        Matcher matcher = createUriParamMatcher(string);
+        while (matcher.find()) {
+            String param = matcher.group(1);
+            Object valObj = paramMap.get(param);
+            if (valObj == null && !isTemplate) {
+                throw new IllegalArgumentException("NULL value for template parameter: " + param);
+            } else if (valObj == null && isTemplate) {
+                matcher.appendReplacement(buffer, matcher.group());
+                continue;
+            }
+            String value = valObj.toString();
+            if (value != null) {
+                if (!fromEncodedMap) {
+                    value = Encode.encodeUserInfoAsIs(value);
+                } else {
+                    value = Encode.encodeUserInfoSaveEncodings(value);
                 }
                 matcher.appendReplacement(buffer, value);
             } else {
@@ -739,6 +766,15 @@ public class KeycloakUriBuilder {
             return this;
         }
         this.path = template? Encode.encodePath(path) : Encode.encodePathSaveEncodings(path);
+        return this;
+    }
+
+    public KeycloakUriBuilder replaceUserInfo(String userInfo, boolean template) {
+        if (userInfo == null) {
+            this.userInfo = null;
+            return this;
+        }
+        this.userInfo = template? Encode.encodeUserInfo(userInfo) : Encode.encodeUserInfoNotTemplateParameters(userInfo);
         return this;
     }
 

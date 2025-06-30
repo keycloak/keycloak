@@ -8,6 +8,8 @@ import org.keycloak.authentication.authenticators.access.DenyAccessAuthenticator
 import org.keycloak.authentication.authenticators.browser.PasswordFormFactory;
 import org.keycloak.authentication.authenticators.browser.UsernameFormFactory;
 import org.keycloak.authentication.authenticators.conditional.ConditionalRoleAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.directgrant.ValidatePassword;
+import org.keycloak.authentication.authenticators.directgrant.ValidateUsername;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -19,12 +21,15 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.util.FlowUtil;
+import org.keycloak.testsuite.util.OAuthClient;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.keycloak.testsuite.forms.BrowserFlowTest.revertFlows;
 
 /**
@@ -329,6 +334,25 @@ public class AllowDenyAuthenticatorTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
+    @Test
+    public void testDenyAccessInDirectGrantFlow() throws Exception {
+        String flowAlias = "direct grant - deny defaultMessage";
+        String user = "test-user@localhost";
+        String clientId = "direct-grant";
+
+        configureDirectGrantFlowWithDenyAccess(flowAlias, new HashMap<>());
+
+        try {
+            oauth.clientId(clientId);
+            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", user, "password");
+            assertEquals(401, response.getStatusCode());
+            assertEquals("Access denied", response.getError());
+            assertNull(response.getErrorDescription());
+        } finally {
+            DirectGrantFlowTest.revertFlows(testRealm(), flowAlias);
+        }
+    }
+
     /**
      * This flow contains:
      * UsernameForm REQUIRED
@@ -410,6 +434,27 @@ public class AllowDenyAuthenticatorTest extends AbstractTestRealmKeycloakTest {
 
                         ))
                 .defineAsBrowserFlow() // Activate this new flow
+        );
+    }
+
+    /**
+     * This flow contains:
+     * Validate Username REQUIRED
+     * Validate Password REQUIRED
+     * Deny Access REQUIRED
+     *
+     * @param newFlowAlias
+     * @param denyConfig
+     */
+    private void configureDirectGrantFlowWithDenyAccess(String newFlowAlias, Map<String, String> denyConfig) {
+        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyDirectGrantFlow(newFlowAlias));
+        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session)
+                .selectFlow(newFlowAlias)
+                .clear()
+                .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, ValidateUsername.PROVIDER_ID)
+                .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, ValidatePassword.PROVIDER_ID)
+                .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, DenyAccessAuthenticatorFactory.PROVIDER_ID, config -> config.setConfig(denyConfig))
+                .defineAsDirectGrantFlow() // Activate this new flow
         );
     }
 }

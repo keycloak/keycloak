@@ -5,7 +5,9 @@ import {
   Form,
   FormGroup,
   InputGroup,
+  InputGroupItem,
   Modal,
+  TextInput,
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { useEffect } from "react";
@@ -16,10 +18,14 @@ import {
   useWatch,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
+import {
+  FormErrorText,
+  SelectControl,
+  useAlerts,
+  useEnvironment,
+} from "@keycloak/keycloak-ui-shared";
 import { updateRequest } from "../api";
 import { Permission, Resource } from "../api/representations";
-import { useAlerts, SelectControl, KeycloakTextInput } from "ui-shared";
 import { SharedWith } from "./SharedWith";
 
 type ShareTheResourceProps = {
@@ -41,6 +47,7 @@ export const ShareTheResource = ({
   onClose,
 }: ShareTheResourceProps) => {
   const { t } = useTranslation();
+  const context = useEnvironment();
   const { addAlert, addError } = useAlerts();
   const form = useForm<FormValues>();
   const {
@@ -79,7 +86,7 @@ export const ShareTheResource = ({
         usernames
           .filter(({ value }) => value !== "")
           .map(({ value: username }) =>
-            updateRequest(resource._id, username, permissions),
+            updateRequest(context, resource._id, username, permissions),
           ),
       );
       addAlert(t("shareSuccess"));
@@ -137,36 +144,36 @@ export const ShareTheResource = ({
         <FormGroup
           label={t("shareUser")}
           type="string"
-          helperTextInvalid={errors.usernames?.message}
           fieldId="users"
           isRequired
-          validated={
-            errors.usernames ? ValidatedOptions.error : ValidatedOptions.default
-          }
         >
           <InputGroup>
-            <KeycloakTextInput
-              id="users"
-              data-testid="users"
-              placeholder={t("usernamePlaceholder")}
-              validated={
-                errors.usernames
-                  ? ValidatedOptions.error
-                  : ValidatedOptions.default
-              }
-              {...register(`usernames.${fields.length - 1}.value`, {
-                validate: validateUser,
-              })}
-            />
-            <Button
-              key="add-user"
-              variant="primary"
-              data-testid="add"
-              onClick={() => append({ value: "" })}
-              isDisabled={isDisabled}
-            >
-              {t("add")}
-            </Button>
+            <InputGroupItem>
+              <TextInput
+                id="users"
+                data-testid="users"
+                placeholder={t("usernamePlaceholder")}
+                validated={
+                  errors.usernames
+                    ? ValidatedOptions.error
+                    : ValidatedOptions.default
+                }
+                {...register(`usernames.${fields.length - 1}.value`, {
+                  validate: validateUser,
+                })}
+              />
+            </InputGroupItem>
+            <InputGroupItem>
+              <Button
+                key="add-user"
+                variant="primary"
+                data-testid="add"
+                onClick={() => append({ value: "" })}
+                isDisabled={isDisabled}
+              >
+                {t("add")}
+              </Button>
+            </InputGroupItem>
           </InputGroup>
           {fields.length > 1 && (
             <ChipGroup categoryName={t("shareWith")}>
@@ -180,18 +187,24 @@ export const ShareTheResource = ({
               )}
             </ChipGroup>
           )}
+          {errors.usernames && (
+            <FormErrorText message={errors.usernames.message!} />
+          )}
         </FormGroup>
         <FormProvider {...form}>
-          <FormGroup label="" fieldId="permissions-selected">
+          <FormGroup
+            label=""
+            fieldId="permissions-selected"
+            data-testid="permissions"
+          >
             <SelectControl
               name="permissions"
-              variant="typeaheadmulti"
+              variant="typeaheadMulti"
               controller={{ defaultValue: [] }}
               options={resource.scopes.map(({ name, displayName }) => ({
                 key: name,
                 value: displayName || name,
               }))}
-              menuAppendTo="parent"
             />
           </FormGroup>
         </FormProvider>

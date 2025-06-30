@@ -19,11 +19,13 @@
 package org.keycloak.authorization.policy.evaluation;
 
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.Decision.Effect;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.permission.ResourcePermission;
+import org.keycloak.authorization.policy.provider.PolicyProvider;
 
 /**
- * <p>An {@link Evaluation} is mainly used by {@link org.keycloak.authorization.policy.provider.PolicyProvider} in order to evaluate a single
+ * <p>An {@link Evaluation} is mainly used by {@link PolicyProvider} in order to evaluate a single
  * and specific {@link ResourcePermission} against the configured policies.
  *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -74,4 +76,8 @@ public interface Evaluation {
      * Denies the requested permission if a decision was not made yet.
      */
     void denyIfNoEffect();
+
+    Effect getEffect();
+
+    void setEffect(Effect effect);
 }

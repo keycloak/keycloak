@@ -66,7 +66,7 @@ public final class XmlUtil {
     }
 
     /**
-     * Applys a xpathExpression to a xml-Document and return a {@link NodeList} with the results.
+     * Applies a xpathExpression to a xml-Document and return a {@link NodeList} with the results.
      *
      * @param _xpathExpression xpath expression
      * @param _xmlDocumentOrNode document or node

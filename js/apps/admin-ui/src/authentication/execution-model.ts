@@ -81,34 +81,37 @@ export class ExecutionList {
   }
 
   findExecution(
-    id: string,
+    index: number,
+    current: { index: number } = { index: 0 },
     list?: ExpandableExecution[],
   ): ExpandableExecution | undefined {
-    let found = (list || this.expandableList).find((ex) => ex.id === id);
-    if (!found) {
-      for (const ex of list || this.expandableList) {
-        if (ex.executionList) {
-          found = this.findExecution(id, ex.executionList);
-          if (found) {
-            return found;
-          }
+    const l = list || this.expandableList;
+    for (let i = 0; i < l.length; i++) {
+      const ex = l[i];
+
+      if (current.index === index) {
+        return ex;
+      }
+      current.index++;
+      if (ex.executionList) {
+        const found = this.findExecution(index, current, ex.executionList);
+        if (found) {
+          return found;
         }
       }
     }
-    return found;
+    return undefined;
   }
 
-  #getParentNodes(level?: number) {
-    for (let index = 0; index < this.#list.length; index++) {
-      const ex = this.#list[index];
-      if (
-        index + 1 < this.#list.length &&
-        this.#list[index + 1].level! > ex.level! &&
-        ex.level! + 1 === level
-      ) {
-        return ex;
+  #getParentNodes(level: number, index: number) {
+    let parent = undefined;
+    for (let i = 0; i < index; i++) {
+      const ex = this.#list[i];
+      if (level - 1 === ex.level) {
+        parent = ex;
       }
     }
+    return parent;
   }
 
   getChange(
@@ -117,13 +120,14 @@ export class ExecutionList {
   ) {
     const currentOrder = this.order();
     const newLocIndex = order.findIndex((id) => id === changed.id);
-    const oldLocation =
-      currentOrder[currentOrder.findIndex((ex) => ex.id === changed.id)];
+    const oldLocIndex = currentOrder.findIndex((ex) => ex.id === changed.id);
+    const oldLocation = currentOrder[oldLocIndex];
     const newLocation = currentOrder[newLocIndex];
 
-    if (newLocation.level !== oldLocation.level) {
+    const currentParent = this.#getParentNodes(oldLocation.level!, oldLocIndex);
+    const parent = this.#getParentNodes(newLocation.level!, newLocIndex);
+    if (currentParent?.id !== parent?.id) {
       if (newLocation.level! > 0) {
-        const parent = this.#getParentNodes(newLocation.level);
         return new LevelChange(
           parent?.executionList?.length || 0,
           newLocation.index!,

@@ -40,10 +40,16 @@ public abstract class AbstractInitiateLogin implements AuthChallenge {
 
     protected SamlDeployment deployment;
     protected SamlSessionStore sessionStore;
+    protected boolean saveRequestUri;
 
     public AbstractInitiateLogin(SamlDeployment deployment, SamlSessionStore sessionStore) {
+        this(deployment, sessionStore, true);
+    }
+
+    public AbstractInitiateLogin(SamlDeployment deployment, SamlSessionStore sessionStore, boolean saveRequestUri) {
         this.deployment = deployment;
         this.sessionStore = sessionStore;
+        this.saveRequestUri = saveRequestUri;
     }
 
     @Override
@@ -56,7 +62,9 @@ public abstract class AbstractInitiateLogin implements AuthChallenge {
         try {
             SAML2AuthnRequestBuilder authnRequestBuilder = buildSaml2AuthnRequestBuilder(deployment);
             BaseSAML2BindingBuilder binding = createSaml2Binding(deployment);
-            sessionStore.saveRequest();
+            if (saveRequestUri) {
+                sessionStore.saveRequest();
+            }
 
             sendAuthnRequest(httpFacade, authnRequestBuilder, binding);
             sessionStore.setCurrentAction(SamlSessionStore.CurrentAction.LOGGING_IN);

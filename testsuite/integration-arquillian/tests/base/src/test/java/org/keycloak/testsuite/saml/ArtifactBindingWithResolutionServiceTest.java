@@ -55,8 +55,8 @@ public class ArtifactBindingWithResolutionServiceTest extends AbstractSamlTest {
         ArtifactResolutionService ars = new ArtifactResolutionService("http://127.0.0.1:8082/").setResponseDocument(doc);
         Thread arsThread = new Thread(ars);
         try {
-            arsThread.start();
             synchronized (ars) {
+                arsThread.start();
                 ars.wait();
                 SAMLDocumentHolder response = builder.artifactMessage(camb).build().login().user(bburkeUser).build().getSamlResponse(SamlClient.Binding.POST);
                 assertThat(response.getSamlObject(), instanceOf(ResponseType.class));
@@ -90,8 +90,8 @@ public class ArtifactBindingWithResolutionServiceTest extends AbstractSamlTest {
         ArtifactResolutionService ars = new ArtifactResolutionService("http://127.0.0.1:8082/").setResponseDocument(doc);
         Thread arsThread = new Thread(ars);
         try {
-            arsThread.start();
             synchronized (ars) {
+                arsThread.start();
                 ars.wait();
                 SAMLDocumentHolder response = builder.artifactMessage(camb).build().login().user(bburkeUser).build().getSamlResponse(REDIRECT);
                 assertThat(response.getSamlObject(), instanceOf(ResponseType.class));
@@ -124,8 +124,8 @@ public class ArtifactBindingWithResolutionServiceTest extends AbstractSamlTest {
         ArtifactResolutionService ars = new ArtifactResolutionService("http://127.0.0.1:8082/").setResponseDocument(doc);
         Thread arsThread = new Thread(ars);
         try {
-            arsThread.start();
             synchronized (ars) {
+                arsThread.start();
                 ars.wait();
                 String response = builder.artifactMessage(camb).build().executeAndTransform(resp -> EntityUtils.toString(resp.getEntity()));
                 assertThat(response, containsString("Invalid Request"));
@@ -151,8 +151,8 @@ public class ArtifactBindingWithResolutionServiceTest extends AbstractSamlTest {
         ArtifactResolutionService ars = new ArtifactResolutionService("http://127.0.0.1:8082/").setEmptyArtifactResponse(SAML_CLIENT_ID_SALES_POST);
         Thread arsThread = new Thread(ars);
         try {
-            arsThread.start();
             synchronized (ars) {
+                arsThread.start();
                 ars.wait();
                 builder.artifactMessage(camb).build().execute(r -> {
                     assertThat(r, statusCodeIsHC(400));
@@ -180,8 +180,8 @@ public class ArtifactBindingWithResolutionServiceTest extends AbstractSamlTest {
         ArtifactResolutionService ars = new ArtifactResolutionService("http://127.0.0.1:8082/");
         Thread arsThread = new Thread(ars);
         try {
-            arsThread.start();
             synchronized (ars) {
+                arsThread.start();
                 ars.wait();
                 SAMLDocumentHolder samlResponse = builder.authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, POST).build()
                         .login().user(bburkeUser).build()
@@ -220,8 +220,8 @@ public class ArtifactBindingWithResolutionServiceTest extends AbstractSamlTest {
         ArtifactResolutionService ars = new ArtifactResolutionService("http://127.0.0.1:8082/");
         Thread arsThread = new Thread(ars);
         try {
-            arsThread.start();
             synchronized (ars) {
+                arsThread.start();
                 ars.wait();
                 SAMLDocumentHolder samlResponse = builder
                         .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST,

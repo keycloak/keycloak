@@ -1,3 +1,4 @@
+import { Icon } from "@patternfly/react-core";
 import {
   BitbucketIcon,
   CubeIcon,
@@ -19,8 +20,12 @@ type IconMapperProps = {
 };
 
 export const IconMapper = ({ icon }: IconMapperProps) => {
-  const Icon = getIcon(icon);
-  return <Icon size="lg" alt={icon} />;
+  const SpecificIcon = getIcon(icon);
+  return (
+    <Icon size="lg">
+      <SpecificIcon alt={icon} />
+    </Icon>
+  );
 };
 
 function getIcon(icon: string) {

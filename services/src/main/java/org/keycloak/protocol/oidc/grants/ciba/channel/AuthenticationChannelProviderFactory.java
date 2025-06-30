@@ -16,6 +16,7 @@
  */
 package org.keycloak.protocol.oidc.grants.ciba.channel;
 
+import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderFactory;
@@ -27,7 +28,7 @@ public interface AuthenticationChannelProviderFactory extends ProviderFactory<Au
         EnvironmentDependentProviderFactory {
 
     @Override
-    default boolean isSupported() {
+    default boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.CIBA);
     }
 }

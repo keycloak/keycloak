@@ -2,7 +2,7 @@
 = JavaScript-based policy
 
 WARNING: If your policy implementation is using Attribute based access control (ABAC) as in the examples below, then please make sure that
-users are not able to edit the protected attributes and the corresponding attributes are read-only. See the details in the link:{adminguide_link}#_read_only_user_attributes[Threat model mitigation chapter].
+users are not able to edit the protected attributes and the corresponding attributes are read-only. See the details in the link:{adminguide_link}#mitigating_security_threats[Threat model mitigation] chapter.
 
 You can use this type of policy to define conditions for your permissions using JavaScript. It is one of the rule-based policy types
 supported by {project_name}, and provides flexibility to write any policy based on the <<_policy_evaluation_api, Evaluation API>>.

@@ -21,6 +21,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
+import org.jboss.logging.Logger;
 import org.keycloak.authorization.attribute.Attributes;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
@@ -32,6 +33,8 @@ import org.keycloak.authorization.policy.provider.PolicyProvider;
  */
 public class TimePolicyProvider implements PolicyProvider {
 
+    private static final Logger logger = Logger.getLogger(TimePolicyProvider.class);
+
     static String DEFAULT_DATE_PATTERN = "yyyy-MM-dd HH:mm:ss";
 
     static String CONTEXT_TIME_ENTRY = "kc.time.date_time";
@@ -40,6 +43,7 @@ public class TimePolicyProvider implements PolicyProvider {
     public void evaluate(Evaluation evaluation) {
         Policy policy = evaluation.getPolicy();
         SimpleDateFormat dateFormat = new SimpleDateFormat(DEFAULT_DATE_PATTERN);
+        logger.debugv("Time policy {} evaluating", policy.getName());
         try {
             String contextTime = null;
             EvaluationContext context = evaluation.getContext();
@@ -54,6 +58,7 @@ public class TimePolicyProvider implements PolicyProvider {
             String notBefore = policy.getConfig().get("nbf");
             if (notBefore != null && !"".equals(notBefore)) {
                 if (actualDate.before(dateFormat.parse(format(notBefore)))) {
+                    logger.debugv("Provided date is before the accepted date: (nbf) ", notBefore);
                     evaluation.deny();
                     return;
                 }
@@ -62,6 +67,7 @@ public class TimePolicyProvider implements PolicyProvider {
             String notOnOrAfter = policy.getConfig().get("noa");
             if (notOnOrAfter != null && !"".equals(notOnOrAfter)) {
                 if (actualDate.after(dateFormat.parse(format(notOnOrAfter)))) {
+                    logger.debugv("Provided date is after the accepted date: (noa) {}", notOnOrAfter);
                     evaluation.deny();
                     return;
                 }
@@ -72,6 +78,7 @@ public class TimePolicyProvider implements PolicyProvider {
                     || isInvalid(actualDate, Calendar.YEAR, "year", policy)
                     || isInvalid(actualDate, Calendar.HOUR_OF_DAY, "hour", policy)
                     || isInvalid(actualDate, Calendar.MINUTE, "minute", policy)) {
+                logger.debugv("Invalid date provided to time policy {}", policy.getName());
                 evaluation.deny();
                 return;
             }

@@ -1,0 +1,3 @@
+.keycloak__identity-providers__url_component > .pf-v5-c-form__group-control {
+  padding-top: var(--pf-v5-c-form--m-horizontal__group-label--md--PaddingTop);
+}

@@ -37,26 +37,29 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
 import org.keycloak.models.utils.FormMessage;
-import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.ClientData;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocol.Error;
+import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.UserSessionManager;
+import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
 
 import jakarta.ws.rs.core.MultivaluedHashMap;
@@ -72,7 +75,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.keycloak.models.light.LightweightUserAdapter.isLightweightUser;
-import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -99,6 +101,8 @@ public class AuthenticationProcessor {
     protected HttpRequest request;
     protected String flowId;
     protected String flowPath;
+
+
     protected boolean browserFlow;
     protected BruteForceProtector protector;
     protected Runnable afterResetListener;
@@ -284,11 +288,22 @@ public class AuthenticationProcessor {
         getAuthenticationSession().setAuthenticatedUser(null);
     }
 
+    private String getClientData() {
+        return getClientData(getSession(), getAuthenticationSession());
+    }
+
+    public static String getClientData(KeycloakSession session, AuthenticationSessionModel authSession) {
+        LoginProtocol protocol = session.getProvider(LoginProtocol.class, authSession.getProtocol());
+        ClientData clientData = protocol.getClientData(authSession);
+        return clientData.encode();
+    }
+
     public URI getRefreshUrl(boolean authSessionIdParam) {
         UriBuilder uriBuilder = LoginActionsService.loginActionsBaseUrl(getUriInfo())
                 .path(AuthenticationProcessor.this.flowPath)
                 .queryParam(Constants.CLIENT_ID, getAuthenticationSession().getClient().getClientId())
-                .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId());
+                .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId())
+                .queryParam(Constants.CLIENT_DATA, getClientData());
         if (authSessionIdParam) {
             uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getAuthenticationSession().getParentSession().getId());
         }
@@ -345,6 +360,11 @@ public class AuthenticationProcessor {
         @Override
         public AuthenticationExecutionModel getExecution() {
             return execution;
+        }
+
+        @Override
+        public AuthenticationFlowModel getTopLevelFlow() {
+            return AuthenticatorUtil.getTopParentFlow(realm, execution);
         }
 
         @Override
@@ -573,7 +593,8 @@ public class AuthenticationProcessor {
                     .queryParam(LoginActionsService.SESSION_CODE, code)
                     .queryParam(Constants.EXECUTION, getExecution().getId())
                     .queryParam(Constants.CLIENT_ID, getAuthenticationSession().getClient().getClientId())
-                    .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId());
+                    .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId())
+                    .queryParam(Constants.CLIENT_DATA, getClientData());
             if (getUriInfo().getQueryParameters().containsKey(LoginActionsService.AUTH_SESSION_ID)) {
                 uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getAuthenticationSession().getParentSession().getId());
             }
@@ -587,7 +608,8 @@ public class AuthenticationProcessor {
                     .queryParam(Constants.KEY, tokenString)
                     .queryParam(Constants.EXECUTION, getExecution().getId())
                     .queryParam(Constants.CLIENT_ID, getAuthenticationSession().getClient().getClientId())
-                    .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId());
+                    .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId())
+                    .queryParam(Constants.CLIENT_DATA, getClientData());
             if (getUriInfo().getQueryParameters().containsKey(LoginActionsService.AUTH_SESSION_ID)) {
                 uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getAuthenticationSession().getParentSession().getId());
             }
@@ -601,7 +623,8 @@ public class AuthenticationProcessor {
                     .path(AuthenticationProcessor.this.flowPath)
                     .queryParam(Constants.EXECUTION, getExecution().getId())
                     .queryParam(Constants.CLIENT_ID, getAuthenticationSession().getClient().getClientId())
-                    .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId());
+                    .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId())
+                    .queryParam(Constants.CLIENT_DATA, getClientData());
             if (getUriInfo().getQueryParameters().containsKey(LoginActionsService.AUTH_SESSION_ID)) {
                 uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getAuthenticationSession().getParentSession().getId());
             }
@@ -829,14 +852,6 @@ public class AuthenticationProcessor {
                 if (e.getResponse() != null) return e.getResponse();
                 return ErrorPage.error(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.INVALID_USER);
             }
-
-        } else if (KeycloakModelUtils.isExceptionRetriable(failure)) {
-            // let calling code decide if whole action should be retried.
-            if (failure instanceof RuntimeException) {
-                throw (RuntimeException) failure;
-            } else {
-                throw new RuntimeException(failure);
-            }
         } else {
             ServicesLogger.LOGGER.failedAuthentication(failure);
             event.error(Errors.INVALID_USER_CREDENTIALS);
@@ -947,6 +962,22 @@ public class AuthenticationProcessor {
         authSession.setAuthNote(CURRENT_FLOW_PATH, flowPath);
     }
 
+    // Recreate new root auth session and new auth session from the given auth session.
+    public static AuthenticationSessionModel recreate(KeycloakSession session, AuthenticationSessionModel authSession) {
+        AuthenticationSessionManager authenticationSessionManager =  new AuthenticationSessionManager(session);
+        RootAuthenticationSessionModel rootAuthenticationSession = authenticationSessionManager.createAuthenticationSession(authSession.getRealm(), true);
+        AuthenticationSessionModel newAuthSession = rootAuthenticationSession.createAuthenticationSession(authSession.getClient());
+        newAuthSession.setRedirectUri(authSession.getRedirectUri());
+        newAuthSession.setProtocol(authSession.getProtocol());
+
+        for (Map.Entry<String, String> clientNote : authSession.getClientNotes().entrySet()) {
+            newAuthSession.setClientNote(clientNote.getKey(), clientNote.getValue());
+        }
+
+        authenticationSessionManager.removeAuthenticationSession(authSession.getRealm(), authSession, true);
+        RestartLoginCookie.setRestartCookie(session, authSession);
+        return newAuthSession;
+    }
 
     // Clone new authentication session from the given authSession. New authenticationSession will have same parent (rootSession) and will use same client
     public static AuthenticationSessionModel clone(KeycloakSession session, AuthenticationSessionModel authSession) {
@@ -960,6 +991,9 @@ public class AuthenticationProcessor {
         }
 
         clone.setAuthNote(FORKED_FROM, authSession.getTabId());
+        if (authSession.getAuthNote(AuthenticationManager.END_AFTER_REQUIRED_ACTIONS) != null) {
+            clone.setAuthNote(AuthenticationManager.END_AFTER_REQUIRED_ACTIONS, authSession.getAuthNote(AuthenticationManager.END_AFTER_REQUIRED_ACTIONS));
+        }
 
         logger.debugf("Forked authSession %s from authSession %s . Client: %s, Root session: %s",
                 clone.getTabId(), authSession.getTabId(), authSession.getClient().getClientId(), authSession.getParentSession().getId());
@@ -1073,12 +1107,17 @@ public class AuthenticationProcessor {
 
         if (userSession == null) { // if no authenticator attached a usersession
 
-            userSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, authSession.getParentSession().getId()));
+            userSession = session.sessions().getUserSession(realm, authSession.getParentSession().getId());
             if (userSession == null) {
                 UserSessionModel.SessionPersistenceState persistenceState = UserSessionModel.SessionPersistenceState.fromString(authSession.getClientNote(AuthenticationManager.USER_SESSION_PERSISTENT_STATE));
 
                 userSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, authSession.getAuthenticatedUser(), username, connection.getRemoteAddr(), authSession.getProtocol()
                         , remember, brokerSessionId, brokerUserId, persistenceState);
+
+                if (isLightweightUser(userSession.getUser())) {
+                    LightweightUserAdapter lua = (LightweightUserAdapter) userSession.getUser();
+                    lua.setOwningUserSessionId(userSession.getId());
+                }
             } else if (userSession.getUser() == null || !AuthenticationManager.isSessionValid(realm, userSession)) {
                 userSession.restartSession(realm, authSession.getAuthenticatedUser(), username, connection.getRemoteAddr(), authSession.getProtocol()
                         , remember, brokerSessionId, brokerUserId);

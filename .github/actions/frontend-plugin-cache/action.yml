@@ -1,0 +1,21 @@
+name: Frontend Plugin Cache
+description: Caches NPM dependencies for the frontend-maven-plugin to speed up builds
+
+runs:
+  using: composite
+  steps:
+    - name: Get PNPM version
+      id: pnpm-version
+      shell: bash
+      run: |
+        echo "version=$(mvn help:evaluate -Dexpression=pnpm.version -q -DforceStdout)" >> $GITHUB_OUTPUT
+
+    - uses: actions/cache@v4
+      name: Cache PNPM store
+      with:
+        # See: https://pnpm.io/npmrc#store-dir
+        path: |
+          ~/.local/share/pnpm/store
+          ~/AppData/Local/pnpm/store
+          ~/Library/pnpm/store
+        key: ${{ runner.os }}-frontend-plugin-pnpm-store-${{ steps.pnpm-version.outputs.version }}-${{ hashFiles('pnpm-lock.yaml') }}

@@ -111,3 +111,11 @@ To use a specific database container image, use the option `-Dkc.db.postgresql.c
 Example:
 
     ../mvnw clean install -Dkc.test.storage.database=true -Dtest=PostgreSQLDistTest -Dkc.db.postgresql.container.image=postgres:alpine
+    
+### Updating Expectations
+
+Changing to the help output will cause HelpCommandDistTest to fail. You may use:
+
+    KEYCLOAK_REPLACE_EXPECTED=true ../mvnw clean install -Dtest=HelpCommandDistTest 
+
+to replace the expected output, then use a diff to ensure the changes look good.

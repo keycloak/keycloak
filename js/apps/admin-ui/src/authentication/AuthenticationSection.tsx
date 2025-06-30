@@ -1,3 +1,4 @@
+import { fetchWithError } from "@keycloak/keycloak-admin-client";
 import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
 import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
@@ -14,8 +15,7 @@ import { sortBy } from "lodash-es";
 import { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
@@ -30,7 +30,6 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import helpUrls from "../help-urls";
 import { addTrailingSlash } from "../util";
 import { getAuthorizationHeaders } from "../utils/getAuthorizationHeaders";
-import { useFetch } from "../utils/useFetch";
 import useLocaleSort, { mapByKey } from "../utils/useLocaleSort";
 import useToggle from "../utils/useToggle";
 import { BindFlowDialog } from "./BindFlowDialog";
@@ -56,6 +55,7 @@ export const REALM_FLOWS = new Map<string, string>([
   ["resetCredentialsFlow", "reset credentials"],
   ["clientAuthenticationFlow", "clients"],
   ["dockerAuthenticationFlow", "docker auth"],
+  ["firstBrokerLoginFlow", "firstBrokerLogin"],
 ]);
 
 const AliasRenderer = ({ id, alias, usedBy, builtIn }: AuthenticationType) => {
@@ -81,27 +81,19 @@ const AliasRenderer = ({ id, alias, usedBy, builtIn }: AuthenticationType) => {
 };
 
 export default function AuthenticationSection() {
+  const { adminClient } = useAdminClient();
   const { t } = useTranslation();
-  const { realm: realmName } = useRealm();
+  const { realm: realmName, realmRepresentation: realm } = useRealm();
   const [key, setKey] = useState(0);
-  const refresh = () => {
-    setRealm(undefined);
-    setKey(key + 1);
-  };
+  const refresh = () => setKey(key + 1);
   const { addAlert, addError } = useAlerts();
   const localeSort = useLocaleSort();
   const [selectedFlow, setSelectedFlow] = useState<AuthenticationType>();
   const [open, toggleOpen] = useToggle();
   const [bindFlowOpen, toggleBindFlow] = useToggle();
 
-  const [realm, setRealm] = useState<RealmRepresentation>();
-
-  useFetch(() => adminClient.realms.findOne({ realm: realmName }), setRealm, [
-    key,
-  ]);
-
   const loader = async () => {
-    const flowsRequest = await fetch(
+    const flowsRequest = await fetchWithError(
       `${addTrailingSlash(
         adminClient.baseUrl,
       )}admin/realms/${realmName}/ui-ext/authentication-management/flows`,
@@ -183,7 +175,7 @@ export default function AuthenticationSection() {
         helpUrl={helpUrls.authenticationUrl}
         divider={false}
       />
-      <PageSection variant="light" className="pf-u-p-0">
+      <PageSection variant="light" className="pf-v5-u-p-0">
         <RoutableTabs
           isBox
           defaultLocation={toAuthentication({ realm: realmName, tab: "flows" })}
@@ -252,9 +244,7 @@ export default function AuthenticationSection() {
                 {
                   name: "usedBy",
                   displayKey: "usedBy",
-                  cellRenderer: (row) => (
-                    <UsedBy authType={row} realm={realm} />
-                  ),
+                  cellRenderer: (row) => <UsedBy authType={row} />,
                 },
                 {
                   name: "description",

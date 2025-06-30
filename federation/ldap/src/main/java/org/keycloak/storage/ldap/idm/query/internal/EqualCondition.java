@@ -18,23 +18,17 @@
 package org.keycloak.storage.ldap.idm.query.internal;
 
 import org.keycloak.models.LDAPConstants;
-import org.keycloak.storage.ldap.idm.query.EscapeStrategy;
-import org.keycloak.storage.ldap.idm.store.ldap.LDAPUtil;
-
-import java.util.Date;
 
 /**
  * @author Pedro Igor
  */
 public class EqualCondition extends NamedParameterCondition {
 
-    private final EscapeStrategy escapeStrategy;
     private Object value;
 
-    public EqualCondition(String name, Object value, EscapeStrategy escapeStrategy) {
+    public EqualCondition(String name, Object value) {
         super(name);
         this.value = value;
-        this.escapeStrategy = escapeStrategy;
     }
 
     public Object getValue() {
@@ -45,20 +39,9 @@ public class EqualCondition extends NamedParameterCondition {
         this.value = value;
     }
 
-    public EscapeStrategy getEscapeStrategy() {
-        return escapeStrategy;
-    }
-
     @Override
     public void applyCondition(StringBuilder filter) {
-        Object parameterValue = value;
-        if (Date.class.isInstance(value)) {
-            parameterValue = LDAPUtil.formatDate((Date) parameterValue);
-        }
-
-        String escaped = new OctetStringEncoder(escapeStrategy).encode(parameterValue, isBinary());
-
-        filter.append("(").append(getParameterName()).append(LDAPConstants.EQUAL).append(escaped).append(")");
+        filter.append("(").append(getParameterName()).append(LDAPConstants.EQUAL).append(escapeValue(value)).append(")");
     }
 
     @Override
@@ -66,7 +49,6 @@ public class EqualCondition extends NamedParameterCondition {
         return "EqualCondition{" +
                 "paramName=" + getParameterName() +
                 ", value=" + value +
-                ", escapeStrategy=" + escapeStrategy +
                 '}';
     }
 }

@@ -2,10 +2,10 @@ package org.keycloak.testsuite.cli.registration;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.client.registration.cli.config.ConfigData;
-import org.keycloak.client.registration.cli.config.FileConfigHandler;
-import org.keycloak.client.registration.cli.config.RealmConfigData;
-import org.keycloak.client.registration.cli.util.ConfigUtil;
+import org.keycloak.client.cli.config.ConfigData;
+import org.keycloak.client.cli.config.FileConfigHandler;
+import org.keycloak.client.cli.config.RealmConfigData;
+import org.keycloak.client.cli.util.ConfigUtil;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.cli.KcRegExec;
 import org.keycloak.testsuite.util.TempFileResource;

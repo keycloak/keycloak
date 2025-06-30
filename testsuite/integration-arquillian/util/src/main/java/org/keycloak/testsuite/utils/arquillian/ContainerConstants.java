@@ -17,27 +17,15 @@
 package org.keycloak.testsuite.utils.arquillian;
 
 public interface ContainerConstants {
-    public static final String APP_SERVER_PREFIX = "app-server-";
+    String APP_SERVER_PREFIX = "app-server-";
 
-    public static final String APP_SERVER_UNDERTOW = APP_SERVER_PREFIX + "undertow";
+    String APP_SERVER_UNDERTOW = APP_SERVER_PREFIX + "undertow";
 
-    public static final String APP_SERVER_WILDFLY = APP_SERVER_PREFIX + "wildfly";
-    public static final String APP_SERVER_WILDFLY_CLUSTER = APP_SERVER_WILDFLY + "-ha-node-1;" + APP_SERVER_WILDFLY + "-ha-node-2";
+    String APP_SERVER_WILDFLY = APP_SERVER_PREFIX + "wildfly";
+    String APP_SERVER_WILDFLY_CLUSTER = APP_SERVER_WILDFLY + "-ha-node-1;" + APP_SERVER_WILDFLY + "-ha-node-2";
 
-    public static final String APP_SERVER_EAP = APP_SERVER_PREFIX + "eap";
-    public static final String APP_SERVER_EAP_CLUSTER = APP_SERVER_EAP + "-ha-node-1;" + APP_SERVER_EAP + "-ha-node-2";
+    String APP_SERVER_EAP = APP_SERVER_PREFIX + "eap";
+    String APP_SERVER_EAP_CLUSTER = APP_SERVER_EAP + "-ha-node-1;" + APP_SERVER_EAP + "-ha-node-2";
 
-    public static final String APP_SERVER_EAP71 = APP_SERVER_PREFIX + "eap71";
-
-    public static final String APP_SERVER_EAP6 = APP_SERVER_PREFIX + "eap6";
-    public static final String APP_SERVER_EAP6_CLUSTER = APP_SERVER_EAP6 + "-ha-node-1;" + APP_SERVER_EAP6 + "-ha-node-2";
-
-    public static final String APP_SERVER_FUSE63 = APP_SERVER_PREFIX + "fuse63";
-    public static final String APP_SERVER_FUSE7X = APP_SERVER_PREFIX + "fuse7x";
-
-    public static final String APP_SERVER_JETTY94 = APP_SERVER_PREFIX + "jetty94";
-
-    public static final String APP_SERVER_TOMCAT8 = APP_SERVER_PREFIX + "tomcat8";
-    public static final String APP_SERVER_TOMCAT9 = APP_SERVER_PREFIX + "tomcat9";
-
+    String APP_SERVER_EAP8 = APP_SERVER_PREFIX + "eap8";
 }

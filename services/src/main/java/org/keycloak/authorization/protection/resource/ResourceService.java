@@ -31,7 +31,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.authorization.admin.ResourceSetService;
 import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.model.Resource;

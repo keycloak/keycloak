@@ -5,13 +5,13 @@
 
 == Create a realm
 
-A realm in Keycloak is equivalent to a tenant. Each realm allows an administrator to create isolated groups of applications and users. Initially, Keycloak
-includes a single realm, called `master`. Use this realm only for managing Keycloak and not for managing any applications.
+A realm in {project_name} is equivalent to a tenant. Each realm allows an administrator to create isolated groups of applications and users. Initially, {project_name}
+includes a single realm, called `master`. Use this realm only for managing {project_name} and not for managing any applications.
 
 Use these steps to create the first realm.
 
 . Open the {links-admin-console}.
-. Click the word *master* in the top-left corner, then click *Create Realm*.
+. Click *{project_name}* next to *master realm*, then click *Create Realm*.
 . Enter `myrealm` in the *Realm name* field.
 . Click *Create*.
 
@@ -21,8 +21,7 @@ image::add-realm.png[Add realm]
 
 Initially, the realm has no users. Use these steps to create a user:
 
-. Open the {links-admin-console}.
-. Click the word *master* in the top-left corner, then click *myrealm*.
+. Verify that you are still in the *myrealm* realm, which is shown above the word *Manage*.
 . Click *Users* in the left-hand menu.
 . Click *Add user*.
 . Fill in the form with the following values:

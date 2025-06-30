@@ -1,7 +1,7 @@
 package org.keycloak.protocol.docker;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.specimpl.ResponseBuilderImpl;
+import org.jboss.resteasy.reactive.server.jaxrs.ResponseBuilderImpl;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSBuilder;
@@ -13,6 +13,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.ClientData;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.docker.mapper.DockerAuthV2AttributeMapper;
@@ -104,8 +105,8 @@ public class DockerAuthV2Protocol implements LoginProtocol {
 
         // since realm access token is given in seconds
         final int accessTokenLifespan = realm.getAccessTokenLifespan();
-        responseToken.notBefore(responseToken.getIssuedAt())
-                .expiration(responseToken.getIssuedAt() + accessTokenLifespan);
+        responseToken.nbf(responseToken.getIat())
+                .exp(responseToken.getIat() + accessTokenLifespan);
 
         // Next, allow mappers to decorate the token to add/remove scopes as appropriate
 
@@ -125,7 +126,7 @@ public class DockerAuthV2Protocol implements LoginProtocol {
                         .type("JWT")
                         .jsonContent(responseToken)
                         .rsa256(activeKey.getPrivateKey());
-                final String expiresInIso8601String = new SimpleDateFormat(ISO_8601_DATE_FORMAT).format(new Date(responseToken.getIssuedAt() * 1000L));
+                final String expiresInIso8601String = new SimpleDateFormat(ISO_8601_DATE_FORMAT).format(new Date(responseToken.getIat() * 1000L));
 
                 final DockerResponse responseEntity = new DockerResponse()
                         .setToken(encodedToken)
@@ -145,6 +146,16 @@ public class DockerAuthV2Protocol implements LoginProtocol {
 
     @Override
     public Response sendError(final AuthenticationSessionModel clientSession, final LoginProtocol.Error error) {
+        return new ResponseBuilderImpl().status(Response.Status.INTERNAL_SERVER_ERROR).build();
+    }
+
+    @Override
+    public ClientData getClientData(AuthenticationSessionModel authSession) {
+        return new ClientData();
+    }
+
+    @Override
+    public Response sendError(ClientModel client, ClientData clientData, Error error) {
         return new ResponseBuilderImpl().status(Response.Status.INTERNAL_SERVER_ERROR).build();
     }
 

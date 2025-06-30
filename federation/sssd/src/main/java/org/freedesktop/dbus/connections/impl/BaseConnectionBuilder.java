@@ -160,8 +160,8 @@ public abstract class BaseConnectionBuilder<R extends BaseConnectionBuilder<R, C
     }
 
     /**
-     * Set the endianess for the connection
-     * Default is based on system endianess.
+     * Set the endianness for the connection
+     * Default is based on system endianness.
      *
      * @param _endianess {@link Endian#BIG} or {@value Endian#LITTLE}
      * @return this

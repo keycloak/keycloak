@@ -38,7 +38,6 @@
         <app.server.jboss.version>${wildfly.server.version}</app.server.jboss.version>
         <app.server.jboss.unpacked.folder.name>wildfly-${wildfly.server.version}</app.server.jboss.unpacked.folder.name>
         
-        <app.server.oidc.adapter.artifactId>keycloak-wildfly-adapter-dist</app.server.oidc.adapter.artifactId>
         <app.server.saml.adapter.artifactId>keycloak-saml-wildfly-adapter-dist</app.server.saml.adapter.artifactId>
 
         <skip.elytron.adapter.installation>false</skip.elytron.adapter.installation>

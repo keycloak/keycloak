@@ -1,17 +1,28 @@
 import { NetworkError } from "@keycloak/keycloak-admin-client";
+import {
+  createNamedContext,
+  label,
+  useEnvironment,
+  useRequiredContext,
+} from "@keycloak/keycloak-ui-shared";
 import { PropsWithChildren, useCallback, useMemo, useState } from "react";
-import { createNamedContext, useRequiredContext } from "ui-shared";
-
-import { keycloak } from "../keycloak";
+import { useTranslation } from "react-i18next";
+import { useAdminClient } from "../admin-client";
 import { useFetch } from "../utils/useFetch";
+import useLocaleSort from "../utils/useLocaleSort";
 import { fetchAdminUI } from "./auth/admin-ui-endpoint";
 
 type RealmsContextProps = {
   /** A list of all the realms. */
-  realms: string[];
+  realms: RealmNameRepresentation[];
   /** Refreshes the realms with the latest information. */
   refresh: () => Promise<void>;
 };
+
+export interface RealmNameRepresentation {
+  name: string;
+  displayName?: string;
+}
 
 export const RealmsContext = createNamedContext<RealmsContextProps | undefined>(
   "RealmsContext",
@@ -19,22 +30,26 @@ export const RealmsContext = createNamedContext<RealmsContextProps | undefined>(
 );
 
 export const RealmsProvider = ({ children }: PropsWithChildren) => {
-  const [realms, setRealms] = useState<string[]>([]);
-  const [refreshCount, setRefreshCount] = useState(0);
+  const { keycloak } = useEnvironment();
+  const { adminClient } = useAdminClient();
 
-  function updateRealms(realms: string[]) {
-    setRealms(realms.sort());
+  const [realms, setRealms] = useState<RealmNameRepresentation[]>([]);
+  const [refreshCount, setRefreshCount] = useState(0);
+  const localeSort = useLocaleSort();
+  const { t } = useTranslation();
+
+  function updateRealms(realms: RealmNameRepresentation[]) {
+    setRealms(localeSort(realms, (r) => label(t, r.displayName, r.name)));
   }
 
   useFetch(
     async () => {
-      // We don't want to fetch until the user has requested it, so let's ignore the initial mount.
-      if (refreshCount === 0) {
-        return [];
-      }
-
       try {
-        return await fetchAdminUI<string[]>("ui-ext/realms", {});
+        return await fetchAdminUI<RealmNameRepresentation[]>(
+          adminClient,
+          "ui-ext/realms/names",
+          {},
+        );
       } catch (error) {
         if (error instanceof NetworkError && error.response.status < 500) {
           return [];

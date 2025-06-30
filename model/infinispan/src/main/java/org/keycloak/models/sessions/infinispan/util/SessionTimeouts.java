@@ -38,11 +38,6 @@ public class SessionTimeouts {
     public static final long ENTRY_EXPIRED_FLAG = -2l;
 
     /**
-     * This is used just if timeouts are not set on the realm (usually happens just during tests when realm is created manually with the model API)
-     */
-    public static final int MINIMAL_EXPIRATION_SEC = 300;
-
-    /**
      * Get the maximum lifespan, which this userSession can remain in the infinispan cache.
      * Returned value will be used as "lifespan" when calling put/replace operation in the infinispan cache for this entity
      *

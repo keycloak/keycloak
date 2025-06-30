@@ -18,11 +18,9 @@
 package org.keycloak.services.resources;
 
 import static org.keycloak.services.managers.AuthenticationManager.authenticateIdentityCookie;
-import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
 import java.net.URI;
 
-import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
@@ -40,9 +38,12 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.AuthorizationEndpointBase;
+import org.keycloak.protocol.ClientData;
+import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.RestartLoginCookie;
+import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpointChecker;
+import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -74,12 +75,14 @@ public class SessionCodeChecks {
     private final String code;
     private final String execution;
     private final String clientId;
+    private final ClientData clientData;
     private final String tabId;
     private final String flowPath;
     private final String authSessionId;
 
+
     public SessionCodeChecks(RealmModel realm, UriInfo uriInfo, HttpRequest request, ClientConnection clientConnection, KeycloakSession session, EventBuilder event,
-                             String authSessionId, String code, String execution, String clientId, String tabId, String flowPath) {
+                             String authSessionId, String code, String execution, String clientId, String tabId, String clientData, String flowPath) {
         this.realm = realm;
         this.uriInfo = uriInfo;
         this.request = request;
@@ -93,6 +96,7 @@ public class SessionCodeChecks {
         this.tabId = tabId;
         this.flowPath = flowPath;
         this.authSessionId = authSessionId;
+        this.clientData = ClientData.decodeClientDataFromParameter(clientData);
     }
 
 
@@ -150,6 +154,7 @@ public class SessionCodeChecks {
         }
         if (client != null) {
             session.getContext().setClient(client);
+            setClientToEvent(client);
         }
 
 
@@ -185,17 +190,35 @@ public class SessionCodeChecks {
 
         // if restart from cookie was not found check if the user is already authenticated
         if (response.getStatus() != Response.Status.FOUND.getStatusCode()) {
-            AuthenticationManager.AuthResult authResult = lockUserSessionsForModification(session, () -> authenticateIdentityCookie(session, realm, false));
+            AuthenticationManager.AuthResult authResult = authenticateIdentityCookie(session, realm, false);
 
             if (authResult != null && authResult.getSession() != null) {
-                LoginFormsProvider loginForm = session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authSession)
-                        .setSuccess(Messages.ALREADY_LOGGED_IN);
+                response = null;
 
-                if (client == null) {
-                    loginForm.setAttribute(Constants.SKIP_LINK, true);
+                if (client != null && clientData != null) {
+                    LoginProtocol protocol = session.getProvider(LoginProtocol.class, client.getProtocol());
+                    protocol.setRealm(realm)
+                            .setHttpHeaders(session.getContext().getRequestHeaders())
+                            .setUriInfo(session.getContext().getUri())
+                            .setEventBuilder(event);
+                    response = protocol.sendError(client, clientData, LoginProtocol.Error.ALREADY_LOGGED_IN);
+                    event.detail(Details.REDIRECTED_TO_CLIENT, "true");
                 }
 
-                response = loginForm.createInfoPage();
+                if (response == null) {
+                    LoginFormsProvider loginForm = session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authSession)
+                            .setSuccess(Messages.ALREADY_LOGGED_IN);
+
+                    if (client == null) {
+                        loginForm.setAttribute(Constants.SKIP_LINK, true);
+                    }
+
+                    response = loginForm.createInfoPage();
+                    event.detail(Details.REDIRECTED_TO_CLIENT, "false");
+                }
+                event.error(Errors.ALREADY_LOGGED_IN);
+            } else {
+                event.error(Errors.COOKIE_NOT_FOUND);
             }
         }
 
@@ -282,7 +305,8 @@ public class SessionCodeChecks {
                 if (ObjectUtil.isEqualOrBothNull(execution, authSession.getAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION))) {
                     String latestFlowPath = authSession.getAuthNote(AuthenticationProcessor.CURRENT_FLOW_PATH);
                     if (latestFlowPath != null) {
-                        URI redirectUri = getLastExecutionUrl(latestFlowPath, execution, tabId);
+                        String clientData = AuthenticationProcessor.getClientData(session, authSession);
+                        URI redirectUri = getLastExecutionUrl(latestFlowPath, execution, tabId, clientData);
 
                         logger.debugf("Invalid action code, but execution matches. So just redirecting to %s", redirectUri);
                         authSession.setAuthNote(LoginActionsService.FORWARDED_ERROR_MESSAGE_NOTE, Messages.EXPIRED_ACTION);
@@ -344,7 +368,8 @@ public class SessionCodeChecks {
 
             authSession.setAuthNote(LoginActionsService.FORWARDED_ERROR_MESSAGE_NOTE, Messages.LOGIN_TIMEOUT);
 
-            URI redirectUri = getLastExecutionUrl(LoginActionsService.AUTHENTICATE_PATH, null, tabId);
+            String clientData = AuthenticationProcessor.getClientData(session, authSession);
+            URI redirectUri = getLastExecutionUrl(LoginActionsService.AUTHENTICATE_PATH, null, tabId, clientData);
             logger.debugf("Flow restart after timeout. Redirecting to %s", redirectUri);
             response = Response.status(Response.Status.FOUND).location(redirectUri).build();
             return false;
@@ -387,9 +412,8 @@ public class SessionCodeChecks {
         logger.debug("Authentication session not found. Trying to restart from cookie.");
         AuthenticationSessionModel authSession = null;
 
-        Cookie cook = RestartLoginCookie.getRestartCookie(session);
+        String cook = RestartLoginCookie.getRestartCookie(session);
         if (cook == null) {
-            event.error(Errors.COOKIE_NOT_FOUND);
             return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.COOKIE_NOT_FOUND);
         }
 
@@ -413,7 +437,8 @@ public class SessionCodeChecks {
                 flowPath = LoginActionsService.AUTHENTICATE_PATH;
             }
 
-            URI redirectUri = getLastExecutionUrl(flowPath, null, authSession.getTabId());
+            String clientData = AuthenticationProcessor.getClientData(session, authSession);
+            URI redirectUri = getLastExecutionUrl(flowPath, null, authSession.getTabId(), clientData);
             logger.debugf("Authentication session restart from cookie succeeded. Redirecting to %s", redirectUri);
             return Response.status(Response.Status.FOUND).location(redirectUri).build();
         } else {
@@ -433,17 +458,18 @@ public class SessionCodeChecks {
         }
 
         ClientModel client = authSession.getClient();
-        uriBuilder.queryParam(Constants.CLIENT_ID, client.getClientId());
-        uriBuilder.queryParam(Constants.TAB_ID, authSession.getTabId());
+        uriBuilder.queryParam(Constants.CLIENT_ID, client.getClientId())
+                .queryParam(Constants.TAB_ID, authSession.getTabId())
+                .queryParam(Constants.CLIENT_DATA, AuthenticationProcessor.getClientData(session, authSession));
 
         URI redirect = uriBuilder.build(realm.getName());
         return Response.status(302).location(redirect).build();
     }
 
 
-    private URI getLastExecutionUrl(String flowPath, String executionId, String tabId) {
+    private URI getLastExecutionUrl(String flowPath, String executionId, String tabId, String clientData) {
         return new AuthenticationFlowURLHelper(session, realm, uriInfo)
-                .getLastExecutionUrl(flowPath, executionId, clientId, tabId);
+                .getLastExecutionUrl(flowPath, executionId, clientId, tabId, clientData);
     }
 
 

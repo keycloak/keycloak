@@ -58,6 +58,7 @@ export const TableToolbar = ({
                 {searchTypeComponent}
                 {inputGroupPlaceholder && (
                   <SearchInput
+                    data-testid="table-search-input"
                     placeholder={inputGroupPlaceholder}
                     aria-label={t("search")}
                     value={searchValue}

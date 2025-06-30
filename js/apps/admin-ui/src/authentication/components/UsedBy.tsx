@@ -1,4 +1,3 @@
-import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
   Button,
   Modal,
@@ -10,17 +9,17 @@ import {
 } from "@patternfly/react-core";
 import { CheckCircleIcon } from "@patternfly/react-icons";
 import { useTranslation } from "react-i18next";
-
+import { useAdminClient } from "../../admin-client";
 import { fetchUsedBy } from "../../components/role-mapping/resource";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
 import useToggle from "../../utils/useToggle";
 import { AuthenticationType, REALM_FLOWS } from "../AuthenticationSection";
 
 import style from "./used-by.module.css";
+import { useRealm } from "../../context/realm-context/RealmContext";
 
 type UsedByProps = {
   authType: AuthenticationType;
-  realm: RealmRepresentation;
 };
 
 const Label = ({ label }: { label: string }) => (
@@ -36,6 +35,8 @@ type UsedByModalProps = {
 };
 
 const UsedByModal = ({ id, isSpecificClient, onClose }: UsedByModalProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
 
   const loader = async (
@@ -43,7 +44,7 @@ const UsedByModal = ({ id, isSpecificClient, onClose }: UsedByModalProps) => {
     max?: number,
     search?: string,
   ): Promise<{ name: string }[]> => {
-    const result = await fetchUsedBy({
+    const result = await fetchUsedBy(adminClient, {
       id,
       type: isSpecificClient ? "clients" : "idp",
       first: first || 0,
@@ -94,11 +95,12 @@ const UsedByModal = ({ id, isSpecificClient, onClose }: UsedByModalProps) => {
   );
 };
 
-export const UsedBy = ({ authType: { id, usedBy }, realm }: UsedByProps) => {
+export const UsedBy = ({ authType: { id, usedBy } }: UsedByProps) => {
   const { t } = useTranslation();
+  const { realmRepresentation: realm } = useRealm();
   const [open, toggle] = useToggle();
 
-  const key = Object.entries(realm).find(
+  const key = Object.entries(realm!).find(
     (e) => e[1] === usedBy?.values[0],
   )?.[0];
 

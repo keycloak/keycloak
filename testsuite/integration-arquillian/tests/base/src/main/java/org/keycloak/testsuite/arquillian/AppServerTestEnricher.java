@@ -30,8 +30,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainers;
 import org.keycloak.testsuite.arquillian.containers.SelfManagedAppContainerLifecycle;
-import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
-import org.keycloak.testsuite.utils.fuse.FuseUtils;
 import org.wildfly.extras.creaper.commands.web.AddConnector;
 import org.wildfly.extras.creaper.commands.web.AddConnectorSslConfig;
 import org.wildfly.extras.creaper.core.CommandFailedException;
@@ -73,7 +71,7 @@ public class AppServerTestEnricher {
 
     private static final Logger log = Logger.getLogger(AppServerTestEnricher.class);
 
-    public static final String CURRENT_APP_SERVER = System.getProperty("app.server", "wildfly");
+    public static final String CURRENT_APP_SERVER = System.getProperty("app.server", "disabled");
     public static final boolean APP_SERVER_SSL_REQUIRED = Boolean.parseBoolean(System.getProperty("app.server.ssl.required", "false"));
 
     @Inject private Instance<ContainerController> containerConrollerInstance;
@@ -185,8 +183,8 @@ public class AppServerTestEnricher {
         try {
             return ManagementClient.online(OnlineOptions
                     .standalone()
-                    .hostAndPort(System.getProperty("app.server.host", "localhost"), System.getProperty("app.server","").startsWith("eap6") ? 9999 + portOffset : 9990 + portOffset)
-                    .protocol(System.getProperty("app.server","").startsWith("eap6") ? ManagementProtocol.REMOTE : ManagementProtocol.HTTP_REMOTING)
+                    .hostAndPort(System.getProperty("app.server.host", "localhost"), 9990 + portOffset)
+                    .protocol(ManagementProtocol.HTTP_REMOTING)
                     .build()
             );
         } catch (IOException e) {
@@ -208,9 +206,6 @@ public class AppServerTestEnricher {
             if (!controller.isStarted(testContext.getAppServerInfo().getQualifier())) {
                 log.info("Starting app server: " + testContext.getAppServerInfo().getQualifier());
                 controller.start(testContext.getAppServerInfo().getQualifier());
-            }
-            if (isFuseAppServer()) {
-                FuseUtils.setUpFuse(ContainerConstants.APP_SERVER_PREFIX + CURRENT_APP_SERVER);
             }
         }
     }
@@ -246,29 +241,7 @@ public class AppServerTestEnricher {
         client.execute("/system-property=javax.net.ssl.trustStore:add(value=${jboss.server.config.dir}/keycloak.truststore)");
         client.execute("/system-property=javax.net.ssl.trustStorePassword:add(value=secret)");
 
-        if (AppServerTestEnricher.isEAP6AppServer()) {
-            if(!operations.exists(Address.subsystem("web").and("connector", "https"))) {
-                client.apply(new AddConnector.Builder("https")
-                        .protocol("HTTP/1.1")
-                        .scheme("https")
-                        .socketBinding("https")
-                        .secure(true)
-                        .build());
-
-                client.apply(new AddConnectorSslConfig.Builder("https")
-                        .password("secret")
-                        .certificateKeyFile("${jboss.server.config.dir}/adapter.jks")
-                        .build());
-
-
-                String appServerJavaHome = System.getProperty("app.server.java.home", "");
-                if (appServerJavaHome.contains("ibm")) {
-                    // Workaround for bug in IBM JDK: https://bugzilla.redhat.com/show_bug.cgi?id=1430730
-                    // Source: https://access.redhat.com/solutions/4133531
-                    client.execute("/subsystem=web/connector=https/configuration=ssl:write-attribute(name=cipher-suite, value=\"SSL_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,SSL_ECDHE_RSA_WITH_AES_128_CBC_SHA256,SSL_RSA_WITH_AES_128_CBC_SHA256,SSL_ECDH_ECDSA_WITH_AES_128_CBC_SHA256,SSL_ECDH_RSA_WITH_AES_128_CBC_SHA256,SSL_DHE_RSA_WITH_AES_128_CBC_SHA256,SSL_DHE_DSS_WITH_AES_128_CBC_SHA256,SSL_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,SSL_ECDHE_RSA_WITH_AES_128_CBC_SHA,SSL_RSA_WITH_AES_128_CBC_SHA,SSL_ECDH_ECDSA_WITH_AES_128_CBC_SHA,SSL_ECDH_RSA_WITH_AES_128_CBC_SHA,SSL_DHE_RSA_WITH_AES_128_CBC_SHA,SSL_DHE_DSS_WITH_AES_128_CBC_SHA\")");
-                }
-            }
-        } else if (!isElytronConfigured) {
+        if (!isElytronConfigured) {
             removeHttpsListener(client, administration);
             addHttpsListenerAppServer(client);
         }
@@ -367,16 +340,8 @@ public class AppServerTestEnricher {
         return CURRENT_APP_SERVER.equals("wildfly9");
     }
 
-    public static boolean isTomcatAppServer() {
-        return CURRENT_APP_SERVER.startsWith("tomcat");
-    }
-
-    public static boolean isEAP6AppServer() {
-        return CURRENT_APP_SERVER.equals("eap6");
-    }
-
-    public static boolean isEAPAppServer() {
-        return CURRENT_APP_SERVER.equals("eap");
+    public static boolean isJBossJakartaAppServer() {
+        return CURRENT_APP_SERVER.equals("eap8");
     }
 
     public static boolean isWASAppServer() {
@@ -385,10 +350,6 @@ public class AppServerTestEnricher {
 
     public static boolean isWLSAppServer() {
         return CURRENT_APP_SERVER.equals("wls");
-    }
-
-    public static boolean isFuseAppServer() {
-        return CURRENT_APP_SERVER.contains("fuse");
     }
 
     public static boolean isRemoteAppServer() {

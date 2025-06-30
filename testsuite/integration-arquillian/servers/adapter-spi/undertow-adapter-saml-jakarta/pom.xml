@@ -51,11 +51,6 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.keycloak.testsuite</groupId>
-            <artifactId>keycloak-undertow-adapter-jakarta</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
             <scope>provided</scope>
@@ -86,6 +81,7 @@
         <plugins>
             <plugin>
                 <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
                 <executions>
                     <execution>
                         <id>transform</id>
@@ -96,8 +92,7 @@
                         <configuration>
                             <target>
                                 <property name="plugin_classpath" refid="maven.plugin.classpath" />
-                                <java classname="org.eclipse.transformer.jakarta.JakartaTransformer" fork="true">
-                                    <jvmarg value="${ant.jvm.args}"/>
+                                <java classname="org.eclipse.transformer.cli.JakartaTransformerCLI" fork="true">
                                     <arg value="-o" />
                                     <arg value="${jakarta-transformer-sources}" />
                                     <arg value="${jakarta-transformer-target}/tmp" />
@@ -120,18 +115,12 @@
                     <dependency>
                         <groupId>org.eclipse.transformer</groupId>
                         <artifactId>org.eclipse.transformer.cli</artifactId>
-                        <version>0.2.0</version>
+                        <version>0.5.0</version>
                     </dependency>
                     <dependency>
-                        <groupId>ant-contrib</groupId>
-                        <artifactId>ant-contrib</artifactId>
-                        <version>1.0b3</version>
-                        <exclusions>
-                            <exclusion>
-                                <groupId>ant</groupId>
-                                <artifactId>ant</artifactId>
-                            </exclusion>
-                        </exclusions>
+                        <groupId>org.apache.ant</groupId>
+                        <artifactId>ant</artifactId>
+                        <version>1.10.14</version>
                     </dependency>
                 </dependencies>
             </plugin>

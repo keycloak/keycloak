@@ -16,7 +16,8 @@ export const ScopeDetailsRoute: AppRouteObject = {
   element: <ScopeDetails />,
   breadcrumb: (t) => t("authorizationScopeDetails"),
   handle: {
-    access: "manage-clients",
+    access: (accessChecker) =>
+      accessChecker.hasAny("manage-clients", "view-authorization"),
   },
 };
 

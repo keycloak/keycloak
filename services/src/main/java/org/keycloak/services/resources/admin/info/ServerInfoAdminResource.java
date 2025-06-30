@@ -20,7 +20,7 @@ package org.keycloak.services.resources.admin.info;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProvider;
@@ -113,10 +113,12 @@ public class ServerInfoAdminResource {
                                 Collectors.toMap(
                                         ClientSignatureVerifierProvider::isAsymmetricAlgorithm,
                                         clientSignatureVerifier -> Collections.singletonList(clientSignatureVerifier.getAlgorithm()),
-                                        (l1, l2) -> listCombiner(l1, l2)
-                                                .stream()
-                                                .sorted()
-                                                .collect(Collectors.toList()),
+                                        (l1, l2) -> {
+                                            List<String> result = listCombiner(l1, l2);
+                                            return result.stream()
+                                                    .sorted()
+                                                    .collect(Collectors.toList());
+                                        },
                                         HashMap::new
                                 )
                         );
@@ -225,13 +227,12 @@ public class ServerInfoAdminResource {
     
     private LinkedList<String> filterThemes(Theme.Type type, LinkedList<String> themeNames) {
         LinkedList<String> filteredNames = new LinkedList<>(themeNames);
-        
-        boolean filterAccountV2 = (type == Theme.Type.ACCOUNT) && 
-                !Profile.isFeatureEnabled(Profile.Feature.ACCOUNT2);
         boolean filterAdminV2 = (type == Theme.Type.ADMIN) && 
                 !Profile.isFeatureEnabled(Profile.Feature.ADMIN2);
-        
-        if (filterAccountV2 || filterAdminV2) {
+        boolean filterLoginV2 = (type == Theme.Type.LOGIN) &&
+                !Profile.isFeatureEnabled(Profile.Feature.LOGIN2);
+
+        if (filterAdminV2 || filterLoginV2) {
             filteredNames.remove("keycloak.v2");
             filteredNames.remove("rh-sso.v2");
         }

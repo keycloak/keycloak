@@ -19,7 +19,6 @@
 package org.keycloak.testsuite.federation.ldap;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -33,8 +32,8 @@ import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.broker.provider.util.SimpleHttp;
-import org.keycloak.common.Profile;
 import org.keycloak.federation.kerberos.KerberosFederationProvider;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
@@ -42,19 +41,18 @@ import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.representations.account.UserRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.account.AccountCredentialResource;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
-import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
+import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.testsuite.util.TokenUtil;
 
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -73,8 +71,6 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
 
     @Before
     public void before() {
-        // don't run this test when map storage is enabled, as map storage doesn't support the legacy style federation
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
         httpClient = HttpClientBuilder.create().build();
     }
 
@@ -119,61 +115,119 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
     public void testUpdateProfile() throws IOException {
         UserRepresentation user = getProfile();
 
-        List<String> origLdapId = new ArrayList<>(user.getAttributes().get(LDAPConstants.LDAP_ID));
-        List<String> origLdapEntryDn = new ArrayList<>(user.getAttributes().get(LDAPConstants.LDAP_ENTRY_DN));
-        Assert.assertEquals(1, origLdapId.size());
-        Assert.assertEquals(1, origLdapEntryDn.size());
-        assertThat(user.getAttributes().keySet(), not(contains(KerberosFederationProvider.KERBEROS_PRINCIPAL)));
+        // Metadata attributes like LDAP_ID are not present
+        Assert.assertNull(user.getAttributes());
 
-        // Trying to add KERBEROS_PRINCIPAL should fail (Adding attribute, which was not yet present)
+        org.keycloak.representations.idm.UserRepresentation adminRestUserRep = testRealm().users()
+                .search(user.getUsername()).get(0);
+        List<String> origLdapId = adminRestUserRep.getAttributes().get(LDAPConstants.LDAP_ID);
+        List<String> origLdapEntryDn = adminRestUserRep.getAttributes().get(LDAPConstants.LDAP_ENTRY_DN);
+        Assert.assertNotNull(origLdapId.get(0));
+        Assert.assertNotNull(origLdapEntryDn.get(0));
+        adminRestUserRep = testRealm().users().get(adminRestUserRep.getId()).toRepresentation();
+        origLdapId = adminRestUserRep.getAttributes().get(LDAPConstants.LDAP_ID);
+        origLdapEntryDn = adminRestUserRep.getAttributes().get(LDAPConstants.LDAP_ENTRY_DN);
+        Assert.assertNotNull(origLdapId.get(0));
+        Assert.assertNotNull(origLdapEntryDn.get(0));
+
+        // Trying to add KERBEROS_PRINCIPAL (Adding attribute, which was not yet present). Request does not fail, but attribute is not updated
         user.setFirstName("JohnUpdated");
         user.setLastName("DoeUpdated");
         user.singleAttribute(KerberosFederationProvider.KERBEROS_PRINCIPAL, "foo");
-        updateProfileExpectError(user, 400, Messages.UPDATE_READ_ONLY_ATTRIBUTES_REJECTED);
+        updateProfileExpectSuccess(user);
+        user = getProfile();
+        Assert.assertEquals("JohnUpdated", user.getFirstName());
+        Assert.assertEquals("DoeUpdated", user.getLastName());
+        Assert.assertNull(user.getAttributes());
 
-        // The same test, but consider case sensitivity
-        user.getAttributes().remove(KerberosFederationProvider.KERBEROS_PRINCIPAL);
-        user.singleAttribute("KERberos_principal", "foo");
-        updateProfileExpectError(user, 400, Messages.UPDATE_READ_ONLY_ATTRIBUTES_REJECTED);
-
-        // Trying to update LDAP_ID should fail (Updating existing attribute, which was present)
-        user.getAttributes().remove("KERberos_principal");
-        user.setFirstName("JohnUpdated");
-        user.setLastName("DoeUpdated");
-        user.getAttributes().get(LDAPConstants.LDAP_ID).remove(0);
-        user.getAttributes().get(LDAPConstants.LDAP_ID).add("123");
-        updateProfileExpectError(user, 400, Messages.UPDATE_READ_ONLY_ATTRIBUTES_REJECTED);
-
-        // Trying to delete LDAP_ID should fail (Removing attribute, which was present here already)
-        user.getAttributes().get(LDAPConstants.LDAP_ID).remove(0);
+        // Trying to update LDAP_ID should fail (Updating existing attribute, which is present on the user even if not visible to the user)
+        user.singleAttribute(LDAPConstants.LDAP_ID, "123");
         updateProfileExpectError(user, 400, Messages.UPDATE_READ_ONLY_ATTRIBUTES_REJECTED);
 
         // ignore removal for read-only attributes
         user.getAttributes().remove(LDAPConstants.LDAP_ID);
         updateProfileExpectSuccess(user);
         user = getProfile();
-        assertFalse(user.getAttributes().get(LDAPConstants.LDAP_ID).isEmpty());
+        Assert.assertNull(user.getAttributes());
 
         // Trying to update LDAP_ENTRY_DN should fail
-        user.getAttributes().put(LDAPConstants.LDAP_ID, origLdapId);
-        user.getAttributes().get(LDAPConstants.LDAP_ENTRY_DN).remove(0);
-        user.getAttributes().get(LDAPConstants.LDAP_ENTRY_DN).add("ou=foo,dc=bar");
+        user.singleAttribute(LDAPConstants.LDAP_ENTRY_DN, "ou=foo,dc=bar");
         updateProfileExpectError(user, 400, Messages.UPDATE_READ_ONLY_ATTRIBUTES_REJECTED);
 
         // Update firstName and lastName should be fine
-        user.getAttributes().put(LDAPConstants.LDAP_ENTRY_DN, origLdapEntryDn);
+        user.getAttributes().remove(LDAPConstants.LDAP_ENTRY_DN);
         updateProfileExpectSuccess(user);
 
         user = getProfile();
         assertEquals("JohnUpdated", user.getFirstName());
         assertEquals("DoeUpdated", user.getLastName());
-        assertEquals(origLdapId, user.getAttributes().get(LDAPConstants.LDAP_ID));
-        assertEquals(origLdapEntryDn, user.getAttributes().get(LDAPConstants.LDAP_ENTRY_DN));
+        Assert.assertNull(user.getAttributes());
 
         // Revert
         user.setFirstName("John");
         user.setLastName("Doe");
         updateProfileExpectSuccess(user);
+    }
+
+    @Test
+    public void testUpdateProfileUnmanagedAttributes() throws IOException {
+        // User profile unmanaged attributes supported
+        UserProfileResource userProfileRes = testRealm().users().userProfile();
+        UPConfig origConfig = VerifyProfileTest.enableUnmanagedAttributes(userProfileRes);
+
+        try {
+            UserRepresentation user = getProfile();
+
+            // Metadata attributes like LDAP_ID are not present
+            Assert.assertNull(user.getAttributes());
+
+            org.keycloak.representations.idm.UserRepresentation adminRestUserRep = testRealm().users()
+                    .search(user.getUsername()).get(0);
+            List<String> origLdapId = adminRestUserRep.getAttributes().get(LDAPConstants.LDAP_ID);
+            List<String> origLdapEntryDn = adminRestUserRep.getAttributes().get(LDAPConstants.LDAP_ENTRY_DN);
+            Assert.assertNotNull(origLdapId.get(0));
+            Assert.assertNotNull(origLdapEntryDn.get(0));
+
+            // Trying to add KERBEROS_PRINCIPAL should fail (Adding attribute, which was not yet present)
+            user.setFirstName("JohnUpdated");
+            user.setLastName("DoeUpdated");
+            user.singleAttribute(KerberosFederationProvider.KERBEROS_PRINCIPAL, "foo");
+            updateProfileExpectError(user, 400, Messages.UPDATE_READ_ONLY_ATTRIBUTES_REJECTED);
+
+            // The same test, but consider case sensitivity
+            user.getAttributes().remove(KerberosFederationProvider.KERBEROS_PRINCIPAL);
+            user.singleAttribute("KERberos_principal", "foo");
+            updateProfileExpectError(user, 400, Messages.UPDATE_READ_ONLY_ATTRIBUTES_REJECTED);
+
+            // Trying to update LDAP_ID should fail (Updating existing attribute, which was present)
+            user.getAttributes().remove("KERberos_principal");
+            user.setFirstName("JohnUpdated");
+            user.setLastName("DoeUpdated");
+            user.singleAttribute(LDAPConstants.LDAP_ID, "123");
+            updateProfileExpectError(user, 400, Messages.UPDATE_READ_ONLY_ATTRIBUTES_REJECTED);
+
+            // Trying to delete LDAP_ID (by set to null) should fail (Removing attribute, which was present here already)
+            user.singleAttribute(LDAPConstants.LDAP_ID, null);
+            updateProfileExpectError(user, 400, Messages.UPDATE_READ_ONLY_ATTRIBUTES_REJECTED);
+
+            // ignore removal for read-only attributes
+            user.getAttributes().remove(LDAPConstants.LDAP_ID);
+            updateProfileExpectSuccess(user);
+            user = getProfile();
+            Assert.assertNull(user.getAttributes());
+
+            user = getProfile();
+            assertEquals("JohnUpdated", user.getFirstName());
+            assertEquals("DoeUpdated", user.getLastName());
+            Assert.assertNull(user.getAttributes());
+
+            // Revert
+            user.setFirstName("John");
+            user.setLastName("Doe");
+            updateProfileExpectSuccess(user);
+        } finally {
+            userProfileRes.update(origConfig);
+        }
     }
 
     @Test
@@ -187,7 +241,7 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
 
         // Password won't have createdDate and any metadata set
         Assert.assertEquals(PasswordCredentialModel.TYPE, userPassword.getType());
-        Assert.assertEquals(userPassword.getCreatedDate(), new Long(-1L));
+        Assert.assertEquals(userPassword.getCreatedDate(), Long.valueOf(-1L));
         Assert.assertNull(userPassword.getCredentialData());
         Assert.assertNull(userPassword.getSecretData());
     }
@@ -200,11 +254,11 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
             RealmModel appRealm = ctx.getRealm();
             appRealm.setEditUsernameAllowed(false);
         });
-        UserRepresentation user = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        UserRepresentation user = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
         user.setEmail("john-alias@email.org");
-        SimpleHttp.doPost(getAccountUrl(null), httpClient).json(user).auth(tokenUtil.getToken()).asStatus();
+        SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).json(user).auth(tokenUtil.getToken()).asStatus();
 
-        UserRepresentation usernew = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        UserRepresentation usernew = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
         assertEquals("johnkeycloak", usernew.getUsername());
         assertEquals("John", usernew.getFirstName());
         assertEquals("Doe", usernew.getLastName());
@@ -213,7 +267,7 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
 
         //clean up
         usernew.setEmail("john@email.org");
-        SimpleHttp.doPost(getAccountUrl(null), httpClient).json(usernew).auth(tokenUtil.getToken()).asStatus();
+        SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).json(usernew).auth(tokenUtil.getToken()).asStatus();
 
     }
 
@@ -224,33 +278,43 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
             RealmModel appRealm = ctx.getRealm();
             appRealm.setEditUsernameAllowed(false);
         });
-        UserRepresentation user = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        UserRepresentation user = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
         user.setEmail("john-alias@email.org");
-        SimpleHttp.doPost(getAccountUrl(null), httpClient).json(user).auth(tokenUtil.getToken()).asStatus();
+        SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).json(user).auth(tokenUtil.getToken()).asStatus();
 
-        UserRepresentation usernew = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        UserRepresentation usernew = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
         assertEquals("johnkeycloak", usernew.getUsername());
         assertEquals("John", usernew.getFirstName());
         assertEquals("Doe", usernew.getLastName());
         assertEquals("john-alias@email.org", usernew.getEmail());
         assertFalse(usernew.isEmailVerified());
 
-        usernew.getAttributes().clear();
+        // No metadata attributes like LDAP_ID or LDAP_ENTRY_DN present in account REST API
+        Assert.assertNull(usernew.getAttributes());
 
         //clean up
         usernew.setEmail("john@email.org");
-        final int i = SimpleHttp.doPost(getAccountUrl(null), httpClient).json(usernew).auth(tokenUtil.getToken()).asStatus();
+        final int i = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).json(usernew).auth(tokenUtil.getToken()).asStatus();
 
         org.keycloak.representations.idm.UserRepresentation userRep = testRealm().users()
                 .search(usernew.getUsername()).get(0);
 
+        // Metadata attributes present in admin REST API
+        assertTrue(userRep.getAttributes().containsKey(LDAPConstants.LDAP_ID));
+        assertTrue(userRep.getAttributes().containsKey(LDAPConstants.LDAP_ENTRY_DN));
+
         userRep.setAttributes(null);
 
         testRealm().users().get(userRep.getId()).update(userRep);
-        usernew = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        usernew = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
 
-        assertTrue(usernew.getAttributes().containsKey(LDAPConstants.LDAP_ID));
-        assertTrue(usernew.getAttributes().containsKey(LDAPConstants.LDAP_ENTRY_DN));
+        // Metadata attributes still not present in account REST
+        Assert.assertNull(usernew.getAttributes());
+
+        // Metadata attributes still present in admin REST API
+        userRep = testRealm().users().search(usernew.getUsername()).get(0);
+        assertTrue(userRep.getAttributes().containsKey(LDAPConstants.LDAP_ID));
+        assertTrue(userRep.getAttributes().containsKey(LDAPConstants.LDAP_ENTRY_DN));
     }
 
 
@@ -259,23 +323,23 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
     }
 
     private UserRepresentation getProfile() throws IOException {
-        return SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        return SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
     }
 
     private void updateProfileExpectSuccess(UserRepresentation user) throws IOException {
-        int status = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asStatus();
+        int status = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asStatus();
         assertEquals(204, status);
     }
 
     private void updateProfileExpectError(UserRepresentation user, int expectedStatus, String expectedMessage) throws IOException {
-        SimpleHttp.Response response = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
+        SimpleHttp.Response response = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
         assertEquals(expectedStatus, response.getStatus());
         assertEquals(expectedMessage, response.asJson(ErrorRepresentation.class).getErrorMessage());
     }
 
     // Send REST request to get all credential containers and credentials of current user
     private List<AccountCredentialResource.CredentialContainer> getCredentials() throws IOException {
-        return SimpleHttp.doGet(getAccountUrl("credentials"), httpClient)
+        return SimpleHttpDefault.doGet(getAccountUrl("credentials"), httpClient)
                 .auth(tokenUtil.getToken()).asJson(new TypeReference<List<AccountCredentialResource.CredentialContainer>>() {});
     }
 

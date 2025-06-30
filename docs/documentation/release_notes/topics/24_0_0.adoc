@@ -1,0 +1,455 @@
+= Supported user profile and progressive profiling
+
+The user profile preview feature is promoted to be fully supported and user profile is enabled by default.
+
+ifeval::[{project_community}==true]
+In the past months, the Keycloak team spent a huge amount of effort in polishing the user
+profile feature to make it fully supported. In this release, we continued the effort. Lots of improvements, fixes and
+polishing were done based on the thorough testing and feedback from our awesome community.
+endif::[]
+
+The following are a few highlights of this feature;
+
+* Fine-grained control over the attributes that users and administrators can manage so that you can prevent unexpected attributes and values from being set. 
+* Ability to specify what user attributes are managed and should be displayed on the forms to regular users or administrators.
+* Dynamic forms - Previously, the forms where users created or updated their profiles, contain four basic attributes like username, email, first name and last name. The addition of any 
+attributes (or removing some default attributes) required you to create a custom theme. Now custom themes may not be needed because users see exactly the requested attributes based on the requirement of the particular deployment.
+
+* Validations - Ability to specify validators for the user attributes including built-in validators that you can use to specify a maximum or minimum length, a specific regex, or limiting a  
+particular attribute to be a URL or number.
+
+* Annotations - Ability to specify that particular attribute should be rendered for instance as a text area, an HTML select with specified options, or calendar or many other options. You can also bind JavaScript code to a specific field to change how an attribute is rendered and customize its behavior.
+
+* Progressive profiling - Ability to specify that some fields are required or available on the forms just for particular values of `scope` parameter. This effectively allow progressive
+profiling. You no longer need to ask the user for twenty attributes during registration; you can instead ask the user to fill in attributes incrementally according to the requirements of the individual client
+applications that are used by the user.
+
+* Migration from previous versions - The user profile is now always enabled, but it operates as before for those who did not use this feature. You can
+benefit from the user profile capabilities, but you are not required to use them. For migration instructions, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+The first release of the user profile as a supported feature is just the starting point and the baseline for delivering many more capabilities around identity management.
+
+ifeval::[{project_community}==true]
+We would like to give huge thanks to the awesome Keycloak community as lots of ideas, requirements and contributions came from the community! Special thanks to:
+
+* https://github.com/velias[Vlastimil Eliáš]
+* https://github.com/alechenninger[Alec Henninger]
+* https://github.com/thomasdarimont[Thomas Darimont]
+* https://github.com/bs-matil[Markus Till]
+* https://github.com/sschu[Sebastian Schuster]
+* https://github.com/antikalk[Oliver]
+* https://github.com/patrickjennings[Patrick Jennings]
+* https://github.com/adrhine[Andrew]
+
+endif::[]
+
+For more details about user profile capabilities, see the link:{adminguide_link}#user-profile[{adminguide_name}].
+
+== Breaking changes to the User Profile SPI
+
+In this release, changes to the User Profile SPI might impact existing implementations based on this SPI. For more details, see the 
+link:{upgradingguide_link}[{upgradingguide_name}].
+
+== Changes to Freemarker templates to render pages based on the user profile and realm
+
+In this release, the following templates were updated to make it possible to dynamically render attributes based
+on the user profile configuration set to a realm:
+
+* `login-update-profile.ftl`
+* `register.ftl`
+* `update-email.ftl`
+
+For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+== New Freemarker template for the update profile page at first login through a broker
+
+In this release, the server renders the update profile page when the user is authenticating through a broker for the
+first time using the `idp-review-user-profile.ftl` template.
+
+For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+ifeval::[{project_community}==true]
+= Java adapter deprecation and removal
+
+Back in 2022 we announced the https://www.keycloak.org/2022/02/adapter-deprecation.html[deprecation of Keycloak adapters in Keycloak 19].
+To give the community more time to adopt this https://www.keycloak.org/2023/03/adapter-deprecation-update.html[was delayed].
+
+With that in mind, this will be the last major release of Keycloak to include OpenID Connect and SAML adapters.
+As Jetty 9.x has not been supported since 2022 the Jetty adapter has been removed already in this release.
+
+The generic Authorization Client library will continue to be supported, and aims to be used in combination with any
+other OAuth 2.0 or OpenID Connect libraries.
+
+The only adapter we will continue to deliver is the SAML adapter for latest releases of WildFly and EAP 8.x. Reasoning
+for continuing to support this is down to the fact that the majority of the SAML codebase in Keycloak was a contribution
+from WildFly. As part of this contribution we agreed to maintain SAML adapters for WildFly and EAP in the long run.
+
+== Jetty adapter removed
+
+Jetty 9.4 has not been supported in the community for a long time, and reached end-of-life in 2022. At the same time the
+adapter has not been updated or tested with more recent versions of Jetty. For these reasons the Jetty adapter has been
+removed from this release.
+
+endif::[]
+
+= New Welcome Page
+
+The 'welcome' page that appears at the first use of {project_name} is redesigned. It provides a better setup experience and conforms to the latest version of https://www.patternfly.org/[PatternFly]. The simplified page layout includes only a form to register the first administrative user. After completing the registration, the user is sent directly to the Admin Console.
+
+If you use a custom theme, you may need to update it to support the new welcome page. For details, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= New Account Console now the default
+
+We introduced version 3 of the Account Console in {project_name} 22 as a preview feature. In this release, we are making it the default version, and deprecating version 2 in the process, which will be removed in a subsequent release.
+
+This new version has built-in support for the user profile feature, which allows administrators to configure which attributes are available to users in the Account Console, and lands a user directly on their personal account page after logging in.
+
+If you are using or extending the customization features of this theme,  you may need to perform additional migrations. For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Keycloak JS
+
+== Using `exports` field in `package.json`
+
+The {project_name} JS adapter now uses the https://webpack.js.org/guides/package-exports/[`exports` field] in its `package.json`. This change improves support for more modern bundlers like Webpack 5 and Vite, but comes with some unavoidable breaking changes. See the link:{upgradingguide_link}[{upgradingguide_name}] for more details.
+
+== PKCE enabled by default
+
+The {project_name} JS adapter now sets the `pkceMethod` option to `S256` by default. This change enables Proof Key Code Exchange (https://datatracker.ietf.org/doc/html/rfc7636[PKCE]) for all applications using the adapter. If you use the adapter on a system that does not support PKCE, you can set the `pkceMethod` option to `false` to disable it.
+
+= Changes to Password Hashing
+
+In this release, we adapted the password hashing defaults to match the https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pbkdf2[OWASP recommendations for Password Storage].
+
+As part of this change, the default password hashing provider has changed from `pbkdf2-sha256` to `pbkdf2-sha512`.
+Also, the number of default hash iterations for `pbkdf2` based password hashing algorithms changed. This change means better security aligned with latest recommendations, but
+it has impact on performance. It is possible to stick to the old behaviour by adding password policies `hashAlgorithm` and `hashIterations` to your realm. For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= OAuth/OIDC related improvements
+
+== Lightweight access tokens support
+
+This release contains support for Lightweight access tokens. As a result, you can have smaller access tokens for specified clients. These tokens have only a few 
+claims, which is why they are smaller. Note that lightweight access token is still JWT signed by the realm key by default and still contains some very basic claims.
+
+This release introduces an *Add to lightweight access token* flag that is available on some OIDC protocol mappers. Use this flag to specify if a particular claim should be added to a lightweight
+access token. It is *OFF* by default, which means that most claims are not added.
+
+Also, a client policy executor exists. Use it to specify if a particular client request
+should use lightweight access tokens or regular access tokens. An alternative to the executor is to use an *Always use lightweight access token* flag on client advanced
+settings, which causes that client to always use lightweight access tokens. An executor can be an alternative if you need
+more flexibility. For instance, you may choose to use lightweight access tokens by default but use regular tokens only for the specified *scope* parameter.
+
+A previous release added an *Add to token introspection* switch. You use it to add
+claims that are not present in the access token into the introspection endpoint response.
+
+ifeval::[{project_community}==true]
+Thanks to https://github.com/skabano[Shigeyuki Kabano] for the contribution and Thanks to
+https://github.com/tnorimat[Takashi Norimatsu] for a help and review of this feature.
+endif::[]
+
+== OAuth 2.1 support
+
+This release contains optional OAuth 2.1 support. New client policy profiles were introduced in this release, which administrators can use to make sure that clients and particular client requests comply with the OAuth 2.1 specification. A dedicated client profile exists for confidential clients and a dedicated profile for public clients.
+ifeval::[{project_community}==true]
+Thanks to https://github.com/tnorimat[Takashi Norimatsu] and https://github.com/skabano[Shigeyuki Kabano] for the contribution.
+endif::[]
+
+== Scope parameter supported in the refresh token flow
+
+Starting with this release, the *scope* parameter in the OAuth2/OIDC endpoint for token refresh is supported. Use this parameter to request access tokens with a smaller amount
+of scopes than originally granted, which means you cannot increase access token scope. This scope limitation does not affect the scope of the refreshed refresh token. This function works as
+described in the OAuth2 specification.
+ifeval::[{project_community}==true]
+Thanks to https://github.com/cgeorgilakis[Konstantinos Georgilakis] for the contribution.
+endif::[]
+
+== Client policy executor for secure redirect URIs
+
+A new client policy executor `secure-redirect-uris-enforcer` is introduced. Use it to restrict which redirect URIs can be used by the clients. For instance, 
+you can specify that client redirect URIs cannot have wildcards, should be just from specific domain, must be OAuth 2.1 compliant, and so on.
+ifeval::[{project_community}==true]
+Thanks to https://github.com/lexcao[Lex Cao] and https://github.com/tnorimat[Takashi Norimatsu] for the contribution.
+endif::[]
+
+== Client policy executor for enforcing DPoP
+
+A new client policy executor `dpop-bind-enforcer` is introduced. You can use it to enforce DPoP for a particular client if `dpop` preview
+ is enabled.
+ifeval::[{project_community}==true]
+Thanks to https://github.com/tnorimat[Takashi Norimatsu] for the contribution.
+endif::[]
+
+== Supporting EdDSA
+
+You can create EdDSA realm keys and use them as signature algorithms for various clients. For instance, you can use these keys to sign tokens or for client authentication with signed JWT.
+This feature includes identity brokering where {project_name} itself signs client assertions that are used for `private_key_jwt` authentication to third party identity providers.
+ifeval::[{project_community}==true]
+Thanks to
+https://github.com/tnorimat[Takashi Norimatsu] and https://github.com/MuhammadZakwan[Muhammad Zakwan Bin Mohd Zahid] for the contribution.
+endif::[]
+
+== EC Keys supported by JavaKeystore provider
+
+The provider `JavaKeystoreProvider` for providing realm keys now supports EC keys in addition to previously supported RSA keys.
+ifeval::[{project_community}==true]
+Thanks to https://github.com/wistefan[Stefan Wiedemann] for the contribution.
+endif::[]
+
+== Option to add X509 thumbprint to JWT when using private_key_jwt authentication for identity providers
+
+OIDC identity providers now have the *Add X.509 Headers to the JWT* option for the situation when client authentication with JWT signed by private key is used. This option can be useful
+for interoperability with some identity providers such as Azure AD, which require the thumbprint to be present on the JWT.
+ifeval::[{project_community}==true]
+Thanks to https://github.com/MikeTangoEcho[MT] for the contribution.
+endif::[]
+
+== OAuth Grant Type SPI
+
+The {project_name} codebase includes an internal update  to introduce the OAuth Grant Type SPI. This update allows additional flexibility when introducing custom grant types
+supported by the {project_name} OAuth 2 token endpoint.
+ifeval::[{project_community}==true]
+Thanks to https://github.com/dteleguin[Dmitry Telegin] for the contribution.
+endif::[]
+
+= CORS improvements
+
+The CORS related {project_name} functionality was extracted into the SPI, which can allow additional flexibility. Note that `CorsSPI` is internal and may change at a future release.
+ifeval::[{project_community}==true]
+Thanks to https://github.com/dteleguin[Dmitry Telegin] for the contribution.
+endif::[]
+
+= Truststore improvements
+
+{project_name} introduces improved truststores configuration options. The {project_name} truststore is now used across the server, including outgoing connections, mTLS, and database drivers. You no longer need to configure separate truststores for individual areas. To configure the truststore, you can put your truststores files or certificates in the default `conf/truststores`, or use the new `truststore-paths` config option. For details refer to the relevant https://www.keycloak.org/server/keycloak-truststore[guide].
+
+= Versioned Features
+
+Features now support versioning. To preserve backward compatibility, all existing features (including `account2` and `account3`) are marked as version 1. Newly introduced features will use versioning, which means that users can select between different implementations of desired features.
+
+For details refer to the https://www.keycloak.org/server/features[features guide].
+
+== {project_name} CR Truststores
+
+You may also take advantage of the new server-side handling of truststores by using the Keycloak CR, for example:
+
+[source,yaml]
+----
+spec:
+  truststores:
+    mystore:
+      secret:
+        name: mystore-secret
+    myotherstore:
+      secret:
+        name: myotherstore-secret
+----
+
+Currently only Secrets are supported.
+
+== Trust Kubernetes CA
+
+The cert for the Kubernetes CA is added automatically to your {project_name} Pods managed by the Operator.
+
+= Automatic certificate management for SAML identity providers
+
+The SAML identity providers can now be configured to automatically download the signing certificates from the IDP entity metadata descriptor endpoint. In order to use the new feature, configure the `Metadata descriptor URL` option in the provider (the URL where the IDP metadata information with the certificates is published) and set `Use metadata descriptor URL` to `ON`. The certificates are automatically downloaded and cached in the `public-key-storage` SPI from that URL. The certificates can also be reloaded or imported from the Admin Console, using the action combo in the provider page.
+
+See the https://www.keycloak.org/docs/latest/server_admin/index.html#saml-v2-0-identity-providers[documentation] for more details about the new options.
+
+= Non-blocking health check for load balancers
+
+A new health check endpoint available at `/lb-check` was added.
+The execution is running in the event loop, which means this check is responsive also in overloaded situations when {project_name} needs to handle many requests waiting in request queue.
+This behavior is useful, for example, in multi-site deployment to avoid failing over to another site that is under heavy load.
+The endpoint is currently checking availability of the embedded and external Infinispan caches. Other checks may be added later.
+
+
+This endpoint is not available by default.
+To enable it, run Keyloak with the `multi-site` feature.
+For more details, see https://www.keycloak.org/server/features[Enabling and disabling features].
+
+= Keycloak CR Optimized Field
+
+The Keycloak CR now includes an `startOptimized` field, which may be used to override the default assumption about whether to use the `--optimized` flag for the start command.
+As a result, you can use the CR to configure build time options also when a custom {project_name} image is used.
+
+= Enhanced reverse proxy settings
+
+It is now possible to separately enable parsing of either `Forwarded` or `X-Forwarded-*` headers by using the new `--proxy-headers` option.
+For details, see the https://www.keycloak.org/server/reverseproxy[Reverse Proxy Guide].
+The original `--proxy` option is now deprecated and will be removed in a future release. For migration instructions, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Changes to the user representation in both Admin API and Account contexts
+
+In this release, we are encapsulating the root user attributes (such as `username`, `email`, `firstName`, `lastName`, and `locale`) by moving them to a base/abstract class in order to align how these attributes
+are marshalled and unmarshalled when using both Admin and Account REST APIs.
+
+This strategy provides consistency in how attributes are managed by clients and makes sure they conform to the user profile
+configuration set to a realm.
+
+For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Sequential loading of offline sessions and remote sessions
+
+Starting with this release, the first member of a {project_name} cluster will load remote sessions sequentially instead of in parallel.
+If offline session preloading is enabled, those will be loaded sequentially as well.
+
+For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Performing actions on behalf of another already authenticated user is not longer possible
+
+In this release, you can no longer perform actions such as email verification if the user is already authenticated
+and the action is bound to another user. For instance, a user can not complete the verification email flow if the email link
+is bound to a different account.
+
+= Changes to the email verification flow
+
+In this release, if a user tries to follow the link to verify the email and the email was previously verified, a proper message
+will be shown.
+
+In addition to that, a new error (`EMAIL_ALREADY_VERIFIED`) event will be fired to indicate an attempt to verify an already verified email. You can
+use this event to track possible attempts to hijack user accounts in case the link has leaked or to alert users if they do not recognize the action.
+
+= Deprecated offline session preloading
+
+The default behavior of {project_name} is to load offline sessions on demand.
+The old behavior to preload them at startup is now deprecated, as pre-loading them at startup does not scale well with a growing number of sessions, and increases {project_name} memory usage. The old behavior will be removed in a future release.
+
+For more details, see the
+link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Configuration option for offline session lifespan override in memory
+
+To reduce memory requirements, we introduced a configuration option to shorten lifespan for offline sessions imported into the Infinispan caches. Currently, the offline session lifespan override is disabled by default.
+
+For more details, see the
+link:{adminguide_link}#_offline-access[{adminguide_name}].
+
+= Infinispan metrics use labels for cache manager and cache names
+
+When enabling metrics for {project_name}'s embedded caches, the metrics now use labels for the cache manager and the cache names.
+
+For more details, see the
+link:{upgradingguide_link}[{upgradingguide_name}].
+
+= User attribute value length extension
+
+As of this release, {project_name} supports storing and searching by user attribute values longer than 255 characters, which was previously a limitation.
+
+For more details, see the
+link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Brute Force Protection changes
+
+There have been a couple of enhancements to the Brute Protection:
+
+1. When an attempt to authenticate with an OTP or Recovery Code fails due to Brute Force Protection the active Authentication Session is invalidated. Any further attempts to authenticate with that session will fail.
+
+2. In previous versions of {project_name}, the administrator had to choose between disabling users temporarily or permanently due to a Brute Force attack on their accounts. The administrator can now permanently disable a user after a given number of temporary lockouts.
+
+3. The property `failedLoginNotBefore` has been added to the `brute-force/users/{userId}` endpoint
+
+= Authorization Policy
+
+In previous versions of {project_name}, when the last member of a User, Group or Client policy was deleted then that policy would also be deleted. Unfortunately this could lead to an escalation of privileges if the policy was used in an aggregate policy. To avoid privilege escalation the effect policies are no longer deleted and an administrator will need to update those policies.
+
+= {project_name} CR cache-config-file option
+
+The Keycloak CR now allows for specifying the `cache-config-file` option by using the `cache` spec `configMapFile` field, for example:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  ...
+  cache:
+    configMapFile:
+      name: my-configmap
+      key: config.xml
+----
+
+= Keycloak CR resources options
+
+The Keycloak CR now allows for specifying the `resources` options for managing compute resources for the Keycloak container.
+It provides the ability to request and limit resources independently for the main {project_name} deployment via the Keycloak CR, and for the realm import Job via the Realm Import CR.
+
+When no values are specified, the default `requests` memory is set to `1700MiB`, and the `limits` memory is set to `2GiB`.
+
+You can specify your custom values based on your requirements as follows:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  ...
+  resources:
+    requests:
+      cpu: 1200m
+      memory: 896Mi
+    limits:
+      cpu: 6
+      memory: 3Gi
+----
+
+For more details, see the
+https://www.keycloak.org/operator/advanced-configuration[Operator Advanced configuration].
+
+= Temporary lockout log replaced with event
+
+There is now a new event `USER_DISABLED_BY_TEMPORARY_LOCKOUT` when a user is temporarily locked out by the brute force protector.
+The log with ID `KC-SERVICES0053` has been removed as the new event offers the information in a structured form.
+
+For more details, see the
+link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Updates to cookies
+
+Cookie handling code has been refactored and improved, including a new Cookie Provider. This provides better consistency
+for cookies handled by {project_name}, and the ability to introduce configuration options around cookies if needed.
+
+= SAML User Attribute Mapper For NameID now suggests only valid NameID formats
+
+User Attribute Mapper For NameID allowed setting `Name ID Format` option to the following values:
+
+- `urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName`
+- `urn:oasis:names:tc:SAML:1.1:nameid-format:WindowsDomainQualifiedName`
+- `urn:oasis:names:tc:SAML:2.0:nameid-format:kerberos`
+- `urn:oasis:names:tc:SAML:2.0:nameid-format:entity`
+
+However, {project_name} does not support receiving `AuthnRequest` document with one of these `NameIDPolicy`, therefore these
+mappers would never be used. The supported options were updated to only include the following Name ID Formats:
+
+- `urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress`
+- `urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified`
+- `urn:oasis:names:tc:SAML:2.0:nameid-format:persistent`
+- `urn:oasis:names:tc:SAML:2.0:nameid-format:transient`
+
+= Different JVM memory settings when running in a container
+
+Instead of specifying hardcoded values for the initial and maximum heap size, {project_name} uses relative values to the total memory of a container.
+The JVM options `-Xms` and `-Xmx` were replaced by `-XX:InitialRAMPercentage` and `-XX:MaxRAMPercentage`.
+
+WARNING: It can significantly impact memory consumption, so executing particular actions might be required.
+
+For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+ifeval::[{project_community}==true]
+= GELF log handler has been deprecated
+
+With sunsetting of the https://github.com/mp911de/logstash-gelf[underlying library] providing integration
+with GELF, Keycloak will no longer support the GELF log handler out-of-the-box. This feature will be removed in a future
+release. If you require an external log management, consider using file log parsing.
+endif::[]
+
+= Support for multi-site active-passive deployments
+
+Deploying {project_name} to multiple independent sites is essential for some environments to provide high availability and a speedy recovery from failures.
+This release supports active-passive deployments for {project_name}.
+
+To get started, use the link:{highavailabilityguide_link}[{highavailabilityguide_name}] which also includes a comprehensive blueprint to deploy a highly available {project_name} to a cloud environment.

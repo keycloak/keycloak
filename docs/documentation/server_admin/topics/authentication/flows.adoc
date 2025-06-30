@@ -85,17 +85,17 @@ You can copy and then modify an existing flow. Click the "Action list" (the thre
 
 When creating a new flow, you must create a top-level flow first with the following options:
 
-Alias::
+Name::
   The name of the flow.
 Description::
   The description you can set to the flow.
 Top-Level Flow Type::
-  The type of flow. The type *client* is used only for the authentication of clients (applications). For all other cases, choose *generic*.
+  The type of flow. The type *client* is used only for the authentication of clients (applications). For all other cases, choose *basic*.
 
 .Create a top-level flow
 image:images/Create-top-level-flow.png[Top Level Flow]
 
-When {project_name} has created the flow, {project_name} displays the *Add step*, and *Add flow* buttons.
+When {project_name} has created the flow, {project_name} displays the *Add step*, and *Add sub-flow* buttons.
 
 .An empty new flow
 image:images/New-flow.png[New Flow]
@@ -106,15 +106,21 @@ Three factors determine the behavior of flows and sub-flows.
 * The executions within the flows
 * The requirements set within the sub-flows and the executions.
 
-Executions have a wide variety of actions, from sending a reset email to validating an OTP. Add executions with the *Add step* button. Hover over the question mark next to *Provider*, to see a description of the execution.
+Executions have a wide variety of actions, from sending a reset email to validating an OTP. Add executions with the *Add step* button.
 
 .Adding an authentication execution
 image:images/Create-authentication-execution.png[Adding an Authentication Execution]
 
+Authentication executions can optionally have a reference value configured. This can be utilized by the _Authentication Method Reference (AMR)_ protocol mapper to populate the _amr_ claim in OIDC access and ID tokens (for more information on the
+AMR claim, see https://www.rfc-editor.org/rfc/rfc8176.html[RFC-8176]). When the _Authentication Method Reference (AMR)_ protocol mapper is configured for a client, it will populate the _amr_ claim with the reference value for any authenticator execution the user successfully completes during the authentication flow.
+
+.Adding an authenticator reference value
+image:images/config-authenticator-reference.png[Configuring an Authenticator Reference Value]
+
 Two types of executions exist, _automatic executions_ and _interactive executions_. _Automatic executions_ are similar to the *Cookie* execution and will automatically
 perform their action in the flow. _Interactive executions_ halt the flow to get input. Executions executing successfully set their status to _success_.  For a flow to complete, it needs at least one execution with a status of _success_. 
 
-You can add sub-flows to top-level flows with the *Add flow* button. The *Add flow* button displays the *Create Execution Flow* page. This page is similar to the *Create Top Level Form* page. The difference is that the *Flow Type* can be *generic* (default) or *form*. The *form* type constructs a sub-flow that generates a form for the user, similar to the built-in *Registration* flow.
+You can add sub-flows to top-level flows with the *Add sub-flow* button. The *Add sub-flow* button displays the *Create Execution Flow* page. This page is similar to the *Create Top Level Form* page. The difference is that the *Flow Type* can be *basic* (default) or *form*. The *form* type constructs a sub-flow that generates a form for the user, similar to the built-in *Registration* flow.
 Sub-flows success depends on how their executions evaluate, including their contained sub-flows. See the <<_execution-requirements, execution requirements section>> for an in-depth explanation of how sub-flows work.
 
 [NOTE]
@@ -122,8 +128,7 @@ Sub-flows success depends on how their executions evaluate, including their cont
 After adding an execution, check the requirement has the correct value.
 ====
 
-All elements in a flow have a *Delete* option in the *Actions* menu. This action removes the element from the flow.
-Executions have a *⚙️* menu item (the gear icon) to configure the execution. It is also possible to add executions and sub-flows to sub-flows with the *Add step* and *Add flow* links.
+All elements in a flow have a *Delete* option next to the element. Some executions have a *⚙️* menu item (the gear icon) to configure the execution. It is also possible to add executions and sub-flows to sub-flows with the *Add step* and *Add sub-flow* links.
 
 Since the order of execution is important, you can move executions and sub-flows up and down by dragging their names.
 
@@ -181,7 +186,7 @@ At this stage, the form requires a username but no password. We must enable pass
 . Select *Required* for the *Authentication* authentication type to set its requirement to required.
 . Click *+* menu of the *Authentication* sub-flow.
 . Click *Add step*.
-. Select *Webauthn Passwordless Authenticator* from the list.
+. Select *WebAuthn Passwordless Authenticator* from the list.
 . Click *Add*.
 . Select *Alternative* for the *Webauthn Passwordless Authenticator* authentication type to set its requirement to alternative.
 . Click *+* menu of the *Authentication* sub-flow.
@@ -214,7 +219,7 @@ After entering the username, the flow works as follows:
 
 If users have WebAuthn passwordless credentials recorded, they can use these credentials to log in directly. This is the password-less login. The user can also select *Password with OTP* because the `WebAuthn Passwordless` execution and the `Password with OTP` flow are set to *Alternative*. If they are set to *Required*, the user has to enter WebAuthn, password, and OTP.
 
-If the user selects the *Try another way* link with `WebAuthn passwordless` authentication, the user can choose between `Password` and `Security Key` (WebAuthn passwordless). When selecting the password, the user will need to continue and log in with the assigned OTP. If the user has no WebAuthn credentials, the user must enter the password and then the OTP. If the user has no OTP credential, they will be asked to record one.
+If the user selects the *Try another way* link with `WebAuthn passwordless` authentication, the user can choose between `Password` and `Passkey` (WebAuthn passwordless). When selecting the password, the user will need to continue and log in with the assigned OTP. If the user has no WebAuthn credentials, the user must enter the password and then the OTP. If the user has no OTP credential, they will be asked to record one.
 
 [NOTE]
 ====
@@ -262,12 +267,11 @@ Now you configure the flow for the first authentication level.
 . Select *Conditional - Level Of Authentication* from the list.
 . Click *Add*.
 . Click *Required* for the *Conditional - Level Of Authentication* authentication type to set its requirement to required.
-. Click *+* menu of the *Conditional - Level Of Authentication*.
 . Click *⚙️* (gear icon).
 . Enter `Level 1` as an alias.
 . Enter `1` for the Level of Authentication (LoA).
 . Set Max Age to *36000*. This value is in seconds and it is equivalent to 10 hours, which is the default `SSO Session Max` timeout set in the realm.
-  As a result, when a user authenticates with this level, subsequent SSO logins can re-use this level and the user does not need to authenticate
+  As a result, when a user authenticates with this level, subsequent SSO logins can reuse this level and the user does not need to authenticate
   with this level until the end of the user session, which is 10 hours by default.
 . Click *Save*
 +
@@ -356,7 +360,7 @@ For more details see the https://openid.net/specs/openid-connect-core-1_0.html#a
 
 The logic for the previous configured authentication flow is as follows: +
 If a client request a high authentication level, meaning Level of Authentication 2 (LoA 2), a user has to perform full 2-factor authentication: Username/Password + OTP.
-However, if a user already has a session in Keycloak, that was logged in with username and password (LoA 1), the user is only asked for the second authentication factor (OTP).
+However, if a user already has a session in {project_name}, that was logged in with username and password (LoA 1), the user is only asked for the second authentication factor (OTP).
 
 The option *Max Age* in the condition determines how long (how much seconds) the subsequent authentication level is valid. This setting helps to decide
 whether the user will be asked to present the authentication factor again during a subsequent authentication. If the particular level X is requested
@@ -376,6 +380,11 @@ If no explicit level is requested by parameters, the {project_name} will require
 condition found in the authentication flow, such as the Username/Password in the preceding example. When a user was already authenticated with that level
 and that level expired, the user is not required to re-authenticate, but `acr` in the token will have the value 0. This result is considered as authentication
 based solely on `long-lived browser cookie` as mentioned in the section 2 of OIDC Core 1.0 specification.
+
+NOTE: During the first authentication of the user, the first configured subflow with the *Conditional - Level Of Authentication* is always executed (regardless of the requested level) as
+the user does not yet have any level. Therefore, we recommend that the first level subflow contains the minimal required authenticators for user authentication. In addition, ensure that the subflows with different values of *Conditional - Level Of Authentication* are ordered starting with the lowest as shown 
+in the example above. For example, if you configure a subflow with level 2 and then add another subflow with level 1, the level 2 subflow will be always asked during the first authentication, which may
+not be the desired behavior.
 
 NOTE: A conflict situation may arise when an admin specifies several flows, sets different LoA levels to each, and assigns the flows to different clients. However, the rule is always the same: if a user has a certain level, it needs only have that level to connect to a client. It's up to the admin to make sure that the LoA is coherent.
 
@@ -398,6 +407,25 @@ In case you do not want `acr` claim inside tokens or you need some custom logic 
 Note when the login request initiates a request with the `claims` parameter requesting `acr` as `essential` claim, then {project_name} will always return
 one of the specified levels. If it is not able to return one of the specified levels (For example if the requested level is unknown or bigger than configured conditions
 in the authentication flow), then {project_name} will throw an error.
+
+[[_registration-rc-client-flows]]
+==== Registration or Reset credentials requested by client
+
+Usually when the user is redirected to the {project_name} from client application, the `browser` flow is triggered. This flow may allow the user to <<con-user-registration_{context}, register>> in case
+that realm registration is enabled and the user clicks `Register` on the login screen. Also, if <<enabling-forgot-password,Forget password>> is enabled for the realm, the user can
+click `Forget password` on the login screen, which triggers the `Reset credentials` flow where users can reset credentials after email address confirmation.
+
+Sometimes it can be useful for the client application to directly redirect the user to the *Registration* screen or to the *Reset credentials* flow. The resulting action will match the action of when the 
+user clicks *Register* or *Forget password* on the normal login screen. Automatic redirect to the registration or reset-credentials screen can be done as follows:
+
+* When the client wants the user to be redirected directly to the registration, the OIDC client should replace the very last snippet from the OIDC login URL path (`/auth`) with `/registrations` . So the full URL
+might be similar to the following: `https://keycloak.example.com/realms/your_realm/protocol/openid-connect/registrations`.
+
+* When the client wants a user to be redirected directly to the `Reset credentials` flow, the OIDC client should replace the very last snippet from the OIDC login URL path (`/auth`) with `/forgot-credentials` .
+
+WARNING: The preceding steps are the only supported method for a client to directly request a registration or reset-credentials flow. For security
+purposes, it is not supported and recommended for client applications to bypass OIDC/SAML flows and directly redirect to other {project_name} endpoints (such as for instance endpoints under
+`/realms/realm_name/login-actions` or `/realms/realm_name/broker`).
 
 [[_user_session_limits]]
 === User session limits

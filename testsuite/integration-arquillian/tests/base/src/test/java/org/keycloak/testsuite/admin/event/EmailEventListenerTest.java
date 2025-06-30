@@ -24,10 +24,8 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.Profile;
 import org.keycloak.events.email.EmailEventListenerProviderFactory;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.UserBuilder;
 

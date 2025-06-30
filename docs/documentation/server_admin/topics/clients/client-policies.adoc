@@ -6,7 +6,7 @@ To make it easy to secure client applications, it is beneficial to realize the f
 
 * Setting policies on what configuration a client can have
 * Validation of client configurations
-* Conformance to a required security standards and profiles such as Financial-grade API (FAPI)
+* Conformance to a required security standards and profiles such as Financial-grade API (FAPI) and OAuth 2.1
 
 To realize these points in a unified way, _Client Policies_ concept is introduced.
 
@@ -28,16 +28,17 @@ Validation of client configurations::
     Client Policies can do these validation of client configurations mentioned just above and they can also be used to autoconfigure some client configuration switches to meet
     the advanced security requirements. In the future, individual client configuration settings may be replaced by Client Policies directly performing required validations.
 
-Conformance to a required security standards and profiles such as FAPI::
-    The _Global client profiles_ are client profiles pre-configured in {project_name} by default. They are pre-configured to be compliant with standard security profiles like link:{adapterguide_link}#_fapi-support[FAPI],
+Conformance to a required security standards and profiles such as FAPI and OAuth 2.1::
+    The _Global client profiles_ are client profiles pre-configured in {project_name} by default. They are pre-configured to be compliant with standard security profiles like link:{adapterguide_link}#_fapi-support[FAPI] and link:{adapterguide_link}#_oauth21-support[OAuth 2.1],
     which makes it easy for the administrator to secure their client application to be compliant with the particular security profile. At this moment, {project_name} has global
-    profiles for the support of FAPI specifications. The administrator will just need to configure the client policies to specify which clients should
-    be compliant with the FAPI. The administrator can configure client profiles and client policies, so that {project_name} clients can be easily made compliant with various other
+    profiles for the support of FAPI and OAuth 2.1 specifications. The administrator will just need to configure the client policies to specify which clients should
+    be compliant with the FAPI and OAuth 2.1. The administrator can configure client profiles and client policies, so that {project_name} clients can be easily made compliant with various other
     security profiles like SPA, Native App, Open Banking and so on.
 
 == Protocol
 
-The client policy concept is independent of any specific protocol. However, {project_name} currently supports it only just for the link:{adapterguide_link}#_oidc[OpenID Connect (OIDC) protocol].
+The client policy concept is independent of any specific protocol. {project_name} currently supports especially client profiles for the link:{adapterguide_link}#_oidc[OpenID Connect (OIDC) protocol], but there is
+also a client profile available for the link:{adapterguide_link}#_saml[SAML protocol].
 
 == Architecture
 
@@ -61,7 +62,7 @@ The way of creating/updating a client::
 
 So for example when creating a client, a condition can be configured to evaluate to true when this client is created by OIDC Dynamic Client Registration without initial
 access token (Anonymous Dynamic Client Registration). So this condition can be used for example to ensure that all clients registered through OIDC Dynamic Client Registration
-are FAPI compliant.
+are FAPI or OAuth 2.1 compliant.
 
 Author of a client (Checked by presence to the particular role or group)::
     On OpenID Connect dynamic client registration, an author of a client is the end user who was authenticated to get an access token for generating a new client, not Service
@@ -76,7 +77,12 @@ Client Scope::
     OIDC authorization requests with scope `fapi-example-scope` need to be FAPI compliant.
 
 Client Role::
-    Applies for clients with the client role of the specified name
+    Applies for clients with the client role of the specified name. Typically you can create a client role of specified name to requested clients and use it as a "marker role" to make
+    sure that specified client policy will be applied for requested clients.
+
+NOTE: A use-case often exists for requiring the application of a particular client policy for the specified clients such as `my-client-1` and `my-client-2`. The best way to achieve this result 
+is to use a *Client Role* condition in your policy and then a create client role of specified name to requested clients. This client role can be used as a "marker role" used solely
+for marking that particular client policy for particular clients.
 
 Client Domain Name, Host or IP Address::
     Applied for specific domain names of client. Or for the cases when the administrator registers/updates client from particular Host or IP Address.
@@ -105,12 +111,12 @@ on the OIDC authorization request). Events are:
 * Sending a token revocation request
 * Sending a token introspection request
 * Sending a userinfo request
-* Sending a logout request with a refresh token
+* Sending a logout request with a refresh token (note that logout with refresh token is proprietary {project_name} functionality unsupported by any specification. It is rather recommended to rely on the <<_oidc-logout,official OIDC logout>>).
 
 On each event, an executor can work in multiple phases. For example, on creating/updating a client, the executor can modify the client configuration by autoconfigure specific client
 settings. After that, the executor validates this configuration in validation phase.
 
-One of several purposes for this executor is to realize the security requirements of client conformance profiles like FAPI. To do so, the following executors are needed:
+One of several purposes for this executor is to realize the security requirements of client conformance profiles like FAPI and OAuth 2.1. To do so, the following executors are needed:
 
 * Enforce secure <<_client-credentials,Client Authentication method>> is used for the client
 * Enforce <<_mtls-client-certificate-bound-tokens,Holder-of-key tokens>> are used
@@ -127,13 +133,18 @@ One of several purposes for this executor is to realize the security requirement
 * Enforce checking if a client is the one to which an intent was issued in a use case where an intent is issued before starting an authorization code flow to get an access token like UK OpenBanking
 * Enforce prohibiting implicit and hybrid flow
 * Enforce checking if a PAR request includes necessary parameters included by an authorization request
+* Enforce <<_dpop-bound-tokens,DPoP-binding tokens>> is used (available when `dpop` feature is enabled)
+* Enforce <<_using_lightweight_access_token, using lightweight access token>>
+* Enforce that <<_refresh_token_rotation,refresh token rotation>> is skipped and there is no refresh token returned from the refresh token response
+* Enforce a valid redirect URI that the OAuth 2.1 specification requires
+* Enforce SAML Redirect binding cannot be used or SAML requests and assertions are signed
 
 [[_client_policy_profile]]
 === Profile
 
-A profile consists of several executors, which can realize a security profile like FAPI. Profile can be configured by the Admin REST API (Admin Console) together with its executors.
-Three _global profiles_ exist and they are configured in {project_name} by default with pre-configured executors compliant with the FAPI 1 Baseline, FAPI 1 Advanced, FAPI CIBA and FAPI 2 specifications.
-More details exist in the FAPI section of the link:{adapterguide_link}#_fapi-support[{adapterguide_name}].
+A profile consists of several executors, which can realize a security profile like FAPI and OAuth 2.1. Profile can be configured by the Admin REST API (Admin Console) together with its executors.
+Three _global profiles_ exist and they are configured in {project_name} by default with pre-configured executors compliant with the FAPI 1 Baseline, FAPI 1 Advanced, FAPI CIBA, FAPI 2 and OAuth 2.1 specifications.
+More details exist in the FAPI and OAuth 2.1 section of the link:{adapterguide_link}#_fapi-support[{adapterguide_name}].
 
 [[_client_policy_policy]]
 === Policy

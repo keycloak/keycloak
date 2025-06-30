@@ -127,7 +127,7 @@ describe("User Fed LDAP mapper tests", () => {
     sidebarPage.goToClients();
     listingPage.goToCreateItem();
     createClientPage
-      .selectClientType("openid-connect")
+      .selectClientType("OpenID Connect")
       .fillClientData(clientName)
       .continue()
       .continue()

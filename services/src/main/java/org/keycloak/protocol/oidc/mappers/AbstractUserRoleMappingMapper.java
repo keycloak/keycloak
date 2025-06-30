@@ -75,10 +75,7 @@ abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocolMapper 
     }
 
 
-    private static final Pattern CLIENT_ID_PATTERN = Pattern.compile("\\$\\{client_id\\}");
-
-    private static final Pattern DOT_PATTERN = Pattern.compile("\\.");
-    private static final String DOT_REPLACEMENT = "\\\\\\\\.";
+    private static final Pattern CLIENT_ID_PATTERN = Pattern.compile(Pattern.quote("${client_id}"));
 
     private static void mapClaim(IDToken token, ProtocolMapperModel mappingModel, Object attributeValue, String clientId) {
         attributeValue = OIDCAttributeMapperHelper.mapAttributeValue(mappingModel, attributeValue);
@@ -90,11 +87,10 @@ abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocolMapper 
         }
 
         if (clientId != null) {
-            // case when clientId contains dots
-            clientId = DOT_PATTERN.matcher(clientId).replaceAll(DOT_REPLACEMENT);
             Matcher matcher = CLIENT_ID_PATTERN.matcher(protocolClaim);
             if (matcher.find()) {
-                protocolClaim = matcher.replaceAll(clientId);
+                // dots and backslashes in clientId should be escaped first for the claim
+                protocolClaim = matcher.replaceAll(Matcher.quoteReplacement(clientId.replace("\\", "\\\\").replace(".", "\\.")));
             }
         }
 

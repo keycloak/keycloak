@@ -2,44 +2,8 @@
 
 [WARNING]
 ====
-{project_name} Java Adapters are now deprecated and will be removed in a future release. No further enhancements or features will be added to the adapters until then.
+{project_name} Java Adapters were removed from {project_name} codebase and they are not supported anymore.
 
 For more details about how to integrate {project_name} with Java applications, consider looking at the
 {quickstartRepo_link}[Keycloak Quickstart GitHub Repository].
 ====
-
-{project_name} comes with a range of different adapters for Java application. Selecting the correct adapter depends on the target platform.
-
-All Java adapters share a set of common configuration options described in the <<_java_adapter_config,Java Adapters Config>> chapter.
-
-ifeval::[{project_community}==true]
-include::java-adapter-config.adoc[]
-endif::[]
-include::jboss-adapter.adoc[]
-
-include::spring-boot-adapter.adoc[]
-
-ifeval::[{project_community}==true]
-include::tomcat-adapter.adoc[]
-include::jetty9-adapter.adoc[]
-include::spring-security-adapter.adoc[]
-endif::[]
-
-ifeval::[{project_community}==true]
-include::servlet-filter-adapter.adoc[]
-endif::[]
-
-ifeval::[{project_community}==true]
-include::jaas.adoc[]
-include::installed-adapter.adoc[]
-endif::[]
-
-ifeval::[{project_community}==true]
-include::adapter-context.adoc[]
-include::adapter_error_handling.adoc[]
-include::logout.adoc[]
-include::params_forwarding.adoc[]
-include::client-authentication.adoc[]
-include::multi-tenancy.adoc[]
-include::application-clustering.adoc[]
-endif::[]

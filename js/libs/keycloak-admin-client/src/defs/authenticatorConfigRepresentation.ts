@@ -13,4 +13,5 @@ export interface AuthenticationProviderRepresentation {
   id?: string;
   displayName?: string;
   description?: string;
+  supportsSecret?: boolean;
 }

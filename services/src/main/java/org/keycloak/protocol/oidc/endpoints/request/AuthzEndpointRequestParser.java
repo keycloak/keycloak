@@ -73,6 +73,11 @@ public abstract class AuthzEndpointRequestParser {
         // https://tools.ietf.org/html/rfc7636#section-6.1
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.CODE_CHALLENGE_PARAM);
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM);
+
+        // Those are not OAuth/OIDC parameters, but they should never be added to the additionalRequestParameters
+        KNOWN_REQ_PARAMS.add(OAuth2Constants.CLIENT_ASSERTION_TYPE);
+        KNOWN_REQ_PARAMS.add(OAuth2Constants.CLIENT_ASSERTION);
+        KNOWN_REQ_PARAMS.add(OAuth2Constants.CLIENT_SECRET);
     }
 
     public void parseRequest(AuthorizationEndpointRequest request) {

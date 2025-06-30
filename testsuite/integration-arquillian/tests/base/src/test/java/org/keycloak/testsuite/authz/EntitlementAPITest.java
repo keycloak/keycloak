@@ -24,7 +24,6 @@ import static org.junit.Assert.assertNull;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.AssertEvents.isUUID;
 
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
@@ -36,7 +35,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -2048,6 +2049,32 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     }
 
     @Test
+    public void testTokenExpirationRenewalWhenIssuingTokens() {
+        oauth.realm("authz-test");
+        oauth.clientId(PUBLIC_TEST_CLIENT);
+        oauth.doLogin("marta", "password");
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code, null);
+        assertNotNull(accessTokenResponse.getAccessToken());
+        assertNotNull(accessTokenResponse.getRefreshToken());
+
+        try {
+            for (int i = 0; i < 3; i++) {
+                AuthorizationRequest request = new AuthorizationRequest();
+                request.setAudience(RESOURCE_SERVER_TEST);
+                AuthorizationResponse authorizationResponse = getAuthzClient(PUBLIC_TEST_CLIENT_CONFIG).authorization(accessTokenResponse.getAccessToken()).authorize(request);
+                AccessToken refreshToken = toAccessToken(authorizationResponse.getRefreshToken());
+                AccessToken accessTokenToken = toAccessToken(authorizationResponse.getToken());
+                assertEquals(refreshToken.getExp() - refreshToken.getIat(), 1800);
+                assertEquals(accessTokenToken.getExp() - accessTokenToken.getIat(), 300);
+                setTimeOffset(i);
+            }
+        } finally {
+            resetTimeOffset();
+        }
+    }
+
+    @Test
     public void testUsingExpiredToken() throws Exception {
         ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
         AuthorizationResource authorization = client.authorization();
@@ -2388,6 +2415,65 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         assertTrue(result.getPermissions().stream().anyMatch(p ->
                 p.getResourceId() != null && p.getResourceId().equals(resourceId) && p
                         .getScopes().contains("entity:read")));
+    }
+
+    @Test
+    public void testSameResultRegardlessOPermissionParameterValue() throws Exception {
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+        AuthorizationResource authorization = client.authorization();
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName(KeycloakModelUtils.generateId());
+        resource.addScope("scope1", "scope2");
+        resource.setOwnerManagedAccess(true);
+
+        try (Response response = authorization.resources().create(resource)) {
+            resource = response.readEntity(ResourceRepresentation.class);
+        }
+
+        UserPolicyRepresentation policy = new UserPolicyRepresentation();
+
+        policy.setName(KeycloakModelUtils.generateId());
+        policy.addUser("marta");
+
+        authorization.policies().user().create(policy).close();
+
+        ScopePermissionRepresentation representation = new ScopePermissionRepresentation();
+
+        representation.setName(KeycloakModelUtils.generateId());
+        representation.addScope("scope1");
+        representation.addPolicy(policy.getName());
+
+        authorization.permissions().scope().create(representation).close();
+
+        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+        PermissionTicketRepresentation ticket = new PermissionTicketRepresentation();
+
+        ticket.setResource(resource.getId());
+        ticket.setRequesterName("marta");
+        ticket.setGranted(true);
+        ticket.setScopeName("scope1");
+
+        authzClient.protection().permission().create(ticket);
+
+        AuthorizationRequest request = new AuthorizationRequest();
+        request.addPermission(resource.getId());
+        AuthorizationResponse response = authzClient.authorization("marta", "password").authorize(request);
+        AccessToken rpt = toAccessToken(response.getToken());
+        ResourceRepresentation finalResource = resource;
+        List<Permission> permissions = rpt.getAuthorization().getPermissions().stream().filter(permission -> permission.getResourceId().equals(finalResource.getId())).collect(Collectors.toList());
+        assertEquals(1, permissions.size());
+        assertEquals(1, permissions.get(0).getScopes().size());
+        assertEquals("scope1", permissions.get(0).getScopes().iterator().next());
+
+        request = new AuthorizationRequest();
+        request.addPermission(resource.getName());
+        response = authzClient.authorization("marta", "password").authorize(request);
+        rpt = toAccessToken(response.getToken());
+        permissions = rpt.getAuthorization().getPermissions().stream().filter(permission -> permission.getResourceId().equals(finalResource.getId())).collect(Collectors.toList());
+        assertEquals(1, permissions.size());
+        assertEquals(1, permissions.get(0).getScopes().size());
+        assertEquals("scope1", permissions.get(0).getScopes().iterator().next());
     }
 
     private void testRptRequestWithResourceName(String configFile) {

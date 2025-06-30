@@ -30,4 +30,12 @@ public class LDAPUtilTest {
         String decodeObjectGUID = LDAPUtil.decodeObjectGUID(bytes);
         Assert.assertEquals(displayGUID, decodeObjectGUID);
     }
+
+    @Test
+    public void testEncodeEDirectoryGUID() {
+        String guid = "bcdf4a91-ccb1-ae49-a18f-bcdf4a91ccff";
+        byte[] bytes = LDAPUtil.encodeObjectEDirectoryGUID(guid);
+        String decodeObjectGUID = LDAPUtil.decodeGuid(bytes);
+        Assert.assertEquals(guid, decodeObjectGUID);
+    }
 }

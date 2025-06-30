@@ -49,6 +49,7 @@ public class KeyWrapper {
     private X509Certificate certificate;
     private List<X509Certificate> certificateChain;
     private boolean isDefaultClientCertificate;
+    private String curve;
 
     public String getProviderId() {
         return providerId;
@@ -176,6 +177,14 @@ public class KeyWrapper {
         this.isDefaultClientCertificate = isDefaultClientCertificate;
     }
 
+    public void setCurve(String curve) {
+        this.curve = curve;
+    }
+
+    public String getCurve() {
+        return curve;
+    }
+
     public KeyWrapper cloneKey() {
         KeyWrapper key = new KeyWrapper();
         key.providerId = this.providerId;
@@ -189,6 +198,7 @@ public class KeyWrapper {
         key.publicKey = this.publicKey;
         key.privateKey = this.privateKey;
         key.certificate = this.certificate;
+        key.curve = this.curve;
         if (this.certificateChain != null) {
             key.certificateChain = new ArrayList<>(this.certificateChain);
         }

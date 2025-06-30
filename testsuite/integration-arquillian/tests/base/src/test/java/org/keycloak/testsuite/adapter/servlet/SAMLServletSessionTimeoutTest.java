@@ -1,11 +1,9 @@
 package org.keycloak.testsuite.adapter.servlet;
 
-import org.apache.http.util.EntityUtils;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
-import org.keycloak.adapters.rotation.PublicKeyLocator;
 import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
 import org.keycloak.dom.saml.v2.assertion.StatementAbstractType;
@@ -19,7 +17,6 @@ import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.SamlClient;
-import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 
 import javax.xml.datatype.XMLGregorianCalendar;
@@ -38,11 +35,7 @@ import static org.keycloak.testsuite.util.Matchers.bodyHC;
 @AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
-@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT8)
-@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT9)
-@AppServerContainer(ContainerConstants.APP_SERVER_JETTY94)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP8)
 public class SAMLServletSessionTimeoutTest extends AbstractSAMLServletAdapterTest {
 
     @Page
@@ -50,7 +43,7 @@ public class SAMLServletSessionTimeoutTest extends AbstractSAMLServletAdapterTes
 
     @Deployment(name = Employee2Servlet.DEPLOYMENT_NAME)
     protected static WebArchive employee2() {
-        return samlServletDeployment(Employee2Servlet.DEPLOYMENT_NAME, WEB_XML_WITH_ACTION_FILTER, SendUsernameServlet.class, AdapterActionsFilter.class, PublicKeyLocator.class);
+        return samlServletDeployment(Employee2Servlet.DEPLOYMENT_NAME, WEB_XML_WITH_ACTION_FILTER, SendUsernameServlet.class, AdapterActionsFilter.class);
     }
 
     private static final int SESSION_LENGTH_IN_SECONDS = 120;
@@ -154,7 +147,7 @@ public class SAMLServletSessionTimeoutTest extends AbstractSAMLServletAdapterTes
 
                             AuthnStatementType authType = (AuthnStatementType) statements.stream()
                                     .filter(statement -> statement instanceof AuthnStatementType)
-                                    .findFirst().orElseThrow(() -> new RuntimeException("SamlReponse doesn't contain AuthStatement"));
+                                    .findFirst().orElseThrow(() -> new RuntimeException("SamlResponse doesn't contain AuthStatement"));
 
                             assertThat(authType.getSessionNotOnOrAfter(), notNullValue());
                             XMLGregorianCalendar expectedSessionTimeout = XMLTimeUtil.add(authType.getAuthnInstant(), SESSION_LENGTH_IN_SECONDS * 1000);

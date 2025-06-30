@@ -18,13 +18,10 @@
 
 package org.keycloak.services.clientpolicy;
 
-import java.util.List;
-
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.representations.idm.ClientProfileRepresentation;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -33,14 +30,9 @@ public class DefaultClientPolicyManagerFactory implements ClientPolicyManagerFac
 
     private static final Logger logger = Logger.getLogger(DefaultClientPolicyManagerFactory.class);
 
-    // Global (builtin) profiles are loaded on booting keycloak at once.
-    // therefore, their representations are kept and remain unchanged.
-    // these are shared among all realms.
-    private volatile List<ClientProfileRepresentation> globalClientProfiles;
-
     @Override
     public ClientPolicyManager create(KeycloakSession session) {
-        return new DefaultClientPolicyManager(session, () -> getGlobalClientProfiles(session));
+        return new DefaultClientPolicyManager(session);
     }
 
     @Override
@@ -61,27 +53,5 @@ public class DefaultClientPolicyManagerFactory implements ClientPolicyManagerFac
     @Override
     public String getId() {
         return "default";
-    }
-
-    /**
-     * When this method is called, assumption is that CLIENT_POLICIES feature is enabled
-     */
-    protected List<ClientProfileRepresentation> getGlobalClientProfiles(KeycloakSession session) {
-        if (globalClientProfiles == null) {
-            synchronized (this) {
-                if (globalClientProfiles == null) {
-                    logger.trace("LOAD GLOBAL CLIENT PROFILES ON KEYCLOAK");
-
-                    // load builtin profiles from keycloak-services
-                    try {
-                        this.globalClientProfiles = ClientPoliciesUtil.getValidatedGlobalClientProfilesRepresentation(session, getClass().getResourceAsStream("/keycloak-default-client-profiles.json"));
-                    } catch (ClientPolicyException cpe) {
-                        logger.warnv("LOAD GLOBAL PROFILES ON KEYCLOAK FAILED :: error = {0}, error detail = {1}", cpe.getError(), cpe.getErrorDetail());
-                        throw new IllegalStateException(cpe);
-                    }
-                }
-            }
-        }
-        return globalClientProfiles;
     }
 }

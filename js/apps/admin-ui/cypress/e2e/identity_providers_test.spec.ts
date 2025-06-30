@@ -83,8 +83,8 @@ describe("Identity provider test", () => {
         { testName: "Google", displayName: "Google", alias: "google" },
         { testName: "Instagram", displayName: "Instagram", alias: "instagram" },
         {
-          testName: "LinkedIn OpenID Connect",
-          displayName: "LinkedIn OpenID Connect",
+          testName: "LinkedIn",
+          displayName: "LinkedIn",
           alias: "linkedin-openid-connect",
         },
         { testName: "Microsoft", displayName: "Microsoft", alias: "microsoft" },
@@ -124,8 +124,10 @@ describe("Identity provider test", () => {
           }
           const instance = getSocialIdpClassInstance($idp.testName);
           instance
-            .typeDisplayOrder("0")
-            .clickAdd()
+            .typeClientId("1")
+            .typeClientId("")
+            .typeClientSecret("1")
+            .typeClientSecret("")
             .assertRequiredFieldsErrorsExist()
             .fillData($idp.testName)
             .clickAdd()
@@ -139,10 +141,7 @@ describe("Identity provider test", () => {
       createProviderPage.checkGitHubCardVisible().clickGitHubCard();
 
       createProviderPage.checkAddButtonDisabled();
-      createProviderPage
-        .fill(identityProviderName)
-        .clickAdd()
-        .checkClientIdRequiredMessage(true);
+      createProviderPage.fill(identityProviderName).checkAddButtonDisabled();
       createProviderPage.fill(identityProviderName, "123").clickAdd();
       masthead.checkNotificationMessage(createSuccessMsg, true);
 
@@ -298,9 +297,8 @@ describe("Identity provider test", () => {
       createProviderPage.checkAddButtonDisabled();
       createProviderPage
         .fill(identityProviderName)
-        .clickAdd()
-        .checkClientIdRequiredMessage(true);
-      createProviderPage.fill(identityProviderName, "123").clickAdd();
+        .fill(identityProviderName, "123")
+        .clickAdd();
       masthead.checkNotificationMessage(createSuccessMsg, true);
 
       sidebarPage.goToIdentityProviders();
@@ -337,6 +335,15 @@ describe("Identity provider test", () => {
       advancedSettings.clickTrustEmailSwitch();
       advancedSettings.clickAccountLinkingOnlySwitch();
       advancedSettings.clickHideOnLoginPageSwitch();
+      advancedSettings.assertDoNotImportUsersSwitchTurnedOn(false);
+      advancedSettings.assertSyncModeShown(true);
+      advancedSettings.clickdoNotStoreUsersSwitch();
+      advancedSettings.assertDoNotImportUsersSwitchTurnedOn(true);
+      advancedSettings.assertSyncModeShown(false);
+      advancedSettings.clickdoNotStoreUsersSwitch();
+      advancedSettings.assertDoNotImportUsersSwitchTurnedOn(false);
+      advancedSettings.assertSyncModeShown(true);
+
       advancedSettings.clickEssentialClaimSwitch();
       advancedSettings.typeClaimNameInput("claim-name");
       advancedSettings.typeClaimValueInput("claim-value");

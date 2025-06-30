@@ -24,7 +24,6 @@ import jakarta.ws.rs.core.Response;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -63,10 +62,6 @@ public class AdminClientTest extends AbstractKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
 
     @Override
     public void beforeAbstractKeycloakTest() throws Exception {

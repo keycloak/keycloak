@@ -31,8 +31,10 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.IdpConfirmLinkPage;
+import org.keycloak.testsuite.pages.IdpConfirmOverrideLinkPage;
 import org.keycloak.testsuite.pages.IdpLinkEmailPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
@@ -89,6 +91,9 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
 
     @Page
     protected IdpConfirmLinkPage idpConfirmLinkPage;
+
+    @Page
+    protected IdpConfirmOverrideLinkPage idpConfirmOverrideLinkPage;
 
     @Page
     protected ProceedPage proceedPage;
@@ -179,8 +184,13 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
 
     @Before
     public void beforeBrokerTest() {
-        importRealm(bc.createConsumerRealm());
-        importRealm(bc.createProviderRealm());
+        RealmRepresentation consumerRealm = bc.createConsumerRealm();
+        RealmRepresentation providerRealm = bc.createProviderRealm();
+        importRealm(consumerRealm);
+        importRealm(providerRealm);
+
+        VerifyProfileTest.enableUnmanagedAttributes(adminClient.realm(consumerRealm.getRealm()).users().userProfile());
+        VerifyProfileTest.enableUnmanagedAttributes(adminClient.realm(providerRealm.getRealm()).users().userProfile());
     }
 
     @After
@@ -332,7 +342,7 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
                     .clientId(clientId)
                     .initiatingIdp(initiatingIdp);
 
-            if (clientId != null || idTokenHint != null) {
+            if (redirectUri != null && (clientId != null || idTokenHint != null)) {
                 builder.postLogoutRedirectUri(encodeUrl(redirectUri));
             }
 

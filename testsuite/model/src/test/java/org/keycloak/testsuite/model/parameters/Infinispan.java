@@ -102,6 +102,8 @@ public class Infinispan extends KeycloakModelParameters {
                 .spi(UserSessionSpi.NAME)
                 .provider(InfinispanUserSessionProviderFactory.PROVIDER_ID)
                 .config("sessionPreloadStalledTimeoutInSeconds", "10")
+                .config("offlineSessionCacheEntryLifespanOverride", "43200")
+                .config("offlineClientSessionCacheEntryLifespanOverride", "43200")
         ;
     }
 

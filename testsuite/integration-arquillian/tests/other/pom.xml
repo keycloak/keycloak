@@ -142,25 +142,6 @@
                 <module>sssd</module>
             </modules>
         </profile>
-        <profile>
-            <id>base-ui</id>
-            <modules>
-                <module>base-ui</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>springboot</id>
-            <modules>
-                <module>springboot-tests</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>webauthn</id>
-            <modules>
-                <module>base-ui</module>
-                <module>webauthn</module>
-            </modules>
-        </profile>
     </profiles>
 
 </project>

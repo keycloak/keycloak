@@ -18,7 +18,7 @@ final class ConfigKeystorePropertyMappers {
     private ConfigKeystorePropertyMappers() {
     }
 
-    public static PropertyMapper[] getConfigKeystorePropertyMappers() {
+    public static PropertyMapper<?>[] getConfigKeystorePropertyMappers() {
         return new PropertyMapper[] {
                 fromOption(ConfigKeystoreOptions.CONFIG_KEYSTORE)
                         .to(SMALLRYE_KEYSTORE_PATH)
@@ -29,6 +29,7 @@ final class ConfigKeystorePropertyMappers {
                         .to(SMALLRYE_KEYSTORE_PASSWORD)
                         .transformer(ConfigKeystorePropertyMappers::validatePassword)
                         .paramLabel("config-keystore-password")
+                        .isMasked(true)
                         .build(),
                 fromOption(ConfigKeystoreOptions.CONFIG_KEYSTORE_TYPE)
                         .to("smallrye.config.source.keystore.kc-default.type")

@@ -18,7 +18,6 @@
 package org.keycloak.connections.httpclient;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -26,7 +25,6 @@ import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 
@@ -37,13 +35,9 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.Assume;
 import org.junit.Test;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.services.DefaultKeycloakSession;
-import org.keycloak.services.DefaultKeycloakSessionFactory;
-import org.keycloak.services.util.JsonConfigProvider;
-import org.keycloak.services.util.JsonConfigProvider.JsonScope;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.keycloak.services.resteasy.ResteasyKeycloakSession;
+import org.keycloak.services.resteasy.ResteasyKeycloakSessionFactory;
+import org.keycloak.utils.ScopeUtil;
 
 public class DefaultHttpClientFactoryTest {
 	private static final String DISABLE_TRUST_MANAGER_PROPERTY = "disable-trust-manager";
@@ -54,12 +48,12 @@ public class DefaultHttpClientFactoryTest {
 		Map<String, String> values = new HashMap<>();
 		values.put(DISABLE_TRUST_MANAGER_PROPERTY, "true");
 		DefaultHttpClientFactory factory = new DefaultHttpClientFactory();
-		factory.init(scope(values));
-		KeycloakSession session = new DefaultKeycloakSession(new DefaultKeycloakSessionFactory());
+		factory.init(ScopeUtil.createScope(values));
+		KeycloakSession session = new ResteasyKeycloakSession(new ResteasyKeycloakSessionFactory());
 		HttpClientProvider provider = factory.create(session);
         Optional<String> testURL = getTestURL();
         Assume.assumeTrue( "Could not get test url for domain", testURL.isPresent() );
-		try (CloseableHttpClient httpClient = (CloseableHttpClient) provider.getHttpClient();
+		try (CloseableHttpClient httpClient = provider.getHttpClient();
           CloseableHttpResponse response = httpClient.execute(new HttpGet(testURL.get()))) {
     		assertEquals(HttpStatus.SC_NOT_FOUND,response.getStatusLine().getStatusCode());
 		}
@@ -68,40 +62,14 @@ public class DefaultHttpClientFactoryTest {
 	@Test(expected = SSLPeerUnverifiedException.class)
 	public void createHttpClientProviderWithUnvailableURL() throws IOException {
 		DefaultHttpClientFactory factory = new DefaultHttpClientFactory();
-		factory.init(scope(new HashMap<>()));
-		KeycloakSession session = new DefaultKeycloakSession(new DefaultKeycloakSessionFactory());
+		factory.init(ScopeUtil.createScope(new HashMap<>()));
+		KeycloakSession session = new ResteasyKeycloakSession(new ResteasyKeycloakSessionFactory());
 		HttpClientProvider provider = factory.create(session);
-		try (CloseableHttpClient httpClient = (CloseableHttpClient) provider.getHttpClient()) {
+		try (CloseableHttpClient httpClient = provider.getHttpClient()) {
 			Optional<String> testURL = getTestURL();
 			Assume.assumeTrue("Could not get test url for domain", testURL.isPresent());
 			httpClient.execute(new HttpGet(testURL.get()));
 		}
-	}
-
-	private JsonScope scope(Map<String, String> properties) {
-		ObjectMapper mapper = new ObjectMapper();
-		try {
-			JsonNode config = mapper.readTree(json(properties));
-			return new JsonConfigProvider(config,new Properties()).new JsonScope(config);
-		} catch (IOException e) {
-			fail("Could not parse json");
-		}
-		return null;
-	}
-
-	private String json(Map<String, String> properties) {
-		String[] params = properties.entrySet().stream().map(e -> param(e.getKey(), e.getValue())).toArray(String[]::new);
-
-		StringBuilder sb = new StringBuilder();
-		sb.append("{");
-		sb.append(String.join(",", params));
-		sb.append("}");
-		
-		return sb.toString();
-	}
-
-	private String param(String key, String value) {
-		return "\"" + key + "\"" + " : " + "\"" + value + "\"";
 	}
 
 	private Optional<String> getTestURL() {

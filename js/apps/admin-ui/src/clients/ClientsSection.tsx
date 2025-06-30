@@ -1,5 +1,6 @@
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type { ClientQuery } from "@keycloak/keycloak-admin-client/lib/resources/clients";
+import { useEnvironment } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   Badge,
@@ -14,8 +15,7 @@ import { IRowData, TableText, cellWidth } from "@patternfly/react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { FormattedLink } from "../components/external-link/FormattedLink";
@@ -30,6 +30,7 @@ import {
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { Environment } from "../environment";
 import helpUrls from "../help-urls";
 import { emptyFormatter, exportClient } from "../util";
 import { convertClientToUrl } from "../utils/client-url";
@@ -45,17 +46,19 @@ const ClientDetailLink = (client: ClientRepresentation) => {
   const { t } = useTranslation();
   const { realm } = useRealm();
   return (
-    <Link
-      key={client.id}
-      to={toClient({ realm, clientId: client.id!, tab: "settings" })}
-    >
-      {client.clientId}
-      {!client.enabled && (
-        <Badge key={`${client.id}-disabled`} isRead className="pf-u-ml-sm">
-          {t("disabled")}
-        </Badge>
-      )}
-    </Link>
+    <TableText wrapModifier="truncate">
+      <Link
+        key={client.id}
+        to={toClient({ realm, clientId: client.id!, tab: "settings" })}
+      >
+        {client.clientId}
+        {!client.enabled && (
+          <Badge key={`${client.id}-disabled`} isRead className="pf-v5-u-ml-sm">
+            {t("disabled")}
+          </Badge>
+        )}
+      </Link>
+    </TableText>
   );
 };
 
@@ -72,7 +75,8 @@ const ClientDescription = (client: ClientRepresentation) => (
 );
 
 const ClientHomeLink = (client: ClientRepresentation) => {
-  const href = convertClientToUrl(client, adminClient.baseUrl);
+  const { environment } = useEnvironment<Environment>();
+  const href = convertClientToUrl(client, environment);
 
   if (!href) {
     return "—";
@@ -115,6 +119,8 @@ const ToolbarItems = () => {
 };
 
 export default function ClientsSection() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
@@ -170,7 +176,7 @@ export default function ClientsSection() {
         helpUrl={helpUrls.clientsUrl}
         divider={false}
       />
-      <PageSection variant="light" className="pf-u-p-0">
+      <PageSection variant="light" className="pf-v5-u-p-0">
         <RoutableTabs
           mountOnEnter
           isBox

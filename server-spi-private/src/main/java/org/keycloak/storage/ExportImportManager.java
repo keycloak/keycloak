@@ -28,7 +28,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import java.io.InputStream;
 
 /**
- * Manage importing and updating of realms for the legacy store.
+ * Manage importing and updating of realms for the store.
  *
  * @author Alexander Schwartz
  */

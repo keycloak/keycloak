@@ -73,7 +73,7 @@ public class MyThemeSelectorProvider implements ThemeSelectorProvider {
     }
 
     @Override
-	public void close() {
+    public void close() {
     }
 }
 ----
@@ -216,11 +216,37 @@ need to be retrieved with the usage of `KeycloakSessionFactory`. It is not recom
 
 === Registering provider implementations
 
-Providers are registered with the server by simply copying them to the `providers` directory.
+Providers are registered with the server by simply copying the JAR file to the `providers` directory.
 
 If your provider needs additional dependencies not already provided by Keycloak copy these to the `providers` directory.
 
-After registering new providers or dependencies Keycloak needs to be re-built with the `kc.[sh|bat] build` command.
+After registering new providers or dependencies Keycloak needs to be re-built with a non-optimized start or the `kc.[sh|bat] build` command.
+
+[NOTE]
+====
+Provider JARs are not loaded in isolated classloaders, so do not include resources or classes in your provider JARs that conflict with built-in resources or classes. 
+In particular the inclusion of an application.properties file or overriding the commons-lang3 dependency will cause auto-build to fail if the provider JAR is removed. 
+If you have included conflicting classes, you may see a split package warning in the start log for the server. Unfortunately not all built-in lib jars are checked by the split package warning logic,
+so you'll need to check the lib directory JARs before bundling or including a transitive dependency. Should there be a conflict, that can be resolved by removing or repackaging the offending classes.
+
+There is no warning if you have conflicting resource files. You should either ensure that your JAR's resource files have path names that contain something unique to that provider, 
+or you can check for the existence of `some.file` in the JAR contents under the `"install root"/lib/lib/main` directory with something like:
+ 
+[source,bash]
+----
+find . -type f -name "*.jar" -exec unzip -l {} \; | grep some.file
+----
+
+If you find that your server will not start due to a `NoSuchFileException` error related to a removed provider JAR, then run:
+
+[source,bash]
+----
+./kc.sh -Dquarkus.launch.rebuild=true --help
+----
+
+This will force Quarkus to rebuild the classloading related index files. From there you should be able to perform a non-optimized start or build without an exception.
+====    
+
 
 ==== Disabling a provider
 
@@ -234,6 +260,10 @@ bin/kc.[sh|bat] build --spi-user-cache-infinispan-enabled=false
 
 [[_script_providers]]
 === JavaScript providers
+
+:tech_feature_name: Scripts
+:tech_feature_id: scripts
+include::./templates/techpreview.adoc[]
 
 {project_name} has the ability to execute scripts during runtime in order to allow administrators to customize specific functionalities:
 
@@ -359,7 +389,8 @@ my-script-mapper.js
 
 The `META-INF/keycloak-scripts.json` is a file descriptor that provides metadata information about the scripts you want to deploy. It is a JSON file with the following structure:
 
-```json
+[source,json]
+----
 {
     "authenticators": [
         {
@@ -390,7 +421,7 @@ The `META-INF/keycloak-scripts.json` is a file descriptor that provides metadata
         }
     ]
 }
-```
+----
 
 This file should reference the different types of script providers that you want to deploy:
 
@@ -428,7 +459,6 @@ The name of the script file. This property is *mandatory* and should map to a fi
 ==== Deploy the script JAR
 
 Once you have a JAR file with a descriptor and the scripts you want to deploy, you just need to copy the JAR to the {project_name} `providers/` directory, then run `bin/kc.[sh|bat] build`.
-Note that you also need to enable the `scripts` feature.
 
 === Available SPIs
 

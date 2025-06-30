@@ -1,0 +1,42 @@
+[id="managing-organization-identity-providers_{context}"]
+
+[[_managing_identity_provider_]]
+=  Managing identity providers
+[role="_abstract"]
+An organization might have its own identity provider as the single source of truth for their identities. In this case,
+you want to configure the organization to authenticate users using the organization's identity provider, federate their
+identities, and finally add them as a member of the organization.
+
+An organization can have one or more identity providers associated with it so that they can authenticate their users from
+different sources and enforce different constraints on each of them.
+
+Before you can link an identity provider to an organization, you create an organization at the realm level from the *Identity Providers*
+section in the menu. You can link any of the built-in social and identity providers available in the realm to an organization.
+
+An identity provider can be linked to an organization from the *Identity providers* tab.
+
+.Procedure
+
+. Click *Link identity provider*.
+. Select an *Identity provider*
+. Click *Save*
++
+
+If identity providers already exist, you see a list of them and options to search, edit, or unlink from the organization.
+
+An identity provider has the following settings:
+
+Identity provider::
+The identity provider you want to link to the organization. An identity provider can only be linked to a single organization.
+
+Domain::
+The domain from the organization that you want to link with the identity provider.
+
+Show on login page::
+If this identity provider should be shown in login pages when the user is authenticating in the scope of the organization.
+
+Redirect when email domain matches::
+If members should be automatically redirected to the identity provider when their email domain matches the domain set to the identity provider.
+
+Once linked to an organization, the identity provider can be managed just like any other in a realm by accessing the *Identity Providers* section in the menu.
+However, the options herein described are only available when managing the identity provider in the scope of an organization.

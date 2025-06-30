@@ -18,4 +18,4 @@ image:images/registration-form.png[]
 . Click the *Register* link on the login page. The registration page is displayed.
 . Enter the user profile information.
 . Enter the new password.
-. Click *Save*.
+. Click *Register*.

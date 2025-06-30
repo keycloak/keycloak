@@ -121,13 +121,12 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
 
 	@Override
 	protected BrokeredIdentityContext extractIdentityFromProfile(EventBuilder event, JsonNode profile) {
-		BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "id"));
+		BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "id"), getConfig());
 
 		String username = getJsonProperty(profile, "login");
 		user.setUsername(username);
 		user.setName(getJsonProperty(profile, "name"));
 		user.setEmail(getJsonProperty(profile, "email"));
-		user.setIdpConfig(getConfig());
 		user.setIdp(this);
 
 		AbstractJsonUserAttributeMapper.storeUserProfileForMapper(user, profile, getConfig().getAlias());

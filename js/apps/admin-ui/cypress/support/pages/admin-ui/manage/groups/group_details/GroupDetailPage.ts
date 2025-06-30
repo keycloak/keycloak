@@ -13,14 +13,13 @@ export default class GroupDetailPage extends GroupPage {
   #attributesTab = "attributes";
   #roleMappingTab = "role-mapping-tab";
   #permissionsTab = "permissionsTab";
-  #memberNameColumn =
-    '[data-testid="members-table"] > tbody > tr > [data-label="Name"]';
+  #memberNameColumn = '[data-testid="members-table"] > tbody > tr';
   #addMembers = "addMember";
   #memberUsernameColumn = 'tbody > tr > [data-label="Username"]';
   #actionDrpDwnItemRenameGroup = "renameGroupAction";
   #actionDrpDwnItemDeleteGroup = "deleteGroup";
-  #headerGroupName = ".pf-l-level.pf-m-gutter";
-  #renameGroupModalGroupNameInput = "groupNameInput";
+  #headerGroupName = ".pf-v5-l-level.pf-m-gutter";
+  #renameGroupModalGroupNameInput = "name";
   #renameGroupModalRenameBtn = "renameGroup";
   #permissionSwitch = "permissionSwitch";
 
@@ -149,10 +148,6 @@ export default class GroupDetailPage extends GroupPage {
       .confirmModal();
     this.assertSwitchStateOff(cy.findByTestId(this.#permissionSwitch));
     return this;
-  }
-
-  createRoleMapping() {
-    listingPage.clickItemCheckbox("default-roles-");
   }
 
   checkDefaultRole() {

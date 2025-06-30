@@ -22,7 +22,11 @@ import {
 } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ContinueCancelModal, useAlerts } from "ui-shared";
+import {
+  ContinueCancelModal,
+  useAlerts,
+  useEnvironment,
+} from "@keycloak/keycloak-ui-shared";
 import { deleteConsent, getApplications } from "../api/methods";
 import { ClientRepresentation } from "../api/representations";
 import { Page } from "../components/page/Page";
@@ -34,8 +38,9 @@ type Application = ClientRepresentation & {
   open: boolean;
 };
 
-const Applications = () => {
+export const Applications = () => {
   const { t } = useTranslation();
+  const context = useEnvironment();
   const { addAlert, addError } = useAlerts();
 
   const [applications, setApplications] = useState<Application[]>();
@@ -43,7 +48,7 @@ const Applications = () => {
   const refresh = () => setKey(key + 1);
 
   usePromise(
-    (signal) => getApplications({ signal }),
+    (signal) => getApplications({ signal, context }),
     (clients) => setApplications(clients.map((c) => ({ ...c, open: false }))),
     [key],
   );
@@ -58,7 +63,7 @@ const Applications = () => {
 
   const removeConsent = async (id: string) => {
     try {
-      await deleteConsent(id);
+      await deleteConsent(context, id);
       refresh();
       addAlert(t("removeConsentSuccess"));
     } catch (error) {
@@ -89,21 +94,21 @@ const Applications = () => {
                 <DataListCell
                   key="applications-list-client-id-header"
                   width={2}
-                  className="pf-u-pt-md"
+                  className="pf-v5-u-pt-md"
                 >
                   <strong>{t("name")}</strong>
                 </DataListCell>,
                 <DataListCell
                   key="applications-list-app-type-header"
                   width={2}
-                  className="pf-u-pt-md"
+                  className="pf-v5-u-pt-md"
                 >
                   <strong>{t("applicationType")}</strong>
                 </DataListCell>,
                 <DataListCell
                   key="applications-list-status"
                   width={2}
-                  className="pf-u-pt-md"
+                  className="pf-v5-u-pt-md"
                 >
                   <strong>{t("status")}</strong>
                 </DataListCell>,
@@ -115,9 +120,10 @@ const Applications = () => {
           <DataListItem
             key={application.clientId}
             aria-labelledby="applications-list"
+            data-testid="applications-list-item"
             isExpanded={application.open}
           >
-            <DataListItemRow className="pf-u-align-items-center">
+            <DataListItemRow className="pf-v5-u-align-items-center">
               <DataListToggle
                 onClick={() => toggleOpen(application.clientId)}
                 isExpanded={application.open}
@@ -125,18 +131,25 @@ const Applications = () => {
                 aria-controls={`content-${application.clientId}`}
               />
               <DataListItemCells
-                className="pf-u-align-items-center"
+                className="pf-v5-u-align-items-center"
                 dataListCells={[
                   <DataListCell width={2} key={`client${application.clientId}`}>
-                    <Button
-                      className="pf-u-pl-0 title-case"
-                      component="a"
-                      variant="link"
-                      onClick={() => window.open(application.effectiveUrl)}
-                    >
-                      {application.clientName || application.clientId}{" "}
-                      <ExternalLinkAltIcon />
-                    </Button>
+                    {application.effectiveUrl && (
+                      <Button
+                        className="pf-v5-u-pl-0 title-case"
+                        component="a"
+                        variant="link"
+                        onClick={() => window.open(application.effectiveUrl)}
+                      >
+                        {application.clientName || application.clientId}{" "}
+                        <ExternalLinkAltIcon />
+                      </Button>
+                    )}
+                    {!application.effectiveUrl && (
+                      <span>
+                        {application.clientName || application.clientId}
+                      </span>
+                    )}
                   </DataListCell>,
                   <DataListCell
                     width={2}
@@ -156,7 +169,7 @@ const Applications = () => {
 
             <DataListContent
               id={`content-${application.clientId}`}
-              className="pf-u-pl-4xl"
+              className="pf-v5-u-pl-4xl"
               aria-label={t("applicationDetails", {
                 clientId: application.clientId,
               })}

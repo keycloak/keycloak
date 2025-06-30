@@ -1,18 +1,24 @@
 package org.keycloak.testsuite.util;
 
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.MessageDigest;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.X509Certificate;
-import java.util.Enumeration;
-
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
-
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.X509Certificate;
+import java.util.Enumeration;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.keycloak.common.util.Base64Url;
@@ -53,7 +59,7 @@ public class MutualTLSUtils {
     public static CloseableHttpClient newCloseableHttpClientWithOBBKeyStoreAndTrustStore() {
         return newCloseableHttpClient(OBB_KEYSTOREPATH, OBB_KEYSTOREPASSWORD, DEFAULT_TRUSTSTOREPATH, DEFAULT_TRUSTSTOREPASSWORD);
     }
-    
+
     public static CloseableHttpClient newCloseableHttpClientWithoutKeyStoreAndTrustStore() {
         return newCloseableHttpClient(null, null, null, null);
     }
@@ -66,28 +72,41 @@ public class MutualTLSUtils {
             try {
                 keystore = KeystoreUtil.loadKeyStore(keyStorePath, keyStorePassword);
             } catch (Exception e) {
-                e.printStackTrace();
+                throw new RuntimeException(e);
             }
         }
 
-        // load the trustore
+        // load the truststore
         KeyStore truststore = null;
         if (trustStorePath != null) {
             try {
                 truststore = KeystoreUtil.loadKeyStore(trustStorePath, trustStorePassword);
             } catch(Exception e) {
-                e.printStackTrace();
+                throw new RuntimeException(e);
             }
         }
 
-        if (keystore != null || truststore != null)
-            return (CloseableHttpClient) new org.keycloak.adapters.HttpClientBuilder()
-                    .keyStore(keystore, keyStorePassword)
-                    .trustStore(truststore)
-                    .hostnameVerification(org.keycloak.adapters.HttpClientBuilder.HostnameVerificationPolicy.ANY)
-                    .build();
+        if (keystore != null || truststore != null) {
+            return newCloseableHttpClientSSL(keystore, keyStorePassword, truststore);
+        }
 
         return HttpClientBuilder.create().build();
+    }
+
+    public static CloseableHttpClient newCloseableHttpClientSSL(KeyStore keystore, String keyStorePassword, KeyStore truststore) {
+        try {
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            KeyManagerFactory kmfactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            kmfactory.init(keystore, keyStorePassword.toCharArray());
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            tmf.init(truststore);
+            sslContext.init(kmfactory.getKeyManagers(), tmf.getTrustManagers(), null);
+            SSLConnectionSocketFactory sf = new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
+
+            return HttpClientBuilder.create().setSSLSocketFactory(sf).build();
+        } catch (NoSuchAlgorithmException|KeyStoreException|KeyManagementException|UnrecoverableKeyException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static String getThumbprintFromDefaultClientCert() throws KeyStoreException, CertificateEncodingException {

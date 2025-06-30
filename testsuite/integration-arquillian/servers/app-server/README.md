@@ -16,8 +16,6 @@ Submodules are enabled with profiles: `-Papp-server-MODULE`
 * __`wildfly9` Wildfly 9__
 * __`wildfly10` Wildfly 10__
 * __`wildfly` Wildfly 11__
-* __`eap6` EAP 6__ Requires access to EAP product repo, or setting `-Deap6.version` to public EAP 6 Alpha.
-* __`eap` EAP 7__ Requires access to EAP product repo.
 
 ### Adapter Configs Location
 
@@ -27,9 +25,3 @@ Submodules are enabled with profiles: `-Papp-server-MODULE`
 ### SSL
 
 Configures SSL in `standalone.xml`. See profile `ssl`.
-
-## App Server - Tomcat
-Submodules are enabled with profiles: `-Papp-server-MODULE`
-### Modules
-* __`tomcat8` Tomcat 8__
-* __`tomcat9` Tomcat 9__

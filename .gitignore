@@ -29,6 +29,7 @@ nbproject
 # VS Code #
 ###########
 *.code-workspace
+*.vscode
 
 # Compiled source #
 ###################
@@ -64,6 +65,7 @@ nbproject
 # Maven #
 #########
 target
+bin
 
 # Maven shade
 #############
@@ -83,14 +85,30 @@ quarkus/data/*.db
 /adapters/saml/jakarta-servlet-filter/src/
 /adapters/oidc/jakarta-servlet-filter/src/
 /adapters/saml/wildfly-elytron-jakarta/src/
+/adapters/saml/core-jakarta/src/
 /adapters/saml/wildfly/wildfly-jakarta-subsystem/src/
 /.metadata/
 
 # Git ephemeral files
 *.versionsBackup
 
-# Node.js for frontend-maven-plugin #
+# frontend-maven-plugin
 node
+
+# Wireit
+.wireit
+
+# Vite
+dist
+
+# ESLint
+.eslintcache
+
+# NPM
+node_modules
 
 # SDKMAM environment file
 .sdkmanrc
+
+# JENV
+.java-version

@@ -679,6 +679,16 @@ public class IdentityBrokerStateTestHelpers {
         }
 
         @Override
+        public int getMaxTemporaryLockouts() {
+            return 0;
+        }
+
+        @Override
+        public void setMaxTemporaryLockouts(int val) {
+
+        }
+
+        @Override
         public int getMaxFailureWaitSeconds() {
             return 0;
         }
@@ -1144,6 +1154,12 @@ public class IdentityBrokerStateTestHelpers {
         }
 
         @Override
+        public Stream<ClientModel> searchClientByAuthenticationFlowBindingOverrides(Map<String, String> overrides, Integer firstResult, Integer maxResults) {
+            return null;
+        }
+
+
+        @Override
         public void updateRequiredCredentials(Set<String> creds) {
 
         }
@@ -1225,6 +1241,16 @@ public class IdentityBrokerStateTestHelpers {
 
         @Override
         public void setDockerAuthenticationFlow(AuthenticationFlowModel flow) {
+
+        }
+
+        @Override
+        public AuthenticationFlowModel getFirstBrokerLoginFlow() {
+            return null;
+        }
+
+        @Override
+        public void setFirstBrokerLoginFlow(AuthenticationFlowModel flow) {
 
         }
 
@@ -1747,6 +1773,39 @@ public class IdentityBrokerStateTestHelpers {
         public void decreaseRemainingCount(ClientInitialAccessModel clientInitialAccess) {
 
         }
-    }
 
+        @Override
+        public Stream<RequiredActionConfigModel> getRequiredActionConfigsStream() {
+            return Stream.empty();
+        }
+
+        @Override
+        public RequiredActionConfigModel getRequiredActionConfigByAlias(String alias) {
+            return null;
+        }
+
+        @Override
+        public RequiredActionConfigModel getRequiredActionConfigById(String id) {
+            return null;
+        }
+
+        @Override
+        public void removeRequiredActionProviderConfig(RequiredActionConfigModel model) {
+
+        }
+
+        @Override
+        public void updateRequiredActionConfig(RequiredActionConfigModel model) {
+
+        }
+
+        @Override
+        public boolean isOrganizationsEnabled() {
+            return false;
+        }
+
+        @Override
+        public void setOrganizationsEnabled(boolean organizationsEnabled) {
+        }
+    }
 }

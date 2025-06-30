@@ -48,13 +48,13 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-authz-client</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.quarkus.resteasy.reactive</groupId>
+            <artifactId>resteasy-reactive</artifactId>
+            <scope>provided</scope>
+        </dependency>
         <!-- Include all classes that are marked "provided" and therefore not included in the dependencies above.
         This avoids warnings when generating the JavaDoc -->
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-build-processor</artifactId>
-            <version>${project.version}</version>
-        </dependency>
         <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging-annotations</artifactId>
@@ -63,16 +63,10 @@
             <groupId>net.java.dev.jna</groupId>
             <artifactId>jna</artifactId>
         </dependency>
+        <!-- This is here because BloomFilter is used in the Javadoc within BlacklistPasswordPolicyProviderFactory -->
         <dependency>
-            <!-- Included here as it provides Nonnull from com.google.code.findbugs:jsr305.
-            That is used in annotations in FilesPlainTextVaultProvider -->
-            <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
-            <artifactId>owasp-java-html-sanitizer</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.infinispan.protostream</groupId>
-            <artifactId>protostream-processor</artifactId>
-            <version>${infinispan.protostream.processor.version}</version>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
         </dependency>
     </dependencies>
 
@@ -89,13 +83,20 @@
                     <includeDependencySources>true</includeDependencySources>
                     <source>${maven.compiler.source}</source>
                     <failOnError>true</failOnError>
+                    <includeTransitiveDependencySources>true</includeTransitiveDependencySources>
+                    <dependencySourceIncludes>
+                        <dependencySourceInclude>org.keycloak:*</dependencySourceInclude>
+                    </dependencySourceIncludes>
+                    <dependencySourceExcludes>
+                        <dependencySourceInclude>org.keycloak:keycloak-operator</dependencySourceInclude>
+                    </dependencySourceExcludes>
                 </configuration>
                 <executions>
                     <execution>
                         <id>aggregate-javadoc</id>
                         <phase>compile</phase>
                         <goals>
-                            <goal>javadoc</goal>
+                            <goal>aggregate</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -114,21 +115,6 @@
                                 <descriptor>assembly.xml</descriptor>
                             </descriptors>
                             <appendAssemblyId>false</appendAssemblyId>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>aggregate-javadoc</id>
-                        <configuration>
-                            <includeTransitiveDependencySources>true</includeTransitiveDependencySources>
-                            <dependencySourceIncludes>
-                                <dependencySourceInclude>org.keycloak:*</dependencySourceInclude>
-                            </dependencySourceIncludes>
                         </configuration>
                     </execution>
                 </executions>

@@ -106,7 +106,7 @@ public class TokenCallable implements Callable<String> {
     }
 
     public boolean isTokenTimeToLiveSufficient(AccessToken token) {
-        return token != null && (token.getExpiration() - getConfiguration().getTokenMinimumTimeToLive()) > Time.currentTime();
+        return token != null && (token.getExp() - getConfiguration().getTokenMinimumTimeToLive()) > Time.currentTime();
     }
 
     /**

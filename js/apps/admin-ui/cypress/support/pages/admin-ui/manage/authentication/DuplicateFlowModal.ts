@@ -1,5 +1,5 @@
 export default class DuplicateFlowModal {
-  #nameInput = "name";
+  #nameInput = "alias";
   #descriptionInput = "description";
   #confirmButton = "confirm";
   #errorText = ".pf-m-error";

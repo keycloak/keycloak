@@ -3,7 +3,7 @@ import SetupTab from "./clientscopes_subtabs/SetupTab";
 import EvaluateTab from "./clientscopes_subtabs/EvaluateTab";
 import DedicatedScopesPage from "../DedicatedScopesPage";
 
-enum ClientScopesSubTab {
+export enum ClientScopesSubTab {
   Setup = "Setup",
   Evaluate = "Evaluate",
 }
@@ -24,7 +24,7 @@ export default class ClientScopesTab extends CommonPage {
   }
 
   clickDedicatedScope(clientId: string) {
-    cy.intercept("/admin/realms/master/clients/*").as("get");
+    cy.intercept("/admin/realms/*/clients/*").as("get");
     cy.findByText(`${clientId}-dedicated`).click();
     cy.wait("@get");
     return this.#dedicatedScopesPage;

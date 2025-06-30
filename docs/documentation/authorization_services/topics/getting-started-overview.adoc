@@ -1,7 +1,7 @@
 [[_getting_started_overview]]
 = Getting Started
 
-If you are using Wildfly, Spring Boot, or Quarkus, you can look at the following quickstarts and documentation to quickly
+For certain applications, you can look at the following resources to quickly
 get started with {project_name} Authorization Services:
 
 * {quickstartRepo_link}/tree/latest/jakarta/servlet-authz-client[Securing a JakartaEE Application in Wildfly]

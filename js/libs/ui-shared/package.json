@@ -1,12 +1,13 @@
 {
-  "name": "ui-shared",
+  "name": "@keycloak/keycloak-ui-shared",
+  "version": "999.0.0-SNAPSHOT",
   "type": "module",
-  "main": "./dist/ui-shared.js",
-  "types": "./dist/ui-shared.d.ts",
+  "main": "./dist/keycloak-ui-shared.js",
+  "types": "./dist/keycloak-ui-shared.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/ui-shared.js",
-      "types": "./dist/ui-shared.d.ts"
+      "import": "./dist/keycloak-ui-shared.js",
+      "types": "./dist/keycloak-ui-shared.d.ts"
     }
   },
   "files": [
@@ -19,6 +20,9 @@
   "wireit": {
     "build": {
       "command": "vite build",
+      "dependencies": [
+        "../keycloak-admin-client:build"
+      ],
       "files": [
         "src/**",
         "package.json",
@@ -30,24 +34,35 @@
       ]
     },
     "lint": {
-      "command": "eslint . --ext js,jsx,mjs,ts,tsx"
+      "command": "eslint .",
+      "dependencies": [
+        "../keycloak-admin-client:build"
+      ]
     }
   },
   "dependencies": {
-    "@patternfly/react-core": "^4.276.8",
-    "@patternfly/react-icons": "^4.93.6",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-hook-form": "7.47.0"
+    "@keycloak/keycloak-admin-client": "workspace:*",
+    "@patternfly/react-core": "^5.3.3",
+    "@patternfly/react-icons": "^5.3.2",
+    "@patternfly/react-styles": "^5.3.1",
+    "i18next": "^23.11.5",
+    "keycloak-js": "workspace:*",
+    "lodash-es": "^4.17.21",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-hook-form": "7.51.5",
+    "react-i18next": "^14.1.2"
   },
   "devDependencies": {
-    "@types/react": "^18.2.31",
-    "@types/react-dom": "^18.2.14",
-    "@vitejs/plugin-react-swc": "^3.4.0",
+    "@types/lodash-es": "^4.17.12",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react-swc": "^3.7.0",
     "rollup-plugin-peer-deps-external": "^2.2.4",
-    "vite": "^4.5.0",
-    "vite-plugin-checker": "^0.6.2",
-    "vite-plugin-dts": "^3.6.1",
-    "vitest": "^0.34.6"
+    "vite": "^5.2.12",
+    "vite-plugin-checker": "^0.6.4",
+    "vite-plugin-dts": "^3.9.1",
+    "vite-plugin-lib-inject-css": "^2.1.1",
+    "vitest": "^1.6.0"
   }
 }

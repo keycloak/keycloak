@@ -195,7 +195,7 @@ public class PolicyEvaluationResponseBuilder {
 
             filters.put(PermissionTicket.FilterOption.POLICY_ID, policy.getId());
 
-            List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(resourceServer.getRealm(), resourceServer, filters, -1, 1);
+            List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(resourceServer, filters, -1, 1);
 
             if (!tickets.isEmpty()) {
                 KeycloakSession keycloakSession = authorization.getKeycloakSession();

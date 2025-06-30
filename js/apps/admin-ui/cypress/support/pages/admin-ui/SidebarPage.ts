@@ -1,7 +1,7 @@
 import CommonElements from "../CommonElements";
 
 export default class SidebarPage extends CommonElements {
-  #realmsDrpDwn = "realmSelectorToggle";
+  #realmsDrpDwn = "realmSelector";
   #createRealmBtn = "add-realm";
 
   #clientsBtn = "#nav-item-clients";
@@ -17,13 +17,29 @@ export default class SidebarPage extends CommonElements {
   #identityProvidersBtn = "#nav-item-identity-providers";
   #userFederationBtn = "#nav-item-user-federation";
 
+  realmsElements = '[id="realm-select"] li';
+
   showCurrentRealms(length: number) {
     cy.findByTestId(this.#realmsDrpDwn).click();
-    cy.get('[data-testid="realmSelector"] li').should(
+    cy.get(this.realmsElements).contains("Loading realms…").should("not.exist");
+    cy.get(this.realmsElements).should(
       "have.length",
       length + 1, // account for button
     );
     cy.findByTestId(this.#realmsDrpDwn).click({ force: true });
+
+    return this;
+  }
+
+  realmExists(realmName: string, exists = true) {
+    cy.findByTestId(this.#realmsDrpDwn).click();
+    cy.get(this.realmsElements).contains("Loading realms…").should("not.exist");
+    cy.get(this.realmsElements)
+      .contains(realmName)
+      .should((exists ? "" : "not.") + "exist");
+    cy.findByTestId(this.#realmsDrpDwn).click();
+
+    return this;
   }
 
   getCurrentRealm() {
@@ -32,11 +48,9 @@ export default class SidebarPage extends CommonElements {
 
   goToRealm(realmName: string) {
     this.waitForPageLoad();
-    cy.findByTestId(this.#realmsDrpDwn)
-      .click()
-      .parent()
-      .contains(realmName)
-      .click();
+    cy.findByTestId(this.#realmsDrpDwn).click();
+    cy.get(this.realmsElements).contains("Loading realms…").should("not.exist");
+    cy.get(this.realmsElements).contains(realmName).click();
     this.waitForPageLoad();
 
     return this;

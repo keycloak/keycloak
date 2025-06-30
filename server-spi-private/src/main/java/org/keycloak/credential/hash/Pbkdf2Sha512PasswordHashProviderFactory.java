@@ -13,7 +13,10 @@ public class Pbkdf2Sha512PasswordHashProviderFactory extends AbstractPbkdf2Passw
 
     public static final String PBKDF2_ALGORITHM = "PBKDF2WithHmacSHA512";
 
-    public static final int DEFAULT_ITERATIONS = 30000;
+    /**
+     * Hash iterations for PBKDF2-HMAC-SHA512 according to the <a href="https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pbkdf2">Password Storage Cheat Sheet</a>.
+     */
+    public static final int DEFAULT_ITERATIONS = 210_000;
 
     @Override
     public PasswordHashProvider create(KeycloakSession session) {
@@ -23,5 +26,10 @@ public class Pbkdf2Sha512PasswordHashProviderFactory extends AbstractPbkdf2Passw
     @Override
     public String getId() {
         return ID;
+    }
+
+    @Override
+    public int order() {
+        return 200;
     }
 }

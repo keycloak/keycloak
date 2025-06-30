@@ -5,27 +5,32 @@ import {
   NavItem,
   NavList,
   PageSidebar,
+  PageSidebarBody,
 } from "@patternfly/react-core";
 import { FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink, useMatch, useNavigate } from "react-router-dom";
-
 import { RealmSelector } from "./components/realm-selector/RealmSelector";
 import { useAccess } from "./context/access/Access";
 import { useRealm } from "./context/realm-context/RealmContext";
+import { useServerInfo } from "./context/server-info/ServerInfoProvider";
+import { toPage } from "./page/routes";
 import { AddRealmRoute } from "./realm/routes/AddRealm";
 import { routes } from "./routes";
+import useIsFeatureEnabled, { Feature } from "./utils/useIsFeatureEnabled";
 
 import "./page-nav.css";
 
-type LeftNavProps = { title: string; path: string };
+type LeftNavProps = { title: string; path: string; id?: string };
 
-const LeftNav = ({ title, path }: LeftNavProps) => {
+const LeftNav = ({ title, path, id }: LeftNavProps) => {
   const { t } = useTranslation();
   const { hasAccess } = useAccess();
   const { realm } = useRealm();
+  const encodedRealm = encodeURIComponent(realm);
   const route = routes.find(
-    (route) => route.path.replace(/\/:.+?(\?|(?:(?!\/).)*|$)/g, "") === path,
+    (route) =>
+      route.path.replace(/\/:.+?(\?|(?:(?!\/).)*|$)/g, "") === (id || path),
   );
 
   const accessAllowed =
@@ -42,9 +47,9 @@ const LeftNav = ({ title, path }: LeftNavProps) => {
     <li>
       <NavLink
         id={"nav-item" + path.replace("/", "-")}
-        to={`/${realm}${path}`}
+        to={`/${encodedRealm}${path}`}
         className={({ isActive }) =>
-          `pf-c-nav__link${isActive ? " pf-m-current" : ""}`
+          `pf-v5-c-nav__link${isActive ? " pf-m-current" : ""}`
         }
       >
         {t(title)}
@@ -56,8 +61,12 @@ const LeftNav = ({ title, path }: LeftNavProps) => {
 export const PageNav = () => {
   const { t } = useTranslation();
   const { hasSomeAccess } = useAccess();
-
+  const { componentTypes } = useServerInfo();
+  const isFeatureEnabled = useIsFeatureEnabled();
+  const pages =
+    componentTypes?.["org.keycloak.services.ui.extend.UiPageProvider"];
   const navigate = useNavigate();
+  const { realmRepresentation } = useRealm();
 
   type SelectedItem = {
     groupId: number | string;
@@ -88,10 +97,9 @@ export const PageNav = () => {
   const isOnAddRealm = !!useMatch(AddRealmRoute.path);
 
   return (
-    <PageSidebar
-      className="keycloak__page_nav__nav"
-      nav={
-        <Nav onSelect={onSelect}>
+    <PageSidebar className="keycloak__page_nav__nav">
+      <PageSidebarBody>
+        <Nav onSelect={(_event, item) => onSelect(item as SelectedItem)}>
           <NavList>
             <NavItem className="keycloak__page_nav__nav_item__realm-selector">
               <RealmSelector />
@@ -100,6 +108,10 @@ export const PageNav = () => {
           <Divider />
           {showManage && !isOnAddRealm && (
             <NavGroup aria-label={t("manage")} title={t("manage")}>
+              {isFeatureEnabled(Feature.Organizations) &&
+                realmRepresentation?.organizationsEnabled && (
+                  <LeftNav title="organizations" path="/organizations" />
+                )}
               <LeftNav title="clients" path="/clients" />
               <LeftNav title="clientScopes" path="/client-scopes" />
               <LeftNav title="realmRoles" path="/roles" />
@@ -116,10 +128,19 @@ export const PageNav = () => {
               <LeftNav title="authentication" path="/authentication" />
               <LeftNav title="identityProviders" path="/identity-providers" />
               <LeftNav title="userFederation" path="/user-federation" />
+              {isFeatureEnabled(Feature.DeclarativeUI) &&
+                pages?.map((p) => (
+                  <LeftNav
+                    key={p.id}
+                    title={p.id}
+                    path={toPage({ providerId: p.id }).pathname!}
+                    id="/page-section"
+                  />
+                ))}
             </NavGroup>
           )}
         </Nav>
-      }
-    />
+      </PageSidebarBody>
+    </PageSidebar>
   );
 };

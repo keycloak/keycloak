@@ -117,8 +117,10 @@ import org.keycloak.admin.client.resource.RoleScopeResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.KeyUtils;
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
@@ -128,6 +130,7 @@ import org.keycloak.keys.Attributes;
 import org.keycloak.keys.ImportedRsaKeyProviderFactory;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.Constants;
+import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -144,10 +147,8 @@ import org.keycloak.saml.common.util.XmlKeyInfoKeyNameTransformer;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
-import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.services.util.CookieHelper;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.testsuite.adapter.page.*;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
@@ -166,15 +167,19 @@ import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.Creator;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
+import org.keycloak.testsuite.util.BrowserTabUtil;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
+import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.utils.io.IOUtil;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.Cookie;
+import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -190,10 +195,7 @@ import org.xml.sax.SAXException;
 @AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
-@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT8)
-@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT9)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP8)
 public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
     @Page
     protected BadClientSalesPostSigServlet badClientSalesPostSigServletPage;
@@ -674,10 +676,14 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         }
     }
 
-    private static final KeyPair NEW_KEY_PAIR = KeyUtils.generateRsaKeyPair(org.keycloak.testsuite.util.KeyUtils.getLowestSupportedRsaKeySize());
-    private static final String NEW_KEY_PRIVATE_KEY_PEM = PemUtils.encodeKey(NEW_KEY_PAIR.getPrivate());
+    private static KeyPair NEW_KEY_PAIR;
+    private static String NEW_KEY_PRIVATE_KEY_PEM;
 
     private PublicKey createKeys(String priority) throws Exception {
+        if (NEW_KEY_PAIR == null) {
+            NEW_KEY_PAIR = KeyUtils.generateRsaKeyPair(org.keycloak.testsuite.util.KeyUtils.getLowestSupportedRsaKeySize());
+            NEW_KEY_PRIVATE_KEY_PEM = PemUtils.encodeKey(NEW_KEY_PAIR.getPrivate());
+        }
         PublicKey publicKey = NEW_KEY_PAIR.getPublic();
 
         ComponentRepresentation rep = new ComponentRepresentation();
@@ -1128,6 +1134,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
     public void testSavedPostRequest() {
         inputPortalPage.navigateTo();
         assertCurrentUrlStartsWith(inputPortalPage);
+        String sessionId = driver.manage().getCookieNamed("JSESSIONID").getValue();
         inputPortalPage.execute("hello");
 
         assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
@@ -1138,6 +1145,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         // test that user principal and KeycloakSecurityContext available
         driver.navigate().to(inputPortalPage + "/insecure");
         waitUntilElement(By.xpath("//body")).text().contains("Insecure Page");
+        Assert.assertNotEquals("SessionID has not been changed at login", sessionId, driver.manage().getCookieNamed("JSESSIONID").getValue());
 
         if (System.getProperty("insecure.user.principal.unsupported") == null) waitUntilElement(By.xpath("//body")).text().contains("UserPrincipal");
 
@@ -1811,12 +1819,12 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         waitForPageToLoad();
         infoPage.assertCurrent();
         Assert.assertEquals("You are already logged in.", infoPage.getInfo());
-        Cookie identityCookie = driver.manage().getCookieNamed(AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE);
+        Cookie identityCookie = driver.manage().getCookieNamed(CookieType.IDENTITY.getName());
         Assert.assertNotNull(identityCookie);
-        driver.manage().deleteCookieNamed(AuthenticationSessionManager.AUTH_SESSION_ID);
-        driver.manage().deleteCookieNamed(AuthenticationSessionManager.AUTH_SESSION_ID + CookieHelper.LEGACY_COOKIE);
-        driver.manage().addCookie(new Cookie(AuthenticationSessionManager.AUTH_SESSION_ID, "invalid-value", identityCookie.getPath()));
-        driver.manage().addCookie(new Cookie(AuthenticationSessionManager.AUTH_SESSION_ID + CookieHelper.LEGACY_COOKIE, "invalid-value", identityCookie.getPath()));
+        driver.manage().deleteCookieNamed(CookieType.AUTH_SESSION_ID.getName());
+        driver.manage().deleteCookieNamed(CookieType.AUTH_SESSION_ID.getSameSiteLegacyName());
+        driver.manage().addCookie(new Cookie(CookieType.AUTH_SESSION_ID.getName(), "invalid-value", identityCookie.getPath()));
+        driver.manage().addCookie(new Cookie(CookieType.AUTH_SESSION_ID.getSameSiteLegacyName(), "invalid-value", identityCookie.getPath()));
 
         // go back to the app page, re-login should work with the invalid cookie
         testRealmSAMLPostLoginPage.navigateTo();
@@ -1826,6 +1834,93 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
 
         salesPostSigServletPage.logout();
         checkLoggedOut(salesPostSigEmailServletPage, testRealmSAMLPostLoginPage);
+    }
+
+    @Test
+    public void testMultipleTabsParallelLogin() throws Exception {
+        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
+            // open an application in tab1 and go to the login page
+            Assert.assertEquals(1, tabUtil.getCountOfTabs());
+            salesPostServletPage.navigateTo();
+            waitForPageToLoad();
+            assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
+
+            // Prepare a login in tab2
+            tabUtil.newTab(salesPostServletPage.buildUri().toASCIIString());
+            waitForPageToLoad();
+            assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
+            Assert.assertEquals(2, tabUtil.getCountOfTabs());
+            testRealmSAMLPostLoginPage.form().login(bburkeUser);
+            waitUntilElement(By.xpath("//body")).text().contains("principal=bburke");
+
+            // Go back to tab1 and it should automatically login
+            tabUtil.closeTab(1);
+            Assert.assertEquals(1, tabUtil.getCountOfTabs());
+            if (driver instanceof HtmlUnitDriver) {
+                // go to restart URI manually as JS does not work
+                KeycloakUriBuilder current = KeycloakUriBuilder.fromUri(driver.getCurrentUrl(), false);
+                KeycloakUriBuilder restart = KeycloakUriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT + "/realms/" + DEMO + "/login-actions/restart", false)
+                        .replaceQuery(current.getQuery(), false)
+                        .queryParam(Constants.SKIP_LOGOUT, Boolean.TRUE.toString());
+                driver.navigate().to(restart.buildAsString());
+            }
+            waitUntilElement(By.xpath("//body")).text().contains("principal=bburke");
+        } finally {
+            salesPostServletPage.logout();
+        }
+    }
+
+    @Test
+    public void testMultipleTabsParallelLoginAfterAuthSessionExpiration() throws Exception {
+        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
+            // open an application in tab1 and go to the login page
+            Assert.assertEquals(1, tabUtil.getCountOfTabs());
+            salesPostServletPage.navigateTo();
+            waitForPageToLoad();
+            assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
+
+            // Prepare a login in tab2
+            tabUtil.newTab(salesPostServletPage.buildUri().toASCIIString());
+            waitForPageToLoad();
+            assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
+            Assert.assertEquals(2, tabUtil.getCountOfTabs());
+
+            // remove the authentication session in the server to simulate expiration
+            Cookie sessionCookie = driver.manage().getCookieNamed(CookieType.AUTH_SESSION_ID.getName());
+            Assert.assertNotNull(sessionCookie);
+            final String authSessionId = sessionCookie.getValue();
+            testingClient.server().run(session -> {
+                RealmModel realm = session.realms().getRealmByName(DEMO);
+                RootAuthenticationSessionModel root = session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId);
+                session.authenticationSessions().removeRootAuthenticationSession(realm, root);
+            });
+
+            // finish the login that should fail
+            testRealmSAMLPostLoginPage.form().login(bburkeUser);
+            waitForPageToLoad();
+            assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage); // we are still in login
+            Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.",
+                    UIUtils.getTextFromElement(driver.findElement(By.className("alert-error"))));
+
+            // login successfully in tab2 after the error
+            loginPage.form().login(bburkeUser);
+            waitUntilElement(By.xpath("//body")).text().contains("principal=bburke");
+
+            // Go back to tab1 and it should automatically log into the app with retry
+            tabUtil.closeTab(1);
+            Assert.assertEquals(1, tabUtil.getCountOfTabs());
+            if (driver instanceof HtmlUnitDriver) {
+                // go to restart URI manually as JS does not work
+                KeycloakUriBuilder current = KeycloakUriBuilder.fromUri(driver.getCurrentUrl(), false);
+                KeycloakUriBuilder restart = KeycloakUriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT + "/realms/" + DEMO + "/login-actions/restart", false)
+                        .replaceQuery(current.getQuery(), false)
+                        .queryParam(Constants.SKIP_LOGOUT, Boolean.TRUE.toString());
+                driver.navigate().to(restart.buildAsString());
+            }
+            waitUntilElement(By.xpath("//body")).text().contains("principal=bburke");
+        } finally {
+            salesPostServletPage.logout();
+        }
     }
 
     private List<Cookie> impersonate(String admin, String adminPassword, String userId) throws IOException {
@@ -1893,6 +1988,34 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
 
         salesPostSigServletPage.logout();
         checkLoggedOut(salesPostSigEmailServletPage, testRealmSAMLPostLoginPage);
+    }
+
+    @Test
+    public void testChangeSessionID() throws Exception {
+        // login in the employeeDom application
+        assertSuccessfulLogin(employeeDomServletPage, bburkeUser, testRealmSAMLPostLoginPage, "principal=bburke");
+        assertSuccessfullyLoggedIn(employeeDomServletPage, "principal=bburke");
+        String sessionId = driver.manage().getCookieNamed("JSESSIONID").getValue();
+
+        // retrieve the saml document
+        driver.navigate().to(employeeDomServletPage.getUriBuilder().clone().path("getAssertionFromDocument").build().toURL());
+        waitForPageToLoad();
+        String xml = getRawPageSource();
+        Assert.assertNotEquals("", xml);
+
+        // change the session id
+        driver.navigate().to(employeeDomServletPage.getUriBuilder().clone().path("change-session-id").build().toURL());
+        waitForPageToLoad();
+        Assert.assertNotEquals("SessionID has not been changed at login", sessionId, driver.manage().getCookieNamed("JSESSIONID").getValue());
+
+        // retrieve again the saml document and should be the same as login should be maintained
+        driver.navigate().to(employeeDomServletPage.getUriBuilder().clone().path("getAssertionFromDocument").build().toURL());
+        waitForPageToLoad();
+        Assert.assertEquals(xml, getRawPageSource());
+
+        // logout
+        employeeDomServletPage.logout();
+        checkLoggedOut(employeeDomServletPage, testRealmSAMLPostLoginPage);
     }
 
     public static void printDocument(Source doc, OutputStream out) throws IOException, TransformerException {

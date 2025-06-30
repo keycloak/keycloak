@@ -17,16 +17,26 @@
 package org.keycloak.services.resources.admin;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
-import org.keycloak.http.HttpRequest;
-import org.keycloak.http.HttpResponse;
+import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.OPTIONS;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Response;
+import org.jboss.logging.Logger;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.Config;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
+import org.keycloak.common.util.Environment;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.headers.SecurityHeadersProvider;
+import org.keycloak.http.HttpRequest;
+import org.keycloak.http.HttpResponse;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -36,28 +46,22 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.services.Urls;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.resources.Cors;
+import org.keycloak.services.util.ViteManifest;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
 import org.keycloak.utils.MediaType;
 
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.OPTIONS;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
@@ -185,13 +189,13 @@ public class AdminConsole {
     @Path("whoami")
     @OPTIONS
     public Response whoAmIPreFlight() {
-        return new AdminCorsPreflightService(request).preflight();
+        return new AdminCorsPreflightService().preflight();
     }
 
     /**
      * Permission information
      *
-     * @param headers
+     * @param currentRealm
      * @return
      */
     @Path("whoami")
@@ -199,6 +203,10 @@ public class AdminConsole {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public Response whoAmI(@QueryParam("currentRealm") String currentRealm) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.ADMIN_API)) {
+            throw new NotFoundException();
+        }
+
         RealmManager realmManager = new RealmManager(session);
         AuthenticationManager.AuthResult authResult = new AppAuthManager.BearerTokenAuthenticator(session)
                 .setRealm(realm)
@@ -207,8 +215,21 @@ public class AdminConsole {
                 .authenticate();
 
         if (authResult == null) {
-            return Response.status(401).build();
+            throw new NotAuthorizedException("Bearer");
         }
+
+        final String issuedFor = authResult.getToken().getIssuedFor();
+        if (!Constants.ADMIN_CONSOLE_CLIENT_ID.equals(issuedFor)) {
+            if (issuedFor == null) {
+                throw new ForbiddenException("No azp claim in the token");
+            }
+            // check the attribute to see if the app is defined as an admin console
+            ClientModel client  = session.clients().getClientByClientId(realm, issuedFor);
+            if (client == null || !Boolean.parseBoolean(client.getAttribute(Constants.SECURITY_ADMIN_CONSOLE_ATTR))) {
+                throw new ForbiddenException("Token issued for an application that is not the admin console: " + issuedFor);
+            }
+        }
+
         UserModel user= authResult.getUser();
         String displayName;
         if ((user.getFirstName() != null && !user.getFirstName().trim().equals("")) || (user.getLastName() != null && !user.getLastName().trim().equals(""))) {
@@ -237,12 +258,18 @@ public class AdminConsole {
             addRealmAccess(realm, user, realmAccess);
         }
 
+        if (realmAccess.isEmpty() || realmAccess.values().iterator().next().isEmpty()) {
+            // if the user has no access in the realm just return forbidden/403
+            throw new ForbiddenException("No realm access");
+        }
+
         Locale locale = session.getContext().resolveLocale(user);
 
-        Cors.add(request).allowedOrigins(authResult.getToken()).allowedMethods("GET").auth()
-                .build(response);
-
-        return Response.ok(new WhoAmI(user.getId(), realm.getName(), displayName, createRealm, realmAccess, locale)).build();
+        return Cors.builder()
+                .allowedOrigins(authResult.getToken())
+                .allowedMethods("GET")
+                .auth()
+                .add(Response.ok(new WhoAmI(user.getId(), realm.getName(), displayName, createRealm, realmAccess, locale)));
     }
 
     private void addRealmAccess(RealmModel realm, UserModel user, Map<String, Set<String>> realmAdminAccess) {
@@ -256,29 +283,13 @@ public class AdminConsole {
         getRealmAdminAccess(realm, realm.getMasterAdminClient(), user, realmAdminAccess);
     }
 
-    private static <T> HashSet<T> union(Set<T> set1, Set<T> set2) {
-        if (set1 == null && set2 == null) {
-            return null;
-        }
-        HashSet<T> res;
-        if (set1 instanceof HashSet) {
-            res = (HashSet <T>) set1;
-        } else {
-            res = set1 == null ? new HashSet<>() : new HashSet<>(set1);
-        }
-        if (set2 != null) {
-            res.addAll(set2);
-        }
-        return res;
-    }
-
     private void getRealmAdminAccess(RealmModel realm, ClientModel client, UserModel user, Map<String, Set<String>> realmAdminAccess) {
         Set<String> realmRoles = client.getRolesStream()
           .filter(user::hasRole)
           .map(RoleModel::getName)
           .collect(Collectors.toSet());
 
-        realmAdminAccess.merge(realm.getName(), realmRoles, AdminConsole::union);
+        realmAdminAccess.put(realm.getName(), realmRoles);
     }
 
     /**
@@ -302,59 +313,72 @@ public class AdminConsole {
     }
 
     /**
-     * Main page of this realm's admin console
-     *
-     * @return
-     * @throws URISyntaxException
+     * Main page of this realm's admin console.
      */
     @GET
     @NoCache
     public Response getMainPage() throws IOException, FreeMarkerException {
-        if (!session.getContext().getUri(UrlType.ADMIN).getRequestUri().getPath().endsWith("/")) {
-            return Response.status(302).location(session.getContext().getUri(UrlType.ADMIN).getRequestUriBuilder().path("/").build()).build();
+        final var baseUriInfo = session.getContext().getUri(UrlType.FRONTEND);
+        final var adminUriInfo = session.getContext().getUri(UrlType.ADMIN);
+
+        // Redirect to a URL with a trailing slash if the current URL doesn't have one.
+        if (!adminUriInfo.getRequestUri().getPath().endsWith("/")) {
+            return Response.status(302).location(adminUriInfo.getRequestUriBuilder().path("/").build()).build();
         } else {
-            Theme theme = AdminRoot.getTheme(session, realm);
+            // Get the base URLs of the server and admin console.
+            final var serverBaseUri = baseUriInfo.getBaseUri();
+            final var adminBaseUri = adminUriInfo.getBaseUri();
 
-            Map<String, Object> map = new HashMap<>();
+            // Strip any trailing slashes from the URLs.
+            final var serverBaseUrl = serverBaseUri.toString().replaceFirst("/+$", "");
+            final var adminBaseUrl = adminBaseUri.toString().replaceFirst("/+$", "");
 
-            URI adminBaseUri = session.getContext().getUri(UrlType.ADMIN).getBaseUri();
-            String adminBaseUrl = adminBaseUri.toString();
-            if (adminBaseUrl.endsWith("/")) {
-                adminBaseUrl = adminBaseUrl.substring(0, adminBaseUrl.length() - 1);
-            }
+            final var map = new HashMap<String, Object>();
+            final var theme = AdminRoot.getTheme(session, realm);
 
-            String kcJsRelativeBasePath = adminBaseUri.getPath();
-
-            if(!kcJsRelativeBasePath.endsWith("/")) {
-                kcJsRelativeBasePath = kcJsRelativeBasePath + "/";
-            }
-
-            URI authServerBaseUri = session.getContext().getUri(UrlType.FRONTEND).getBaseUri();
-
-            String authServerBaseUrl = authServerBaseUri.toString();
-            if (authServerBaseUrl.endsWith("/")) {
-                authServerBaseUrl = authServerBaseUrl.substring(0, authServerBaseUrl.length() - 1);
-            }
-
-            map.put("authServerUrl", authServerBaseUrl);
-            map.put("authUrl", adminBaseUrl);
+            map.put("serverBaseUrl", serverBaseUrl);
+            map.put("adminBaseUrl", adminBaseUrl);
+            // TODO: Some variables are deprecated and only exist to provide backwards compatibility for older themes, they should be removed in a future version.
+            // Note that these should be removed from the template of the Administration Console as well.
+            map.put("authServerUrl", serverBaseUrl); // Superseded by 'serverBaseUrl', remove in the future.
+            map.put("authUrl", adminBaseUrl); // Superseded by 'adminBaseUrl', remove in the future.
             map.put("consoleBaseUrl", Urls.adminConsoleRoot(adminBaseUri, realm.getName()).getPath());
             map.put("resourceUrl", Urls.themeRoot(adminBaseUri).getPath() + "/admin/" + theme.getName());
             map.put("resourceCommonUrl", Urls.themeRoot(adminBaseUri).getPath() + "/common/keycloak");
-            map.put("keycloakJsUrl", kcJsRelativeBasePath + "js/keycloak.js?version=" + Version.RESOURCES_VERSION);
+            map.put("keycloakJsUrl", adminBaseUrl + "/js/keycloak.js?version=" + Version.RESOURCES_VERSION);
             map.put("masterRealm", Config.getAdminRealm());
             map.put("resourceVersion", Version.RESOURCES_VERSION);
             map.put("loginRealm", realm.getName());
             map.put("clientId", Constants.ADMIN_CONSOLE_CLIENT_ID);
             map.put("properties", theme.getProperties());
 
-            FreeMarkerProvider freeMarkerUtil = session.getProvider(FreeMarkerProvider.class);
-            String result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);
-            Response.ResponseBuilder builder = Response.status(Response.Status.OK).type(MediaType.TEXT_HTML_UTF_8).language(Locale.ENGLISH).entity(result);
+            final var devServerUrl = Environment.isDevMode() ? System.getenv(ViteManifest.ADMIN_VITE_URL) : null;
 
-            // Replace CSP if admin is hosted on different URL
-            if (!adminBaseUri.equals(authServerBaseUri)) {
-                session.getProvider(SecurityHeadersProvider.class).options().allowFrameSrc(UriUtils.getOrigin(authServerBaseUri));
+            if (devServerUrl != null) {
+                map.put("devServerUrl", devServerUrl);
+            }
+
+            final var manifestFile = theme.getResourceAsStream(".vite/manifest.json");
+
+            if (devServerUrl == null && manifestFile != null) {
+                final var manifest = ViteManifest.parseFromInputStream(manifestFile);
+                final var entryChunk = manifest.getEntryChunk();
+                final var entryStyles = entryChunk.css().orElse(new String[] {});
+                final var entryScript = entryChunk.file();
+                final var entryImports = entryChunk.imports().orElse(new String[] {});
+
+                map.put("entryStyles", entryStyles);
+                map.put("entryScript", entryScript);
+                map.put("entryImports", entryImports);
+            }
+
+            final var freeMarkerUtil = session.getProvider(FreeMarkerProvider.class);
+            final var result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);
+            final var builder = Response.status(Response.Status.OK).type(MediaType.TEXT_HTML_UTF_8).language(Locale.ENGLISH).entity(result);
+
+            // Allow iframes to be embedded from the server if the admin console is running on a different URL.
+            if (!adminBaseUri.equals(serverBaseUri)) {
+                session.getProvider(SecurityHeadersProvider.class).options().allowFrameSrc(UriUtils.getOrigin(serverBaseUri));
             }
 
             return builder.build();

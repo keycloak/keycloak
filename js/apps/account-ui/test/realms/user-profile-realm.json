@@ -6,12 +6,102 @@
   "sslRequired": "external",
   "privateKey": "MIICXAIBAAKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQABAoGAfmO8gVhyBxdqlxmIuglbz8bcjQbhXJLR2EoS8ngTXmN1bo2L90M0mUKSdc7qF10LgETBzqL8jYlQIbt+e6TH8fcEpKCjUlyq0Mf/vVbfZSNaVycY13nTzo27iPyWQHK5NLuJzn1xvxxrUeXI6A2WFpGEBLbHjwpx5WQG9A+2scECQQDvdn9NE75HPTVPxBqsEd2z10TKkl9CZxu10Qby3iQQmWLEJ9LNmy3acvKrE3gMiYNWb6xHPKiIqOR1as7L24aTAkEAtyvQOlCvr5kAjVqrEKXalj0Tzewjweuxc0pskvArTI2Oo070h65GpoIKLc9jf+UA69cRtquwP93aZKtW06U8dQJAF2Y44ks/mK5+eyDqik3koCI08qaC8HYq2wVl7G2QkJ6sbAaILtcvD92ToOvyGyeE0flvmDZxMYlvaZnaQ0lcSQJBAKZU6umJi3/xeEbkJqMfeLclD27XGEFoPeNrmdx0q10Azp4NfJAY+Z8KRyQCR2BEG+oNitBOZ+YXF9KCpH3cdmECQHEigJhYg+ykOvr1aiZUMFT72HU0jnmQe2FVekuG+LJUt2Tm7GtMjTFoGpf0JwrVuZN39fOYAlo+nTixgeW7X8Y=",
   "publicKey": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB",
-  "requiredCredentials": [
-    "password"
-  ],
+  "requiredCredentials": ["password"],
   "attributes": {
     "userProfileEnabled": "true"
   },
+  "requiredActions": [
+    {
+      "alias": "CONFIGURE_TOTP",
+      "name": "Configure OTP",
+      "providerId": "CONFIGURE_TOTP",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 10,
+      "config": {}
+    },
+    {
+      "alias": "TERMS_AND_CONDITIONS",
+      "name": "Terms and Conditions",
+      "providerId": "TERMS_AND_CONDITIONS",
+      "enabled": false,
+      "defaultAction": false,
+      "priority": 20,
+      "config": {}
+    },
+    {
+      "alias": "UPDATE_PASSWORD",
+      "name": "Update Password",
+      "providerId": "UPDATE_PASSWORD",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 30,
+      "config": {}
+    },
+    {
+      "alias": "UPDATE_PROFILE",
+      "name": "Update Profile",
+      "providerId": "UPDATE_PROFILE",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 40,
+      "config": {}
+    },
+    {
+      "alias": "VERIFY_EMAIL",
+      "name": "Verify Email",
+      "providerId": "VERIFY_EMAIL",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 50,
+      "config": {}
+    },
+    {
+      "alias": "delete_account",
+      "name": "Delete Account",
+      "providerId": "delete_account",
+      "enabled": false,
+      "defaultAction": false,
+      "priority": 60,
+      "config": {}
+    },
+    {
+      "alias": "webauthn-register",
+      "name": "Webauthn Register",
+      "providerId": "webauthn-register",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 70,
+      "config": {}
+    },
+    {
+      "alias": "webauthn-register-passwordless",
+      "name": "Webauthn Register Passwordless",
+      "providerId": "webauthn-register-passwordless",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 80,
+      "config": {}
+    },
+    {
+      "alias": "VERIFY_PROFILE",
+      "name": "Verify Profile",
+      "providerId": "VERIFY_PROFILE",
+      "enabled": false,
+      "defaultAction": false,
+      "priority": 90,
+      "config": {}
+    },
+    {
+      "alias": "update_user_locale",
+      "name": "Update User Locale",
+      "providerId": "update_user_locale",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 1000,
+      "config": {}
+    }
+  ],
   "clients": [
     {
       "clientId": "security-admin-console-v2",
@@ -21,12 +111,8 @@
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
-      "redirectUris": [
-          "http://localhost:8080/*"
-      ],
-      "webOrigins": [
-          "http://localhost:8080"
-      ],
+      "redirectUris": ["http://localhost:8080/*"],
+      "webOrigins": ["http://localhost:8080"],
       "notBefore": 0,
       "bearerOnly": false,
       "consentRequired": false,
@@ -42,23 +128,106 @@
       "fullScopeAllowed": true,
       "nodeReRegistrationTimeout": -1,
       "defaultClientScopes": [
-          "web-origins",
-          "role_list",
-          "roles",
-          "profile",
-          "email"
+        "web-origins",
+        "role_list",
+        "roles",
+        "profile",
+        "email"
       ],
       "optionalClientScopes": [
-          "address",
-          "phone",
-          "offline_access",
-          "microprofile-jwt"
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
       ],
       "access": {
-          "view": true,
-          "configure": true,
-          "manage": true
+        "view": true,
+        "configure": true,
+        "manage": true
       }
     }
-  ]
+  ],
+  "users": [
+    {
+      "username": "alice",
+      "enabled": true,
+      "email": "alice@keycloak.org",
+      "firstName": "Alice",
+      "lastName": "In Chains",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "alice"
+        }
+      ],
+      "realmRoles": [
+        "user", "uma_authorization"
+      ],
+      "clientRoles": {
+        "account": [
+          "manage-account"
+        ]
+      }
+    }
+  ],
+  "identityProviders": [
+    {
+      "alias": "keycloak-oidc",
+      "displayName": "",
+      "internalId": "566b8743-6b80-4165-9675-ed10a2e9af9c",
+      "providerId": "keycloak-oidc",
+      "enabled": true,
+      "updateProfileFirstLoginMode": "on",
+      "trustEmail": false,
+      "storeToken": false,
+      "addReadTokenRoleOnCreate": false,
+      "authenticateByDefault": false,
+      "linkOnly": false,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "userInfoUrl": "http://localhost:8180/realms/oidc-broker/protocol/openid-connect/userinfo",
+        "validateSignature": "true",
+        "clientId": "3953a1ad-de74-4d09-955b-8a023d453803",
+        "tokenUrl": "http://localhost:8180/realms/oidc-broker/protocol/openid-connect/token",
+        "jwksUrl": "http://localhost:8180/realms/oidc-broker/protocol/openid-connect/certs",
+        "issuer": "http://localhost:8180/realms/oidc-broker",
+        "useJwksUrl": "true",
+        "pkceEnabled": "false",
+        "authorizationUrl": "http://localhost:8180/realms/oidc-broker/protocol/openid-connect/auth",
+        "clientAuthMethod": "client_secret_post",
+        "logoutUrl": "http://localhost:8180/realms/oidc-broker/protocol/openid-connect/logout",
+        "clientSecret": "**********"
+      }
+    }
+  ],
+  "identityFederationEnabled": true,
+  "internationalizationEnabled": true,
+  "supportedLocales": [
+    "de",
+    "no",
+    "fi",
+    "ru",
+    "lt",
+    "lv",
+    "fr",
+    "hu",
+    "zh-CN",
+    "sk",
+    "ca",
+    "sv",
+    "pt-BR",
+    "el",
+    "en",
+    "it",
+    "es",
+    "cs",
+    "ar",
+    "ja",
+    "fa",
+    "pl",
+    "da",
+    "nl",
+    "tr"
+  ],
+  "defaultLocale": "en"
 }

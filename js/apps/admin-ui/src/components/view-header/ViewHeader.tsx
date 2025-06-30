@@ -3,10 +3,10 @@ import {
   Button,
   Divider,
   Dropdown,
-  DropdownPosition,
-  DropdownToggle,
+  DropdownList,
   Level,
   LevelItem,
+  MenuToggle,
   PageSection,
   Switch,
   Text,
@@ -24,7 +24,7 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { FormattedLink } from "../external-link/FormattedLink";
-import { useHelp, HelpItem } from "ui-shared";
+import { useHelp, HelpItem } from "@keycloak/keycloak-ui-shared";
 import "../../help-urls";
 
 export type ViewHeaderProps = {
@@ -92,8 +92,12 @@ export const ViewHeader = ({
           <LevelItem>
             <Level>
               <LevelItem>
-                <TextContent className="pf-u-mr-sm">
-                  <Text className={className} component="h1">
+                <TextContent className="pf-v5-u-mr-sm">
+                  <Text
+                    className={className}
+                    component="h1"
+                    data-testid="view-header"
+                  >
                     {i18n.exists(titleKey) ? t(titleKey) : titleKey}
                   </Text>
                 </TextContent>
@@ -117,7 +121,7 @@ export const ViewHeader = ({
             </Level>
           </LevelItem>
           <LevelItem>
-            <Toolbar className="pf-u-p-0">
+            <Toolbar className="pf-v5-u-p-0">
               <ToolbarContent>
                 {onToggle && (
                   <ToolbarItem>
@@ -126,11 +130,11 @@ export const ViewHeader = ({
                       data-testid={`${titleKey}-switch`}
                       label={t("enabled")}
                       labelOff={t("disabled")}
-                      className="pf-u-mr-lg"
+                      className="pf-v5-u-mr-lg"
                       isDisabled={isReadOnly}
                       isChecked={isEnabled}
                       aria-label={t("enabled")}
-                      onChange={(value) => {
+                      onChange={(_event, value) => {
                         onToggle(value);
                       }}
                     />
@@ -145,20 +149,25 @@ export const ViewHeader = ({
                 {dropdownItems && (
                   <ToolbarItem>
                     <Dropdown
-                      position={DropdownPosition.right}
-                      toggle={
-                        <DropdownToggle
+                      popperProps={{
+                        position: "right",
+                      }}
+                      onOpenChange={onDropdownToggle}
+                      toggle={(ref) => (
+                        <MenuToggle
+                          ref={ref}
                           isDisabled={isDropdownDisabled}
                           id={actionsDropdownId}
-                          onToggle={onDropdownToggle}
+                          onClick={onDropdownToggle}
+                          data-testid="action-dropdown"
                         >
                           {t("action")}
-                        </DropdownToggle>
-                      }
+                        </MenuToggle>
+                      )}
                       isOpen={isDropdownOpen}
-                      dropdownItems={dropdownItems}
-                      data-testid="action-dropdown"
-                    />
+                    >
+                      <DropdownList>{dropdownItems}</DropdownList>
+                    </Dropdown>
                   </ToolbarItem>
                 )}
               </ToolbarContent>
@@ -171,14 +180,14 @@ export const ViewHeader = ({
               {isValidElement(subKey)
                 ? subKey
                 : subKey
-                ? t(subKey as string)
-                : ""}
+                  ? t(subKey as string)
+                  : ""}
               {helpUrl && (
                 <FormattedLink
                   title={t("learnMore")}
                   href={helpUrl}
                   isInline
-                  className="pf-u-ml-md"
+                  className="pf-v5-u-ml-md"
                 />
               )}
             </Text>
@@ -187,18 +196,21 @@ export const ViewHeader = ({
         {lowerDropdownItems && (
           <Dropdown
             className="keycloak__user-federation__dropdown"
-            toggle={
-              <DropdownToggle
-                onToggle={() => onLowerDropdownToggle()}
-                isPrimary
+            onOpenChange={onLowerDropdownToggle}
+            toggle={(ref) => (
+              <MenuToggle
+                ref={ref}
+                onClick={onLowerDropdownToggle}
+                variant="primary"
                 id="ufToggleId"
               >
                 {t(lowerDropdownMenuTitle)}
-              </DropdownToggle>
-            }
+              </MenuToggle>
+            )}
             isOpen={isLowerDropdownOpen}
-            dropdownItems={lowerDropdownItems}
-          />
+          >
+            <DropdownList>{lowerDropdownItems}</DropdownList>
+          </Dropdown>
         )}
         {lowerButton && (
           <Button

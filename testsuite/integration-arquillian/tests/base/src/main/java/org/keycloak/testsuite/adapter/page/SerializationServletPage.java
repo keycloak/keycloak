@@ -21,7 +21,6 @@ import org.jboss.arquillian.container.test.api.OperateOnDeployment;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
 
-import jakarta.ws.rs.core.UriBuilder;
 import java.net.URI;
 import java.net.URL;
 

@@ -17,6 +17,7 @@
 
 package org.keycloak.services.clientregistration.policy.impl;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -54,11 +55,13 @@ public class ClientScopesClientRegistrationPolicy implements ClientRegistrationP
         List<String> requestedDefaultScopeNames = context.getClient().getDefaultClientScopes();
         List<String> requestedOptionalScopeNames = context.getClient().getOptionalClientScopes();
 
-        List<String> allowedDefaultScopeNames = getAllowedScopeNames(realm, true);
-        List<String> allowedOptionalScopeNames = getAllowedScopeNames(realm, false);
+        List<String> allowedScopeNames = new ArrayList<>();
+        allowedScopeNames.addAll(getAllowedScopeNames(realm, true));
+        allowedScopeNames.addAll(getAllowedScopeNames(realm, false));
 
-        checkClientScopesAllowed(requestedDefaultScopeNames, allowedDefaultScopeNames);
-        checkClientScopesAllowed(requestedOptionalScopeNames, allowedOptionalScopeNames);
+
+        checkClientScopesAllowed(requestedDefaultScopeNames, allowedScopeNames);
+        checkClientScopesAllowed(requestedOptionalScopeNames, allowedScopeNames);
     }
 
     @Override
@@ -68,22 +71,26 @@ public class ClientScopesClientRegistrationPolicy implements ClientRegistrationP
 
     @Override
     public void beforeUpdate(ClientRegistrationContext context, ClientModel clientModel) throws ClientRegistrationPolicyException {
-        List<String> requestedDefaultScopeNames = context.getClient().getDefaultClientScopes();
-        List<String> requestedOptionalScopeNames = context.getClient().getOptionalClientScopes();
+        List<String> requestedDefaultScopeNames = new LinkedList<>();
+        List<String> requestedOptionalScopeNames = new LinkedList<>();
+
+        if(context.getClient().getDefaultClientScopes() != null) {
+            requestedDefaultScopeNames.addAll(context.getClient().getDefaultClientScopes());
+        }
+        if(context.getClient().getOptionalClientScopes() != null) {
+            requestedOptionalScopeNames.addAll(context.getClient().getOptionalClientScopes());
+        }
 
         // Allow scopes, which were already presented before
-        if (requestedDefaultScopeNames != null) {
-            requestedDefaultScopeNames.removeAll(clientModel.getClientScopes(true).keySet());
-        }
-        if (requestedOptionalScopeNames != null) {
-            requestedOptionalScopeNames.removeAll(clientModel.getClientScopes(false).keySet());
-        }
+        requestedDefaultScopeNames.removeAll(clientModel.getClientScopes(true).keySet());
+        requestedOptionalScopeNames.removeAll(clientModel.getClientScopes(false).keySet());
 
-        List<String> allowedDefaultScopeNames = getAllowedScopeNames(realm, true);
-        List<String> allowedOptionalScopeNames = getAllowedScopeNames(realm, false);
+        List<String> allowedScopeNames = new ArrayList<>();
+        allowedScopeNames.addAll(getAllowedScopeNames(realm, true));
+        allowedScopeNames.addAll(getAllowedScopeNames(realm, false));
 
-        checkClientScopesAllowed(requestedDefaultScopeNames, allowedDefaultScopeNames);
-        checkClientScopesAllowed(requestedOptionalScopeNames, allowedOptionalScopeNames);
+        checkClientScopesAllowed(requestedDefaultScopeNames, allowedScopeNames);
+        checkClientScopesAllowed(requestedOptionalScopeNames, allowedScopeNames);
     }
 
     @Override

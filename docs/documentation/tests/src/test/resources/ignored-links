@@ -13,7 +13,7 @@ http://host:port*
 https://host:port*
 http://broker-keycloak:8180*
 https://expressjs.com/
-https://github.com/keycloak/keycloak/tree/*
+https://github.com/*
 http://node11:8080*
 http://node11:8080/auth/
 http://node12:8080*
@@ -21,10 +21,7 @@ http://node21:8080*
 http://node22:8080*
 http://web.example.com*
 https://keycloak.example.com*
-https://github.com/keycloak/keycloak-documentation/blob/master/*
 https://openshift.example.com:8443/console
-https://github.com/keycloak/keycloak-quickstarts.git
-https://github.com/go-chi/chi#router-design
 https://accounts.google.com/o/oauth2/revoke
 https://keycloak.example.com/auth/realms/REALM_NAME/protocol/openid-connect/logout
 http://127.0.0.1:3000/oauth/callback
@@ -38,8 +35,5 @@ https://developer.paypal.com/developer/applications
 https://account.live.com/developers/applications/create
 https://developer.twitter.com/apps/
 https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/#rolling-update
-https://github.com/keycloak/keycloak/blob/main/docs/tests.md#kerberos-server
-https://github.com/apache/felix-dev/tree/master/http#using-the-osgi-http-whiteboard
-https://github.com/keycloak/keycloak/blob/025778fe9c745316f80b53fe3052aeb314e868ef/js/apps/admin-ui/public/locales/en/dashboard.json#L3
-https://github.com/keycloak/keycloak/issues/new?*
 https://stackapps.com/apps/oauth/register
+https://www.keycloak.org/server/management-interface

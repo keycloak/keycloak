@@ -39,6 +39,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.TimeBasedOTP;
@@ -53,7 +54,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -350,12 +350,12 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
     @Test
     public void grantRequest_ClientES256_RealmPS256() throws Exception {
-    	conductGrantRequest(Algorithm.HS256, Algorithm.ES256, Algorithm.PS256);
+        conductGrantRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.ES256, Algorithm.PS256);
     }
 
     @Test
     public void grantRequest_ClientPS256_RealmES256() throws Exception {
-    	conductGrantRequest(Algorithm.HS256, Algorithm.PS256, Algorithm.ES256);
+        conductGrantRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.PS256, Algorithm.ES256);
     }
 
     private void conductGrantRequest(String expectedRefreshAlg, String expectedAccessAlg, String realmTokenAlg) throws Exception {
@@ -452,7 +452,9 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         assertEquals(400, response.getStatusCode());
         assertEquals("invalid_grant", response.getError());
 
-        events.expectRefresh(refreshToken.getId(), refreshToken.getSessionState()).client("resource-owner")
+        events.expectRefresh(refreshToken.getId(), refreshToken.getSessionState())
+                .client("resource-owner")
+                .user((String) null)
                 .removeDetail(Details.TOKEN_ID)
                 .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID)
                 .error(Errors.INVALID_TOKEN).assertEvent();
@@ -651,6 +653,38 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
     }
 
     @Test
+    public void grantAccessTokenInvalidUserCredentialsPerf() throws Exception {
+        int count = 5;
+
+        // Measure the times when username exists, but password is invalid
+        long sumInvalidPasswordMs = perfTest(count, "Invalid password", this::grantAccessTokenInvalidUserCredentials);
+
+        // Measure the times when username does not exists
+        long sumInvalidUsernameMs = perfTest(count, "User not found", this::grantAccessTokenUserNotFound);
+
+        String errorMessage = String.format("Times in ms of %d attempts: For invalid password: %d. For invalid username: %d", count, sumInvalidPasswordMs, sumInvalidUsernameMs);
+
+        // The times should be very similar. Using the bigger difference just to avoid flakiness (Before the fix, the difference was like 3 times shorter time for invalid-username, which allowed quite accurate username enumeration)
+        Assert.assertTrue(errorMessage, sumInvalidUsernameMs * 2 > sumInvalidPasswordMs);
+    }
+
+    private long perfTest(int actionsCount, String actionMessage, RunnableWithException action) throws Exception {
+        long sumTimeMs = 0;
+        for (int i = 0 ; i < actionsCount ; i++) {
+            long start = System.currentTimeMillis();
+            action.run();
+            long took = System.currentTimeMillis() - start;
+            getLogger().infof("%s %d: %d ms", actionMessage, i + 1, took);
+            sumTimeMs = sumTimeMs + took;
+        }
+        return sumTimeMs;
+    }
+
+    private interface RunnableWithException {
+        void run() throws Exception;
+    }
+
+    @Test
     public void grantAccessTokenInvalidUserCredentials() throws Exception {
         oauth.clientId("resource-owner");
 
@@ -747,11 +781,6 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
     }
 
     private int getAuthenticationSessionsCount() {
-        if (ProfileAssume.isFeatureEnabled(Profile.Feature.MAP_STORAGE)) {
-            // Currently, no access to the authentication sessions is available for map storage.
-            // By return a constant, all tests in this test class can still pass.
-            return 0;
-        }
         return testingClient.testing().cache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME).size();
     }
 }

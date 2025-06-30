@@ -20,6 +20,7 @@ package org.keycloak.models.jpa;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.jpa.entities.GroupAttributeEntity;
@@ -38,6 +39,9 @@ import java.util.Objects;
 import java.util.stream.Stream;
 import jakarta.persistence.LockModeType;
 
+import static java.util.Optional.ofNullable;
+import static org.keycloak.common.util.CollectionUtil.collectionEquals;
+import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
@@ -46,11 +50,13 @@ import static org.keycloak.utils.StreamsUtil.closing;
  */
 public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
 
+    protected final KeycloakSession session;
     protected GroupEntity group;
     protected EntityManager em;
     protected RealmModel realm;
 
-    public GroupAdapter(RealmModel realm, EntityManager em, GroupEntity group) {
+    public GroupAdapter(KeycloakSession session, RealmModel realm, EntityManager em, GroupEntity group) {
+        this.session = session;
         this.em = em;
         this.group = group;
         this.realm = realm;
@@ -73,6 +79,7 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
     @Override
     public void setName(String name) {
         group.setName(name);
+        fireGroupUpdatedEvent();
     }
 
     @Override
@@ -101,6 +108,7 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
             GroupEntity parentEntity = toEntity(parent, em);
             group.setParentId(parentEntity.getId());
         }
+        fireGroupUpdatedEvent();
     }
 
     @Override
@@ -109,6 +117,7 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
             return;
         }
         subGroup.setParent(this);
+        fireGroupUpdatedEvent();
     }
 
     @Override
@@ -117,14 +126,39 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
             return;
         }
         subGroup.setParent(null);
+        fireGroupUpdatedEvent();
     }
 
     @Override
     public Stream<GroupModel> getSubGroupsStream() {
-        TypedQuery<String> query = em.createNamedQuery("getGroupIdsByParent", String.class);
-        query.setParameter("realm", group.getRealm());
-        query.setParameter("parent", group.getId());
-        return closing(query.getResultStream().map(realm::getGroupById).filter(Objects::nonNull));
+        return getSubGroupsStream("", false, -1, -1);
+    }
+
+    @Override
+    public Stream<GroupModel> getSubGroupsStream(String search, Boolean exact, Integer firstResult, Integer maxResults) {
+        TypedQuery<String> query;
+        if (Boolean.TRUE.equals(exact)) {
+            query = em.createNamedQuery("getGroupIdsByParentAndName", String.class);
+        } else {
+            query = em.createNamedQuery("getGroupIdsByParentAndNameContaining", String.class);
+        }
+        query.setParameter("realm", realm.getId())
+                .setParameter("parent", group.getId())
+                .setParameter("search", search == null ? "" : search);
+
+        return closing(paginateQuery(query, firstResult, maxResults).getResultStream()
+                .map(realm::getGroupById)
+                // In concurrent tests, the group might be deleted in another thread, therefore, skip those null values.
+                .filter(Objects::nonNull)
+        );
+    }
+
+    @Override
+    public Long getSubGroupsCount() {
+        return em.createNamedQuery("getGroupCountByParent", Long.class)
+                .setParameter("realm", realm.getId())
+                .setParameter("parent", group.getId())
+                .getSingleResult();
     }
 
     @Override
@@ -148,14 +182,22 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
         }
 
         if (found) {
+            fireGroupUpdatedEvent();
             return;
         }
 
         persistAttributeValue(name, value);
+        fireGroupUpdatedEvent();
     }
 
     @Override
     public void setAttribute(String name, List<String> values) {
+        List<String> current = getAttributes().getOrDefault(name, List.of());
+
+        if (collectionEquals(current, ofNullable(values).orElse(List.of()))) {
+            return;
+        }
+
         // Remove all existing
         removeAttribute(name);
 
@@ -185,6 +227,7 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
                 em.remove(attr);
             }
         }
+        fireGroupUpdatedEvent();
     }
 
     @Override
@@ -236,6 +279,7 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
         em.persist(entity);
         em.flush();
         em.detach(entity);
+        fireGroupUpdatedEvent();
     }
 
     @Override
@@ -265,6 +309,7 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
             em.remove(entity);
         }
         em.flush();
+        fireGroupUpdatedEvent();
     }
 
     @Override
@@ -286,6 +331,12 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
         return getId().hashCode();
     }
 
+    @Override
+    public boolean escapeSlashesInGroupPath() {
+        return KeycloakModelUtils.escapeSlashesInGroupPath(session);
+    }
 
-
+    private void fireGroupUpdatedEvent() {
+        GroupUpdatedEvent.fire(this, session);
+    }
 }

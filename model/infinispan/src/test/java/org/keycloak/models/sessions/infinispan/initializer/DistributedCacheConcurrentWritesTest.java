@@ -75,8 +75,7 @@ public class DistributedCacheConcurrentWritesTest {
 
     private static SessionEntityWrapper<UserSessionEntity> createEntityInstance(String id) {
         // Create initial item
-        UserSessionEntity session = new UserSessionEntity();
-        session.setId(id);
+        UserSessionEntity session = new UserSessionEntity(id);
         session.setRealmId("foo");
         session.setBrokerSessionId("!23123123");
         session.setBrokerUserId(null);

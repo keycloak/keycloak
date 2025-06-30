@@ -41,6 +41,7 @@ import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AdminRoles;
@@ -52,7 +53,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.*;
-import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.auth.page.AuthRealm;
@@ -340,7 +340,7 @@ public class ImpersonationTest extends AbstractKeycloakTest {
             Assert.assertEquals(admin, notes.get(ImpersonationSessionNote.IMPERSONATOR_USERNAME.toString()));
 
             Set<Cookie> cookies = cookieStore.getCookies().stream()
-                    .filter(c -> c.getName().startsWith(AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE))
+                    .filter(c -> c.getName().startsWith(CookieType.IDENTITY.getName()))
                     .map(c -> new Cookie(c.getName(), c.getValue(), c.getDomain(), c.getPath(), c.getExpiryDate(), c.isSecure(), true))
                     .collect(Collectors.toSet());
 
@@ -459,7 +459,7 @@ public class ImpersonationTest extends AbstractKeycloakTest {
             Assert.assertNotNull(resBody);
             Assert.assertTrue(resBody.contains("redirect"));
             Set<Cookie> cookies = cookieStore.getCookies().stream()
-                    .filter(c -> c.getName().startsWith(AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE))
+                    .filter(c -> c.getName().startsWith(CookieType.IDENTITY.getName()))
                     .map(c -> new Cookie(c.getName(), c.getValue(), c.getDomain(), c.getPath(), c.getExpiryDate(), c.isSecure(), true))
                     .collect(Collectors.toSet());
 

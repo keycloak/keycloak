@@ -19,21 +19,33 @@
 package org.keycloak.authentication.authenticators.util;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.jboss.logging.Logger;
+import org.keycloak.authentication.Authenticator;
+import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticator;
 import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticatorFactory;
+import org.keycloak.credential.CredentialProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.cache.CachedRealmModel;
+
+import static org.keycloak.models.Constants.NO_LOA;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -48,7 +60,7 @@ public class LoAUtil {
      */
     public static int getCurrentLevelOfAuthentication(AuthenticatedClientSessionModel clientSession) {
         String clientSessionLoaNote = clientSession.getNote(Constants.LEVEL_OF_AUTHENTICATION);
-        return clientSessionLoaNote == null ? Constants.NO_LOA : Integer.parseInt(clientSessionLoaNote);
+        return clientSessionLoaNote == null ? NO_LOA : Integer.parseInt(clientSessionLoaNote);
     }
 
 
@@ -71,7 +83,7 @@ public class LoAUtil {
 
     /**
      * @param realm
-     * @return All LoA numbers configured in the conditions in the realm browser flow. Key is level, Vaue is maxAge for particular level
+     * @return All LoA numbers configured in the conditions in the realm browser flow. Key is level, Value is maxAge for particular level
      */
     public static Map<Integer, Integer> getLoaMaxAgesConfiguredInRealmBrowserFlow(RealmModel realm) {
         List<AuthenticationExecutionModel> loaConditions = AuthenticatorUtil.getExecutionsByType(realm, realm.getBrowserFlow().getId(), ConditionalLoaAuthenticatorFactory.PROVIDER_ID);
@@ -119,4 +131,75 @@ public class LoAUtil {
             return 0;
         }
     }
+
+    /**
+     * Return map where:
+     *  - keys are credential types corresponding to authenticators available in given authentication flow
+     *  - values are LoA levels of those credentials in the given flow (If not step-up authentication is used, values will be always Constants.NO_LOA)
+     *
+     *  For instance if we have password as level1 and OTP or WebAuthn as available level2 authenticators it can return map like:
+     *   { "password" -> 1,
+     *     "otp" -> 2
+     *     "webauthn" -> 2
+     *   }
+     *
+     * @param session
+     * @param realm
+     * @param topFlow
+     * @return map as described above. Never returns null, but can return empty map.
+     */
+    public static Map<String, Integer> getCredentialTypesToLoAMap(KeycloakSession session, RealmModel realm, AuthenticationFlowModel topFlow) {
+        // Attempt to cache mapping, so it is not needed to compute it multiple times at every authentication
+        String cacheKey = "flow:" + topFlow.getId();
+        if (realm instanceof CachedRealmModel) {
+            ConcurrentHashMap cachedWith = ((CachedRealmModel) realm).getCachedWith();
+            Map<String, Integer> result = (Map<String, Integer>) cachedWith.get(cacheKey);
+            if (result != null) return result;
+        }
+
+        Map<String, Integer> result = new HashMap<>();
+        AtomicReference<Integer> currentLevel = new AtomicReference<>(NO_LOA);
+        Set<String> availableCredentialTypes = AuthenticatorUtil.getCredentialProviders(session)
+                .map(CredentialProvider::getType)
+                .collect(Collectors.toSet());
+
+        fillCredentialsToLoAMap(session, realm, topFlow, availableCredentialTypes, currentLevel, result);
+
+        logger.tracef("Computed credential types to LoA map for authentication flow '%s' in realm '%s'. Mapping: %s", topFlow.getAlias(), realm.getName(), result);
+
+        if (realm instanceof CachedRealmModel) {
+            ConcurrentHashMap cachedWith = ((CachedRealmModel) realm).getCachedWith();
+            cachedWith.put(cacheKey, result);
+        }
+
+        return result;
+    }
+
+    private static void fillCredentialsToLoAMap(KeycloakSession session, RealmModel realm, AuthenticationFlowModel authFlow, Set<String> availableCredentialTypes, AtomicReference<Integer> currentLevel, Map<String, Integer> result) {
+        realm.getAuthenticationExecutionsStream(authFlow.getId()).forEachOrdered(execution -> {
+            if (execution.isAuthenticatorFlow()) {
+                AuthenticationFlowModel subFlow = realm.getAuthenticationFlowById(execution.getFlowId());
+
+                int levelWhenExecuted = currentLevel.get();
+                fillCredentialsToLoAMap(session, realm, subFlow, availableCredentialTypes, currentLevel, result);
+                currentLevel.set(levelWhenExecuted); // Subflow is finished. We should "reset" current level and set it to the same value before we started to process the subflow
+            } else {
+                if (ConditionalLoaAuthenticatorFactory.PROVIDER_ID.equals(execution.getAuthenticator())) {
+                    AuthenticatorConfigModel loaConditionConfig = realm.getAuthenticatorConfigById(execution.getAuthenticatorConfig());
+                    Integer level = getLevelFromLoaConditionConfiguration(loaConditionConfig);
+                    if (level != null) {
+                        currentLevel.set(level);
+                    }
+                } else {
+                    AuthenticatorFactory factory = (AuthenticatorFactory) session.getKeycloakSessionFactory().getProviderFactory(Authenticator.class, execution.getAuthenticator());
+                    if (factory == null) return;
+                    // reference-category points to the credentialType
+                    if (factory.getReferenceCategory() != null && availableCredentialTypes.contains(factory.getReferenceCategory())) {
+                        result.put(factory.getReferenceCategory(), currentLevel.get());
+                    }
+                }
+            }
+        });
+    }
+
 }

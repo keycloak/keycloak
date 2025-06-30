@@ -33,7 +33,7 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.LegacyRealmModel;
+import org.keycloak.models.StorageProviderRealmModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
@@ -151,7 +151,7 @@ public class LDAPSyncTest extends AbstractLDAPTest {
 
             // Assert lastSync time updated
             Assert.assertTrue(ctx.getLdapModel().getLastSync() > 0);
-            ((LegacyRealmModel) testRealm).getUserStorageProvidersStream().forEachOrdered(persistentFedModel -> {
+            ((StorageProviderRealmModel) testRealm).getUserStorageProvidersStream().forEachOrdered(persistentFedModel -> {
                 if (LDAPStorageProviderFactory.PROVIDER_NAME.equals(persistentFedModel.getProviderId())) {
                     Assert.assertTrue(persistentFedModel.getLastSync() > 0);
                 } else {
@@ -346,6 +346,16 @@ public class LDAPSyncTest extends AbstractLDAPTest {
             Assert.assertEquals("user1", user1.getFirstAttribute(LDAPConstants.LDAP_ID));
         });
 
+        // Remove all users from model - required step before the next test execution especially when running against external AD
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            // Remove all users from model
+            UserStoragePrivateUtil.userLocalStorage(session)
+                    .searchForUserStream(ctx.getRealm(), Collections.emptyMap())
+                    .collect(Collectors.toList())
+                    .forEach(user -> UserStoragePrivateUtil.userLocalStorage(session).removeUser(ctx.getRealm(), user));
+        });
+
         // Revert config changes
         ComponentRepresentation ldapRep = testRealm().components().component(ldapModelId).toRepresentation();
         ldapRep.getConfig().putSingle(LDAPConstants.UUID_LDAP_ATTRIBUTE, origUuidAttrName);
@@ -455,7 +465,7 @@ public class LDAPSyncTest extends AbstractLDAPTest {
             LDAPUtils.addMember(ctx.getLdapProvider(), MembershipType.DN, LDAPConstants.MEMBER, "not-used", group2, group1);
 
             ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "groupsMapper");
-            LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "false");
+            LDAPTestUtils.updateConfigOptions(mapperModel, GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "false");
             ctx.getRealm().updateComponent(mapperModel);
 
             // sync groups to Keycloak

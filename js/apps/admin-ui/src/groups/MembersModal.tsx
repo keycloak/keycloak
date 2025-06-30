@@ -1,32 +1,33 @@
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
-import {
-  AlertVariant,
-  Button,
-  Modal,
-  ModalVariant,
-} from "@patternfly/react-core";
+import { Button, Modal, ModalVariant } from "@patternfly/react-core";
 import { differenceBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { emptyFormatter } from "../util";
 
 type MemberModalProps = {
-  groupId: string;
+  membersQuery: () => Promise<UserRepresentation[]>;
+  onAdd: (users: UserRepresentation[]) => Promise<void>;
   onClose: () => void;
 };
 
-export const MemberModal = ({ groupId, onClose }: MemberModalProps) => {
+export const MemberModal = ({
+  membersQuery,
+  onAdd,
+  onClose,
+}: MemberModalProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
-  const { addAlert, addError } = useAlerts();
+  const { addError } = useAlerts();
   const [selectedRows, setSelectedRows] = useState<UserRepresentation[]>([]);
 
   const loader = async (first?: number, max?: number, search?: string) => {
-    const members = await adminClient.groups.listMembers({ id: groupId });
+    const members = await membersQuery();
     const params: { [name: string]: string | number } = {
       first: first!,
       max: max! + members.length,
@@ -46,7 +47,7 @@ export const MemberModal = ({ groupId, onClose }: MemberModalProps) => {
     <Modal
       variant={ModalVariant.large}
       title={t("addMember")}
-      isOpen={true}
+      isOpen
       onClose={onClose}
       actions={[
         <Button
@@ -54,20 +55,8 @@ export const MemberModal = ({ groupId, onClose }: MemberModalProps) => {
           key="confirm"
           variant="primary"
           onClick={async () => {
-            try {
-              await Promise.all(
-                selectedRows.map((user) =>
-                  adminClient.users.addToGroup({ id: user.id!, groupId }),
-                ),
-              );
-              onClose();
-              addAlert(
-                t("usersAdded", { count: selectedRows.length }),
-                AlertVariant.success,
-              );
-            } catch (error) {
-              addError("usersAddedError", error);
-            }
+            await onAdd(selectedRows);
+            onClose();
           }}
         >
           {t("add")}

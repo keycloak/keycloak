@@ -33,11 +33,12 @@ import org.infinispan.commons.marshall.SerializeWith;
 @SerializeWith(RootAuthenticationSessionEntity.ExternalizerImpl.class)
 public class RootAuthenticationSessionEntity extends SessionEntity {
 
-    private String id;
+    private final String id;
     private int timestamp;
     private Map<String, AuthenticationSessionEntity> authenticationSessions = new ConcurrentHashMap<>();
 
-    public RootAuthenticationSessionEntity() {
+    public RootAuthenticationSessionEntity(String id) {
+        this.id = id;
     }
 
     protected RootAuthenticationSessionEntity(String realmId, String id, int timestamp, Map<String, AuthenticationSessionEntity> authenticationSessions) {
@@ -49,10 +50,6 @@ public class RootAuthenticationSessionEntity extends SessionEntity {
 
     public String getId() {
         return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
     }
 
     public int getTimestamp() {

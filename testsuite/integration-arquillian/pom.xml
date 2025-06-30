@@ -37,29 +37,27 @@
         <containers.home>${project.build.directory}/containers</containers.home>
         <auth.server.java.home>${java.home}</auth.server.java.home>
         <app.server.java.home>${java.home}</app.server.java.home>
-        <app.server>wildfly</app.server>
+        <app.server>disabled</app.server>
         <cache.server.java.home>${java.home}</cache.server.java.home>
 
         <!--component versions-->
-        <arquillian-core.version>1.7.0.Alpha14</arquillian-core.version>
+        <arquillian-core.version>1.8.0.Final</arquillian-core.version>
         <!--the version of shrinkwrap_resolver should align with the version in arquillian-bom-->
-        <shrinkwrap-resolver.version>3.1.4</shrinkwrap-resolver.version>
-        <selenium.version>3.14.0</selenium.version>
-        <arquillian-drone.version>2.5.5</arquillian-drone.version>
-        <arquillian-graphene.version>3.0.0-alpha.3</arquillian-graphene.version>
+        <shrinkwrap-resolver.version>3.2.1</shrinkwrap-resolver.version>
+        <selenium.version>4.21.0</selenium.version>
+        <arquillian-drone.version>3.0.0-alpha.8</arquillian-drone.version>
+        <arquillian-graphene.version>3.0.0-alpha.4</arquillian-graphene.version>
         <arquillian-wildfly-container.version>3.0.1.Final</arquillian-wildfly-container.version>
         <arquillian-wls-container.version>1.0.1.Final</arquillian-wls-container.version>
-        <arquillian-jetty9-container.version>1.0.0.CR3</arquillian-jetty9-container.version>
-        <arquillian-container-karaf.version>2.2.0.Final</arquillian-container-karaf.version>
         <arquillian-infinispan-container.version>1.2.0.Beta3</arquillian-infinispan-container.version>
-        <arquillian-tomcat8-container-version>1.1.0.Final</arquillian-tomcat8-container-version>
-        <arquillian-tomcat9-container-version>1.1.0.Final</arquillian-tomcat9-container-version>
         <undertow.version>${undertow-jakarta.version}</undertow.version>
         <undertow-embedded.version>1.0.0.Final</undertow-embedded.version>
         <version.org.wildfly.extras.creaper>1.6.1</version.org.wildfly.extras.creaper>
-        <appium.client.version>6.1.0</appium.client.version>
+        <appium.client.version>9.2.2</appium.client.version>
         <jakarta.persistence-legacy.version>2.2.3</jakarta.persistence-legacy.version>
         <smallrye.jandex.version>3.0.5</smallrye.jandex.version>
+        <commons.validator.version>1.8.0</commons.validator.version>
+        <byte-buddy.version>1.14.13</byte-buddy.version>
 
         <!--migration properties-->
         <migration.70.version>1.9.8.Final</migration.70.version>
@@ -85,6 +83,13 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-parent</artifactId>
+                <version>${project.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
 
             <!-- Selenium Server -->
             <dependency>
@@ -117,6 +122,11 @@
             <dependency>
                 <groupId>org.seleniumhq.selenium</groupId>
                 <artifactId>lift</artifactId>
+                <version>${selenium.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>selenium-manager</artifactId>
                 <version>${selenium.version}</version>
             </dependency>
 
@@ -153,8 +163,13 @@
             </dependency>
             <dependency>
                 <groupId>org.seleniumhq.selenium</groupId>
-                <artifactId>selenium-opera-driver</artifactId>
+                <artifactId>htmlunit3-driver</artifactId>
                 <version>${selenium.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-validator</groupId>
+                <artifactId>commons-validator</artifactId>
+                <version>${commons.validator.version}</version>
             </dependency>
 
             <dependency>
@@ -214,25 +229,6 @@
                 <artifactId>keycloak-rest-admin-ui-ext</artifactId>
             </dependency>
 
-            <!-- Fuse adapter tests dependencies -->
-            <dependency>
-		        <groupId>org.jboss.arquillian.container</groupId>
-                <artifactId>arquillian-container-karaf-managed</artifactId>
-                <version>${arquillian-container-karaf.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.arquillian.container</groupId>
-                <artifactId>arquillian-container-osgi</artifactId>
-                <version>${arquillian-container-karaf.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.google.guava</groupId>
-                        <artifactId>guava</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <!-- Fuse adapter tests dependencies END -->
-            
         </dependencies>
     </dependencyManagement>
     
@@ -458,16 +454,12 @@
                 <keycloak.connectionsJpa.user>keycloak</keycloak.connectionsJpa.user>
                 <keycloak.connectionsJpa.password>keycloak</keycloak.connectionsJpa.password>
                 <keycloak.connectionsJpa.url>jdbc:mysql://${auth.server.db.host}/${keycloak.connectionsJpa.database}?allowPublicKeyRetrieval=true</keycloak.connectionsJpa.url>
-                <!-- Map Store JPA -->
-                <keycloak.map.storage.connectionsJpa.url>${keycloak.connectionsJpa.url}</keycloak.map.storage.connectionsJpa.url>
-                <keycloak.map.storage.connectionsJpa.user>${keycloak.connectionsJpa.user}</keycloak.map.storage.connectionsJpa.user>
-                <keycloak.map.storage.connectionsJpa.password>${keycloak.connectionsJpa.password}</keycloak.map.storage.connectionsJpa.password>
 
                 <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
                 <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
                 <!-- for the particular EAP version -->
-                <jdbc.mvn.groupId>mysql</jdbc.mvn.groupId>
-                <jdbc.mvn.artifactId>mysql-connector-java</jdbc.mvn.artifactId>
+                <jdbc.mvn.groupId>com.mysql</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>mysql-connector-j</jdbc.mvn.artifactId>
                 <jdbc.mvn.version>${mysql-jdbc.version}</jdbc.mvn.version>
                 <docker.database.image>mysql:${mysql.version}</docker.database.image>
                 <docker.database.port>3306</docker.database.port>
@@ -493,10 +485,6 @@
                 <keycloak.connectionsJpa.user>keycloak</keycloak.connectionsJpa.user>
                 <keycloak.connectionsJpa.password>keycloak</keycloak.connectionsJpa.password>
                 <keycloak.connectionsJpa.url>jdbc:postgresql://${auth.server.db.host}/${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.url>
-                <!-- Map Store JPA -->
-                <keycloak.map.storage.connectionsJpa.url>${keycloak.connectionsJpa.url}</keycloak.map.storage.connectionsJpa.url>
-                <keycloak.map.storage.connectionsJpa.user>${keycloak.connectionsJpa.user}</keycloak.map.storage.connectionsJpa.user>
-                <keycloak.map.storage.connectionsJpa.password>${keycloak.connectionsJpa.password}</keycloak.map.storage.connectionsJpa.password>
                 <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
                 <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
                 <!-- for the particular EAP version -->
@@ -508,6 +496,24 @@
                 <docker.database.skip>false</docker.database.skip>
                 <docker.database.cmd>postgres</docker.database.cmd>
                 <docker.database.wait-for-log-regex>(?si)Ready for start up.*ready [^\n]{0,30}connections</docker.database.wait-for-log-regex>
+            </properties>
+        </profile>
+        <profile>
+            <id>db-aurora-postgres</id>
+            <properties>
+                <keycloak.storage.connections.vendor>aurora-postgres</keycloak.storage.connections.vendor>
+                <keycloak.connectionsJpa.driver>software.amazon.jdbc.Driver</keycloak.connectionsJpa.driver>
+                <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
+                <keycloak.connectionsJpa.user>keycloak</keycloak.connectionsJpa.user>
+                <keycloak.connectionsJpa.password>secret99</keycloak.connectionsJpa.password>
+                <keycloak.connectionsJpa.jdbcParameters/>
+                <keycloak.connectionsJpa.url>jdbc:aws-wrapper:postgresql://${auth.server.db.host}/${keycloak.connectionsJpa.database}${keycloak.connectionsJpa.jdbcParameters}</keycloak.connectionsJpa.url>
+                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
+                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
+                <!-- for the particular EAP version -->
+                <jdbc.mvn.groupId>software.amazon.jdbc</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>aws-advanced-jdbc-wrapper</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>${aws-jdbc-wrapper.version}</jdbc.mvn.version>
             </properties>
         </profile>
         <profile>
@@ -535,10 +541,6 @@
                 <keycloak.connectionsJpa.user>keycloak</keycloak.connectionsJpa.user>
                 <keycloak.connectionsJpa.password>keycloak</keycloak.connectionsJpa.password>
                 <keycloak.connectionsJpa.url>jdbc:mariadb://${auth.server.db.host}/${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.url>
-                <!-- Map Store JPA -->
-                <keycloak.map.storage.connectionsJpa.url>${keycloak.connectionsJpa.url}</keycloak.map.storage.connectionsJpa.url>
-                <keycloak.map.storage.connectionsJpa.user>${keycloak.connectionsJpa.user}</keycloak.map.storage.connectionsJpa.user>
-                <keycloak.map.storage.connectionsJpa.password>${keycloak.connectionsJpa.password}</keycloak.map.storage.connectionsJpa.password>
                 <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
                 <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
                 <!-- for the particular EAP version -->
@@ -567,19 +569,15 @@
                 <docker.database.image>mcr.microsoft.com/mssql/server:${mssql.version}</docker.database.image>
                 <docker.database.port>1433</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>
-                <docker.database.postStart>/opt/mssql-tools/bin/sqlcmd -e -U sa -P vEry5tron9Pwd -d master -Q CREATE\ DATABASE\ ${keycloak.connectionsJpa.database}</docker.database.postStart>
+                <docker.database.postStart>/opt/mssql-tools18/bin/sqlcmd -e -U sa -P ${keycloak.connectionsJpa.password} -No -d master -Q CREATE\ DATABASE\ ${keycloak.connectionsJpa.database}</docker.database.postStart>
                 <docker.database.cmd>/bin/sh -c /opt/mssql/bin/sqlservr</docker.database.cmd>
-                <docker.database.wait-for-log-regex>(?si)SQL Server is now ready for client connections.*Service Broker manager has started</docker.database.wait-for-log-regex>
+                <docker.database.wait-for-log-regex>Recovery is complete. This is an informational message only. No user action is required.</docker.database.wait-for-log-regex>
                 <keycloak.storage.connections.vendor>mssql</keycloak.storage.connections.vendor>
                 <keycloak.connectionsJpa.driver>com.microsoft.sqlserver.jdbc.SQLServerDriver</keycloak.connectionsJpa.driver>
                 <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
                 <keycloak.connectionsJpa.user>sa</keycloak.connectionsJpa.user>
-                <keycloak.connectionsJpa.password>vEry5tron9Pwd</keycloak.connectionsJpa.password>
+                <keycloak.connectionsJpa.password>vEry$tron9Pwd</keycloak.connectionsJpa.password>
                 <keycloak.connectionsJpa.url>jdbc:sqlserver://${auth.server.db.host}:${docker.database.port};databaseName=${keycloak.connectionsJpa.database};integratedSecurity=false;encrypt=false;trustServerCertificate=true;sendStringParametersAsUnicode=false;</keycloak.connectionsJpa.url>
-                <!-- Map Store JPA -->
-                <keycloak.map.storage.connectionsJpa.url>${keycloak.connectionsJpa.url}</keycloak.map.storage.connectionsJpa.url>
-                <keycloak.map.storage.connectionsJpa.user>${keycloak.connectionsJpa.user}</keycloak.map.storage.connectionsJpa.user>
-                <keycloak.map.storage.connectionsJpa.password>${keycloak.connectionsJpa.password}</keycloak.map.storage.connectionsJpa.password>
                 <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
                 <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
                 <!-- for the particular EAP version -->
@@ -611,10 +609,6 @@
                 <keycloak.connectionsJpa.user>keycloak</keycloak.connectionsJpa.user>
                 <keycloak.connectionsJpa.password>keycloak</keycloak.connectionsJpa.password>
                 <keycloak.connectionsJpa.url>jdbc:oracle:thin:@${auth.server.db.host}:${docker.database.port}:${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.url>
-                <!-- Map Store JPA -->
-                <keycloak.map.storage.connectionsJpa.url>${keycloak.connectionsJpa.url}</keycloak.map.storage.connectionsJpa.url>
-                <keycloak.map.storage.connectionsJpa.user>${keycloak.connectionsJpa.user}</keycloak.map.storage.connectionsJpa.user>
-                <keycloak.map.storage.connectionsJpa.password>${keycloak.connectionsJpa.password}</keycloak.map.storage.connectionsJpa.password>
 
                 <docker.database.postStart>bash -c while\ !\ sqlplus\ -L\ SYS/sa@localhost/XE\ AS\ SYSDBA\ &lt;&lt;&lt;\ $'alter\ session\ set\ \"_ORACLE_SCRIPT\"=true;\n\ CREATE\ USER\ ${keycloak.connectionsJpa.user}\ IDENTIFIED\ BY\ ${keycloak.connectionsJpa.password};\n\ GRANT\ CONNECT,\ RESOURCE,\ DBA,\ GRANT\ ANY\ PRIVILEGE,\ UNLIMITED\ TABLESPACE\ TO\ ${keycloak.connectionsJpa.user};\n';\ do\ sleep\ 5;\ done</docker.database.postStart>
                 <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
@@ -633,45 +627,6 @@
                 <dballocator.skip>false</dballocator.skip>
             </properties>
         </profile>
-
-        <!-- Workaround for issues related to PhantomJS in some newer linux environment. See for example here for more details https://github.com/nodejs/node/issues/43132 -->
-        <profile>
-            <id>phantomjs-openssl-workaround</id>
-            <activation>
-                <os>
-                    <family>unix</family>
-                </os>
-            </activation>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <artifactId>maven-surefire-plugin</artifactId>
-                            <configuration>
-                                <environmentVariables>
-                                    <OPENSSL_CONF>/dev/null</OPENSSL_CONF>
-                                </environmentVariables>
-                            </configuration>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
     </profiles>
-
-    <repositories>
-        <repository>
-            <id>sonatype-snapshots</id>
-            <name>Sonatype Snapshots</name>
-            <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
-            <snapshots>
-                <enabled>true</enabled>
-                <updatePolicy>daily</updatePolicy>
-            </snapshots>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-        </repository>
-    </repositories>
 
 </project>

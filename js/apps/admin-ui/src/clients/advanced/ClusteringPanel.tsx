@@ -10,9 +10,8 @@ import {
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../components/form/FormAccess";
@@ -35,6 +34,8 @@ export const ClusteringPanel = ({
   save,
   client: { id, registeredNodes, access },
 }: AdvancedProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const formatDate = useFormatDate();
@@ -122,7 +123,7 @@ export const ClusteringPanel = ({
         />
         <ExpandableSection
           toggleText={t("registeredClusterNodes")}
-          onToggle={setExpanded}
+          onToggle={(_event, val) => setExpanded(val)}
           isExpanded={expanded}
         >
           <KeycloakDataTable

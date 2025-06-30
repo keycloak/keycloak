@@ -1,22 +1,15 @@
 import IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
-import {
-  ExpandableSection,
-  FormGroup,
-  NumberInput,
-  Select,
-  SelectOption,
-  SelectVariant,
-  ValidatedOptions,
-} from "@patternfly/react-core";
+import { ExpandableSection } from "@patternfly/react-core";
 import { useState } from "react";
-import { Controller, useFormContext, useWatch } from "react-hook-form";
+import { FormProvider, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { HelpItem } from "ui-shared";
-import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
-import { FormGroupField } from "../component/FormGroupField";
-import { SwitchField } from "../component/SwitchField";
+import {
+  NumberControl,
+  SelectControl,
+  TextAreaControl,
+  TextControl,
+} from "@keycloak/keycloak-ui-shared";
+import { DefaultSwitchControl } from "../../components/SwitchControl";
 
 import "./discovery-settings.css";
 
@@ -27,22 +20,8 @@ type DescriptorSettingsProps = {
 const Fields = ({ readOnly }: DescriptorSettingsProps) => {
   const { t } = useTranslation();
 
-  const {
-    register,
-    control,
-    formState: { errors },
-  } = useFormContext<IdentityProviderRepresentation>();
-  const [namedPolicyDropdownOpen, setNamedPolicyDropdownOpen] = useState(false);
-  const [principalTypeDropdownOpen, setPrincipalTypeDropdownOpen] =
-    useState(false);
-  const [signatureAlgorithmDropdownOpen, setSignatureAlgorithmDropdownOpen] =
-    useState(false);
-  const [encryptionAlgorithmDropdownOpen, setEncryptionAlgorithmDropdownOpen] =
-    useState(false);
-  const [
-    samlSignatureKeyNameDropdownOpen,
-    setSamlSignatureKeyNameDropdownOpen,
-  ] = useState(false);
+  const form = useFormContext<IdentityProviderRepresentation>();
+  const { control } = form;
 
   const wantAuthnSigned = useWatch({
     control,
@@ -59,547 +38,295 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
     name: "config.validateSignature",
   });
 
+  const useMetadataDescriptorUrl = useWatch({
+    control,
+    name: "config.useMetadataDescriptorUrl",
+  });
+
   const principalType = useWatch({
     control,
     name: "config.principalType",
   });
 
   return (
-    <div className="pf-c-form pf-m-horizontal">
-      <FormGroup
-        label={t("serviceProviderEntityId")}
-        fieldId="kc-saml-service-provider-entity-id"
-        labelIcon={
-          <HelpItem
-            helpText={t("serviceProviderEntityIdHelp")}
-            fieldLabelId="serviceProviderEntityId"
-          />
-        }
-      >
-        <KeycloakTextInput
-          data-testid="serviceProviderEntityId"
-          id="kc-saml-service-provider-entity-id"
-          {...register("config.entityId")}
+    <div className="pf-v5-c-form pf-m-horizontal">
+      <FormProvider {...form}>
+        <TextControl
+          name="config.entityId"
+          label={t("serviceProviderEntityId")}
+          labelIcon={t("serviceProviderEntityIdHelp")}
         />
-      </FormGroup>
-      <FormGroup
-        label={t("identityProviderEntityId")}
-        fieldId="kc-identity-provider-entity-id"
-        labelIcon={
-          <HelpItem
-            helpText={t("identityProviderEntityIdHelp")}
-            fieldLabelId="identityProviderEntityId"
-          />
-        }
-      >
-        <KeycloakTextInput
+        <TextControl
+          name="config.idpEntityId"
+          label={t("identityProviderEntityId")}
+          labelIcon={t("identityProviderEntityIdHelp")}
           data-testid="identityProviderEntityId"
           id="kc-identity-provider-entity-id"
-          {...register("config.idpEntityId")}
         />
-      </FormGroup>
-      <FormGroup
-        label={t("ssoServiceUrl")}
-        labelIcon={
-          <HelpItem
-            helpText={t("ssoServiceUrlHelp")}
-            fieldLabelId="ssoServiceUrl"
-          />
-        }
-        fieldId="kc-sso-service-url"
-        isRequired
-        validated={
-          errors.config?.singleSignOnServiceUrl
-            ? ValidatedOptions.error
-            : ValidatedOptions.default
-        }
-        helperTextInvalid={t("required")}
-      >
-        <KeycloakTextInput
+        <TextControl
+          name="config.singleSignOnServiceUrl"
+          label={t("ssoServiceUrl")}
+          labelIcon={t("ssoServiceUrlHelp")}
           type="url"
-          data-testid="sso-service-url"
-          id="kc-sso-service-url"
-          validated={
-            errors.config?.singleSignOnServiceUrl
-              ? ValidatedOptions.error
-              : ValidatedOptions.default
-          }
-          isReadOnly={readOnly}
-          {...register("config.singleSignOnServiceUrl", { required: true })}
+          readOnly={readOnly}
+          rules={{ required: t("required") }}
         />
-      </FormGroup>
-      <FormGroup
-        label={t("singleLogoutServiceUrl")}
-        labelIcon={
-          <HelpItem
-            helpText={t("singleLogoutServiceUrlHelp")}
-            fieldLabelId="singleLogoutServiceUrl"
-          />
-        }
-        fieldId="single-logout-service-url"
-        data-testid="single-logout-service-url"
-        validated={
-          errors.config?.singleLogoutServiceUrl
-            ? ValidatedOptions.error
-            : ValidatedOptions.default
-        }
-        helperTextInvalid={t("required")}
-      >
-        <KeycloakTextInput
+        <TextControl
+          name="config.singleLogoutServiceUrl"
+          label={t("singleLogoutServiceUrl")}
+          labelIcon={t("singleLogoutServiceUrlHelp")}
           type="url"
-          id="single-logout-service-url"
-          isReadOnly={readOnly}
-          {...register("config.singleLogoutServiceUrl")}
+          readOnly={readOnly}
         />
-      </FormGroup>
-      <SwitchField
-        field="config.backchannelSupported"
-        label="backchannelLogout"
-        data-testid="backchannelLogout"
-        isReadOnly={readOnly}
-      />
-      <FormGroup
-        label={t("nameIdPolicyFormat")}
-        labelIcon={
-          <HelpItem
-            helpText={t("nameIdPolicyFormatHelp")}
-            fieldLabelId="nameIdPolicyFormat"
-          />
-        }
-        fieldId="kc-nameIdPolicyFormat"
-        helperTextInvalid={t("required")}
-      >
-        <Controller
+        <DefaultSwitchControl
+          name="config.backchannelSupported"
+          label={t("backchannelLogout")}
+          isDisabled={readOnly}
+          stringify
+        />
+        <DefaultSwitchControl
+          name="config.sendIdTokenOnLogout"
+          label={t("sendIdTokenOnLogout")}
+          defaultValue={"true"}
+          isDisabled={readOnly}
+          stringify
+        />
+        <DefaultSwitchControl
+          name="config.sendClientIdOnLogout"
+          label={t("sendClientIdOnLogout")}
+          isDisabled={readOnly}
+          stringify
+        />
+        <SelectControl
           name="config.nameIDPolicyFormat"
-          defaultValue={"urn:oasis:names:tc:SAML:2.0:nameid-format:persistent"}
-          control={control}
-          render={({ field }) => (
-            <Select
-              toggleId="kc-nameIdPolicyFormat"
-              onToggle={(isExpanded) => setNamedPolicyDropdownOpen(isExpanded)}
-              isOpen={namedPolicyDropdownOpen}
-              onSelect={(_, value) => {
-                field.onChange(value as string);
-                setNamedPolicyDropdownOpen(false);
-              }}
-              selections={field.value}
-              variant={SelectVariant.single}
-              isDisabled={readOnly}
-            >
-              <SelectOption
-                data-testid="persistent-option"
-                value={"urn:oasis:names:tc:SAML:2.0:nameid-format:persistent"}
-                isPlaceholder
-              >
-                {t("persistent")}
-              </SelectOption>
-              <SelectOption
-                data-testid="transient-option"
-                value="urn:oasis:names:tc:SAML:2.0:nameid-format:transient"
-              >
-                {t("transient")}
-              </SelectOption>
-              <SelectOption
-                data-testid="email-option"
-                value="urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
-              >
-                {t("email")}
-              </SelectOption>
-              <SelectOption
-                data-testid="kerberos-option"
-                value="urn:oasis:names:tc:SAML:2.0:nameid-format:kerberos"
-              >
-                {t("kerberos")}
-              </SelectOption>
-
-              <SelectOption
-                data-testid="x509-option"
-                value="urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName"
-              >
-                {t("x509")}
-              </SelectOption>
-
-              <SelectOption
-                data-testid="windowsDomainQN-option"
-                value="urn:oasis:names:tc:SAML:1.1:nameid-format:WindowsDomainQualifiedName"
-              >
-                {t("windowsDomainQN")}
-              </SelectOption>
-
-              <SelectOption
-                data-testid="unspecified-option"
-                value={"urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"}
-              >
-                {t("unspecified")}
-              </SelectOption>
-            </Select>
-          )}
-        ></Controller>
-      </FormGroup>
-
-      <FormGroup
-        label={t("principalType")}
-        labelIcon={
-          <HelpItem
-            helpText={t("principalTypeHelp")}
-            fieldLabelId="principalType"
-          />
-        }
-        fieldId="kc-principalType"
-        helperTextInvalid={t("required")}
-      >
-        <Controller
+          label={t("nameIdPolicyFormat")}
+          labelIcon={t("nameIdPolicyFormatHelp")}
+          controller={{
+            defaultValue:
+              "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent",
+          }}
+          isDisabled={readOnly}
+          options={[
+            {
+              key: "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent",
+              value: t("persistent"),
+            },
+            {
+              key: "urn:oasis:names:tc:SAML:2.0:nameid-format:transient",
+              value: t("transient"),
+            },
+            {
+              key: "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
+              value: t("email"),
+            },
+            {
+              key: "urn:oasis:names:tc:SAML:2.0:nameid-format:kerberos",
+              value: t("kerberos"),
+            },
+            {
+              key: "urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName",
+              value: t("x509"),
+            },
+            {
+              key: "urn:oasis:names:tc:SAML:1.1:nameid-format:WindowsDomainQualifiedName",
+              value: t("windowsDomainQN"),
+            },
+            {
+              key: "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified",
+              value: t("unspecified"),
+            },
+          ]}
+        />
+        <SelectControl
           name="config.principalType"
-          defaultValue={t("subjectNameId")}
-          control={control}
-          render={({ field }) => (
-            <Select
-              toggleId="kc-principalType"
-              onToggle={(isExpanded) =>
-                setPrincipalTypeDropdownOpen(isExpanded)
-              }
-              isOpen={principalTypeDropdownOpen}
-              onSelect={(_, value) => {
-                field.onChange(value.toString());
-                setPrincipalTypeDropdownOpen(false);
-              }}
-              selections={field.value}
-              variant={SelectVariant.single}
-              isDisabled={readOnly}
-            >
-              <SelectOption
-                data-testid="subjectNameId-option"
-                value="SUBJECT"
-                isPlaceholder
-              >
-                {t("subjectNameId")}
-              </SelectOption>
-              <SelectOption
-                data-testid="attributeName-option"
-                value="ATTRIBUTE"
-              >
-                {t("attributeName")}
-              </SelectOption>
-              <SelectOption
-                data-testid="attributeFriendlyName-option"
-                value="FRIENDLY_ATTRIBUTE"
-              >
-                {t("attributeFriendlyName")}
-              </SelectOption>
-            </Select>
-          )}
-        ></Controller>
-      </FormGroup>
+          label={t("principalType")}
+          labelIcon={t("principalTypeHelp")}
+          controller={{
+            defaultValue: "SUBJECT",
+          }}
+          isDisabled={readOnly}
+          options={[
+            { key: "SUBJECT", value: t("subjectNameId") },
+            { key: "ATTRIBUTE", value: t("attributeName") },
+            { key: "FRIENDLY_ATTRIBUTE", value: t("attributeFriendlyName") },
+          ]}
+        />
 
-      {principalType?.includes("ATTRIBUTE") && (
-        <FormGroup
-          label={t("principalAttribute")}
-          labelIcon={
-            <HelpItem
-              helpText={t("principalAttributeHelp")}
-              fieldLabelId="principalAttribute"
-            />
-          }
-          fieldId="principalAttribute"
-        >
-          <KeycloakTextInput
-            id="principalAttribute"
-            data-testid="principalAttribute"
-            isReadOnly={readOnly}
-            {...register("config.principalAttribute")}
+        {principalType?.includes("ATTRIBUTE") && (
+          <TextControl
+            name="config.principalAttribute"
+            label={t("principalAttribute")}
+            labelIcon={t("principalAttributeHelp")}
+            readOnly={readOnly}
           />
-        </FormGroup>
-      )}
-      <SwitchField
-        field="config.allowCreate"
-        label="allowCreate"
-        isReadOnly={readOnly}
-      />
+        )}
+        <DefaultSwitchControl
+          name="config.allowCreate"
+          label={t("allowCreate")}
+          isDisabled={readOnly}
+          stringify
+        />
 
-      <SwitchField
-        field="config.postBindingResponse"
-        label="httpPostBindingResponse"
-        isReadOnly={readOnly}
-      />
+        <DefaultSwitchControl
+          name="config.postBindingResponse"
+          label={t("httpPostBindingResponse")}
+          isDisabled={readOnly}
+          stringify
+        />
 
-      <SwitchField
-        field="config.postBindingAuthnRequest"
-        label="httpPostBindingAuthnRequest"
-        isReadOnly={readOnly}
-      />
+        <DefaultSwitchControl
+          name="config.postBindingAuthnRequest"
+          label={t("httpPostBindingAuthnRequest")}
+          isDisabled={readOnly}
+          stringify
+        />
 
-      <SwitchField
-        field="config.postBindingLogout"
-        label="httpPostBindingLogout"
-        isReadOnly={readOnly}
-      />
+        <DefaultSwitchControl
+          name="config.postBindingLogout"
+          label={t("httpPostBindingLogout")}
+          isDisabled={readOnly}
+          stringify
+        />
 
-      <SwitchField
-        field="config.wantAuthnRequestsSigned"
-        label="wantAuthnRequestsSigned"
-        isReadOnly={readOnly}
-      />
+        <DefaultSwitchControl
+          name="config.wantAuthnRequestsSigned"
+          label={t("wantAuthnRequestsSigned")}
+          isDisabled={readOnly}
+          stringify
+        />
 
-      {wantAuthnSigned === "true" && (
-        <>
-          <FormGroup
-            label={t("signatureAlgorithm")}
-            labelIcon={
-              <HelpItem
-                helpText={t("signatureAlgorithmHelp")}
-                fieldLabelId="signatureAlgorithm"
-              />
-            }
-            fieldId="kc-signatureAlgorithm"
-          >
-            <Controller
+        {wantAuthnSigned === "true" && (
+          <>
+            <SelectControl
               name="config.signatureAlgorithm"
-              defaultValue="RSA_SHA256"
-              control={control}
-              render={({ field }) => (
-                <Select
-                  toggleId="kc-signatureAlgorithm"
-                  onToggle={(isExpanded) =>
-                    setSignatureAlgorithmDropdownOpen(isExpanded)
-                  }
-                  isOpen={signatureAlgorithmDropdownOpen}
-                  onSelect={(_, value) => {
-                    field.onChange(value.toString());
-                    setSignatureAlgorithmDropdownOpen(false);
-                  }}
-                  selections={field.value}
-                  variant={SelectVariant.single}
-                  isDisabled={readOnly}
-                >
-                  <SelectOption value="RSA_SHA1" />
-                  <SelectOption value="RSA_SHA256" isPlaceholder />
-                  <SelectOption value="RSA_SHA256_MGF1" />
-                  <SelectOption value="RSA_SHA512" />
-                  <SelectOption value="RSA_SHA512_MGF1" />
-                  <SelectOption value="DSA_SHA1" />
-                </Select>
-              )}
-            ></Controller>
-          </FormGroup>
-          <FormGroup
-            label={t("samlSignatureKeyName")}
-            labelIcon={
-              <HelpItem
-                helpText={t("samlSignatureKeyNameHelp")}
-                fieldLabelId="samlSignatureKeyName"
-              />
-            }
-            fieldId="kc-samlSignatureKeyName"
-          >
-            <Controller
-              name="config.xmlSigKeyInfoKeyNameTransformer"
-              defaultValue={t("keyID")}
-              control={control}
-              render={({ field }) => (
-                <Select
-                  toggleId="kc-samlSignatureKeyName"
-                  onToggle={(isExpanded) =>
-                    setSamlSignatureKeyNameDropdownOpen(isExpanded)
-                  }
-                  isOpen={samlSignatureKeyNameDropdownOpen}
-                  onSelect={(_, value) => {
-                    field.onChange(value.toString());
-                    setSamlSignatureKeyNameDropdownOpen(false);
-                  }}
-                  selections={field.value}
-                  variant={SelectVariant.single}
-                  isDisabled={readOnly}
-                >
-                  <SelectOption value="NONE" />
-                  <SelectOption value={t("keyID")} isPlaceholder />
-                  <SelectOption value={t("certSubject")} />
-                </Select>
-              )}
-            ></Controller>
-          </FormGroup>
-        </>
-      )}
-
-      <SwitchField
-        field="config.wantAssertionsSigned"
-        label="wantAssertionsSigned"
-        isReadOnly={readOnly}
-      />
-
-      <SwitchField
-        field="config.wantAssertionsEncrypted"
-        label="wantAssertionsEncrypted"
-        isReadOnly={readOnly}
-      />
-
-      {wantAssertionsEncrypted === "true" && (
-        <FormGroup
-          label={t("encryptionAlgorithm")}
-          labelIcon={
-            <HelpItem
-              helpText={t("encryptionAlgorithmHelp")}
-              fieldLabelId="encryptionAlgorithm"
+              label={t("signatureAlgorithm")}
+              labelIcon={t("signatureAlgorithmHelp")}
+              isDisabled={readOnly}
+              controller={{
+                defaultValue: "RSA_SHA256",
+              }}
+              options={[
+                "RSA_SHA1",
+                "RSA_SHA256",
+                "RSA_SHA256_MGF1",
+                "RSA_SHA512",
+                "RSA_SHA512_MGF1",
+                "DSA_SHA1",
+              ]}
             />
-          }
-          fieldId="kc-encryptionAlgorithm"
-        >
-          <Controller
+            <SelectControl
+              name="config.xmlSigKeyInfoKeyNameTransformer"
+              label={t("samlSignatureKeyName")}
+              labelIcon={t("samlSignatureKeyNameHelp")}
+              isDisabled={readOnly}
+              controller={{
+                defaultValue: t("keyID"),
+              }}
+              options={["NONE", t("keyID"), t("certSubject")]}
+            />
+          </>
+        )}
+        <DefaultSwitchControl
+          name="config.wantAssertionsSigned"
+          label={t("wantAssertionsSigned")}
+          isDisabled={readOnly}
+          stringify
+        />
+        <DefaultSwitchControl
+          name="config.wantAssertionsEncrypted"
+          label={t("wantAssertionsEncrypted")}
+          isDisabled={readOnly}
+          stringify
+        />
+        {wantAssertionsEncrypted === "true" && (
+          <SelectControl
             name="config.encryptionAlgorithm"
-            defaultValue="RSA-OAEP"
-            control={control}
-            render={({ field }) => (
-              <Select
-                toggleId="kc-encryptionAlgorithm"
-                onToggle={(isExpanded) =>
-                  setEncryptionAlgorithmDropdownOpen(isExpanded)
-                }
-                isOpen={encryptionAlgorithmDropdownOpen}
-                onSelect={(_, value) => {
-                  field.onChange(value.toString());
-                  setEncryptionAlgorithmDropdownOpen(false);
-                }}
-                selections={field.value}
-                variant={SelectVariant.single}
-                isDisabled={readOnly}
-              >
-                <SelectOption value="RSA-OAEP" />
-                <SelectOption value="RSA1_5" />
-              </Select>
+            label={t("encryptionAlgorithm")}
+            labelIcon={t("encryptionAlgorithmHelp")}
+            isDisabled={readOnly}
+            controller={{
+              defaultValue: "RSA-OAEP",
+            }}
+            options={["RSA-OAEP", "RSA1_5"]}
+          />
+        )}
+
+        <DefaultSwitchControl
+          name="config.forceAuthn"
+          label={t("forceAuthentication")}
+          isDisabled={readOnly}
+          stringify
+        />
+        <DefaultSwitchControl
+          name="config.validateSignature"
+          label={t("validateSignature")}
+          isDisabled={readOnly}
+          stringify
+        />
+        {validateSignature === "true" && (
+          <>
+            <TextControl
+              name="config.metadataDescriptorUrl"
+              label={t("metadataDescriptorUrl")}
+              labelIcon={t("metadataDescriptorUrlHelp")}
+              type="url"
+              readOnly={readOnly}
+              rules={{
+                required: {
+                  value: useMetadataDescriptorUrl === "true",
+                  message: t("required"),
+                },
+              }}
+            />
+            <DefaultSwitchControl
+              name="config.useMetadataDescriptorUrl"
+              label={t("useMetadataDescriptorUrl")}
+              isDisabled={readOnly}
+              stringify
+            />
+            {useMetadataDescriptorUrl !== "true" && (
+              <TextAreaControl
+                name="config.signingCertificate"
+                label={t("validatingX509Certs")}
+                labelIcon={t("validatingX509CertsHelp")}
+                readOnly={readOnly}
+              />
             )}
-          ></Controller>
-        </FormGroup>
-      )}
-
-      <SwitchField
-        field="config.forceAuthn"
-        label="forceAuthentication"
-        isReadOnly={readOnly}
-      />
-
-      <SwitchField
-        field="config.validateSignature"
-        label="validateSignature"
-        isReadOnly={readOnly}
-      />
-      {validateSignature === "true" && (
-        <FormGroupField label="validatingX509Certs">
-          <KeycloakTextArea
-            id="validatingX509Certs"
-            data-testid="validatingX509Certs"
-            isReadOnly={readOnly}
-            {...register("config.signingCertificate")}
-          ></KeycloakTextArea>
-        </FormGroupField>
-      )}
-      <SwitchField
-        field="config.signSpMetadata"
-        label="signServiceProviderMetadata"
-        data-testid="signServiceProviderMetadata"
-        isReadOnly={readOnly}
-      />
-      <SwitchField
-        field="config.loginHint"
-        label="passSubject"
-        data-testid="passSubject"
-        isReadOnly={readOnly}
-      />
-
-      <FormGroup
-        label={t("allowedClockSkew")}
-        labelIcon={
-          <HelpItem
-            helpText={t("allowedClockSkewHelp")}
-            fieldLabelId="allowedClockSkew"
-          />
-        }
-        fieldId="allowedClockSkew"
-        helperTextInvalid={t("required")}
-      >
-        <Controller
+          </>
+        )}
+        <DefaultSwitchControl
+          name="config.signSpMetadata"
+          label={t("signServiceProviderMetadata")}
+          isDisabled={readOnly}
+          stringify
+        />
+        <DefaultSwitchControl
+          name="config.loginHint"
+          label={t("passSubject")}
+          isDisabled={readOnly}
+          stringify
+        />
+        <NumberControl
           name="config.allowedClockSkew"
-          defaultValue={0}
-          control={control}
-          render={({ field }) => {
-            const v = Number(field.value);
-            return (
-              <NumberInput
-                data-testid="allowedClockSkew"
-                inputName="allowedClockSkew"
-                min={0}
-                max={2147483}
-                value={v}
-                readOnly
-                onPlus={() => field.onChange(v + 1)}
-                onMinus={() => field.onChange(v - 1)}
-                onChange={(event) => {
-                  const value = Number(
-                    (event.target as HTMLInputElement).value,
-                  );
-                  field.onChange(value < 0 ? 0 : value);
-                }}
-              />
-            );
-          }}
+          label={t("allowedClockSkew")}
+          labelIcon={t("allowedClockSkewHelp")}
+          controller={{ defaultValue: 0, rules: { min: 0, max: 2147483 } }}
+          isDisabled={readOnly}
         />
-      </FormGroup>
-
-      <FormGroup
-        label={t("attributeConsumingServiceIndex")}
-        labelIcon={
-          <HelpItem
-            helpText={t("attributeConsumingServiceIndexHelp")}
-            fieldLabelId="attributeConsumingServiceIndex"
-          />
-        }
-        fieldId="attributeConsumingServiceIndex"
-        helperTextInvalid={t("required")}
-      >
-        <Controller
+        <NumberControl
           name="config.attributeConsumingServiceIndex"
-          defaultValue={0}
-          control={control}
-          render={({ field }) => {
-            const v = Number(field.value);
-            return (
-              <NumberInput
-                data-testid="attributeConsumingServiceIndex"
-                inputName="attributeConsumingServiceIndex"
-                min={0}
-                max={2147483}
-                value={v}
-                readOnly
-                onPlus={() => field.onChange(v + 1)}
-                onMinus={() => field.onChange(v - 1)}
-                onChange={(event) => {
-                  const value = Number(
-                    (event.target as HTMLInputElement).value,
-                  );
-                  field.onChange(value < 0 ? 0 : value);
-                }}
-              />
-            );
-          }}
+          label={t("attributeConsumingServiceIndex")}
+          labelIcon={t("attributeConsumingServiceIndexHelp")}
+          controller={{ defaultValue: 0, rules: { min: 0, max: 2147483 } }}
+          isDisabled={readOnly}
         />
-      </FormGroup>
-
-      <FormGroup
-        label={t("attributeConsumingServiceName")}
-        labelIcon={
-          <HelpItem
-            helpText={t("attributeConsumingServiceNameHelp")}
-            fieldLabelId="attributeConsumingServiceName"
-          />
-        }
-        fieldId="attributeConsumingServiceName"
-        helperTextInvalid={t("required")}
-      >
-        <KeycloakTextInput
-          id="attributeConsumingServiceName"
-          data-testid="attributeConsumingServiceName"
-          isReadOnly={readOnly}
-          {...register("config.attributeConsumingServiceName")}
+        <TextControl
+          name="config.attributeConsumingServiceName"
+          label={t("attributeConsumingServiceName")}
+          labelIcon={t("attributeConsumingServiceNameHelp")}
+          readOnly={readOnly}
         />
-      </FormGroup>
+      </FormProvider>
     </div>
   );
 };
@@ -612,7 +339,7 @@ export const DescriptorSettings = ({ readOnly }: DescriptorSettingsProps) => {
     <ExpandableSection
       className="keycloak__discovery-settings__metadata"
       toggleText={isExpanded ? t("hideMetaData") : t("showMetaData")}
-      onToggle={(isOpen) => setIsExpanded(isOpen)}
+      onToggle={(_event, isOpen) => setIsExpanded(isOpen)}
       isExpanded={isExpanded}
     >
       <Fields readOnly={readOnly} />

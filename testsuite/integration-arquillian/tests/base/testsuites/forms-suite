@@ -1,1 +1,2 @@
 org.keycloak.testsuite.forms.**
+org.keycloak.testsuite.actions.RequiredActionUpdateProfileTest

@@ -12,8 +12,7 @@ import { isEqual } from "lodash-es";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../components/form/FormAccess";
@@ -34,6 +33,8 @@ type EventsConfigForm = RealmEventsConfigRepresentation & {
 };
 
 export const EventsTab = ({ realm }: EventsTabProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const form = useForm<EventsConfigForm>();
   const { setValue, handleSubmit } = form;
@@ -49,7 +50,7 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
   const [addEventType, setAddEventType] = useState(false);
 
   const { addAlert, addError } = useAlerts();
-  const { realm: realmName } = useRealm();
+  const { realm: realmName, refresh: refreshRealm } = useRealm();
 
   const setupForm = (eventConfig?: EventsConfigForm) => {
     setEvents(eventConfig);
@@ -78,7 +79,7 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
         }
         addAlert(t(`${type}-events-cleared`), AlertVariant.success);
       } catch (error) {
-        addError(`realm-settings:${type}-events-cleared-error`, error);
+        addError(`${type}-events-cleared-error`, error);
       }
     },
   });
@@ -111,6 +112,7 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
         },
       );
     }
+    refreshRealm();
 
     try {
       await adminClient.realms.updateConfigEvents(

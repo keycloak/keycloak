@@ -19,10 +19,10 @@ package org.keycloak.email;
 
 import jakarta.mail.internet.MimeUtility;
 import org.jboss.logging.Logger;
+import org.keycloak.common.enums.HostnameVerificationPolicy;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
-import org.keycloak.truststore.HostnameVerificationPolicy;
 import org.keycloak.truststore.JSSETruststoreConfigurator;
 import org.keycloak.vault.VaultStringSecret;
 
@@ -97,7 +97,7 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
                 props.setProperty("mail.smtp.starttls.enable", "true");
             }
 
-            if (ssl || starttls) {
+            if (ssl || starttls || auth){
                 props.put("mail.smtp.ssl.protocols", SUPPORTED_SSL_PROTOCOLS);
 
                 setupTruststore(props);

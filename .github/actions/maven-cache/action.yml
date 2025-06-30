@@ -19,7 +19,7 @@ runs:
 
     - id: cache-maven-repository
       name: Maven cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       if: inputs.create-cache-if-it-doesnt-exist == 'true'
       with:
         # Two asterisks are needed to make the follow-up exclusion work
@@ -28,21 +28,43 @@ runs:
           ~/.m2/repository/*/*
           !~/.m2/repository/org/keycloak
         key: ${{ steps.weekly-cache-key.outputs.key }}
+        # Enable cross-os archive use the cache on both Linux and Windows
+        enableCrossOsArchive: true
+
+    - id: download-node-for-windows
+      # This is necessary as the build which creates the cache will run on a Linux node and therefore will never download the Windows artifact by default.
+      # If we wouldn't download it manually, it would be downloaded on each Windows build, which proved to be unstable as downloads would randomly fail in the middle of the download.
+      if: inputs.create-cache-if-it-doesnt-exist == 'true' && steps.cache-maven-repository.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        export VERSION=$(mvn help:evaluate -Dexpression=node.version -q -DforceStdout  | cut -c 2-)
+        curl -Lf https://nodejs.org/dist/v${VERSION}/win-x64/node.exe --create-dirs -o ~/.m2/repository/com/github/eirslett/node/${VERSION}/node-${VERSION}-win-x64.exe
+
+    - shell: powershell
+      name: Link the cached Maven repository to the OS-dependent location
+      if: inputs.create-cache-if-it-doesnt-exist == 'false' && runner.os == 'Windows'
+      # The cache restore in the next step uses the relative path which was valid on Linux and that is part of the archive it downloads.
+      # You'll see that path when you enable debugging for the GitHub workflow on Windows.
+      # On Windows, the .m2 folder is in different location, so move all the contents to the right folder here.
+      # Also, not using the C: drive will speed up the build, see https://github.com/actions/runner-images/issues/8755
+      run: |
+        mkdir -p ../../../.m2/repository
+        cmd /c mklink /d $HOME\.m2\repository D:\.m2\repository
 
     - id: restore-maven-repository
       name: Maven cache
-      uses: actions/cache/restore@v3
+      uses: actions/cache/restore@v4
       if: inputs.create-cache-if-it-doesnt-exist == 'false'
       with:
-        # Two asterisks are needed to make the follow-up exclusion work
-        # see https://github.com/actions/toolkit/issues/713 for the upstream issue
+        # This needs to repeat the same path pattern as above to find the matching cache
         path: |
           ~/.m2/repository/*/*
           !~/.m2/repository/org/keycloak
         key: ${{ steps.weekly-cache-key.outputs.key }}
+        enableCrossOsArchive: true
 
     - name: Cache Maven Wrapper
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: .mvn/wrapper/maven-wrapper.jar
         key: ${{ runner.os }}-maven-wrapper-${{ hashFiles('**/maven-wrapper.properties') }}

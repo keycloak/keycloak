@@ -68,7 +68,7 @@ public final class K8sUtils {
     }
 
     public static List<HasMetadata> set(KubernetesClient client, InputStream stream, Function<HasMetadata, HasMetadata> modifier) {
-        return client.load(stream).items().stream().map(modifier).map(i -> set(client, i)).collect(Collectors.toList());
+        return client.load(stream).items().stream().map(modifier).filter(Objects::nonNull).map(i -> set(client, i)).collect(Collectors.toList());
     }
 
     public static <T extends HasMetadata> T set(KubernetesClient client, T hasMetadata) {

@@ -20,7 +20,6 @@ package org.keycloak.testsuite.x509;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -32,11 +31,10 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.testsuite.util.PhantomJSBrowser;
+import org.keycloak.testsuite.util.HtmlUnitBrowser;
 import org.openqa.selenium.WebDriver;
 
 import jakarta.ws.rs.core.Response;
@@ -58,12 +56,12 @@ import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorC
 public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
 
     @Drone
-    @PhantomJSBrowser
-    private WebDriver phantomJS;
+    @HtmlUnitBrowser
+    private WebDriver htmlUnit;
 
     @Before
     public void replaceTheDefaultDriver() {
-        replaceDefaultWebDriver(phantomJS);
+        replaceDefaultWebDriver(htmlUnit);
     }
 
     @Test
@@ -267,8 +265,6 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
 
     @Test
     public void loginCertificateExpired() throws Exception {
-        Assume.assumeFalse("Time offset is causing integer overflow. With the old store it works, because root authentication session has also timestamp overflown, this is not true for the new store so the test is failing.", keycloakUsingProviderWithId(AuthenticationSessionProvider.class, "map"));
-
         X509AuthenticatorConfigModel config =
                 new X509AuthenticatorConfigModel()
                     .setCertValidationEnabled(true)

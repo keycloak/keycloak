@@ -9,11 +9,11 @@ import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import useToggle from "../../utils/useToggle";
-import { HelpItem } from "ui-shared";
+import { FormErrorText, HelpItem } from "@keycloak/keycloak-ui-shared";
 import { AddRoleMappingModal } from "../role-mapping/AddRoleMappingModal";
 import { Row, ServiceRole } from "../role-mapping/RoleMapping";
-import type { ComponentProps } from "./components";
 import { convertToName } from "./DynamicComponents";
+import type { ComponentProps } from "./components";
 
 const parseValue = (value: any) =>
   value?.includes(".") ? value.split(".") : ["", value || ""];
@@ -45,8 +45,6 @@ export const RoleComponent = ({
     <FormGroup
       label={t(label!)}
       labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
-      validated={errors[fieldName] ? "error" : "default"}
-      helperTextInvalid={t("required")}
       fieldId={name!}
       isRequired={required}
     >
@@ -90,6 +88,7 @@ export const RoleComponent = ({
           </Split>
         )}
       />
+      {errors[fieldName] && <FormErrorText message={t("required")} />}
     </FormGroup>
   );
 };

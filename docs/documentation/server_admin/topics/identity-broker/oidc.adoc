@@ -46,6 +46,9 @@ image:images/oidc-add-identity-provider.png[Add Identity Provider]
 |Signature algorithm to create JWT assertion as client authentication.
 In the case of JWT signed with private key or Client secret as jwt, it is required. If no algorithm is specified, the following algorithm is adapted. `RS256` is adapted in the case of JWT signed with private key.  `HS256` is adapted in the case of Client secret as jwt.
 
+|Client Assertion Audience
+|The audience to use for the client assertion. The default value is the IDP's token endpoint URL.
+
 |Issuer
 |{project_name} validates issuer claims, in responses from the IDP, against this value.
 

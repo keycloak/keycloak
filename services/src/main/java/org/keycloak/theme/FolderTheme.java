@@ -107,7 +107,7 @@ public class FolderTheme implements Theme {
         return getMessages("messages", locale);
     }
 
-    private static final Pattern LEGAL_LOCALE = Pattern.compile("[a-zA-Z0-9-_]*");
+    private static final Pattern LEGAL_LOCALE = Pattern.compile("[a-zA-Z0-9-_#]*");
 
     @Override
     public Properties getMessages(String baseBundlename, Locale locale) throws IOException {

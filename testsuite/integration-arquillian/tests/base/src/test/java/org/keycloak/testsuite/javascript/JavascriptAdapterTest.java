@@ -1,7 +1,6 @@
 package org.keycloak.testsuite.javascript;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -55,6 +54,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
@@ -157,6 +157,39 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                 .init(pkceS256, this::assertInitAuth)
                 .logout(this::assertOnTestAppUrl)
                 .init(pkceS256, this::assertInitNotAuth);
+    }
+
+    @Test
+    public void testLogoutWithDefaults() {
+        boolean stillLoggedIn = testExecutor.init(defaultArguments(), this::assertInitNotAuth)
+                .login(this::assertOnLoginPage)
+                .loginForm(testUser, this::assertOnTestAppUrl)
+                .init(defaultArguments(), this::assertInitAuth)
+                .logout(this::assertOnTestAppUrl)
+                .isLoggedIn();
+        assertFalse("still logged in", stillLoggedIn);
+    }
+
+    @Test
+    public void testLogoutWithInitOptionsPostMethod() {
+        boolean stillLoggedIn = testExecutor.init(defaultArguments(), this::assertInitNotAuth)
+                .login(this::assertOnLoginPage)
+                .loginForm(testUser, this::assertOnTestAppUrl)
+                .init(defaultArguments().add("logoutMethod", "POST"), this::assertInitAuth)
+                .logout(this::assertOnTestAppUrl, null)
+                .isLoggedIn();
+        assertFalse("still logged in", stillLoggedIn);
+    }
+
+    @Test
+    public void testLogoutWithOptionsPostMethod() {
+        boolean stillLoggedIn = testExecutor.init(defaultArguments(), this::assertInitNotAuth)
+                .login(this::assertOnLoginPage)
+                .loginForm(testUser, this::assertOnTestAppUrl)
+                .init(defaultArguments(), this::assertInitAuth)
+                .logout(this::assertOnTestAppUrl, null, JSObjectBuilder.create().add("logoutMethod", "POST"))
+                .isLoggedIn();
+        assertFalse("still logged in", stillLoggedIn);
     }
 
     @Test
@@ -284,8 +317,6 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
     @Test
     public void grantBrowserBasedApp() {
-        Assume.assumeTrue("This test doesn't work with phantomjs", !"phantomjs".equals(System.getProperty("js.browser")));
-
         ClientResource clientResource = ApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), CLIENT_ID);
         ClientRepresentation client = clientResource.toRepresentation();
         try {
@@ -421,13 +452,10 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                 // Possibility of 0 and 401 is caused by this issue: https://issues.redhat.com/browse/KEYCLOAK-12686
                 .sendXMLHttpRequest(request, response -> assertThat(response, hasEntry(is("status"), anyOf(is(0L), is(401L)))))
                 .refresh();
-        if (!"phantomjs".equals(System.getProperty("js.browser"))) {
-            // I have no idea why, but this request doesn't work with phantomjs, it works in chrome
-            testExecutor.logInAndInit(defaultArguments(), unauthorizedUser, this::assertInitAuth)
-                    .sendXMLHttpRequest(request, output -> assertThat(output, hasEntry("status", 403L)))
-                    .logout(this::assertOnTestAppUrl)
-                    .refresh();
-        }
+        testExecutor.logInAndInit(defaultArguments(), unauthorizedUser, this::assertInitAuth)
+                .sendXMLHttpRequest(request, output -> assertThat(output, hasEntry("status", 403L)))
+                .logout(this::assertOnTestAppUrl)
+                .refresh();
         testExecutor.logInAndInit(defaultArguments(), testUser, this::assertInitAuth)
                 .sendXMLHttpRequest(request, assertResponseStatus(200));
     }
@@ -541,6 +569,45 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
         });
     }
 
+    /**
+     * Test for {@code acr_values} handling via {@code loginOptions}: <pre>{@code
+     * Keycloak keycloak = new Keycloak(); keycloak.login({...., acrValues: "1"})
+     * }</pre>
+     */
+    @Test
+    public void testAcrValuesInLoginOptionsShouldBeConsideredByLoginUrl() {
+
+        testExecutor.configure().init(defaultArguments());
+        JSObjectBuilder loginOptions = JSObjectBuilder.create();
+
+        testExecutor.login(loginOptions, (JavascriptStateValidator) (driver, output, events) -> {
+            try {
+                String queryString = new URL(driver.getCurrentUrl()).getQuery();
+                String acrValues = UriUtils.decodeQueryString(queryString).getFirst(OIDCLoginProtocol.ACR_PARAM);
+                Assert.assertNull(acrValues);
+            } catch (IOException ioe) {
+                throw new AssertionError(ioe);
+            }
+        });
+
+        // Test given "acrValues" option will be translated into the "acr_values" parameter passed to Keycloak server
+        jsDriver.navigate().to(testAppUrl);
+        testExecutor.configure().init(defaultArguments());
+
+        loginOptions = JSObjectBuilder.create().acrValues("2fa");
+
+        testExecutor.login(loginOptions, (JavascriptStateValidator) (driver, output, events) -> {
+            try {
+                String queryString = new URL(driver.getCurrentUrl()).getQuery();
+                String acrValuesParam = UriUtils.decodeQueryString(queryString).getFirst(OIDCLoginProtocol.ACR_PARAM);
+                Assert.assertNotNull(acrValuesParam);
+                assertThat(acrValuesParam, is("2fa"));
+            } catch (IOException ioe) {
+                throw new AssertionError(ioe);
+            }
+        });
+    }
+
     @Test
     public void testUpdateToken() {
         XMLHttpRequest request = XMLHttpRequest.create()
@@ -638,10 +705,6 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
     @Test
     public void spaceInRealmNameTest() {
-        // Unfortunately this test doesn't work on phantomjs
-        // it looks like phantomjs double encode %20 => %25%20
-        Assume.assumeTrue("This test doesn't work with phantomjs", !"phantomjs".equals(System.getProperty("js.browser")));
-
         try {
             adminClient.realm(REALM_NAME).update(RealmBuilder.edit(adminClient.realm(REALM_NAME).toRepresentation()).name(SPACE_REALM_NAME).build());
 

@@ -6,8 +6,7 @@ initialized only with those providers that are explicitly enabled
 in a used profile via `keycloak.model.parameters` system property.
 
 This allows writing tests and running those in different
-configurations quickly, e.g. once with legacy JPA storage,
-second time with purely new Hot Rod implementation.
+configurations quickly.
 
 The valid parameters are names of classes in `org.keycloak.testsuite.model.parameters`
 package, and it is possible to combine those by providing multiple class names
@@ -49,76 +48,4 @@ mvn test -Pjpa -Dtest=ClientModelTest \
 
 The results are available in the `target/profile.html` file.
 
-Usage of Testcontainers
------------------------
-
-Some profiles within model tests require running 3rd party software, for
-example, database or Infinispan. For running these we are using
-[Testcontainers](https://www.testcontainers.org/). This may require some
-additional configuration of your container engine.
-
-#### Podman settings
-
-For more details see the following [Podman guide from Quarkus webpage](https://quarkus.io/guides/podman).
-
-Specifically, these steps are required:
-```shell
-# Enable the podman socket with Docker REST API (only needs to be done once)
-systemctl --user enable podman.socket --now
-
-# Set the required environment variables (need to be run everytime or added to profile)
-export DOCKER_HOST=unix:///run/user/${UID}/podman/podman.sock
-```
-
-Testcontainers are using [ryuk](https://hub.docker.com/r/testcontainers/ryuk)
-to cleanup containers after tests. To make this work with Podman add the
-following line to `~/.testcontainers.properties`
-```shell
-ryuk.container.privileged=true
-```
-Alternatively, disable usage of ryuk (using this may result in stale containers
-still running after tests finish. This is not recommended especially if you are
-executing tests from Intellij IDE as it [may not stop](https://youtrack.jetbrains.com/issue/IDEA-190385) 
-the containers created during test run).
-```shell
-export TESTCONTAINERS_RYUK_DISABLED=true #not recommended - see above!
-```
-
-#### Docker settings
-
-To use Testcontainers with Docker it is necessary to
-[make Docker available for non-root users](https://docs.docker.com/engine/install/linux-postinstall/).
-
-Running HotRod tests with external Infinispan
----------------------------------------------
-
-By default, Model tests with `hot-rod` profile spawn a new Infinispan container
-with each test execution. It is also possible, to configure Model tests to
-connect to an external instance of Infinispan. To do so, execute tests with
-the following command:
-```shell
-mvn test -Phot-rod \
-  -Dkeycloak.testsuite.start-hotrod-container=false \
-  -Dkeycloak.connectionsHotRod.host=<host> \
-  -Dkeycloak.connectionsHotRod.port=<port> \
-  -Dkeycloak.connectionsHotRod.username=<username> \
-  -Dkeycloak.connectionsHotRod.password=<password>
-```
-
-Running tests with `map-jpa` profile using external Postgres database
----------------------------------------------
-
-By default, Model tests with `map-jpa` profile spawns a new Postgres container
-with each test execution. Default image used is "postgres:alpine". To spawn different 
-version, it can be used "keycloak.map.storage.postgres.docker.image" system property.
-
-It is also possible, to configure Model tests to connect to an external instance 
-of Postgres. To do so, execute tests with the following command:
-```shell
-mvn test -Pmap-jpa \
-  -Dpostgres.start-container=false \
-  -Dkeycloak.map.storage.connectionsJpa.url=<jdbc_url> \
-  -Dkeycloak.map.storage.connectionsJpa.user=<user> \
-  -Dkeycloak.map.storage.connectionsJpa.password=<password>
-```
 

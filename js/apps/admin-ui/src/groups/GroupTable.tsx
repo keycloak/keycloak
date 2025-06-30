@@ -1,13 +1,16 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
+import {
+  GroupQuery,
+  SubGroupQuery,
+} from "@keycloak/keycloak-admin-client/lib/resources/groups";
 import { SearchInput, ToolbarItem } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
-
+import { useAdminClient } from "../admin-client";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useAccess } from "../context/access/Access";
-import { fetchAdminUI } from "../context/auth/admin-ui-endpoint";
 import useToggle from "../utils/useToggle";
 import { GroupsModal } from "./GroupsModal";
 import { useSubGroups } from "./SubGroupsContext";
@@ -18,13 +21,11 @@ import { getLastId } from "./groupIdUtils";
 
 type GroupTableProps = {
   refresh: () => void;
-  canViewDetails: boolean;
 };
 
-export const GroupTable = ({
-  refresh: viewRefresh,
-  canViewDetails,
-}: GroupTableProps) => {
+export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
 
   const [selectedRows, setSelectedRows] = useState<GroupRepresentation[]>([]);
@@ -47,23 +48,22 @@ export const GroupTable = ({
   const isManager = hasAccess("manage-users") || currentGroup()?.access?.manage;
 
   const loader = async (first?: number, max?: number) => {
-    const params: Record<string, string> = {
-      search: search || "",
-      first: first?.toString() || "",
-      max: max?.toString() || "",
-    };
-
     let groupsData = undefined;
     if (id) {
-      groupsData = await fetchAdminUI<GroupRepresentation[]>(
-        "ui-ext/groups/subgroup",
-        { ...params, id },
-      );
+      const args: SubGroupQuery = {
+        search: search || "",
+        first: first,
+        max: max,
+        parentId: id,
+      };
+      groupsData = await adminClient.groups.listSubGroups(args);
     } else {
-      groupsData = await fetchAdminUI<GroupRepresentation[]>("ui-ext/groups", {
-        ...params,
-        global: "false",
-      });
+      const args: GroupQuery = {
+        search: search || "",
+        first: first || undefined,
+        max: max || undefined,
+      };
+      groupsData = await adminClient.groups.find(args);
     }
 
     return groupsData;
@@ -190,7 +190,7 @@ export const GroupTable = ({
             name: "name",
             displayKey: "groupName",
             cellRenderer: (group) =>
-              canViewDetails ? (
+              group.access?.view ? (
                 <Link key={group.id} to={`${location.pathname}/${group.id}`}>
                   {group.name}
                 </Link>

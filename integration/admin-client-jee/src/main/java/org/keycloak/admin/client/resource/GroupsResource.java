@@ -41,8 +41,8 @@ public interface GroupsResource {
 
     /**
      * Get groups by pagination params.
-     * @param first index of the first element
-     * @param max max number of occurrences
+     * @param first index of the first element (pagination offset).
+     * @param max the maximum number of results.
      * @return A list containing the slice of all groups.
      */
     @GET
@@ -52,9 +52,9 @@ public interface GroupsResource {
 
     /**
      * Get groups by pagination params.
-     * @param search max number of occurrences
-     * @param first index of the first element
-     * @param max max number of occurrences
+     * @param search A {@code String} representing either an exact or partial group name.
+     * @param first index of the first element (pagination offset).
+     * @param max the maximum number of results.
      * @return A list containing the slice of all groups.
      */
     @GET
@@ -66,10 +66,12 @@ public interface GroupsResource {
 
     /**
      * Get groups by pagination params.
-     * @param search max number of occurrences
-     * @param first index of the first element
-     * @param max max number of occurrences
-     * @param briefRepresentation if false, return groups with their attributes
+     * @param search A {@code String} representing either an exact or partial group name.
+     * @param first index of the first element (pagination offset).
+     * @param max the maximum number of results.
+     * @param briefRepresentation if {@code true}, each returned group representation will only contain basic information
+     *                            (id, name, path, and parentId). If {@code false}, the complete representations of the groups
+     *                            are returned (including role mappings and attributes).
      * @return A list containing the slice of all groups.
      */
     @GET
@@ -82,11 +84,14 @@ public interface GroupsResource {
 
     /**
      * Get groups by pagination params.
-     * @param search search string for group
-     * @param exact exact match for search
-     * @param first index of the first element
-     * @param max max number of occurrences
-     * @param briefRepresentation if false, return groups with their attributes
+     * @param search A {@code String} representing either an exact or partial group name.
+     * @param exact if {@code true}, the groups will be searched using exact match for the {@code search} param. If false,
+     *      *              the method returns all groups that partially match the specified name.
+     * @param first index of the first element (pagination offset).
+     * @param max the maximum number of results.
+     * @param briefRepresentation if {@code true}, each returned group representation will only contain basic information
+     *                            (id, name, path, and parentId). If {@code false}, the complete representations of the groups
+     *                            are returned (including role mappings and attributes).
      * @return A list containing the slice of all groups.
      */
     @GET

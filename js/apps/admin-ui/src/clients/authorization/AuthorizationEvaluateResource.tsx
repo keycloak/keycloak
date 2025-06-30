@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   ExpandableRowContent,
-  TableComposable,
+  Table,
   Tbody,
   Td,
   Th,
@@ -59,7 +59,7 @@ export const AuthorizationEvaluateResource = ({
                 isHorizontal
                 className="keycloak_resource_details"
               >
-                <TableComposable aria-label={t("evaluationResults")}>
+                <Table aria-label={t("evaluationResults")}>
                   <Thead>
                     <Tr>
                       <Th aria-hidden="true" />
@@ -82,7 +82,7 @@ export const AuthorizationEvaluateResource = ({
                       />
                     ),
                   )}
-                </TableComposable>
+                </Table>
               </DescriptionList>
             )}
           </ExpandableRowContent>

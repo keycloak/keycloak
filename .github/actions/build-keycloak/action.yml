@@ -24,41 +24,16 @@ runs:
       with:
         create-cache-if-it-doesnt-exist: true
 
-    - id: phantomjs-cache
-      name: PhantomJS cache
-      uses: ./.github/actions/phantomjs-cache
-
-    # Remove once https://github.com/keycloak/keycloak/issues/19299 is solved
-    ########################################################################################################
-    - id: check-adapter-changes
-      if: github.event_name == 'pull_request'
-      name: Check changes for WildFly adapters
-      shell: bash
-      # If there are no changes for WildFly adapters, we use adapters built in the latest nightly build
-      run: |
-        WF_ADAPTERS_REGEX="^adapters/oidc/wildfly|^adapters/saml/wildfly"
-        
-        git fetch origin --tags --force
-        
-        echo "GIT_WF_ADAPTERS_DIFF=$(git diff origin/main --name-only | egrep -ic -e "$WF_ADAPTERS_REGEX")" >> $GITHUB_ENV
-        echo "NIGHTLY_DIFF=$(git diff nightly --name-only | egrep -ic -e "$WF_ADAPTERS_REGEX")" >> $GITHUB_ENV
-
-    - id: set-maven-profile
-      if: ${{ github.event_name != 'pull_request' || env.GIT_WF_ADAPTERS_DIFF != 0 || env.NIGHTLY_DIFF != 0}}
-      name: Set profile for building distribution
-      shell: bash
-      run: |
-        echo "MVN_PROFILES=-Pdistribution" >> $GITHUB_ENV
-        echo "WildFly adapters will be built in our codebase"
-    ########################################################################################################
+    - id: frontend-plugin-cache
+      name: Frontend Plugin Cache
+      uses: ./.github/actions/frontend-plugin-cache
 
     - id: build-keycloak
       name: Build Keycloak
       shell: bash
       # By using "dependency:resolve", it will download all dependencies used in later stages for running the tests
       run: |
-        MVN_HTTP_CONFIG="-Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.class=standard -Dmaven.wagon.http.retryHandler.count=3 -Dmaven.wagon.httpconnectionManager.ttlSeconds=120"
-        ./mvnw install dependency:resolve -nsu -V -B -e -DskipTests -DskipExamples $MVN_HTTP_CONFIG ${{ env.MVN_PROFILES}}
+        ./mvnw install dependency:resolve -V -e -DskipTests -DskipExamples
 
     - id: compress-keycloak-maven-repository
       name: Compress Keycloak Maven artifacts
@@ -72,7 +47,7 @@ runs:
     - id: upload-keycloak-maven-repository
       name: Upload Keycloak Maven artifacts
       if: inputs.upload-m2-repo == 'true'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: m2-keycloak.tzts
         path: m2-keycloak.tzts
@@ -81,7 +56,7 @@ runs:
     - id: upload-keycloak-dist
       name: Upload Keycloak dist
       if: inputs.upload-dist == 'true'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: keycloak-dist
         path: quarkus/dist/target/keycloak*.tar.gz

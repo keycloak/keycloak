@@ -21,6 +21,7 @@ import org.keycloak.authentication.AuthenticationFlowCallback;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowException;
+import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -33,7 +34,7 @@ public class CustomAuthenticationFlowCallback implements AuthenticationFlowCallb
     public static final String EXPECTED_ERROR_MESSAGE = "Custom Authentication Flow Callback message";
 
     @Override
-    public void onTopFlowSuccess() {
+    public void onTopFlowSuccess(AuthenticationFlowModel topFlow) {
         throw new AuthenticationFlowException(AuthenticationFlowError.GENERIC_AUTHENTICATION_ERROR, "detail", EXPECTED_ERROR_MESSAGE);
     }
 

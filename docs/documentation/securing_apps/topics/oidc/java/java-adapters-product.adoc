@@ -1,0 +1,35 @@
+=== {project_name} Java adapters
+
+==== Red Hat JBoss Enterprise Application Platform
+
+{project_name} does not include any adapters for Red Hat JBoss Enterprise Application Platform. However, there are
+alternatives for existing applications deployed to Red Hat JBoss Enterprise Application Platform.
+
+===== 8.0 Beta
+
+Red Hat Enterprise Application Platform 8.0 Beta provides a native OpenID Connect client through the Elytron OIDC client
+subsystem.
+
+For more information, see the https://access.redhat.com/documentation/en-us/red_hat_jboss_enterprise_application_platform/8-beta/html/using_single_sign-on_with_jboss_eap/index[Red Hat JBoss Enterprise Application Platform documentation].
+
+===== 6.4 and 7.x
+
+Existing applications deployed to Red Hat JBoss Enterprise Application Platform 6.4 and 7.x can leverage adapters from
+Red Hat Single Sign-On 7.6 in combination with the {project_name} server.
+
+For more information, see the
+https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.6/html/securing_applications_and_services_guide/oidc#jboss_adapter[Red Hat Single Sign-On documentation].
+
+
+==== Spring Boot adapter
+
+{project_name} does not include any adapters for Spring Boot. However, there are
+alternatives for existing applications built with Spring Boot.
+
+Spring Security provides comprehensive support for OAuth 2 and OpenID Connect. For more information, see the
+https://spring.io/projects/spring-security[Spring Security documentation].
+
+Alternatively, for Spring Boot 2.x the Spring Boot adapter from Red Hat Single Sign-On 7.6 can be used in combination with the {project_name} server. For more information, see the
+https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.6/html/securing_applications_and_services_guide/oidc#spring_boot_adapter[Red Hat Single Sign-On documentation].
+
+

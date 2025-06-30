@@ -35,6 +35,7 @@ import org.keycloak.keys.Attributes;
 import org.keycloak.keys.GeneratedHmacKeyProviderFactory;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.keys.ImportedRsaKeyProviderFactory;
+import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -131,7 +132,7 @@ public class KeyRotationTest extends AbstractKeycloakTest {
         OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get("code"), "password");
         assertEquals(200, response.getStatusCode());
         assertTokenKid(keys1.get(Algorithm.RS256), response.getAccessToken());
-        assertTokenKid(keys1.get(Algorithm.HS256), response.getRefreshToken());
+        assertTokenKid(keys1.get(Constants.INTERNAL_SIGNATURE_ALGORITHM), response.getRefreshToken());
 
         // Create client with keys #1
         ClientInitialAccessCreatePresentation initialToken = new ClientInitialAccessCreatePresentation();
@@ -158,13 +159,13 @@ public class KeyRotationTest extends AbstractKeycloakTest {
         Map<String, String> keys2 = createKeys2();
 
         assertNotEquals(keys1.get(Algorithm.RS256), keys2.get(Algorithm.RS256));
-        assertNotEquals(keys1.get(Algorithm.HS256), keys2.get(Algorithm.HS512));
+        assertNotEquals(keys1.get(Constants.INTERNAL_SIGNATURE_ALGORITHM), keys2.get(Algorithm.HS512));
 
                 // Refresh token with keys #2
         response = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
         assertEquals(200, response.getStatusCode());
         assertTokenKid(keys2.get(Algorithm.RS256), response.getAccessToken());
-        assertTokenKid(keys2.get(Algorithm.HS256), response.getRefreshToken());
+        assertTokenKid(keys2.get(Constants.INTERNAL_SIGNATURE_ALGORITHM), response.getRefreshToken());
 
         // Userinfo with keys #2
         assertUserInfo(response.getAccessToken(), 200);
@@ -183,7 +184,7 @@ public class KeyRotationTest extends AbstractKeycloakTest {
         response = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
 
         assertTokenKid(keys2.get(Algorithm.RS256), response.getAccessToken());
-        assertTokenKid(keys2.get(Algorithm.HS256), response.getRefreshToken());
+        assertTokenKid(keys2.get(Constants.INTERNAL_SIGNATURE_ALGORITHM), response.getRefreshToken());
 
         // Userinfo with keys #1 dropped
         assertUserInfo(response.getAccessToken(), 200);
@@ -279,7 +280,7 @@ public class KeyRotationTest extends AbstractKeycloakTest {
         rep.setProviderId(ImportedRsaKeyProviderFactory.ID);
         rep.setProviderType(KeyProvider.class.getName());
 
-        org.keycloak.common.util.MultivaluedHashMap config = new org.keycloak.common.util.MultivaluedHashMap();
+        org.keycloak.common.util.MultivaluedHashMap<String, String> config = new org.keycloak.common.util.MultivaluedHashMap<>();
         config.addFirst("priority", priority);
         config.addFirst(Attributes.PRIVATE_KEY_KEY, privateKeyPem);
         rep.setConfig(config);
@@ -293,8 +294,9 @@ public class KeyRotationTest extends AbstractKeycloakTest {
         rep.setProviderId(GeneratedHmacKeyProviderFactory.ID);
         rep.setProviderType(KeyProvider.class.getName());
 
-        config = new org.keycloak.common.util.MultivaluedHashMap();
-        config.addFirst("priority", priority);
+        config = new org.keycloak.common.util.MultivaluedHashMap<>();
+        config.addFirst(Attributes.PRIORITY_KEY, priority);
+        config.addFirst(Attributes.ALGORITHM_KEY, Constants.INTERNAL_SIGNATURE_ALGORITHM);
         rep.setConfig(config);
 
         response = adminClient.realm("test").components().add(rep);

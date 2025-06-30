@@ -13,6 +13,8 @@ export default class ClientRolesTab extends CommonPage {
   #hideInheritedRolesChkBox = "#hideInheritedRoles";
   #rolesTab = "rolesTab";
   #associatedRolesTab = "associatedRolesTab";
+  #defaultRolesTab = "default-roles-tab";
+  #defaultGroupsTab = "default-groups-tab";
 
   goToDetailsTab() {
     this.tabUtils().clickTab(ClientRolesTabItems.Details);
@@ -61,6 +63,16 @@ export default class ClientRolesTab extends CommonPage {
 
   hideInheritedRoles() {
     cy.get(this.#hideInheritedRolesChkBox).check();
+    return this;
+  }
+
+  goToDefaultRolesTab() {
+    cy.findByTestId(this.#defaultRolesTab).click();
+    return this;
+  }
+
+  goToDefaultGroupsTab() {
+    cy.findByTestId(this.#defaultGroupsTab).click();
     return this;
   }
 }

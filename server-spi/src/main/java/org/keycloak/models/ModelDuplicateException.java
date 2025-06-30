@@ -40,10 +40,6 @@ public class ModelDuplicateException extends ModelException {
         super(message, cause);
     }
 
-    public ModelDuplicateException(Throwable cause) {
-        super(cause);
-    }
-
     public String getDuplicateFieldName() {
         return duplicateFieldName;
     }

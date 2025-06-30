@@ -20,7 +20,7 @@ package org.keycloak.testsuite.x509;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.util.PhantomJSBrowser;
+import org.keycloak.testsuite.util.HtmlUnitBrowser;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,7 +46,7 @@ import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorC
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SERIALNUMBER;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_EMAIL;
-import org.keycloak.testsuite.ProfileAssume;
+
 import org.keycloak.testsuite.util.DroneUtils;
 import org.openqa.selenium.WebDriver;
 
@@ -58,17 +58,14 @@ import org.openqa.selenium.WebDriver;
 
 public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
-
     @Drone
-    @PhantomJSBrowser
-    private WebDriver phantomJS;
-
+    @HtmlUnitBrowser
+    private WebDriver htmlUnit;
 
     @Before
     public void replaceTheDefaultDriver() {
-        replaceDefaultWebDriver(phantomJS);
+        replaceDefaultWebDriver(htmlUnit);
     }
-
 
     @Test
     public void loginAsUserFromCertSubjectEmail() throws Exception {

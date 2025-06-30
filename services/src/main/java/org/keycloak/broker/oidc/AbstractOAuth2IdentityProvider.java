@@ -19,6 +19,8 @@ package org.keycloak.broker.oidc;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
+import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -42,8 +44,11 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.jose.jwk.JWKBuilder;
+import org.keycloak.jose.jwk.RSAPublicJWK;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -62,6 +67,7 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.utils.StringUtil;
 import org.keycloak.vault.VaultStringSecret;
 
 import javax.crypto.SecretKey;
@@ -77,8 +83,11 @@ import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.net.URI;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -404,7 +413,24 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     public SimpleHttp authenticateTokenRequest(final SimpleHttp tokenRequest) {
 
         if (getConfig().isJWTAuthentication()) {
-            String jws = new JWSBuilder().type(OAuth2Constants.JWT).jsonContent(generateToken()).sign(getSignatureContext());
+            String sha1x509Thumbprint = null;
+            SignatureSignerContext signer = getSignatureContext();
+            if (getConfig().isJwtX509HeadersEnabled()) {
+                KeyWrapper key = session.keys().getKey(session.getContext().getRealm(), signer.getKid(), KeyUse.SIG, signer.getAlgorithm());
+                if (key != null
+                        && key.getStatus().isEnabled()
+                        && key.getPublicKey() != null
+                        && key.getUse().equals(KeyUse.SIG)
+                        && key.getType().equals(KeyType.RSA)) {
+                    JWKBuilder builder = JWKBuilder.create().kid(key.getKid()).algorithm(key.getAlgorithmOrDefault());
+                    List<X509Certificate> certificates = Optional.ofNullable(key.getCertificateChain())
+                            .filter(certs -> !certs.isEmpty())
+                            .orElseGet(() -> Collections.singletonList(key.getCertificate()));
+                    RSAPublicJWK jwk = (RSAPublicJWK) builder.rsa(key.getPublicKey(), certificates, key.getUse());
+                    sha1x509Thumbprint = jwk.getSha1x509Thumbprint();
+                }
+            }
+            String jws = new JWSBuilder().type(OAuth2Constants.JWT).x5t(sha1x509Thumbprint).jsonContent(generateToken()).sign(signer);
             return tokenRequest
                     .param(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT)
                     .param(OAuth2Constants.CLIENT_ASSERTION, jws)
@@ -427,9 +453,13 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         jwt.type(OAuth2Constants.JWT);
         jwt.issuer(getConfig().getClientId());
         jwt.subject(getConfig().getClientId());
-        jwt.audience(getConfig().getTokenUrl());
-        int expirationDelay = session.getContext().getRealm().getAccessCodeLifespan();
-        jwt.expiration(Time.currentTime() + expirationDelay);
+        String audience = getConfig().getClientAssertionAudience();
+        if (StringUtil.isBlank(audience)) {
+            audience = getConfig().getTokenUrl();
+        }
+        jwt.audience(audience);
+        long expirationDelay = session.getContext().getRealm().getAccessCodeLifespan();
+        jwt.exp(Time.currentTime() + expirationDelay);
         jwt.issuedNow();
         return jwt;
     }
@@ -478,7 +508,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         @GET
         public Response authResponse(@QueryParam(AbstractOAuth2IdentityProvider.OAUTH2_PARAMETER_STATE) String state,
                                      @QueryParam(AbstractOAuth2IdentityProvider.OAUTH2_PARAMETER_CODE) String authorizationCode,
-                                     @QueryParam(OAuth2Constants.ERROR) String error) {
+                                     @QueryParam(OAuth2Constants.ERROR) String error,
+                                     @QueryParam(OAuth2Constants.ERROR_DESCRIPTION) String errorDescription) {
             OAuth2IdentityProviderConfig providerConfig = provider.getConfig();
             
             if (state == null) {
@@ -496,6 +527,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                         return callback.cancelled(providerConfig);
                     } else if (error.equals(OAuthErrorException.LOGIN_REQUIRED) || error.equals(OAuthErrorException.INTERACTION_REQUIRED)) {
                         return callback.error(error);
+                    } else if (error.equals(OAuthErrorException.TEMPORARILY_UNAVAILABLE) && Constants.AUTHENTICATION_EXPIRED_MESSAGE.equals(errorDescription)) {
+                        return callback.retryLogin(this.provider, authSession);
                     } else {
                         return callback.error(Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
                     }
@@ -529,7 +562,6 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                     if (federatedIdentity.getToken() == null)federatedIdentity.setToken(response);
                 }
 
-                federatedIdentity.setIdpConfig(providerConfig);
                 federatedIdentity.setIdp(provider);
                 federatedIdentity.setAuthenticationSession(authSession);
 
@@ -679,7 +711,6 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         BrokeredIdentityContext context = exchangeExternalImpl(event, params);
         if (context != null) {
             context.setIdp(this);
-            context.setIdpConfig(getConfig());
         }
         return context;
     }
@@ -710,7 +741,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
     @Override
     public void exchangeExternalComplete(UserSessionModel userSession, BrokeredIdentityContext context, MultivaluedMap<String, String> params) {
-        if (context.getContextData().containsKey(OIDCIdentityProvider.VALIDATED_ID_TOKEN))
+        if (context.getContextData().containsKey(OIDCIdentityProvider.VALIDATED_ACCESS_TOKEN))
             userSession.setNote(FEDERATED_ACCESS_TOKEN, params.getFirst(OAuth2Constants.SUBJECT_TOKEN));
         if (context.getContextData().containsKey(OIDCIdentityProvider.VALIDATED_ID_TOKEN))
             userSession.setNote(OIDCIdentityProvider.FEDERATED_ID_TOKEN, params.getFirst(OAuth2Constants.SUBJECT_TOKEN));

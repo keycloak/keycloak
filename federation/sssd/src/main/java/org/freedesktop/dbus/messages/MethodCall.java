@@ -74,7 +74,7 @@ public class MethodCall extends MethodBase {
     }
 
     /**
-    * Block (if neccessary) for a reply.
+    * Block (if necessary) for a reply.
     * @return The reply to this MethodCall, or null if a timeout happens.
     * @param _timeout The length of time to block before timing out (ms).
     */
@@ -93,7 +93,7 @@ public class MethodCall extends MethodBase {
     }
 
     /**
-    * Block (if neccessary) for a reply.
+    * Block (if necessary) for a reply.
     * Default timeout is 20s, or can be configured with setDefaultTimeout()
     * @return The reply to this MethodCall, or null if a timeout happens.
     */

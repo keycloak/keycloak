@@ -25,7 +25,6 @@ import java.util.Optional;
 import org.jboss.logging.Logger;
 import org.keycloak.platform.Platform;
 import org.keycloak.quarkus.runtime.Environment;
-import org.keycloak.quarkus.runtime.InitializationException;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.integration.QuarkusPlatform;
 
@@ -42,7 +41,7 @@ public final class ExecutionExceptionHandler implements CommandLine.IExecutionEx
 
     @Override
     public int handleExecutionException(Exception cause, CommandLine cmd, ParseResult parseResult) {
-        if (cause instanceof NonCliPropertyException) {
+        if (cause instanceof PropertyException) {
             PrintWriter writer = cmd.getErr();
             writer.println(cmd.getColorScheme().errorText(cause.getMessage()));
             return ShortErrorMessageHandler.getInvalidInputExitCode(cause, cmd);
@@ -61,24 +60,7 @@ public final class ExecutionExceptionHandler implements CommandLine.IExecutionEx
         }
 
         if (cause != null) {
-            if (cause instanceof InitializationException) {
-                InitializationException initializationException = (InitializationException) cause;
-                if (initializationException.getSuppressed() == null || initializationException.getSuppressed().length == 0) {
-                    dumpException(errorWriter, initializationException);
-                } else if (initializationException.getSuppressed().length == 1) {
-                    dumpException(errorWriter, initializationException.getSuppressed()[0]);
-                } else {
-                    logError(errorWriter, "ERROR: Multiple configuration errors during startup");
-                    int counter = 0;
-                    for (Throwable inner : initializationException.getSuppressed()) {
-                        counter++;
-                        logError(errorWriter, "ERROR " + counter);
-                        dumpException(errorWriter, inner);
-                    }
-                }
-            } else {
-                dumpException(errorWriter, cause);
-            }
+            dumpException(errorWriter, cause);
 
             if (!verbose) {
                 logError(errorWriter, "For more details run the same command passing the '--verbose' option. Also you can use '--help' to see the details about the usage of the particular command.");
@@ -107,7 +89,7 @@ public final class ExecutionExceptionHandler implements CommandLine.IExecutionEx
             ConfigValue httpsCertFile = getConfig().getConfigValue("kc.https-certificate-file");
 
             if (fse.getFile().equals(Optional.ofNullable(httpsCertFile.getValue()).orElse(null))) {
-                logError(errorWriter, Messages.httpsConfigurationNotSet().getMessage());
+                logError(errorWriter, Messages.httpsConfigurationNotSet());
             }
         }
     }

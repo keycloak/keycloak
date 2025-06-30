@@ -29,6 +29,10 @@ public class Environment {
 
     public static final int DEFAULT_JBOSS_AS_STARTUP_TIMEOUT = 300;
 
+    public static final String PROFILE = "kc.profile";
+    public static final String ENV_PROFILE = "KC_PROFILE";
+    public static final String DEV_PROFILE_VALUE = "dev";
+
     public static int getServerStartupTimeout() {
         String timeout = System.getProperty("jboss.as.management.blocking.timeout");
         if (timeout != null) {
@@ -57,4 +61,17 @@ public class Environment {
         return false;
     }
 
+    public static boolean isDevMode() {
+        return DEV_PROFILE_VALUE.equalsIgnoreCase(getProfile());
+    }
+
+    public static String getProfile() {
+        String profile = System.getProperty(PROFILE);
+
+        if (profile != null) {
+            return profile;
+        }
+
+        return System.getenv(ENV_PROFILE);
+    }
 }

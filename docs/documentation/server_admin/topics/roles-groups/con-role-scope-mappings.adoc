@@ -4,7 +4,7 @@
 
 = Role scope mappings
 [role="_abstract"]
-On creation of an OIDC access token or SAML assertion, the user role mappings become claims within the token or assertion.  Applications use these claims to make access decisions on the resources controlled by the application.  {project_name} digitally signs access tokens and applications re-use them to invoke remotely secured REST services.  However, these tokens have an associated risk. An attacker can obtain these tokens and use their permissions to compromise your networks. To prevent this situation, use _Role Scope Mappings_.
+On creation of an OIDC access token or SAML assertion, the user role mappings become claims within the token or assertion.  Applications use these claims to make access decisions on the resources controlled by the application.  {project_name} digitally signs access tokens and applications reuse them to invoke remotely secured REST services.  However, these tokens have an associated risk. An attacker can obtain these tokens and use their permissions to compromise your networks. To prevent this situation, use _Role Scope Mappings_.
 
 _Role Scope Mappings_ limit the roles declared inside an access token.  When a client requests a user authentication, the access token they receive contains only the role mappings that are explicitly specified for the client's scope.  The result is that you limit the permissions of each individual access token instead of giving the client access to all the users permissions.  
 

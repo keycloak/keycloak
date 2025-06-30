@@ -5,7 +5,7 @@ inputs:
   node-version:
     description: Node.js version
     required: false
-    default: "18"
+    default: "20"
 
   working-directory:
     description: The working directory where the `pnpm-lock.yaml` file is located.
@@ -16,7 +16,7 @@ runs:
   using: composite
   steps:
     - name: Set up Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: ${{ inputs.node-version }}
         check-latest: true
@@ -29,9 +29,9 @@ runs:
       id: pnpm-cache
       shell: bash
       run: |
-        echo "store-path=$(pnpm store path)" >> $GITHUB_OUTPUT
+        echo "store-path=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
 
-    - uses: actions/cache@v3
+    - uses: actions/cache@v4
       name: Setup PNPM cache
       with:
         # Also cache Cypress binary.
@@ -45,4 +45,4 @@ runs:
     - name: Install dependencies
       working-directory: ${{ inputs.working-directory }}
       shell: bash
-      run: pnpm install --frozen-lockfile
+      run: pnpm install --prefer-offline --frozen-lockfile

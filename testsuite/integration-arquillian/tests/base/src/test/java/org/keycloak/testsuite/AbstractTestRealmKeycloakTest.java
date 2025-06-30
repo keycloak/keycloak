@@ -44,7 +44,7 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
  */
 public abstract class AbstractTestRealmKeycloakTest extends AbstractKeycloakTest {
     public static final String TEST_REALM_NAME = "test";
-    
+
     protected RealmResource testRealm() {
         return adminClient.realm(TEST_REALM_NAME);
     }
@@ -128,7 +128,7 @@ public abstract class AbstractTestRealmKeycloakTest extends AbstractKeycloakTest
 
     /** KEYCLOAK-12065 Inherit Client Connection from parent session **/
     public static KeycloakSession inheritClientConnection(KeycloakSession parentSession, KeycloakSession currentSession) {
-        Resteasy.pushContext(ClientConnection.class, parentSession.getContext().getConnection());
+        currentSession.getContext().setConnection(parentSession.getContext().getConnection());
         return currentSession;
     }
 }

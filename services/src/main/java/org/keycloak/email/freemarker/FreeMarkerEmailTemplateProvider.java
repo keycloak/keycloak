@@ -19,14 +19,12 @@ package org.keycloak.email.freemarker;
 
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
-
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.email.EmailException;
@@ -39,6 +37,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakUriInfo;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -136,21 +135,15 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         BrokeredIdentityContext brokerContext = (BrokeredIdentityContext) this.attributes.get(IDENTITY_PROVIDER_BROKER_CONTEXT);
         String idpAlias = brokerContext.getIdpConfig().getAlias();
         String idpDisplayName = brokerContext.getIdpConfig().getDisplayName();
-        idpAlias = ObjectUtil.capitalize(idpAlias);
-        String displayName = idpAlias;
-        if (!ObjectUtil.isBlank(brokerContext.getIdpConfig().getDisplayName())) {
-            displayName = brokerContext.getIdpConfig().getDisplayName();
-        }
-
-        if (idpDisplayName != null && idpDisplayName.length() > 0) {
-            idpAlias = ObjectUtil.capitalize(idpDisplayName);
+        if (ObjectUtil.isBlank(idpDisplayName)) {
+            idpDisplayName = ObjectUtil.capitalize(idpAlias);
         }
 
         attributes.put("identityProviderContext", brokerContext);
         attributes.put("identityProviderAlias", idpAlias);
-        attributes.put("identityProviderDisplayName", displayName);
+        attributes.put("identityProviderDisplayName", idpDisplayName);
 
-        List<Object> subjectAttrs = Arrays.asList(displayName);
+        List<Object> subjectAttrs = Collections.singletonList(idpDisplayName);
         send("identityProviderLinkSubject", subjectAttrs, "identity-provider-link.ftl", attributes);
     }
 
@@ -168,6 +161,18 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         addLinkInfoIntoAttributes(link, expirationInMinutes, attributes);
 
         send("emailVerificationSubject", "email-verification.ftl", attributes);
+    }
+
+    @Override
+    public void sendOrgInviteEmail(OrganizationModel organization, String link, long expirationInMinutes) throws EmailException {
+        Map<String, Object> attributes = new HashMap<>(this.attributes);
+        addLinkInfoIntoAttributes(link, expirationInMinutes, attributes);
+        attributes.put("organization", organization);
+        if (user.getFirstName() != null && user.getLastName() != null) {
+            attributes.put("firstName", user.getFirstName());
+            attributes.put("lastName", user.getLastName());
+        }
+        send("orgInviteSubject", List.of(organization.getName()), "org-invite.ftl", attributes);
     }
 
     @Override
@@ -217,7 +222,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
 
             attributes.put("properties", theme.getProperties());
             attributes.put("realmName", getRealmName());
-            attributes.put("user", new ProfileBean(user));
+            attributes.put("user", new ProfileBean(user, session));
             KeycloakUriInfo uriInfo = session.getContext().getUri();
             attributes.put("url", new UrlBean(realm, theme, uriInfo.getBaseUri(), null));
 

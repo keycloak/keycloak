@@ -2,8 +2,6 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Path } from "react-router-dom";
 import { Link } from "react-router-dom";
-import { Dropdown, DropdownItem, DropdownToggle } from "@patternfly/react-core";
-import { CaretDownIcon } from "@patternfly/react-icons";
 
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
@@ -17,6 +15,12 @@ import {
   Action,
   KeycloakDataTable,
 } from "../../components/table-toolbar/KeycloakDataTable";
+import {
+  Dropdown,
+  DropdownItem,
+  DropdownList,
+  MenuToggle,
+} from "@patternfly/react-core";
 
 type MapperListProps = {
   model: ClientScopeRepresentation | ClientRepresentation;
@@ -110,32 +114,28 @@ export const MapperList = ({
         toolbarItem={
           <Dropdown
             onSelect={() => setMapperAction(false)}
-            toggle={
-              <DropdownToggle
-                isPrimary
+            onOpenChange={(isOpen) => setMapperAction(isOpen)}
+            toggle={(ref) => (
+              <MenuToggle
+                ref={ref}
+                variant="primary"
                 id="mapperAction"
-                onToggle={() => setMapperAction(!mapperAction)}
-                toggleIndicator={CaretDownIcon}
+                onClick={() => setMapperAction(!mapperAction)}
               >
                 {t("addMapper")}
-              </DropdownToggle>
-            }
+              </MenuToggle>
+            )}
             isOpen={mapperAction}
-            dropdownItems={[
-              <DropdownItem
-                key="predefined"
-                onClick={() => toggleAddMapperDialog(true)}
-              >
+          >
+            <DropdownList>
+              <DropdownItem onClick={() => toggleAddMapperDialog(true)}>
                 {t("fromPredefinedMapper")}
-              </DropdownItem>,
-              <DropdownItem
-                key="byConfiguration"
-                onClick={() => toggleAddMapperDialog(false)}
-              >
+              </DropdownItem>
+              <DropdownItem onClick={() => toggleAddMapperDialog(false)}>
                 {t("byConfiguration")}
-              </DropdownItem>,
-            ]}
-          />
+              </DropdownItem>
+            </DropdownList>
+          </Dropdown>
         }
         actions={[
           {

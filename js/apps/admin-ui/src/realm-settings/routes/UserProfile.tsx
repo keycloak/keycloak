@@ -3,7 +3,11 @@ import type { Path } from "react-router-dom";
 import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
-export type UserProfileTab = "attributes" | "attributes-group" | "json-editor";
+export type UserProfileTab =
+  | "attributes"
+  | "attributes-group"
+  | "unmanaged-attributes"
+  | "json-editor";
 
 export type UserProfileParams = {
   realm: string;

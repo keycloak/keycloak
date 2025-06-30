@@ -21,6 +21,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
@@ -54,6 +55,7 @@ import java.net.URI;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -81,7 +83,9 @@ public class DescriptionConverter {
         client.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
         String scopeParam = clientOIDC.getScope();
-        if (scopeParam != null) client.setOptionalClientScopes(new ArrayList<>(Arrays.asList(scopeParam.split(" "))));
+        if (scopeParam != null) {
+            client.setOptionalClientScopes(scopeParam.isEmpty() ? Collections.emptyList() : Arrays.asList(scopeParam.split(" ")));
+        }
 
         List<String> oidcResponseTypes = clientOIDC.getResponseTypes();
         if (oidcResponseTypes == null || oidcResponseTypes.isEmpty()) {
@@ -159,9 +163,7 @@ public class DescriptionConverter {
             configWrapper.setAllowRegexPatternComparison(false);
         }
 
-        if (clientOIDC.getIdTokenSignedResponseAlg() != null) {
-            configWrapper.setIdTokenSignedResponseAlg(clientOIDC.getIdTokenSignedResponseAlg());
-        }
+        configWrapper.setIdTokenSignedResponseAlg(clientOIDC.getIdTokenSignedResponseAlg());
 
         if (clientOIDC.getIdTokenEncryptedResponseAlg() != null) {
             configWrapper.setIdTokenEncryptedResponseAlg(clientOIDC.getIdTokenEncryptedResponseAlg());
@@ -379,6 +381,10 @@ public class DescriptionConverter {
                 throw new ClientRegistrationException("Illegal jwks format");
             }
         }
+        String defaultSignatureAlgorithm = session.getContext().getRealm().getDefaultSignatureAlgorithm();
+        if (Algorithm.RS256.equals(defaultSignatureAlgorithm) || StringUtil.isBlank(defaultSignatureAlgorithm)) {
+            defaultSignatureAlgorithm = null;
+        }
         // KEYCLOAK-6771 Certificate Bound Token
         // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-6.5
         if (config.isUseMtlsHokToken()) {
@@ -391,6 +397,8 @@ public class DescriptionConverter {
         }
         if (config.getIdTokenSignedResponseAlg() != null) {
             response.setIdTokenSignedResponseAlg(config.getIdTokenSignedResponseAlg());
+        } else if (defaultSignatureAlgorithm != null){
+            response.setIdTokenSignedResponseAlg(defaultSignatureAlgorithm);
         }
         if (config.getIdTokenEncryptedResponseAlg() != null) {
             response.setIdTokenEncryptedResponseAlg(config.getIdTokenEncryptedResponseAlg());

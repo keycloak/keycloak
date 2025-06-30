@@ -21,12 +21,11 @@ import org.jboss.logging.Logger;
 import org.keycloak.authentication.AbstractFormAuthenticator;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
-import org.keycloak.credential.hash.PasswordHashProvider;
+import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
@@ -53,6 +52,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
 
     public static final String REGISTRATION_FORM_ACTION = "registration_form";
     public static final String ATTEMPTED_USERNAME = "ATTEMPTED_USERNAME";
+    public static final String SESSION_INVALID = "SESSION_INVALID";
 
     // Flag is true if user was already set in the authContext before this authenticator was triggered. In this case we skip clearing of the user after unsuccessful password authentication
     protected static final String USER_SET_BEFORE_USERNAME_PASSWORD_AUTH = "USER_SET_BEFORE_USERNAME_PASSWORD_AUTH";
@@ -99,32 +99,9 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         return challengeResponse;
     }
 
-    protected void runDefaultDummyHash(AuthenticationFlowContext context) {
-        PasswordHashProvider hash = context.getSession().getProvider(PasswordHashProvider.class, PasswordPolicy.HASH_ALGORITHM_DEFAULT);
-        hash.encode("SlightlyLongerDummyPassword", PasswordPolicy.HASH_ITERATIONS_DEFAULT);
-    }
-
-    protected void dummyHash(AuthenticationFlowContext context) {
-        PasswordPolicy policy = context.getRealm().getPasswordPolicy();
-        if (policy == null) {
-            runDefaultDummyHash(context);
-            return;
-        } else {
-            PasswordHashProvider hash = context.getSession().getProvider(PasswordHashProvider.class, policy.getHashAlgorithm());
-            if (hash == null) {
-                runDefaultDummyHash(context);
-                return;
-
-            } else {
-                hash.encode("SlightlyLongerDummyPassword", policy.getHashIterations());
-            }
-        }
-
-    }
-
     public void testInvalidUser(AuthenticationFlowContext context, UserModel user) {
         if (user == null) {
-            dummyHash(context);
+            AuthenticatorUtils.dummyHash(context);
             context.getEvent().error(Errors.USER_NOT_FOUND);
             Response challengeResponse = challenge(context, getDefaultChallengeMessage(context), FIELD_USERNAME);
             context.failureChallenge(AuthenticationFlowError.INVALID_USER, challengeResponse);
@@ -170,7 +147,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
 
     private UserModel getUserFromForm(AuthenticationFlowContext context, MultivaluedMap<String, String> inputData) {
         String username = inputData.getFirst(AuthenticationManager.FORM_USERNAME);
-        if (username == null) {
+        if (username == null || username.isEmpty()) {
             context.getEvent().error(Errors.USER_NOT_FOUND);
             Response challengeResponse = challenge(context, getDefaultChallengeMessage(context), FIELD_USERNAME);
             context.failureChallenge(AuthenticationFlowError.INVALID_USER, challengeResponse);
@@ -227,6 +204,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         if (isDisabledByBruteForce(context, user)) return false;
 
         if (password != null && !password.isEmpty() && user.credentialManager().isValid(UserCredentialModel.password(password))) {
+            context.getAuthenticationSession().setAuthNote(AuthenticationManager.PASSWORD_VALIDATED, "true");
             return true;
         } else {
             return badPasswordHandler(context, user, clearUser,false);

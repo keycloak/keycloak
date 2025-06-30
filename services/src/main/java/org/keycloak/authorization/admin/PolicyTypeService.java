@@ -22,7 +22,6 @@ import java.util.Map;
 
 import jakarta.ws.rs.Path;
 
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;

@@ -1,22 +1,21 @@
+import { fetchWithError } from "@keycloak/keycloak-admin-client";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { Language } from "@patternfly/react-code-editor";
 import {
   ActionGroup,
   AlertVariant,
   Button,
-  FormGroup,
   PageSection,
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-
-import { adminClient } from "../../admin-client";
+import { FormSubmitButton, TextControl } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";
 import { FileUploadForm } from "../../components/json-file-upload/FileUploadForm";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import {
@@ -34,11 +33,13 @@ import { toClients } from "../routes/Clients";
 const isXml = (text: string) => text.match(/(<.[^(><.)]+>)/g);
 
 export default function ImportForm() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { realm } = useRealm();
   const form = useForm<FormFields>();
-  const { register, handleSubmit, setValue } = form;
+  const { handleSubmit, setValue, formState } = form;
   const [imported, setImported] = useState<ClientRepresentation>({});
 
   const { addAlert, addError } = useAlerts();
@@ -61,7 +62,7 @@ export default function ImportForm() {
       return JSON.parse(contents);
     }
 
-    const response = await fetch(
+    const response = await fetchWithError(
       `${addTrailingSlash(
         adminClient.baseUrl,
       )}admin/realms/${realm}/client-description-converter`,
@@ -115,18 +116,16 @@ export default function ImportForm() {
               onChange={handleFileChange}
             />
             <ClientDescription hasConfigureAccess />
-            <FormGroup label={t("type")} fieldId="kc-type">
-              <KeycloakTextInput
-                id="kc-type"
-                isReadOnly
-                {...register("protocol")}
-              />
-            </FormGroup>
+            <TextControl name="protocol" label={t("type")} readOnly />
             <CapabilityConfig unWrap={true} />
             <ActionGroup>
-              <Button variant="primary" type="submit">
+              <FormSubmitButton
+                formState={formState}
+                allowInvalid
+                allowNonDirty
+              >
                 {t("save")}
-              </Button>
+              </FormSubmitButton>
               <Button
                 variant="link"
                 component={(props) => (

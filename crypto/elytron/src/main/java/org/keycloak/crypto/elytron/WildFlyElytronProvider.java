@@ -34,7 +34,6 @@ import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
@@ -77,7 +76,7 @@ public class WildFlyElytronProvider implements CryptoProvider {
 
     @Override
     public CertificateUtilsProvider getCertificateUtils() {
-        return new ElytronCertificateUtils();
+        return new ElytronCertificateUtilsProvider();
     }
 
     @Override

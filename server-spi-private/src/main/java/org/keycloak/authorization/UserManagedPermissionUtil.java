@@ -26,7 +26,6 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
@@ -49,7 +48,7 @@ public class UserManagedPermissionUtil {
             filter.put(PermissionTicket.FilterOption.RESOURCE_ID, ticket.getResource().getId());
             filter.put(PermissionTicket.FilterOption.POLICY_IS_NOT_NULL, Boolean.TRUE.toString());
 
-            List<PermissionTicket> tickets = storeFactory.getPermissionTicketStore().find(resourceServer.getRealm(), resourceServer, filter, null, null);
+            List<PermissionTicket> tickets = storeFactory.getPermissionTicketStore().find(resourceServer, filter, null, null);
 
             if (!tickets.isEmpty()) {
                 policy = tickets.iterator().next().getPolicy();
@@ -74,7 +73,6 @@ public class UserManagedPermissionUtil {
 
     public static void removePolicy(PermissionTicket ticket, StoreFactory storeFactory) {
         Policy policy = ticket.getPolicy();
-        RealmModel realm = ticket.getResourceServer().getRealm();
 
         if (policy != null) {
             Map<PermissionTicket.FilterOption, String> filter = new EnumMap<>(PermissionTicket.FilterOption.class);
@@ -84,16 +82,16 @@ public class UserManagedPermissionUtil {
             filter.put(PermissionTicket.FilterOption.RESOURCE_ID, ticket.getResource().getId());
             filter.put(PermissionTicket.FilterOption.GRANTED, Boolean.TRUE.toString());
 
-            List<PermissionTicket> tickets = storeFactory.getPermissionTicketStore().find(realm, ticket.getResourceServer(), filter, null, null);
+            List<PermissionTicket> tickets = storeFactory.getPermissionTicketStore().find(ticket.getResourceServer(), filter, null, null);
 
             if (tickets.isEmpty()) {
                 PolicyStore policyStore = storeFactory.getPolicyStore();
 
                 for (Policy associatedPolicy : policy.getAssociatedPolicies()) {
-                    policyStore.delete(realm, associatedPolicy.getId());
+                    policyStore.delete(associatedPolicy.getId());
                 }
 
-                policyStore.delete(realm, policy.getId());
+                policyStore.delete(policy.getId());
             } else if (ticket.getScope() != null) {
                 policy.removeScope(ticket.getScope());
             }

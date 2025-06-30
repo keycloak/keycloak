@@ -3,8 +3,9 @@ export default class UserRegistration {
   #defaultGroupTab = "#pf-tab-20-groups";
   #addRoleBtn = "assignRole";
   #addDefaultGroupBtn = "no-default-groups-empty-action";
-  #namesColumn = 'tbody td[data-label="Name"]:visible';
+  #namesColumn = "tbody td:visible";
   #addBtn = "assign";
+  #filterTypeDropdown = "filter-type-dropdown";
 
   goToTab() {
     cy.findByTestId(this.#userRegistrationTab).click({ force: true });
@@ -26,6 +27,16 @@ export default class UserRegistration {
     return this;
   }
 
+  changeRoleTypeFilter(filter: string) {
+    // Invert the filter because the testid is the current selection
+    const option = filter == "roles" ? "clients" : "roles";
+
+    cy.findByTestId(this.#filterTypeDropdown).click();
+    cy.findByTestId(option).click();
+
+    return this;
+  }
+
   selectRow(name: string) {
     cy.get(this.#namesColumn)
       .contains(name)
@@ -44,7 +55,7 @@ export default class UserRegistration {
 
 export class GroupPickerDialog {
   #addButton = "add-button";
-  #title = ".pf-c-modal-box__title";
+  #title = ".pf-v5-c-modal-box__title";
 
   clickRow(groupName: string) {
     cy.findByTestId(groupName).within(() => cy.get("input").click());
@@ -52,7 +63,7 @@ export class GroupPickerDialog {
   }
 
   clickRoot() {
-    cy.get(".pf-c-breadcrumb__item > button").click();
+    cy.get(".pf-v5-c-breadcrumb__item > button").click();
     return this;
   }
 

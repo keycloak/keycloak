@@ -30,6 +30,10 @@ public interface PasswordHashProvider extends Provider {
 
     PasswordCredentialModel encodedCredential(String rawPassword, int iterations);
 
+    /**
+     * Exists due the backwards compatibility. It is recommended to use {@link #encodedCredential(String, int)}
+     */
+    @Deprecated
     default
     String encode(String rawPassword, int iterations) {
         return rawPassword;

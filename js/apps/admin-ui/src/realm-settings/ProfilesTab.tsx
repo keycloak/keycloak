@@ -19,8 +19,7 @@ import { omit } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
@@ -42,6 +41,8 @@ type ClientProfile = ClientProfileRepresentation & {
 };
 
 export default function ProfilesTab() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
@@ -158,7 +159,7 @@ export default function ProfilesTab() {
         addError("updateClientProfilesError", error);
       }
     } catch (error) {
-      console.warn("Invalid json, ignoring value using {}");
+      addError("invalidJsonClientProfilesError", error);
     }
   };
 
@@ -179,7 +180,7 @@ export default function ProfilesTab() {
               onChange={() => setShow(false)}
               label={t("profilesConfigTypes.formView")}
               id="formView-profilesView"
-              className="kc-form-radio-btn pf-u-mr-sm pf-u-ml-sm"
+              className="kc-form-radio-btn pf-v5-u-mr-sm pf-v5-u-ml-sm"
               data-testid="formView-profilesView"
             />
           </FlexItem>
@@ -249,7 +250,7 @@ export default function ProfilesTab() {
         />
       ) : (
         <FormGroup fieldId={"jsonEditor"}>
-          <div className="pf-u-mt-md pf-u-ml-lg">
+          <div className="pf-v5-u-mt-md pf-v5-u-ml-lg">
             <CodeEditor
               isLineNumbersVisible
               isLanguageLabelVisible
@@ -263,10 +264,10 @@ export default function ProfilesTab() {
             />
           </div>
           <ActionGroup>
-            <div className="pf-u-mt-md">
+            <div className="pf-v5-u-mt-md">
               <Button
                 variant={ButtonVariant.primary}
-                className="pf-u-mr-md pf-u-ml-lg"
+                className="pf-v5-u-mr-md pf-v5-u-ml-lg"
                 onClick={save}
                 data-testid="jsonEditor-saveBtn"
               >

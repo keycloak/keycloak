@@ -1,15 +1,37 @@
+/*
+ * Copyright 2023 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.testsuite.oidc;
 
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.HttpHeaders;
+import org.jboss.logging.Logger;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile;
+import org.keycloak.models.Constants;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.GroupMembershipMapper;
 import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
@@ -18,20 +40,25 @@ import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.RoleNameMapper;
 import org.keycloak.protocol.oidc.mappers.SHA256PairwiseSubMapper;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
+import org.keycloak.protocol.oidc.mappers.SessionStateMapper;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
+import org.keycloak.services.clientpolicy.executor.UseLightweightAccessTokenExecutorFactory;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
 import org.keycloak.testsuite.util.ClientManager;
+import org.keycloak.testsuite.util.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
 import org.keycloak.util.JsonSerialization;
-import org.wildfly.common.Assert;
+import org.keycloak.utils.MediaType;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -62,25 +89,30 @@ import static org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper.INCLUDED
 import static org.keycloak.protocol.oidc.mappers.HardcodedClaim.CLAIM_VALUE;
 import static org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN;
 import static org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION;
+import static org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper.INCLUDE_IN_LIGHTWEIGHT_ACCESS_TOKEN;
 import static org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper.PAIRWISE_SUB_ALGORITHM_SALT;
 import static org.keycloak.protocol.oidc.mappers.RoleNameMapper.NEW_ROLE_NAME;
 import static org.keycloak.protocol.oidc.mappers.RoleNameMapper.ROLE_CONFIG;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
 
 @EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
-public class LightWeightAccessTokenTest extends AbstractKeycloakTest {
-
+public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
+    private static final Logger logger = Logger.getLogger(LightWeightAccessTokenTest.class);
+    private static String RESOURCE_SERVER_CLIENT_ID = "resource-server";
+    private static String RESOURCE_SERVER_CLIENT_PASSWORD = "password";
     @Before
     public void clientConfiguration() {
-        ClientManager.realm(adminClient.realm("test")).clientId("test-app").directAccessGrant(true).setServiceAccountsEnabled(true);
-        ClientManager.realm(adminClient.realm("test")).clientId("resource-server").directAccessGrant(true);
+        ClientManager.realm(adminClient.realm(REALM_NAME)).clientId(TEST_CLIENT).directAccessGrant(true).setServiceAccountsEnabled(true);
+        ClientManager.realm(adminClient.realm(REALM_NAME)).clientId(RESOURCE_SERVER_CLIENT_ID).directAccessGrant(true);
+        ClientManager.realm(adminClient.realm(REALM_NAME)).clientId(RESOURCE_SERVER_CLIENT_ID).updateAttribute(Constants.SUPPORT_JWT_CLAIM_IN_INTROSPECTION_RESPONSE_ENABLED, "true");
     }
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation realm = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
-        UserRepresentation user = findUser(realm, "test-user@localhost");
+        UserRepresentation user = findUser(realm, TEST_USER_NAME);
         Map<String, List<String>> attributes = new HashMap<>(){{
             put("street", Arrays.asList("1 My Street"));
             put("locality", Arrays.asList("Cardiff"));
@@ -89,8 +121,8 @@ public class LightWeightAccessTokenTest extends AbstractKeycloakTest {
         }};
         user.setAttributes(attributes);
         user.setGroups(Arrays.asList("/topGroup/level2group"));
-        ClientRepresentation confApp = KeycloakModelUtils.createClient(realm, "resource-server");
-        confApp.setSecret("password");
+        ClientRepresentation confApp = KeycloakModelUtils.createClient(realm, RESOURCE_SERVER_CLIENT_ID);
+        confApp.setSecret(RESOURCE_SERVER_CLIENT_PASSWORD);
         confApp.setServiceAccountsEnabled(Boolean.TRUE);
         testRealms.add(realm);
     }
@@ -99,7 +131,6 @@ public class LightWeightAccessTokenTest extends AbstractKeycloakTest {
         for (UserRepresentation user : testRealm.getUsers()) {
             if (user.getUsername().equals(userName)) return user;
         }
-
         return null;
     }
 
@@ -109,15 +140,15 @@ public class LightWeightAccessTokenTest extends AbstractKeycloakTest {
         try {
             oauth.nonce("123456");
             oauth.scope("address");
-            oauth.clientId("test-app");
-            OAuthClient.AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password").tokenResponse;
+            oauth.clientId(TEST_CLIENT);
+            OAuthClient.AccessTokenResponse response = browserLogin(TEST_CLIENT_SECRET, TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
             String accessToken = response.getAccessToken();
-            System.out.println("accessToken:" + accessToken);
-            assertAccessToken(oauth.verifyToken(accessToken), true, false);
+            logger.debug("accessToken:" + accessToken);
+            assertAccessToken(oauth.verifyToken(accessToken), true, false, false);
 
-            oauth.clientId("resource-server");
-            String tokenResponse = oauth.introspectAccessTokenWithClientCredential("resource-server", "password", accessToken);
-            System.out.println("tokenResponse:" + tokenResponse);
+            oauth.clientId(RESOURCE_SERVER_CLIENT_ID);
+            String tokenResponse = oauth.introspectAccessTokenWithClientCredential(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD, accessToken);
+            logger.debug("tokenResponse:" + tokenResponse);
             assertTokenIntrospectionResponse(JsonSerialization.readValue(tokenResponse, AccessToken.class), true, true, false);
         } finally {
             deleteProtocolMappers(protocolMappers);
@@ -130,15 +161,15 @@ public class LightWeightAccessTokenTest extends AbstractKeycloakTest {
         try {
             oauth.nonce("123456");
             oauth.scope("address");
-            oauth.clientId("test-app");
-            OAuthClient.AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password").tokenResponse;
+            oauth.clientId(TEST_CLIENT);
+            OAuthClient.AccessTokenResponse response = browserLogin(TEST_CLIENT_SECRET, TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
             String accessToken = response.getAccessToken();
-            System.out.println("accessToken:" + accessToken);
-            assertAccessToken(oauth.verifyToken(accessToken), true, true);
+            logger.debug("accessToken:" + accessToken);
+            assertAccessToken(oauth.verifyToken(accessToken), true, true, false);
 
-            oauth.clientId("resource-server");
-            String tokenResponse = oauth.introspectAccessTokenWithClientCredential("resource-server", "password", accessToken);
-            System.out.println("tokenResponse:" + tokenResponse);
+            oauth.clientId(RESOURCE_SERVER_CLIENT_ID);
+            String tokenResponse = oauth.introspectAccessTokenWithClientCredential(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD, accessToken);
+            logger.debug("tokenResponse:" + tokenResponse);
             // Most of the claims should not be included in introspectionResponse as introspectionMapper was disabled
             assertTokenIntrospectionResponse(JsonSerialization.readValue(tokenResponse, AccessToken.class), true, false, false);
         } finally {
@@ -152,16 +183,44 @@ public class LightWeightAccessTokenTest extends AbstractKeycloakTest {
         try {
             oauth.nonce("123456");
             oauth.scope("address");
-            oauth.clientId("test-app");
-            OAuthClient.AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password").tokenResponse;
+            oauth.clientId(TEST_CLIENT);
+            OAuthClient.AccessTokenResponse response = browserLogin(TEST_CLIENT_SECRET, TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
             String accessToken = response.getAccessToken();
-            System.out.println("accessToken:" + accessToken);
-            assertAccessToken(oauth.verifyToken(accessToken), true, true);
+            logger.debug("accessToken:" + accessToken);
+            assertAccessToken(oauth.verifyToken(accessToken), true, true, false);
 
-            oauth.clientId("resource-server");
-            String tokenResponse = oauth.introspectAccessTokenWithClientCredential("resource-server", "password", accessToken);
-            System.out.println("tokenResponse:" + tokenResponse);
+            oauth.clientId(RESOURCE_SERVER_CLIENT_ID);
+            String tokenResponse = oauth.introspectAccessTokenWithClientCredential(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD, accessToken);
+            logger.debug("tokenResponse:" + tokenResponse);
             assertTokenIntrospectionResponse(JsonSerialization.readValue(tokenResponse, AccessToken.class), true, true, false);
+        } finally {
+            deleteProtocolMappers(protocolMappers);
+        }
+    }
+
+    @Test
+    public void accessTokenTrueIntrospectionReturnedAsJwt() throws IOException {
+        ProtocolMappersResource protocolMappers = setProtocolMappers(true, true, true);
+        try {
+            oauth.nonce("123456");
+            oauth.scope("address");
+            oauth.clientId(TEST_CLIENT);
+            OAuthClient.AccessTokenResponse response = browserLogin(TEST_CLIENT_SECRET, TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
+            String accessToken = response.getAccessToken();
+            logger.debug("accessToken:" + accessToken);
+            assertAccessToken(oauth.verifyToken(accessToken), true, true, false);
+
+            oauth.clientId(RESOURCE_SERVER_CLIENT_ID);
+
+            // request JWT in introspection response
+            oauth.requestHeaders(Map.of(HttpHeaders.ACCEPT, MediaType.APPLICATION_JWT));
+
+            String tokenResponse = oauth.introspectAccessTokenWithClientCredential(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD, accessToken);
+            logger.debug("tokenResponse:" + tokenResponse);
+            AccessToken introspectionResult = JsonSerialization.readValue(tokenResponse, AccessToken.class);
+            assertTokenIntrospectionResponse(introspectionResult, true, true, false);
+
+            Assert.assertNotNull(introspectionResult.getOtherClaims().get("jwt"));
         } finally {
             deleteProtocolMappers(protocolMappers);
         }
@@ -174,30 +233,21 @@ public class LightWeightAccessTokenTest extends AbstractKeycloakTest {
             oauth.nonce("123456");
             oauth.scope("openid address offline_access");
 
-            oauth.clientId("test-app");
-            TokenResponseContext ctx = browserLogin("password", "test-user@localhost", "password");
+            oauth.clientId(TEST_CLIENT);
+            TokenResponseContext ctx = browserLogin(TEST_CLIENT_SECRET, TEST_USER_NAME, TEST_USER_PASSWORD);
             OAuthClient.AccessTokenResponse response = ctx.tokenResponse;
             String accessToken = response.getAccessToken();
-            System.out.println("accessToken:" + accessToken);
-            System.out.println("idtoken:" + response.getIdToken());
-            assertAccessToken(oauth.verifyToken(accessToken), true, false);
+            logger.debug("accessToken:" + accessToken);
+            logger.debug("idtoken:" + response.getIdToken());
+            assertAccessToken(oauth.verifyToken(accessToken), true, false, false);
 
-            oauth.clientId("resource-server");
+            oauth.clientId(RESOURCE_SERVER_CLIENT_ID);
             removeSession(ctx.userSessionId);
-            String tokenResponse = oauth.introspectAccessTokenWithClientCredential("resource-server", "password", accessToken);
-            System.out.println("tokenResponse:" + tokenResponse);
+            String tokenResponse = oauth.introspectAccessTokenWithClientCredential(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD, accessToken);
+            logger.debug("tokenResponse:" + tokenResponse);
             assertTokenIntrospectionResponse(JsonSerialization.readValue(tokenResponse, AccessToken.class), true, true, false);
         } finally {
             deleteProtocolMappers(protocolMappers);
-        }
-    }
-
-    private void removeSession(final String sessionId) {
-        testingClient.testing().removeExpired("test");
-        try {
-            testingClient.testing().removeUserSession("test", sessionId);
-        } catch (NotFoundException nfe) {
-            // Ignore
         }
     }
 
@@ -208,16 +258,16 @@ public class LightWeightAccessTokenTest extends AbstractKeycloakTest {
             oauth.nonce("123456");
             oauth.scope("address");
 
-            oauth.clientId("test-app");
-            OAuthClient.AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest("password");
+            oauth.clientId(TEST_CLIENT);
+            OAuthClient.AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest(TEST_CLIENT_SECRET);
             String accessToken = response.getAccessToken();
-            System.out.println("accessToken:" + accessToken);
-            assertAccessToken(oauth.verifyToken(accessToken), false, false);
+            logger.debug("accessToken:" + accessToken);
+            assertAccessToken(oauth.verifyToken(accessToken), false, false, false);
 
-            oauth.clientId("resource-server");
-            String tokenResponse = oauth.introspectAccessTokenWithClientCredential("resource-server", "password", accessToken);
-            System.out.println("tokenResponse:" + tokenResponse);
-            assertTokenIntrospectionResponse(JsonSerialization.readValue(tokenResponse, AccessToken.class), false);
+            oauth.clientId(RESOURCE_SERVER_CLIENT_ID);
+            String tokenResponse = oauth.introspectAccessTokenWithClientCredential(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD, accessToken);
+            logger.debug("tokenResponse:" + tokenResponse);
+            assertTokenIntrospectionResponse(JsonSerialization.readValue(tokenResponse, AccessToken.class), false, true, false);
         } finally {
             deleteProtocolMappers(protocolMappers);
         }
@@ -230,21 +280,218 @@ public class LightWeightAccessTokenTest extends AbstractKeycloakTest {
             oauth.nonce("123456");
             oauth.scope("address");
 
-            oauth.clientId("test-app");
-            OAuthClient.AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password").tokenResponse;
+            oauth.clientId(TEST_CLIENT);
+            OAuthClient.AccessTokenResponse response = browserLogin(TEST_CLIENT_SECRET, TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
             String accessToken = response.getAccessToken();
-            System.out.println("accessToken:" + accessToken);
-            assertAccessToken(oauth.verifyToken(accessToken), true, false);
-            response = oauth.doTokenExchange(TEST, accessToken, null, "test-app", "password");
+            logger.debug("accessToken:" + accessToken);
+            assertAccessToken(oauth.verifyToken(accessToken), true, false, false);
+            response = oauth.doTokenExchange(TEST, accessToken, null, TEST_CLIENT, TEST_CLIENT_SECRET);
             String exchangedTokenString = response.getAccessToken();
-            System.out.println("exchangedTokenString:" + exchangedTokenString);
+            logger.debug("exchangedTokenString:" + exchangedTokenString);
 
-            oauth.clientId("resource-server");
-            String tokenResponse = oauth.introspectAccessTokenWithClientCredential("resource-server", "password", exchangedTokenString);
-            System.out.println("tokenResponse:" + tokenResponse);
-            assertTokenIntrospectionResponse(JsonSerialization.readValue(tokenResponse, AccessToken.class), true, true, true);
+            oauth.clientId(RESOURCE_SERVER_CLIENT_ID);
+            String tokenResponse = oauth.introspectAccessTokenWithClientCredential(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD, exchangedTokenString);
+            logger.debug("tokenResponse:" + tokenResponse);
+            assertTokenIntrospectionResponse(JsonSerialization.readValue(tokenResponse, AccessToken.class), true, true, false);
         } finally {
             deleteProtocolMappers(protocolMappers);
+        }
+    }
+
+    @Test
+    public void testPolicyLightWeightFalseTest() throws Exception {
+        setUseLightweightAccessTokenExecutor();
+        ProtocolMappersResource protocolMappers = setProtocolMappers(true, true, false, false);
+        try {
+            oauth.nonce("123456");
+            oauth.scope("address");
+
+            oauth.clientId(TEST_CLIENT);
+
+            OAuthClient.AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), TEST_CLIENT_SECRET);
+            String accessToken = tokenResponse.getAccessToken();
+            assertAccessToken(oauth.verifyToken(accessToken), true, false, true);
+            logger.debug("lightweight access token:" + accessToken);
+
+            oauth.clientId(RESOURCE_SERVER_CLIENT_ID);
+            String introspectResponse = oauth.introspectAccessTokenWithClientCredential(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD, accessToken);
+            assertTokenIntrospectionResponse(JsonSerialization.readValue(introspectResponse, AccessToken.class), true, true, false);
+            logger.debug("tokenResponse:" + introspectResponse);
+
+            oauth.clientId(TEST_CLIENT);
+            deletePolicy(POLICY_NAME);
+            oauth.doLogout(tokenResponse.getRefreshToken(), TEST_CLIENT_SECRET);
+
+            authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), TEST_CLIENT_SECRET);
+            accessToken = tokenResponse.getAccessToken();
+            logger.debug("access token:" + accessToken);
+            assertAccessToken(oauth.verifyToken(accessToken), true, true, false);
+        } finally {
+            deleteProtocolMappers(protocolMappers);
+        }
+    }
+
+    @Test
+    public void testPolicyLightWeightTrueTest() throws Exception {
+        setUseLightweightAccessTokenExecutor();
+        ProtocolMappersResource protocolMappers = setProtocolMappers(false, true, true, false);
+        try {
+            oauth.nonce("123456");
+            oauth.scope("address");
+
+            oauth.clientId(TEST_CLIENT);
+
+            OAuthClient.AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), TEST_CLIENT_SECRET);
+            String accessToken = tokenResponse.getAccessToken();
+            logger.debug("access token:" + accessToken);
+            assertAccessToken(oauth.verifyToken(accessToken), true, true, true);
+
+            oauth.clientId(RESOURCE_SERVER_CLIENT_ID);
+            String introspectResponse = oauth.introspectAccessTokenWithClientCredential(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD, accessToken);
+            logger.debug("tokenResponse:" + introspectResponse);
+            assertTokenIntrospectionResponse(JsonSerialization.readValue(introspectResponse, AccessToken.class), true, true, false);
+
+        } finally {
+            deleteProtocolMappers(protocolMappers);
+        }
+    }
+
+    @Test
+    public void testAlwaysUseLightWeightFalseTest() throws Exception {
+        alwaysUseLightWeightAccessToken(true);
+        ProtocolMappersResource protocolMappers = setProtocolMappers(true, true, false, false);
+        try {
+            oauth.nonce("123456");
+            oauth.scope("address");
+
+            oauth.clientId(TEST_CLIENT);
+
+            OAuthClient.AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), TEST_CLIENT_SECRET);
+            String accessToken = tokenResponse.getAccessToken();
+            assertAccessToken(oauth.verifyToken(accessToken), true, false, true);
+            logger.debug("lightweight access token:" + accessToken);
+
+            oauth.clientId(RESOURCE_SERVER_CLIENT_ID);
+            String introspectResponse = oauth.introspectAccessTokenWithClientCredential(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD, accessToken);
+            assertTokenIntrospectionResponse(JsonSerialization.readValue(introspectResponse, AccessToken.class), true, true, false);
+            logger.debug("tokenResponse:" + introspectResponse);
+
+            oauth.clientId(TEST_CLIENT);
+            alwaysUseLightWeightAccessToken(false);
+            oauth.doLogout(tokenResponse.getRefreshToken(), TEST_CLIENT_SECRET);
+
+            authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), TEST_CLIENT_SECRET);
+            accessToken = tokenResponse.getAccessToken();
+            logger.debug("access token:" + accessToken);
+            assertAccessToken(oauth.verifyToken(accessToken), true, true, false);
+        } finally {
+            deleteProtocolMappers(protocolMappers);
+        }
+    }
+
+    @Test
+    public void testAlwaysUseLightWeightTrueTest() throws Exception {
+        alwaysUseLightWeightAccessToken(true);
+        ProtocolMappersResource protocolMappers = setProtocolMappers(false, true, true, false);
+        try {
+            oauth.nonce("123456");
+            oauth.scope("address");
+
+            oauth.clientId(TEST_CLIENT);
+
+            OAuthClient.AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), TEST_CLIENT_SECRET);
+            String accessToken = tokenResponse.getAccessToken();
+            logger.debug("access token:" + accessToken);
+            assertAccessToken(oauth.verifyToken(accessToken), true, true, true);
+
+            oauth.clientId(RESOURCE_SERVER_CLIENT_ID);
+            String introspectResponse = oauth.introspectAccessTokenWithClientCredential(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD, accessToken);
+            logger.debug("tokenResponse:" + introspectResponse);
+            assertTokenIntrospectionResponse(JsonSerialization.readValue(introspectResponse, AccessToken.class), true, true, false);
+
+        } finally {
+            deleteProtocolMappers(protocolMappers);
+            alwaysUseLightWeightAccessToken(false);
+        }
+    }
+
+    @Test
+    public void testWithoutBasicClaim() throws Exception {
+        alwaysUseLightWeightAccessToken(true);
+        removeDefaultBasicClientScope();
+        ProtocolMappersResource protocolMappers = setProtocolMappers(true, true, false, false);
+        try {
+            oauth.clientId(TEST_CLIENT);
+            oauth.scope("address");
+
+            OAuthClient.AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), TEST_CLIENT_SECRET);
+            String accessToken = tokenResponse.getAccessToken();
+            logger.debug("access token:" + accessToken);
+            assertAccessToken(oauth.verifyToken(accessToken), true,  false,true);
+
+            oauth.clientId(RESOURCE_SERVER_CLIENT_ID);
+            String introspectResponse = oauth.introspectAccessTokenWithClientCredential(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD, accessToken);
+            logger.debug("tokenResponse:" + introspectResponse);
+            assertTokenIntrospectionResponse(JsonSerialization.readValue(introspectResponse, AccessToken.class), true, true, true);
+
+            oauth.clientId(TEST_CLIENT);
+            alwaysUseLightWeightAccessToken(false);
+            oauth.doLogout(tokenResponse.getRefreshToken(), TEST_CLIENT_SECRET);
+
+
+            authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), TEST_CLIENT_SECRET);
+            accessToken = tokenResponse.getAccessToken();
+            logger.debug("access token:" + accessToken);
+            assertAccessToken(oauth.verifyToken(accessToken), true, true,  true);
+
+            oauth.clientId(RESOURCE_SERVER_CLIENT_ID);
+            introspectResponse = oauth.introspectAccessTokenWithClientCredential(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD, accessToken);
+            logger.debug("tokenResponse:" + introspectResponse);
+            assertTokenIntrospectionResponse(JsonSerialization.readValue(introspectResponse, AccessToken.class), true, true, true);
+
+        } finally {
+            deleteProtocolMappers(protocolMappers);
+            addDefaultBasicClientScope();
+        }
+    }
+
+    @Test
+    public void clientCredentialWithoutBasicClaims() throws Exception {
+        removeDefaultBasicClientScope();
+        alwaysUseLightWeightAccessToken(true);
+        try {
+            oauth.nonce("123456");
+
+            oauth.clientId(TEST_CLIENT);
+            OAuthClient.AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest(TEST_CLIENT_SECRET);
+            String accessToken = response.getAccessToken();
+            logger.debug("accessToken:" + accessToken);
+            assertAccessToken(oauth.verifyToken(accessToken), false,  false,false);
+
+            oauth.clientId(RESOURCE_SERVER_CLIENT_ID);
+            String tokenResponse = oauth.introspectAccessTokenWithClientCredential(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD, accessToken);
+            logger.debug("tokenResponse:" + tokenResponse);
+            assertTokenIntrospectionResponse(JsonSerialization.readValue(tokenResponse, AccessToken.class), false, true, false);
+        } finally {
+            addDefaultBasicClientScope();
+            alwaysUseLightWeightAccessToken(false);
+        }
+    }
+
+    private void removeSession(final String sessionId) {
+        testingClient.testing().removeExpired(REALM_NAME);
+        try {
+            testingClient.testing().removeUserSession(REALM_NAME, sessionId);
+        } catch (NotFoundException nfe) {
+            // Ignore
         }
     }
 
@@ -259,6 +506,7 @@ public class LightWeightAccessTokenTest extends AbstractKeycloakTest {
                 Assert.assertNotNull(token.getOtherClaims().get("user-session-note"));
                 Assert.assertNotNull(token.getOtherClaims().get("test-claim"));
                 Assert.assertNotNull(token.getOtherClaims().get("group-name"));
+                Assert.assertNotNull(token.getOtherClaims().get(IDToken.SESSION_STATE));
             }
             Assert.assertNotNull(token.getAudience());
             Assert.assertNotNull(token.getAcr());
@@ -269,21 +517,22 @@ public class LightWeightAccessTokenTest extends AbstractKeycloakTest {
             Assert.assertNotNull(token.getPreferredUsername());
         } else {
             if (isAuthCodeFlow) {
-                Assert.assertTrue(token.getName() == null);
-                Assert.assertTrue(token.getGivenName() == null);
-                Assert.assertTrue(token.getFamilyName() == null);
-                Assert.assertTrue(token.getAddress() == null);
-                Assert.assertTrue(token.getEmail() == null);
-                Assert.assertTrue(token.getOtherClaims().get("user-session-note") == null);
-                Assert.assertTrue(token.getOtherClaims().get("test-claim") == null);
-                Assert.assertTrue(token.getOtherClaims().get("group-name") == null);
+                Assert.assertNull(token.getName());
+                Assert.assertNull(token.getGivenName());
+                Assert.assertNull(token.getFamilyName());
+                Assert.assertNull(token.getAddress());
+                Assert.assertNull(token.getEmail());
+                Assert.assertNull(token.getOtherClaims().get("user-session-note"));
+                Assert.assertNull(token.getOtherClaims().get("test-claim"));
+                Assert.assertNull(token.getOtherClaims().get("group-name"));
+                Assert.assertNull(token.getOtherClaims().get(IDToken.SESSION_STATE));
             }
-            Assert.assertTrue(token.getAcr() == null);
-            Assert.assertTrue(token.getAllowedOrigins() == null);
-            Assert.assertTrue(token.getRealmAccess() == null);
+            Assert.assertNull(token.getAcr());
+            Assert.assertNull(token.getAllowedOrigins());
+            Assert.assertNull(token.getRealmAccess());
             Assert.assertTrue(token.getResourceAccess().isEmpty());
-            Assert.assertTrue(token.getEmailVerified() == null);
-            Assert.assertTrue(token.getPreferredUsername() == null);
+            Assert.assertNull(token.getEmailVerified());
+            Assert.assertNull(token.getPreferredUsername());
         }
     }
 
@@ -292,16 +541,28 @@ public class LightWeightAccessTokenTest extends AbstractKeycloakTest {
         Assert.assertNotNull(token.getIat());
         Assert.assertNotNull(token.getId());
         Assert.assertNotNull(token.getType());
-        if (isAuthCodeFlow) {
-            Assert.assertNotNull(token.getSessionId());
-            Assert.assertNotNull(token.getAuth_time());
-        } else {
-            Assert.assertTrue(token.getSessionId() == null);
-            Assert.assertTrue(token.getAuth_time() == null);
-        }
         Assert.assertNotNull(token.getIssuedFor());
         Assert.assertNotNull(token.getScope());
         Assert.assertNotNull(token.getIssuer());
+        if (isAuthCodeFlow) {
+            Assert.assertNotNull(token.getSessionId());
+        } else {
+            Assert.assertNull(token.getSessionId());
+        }
+    }
+
+    private void assertBasicClaims(AccessToken token, boolean isAuthCodeFlow, boolean missing) {
+        if (missing) {
+            Assert.assertNull(token.getAuth_time());
+            Assert.assertNull(token.getSubject());
+        } else {
+            Assert.assertNotNull(token.getSubject());
+            if (isAuthCodeFlow) {
+                Assert.assertNotNull(token.getAuth_time());
+            } else {
+                Assert.assertNull(token.getAuth_time());
+            }
+        }
     }
 
     private void assertIntrospectClaims(AccessToken token) {
@@ -310,51 +571,61 @@ public class LightWeightAccessTokenTest extends AbstractKeycloakTest {
         Assert.assertNotNull(token.getOtherClaims().get("token_type"));
     }
 
-    private void assertNonce(AccessToken token, boolean isAuthCodeFlow, boolean exchangeToken) {
-        if (isAuthCodeFlow && !exchangeToken) {
-            Assert.assertNotNull(token.getNonce());
-        } else {
-            Assert.assertTrue(token.getNonce() == null);
-        }
-    }
-
-    private void assertAccessToken(AccessToken token, boolean isAuthCodeFlow, boolean isAddToAccessToken) {
-        assertNonce(token, isAuthCodeFlow, false);
+    private void assertAccessToken(AccessToken token, boolean isAuthCodeFlow, boolean isAddToAccessToken, boolean missingBasicClaims) {
+        Assert.assertNull(token.getNonce());
         assertMapperClaims(token, isAddToAccessToken, isAuthCodeFlow);
         assertInitClaims(token, isAuthCodeFlow);
+        assertBasicClaims(token, isAuthCodeFlow, missingBasicClaims);
     }
 
-    private void assertTokenIntrospectionResponse(AccessToken token, boolean isAuthCodeFlow) {
-        assertTokenIntrospectionResponse(token, isAuthCodeFlow, true, false);
-    }
-
-    private void assertTokenIntrospectionResponse(AccessToken token, boolean isAuthCodeFlow, boolean isAddToIntrospect, boolean exchangeToken) {
-        assertNonce(token, isAuthCodeFlow, exchangeToken);
+    private void assertTokenIntrospectionResponse(AccessToken token, boolean isAuthCodeFlow, boolean isAddToIntrospect, boolean missingBasicClaims) {
+        Assert.assertNull(token.getNonce());
         assertMapperClaims(token, isAddToIntrospect, isAuthCodeFlow);
         assertInitClaims(token, isAuthCodeFlow);
         assertIntrospectClaims(token);
+        assertBasicClaims(token, isAuthCodeFlow, missingBasicClaims);
     }
 
     protected RealmResource testRealm() {
-        return adminClient.realm("test");
+        return adminClient.realm(REALM_NAME);
     }
 
-    private void setScopeProtocolMappers(boolean isIncludeAccessToken, boolean isIncludeIntrospection) {
-        setScopeProtocolMapper(ACR_SCOPE, ACR, isIncludeAccessToken, isIncludeIntrospection);
-        setScopeProtocolMapper(PROFILE_CLAIM, FULL_NAME, isIncludeAccessToken, isIncludeIntrospection);
-        setScopeProtocolMapper(EMAIL, EMAIL, isIncludeAccessToken, isIncludeIntrospection);
-        setScopeProtocolMapper(EMAIL, EMAIL_VERIFIED, isIncludeAccessToken, isIncludeIntrospection);
-        setScopeProtocolMapper(PROFILE_CLAIM, GIVEN_NAME, isIncludeAccessToken, isIncludeIntrospection);
-        setScopeProtocolMapper(PROFILE_CLAIM, FAMILY_NAME, isIncludeAccessToken, isIncludeIntrospection);
-        setScopeProtocolMapper(PROFILE_CLAIM, USERNAME, isIncludeAccessToken, isIncludeIntrospection);
-        setScopeProtocolMapper(WEB_ORIGINS_SCOPE, ALLOWED_WEB_ORIGINS, isIncludeAccessToken, isIncludeIntrospection);
-        setScopeProtocolMapper(ROLES_SCOPE, REALM_ROLES, isIncludeAccessToken, isIncludeIntrospection);
-        setScopeProtocolMapper(ROLES_SCOPE, CLIENT_ROLES, isIncludeAccessToken, isIncludeIntrospection);
-        setScopeProtocolMapper(ROLES_SCOPE, AUDIENCE_RESOLVE, isIncludeAccessToken, isIncludeIntrospection);
-        setScopeProtocolMapper(ADDRESS, ADDRESS, isIncludeAccessToken, isIncludeIntrospection);
+    public void addDefaultBasicClientScope() {
+        testRealm().getDefaultDefaultClientScopes()
+                .stream()
+                .filter(scope-> scope.getName().equals(OIDCLoginProtocolFactory.BASIC_SCOPE))
+                .findFirst()
+                .ifPresent(scope-> {
+                    ApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), TEST_CLIENT).addDefaultClientScope(scope.getId());
+                });
     }
 
-    private void setScopeProtocolMapper(String scopeName, String mapperName, boolean isIncludeAccessToken, boolean isIncludeIntrospection) {
+    public void removeDefaultBasicClientScope() {
+        testRealm().getDefaultDefaultClientScopes()
+                .stream()
+                .filter(scope-> scope.getName().equals(OIDCLoginProtocolFactory.BASIC_SCOPE))
+                .findFirst()
+                .ifPresent(scope-> {
+                    ApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), TEST_CLIENT).removeDefaultClientScope(scope.getId());
+                });
+    }
+
+    private void setScopeProtocolMappers(boolean isIncludeAccessToken, boolean isIncludeIntrospection, boolean isIncludeLightweightAccessToken) {
+        setScopeProtocolMapper(ACR_SCOPE, ACR, isIncludeAccessToken, isIncludeIntrospection, isIncludeLightweightAccessToken);
+        setScopeProtocolMapper(PROFILE_CLAIM, FULL_NAME, isIncludeAccessToken, isIncludeIntrospection, isIncludeLightweightAccessToken);
+        setScopeProtocolMapper(EMAIL, EMAIL, isIncludeAccessToken, isIncludeIntrospection, isIncludeLightweightAccessToken);
+        setScopeProtocolMapper(EMAIL, EMAIL_VERIFIED, isIncludeAccessToken, isIncludeIntrospection, isIncludeLightweightAccessToken);
+        setScopeProtocolMapper(PROFILE_CLAIM, GIVEN_NAME, isIncludeAccessToken, isIncludeIntrospection, isIncludeLightweightAccessToken);
+        setScopeProtocolMapper(PROFILE_CLAIM, FAMILY_NAME, isIncludeAccessToken, isIncludeIntrospection, isIncludeLightweightAccessToken);
+        setScopeProtocolMapper(PROFILE_CLAIM, USERNAME, isIncludeAccessToken, isIncludeIntrospection, isIncludeLightweightAccessToken);
+        setScopeProtocolMapper(WEB_ORIGINS_SCOPE, ALLOWED_WEB_ORIGINS, isIncludeAccessToken, isIncludeIntrospection, isIncludeLightweightAccessToken);
+        setScopeProtocolMapper(ROLES_SCOPE, REALM_ROLES, isIncludeAccessToken, isIncludeIntrospection, isIncludeLightweightAccessToken);
+        setScopeProtocolMapper(ROLES_SCOPE, CLIENT_ROLES, isIncludeAccessToken, isIncludeIntrospection, isIncludeLightweightAccessToken);
+        setScopeProtocolMapper(ROLES_SCOPE, AUDIENCE_RESOLVE, isIncludeAccessToken, isIncludeIntrospection, isIncludeLightweightAccessToken);
+        setScopeProtocolMapper(ADDRESS, ADDRESS, isIncludeAccessToken, isIncludeIntrospection, isIncludeLightweightAccessToken);
+    }
+
+    private void setScopeProtocolMapper(String scopeName, String mapperName, boolean isIncludeAccessToken, boolean isIncludeIntrospection, boolean isIncludeLightweightAccessToken) {
         ClientScopeResource scope = ApiUtil.findClientScopeByName(testRealm(), scopeName);
         ProtocolMapperRepresentation protocolMapper = ApiUtil.findProtocolMapperByName(scope, mapperName);
         Map<String, String> config = protocolMapper.getConfig();
@@ -368,30 +639,48 @@ public class LightWeightAccessTokenTest extends AbstractKeycloakTest {
         } else {
             config.put(INCLUDE_IN_INTROSPECTION, "false");
         }
+        if (isIncludeLightweightAccessToken) {
+            config.put(INCLUDE_IN_LIGHTWEIGHT_ACCESS_TOKEN, "true");
+        } else {
+            config.put(INCLUDE_IN_LIGHTWEIGHT_ACCESS_TOKEN, "false");
+        }
         scope.getProtocolMappers().update(protocolMapper.getId(), protocolMapper);
     }
 
     private ProtocolMappersResource setProtocolMappers(boolean isIncludeAccessToken, boolean isIncludeIntrospection, boolean setPairWise) {
-        setScopeProtocolMappers(isIncludeAccessToken, isIncludeIntrospection);
+        setScopeProtocolMappers(isIncludeAccessToken, isIncludeIntrospection, false);
         List<ProtocolMapperRepresentation> protocolMapperList = new ArrayList<>();
-        setExistingProtocolMappers(protocolMapperList, isIncludeAccessToken, isIncludeIntrospection, setPairWise);
-        ProtocolMappersResource protocolMappers = ApiUtil.findClientResourceByClientId(adminClient.realm("test"), "test-app").getProtocolMappers();
+        setExistingProtocolMappers(protocolMapperList, isIncludeAccessToken, isIncludeIntrospection, false, setPairWise);
+        ProtocolMappersResource protocolMappers = ApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), TEST_CLIENT).getProtocolMappers();
         protocolMappers.createMapper(protocolMapperList);
         return protocolMappers;
     }
 
-    private void setExistingProtocolMappers(List<ProtocolMapperRepresentation> protocolMapperList, boolean isIncludeAccessToken, boolean isIncludeIntrospection, boolean setPairWise) {
+    private ProtocolMappersResource setProtocolMappers(boolean isIncludeAccessToken, boolean isIncludeIntrospection, boolean isIncludeLightweightAccessToken, boolean setPairWise) {
+        setScopeProtocolMappers(isIncludeAccessToken, isIncludeIntrospection, isIncludeLightweightAccessToken);
+        List<ProtocolMapperRepresentation> protocolMapperList = new ArrayList<>();
+        setExistingProtocolMappers(protocolMapperList, isIncludeAccessToken, isIncludeIntrospection, isIncludeLightweightAccessToken, setPairWise);
+        ProtocolMappersResource protocolMappers = ApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), TEST_CLIENT).getProtocolMappers();
+        protocolMappers.createMapper(protocolMapperList);
+        return protocolMappers;
+    }
+
+    private void setExistingProtocolMappers(List<ProtocolMapperRepresentation> protocolMapperList, boolean isIncludeAccessToken, boolean isIncludeIntrospection, boolean isIncludeLightweightAccessToken, boolean setPairWise) {
         Map<String, String> config = new HashMap<>();
         if (isIncludeAccessToken) {
             config.put(INCLUDE_IN_ACCESS_TOKEN, "true");
         } else {
             config.put(INCLUDE_IN_ACCESS_TOKEN, "false");
         }
-
         if (isIncludeIntrospection) {
             config.put(INCLUDE_IN_INTROSPECTION, "true");
         } else {
             config.put(INCLUDE_IN_INTROSPECTION, "false");
+        }
+        if (isIncludeLightweightAccessToken) {
+            config.put(INCLUDE_IN_LIGHTWEIGHT_ACCESS_TOKEN, "true");
+        } else {
+            config.put(INCLUDE_IN_LIGHTWEIGHT_ACCESS_TOKEN, "false");
         }
 
         ProtocolMapperRepresentation audienceProtocolMapper = createClaimMapper("audience", AudienceProtocolMapper.PROVIDER_ID, new HashMap<>(config) {{
@@ -427,6 +716,8 @@ public class LightWeightAccessTokenTest extends AbstractKeycloakTest {
             }});
             protocolMapperList.add(pairwiseSubMapper);
         }
+        ProtocolMapperRepresentation sessionStateMapper = createClaimMapper("session-state-mapper", SessionStateMapper.PROVIDER_ID, config);
+        protocolMapperList.add(sessionStateMapper);
     }
 
     private static ProtocolMapperRepresentation createClaimMapper(String name, String providerId, Map<String, String> config) {
@@ -439,7 +730,7 @@ public class LightWeightAccessTokenTest extends AbstractKeycloakTest {
     }
 
     private void deleteProtocolMappers(ProtocolMappersResource protocolMappers) {
-        List<String> mapperNames = new ArrayList<>(Arrays.asList("reference", "audience", "role-name", "group-member", "hardcoded-claim", "hardcoded-role", "user-session-note", "pairwise-sub-mapper"));
+        List<String> mapperNames = new ArrayList<>(Arrays.asList("reference", "audience", "role-name", "group-member", "hardcoded-claim", "hardcoded-role", "user-session-note", "pairwise-sub-mapper", "session-state-mapper"));
         List<ProtocolMapperRepresentation> mappers = new ArrayList<>();
         for (String mapperName : mapperNames) {
             mappers.add(ProtocolMapperUtil.getMapperByNameAndProtocol(protocolMappers, OIDCLoginProtocol.LOGIN_PROTOCOL, mapperName));
@@ -468,5 +759,29 @@ public class LightWeightAccessTokenTest extends AbstractKeycloakTest {
             this.userSessionId = userSessionId;
             this.tokenResponse = tokenResponse;
         }
+    }
+
+    private void setUseLightweightAccessTokenExecutor() throws Exception {
+        // register profiles
+        String json = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile(
+                (new ClientPoliciesUtil.ClientProfileBuilder()).createProfile(PROFILE_NAME, "Use Lightweight Access Token")
+                        .addExecutor(UseLightweightAccessTokenExecutorFactory.PROVIDER_ID, null)
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
+                (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Use Lightweight Access Token Policy", Boolean.TRUE)
+                        .addCondition(AnyClientConditionFactory.PROVIDER_ID,
+                                createAnyClientConditionConfig())
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+    }
+
+    private void alwaysUseLightWeightAccessToken(boolean enable){
+        ClientManager.realm(adminClient.realm(REALM_NAME)).clientId(TEST_CLIENT).alwaysUseLightweightAccessToken(enable);
     }
 }

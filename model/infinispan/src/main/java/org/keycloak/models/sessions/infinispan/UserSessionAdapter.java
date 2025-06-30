@@ -17,13 +17,15 @@
 
 package org.keycloak.models.sessions.infinispan;
 
+import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.sessions.infinispan.changes.InfinispanChangelogBasedTransaction;
+import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.sessions.infinispan.changes.SessionsChangelogBasedTransaction;
 import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshChecker;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.changes.Tasks;
@@ -43,20 +45,18 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshListener.IGNORE_REMOTE_CACHE_UPDATE;
-
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class UserSessionAdapter implements UserSessionModel {
+public class UserSessionAdapter<T extends SessionRefreshStore & UserSessionProvider> implements UserSessionModel {
 
     private final KeycloakSession session;
 
-    private final InfinispanUserSessionProvider provider;
+    private final T provider;
 
-    private final InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx;
+    private final SessionsChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx;
 
-    private final InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx;
+    private final SessionsChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx;
 
     private final RealmModel realm;
 
@@ -68,9 +68,9 @@ public class UserSessionAdapter implements UserSessionModel {
 
     private SessionPersistenceState persistenceState;
 
-    public UserSessionAdapter(KeycloakSession session, UserModel user, InfinispanUserSessionProvider provider,
-                              InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx,
-                              InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx,
+    public UserSessionAdapter(KeycloakSession session, UserModel user, T provider,
+                              SessionsChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx,
+                              SessionsChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx,
                               RealmModel realm, UserSessionEntity entity, boolean offline) {
         this.session = session;
         this.user = user;
@@ -94,7 +94,7 @@ public class UserSessionAdapter implements UserSessionModel {
                 // Check if client still exists
                 ClientModel client = realm.getClientById(key);
                 if (client != null) {
-                    final AuthenticatedClientSessionAdapter clientSession = provider.getClientSession(this, client, value.toString(), offline);
+                    final AuthenticatedClientSessionModel clientSession = provider.getClientSession(this, client, value.toString(), offline);
                     if (clientSession != null) {
                         result.put(key, clientSession);
                     }
@@ -145,6 +145,11 @@ public class UserSessionAdapter implements UserSessionModel {
                 public void runUpdate(UserSessionEntity entity) {
                     removedClientUUIDS.forEach(entity.getAuthenticatedClientSessions()::remove);
                 }
+
+                @Override
+                public boolean isOffline() {
+                    return offline;
+                }
             };
             update(task);
         }
@@ -156,9 +161,10 @@ public class UserSessionAdapter implements UserSessionModel {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
-        clientSessionUuids.forEach(clientSessionId -> this.clientSessionUpdateTx.addTask(clientSessionId, Tasks.removeSync()));
+        clientSessionUuids.forEach(clientSessionId -> this.clientSessionUpdateTx.addTask(clientSessionId, Tasks.removeSync(offline)));
     }
 
+    @Override
     public String getId() {
         return entity.getId();
     }
@@ -178,6 +184,7 @@ public class UserSessionAdapter implements UserSessionModel {
         return entity.getBrokerUserId();
     }
 
+    @Override
     public UserModel getUser() {
         return this.user;
     }
@@ -193,6 +200,7 @@ public class UserSessionAdapter implements UserSessionModel {
         }
     }
 
+    @Override
     public String getIpAddress() {
         return entity.getIpAddress();
     }
@@ -207,16 +215,23 @@ public class UserSessionAdapter implements UserSessionModel {
         return entity.isRememberMe();
     }
 
+    @Override
     public int getStarted() {
         return entity.getStarted();
     }
 
+    @Override
     public int getLastSessionRefresh() {
         return entity.getLastSessionRefresh();
     }
 
+    @Override
     public void setLastSessionRefresh(int lastSessionRefresh) {
-        if (offline) {
+        if (lastSessionRefresh <= entity.getLastSessionRefresh()) {
+            return;
+        }
+
+        if (!Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS) && offline) {
             // Received the message from the other DC that we should update the lastSessionRefresh in local cluster. Don't update DB in that case.
             // The other DC already did.
             Boolean ignoreRemoteCacheUpdate = (Boolean) session.getAttribute(CrossDCLastSessionRefreshListener.IGNORE_REMOTE_CACHE_UPDATE);
@@ -229,6 +244,9 @@ public class UserSessionAdapter implements UserSessionModel {
 
             @Override
             public void runUpdate(UserSessionEntity entity) {
+                if (entity.getLastSessionRefresh() >= lastSessionRefresh) {
+                    return;
+                }
                 entity.setLastSessionRefresh(lastSessionRefresh);
             }
 
@@ -236,6 +254,11 @@ public class UserSessionAdapter implements UserSessionModel {
             public CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<UserSessionEntity> sessionWrapper) {
                 return new CrossDCLastSessionRefreshChecker(provider.getLastSessionRefreshStore(), provider.getOfflineLastSessionRefreshStore())
                         .shouldSaveUserSessionToRemoteCache(UserSessionAdapter.this.session, UserSessionAdapter.this.realm, sessionWrapper, offline, lastSessionRefresh);
+            }
+
+            @Override
+            public boolean isOffline() {
+                return offline;
             }
 
             @Override
@@ -272,6 +295,10 @@ public class UserSessionAdapter implements UserSessionModel {
                 entity.getNotes().put(name, value);
             }
 
+            @Override
+            public boolean isOffline() {
+                return offline;
+            }
         };
 
         update(task);
@@ -286,6 +313,10 @@ public class UserSessionAdapter implements UserSessionModel {
                 entity.getNotes().remove(name);
             }
 
+            @Override
+            public boolean isOffline() {
+                return offline;
+            }
         };
 
         update(task);
@@ -304,6 +335,11 @@ public class UserSessionAdapter implements UserSessionModel {
     @Override
     public void setState(State state) {
         UserSessionUpdateTask task = new UserSessionUpdateTask() {
+
+            @Override
+            public boolean isOffline() {
+                return offline;
+            }
 
             @Override
             public void runUpdate(UserSessionEntity entity) {
@@ -329,8 +365,13 @@ public class UserSessionAdapter implements UserSessionModel {
         UserSessionUpdateTask task = new UserSessionUpdateTask() {
 
             @Override
+            public boolean isOffline() {
+                return offline;
+            }
+
+            @Override
             public void runUpdate(UserSessionEntity entity) {
-                provider.updateSessionEntity(entity, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId);
+                InfinispanUserSessionProvider.updateSessionEntity(entity, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId);
 
                 entity.setState(null);
                 entity.getNotes().clear();
@@ -360,7 +401,8 @@ public class UserSessionAdapter implements UserSessionModel {
         return getId().hashCode();
     }
 
-    UserSessionEntity getEntity() {
+    // TODO: This should not be public
+    public UserSessionEntity getEntity() {
         return entity;
     }
 

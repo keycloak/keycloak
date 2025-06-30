@@ -1,16 +1,25 @@
 package org.keycloak.crypto.fips;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.math.BigInteger;
-
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequenceGenerator;
 import org.bouncycastle.asn1.x9.X9IntegerConverter;
+import org.bouncycastle.jcajce.spec.ECDomainParameterSpec;
+import org.bouncycastle.math.ec.ECPoint;
 import org.keycloak.common.crypto.ECDSACryptoProvider;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.interfaces.ECPrivateKey;
+import java.security.interfaces.ECPublicKey;
+import java.security.spec.ECParameterSpec;
+import java.security.spec.ECPublicKeySpec;
+import java.security.spec.InvalidKeySpecException;
 
 public class BCFIPSECDSACryptoProvider implements ECDSACryptoProvider {
 
@@ -60,5 +69,27 @@ public class BCFIPSECDSACryptoProvider implements ECDSACryptoProvider {
         return concatenatedSignatureValue;
     }
 
-    
+    @Override
+    public ECPublicKey getPublicFromPrivate(ECPrivateKey ecPrivateKey) {
+        try {
+            ECParameterSpec parameterSpec = ecPrivateKey.getParams();
+            ECDomainParameterSpec domainParameterSpec = new ECDomainParameterSpec(parameterSpec);
+
+            ECPoint q = domainParameterSpec.getDomainParameters().getG().multiply(ecPrivateKey.getS()).normalize();
+            ECPublicKeySpec ecPublicKeySpec = new ECPublicKeySpec(
+                    new java.security.spec.ECPoint(
+                            q.getAffineXCoord().toBigInteger(),
+                            q.getAffineYCoord().toBigInteger()),
+                    domainParameterSpec);
+
+            KeyFactory keyFactory = KeyFactory.getInstance("EC");
+            return (ECPublicKey) keyFactory.generatePublic(ecPublicKeySpec);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("Key algorithm not supported.", e);
+        } catch (InvalidKeySpecException e) {
+            throw new RuntimeException("Received an invalid key spec.", e);
+        }
+    }
+
+
 }

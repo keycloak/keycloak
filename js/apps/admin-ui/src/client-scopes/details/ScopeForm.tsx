@@ -1,30 +1,23 @@
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
-import {
-  ActionGroup,
-  Button,
-  FormGroup,
-  Select,
-  SelectOption,
-  SelectVariant,
-  Switch,
-  ValidatedOptions,
-} from "@patternfly/react-core";
-import { useEffect, useState } from "react";
-import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
+import { ActionGroup, Button } from "@patternfly/react-core";
+import { useEffect } from "react";
+import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { HelpItem, TextControl } from "ui-shared";
+import {
+  FormSubmitButton,
+  SelectControl,
+  TextAreaControl,
+  TextControl,
+} from "@keycloak/keycloak-ui-shared";
 
 import { getProtocolName } from "../../clients/utils";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
 import {
   ClientScopeDefaultOptionalType,
   allClientScopeTypes,
-  clientScopeTypesSelectOptions,
 } from "../../components/client-scope/ClientScopeTypes";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useLoginProviders } from "../../context/server-info/ServerInfoProvider";
 import { convertAttributeNameToForm, convertToFormValues } from "../../util";
@@ -39,20 +32,12 @@ type ScopeFormProps = {
 export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const { t } = useTranslation();
   const form = useForm<ClientScopeDefaultOptionalType>({ mode: "onChange" });
-  const {
-    register,
-    control,
-    handleSubmit,
-    setValue,
-    formState: { errors, isDirty, isValid },
-  } = form;
+  const { control, handleSubmit, setValue, formState } = form;
   const { realm } = useRealm();
 
   const providers = useLoginProviders();
   const isFeatureEnabled = useIsFeatureEnabled();
   const isDynamicScopesEnabled = isFeatureEnabled(Feature.DynamicScopes);
-  const [open, isOpen] = useState(false);
-  const [openType, setOpenType] = useState(false);
 
   const displayOnConsentScreen: string = useWatch({
     control,
@@ -87,270 +72,132 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
       onSubmit={handleSubmit(save)}
       isHorizontal
     >
-      <FormGroup
-        label={t("name")}
-        labelIcon={
-          <HelpItem helpText={t("scopeNameHelp")} fieldLabelId="name" />
-        }
-        fieldId="kc-name"
-        validated={
-          errors.name ? ValidatedOptions.error : ValidatedOptions.default
-        }
-        helperTextInvalid={t("required")}
-        isRequired
-      >
-        <KeycloakTextInput
-          id="kc-name"
-          validated={
-            errors.name ? ValidatedOptions.error : ValidatedOptions.default
-          }
-          isRequired
-          {...register("name", {
-            required: true,
-            onChange: (e) => {
-              if (isDynamicScopesEnabled) {
-                setDynamicRegex(e.target.value, true);
-              }
+      <FormProvider {...form}>
+        <TextControl
+          name="name"
+          label={t("name")}
+          labelIcon={t("scopeNameHelp")}
+          rules={{
+            required: {
+              value: true,
+              message: t("required"),
             },
-          })}
+            onChange: (e) => {
+              if (isDynamicScopesEnabled)
+                setDynamicRegex(e.target.validated, true);
+            },
+          }}
         />
-      </FormGroup>
-      {isDynamicScopesEnabled && (
-        <FormProvider {...form}>
-          <DefaultSwitchControl
-            name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-              "attributes.is.dynamic.scope",
-            )}
-            label={t("dynamicScope")}
-            labelIcon={t("dynamicScopeHelp")}
-            onChange={(value) => {
-              setDynamicRegex(value ? form.getValues("name") || "" : "", value);
-            }}
-            stringify
-          />
-          {dynamicScope === "true" && (
-            <TextControl
+        {isDynamicScopesEnabled && (
+          <>
+            <DefaultSwitchControl
               name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-                "attributes.dynamic.scope.regexp",
+                "attributes.is.dynamic.scope",
               )}
-              label={t("dynamicScopeFormat")}
-              labelIcon={t("dynamicScopeFormatHelp")}
-              isDisabled
-            />
-          )}
-        </FormProvider>
-      )}
-      <FormGroup
-        label={t("description")}
-        labelIcon={
-          <HelpItem
-            helpText={t("scopeDescriptionHelp")}
-            fieldLabelId="description"
-          />
-        }
-        fieldId="kc-description"
-        validated={
-          errors.description ? ValidatedOptions.error : ValidatedOptions.default
-        }
-        helperTextInvalid={t("maxLength", { length: 255 })}
-      >
-        <KeycloakTextInput
-          id="kc-description"
-          validated={
-            errors.description
-              ? ValidatedOptions.error
-              : ValidatedOptions.default
-          }
-          {...register("description", {
-            maxLength: 255,
-          })}
-        />
-      </FormGroup>
-      <FormGroup
-        label={t("type")}
-        labelIcon={
-          <HelpItem helpText={t("scopeTypeHelp")} fieldLabelId="type" />
-        }
-        fieldId="kc-type"
-      >
-        <Controller
-          name="type"
-          defaultValue={allClientScopeTypes[0]}
-          control={control}
-          render={({ field }) => (
-            <Select
-              toggleId="kc-type"
-              variant={SelectVariant.single}
-              isOpen={openType}
-              selections={field.value}
-              onToggle={setOpenType}
-              onSelect={(_, value) => {
-                field.onChange(value);
-                setOpenType(false);
+              label={t("dynamicScope")}
+              labelIcon={t("dynamicScopeHelp")}
+              onChange={(event, value) => {
+                setDynamicRegex(
+                  value ? form.getValues("name") || "" : "",
+                  value,
+                );
               }}
-            >
-              {clientScopeTypesSelectOptions(t, allClientScopeTypes)}
-            </Select>
-          )}
-        />
-      </FormGroup>
-      {!clientScope && (
-        <FormGroup
-          label={t("protocol")}
-          labelIcon={
-            <HelpItem helpText={t("protocolHelp")} fieldLabelId="protocol" />
-          }
-          fieldId="kc-protocol"
-        >
-          <Controller
-            name="protocol"
-            defaultValue={providers[0]}
-            control={control}
-            render={({ field }) => (
-              <Select
-                toggleId="kc-protocol"
-                onToggle={isOpen}
-                onSelect={(_, value) => {
-                  field.onChange(value);
-                  isOpen(false);
-                }}
-                selections={field.value}
-                variant={SelectVariant.single}
-                isOpen={open}
-              >
-                {providers.map((option) => (
-                  <SelectOption
-                    selected={option === field.value}
-                    key={option}
-                    value={option}
-                    data-testid={`option-${option}`}
-                  >
-                    {getProtocolName(t, option)}
-                  </SelectOption>
-                ))}
-              </Select>
+              stringify
+            />
+            {dynamicScope === "true" && (
+              <TextControl
+                name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+                  "attributes.dynamic.scope.regexp",
+                )}
+                label={t("dynamicScopeFormat")}
+                labelIcon={t("dynamicScopeFormatHelp")}
+                isDisabled
+              />
             )}
+          </>
+        )}
+        <TextControl
+          name="description"
+          label={t("description")}
+          labelIcon={t("scopeDescriptionHelp")}
+          rules={{
+            maxLength: {
+              value: 255,
+              message: t("maxLength"),
+            },
+          }}
+        />
+        <SelectControl
+          id="kc-type"
+          name="type"
+          label={t("type")}
+          labelIcon={t("scopeTypeHelp")}
+          controller={{ defaultValue: allClientScopeTypes[0] }}
+          options={allClientScopeTypes.map((key) => ({
+            key,
+            value: t(`clientScopeType.${key}`),
+          }))}
+        />
+        {!clientScope && (
+          <SelectControl
+            id="kc-protocol"
+            name="protocol"
+            label={t("protocol")}
+            labelIcon={t("protocolHelp")}
+            controller={{ defaultValue: providers[0] }}
+            options={providers.map((option) => ({
+              key: option,
+              value: getProtocolName(t, option),
+            }))}
           />
-        </FormGroup>
-      )}
-      <FormGroup
-        hasNoPaddingTop
-        label={t("displayOnConsentScreen")}
-        labelIcon={
-          <HelpItem
-            helpText={t("displayOnConsentScreenHelp")}
-            fieldLabelId="displayOnConsentScreen"
-          />
-        }
-        fieldId="kc-display-on-consent-screen"
-      >
-        <Controller
+        )}
+        <DefaultSwitchControl
           name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
             "attributes.display.on.consent.screen",
           )}
-          control={control}
           defaultValue={displayOnConsentScreen}
-          render={({ field }) => (
-            <Switch
-              id="kc-display-on-consent-screen"
-              label={t("on")}
-              labelOff={t("off")}
-              isChecked={field.value === "true"}
-              onChange={(value) => field.onChange(value.toString())}
-            />
-          )}
+          label={t("displayOnConsentScreen")}
+          labelIcon={t("displayOnConsentScreenHelp")}
+          stringify
         />
-      </FormGroup>
-      {displayOnConsentScreen === "true" && (
-        <FormGroup
-          label={t("consentScreenText")}
-          labelIcon={
-            <HelpItem
-              helpText={t("consentScreenTextHelp")}
-              fieldLabelId="consentScreenText"
-            />
-          }
-          fieldId="kc-consent-screen-text"
-        >
-          <KeycloakTextArea
-            id="kc-consent-screen-text"
-            {...register(
-              convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-                "attributes.consent.screen.text",
-              ),
+        {displayOnConsentScreen === "true" && (
+          <TextAreaControl
+            name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+              "attributes.consent.screen.text",
             )}
+            label={t("consentScreenText")}
+            labelIcon={t("consentScreenTextHelp")}
           />
-        </FormGroup>
-      )}
-      <FormGroup
-        hasNoPaddingTop
-        label={t("includeInTokenScope")}
-        labelIcon={
-          <HelpItem
-            helpText={t("includeInTokenScopeHelp")}
-            fieldLabelId="includeInTokenScope"
-          />
-        }
-        fieldId="kc-include-in-token-scope"
-      >
-        <Controller
+        )}
+        <DefaultSwitchControl
           name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
             "attributes.include.in.token.scope",
           )}
-          control={control}
-          defaultValue="true"
-          render={({ field }) => (
-            <Switch
-              id="kc-include-in-token-scope"
-              label={t("on")}
-              labelOff={t("off")}
-              isChecked={field.value === "true"}
-              onChange={(value) => field.onChange(value.toString())}
-            />
-          )}
+          label={t("includeInTokenScope")}
+          labelIcon={t("includeInTokenScopeHelp")}
+          stringify
         />
-      </FormGroup>
-      <FormGroup
-        label={t("guiOrder")}
-        labelIcon={
-          <HelpItem helpText={t("guiOrderHelp")} fieldLabelId="guiOrder" />
-        }
-        fieldId="kc-gui-order"
-      >
-        <Controller
+        <TextControl
           name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
             "attributes.gui.order",
           )}
-          defaultValue=""
-          control={control}
-          render={({ field }) => (
-            <KeycloakTextInput
-              id="kc-gui-order"
-              type="number"
-              value={field.value}
-              min={0}
-              onChange={field.onChange}
-            />
-          )}
+          label={t("guiOrder")}
+          labelIcon={t("guiOrderHelp")}
+          type="number"
+          min={0}
         />
-      </FormGroup>
-      <ActionGroup>
-        <Button
-          variant="primary"
-          type="submit"
-          isDisabled={!isDirty || !isValid}
-        >
-          {t("save")}
-        </Button>
-        <Button
-          variant="link"
-          component={(props) => (
-            <Link {...props} to={toClientScopes({ realm })}></Link>
-          )}
-        >
-          {t("cancel")}
-        </Button>
-      </ActionGroup>
+        <ActionGroup>
+          <FormSubmitButton formState={formState}>{t("save")}</FormSubmitButton>
+          <Button
+            variant="link"
+            component={(props) => (
+              <Link {...props} to={toClientScopes({ realm })}></Link>
+            )}
+          >
+            {t("cancel")}
+          </Button>
+        </ActionGroup>
+      </FormProvider>
     </FormAccess>
   );
 };

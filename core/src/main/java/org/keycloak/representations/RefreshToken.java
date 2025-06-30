@@ -43,7 +43,7 @@ public class RefreshToken extends AccessToken {
         this.issuer = token.issuer;
         this.subject = token.subject;
         this.issuedFor = token.issuedFor;
-        this.sessionState = token.sessionState;
+        this.sessionId = token.sessionId;
         this.nonce = token.nonce;
         this.audience = new String[] { token.issuer };
         this.scope = token.scope;
@@ -52,5 +52,12 @@ public class RefreshToken extends AccessToken {
     @Override
     public TokenCategory getCategory() {
         return TokenCategory.INTERNAL;
+    }
+
+    @Override
+    public String getSessionId() {
+        String sessionId = super.getSessionId();
+        // Fallback as offline tokens created in Keycloak 14 or earlier have only the "session_state" claim, but not "sid"
+        return sessionId != null ? sessionId : (String) getOtherClaims().get(IDToken.SESSION_STATE);
     }
 }

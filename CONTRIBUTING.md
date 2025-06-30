@@ -93,6 +93,20 @@ our automatic merging process.
 Please, also provide a good description [commit message, with a link to the issue](#commit-messages-and-issue-linking).
 We also require that the commit message includes a link to the issue ([linking a pull request to an issue](https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue)).
 
+### Developer's Certificate of Origin
+
+Any contributions to Keycloak must only contain code that can legally be contributed to Keycloak, and which the Keycloak
+project can distribute under its license.
+
+Prior to contributing to Keycloak please read the [Developer's Certificate of Origin](https://developercertificate.org/)
+and sign-off all commits with the `--signoff` option provided by `git commit`. For example:
+
+```
+git commit --signoff --message "This is the commit message"
+```
+
+This option adds a `Signed-off-by` trailer at the end of the commit log message.
+
 ### Commit messages and issue linking
 
 The format for a commit message should look like:

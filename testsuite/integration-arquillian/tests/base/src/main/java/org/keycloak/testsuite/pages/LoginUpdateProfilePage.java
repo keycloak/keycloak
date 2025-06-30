@@ -20,10 +20,15 @@ package org.keycloak.testsuite.pages;
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
 import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.util.UIUtils;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -62,6 +67,10 @@ public class LoginUpdateProfilePage extends AbstractPage {
 
     public void update(String firstName, String lastName, String email) {
         prepareUpdate().firstName(firstName).lastName(lastName).email(email).submit();
+    }
+
+    public void update(Map<String, String> attributes) {
+        prepareUpdate().otherProfileAttribute(attributes).submit();
     }
 
     public Update prepareUpdate() {
@@ -111,6 +120,16 @@ public class LoginUpdateProfilePage extends AbstractPage {
     public String getLabelForField(String fieldId) {
         return driver.findElement(By.cssSelector("label[for="+fieldId+"]")).getText();
     }
+
+    public WebElement getElementById(String fieldId) {
+        try {
+            By id = By.id(fieldId);
+            WaitUtils.waitUntilElement(id);
+            return driver.findElement(id);
+        } catch (NoSuchElementException | TimeoutException ignore) {
+            return null;
+        }
+    }
     
     public boolean isDepartmentPresent() {
         try {
@@ -134,12 +153,48 @@ public class LoginUpdateProfilePage extends AbstractPage {
         }
     }
 
+    public void setAttribute(String elementId, String value) {
+        WebElement element = getElementById(elementId);
+
+        if (element != null) {
+            element.clear();
+            element.sendKeys(value);
+        }
+    }
+
+    public void clickAddAttributeValue(String elementId) {
+        WebElement element = getElementById("kc-add-" + elementId);
+
+        if (element != null) {
+            element.click();
+        }
+    }
+
+    public void clickRemoveAttributeValue(String elementId) {
+        WebElement element = getElementById("kc-remove-" + elementId);
+
+        if (element != null) {
+            element.click();
+        }
+    }
+
+    public String getAttribute(String elementId) {
+        WebElement element = getElementById(elementId);
+
+        if (element != null) {
+            return element.getAttribute("value");
+        }
+
+        return null;
+    }
+
     public static class Update {
         private final LoginUpdateProfilePage page;
         private String firstName;
         private String lastName;
         private String department;
         private String email;
+        private final Map<String, String> other = new LinkedHashMap<>();
 
         protected Update(LoginUpdateProfilePage page) {
             this.page = page;
@@ -165,6 +220,11 @@ public class LoginUpdateProfilePage extends AbstractPage {
             return this;
         }
 
+        public Update otherProfileAttribute(Map<String, String> attributes) {
+            other.putAll(attributes);
+            return this;
+        }
+
         public void submit() {
             if (firstName != null) {
                 page.firstNameInput.clear();
@@ -183,6 +243,14 @@ public class LoginUpdateProfilePage extends AbstractPage {
             if (email != null) {
                 page.emailInput.clear();
                 page.emailInput.sendKeys(email);
+            }
+
+            for (Map.Entry<String, String> entry : other.entrySet()) {
+                WebElement el = page.driver.findElement(By.id(entry.getKey()));
+                if (el != null) {
+                    el.clear();
+                    el.sendKeys(entry.getValue());
+                }
             }
 
             clickLink(page.submitButton);

@@ -94,6 +94,7 @@ public interface KeycloakSession extends AutoCloseable {
      * @return
      * @deprecated Deprecated in favor of {@link #getComponentProvider)
      */
+    @Deprecated
     <T extends Provider> T getProvider(Class<T> clazz, ComponentModel componentModel);
 
     /**
@@ -203,6 +204,7 @@ public interface KeycloakSession extends AutoCloseable {
 
     SingleUseObjectProvider singleUseObjects();
 
+    @Override
     void close();
 
     /**
@@ -242,5 +244,7 @@ public interface KeycloakSession extends AutoCloseable {
      * Client Policy Manager
      */
     ClientPolicyManager clientPolicy();
+
+    boolean isClosed();
 
 }

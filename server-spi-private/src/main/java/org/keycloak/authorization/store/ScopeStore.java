@@ -19,7 +19,6 @@ package org.keycloak.authorization.store;
 
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
-import org.keycloak.models.RealmModel;
 
 import java.util.List;
 import java.util.Map;
@@ -57,20 +56,18 @@ public interface ScopeStore {
     /**
      * Deletes a scope from the underlying persistence mechanism.
      *
-     * @param realm the realm. Cannot be {@code null}.
      * @param id the id of the scope to delete
      */
-    void delete(RealmModel realm, String id);
+    void delete(String id);
 
     /**
      * Returns a {@link Scope} with the given <code>id</code>
      *
-     * @param realm the realm. Cannot be {@code null}.
      * @param resourceServer the resource server id. Ignored if {@code null}.
-     * @param id the identifier of the scope
+     * @param id             the identifier of the scope
      * @return a scope with the given identifier.
      */
-    Scope findById(RealmModel realm, ResourceServer resourceServer, String id);
+    Scope findById(ResourceServer resourceServer, String id);
 
     /**
      * Returns a {@link Scope} with the given <code>name</code>

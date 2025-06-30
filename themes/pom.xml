@@ -14,71 +14,45 @@
 
     <properties>
         <dir.common>src/main/resources/theme/keycloak/common/resources</dir.common>
-        <dir.account2>src/main/resources/theme/keycloak.v2/account/src</dir.account2>
-        <args.npm.install>ci --no-optional --ignore-scripts</args.npm.install>
         <!-- ignore folders for incremental builds by the maven build cache plugin -->
-        <maven.build.cache.exclude.1>${project.basedir}/src/main/resources/theme/keycloak/common/resources/node_modules</maven.build.cache.exclude.1>
-        <maven.build.cache.exclude.2>${project.basedir}/src/main/resources/theme/keycloak/common/resources/web_modules</maven.build.cache.exclude.2>
-        <maven.build.cache.exclude.3>${project.basedir}/src/main/resources/theme/keycloak.v2/account/src/node_modules</maven.build.cache.exclude.3>
-        <maven.build.cache.exclude.4>${project.basedir}/src/main/resources/theme/keycloak.v2/account/src/web_modules</maven.build.cache.exclude.4>
+        <maven.build.cache.exclude.value.1>src/main/resources/theme/keycloak/common/resources/node_modules</maven.build.cache.exclude.value.1>
+        <maven.build.cache.exclude.value.2>src/main/resources/theme/keycloak/common/resources/vendor</maven.build.cache.exclude.value.2>
+        <maven.build.cache.exclude.value.3>src/main/resources/theme/keycloak.v2/welcome/node_modules</maven.build.cache.exclude.value.3>
+        <maven.build.cache.exclude.value.4>src/main/resources/theme/keycloak.v2/welcome/resources/vendor</maven.build.cache.exclude.value.4>
     </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-ui</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-account-ui</artifactId>
+        </dependency>
+    </dependencies>
 
     <build>
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
-                <excludes>
-                    <exclude>**/node_modules/**/node_modules/**</exclude>
-                    <exclude>**/minimist/**</exclude>
-                    <exclude>**/mkdirp/**</exclude>
-                    <exclude>**/package.json</exclude>
-                    <exclude>**/package-lock.json</exclude>
-                    <exclude>**/component.json</exclude>
-                    <exclude>**/composer.json</exclude>
-                    <exclude>**/npm-shrinkwrap.json</exclude>
-                    <exclude>**/select2.jquery.json</exclude>
-                    <exclude>**/*.markdown</exclude>
-                    <exclude>**/*.swf</exclude>
-                    <exclude>**/*.sh</exclude>
-                    <exclude>**/.bin/**</exclude>
-                    <exclude>**/bin/**</exclude>
-                    <exclude>**/build/**</exclude>
-                    <exclude>**/docs/**</exclude>
-                    <exclude>**/demo/**</exclude>
-                    <exclude>**/devtools/**</exclude>
-                    <exclude>**/example/**</exclude>
-                    <exclude>**/examples/**</exclude>
-                    <exclude>**/grunt/**</exclude>
-                    <exclude>**/less/**</exclude>
-                    <exclude>**/sass/**</exclude>
-                    <exclude>**/scss/**</exclude>
-                    <exclude>**/jquery/src/**</exclude>
-                    <exclude>**/angular-treeview/src/**</exclude>
-                    <exclude>**/test/**</exclude>
-                    <exclude>**/tests/**</exclude>
-                    <exclude>**/_config.yml</exclude>
-                    <exclude>**/api.md</exclude>
-                    <exclude>**/AUTHORS.txt</exclude>
-                    <exclude>**/CHANGELOG.md</exclude>
-                    <exclude>**/CONTRIBUTING.md</exclude>
-                    <exclude>**/HELP-US-OUT.txt</exclude>
-                    <exclude>**/README.md</exclude>
-                    <exclude>**/Gruntfile.js</exclude>
-                    <exclude>**/Gemfile*</exclude>
-                    <exclude>**/.*</exclude>
-
-                    <exclude>**/keycloak.v2/account/src/**</exclude>
-                </excludes>
             </resource>
         </resources>
+
         <plugins>
             <plugin>
                 <artifactId>maven-source-plugin</artifactId>
                 <configuration>
                     <excludes>
-                        <exclude>**/node_modules/**/*</exclude>
-                        <exclude>**/web_modules/**/*</exclude>
+                        <exclude>**/node_modules/**</exclude>
                     </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.github.eirslett</groupId>
+                <artifactId>frontend-maven-plugin</artifactId>
+                <configuration>
+                    <workingDirectory>src/main/resources/theme/keycloak/common/resources</workingDirectory>
                 </configuration>
             </plugin>
         </plugins>
@@ -98,124 +72,6 @@
                         <directory>src/main/resources-community</directory>
                     </resource>
                 </resources>
-            </build>
-        </profile>
-
-        <profile>
-            <id>account2</id>
-            <activation>
-                <property>
-                    <name>!skipAccount2</name>
-                </property>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-clean-plugin</artifactId>
-                        <configuration>
-                            <filesets>
-                                <fileset>
-                                    <directory>${dir.account2}/web_modules</directory>
-                                </fileset>
-                            </filesets>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>com.github.eirslett</groupId>
-                        <artifactId>frontend-maven-plugin</artifactId>
-                        <executions>
-                            <!-- Download NPM tools -->
-                            <execution>
-                                <id>setup-node</id>
-                                <goals>
-                                    <goal>install-node-and-npm</goal>
-                                </goals>
-                                <phase>initialize</phase>
-                            </execution>
-                            <!-- Compile stuff -->
-                            <execution>
-                                <id>compile-account2</id>
-                                <goals>
-                                    <goal>npm</goal>
-                                </goals>
-                                <phase>generate-resources</phase>
-                                <configuration>
-                                    <workingDirectory>${dir.account2}</workingDirectory>
-                                    <arguments>run build --scripts-prepend-node-path</arguments>
-                                </configuration>
-                            </execution>
-                            <!-- Download NPM packages -->
-                            <execution>
-                                <id>npm-install-account2</id>
-                                <phase>initialize</phase>
-                                <goals>
-                                    <goal>npm</goal>
-                                </goals>
-                                <configuration>
-                                    <workingDirectory>${dir.account2}</workingDirectory>
-                                    <arguments>${args.npm.install}</arguments>
-                                </configuration>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <nodeVersion>${node.version}</nodeVersion>
-                            <installDirectory>../</installDirectory>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <profile>
-            <id>common</id>
-            <activation>
-                <property>
-                    <name>!skipCommon</name>
-                </property>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-clean-plugin</artifactId>
-                        <configuration>
-                            <filesets>
-                                <fileset>
-                                    <directory>${dir.common}/web_modules</directory>
-                                </fileset>
-                            </filesets>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>com.github.eirslett</groupId>
-                        <artifactId>frontend-maven-plugin</artifactId>
-                        <executions>
-                            <!-- Download NPM tools -->
-                            <execution>
-                                <id>setup-node</id>
-                                <goals>
-                                    <goal>install-node-and-npm</goal>
-                                </goals>
-                                <phase>initialize</phase>
-                            </execution>
-                            <!-- Download NPM packages -->
-                            <execution>
-                                <id>npm-install-common</id>
-                                <phase>initialize</phase>
-                                <goals>
-                                    <goal>npm</goal>
-                                </goals>
-                                <configuration>
-                                    <workingDirectory>${dir.common}</workingDirectory>
-                                    <arguments>${args.npm.install}</arguments>
-                                </configuration>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <nodeVersion>${node.version}</nodeVersion>
-                            <installDirectory>../</installDirectory>
-                        </configuration>
-                    </plugin>
-                </plugins>
             </build>
         </profile>
     </profiles>

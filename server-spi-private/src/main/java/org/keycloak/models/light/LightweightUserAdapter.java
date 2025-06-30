@@ -18,12 +18,14 @@ package org.keycloak.models.light;
 
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
-import org.keycloak.common.util.Base64;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.SubjectCredentialManager;
+import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.storage.adapter.AbstractInMemoryUserAdapter;
@@ -32,11 +34,14 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonIncludeProperties;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
 import java.util.function.Consumer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  *
@@ -52,6 +57,7 @@ import java.util.logging.Logger;
     "attributes",
     "requiredActions",
     "federationLink",
+    "consents",
     "serviceAccountClientLink",
     "readonly"
 })
@@ -62,6 +68,8 @@ public class LightweightUserAdapter extends AbstractInMemoryUserAdapter {
 
     public static final String ID_PREFIX = "lightweight-";
 
+    private final Set<LightweightConsentEntity> consents = new HashSet<>();
+
     public static boolean isLightweightUser(UserModel user) {
         return Profile.isFeatureEnabled(Feature.TRANSIENT_USERS) && user instanceof LightweightUserAdapter;
     }
@@ -71,17 +79,18 @@ public class LightweightUserAdapter extends AbstractInMemoryUserAdapter {
     }
 
     public static String getLightweightUserId(String id) {
-        try {
-            return id == null || id.length() < ID_PREFIX.length()
-              ? null
-              : new String(Base64.decode(id.substring(ID_PREFIX.length())), StandardCharsets.UTF_8);
-        } catch (IOException ex) {
-            return null;
-        }
+        return id == null || id.length() < ID_PREFIX.length()
+          ? null
+          : id.substring(ID_PREFIX.length());
     }
 
     public LightweightUserAdapter(KeycloakSession session, String id) {
-        super(session, null, ID_PREFIX + Base64.encodeBytes(id.getBytes(StandardCharsets.UTF_8)));
+        super(session, null, ID_PREFIX + (id == null ? SecretGenerator.getInstance().randomString(16) : id));
+    }
+
+    public void setOwningUserSessionId(String id) {
+        this.id = ID_PREFIX + (id == null ? UUID.randomUUID().toString() : id);
+        update();
     }
 
     protected LightweightUserAdapter() {
@@ -116,115 +125,115 @@ public class LightweightUserAdapter extends AbstractInMemoryUserAdapter {
 
     @Override
     public void deleteRoleMapping(RoleModel role) {
-        super.deleteRoleMapping(role); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/OverriddenMethodBody
+        super.deleteRoleMapping(role);
         update();
     }
 
     @Override
     public void grantRole(RoleModel role) {
-        super.grantRole(role); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/OverriddenMethodBody
+        super.grantRole(role);
         update();
     }
 
     @Override
     public void setServiceAccountClientLink(String clientInternalId) {
-        super.setServiceAccountClientLink(clientInternalId); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/OverriddenMethodBody
+        super.setServiceAccountClientLink(clientInternalId);
         update();
     }
 
     @Override
     public void setFederationLink(String link) {
-        super.setFederationLink(link); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/OverriddenMethodBody
+        super.setFederationLink(link);
         update();
     }
 
     @Override
     public void leaveGroup(GroupModel group) {
-        super.leaveGroup(group); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/OverriddenMethodBody
+        super.leaveGroup(group);
         update();
     }
 
     @Override
     public void joinGroup(GroupModel group) {
-        super.joinGroup(group); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/OverriddenMethodBody
+        super.joinGroup(group);
         update();
     }
 
     @Override
     public void setEmailVerified(boolean verified) {
-        super.setEmailVerified(verified); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/OverriddenMethodBody
+        super.setEmailVerified(verified);
         update();
     }
 
     @Override
     public void removeRequiredAction(RequiredAction action) {
-        super.removeRequiredAction(action); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/OverriddenMethodBody
+        super.removeRequiredAction(action);
         update();
     }
 
     @Override
     public void addRequiredAction(RequiredAction action) {
-        super.addRequiredAction(action); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/OverriddenMethodBody
+        super.addRequiredAction(action);
         update();
     }
 
     @Override
     public void removeRequiredAction(String action) {
-        super.removeRequiredAction(action); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/OverriddenMethodBody
+        super.removeRequiredAction(action);
         update();
     }
 
     @Override
     public void addRequiredAction(String action) {
-        super.addRequiredAction(action); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/OverriddenMethodBody
+        super.addRequiredAction(action);
         update();
     }
 
     @Override
     public void removeAttribute(String name) {
-        super.removeAttribute(name); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/OverriddenMethodBody
+        super.removeAttribute(name);
         update();
     }
 
     @Override
     public void setAttribute(String name, List<String> values) {
-        super.setAttribute(name, values); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/OverriddenMethodBody
+        super.setAttribute(name, values);
         update();
     }
 
     @Override
     public void setSingleAttribute(String name, String value) {
-        super.setSingleAttribute(name, value); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/OverriddenMethodBody
+        super.setSingleAttribute(name, value);
         update();
     }
 
     @Override
     public void setEnabled(boolean enabled) {
-        super.setEnabled(enabled); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/OverriddenMethodBody
+        super.setEnabled(enabled);
         update();
     }
 
     @Override
     public void setCreatedTimestamp(Long timestamp) {
-        super.setCreatedTimestamp(timestamp); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/OverriddenMethodBody
+        super.setCreatedTimestamp(timestamp);
         update();
     }
 
     @Override
     public void setReadonly(boolean flag) {
-        super.setReadonly(flag); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/OverriddenMethodBody
+        super.setReadonly(flag);
         update();
     }
 
     @Override
     public void addDefaults() {
-        super.addDefaults(); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/OverriddenMethodBody
+        super.addDefaults();
         update();
     }
 
     @Override
     public void setUsername(String username) {
-        super.setUsername(username); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/OverriddenMethodBody
+        super.setUsername(username);
         update();
     }
 
@@ -235,5 +244,57 @@ public class LightweightUserAdapter extends AbstractInMemoryUserAdapter {
     private void update() {
         updateHandler.accept(this);
     }
+
+    public void addConsent(UserConsentModel consent) {
+        if (consent != null) {
+            consents.add(LightweightConsentEntity.fromModel(consent));
+            update();
+        }
+    }
+
+    public UserConsentModel getConsentByClient(String clientInternalId) {
+        return LightweightConsentEntity.toModel(realm, getConsentEntityByClient(clientInternalId));
+    }
+
+    public boolean revokeConsentForClient(String clientInternalId) {
+        if (clientInternalId != null) {
+            final boolean res = consents.removeIf(lce -> clientInternalId.equals(lce.getClientId()));
+            if (res) {
+                update();
+            }
+            return res;
+        }
+        return false;
+    }
+
+    public void updateConsent(UserConsentModel consent) {
+        if (consent == null) {
+            return;
+        }
+
+        String clientId = consent.getClient() == null
+          ? null
+          : consent.getClient().getId();
+        LightweightConsentEntity userConsentEntity = getConsentEntityByClient(clientId);
+
+        userConsentEntity.setGrantedClientScopesIds(
+                consent.getGrantedClientScopes().stream()
+                        .map(ClientScopeModel::getId)
+                        .collect(Collectors.toSet())
+        );
+        update();
+    }
+
+    LightweightConsentEntity getConsentEntityByClient(String clientId) {
+        return consents.stream().filter(lce -> Objects.equals(clientId, lce.getClientId()))
+          .findFirst()
+          .orElse(null);
+    }
+
+    public Stream<UserConsentModel> getConsentsStream() {
+        return consents.stream()
+          .map(lce -> LightweightConsentEntity.toModel(realm, lce));
+    }
+
 
 }

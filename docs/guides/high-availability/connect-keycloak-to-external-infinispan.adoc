@@ -1,0 +1,54 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Connect {project_name} with an external {jdgserver_name}"
+summary="Building block for an Infinispan deployment on Kubernetes"
+tileVisible="false"
+includedOptions="cache-remote-*" >
+
+This topic describes advanced {jdgserver_name} configurations for {project_name} on Kubernetes.
+
+== Architecture
+
+This connects {project_name} to {jdgserver_name} using TCP connections secured by TLS 1.3.
+It uses the {project_name}'s truststore to verify {jdgserver_name}'s server certificate.
+As {project_name} is deployed using its Operator on OpenShift in the prerequisites listed below, the Operator already added the `service-ca.crt` to the truststore which is used to sign {jdgserver_name}'s server certificates.
+In other environments, add the necessary certificates to {project_name}'s truststore.
+
+== Prerequisites
+
+* <@links.ha id="deploy-keycloak-kubernetes" /> as it will be extended.
+* <@links.ha id="deploy-infinispan-kubernetes-crossdc" />.
+
+== Procedure
+
+. Create a Secret with the username and password to connect to the external {jdgserver_name} deployment:
++
+[source,yaml]
+----
+include::examples/generated/keycloak-ispn.yaml[tag=keycloak-ispn-secret]
+----
+
+. Extend the {project_name} Custom Resource with `additionalOptions` as shown below.
++
+[NOTE]
+====
+All the memory, resource and database configurations are skipped from the CR below as they have been described in <@links.ha id="deploy-keycloak-kubernetes" /> {section} already.
+Administrators should leave those configurations untouched.
+====
++
+[source,yaml]
+----
+include::examples/generated/keycloak-ispn.yaml[tag=keycloak-ispn]
+----
+<1> The hostname of the remote {jdgserver_name} cluster.
+<2> The port of the remote {jdgserver_name} cluster.
+This is optional and it default to `11222`.
+<3> The Secret `name` and `key` with the {jdgserver_name} username credential.
+<4> The Secret `name` and `key` with the {jdgserver_name} password credential.
+<5> The `spi-connections-infinispan-quarkus-site-name` is an arbitrary {jdgserver_name} site name which {project_name} needs for its Infinispan caches deployment when a remote store is used.
+This site-name is related only to the Infinispan caches and does not need to match any value from the external {jdgserver_name} deployment.
+If you are using multiple sites for {project_name} in a cross-DC setup such as <@links.ha id="deploy-infinispan-kubernetes-crossdc" />, the site name must be different in each site.
+
+</@tmpl.guide>

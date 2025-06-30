@@ -47,8 +47,8 @@ import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.resources.Cors;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.StringUtil;
@@ -139,8 +139,10 @@ public class AuthorizationEndpointChecker {
 
         if (responseType == null) {
             ServicesLogger.LOGGER.missingParameter(OAuth2Constants.RESPONSE_TYPE);
+            String errorMessage = "Missing parameter: response_type";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_REQUEST);
-            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, "Missing parameter: response_type");
+            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
         }
 
         event.detail(Details.RESPONSE_TYPE, responseType);
@@ -148,6 +150,7 @@ public class AuthorizationEndpointChecker {
         try {
             this.parsedResponseType = OIDCResponseType.parse(responseType);
         } catch (IllegalArgumentException iae) {
+            event.detail(Details.REASON, iae.getMessage());
             event.error(Errors.INVALID_REQUEST);
             throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE, null);
         }
@@ -157,8 +160,10 @@ public class AuthorizationEndpointChecker {
             parsedResponseMode = OIDCResponseMode.parse(request.getResponseMode(), parsedResponseType);
         } catch (IllegalArgumentException iae) {
             ServicesLogger.LOGGER.invalidParameter(OIDCLoginProtocol.RESPONSE_MODE_PARAM);
+            String errorMessage = "Invalid parameter: " + OIDCLoginProtocol.RESPONSE_MODE_PARAM;
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_REQUEST);
-            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, "Invalid parameter: response_mode");
+            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
         }
 
         event.detail(Details.RESPONSE_MODE, parsedResponseMode.toString().toLowerCase());
@@ -166,8 +171,10 @@ public class AuthorizationEndpointChecker {
         // Disallowed by OIDC specs
         if (parsedResponseType.isImplicitOrHybridFlow() && parsedResponseMode == OIDCResponseMode.QUERY) {
             ServicesLogger.LOGGER.responseModeQueryNotAllowed();
+            String errorMessage = "Response_mode 'query' not allowed for implicit or hybrid flow";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_REQUEST);
-            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, "Response_mode 'query' not allowed for implicit or hybrid flow");
+            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
         }
 
         this.parsedResponseMode = parsedResponseMode;
@@ -176,20 +183,26 @@ public class AuthorizationEndpointChecker {
                 (!StringUtil.isNotBlank(client.getAttribute(OIDCConfigAttributes.AUTHORIZATION_ENCRYPTED_RESPONSE_ALG)) ||
                 !StringUtil.isNotBlank(client.getAttribute(OIDCConfigAttributes.AUTHORIZATION_ENCRYPTED_RESPONSE_ENC)))) {
             ServicesLogger.LOGGER.responseModeQueryJwtNotAllowed();
+            String errorMessage = "Response_mode 'query.jwt' is allowed only when the authorization response token is encrypted";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_REQUEST);
-            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, "Response_mode 'query.jwt' is allowed only when the authorization response token is encrypted");
+            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
         }
 
         if ((parsedResponseType.hasResponseType(OIDCResponseType.CODE) || parsedResponseType.hasResponseType(OIDCResponseType.NONE)) && !client.isStandardFlowEnabled()) {
             ServicesLogger.LOGGER.flowNotAllowed("Standard");
+            String errorMessage = "Client is not allowed to initiate browser login with given response_type. Standard flow is disabled for the client.";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.NOT_ALLOWED);
-            throw new AuthorizationCheckException(Response.Status.UNAUTHORIZED, OAuthErrorException.UNAUTHORIZED_CLIENT, "Client is not allowed to initiate browser login with given response_type. Standard flow is disabled for the client.");
+            throw new AuthorizationCheckException(Response.Status.UNAUTHORIZED, OAuthErrorException.UNAUTHORIZED_CLIENT, errorMessage);
         }
 
         if (parsedResponseType.isImplicitOrHybridFlow() && !client.isImplicitFlowEnabled()) {
             ServicesLogger.LOGGER.flowNotAllowed("Implicit");
+            String errorMessage = "Client is not allowed to initiate browser login with given response_type. Implicit flow is disabled for the client.";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.NOT_ALLOWED);
-            throw new AuthorizationCheckException(Response.Status.UNAUTHORIZED, OAuthErrorException.UNAUTHORIZED_CLIENT, "Client is not allowed to initiate browser login with given response_type. Implicit flow is disabled for the client.");
+            throw new AuthorizationCheckException(Response.Status.UNAUTHORIZED, OAuthErrorException.UNAUTHORIZED_CLIENT, errorMessage);
         }
     }
 
@@ -219,8 +232,10 @@ public class AuthorizationEndpointChecker {
         }
         if (!validScopes) {
             ServicesLogger.LOGGER.invalidParameter(OIDCLoginProtocol.SCOPE_PARAM);
+            String errorMessage = "Invalid scopes: " + request.getScope();
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_REQUEST);
-            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_SCOPE, "Invalid scopes: " + request.getScope());
+            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_SCOPE, errorMessage);
         }
     }
 
@@ -233,8 +248,10 @@ public class AuthorizationEndpointChecker {
 
         if (parsedResponseType.hasResponseType(OIDCResponseType.ID_TOKEN) && request.getNonce() == null) {
             ServicesLogger.LOGGER.missingParameter(OIDCLoginProtocol.NONCE_PARAM);
+            String errorMessage = "Missing parameter: " + OIDCLoginProtocol.NONCE_PARAM;
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_REQUEST);
-            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, "Missing parameter: nonce");
+            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
         }
 
         return;
@@ -270,8 +287,10 @@ public class AuthorizationEndpointChecker {
             return;
         }
         ServicesLogger.LOGGER.missingParameter(OIDCLoginProtocol.REQUEST_URI_PARAM);
+        String errorMessage = "Pushed Authorization Request is only allowed.";
+        event.detail(Details.REASON, errorMessage);
         event.error(Errors.INVALID_REQUEST);
-        throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, "Pushed Authorization Request is only allowed.");
+        throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
     }
 
     // https://tools.ietf.org/html/rfc7636#section-4
@@ -292,34 +311,44 @@ public class AuthorizationEndpointChecker {
         // check whether code challenge method is specified
         if (codeChallengeMethod == null) {
             logger.info("PKCE enforced Client without code challenge method.");
+            String errorMessage = "Missing parameter: " + OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM;
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_REQUEST);
-            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, "Missing parameter: code_challenge_method");
+            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
         }
         // check whether specified code challenge method is configured one in advance
         if (!codeChallengeMethod.equals(pkceCodeChallengeMethod)) {
-            logger.info("PKCE enforced Client code challenge method is not configured one.");
+            logger.info("PKCE enforced Client code challenge method is not matching the configured one.");
+            String errorMessage = "Invalid parameter: code challenge method is not matching the configured one";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_REQUEST);
-            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, "Invalid parameter: code challenge method is not configured one");
+            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
         }
         // check whether code challenge is specified
         if (codeChallenge == null) {
             logger.info("PKCE supporting Client without code challenge");
+            String errorMessage = "Missing parameter: " + OIDCLoginProtocol.CODE_CHALLENGE_PARAM;
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_REQUEST);
-            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, "Missing parameter: code_challenge");
+            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
         }
         // check whether code challenge is formatted along with the PKCE specification
         if (!isValidPkceCodeChallenge(codeChallenge)) {
             logger.infof("PKCE supporting Client with invalid code challenge specified in PKCE, codeChallenge = %s", codeChallenge);
+            String errorMessage = "Invalid parameter: " + OIDCLoginProtocol.CODE_CHALLENGE_PARAM;
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_REQUEST);
-            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, "Invalid parameter: code_challenge");
+            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
         }
     }
 
     private void checkParamsForPkceNotEnforcedClient(String codeChallengeMethod, String pkceCodeChallengeMethod, String codeChallenge) throws AuthorizationCheckException {
         if (codeChallenge == null && codeChallengeMethod != null) {
             logger.info("PKCE supporting Client without code challenge");
+            String errorMessage = "Missing parameter: " + OIDCLoginProtocol.CODE_CHALLENGE_PARAM;
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_REQUEST);
-            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST,  OAuthErrorException.INVALID_REQUEST, "Missing parameter: code_challenge");
+            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST,  OAuthErrorException.INVALID_REQUEST, errorMessage);
         }
 
         // based on code_challenge value decide whether this client(RP) supports PKCE
@@ -333,8 +362,10 @@ public class AuthorizationEndpointChecker {
             // plain or S256
             if (!codeChallengeMethod.equals(OIDCLoginProtocol.PKCE_METHOD_S256) && !codeChallengeMethod.equals(OIDCLoginProtocol.PKCE_METHOD_PLAIN)) {
                 logger.infof("PKCE supporting Client with invalid code challenge method not specified in PKCE, codeChallengeMethod = %s", codeChallengeMethod);
+                String errorMessage = "Invalid parameter: " + OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM;
+                event.detail(Details.REASON, errorMessage);
                 event.error(Errors.INVALID_REQUEST);
-                throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, "Invalid parameter: code_challenge_method");
+                throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
             }
         } else {
             // https://tools.ietf.org/html/rfc7636#section-4.3
@@ -344,8 +375,10 @@ public class AuthorizationEndpointChecker {
 
         if (!isValidPkceCodeChallenge(codeChallenge)) {
             logger.infof("PKCE supporting Client with invalid code challenge specified in PKCE, codeChallenge = %s", codeChallenge);
+            String errorMessage = "Invalid parameter: " + OIDCLoginProtocol.CODE_CHALLENGE_PARAM;
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_REQUEST);
-            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, "Invalid parameter: code_challenge");
+            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
         }
     }
 

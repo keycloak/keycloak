@@ -21,6 +21,8 @@ import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.keycloak.common.Profile;
+import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -33,6 +35,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.testsuite.model.HotRodServerRule;
@@ -58,6 +61,8 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
 
     @Override
     public void createEnvironment(KeycloakSession s) {
+        super.createEnvironment(s);
+
         RealmModel realm = createRealm(s, "test");
         realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
         this.realmId = realm.getId();
@@ -75,8 +80,29 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
         UserModel user1 = s.users().getUserByUsername(realm, "user1");
         s.sessions().removeUserSessions(realm);
         s.sessions().getOfflineUserSessionsStream(realm, user1).forEach(us -> s.sessions().removeOfflineUserSession(realm, us));
-
         s.realms().removeRealm(realmId);
+
+        // explicitly clear session caches, as removeUserSessions() contains asynchronous processing or might be incomplete due to a previous failure
+        clearSessionCaches(s);
+
+        super.cleanEnvironment(s);
+    }
+
+    private void clearSessionCaches(KeycloakSession s) {
+        InfinispanConnectionProvider provider = s.getProvider(InfinispanConnectionProvider.class);
+        if (provider != null) {
+            for (String cache : InfinispanConnectionProvider.DISTRIBUTED_REPLICATED_CACHE_NAMES) {
+                provider.getCache(cache).clear();
+            }
+        }
+
+        HotRodServerRule hotRodServer = getParameters(HotRodServerRule.class).findFirst().orElse(null);
+        if (hotRodServer != null) {
+           for (String cache : InfinispanConnectionProvider.DISTRIBUTED_REPLICATED_CACHE_NAMES) {
+               hotRodServer.getHotRodCacheManager().getCache(cache).clear();
+               hotRodServer.getHotRodCacheManager2().getCache(cache).clear();
+           }
+       }
     }
 
     protected static UserSessionModel createUserSession(KeycloakSession session, RealmModel realm, UserModel user, boolean offline) {
@@ -263,6 +289,7 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
             for (int i = 0; i < refreshTimes; i++) {
                 offset += 1500;
                 setTimeOffset(offset);
+                int time = Time.currentTime();
                 withRealm(realmId, (session, realm) -> {
                     // refresh sessions before user session expires => both session should exist
                     ClientModel client = realm.getClientByClientId("test-app");
@@ -270,10 +297,29 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
                     Assert.assertNotNull(userSession);
                     AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
                     Assert.assertNotNull(clientSession);
-                    userSession.setLastSessionRefresh(Time.currentTime());
-                    clientSession.setTimestamp(Time.currentTime());
+                    userSession.setLastSessionRefresh(time);
+                    clientSession.setTimestamp(time);
                     return null;
                 });
+
+                if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+                    // The persistent session will write the update data asynchronously, wait for it to arrive.
+                    Retry.executeWithBackoff(iteration -> {
+                        withRealm(realmId, (session, realm) -> {
+                            UserSessionPersisterProvider provider = session.getProvider(UserSessionPersisterProvider.class);
+                            UserSessionModel userSessionModel = provider.loadUserSession(realm, sessions[0], offline);
+                            Assert.assertNotNull(userSessionModel);
+                            Assert.assertEquals(userSessionModel.getLastSessionRefresh(), time);
+
+                            // refresh sessions before user session expires => both session should exist
+                            ClientModel client = realm.getClientByClientId("test-app");
+                            AuthenticatedClientSessionModel clientSession = userSessionModel.getAuthenticatedClientSessionByClient(client.getId());
+                            Assert.assertNotNull(clientSession);
+                            Assert.assertEquals(clientSession.getTimestamp(), time);
+                            return null;
+                        });
+                    }, 10, 10);
+                }
             }
 
             offset += 2100;
@@ -322,12 +368,12 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
         testUserClientMaxLifespanSmallerThanSession(true, true);
     }
 
-    @Test
+    @Test(timeout = 10 * 1000)
     public void testOfflineUserClientIdleTimeoutSmallerThanSessionNoRefresh() {
         testUserClientIdleTimeoutSmallerThanSession(0, true, false);
     }
 
-    @Test
+    @Test(timeout = 10 * 1000)
     public void testOfflineUserClientIdleTimeoutSmallerThanSessionOneRefresh() {
         testUserClientIdleTimeoutSmallerThanSession(1, true, false);
     }
@@ -352,12 +398,12 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
         testUserClientMaxLifespanSmallerThanSession(false, true);
     }
 
-    @Test
+    @Test(timeout = 10 * 1000)
     public void testOnlineUserClientIdleTimeoutSmallerThanSessionNoRefresh() {
         testUserClientIdleTimeoutSmallerThanSession(0, false, false);
     }
 
-    @Test
+    @Test(timeout = 10 * 1000)
     public void testOnlineUserClientIdleTimeoutSmallerThanSessionOneRefresh() {
         testUserClientIdleTimeoutSmallerThanSession(1, false, false);
     }
@@ -374,7 +420,15 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
             while (hotRodServer.getHotRodCacheManager().getCache(cacheName).size() != hotRodServer.getHotRodCacheManager2().getCache(cacheName).size()) {
                 try {
                     Thread.sleep(5);
-                } catch (InterruptedException e) {}
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    log.errorf("Interrupted while waiting. Cache: %s, Cache sizes: %d vs %d",
+                            cacheName,
+                            hotRodServer.getHotRodCacheManager().getCache(cacheName).size(),
+                            hotRodServer.getHotRodCacheManager2().getCache(cacheName).size()
+                    );
+                    throw new RuntimeException(e);
+                }
             }
         }
     }

@@ -27,20 +27,23 @@ import java.io.Serializable;
 @Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder")
 public class HostnameSpec implements Serializable {
 
-    @JsonPropertyDescription("Hostname for the Keycloak server.")
+    @JsonPropertyDescription("Hostname for the Keycloak server. Applicable for Hostname v1 and v2.")
     private String hostname;
 
-    @JsonPropertyDescription("The hostname for accessing the administration console.")
+    @JsonPropertyDescription("The hostname for accessing the administration console. Applicable for Hostname v1 and v2.")
     private String admin;
 
-    @JsonPropertyDescription("Set the base URL for accessing the administration console, including scheme, host, port and path")
+    @JsonPropertyDescription("DEPRECATED. Sets the base URL for accessing the administration console, including scheme, host, port and path. Applicable for Hostname v1.")
     private String adminUrl;
 
-    @JsonPropertyDescription("Disables dynamically resolving the hostname from request headers.")
+    @JsonPropertyDescription("Disables dynamically resolving the hostname from request headers. Applicable for Hostname v1 and v2.")
     private Boolean strict;
 
-    @JsonPropertyDescription("By default backchannel URLs are dynamically resolved from request headers to allow internal and external applications.")
+    @JsonPropertyDescription("DEPRECATED. By default backchannel URLs are dynamically resolved from request headers to allow internal and external applications. Applicable for Hostname v1.")
     private Boolean strictBackchannel;
+
+    @JsonPropertyDescription("Enables dynamic resolving of backchannel URLs, including hostname, scheme, port and context path. Set to true if your application accesses Keycloak via a private network. Applicable for Hostname v2.")
+    private Boolean backchannelDynamic;
 
     public String getHostname() {
         return hostname;
@@ -80,5 +83,13 @@ public class HostnameSpec implements Serializable {
 
     public void setStrictBackchannel(Boolean strictBackchannel) {
         this.strictBackchannel = strictBackchannel;
+    }
+
+    public Boolean isBackchannelDynamic() {
+        return backchannelDynamic;
+    }
+
+    public void setBackchannelDynamic(Boolean backchannelDynamic) {
+        this.backchannelDynamic = backchannelDynamic;
     }
 }

@@ -1,0 +1,58 @@
+{
+  "name": "root",
+  "type": "module",
+  "packageManager": "pnpm@9.1.0+sha256.22e36fba7f4880ecf749a5ca128b8435da085ecd49575e7fb9e64d6bf4fad394",
+  "scripts": {
+    "prepare": "husky js/.husky"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.1.0",
+    "@eslint/js": "^9.4.0",
+    "@types/node": "^20.14.2",
+    "eslint": "^8.52.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-cypress": "^3.3.0",
+    "eslint-plugin-lodash": "^7.4.0",
+    "eslint-plugin-mocha": "^10.4.3",
+    "eslint-plugin-playwright": "^1.6.2",
+    "eslint-plugin-prettier": "^5.1.3",
+    "eslint-plugin-react": "^7.34.2",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.5",
+    "prettier": "^3.3.1",
+    "tslib": "^2.6.3",
+    "typescript": "^5.4.5",
+    "typescript-eslint": "^7.12.0",
+    "wireit": "^0.14.4"
+  },
+  "pnpm": {
+    "ignoredOptionalDependencies": [
+      "@types/c3",
+      "bootstrap-datepicker",
+      "bootstrap-sass",
+      "bootstrap-select",
+      "bootstrap-slider",
+      "bootstrap-switch",
+      "bootstrap-touchspin",
+      "c3",
+      "d3",
+      "datatables.net",
+      "datatables.net-colreorder",
+      "datatables.net-colreorder-bs",
+      "datatables.net-select",
+      "drmonty-datatables-colvis",
+      "eonasdan-bootstrap-datetimepicker",
+      "font-awesome-sass",
+      "google-code-prettify",
+      "jquery-match-height",
+      "moment",
+      "moment-timezone",
+      "patternfly-bootstrap-combobox",
+      "patternfly-bootstrap-treeview"
+    ]
+  },
+  "lint-staged": {
+    "*.{js,jsx,mjs,ts,tsx}": "eslint --cache --fix"
+  }
+}

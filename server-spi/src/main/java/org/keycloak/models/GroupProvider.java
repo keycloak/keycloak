@@ -20,8 +20,6 @@ package org.keycloak.models;
 import org.keycloak.provider.Provider;
 import org.keycloak.storage.group.GroupLookupProvider;
 
-import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -31,6 +29,8 @@ import java.util.stream.Stream;
  *
  */
 public interface GroupProvider extends Provider, GroupLookupProvider {
+
+    static boolean DEFAULT_ESCAPE_SLASHES = false;
 
     /**
      * Returns groups for the given realm.
@@ -125,7 +125,9 @@ public interface GroupProvider extends Provider, GroupLookupProvider {
      * @param realm Realm.
      * @return Stream of all top level groups in the realm. Never returns {@code null}.
      */
-    Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm);
+    default Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm) {
+        return getTopLevelGroupsStream(realm, "", false, null, null);
+    }
 
     /**
      * Returns top level groups (i.e. groups without parent group) for the given realm.
@@ -135,7 +137,20 @@ public interface GroupProvider extends Provider, GroupLookupProvider {
      * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
      * @return Stream of top level groups in the realm. Never returns {@code null}.
      */
-    Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, Integer firstResult, Integer maxResults);
+    default Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, Integer firstResult, Integer maxResults) {
+        return getTopLevelGroupsStream(realm, "", false, firstResult, maxResults);
+    }
+
+    /**
+     * Returns top level groups (i.e. groups without parent group) for the given realm.
+     *
+     * @param realm Realm.
+     * @param firstResult First result to return. Ignored if negative or {@code null}.
+     * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
+     * @param search The name that should be matched
+     * @return Stream of top level groups in the realm. Never returns {@code null}.
+     */
+    Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, String search, Boolean exact, Integer firstResult, Integer maxResults);
 
     /**
      * Creates a new group with the given name in the given realm.

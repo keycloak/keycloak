@@ -68,7 +68,7 @@ public class UserAttributeMapper extends AbstractClaimMapper {
         property.setName(USER_ATTRIBUTE);
         property.setLabel("User Attribute Name");
         property.setHelpText("User attribute name to store claim.  Use email, lastName, and firstName to map to those predefined user properties.");
-        property.setType(ProviderConfigProperty.STRING_TYPE);
+        property.setType(ProviderConfigProperty.USER_PROFILE_ATTRIBUTE_LIST_TYPE);
         configProperties.add(property);
     }
 

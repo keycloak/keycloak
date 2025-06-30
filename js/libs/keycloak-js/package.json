@@ -5,16 +5,39 @@
   "main": "./dist/keycloak.js",
   "module": "./dist/keycloak.mjs",
   "types": "./dist/keycloak.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/keycloak.d.mts",
+        "default": "./dist/keycloak.mjs"
+      },
+      "require": {
+        "types": "./dist/keycloak.d.ts",
+        "default": "./dist/keycloak.js"
+      }
+    },
+    "./authz": {
+      "import": {
+        "types": "./dist/keycloak-authz.d.mts",
+        "default": "./dist/keycloak-authz.mjs"
+      },
+      "require": {
+        "types": "./dist/keycloak-authz.d.ts",
+        "default": "./dist/keycloak-authz.js"
+      }
+    }
+  },
   "files": [
     "dist"
   ],
   "scripts": {
     "build": "wireit",
-    "prepublishOnly": "pnpm run build"
+    "duplicate-types": "shx cp dist/keycloak.d.ts dist/keycloak.d.mts && shx cp dist/keycloak-authz.d.ts dist/keycloak-authz.d.mts",
+    "prepublishOnly": "pnpm build"
   },
   "wireit": {
     "build": {
-      "command": "rollup --config --configPlugin typescript",
+      "command": "rollup --config --configPlugin typescript && pnpm duplicate-types",
       "files": [
         "src/**",
         "package.json",
@@ -42,17 +65,17 @@
     "authentication"
   ],
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^25.0.7",
+    "@rollup/plugin-commonjs": "^26.0.1",
     "@rollup/plugin-inject": "^5.0.5",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.4",
-    "@rollup/plugin-typescript": "^11.1.5",
+    "@rollup/plugin-typescript": "^11.1.6",
     "es6-promise": "^4.2.8",
-    "rollup": "^4.1.4"
+    "rollup": "^4.18.0",
+    "shx": "^0.3.4"
   },
   "dependencies": {
-    "base64-js": "^1.5.1",
-    "js-sha256": "^0.10.1",
-    "jwt-decode": "^3.1.2"
+    "js-sha256": "^0.11.0",
+    "jwt-decode": "^4.0.0"
   }
 }

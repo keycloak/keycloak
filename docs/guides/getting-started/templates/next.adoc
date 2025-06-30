@@ -1,6 +1,6 @@
 == Taking the next step
 
-Before you run Keycloak in production, consider the following actions:
+Before you run {project_name} in production, consider the following actions:
 
 * Switch to a production ready database such as PostgreSQL.
 * Configure SSL with your own certificates.

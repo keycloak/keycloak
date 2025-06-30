@@ -18,8 +18,6 @@
 package org.keycloak.testsuite.federation.ldap.noimport;
 
 import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -60,11 +58,6 @@ public class LDAPRoleMappingsNoImportTest extends AbstractLDAPTest {
     @Override
     protected LDAPRule getLDAPRule() {
         return ldapRule;
-    }
-
-    @Before
-    public void enabled() {
-        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
     }
 
     @Override

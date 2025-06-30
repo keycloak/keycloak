@@ -17,20 +17,17 @@
 
 package org.keycloak.models.cache.infinispan.entities;
 
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -69,8 +66,6 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
     protected boolean serviceAccountsEnabled;
     protected int nodeReRegistrationTimeout;
     protected Map<String, Integer> registeredNodes;
-    protected List<String> defaultClientScopesIds;
-    protected List<String> optionalClientScopesIds;
 
     public CachedClient(Long revision, RealmModel realm, ClientModel model) {
         super(revision, model.getId());
@@ -107,15 +102,6 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
 
         nodeReRegistrationTimeout = model.getNodeReRegistrationTimeout();
         registeredNodes = new TreeMap<>(model.getRegisteredNodes());
-
-        defaultClientScopesIds = new LinkedList<>();
-        for (ClientScopeModel clientScope : model.getClientScopes(true).values()) {
-            defaultClientScopesIds.add(clientScope.getId());
-        }
-        optionalClientScopesIds = new LinkedList<>();
-        for (ClientScopeModel clientScope : model.getClientScopes(false).values()) {
-            optionalClientScopesIds.add(clientScope.getId());
-        }
     }
 
     public String getClientId() {
@@ -240,14 +226,6 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
 
     public Map<String, Integer> getRegisteredNodes() {
         return registeredNodes;
-    }
-
-    public List<String> getDefaultClientScopesIds() {
-        return defaultClientScopesIds;
-    }
-
-    public List<String> getOptionalClientScopesIds() {
-        return optionalClientScopesIds;
     }
 
     public Map<String, String> getAuthFlowBindings() {

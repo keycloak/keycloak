@@ -1,13 +1,13 @@
 #!/bin/bash
 
-dnf install -y java-17-openjdk-devel crypto-policies-scripts
+dnf install -y java-21-openjdk-devel crypto-policies-scripts
 fips-mode-setup --enable --no-bootcfg
 fips-mode-setup --is-enabled
 if [ $? -ne 0 ]; then
   exit 1
 fi
-echo "fips.provider.7=XMLDSig" >>/etc/alternatives/java_sdk_17/conf/security/java.security
-export JAVA_HOME=/etc/alternatives/java_sdk_17
+echo "fips.provider.7=XMLDSig" >>/etc/alternatives/java_sdk_21/conf/security/java.security
+export JAVA_HOME=/etc/alternatives/java_sdk_21
 
 # Build all dependent modules
 ./mvnw install -nsu -B -am -pl crypto/default,crypto/fips1402 -DskipTests

@@ -2,7 +2,7 @@ import CommonElements from "../../CommonElements";
 
 export default class FormPage extends CommonElements {
   constructor() {
-    super(".pf-c-form:visible");
+    super(".pf-v5-c-form:visible");
   }
 
   save() {

@@ -2,20 +2,28 @@
 
 == Preparing for upgrading
 
-Before you upgrade, be aware of the order in which you need to perform the upgrade steps. In particular, be sure to upgrade {project_name} server before you upgrade the adapters.
+Perform the following steps before you upgrade the server.
+
+.Procedure
+. Shutdown {project_name}.
+. Back up the old installation, such as configuration, themes, and so on.
+. Handle any open transactions and delete the `data/tx-object-store/` transaction directory.
+. Back up the database using instructions in the documentation for your relational
+  database.
++
+The database will no longer be compatible with the old server after you upgrade the server. If you need to revert the upgrade, first restore the old installation, and then restore the database from the backup copy.
 
 [WARNING]
 ====
-In a minor upgrade of {project_name}, all user sessions are lost. After the upgrade, all users will have to log in again.
+ifeval::[{project_product}==true]
+After the upgrade of {project_name}, except for offline user sessions, user sessions are lost. Users will have to log in again.
+endif::[]
+
+ifeval::[{project_community}==true]
+After the upgrade of {project_name}, only if the feature `persistent-user-sessions` is enabled, users will still be logged in with their online sessions.
+If it is not enabled, users will have to log in again, except where offline user sessions are used.
+endif::[]
+
+Information about failed logins for the brute force detection and currently ongoing authentication flows is only stored in the internal caches that are cleared when {project_name} is shut down.
+Users currently authenticating, changing their passwords or resetting their password will need to restart the authentication flow once {project_name} is up and running again.
 ====
-
-.Procedure
-. Back up the old installation (configuration, themes, and so on).
-. Back up the database using instructions in the documentation for your relational
-  database.
-. Upgrade the {project_name} server.
-+
-The database will no longer be compatible with the old server after the upgrade.
-. If you need to revert the upgrade, first restore the old installation, and then restore the database from the backup copy.
-. Upgrade the adapters.
-

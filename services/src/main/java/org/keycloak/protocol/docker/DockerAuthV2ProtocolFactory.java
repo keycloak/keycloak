@@ -1,5 +1,6 @@
 package org.keycloak.protocol.docker;
 
+import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
@@ -70,7 +71,7 @@ public class DockerAuthV2ProtocolFactory extends AbstractLoginProtocolFactory im
     }
 
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.DOCKER);
     }
 

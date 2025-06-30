@@ -11,33 +11,38 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.logging.Logger;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.admin.ui.rest.model.Authentication;
 import org.keycloak.admin.ui.rest.model.AuthenticationMapper;
+import org.keycloak.admin.ui.rest.model.ConfigurableRequiredActionProviderRepresentation;
+import org.keycloak.authentication.RequiredActionFactory;
+import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
 
 public class AuthenticationManagementResource extends RoleMappingResource {
-    private final KeycloakSession session;
 
-    private RealmModel realm;
-    private AdminPermissionEvaluator auth;
+    private static final Logger logger = Logger.getLogger(AuthenticationManagementResource.class);
 
     public AuthenticationManagementResource(KeycloakSession session, RealmModel realm, AdminPermissionEvaluator auth) {
-        super(realm, auth);
-        this.realm = realm;
-        this.auth = auth;
-        this.session = session;
+        super(session, realm, auth);
     }
 
     @GET
@@ -112,5 +117,45 @@ public class AuthenticationManagementResource extends RoleMappingResource {
         }
 
         throw new IllegalArgumentException("Invalid type");
+    }
+
+    /**
+     * Get required actions
+     *
+     * Returns a stream of required actions.
+     */
+    @Path("required-actions")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
+    @Operation( //
+            summary = "List all required actions for this realm.",
+            description = "List all required actions for this realm with Admin UI specific metadata."
+    )
+    public Stream<RequiredActionProviderRepresentation> getRequiredActions() {
+        auth.realm().requireViewRequiredActions();
+        return realm.getRequiredActionProvidersStream().map(this::toRepresentation);
+    }
+
+    public ConfigurableRequiredActionProviderRepresentation toRepresentation(RequiredActionProviderModel model) {
+        ConfigurableRequiredActionProviderRepresentation rep = new ConfigurableRequiredActionProviderRepresentation();
+        rep.setAlias(model.getAlias());
+        rep.setProviderId(model.getProviderId());
+        rep.setName(model.getName());
+        rep.setDefaultAction(model.isDefaultAction());
+        rep.setPriority(model.getPriority());
+        rep.setEnabled(model.isEnabled());
+        rep.setConfig(model.getConfig());
+
+        RequiredActionFactory factory = (RequiredActionFactory)session.getKeycloakSessionFactory().getProviderFactory(RequiredActionProvider.class, model.getProviderId());
+        if (factory != null) {
+            rep.setConfigurable(factory.isConfigurable());
+        } else {
+            logger.warnv("Detected RequiredAction with missing provider. realm={0}, alias={1}, providerId={2}",
+                    realm.getName(), model.getAlias(), model.getProviderId());
+        }
+
+        return rep;
     }
 }

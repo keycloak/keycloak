@@ -198,7 +198,7 @@ public class LDAPGroupMapperSyncWithGroupsPathTest extends AbstractLDAPTest {
             Assert.assertNotNull(KeycloakModelUtils.findGroupByPath(session, realm, "/outside"));
 
             // Update group mapper to drop non-existing groups during sync
-            LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.DROP_NON_EXISTING_GROUPS_DURING_SYNC, "true");
+            LDAPTestUtils.updateConfigOptions(mapperModel, GroupMapperConfig.DROP_NON_EXISTING_GROUPS_DURING_SYNC, "true");
             realm.updateComponent(mapperModel);
 
             // Sync groups again from LDAP. Assert LDAP non-existing groups deleted

@@ -6,14 +6,7 @@ import {
   TextVariants,
 } from "@patternfly/react-core";
 import { PlusCircleIcon } from "@patternfly/react-icons";
-import {
-  TableComposable,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
-} from "@patternfly/react-table";
+import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { useEffect, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -96,7 +89,7 @@ export const AttributeValidations = () => {
         </Button>
         <Divider />
         {validators.length !== 0 ? (
-          <TableComposable>
+          <Table>
             <Thead>
               <Tr>
                 <Th>{t("validatorColNames.colName")}</Th>
@@ -129,9 +122,9 @@ export const AttributeValidations = () => {
                 </Tr>
               ))}
             </Tbody>
-          </TableComposable>
+          </Table>
         ) : (
-          <Text className="kc-emptyValidators" component={TextVariants.h6}>
+          <Text className="kc-emptyValidators" component={TextVariants.p}>
             {t("emptyValidators")}
           </Text>
         )}

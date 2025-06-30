@@ -117,7 +117,7 @@ describe("Client authentication subtab", () => {
         name: "Regex policy",
         description: "Policy for regex",
         targetClaim: "I don't know",
-        regexPattern: ".*?",
+        pattern: ".*?",
       })
       .formUtils()
       .save();
@@ -193,6 +193,80 @@ describe("Client authentication subtab", () => {
       "Successfully exported authorization details.",
       true,
     );
+  });
+
+  describe("Client authorization tab access for view-realm-authorization", () => {
+    const clientId = "realm-view-authz-client-" + uuid();
+
+    beforeEach(async () => {
+      const [, testUser] = await Promise.all([
+        adminClient.createRealm("realm-view-authz"),
+        adminClient.createUser({
+          // Create user in master realm
+          username: "test-view-authz-user",
+          enabled: true,
+          credentials: [{ type: "password", value: "password" }],
+        }),
+      ]);
+
+      await Promise.all([
+        adminClient.addClientRoleToUser(
+          testUser.id!,
+          "realm-view-authz-realm",
+          ["view-realm", "view-users", "view-authorization", "view-clients"],
+        ),
+        adminClient.createClient({
+          realm: "realm-view-authz",
+          clientId,
+          authorizationServicesEnabled: true,
+          serviceAccountsEnabled: true,
+          standardFlowEnabled: true,
+        }),
+      ]);
+    });
+
+    after(() =>
+      Promise.all([
+        adminClient.deleteClient(clientId),
+        adminClient.deleteUser("test-view-authz-user"),
+        adminClient.deleteRealm("realm-view-authz"),
+      ]),
+    );
+
+    it("Should view autorization tab", () => {
+      sidebarPage.waitForPageLoad();
+      masthead.signOut();
+
+      sidebarPage.waitForPageLoad();
+      loginPage.logIn("test-view-authz-user", "password");
+      keycloakBefore();
+
+      sidebarPage.waitForPageLoad().goToRealm("realm-view-authz");
+
+      cy.reload();
+
+      sidebarPage.waitForPageLoad().goToClients();
+
+      listingPage
+        .searchItem(clientId, true, "realm-view-authz")
+        .goToItemDetails(clientId);
+      clientDetailsPage.goToAuthorizationTab();
+
+      authenticationTab.goToResourcesSubTab();
+      sidebarPage.waitForPageLoad();
+      listingPage.goToItemDetails("Resource");
+      sidebarPage.waitForPageLoad();
+      cy.go("back");
+
+      authenticationTab.goToScopesSubTab();
+      sidebarPage.waitForPageLoad();
+      authenticationTab.goToPoliciesSubTab();
+      sidebarPage.waitForPageLoad();
+      authenticationTab.goToPermissionsSubTab();
+      sidebarPage.waitForPageLoad();
+      authenticationTab.goToEvaluateSubTab();
+      sidebarPage.waitForPageLoad();
+    });
   });
 
   describe("Accessibility tests for client authorization", () => {

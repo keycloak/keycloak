@@ -22,7 +22,6 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.UUID;
@@ -39,8 +38,6 @@ import org.jboss.logging.Logger;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class KeycloakMarshallUtil {
-
-    private static final Logger log = Logger.getLogger(KeycloakMarshallUtil.class);
 
     public static final Externalizer<String> STRING_EXT = new StringExternalizer();
 
@@ -172,14 +169,6 @@ public class KeycloakMarshallUtil {
             return new ConcurrentHashMap<>(size);
         }
 
-    }
-
-    public static class HashSetBuilder<E> implements MarshallUtil.CollectionBuilder<E, HashSet<E>> {
-
-        @Override
-        public HashSet<E> build(int size) {
-            return new HashSet<>(size);
-        }
     }
 
 

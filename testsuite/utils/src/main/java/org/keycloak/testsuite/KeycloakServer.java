@@ -52,6 +52,7 @@ import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
+import org.keycloak.services.resteasy.ResteasyKeycloakApplication;
 import org.keycloak.testsuite.util.cli.TestsuiteCLI;
 import org.keycloak.util.JsonSerialization;
 import io.undertow.servlet.api.InstanceHandle;
@@ -408,7 +409,7 @@ public class KeycloakServer {
 
         ResteasyDeployment deployment = new ResteasyDeploymentImpl();
 
-        deployment.setApplicationClass(KeycloakApplication.class.getName());
+        deployment.setApplicationClass(ResteasyKeycloakApplication.class.getName());
 
         Builder builder = Undertow.builder()
                 .addHttpListener(config.getPort(), config.getHost())

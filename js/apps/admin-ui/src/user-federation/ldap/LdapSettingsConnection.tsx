@@ -1,25 +1,31 @@
 import type TestLdapConnectionRepresentation from "@keycloak/keycloak-admin-client/lib/defs/testLdapConnection";
 import {
+  HelpItem,
+  KeycloakSelect,
+  PasswordControl,
+  SelectControl,
+  SelectVariant,
+  TextControl,
+} from "@keycloak/keycloak-ui-shared";
+import {
   AlertVariant,
   Button,
   FormGroup,
-  Select,
   SelectOption,
-  SelectVariant,
   Switch,
-  ValidatedOptions,
 } from "@patternfly/react-core";
 import { get, isEqual } from "lodash-es";
 import { useState } from "react";
-import { Controller, UseFormReturn, useWatch } from "react-hook-form";
+import {
+  Controller,
+  FormProvider,
+  UseFormReturn,
+  useWatch,
+} from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
-import { PasswordInput } from "../../components/password-input/PasswordInput";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
 
@@ -59,6 +65,8 @@ export const LdapSettingsConnection = ({
   showSectionHeading = false,
   showSectionDescription = false,
 }: LdapSettingsConnectionProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
@@ -77,9 +85,6 @@ export const LdapSettingsConnection = ({
     }
   };
 
-  const [isTruststoreSpiDropdownOpen, setIsTruststoreSpiDropdownOpen] =
-    useState(false);
-
   const [isBindTypeDropdownOpen, setIsBindTypeDropdownOpen] = useState(false);
 
   const ldapBindType = useWatch({
@@ -89,7 +94,7 @@ export const LdapSettingsConnection = ({
   });
 
   return (
-    <>
+    <FormProvider {...form}>
       {showSectionHeading && (
         <WizardSectionHeader
           title={t("connectionAndAuthenticationSettings")}
@@ -98,43 +103,15 @@ export const LdapSettingsConnection = ({
         />
       )}
       <FormAccess role="manage-realm" isHorizontal>
-        <FormGroup
+        <TextControl
+          name="config.connectionUrl.0"
           label={t("connectionURL")}
-          labelIcon={
-            <HelpItem
-              helpText={t("consoleDisplayConnectionUrlHelp")}
-              fieldLabelId="connectionURL"
-            />
-          }
-          fieldId="kc-ui-connection-url"
-          isRequired
-          validated={
-            (form.formState.errors.config as any)?.connectionUrl?.[0]
-              ? "error"
-              : "default"
-          }
-          helperTextInvalid={
-            (form.formState.errors.config as any)?.connectionUrl?.[0].message
-          }
-        >
-          <KeycloakTextInput
-            isRequired
-            type="url"
-            id="kc-ui-connection-url"
-            data-testid="ldap-connection-url"
-            validated={
-              (form.formState.errors.config as any)?.connectionUrl?.[0]
-                ? "error"
-                : "default"
-            }
-            {...form.register("config.connectionUrl.0", {
-              required: {
-                value: true,
-                message: t("validateConnectionUrl").toString(),
-              },
-            })}
-          />
-        </FormGroup>
+          labelIcon={t("consoleDisplayConnectionUrlHelp")}
+          type="url"
+          rules={{
+            required: t("validateConnectionUrl"),
+          }}
+        />
         <FormGroup
           label={t("enableStartTls")}
           labelIcon={
@@ -155,49 +132,28 @@ export const LdapSettingsConnection = ({
                 id={"kc-enable-start-tls"}
                 data-testid="enable-start-tls"
                 isDisabled={false}
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 label={t("on")}
                 labelOff={t("off")}
                 aria-label={t("enableStartTls")}
               />
             )}
-          ></Controller>
+          />
         </FormGroup>
-
-        <FormGroup
+        <SelectControl
+          id="useTruststoreSpi"
+          name="config.useTruststoreSpi[0]"
           label={t("useTruststoreSpi")}
-          labelIcon={
-            <HelpItem
-              helpText={t("useTruststoreSpiHelp")}
-              fieldLabelId="useTruststoreSpi"
-            />
-          }
-          fieldId="kc-use-truststore-spi"
-        >
-          <Controller
-            name="config.useTruststoreSpi[0]"
-            control={form.control}
-            defaultValue="always"
-            render={({ field }) => (
-              <Select
-                toggleId="kc-use-truststore-spi"
-                onToggle={() =>
-                  setIsTruststoreSpiDropdownOpen(!isTruststoreSpiDropdownOpen)
-                }
-                isOpen={isTruststoreSpiDropdownOpen}
-                onSelect={(_, value) => {
-                  field.onChange(value.toString());
-                  setIsTruststoreSpiDropdownOpen(false);
-                }}
-                selections={field.value}
-              >
-                <SelectOption value="always">{t("always")}</SelectOption>
-                <SelectOption value="never">{t("never")}</SelectOption>
-              </Select>
-            )}
-          ></Controller>
-        </FormGroup>
+          labelIcon={t("useTruststoreSpiHelp")}
+          controller={{
+            defaultValue: "always",
+          }}
+          options={[
+            { key: "always", value: t("always") },
+            { key: "never", value: t("never") },
+          ]}
+        />
         <FormGroup
           label={t("connectionPooling")}
           labelIcon={
@@ -218,33 +174,22 @@ export const LdapSettingsConnection = ({
                 id={"kc-connection-pooling"}
                 data-testid="connection-pooling"
                 isDisabled={false}
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 label={t("on")}
                 labelOff={t("off")}
                 aria-label={t("connectionPooling")}
               />
             )}
-          ></Controller>
-        </FormGroup>
-        <FormGroup
-          label={t("connectionTimeout")}
-          labelIcon={
-            <HelpItem
-              helpText={t("connectionTimeoutHelp")}
-              fieldLabelId="consoleTimeout"
-            />
-          }
-          fieldId="kc-ui-connection-timeout"
-        >
-          <KeycloakTextInput
-            type="number"
-            min={0}
-            id="kc-ui-connection-timeout"
-            data-testid="connection-timeout"
-            {...form.register("config.connectionTimeout.0")}
           />
         </FormGroup>
+        <TextControl
+          name="config.connectionTimeout.0"
+          label={t("connectionTimeout")}
+          labelIcon={t("connectionTimeoutHelp")}
+          type="number"
+          min={0}
+        />
         <FormGroup fieldId="kc-test-connection-button">
           <Button
             variant="secondary"
@@ -268,88 +213,47 @@ export const LdapSettingsConnection = ({
             defaultValue="simple"
             control={form.control}
             render={({ field }) => (
-              <Select
+              <KeycloakSelect
                 toggleId="kc-bind-type"
-                required
                 onToggle={() =>
                   setIsBindTypeDropdownOpen(!isBindTypeDropdownOpen)
                 }
                 isOpen={isBindTypeDropdownOpen}
-                onSelect={(_, value) => {
+                onSelect={(value) => {
                   field.onChange(value as string);
                   setIsBindTypeDropdownOpen(false);
                 }}
                 selections={field.value}
                 variant={SelectVariant.single}
                 data-testid="ldap-bind-type"
+                aria-label={t("selectBindType")}
               >
-                <SelectOption value="simple" />
-                <SelectOption value="none" />
-              </Select>
+                <SelectOption value="simple">simple</SelectOption>
+                <SelectOption value="none">none</SelectOption>
+              </KeycloakSelect>
             )}
-          ></Controller>
+          />
         </FormGroup>
 
         {isEqual(ldapBindType, ["simple"]) && (
           <>
-            <FormGroup
+            <TextControl
+              name="config.bindDn.0"
               label={t("bindDn")}
-              labelIcon={
-                <HelpItem helpText={t("bindDnHelp")} fieldLabelId="bindDn" />
-              }
-              fieldId="kc-ui-bind-dn"
-              helperTextInvalid={t("validateBindDn")}
-              validated={
-                (form.formState.errors.config as any)?.bindDn
-                  ? ValidatedOptions.error
-                  : ValidatedOptions.default
-              }
-              isRequired
-            >
-              <KeycloakTextInput
-                type="text"
-                id="kc-ui-bind-dn"
-                data-testid="ldap-bind-dn"
-                validated={
-                  (form.formState.errors.config as any)?.bindDn
-                    ? ValidatedOptions.error
-                    : ValidatedOptions.default
-                }
-                {...form.register("config.bindDn.0", { required: true })}
-              />
-            </FormGroup>
-            <FormGroup
+              labelIcon={t("bindDnHelp")}
+              rules={{
+                required: t("validateBindDn"),
+              }}
+            />
+            <PasswordControl
+              name="config.bindCredential.0"
               label={t("bindCredentials")}
-              labelIcon={
-                <HelpItem
-                  helpText={t("bindCredentialsHelp")}
-                  fieldLabelId="bindCredentials"
-                />
-              }
-              fieldId="kc-ui-bind-credentials"
-              helperTextInvalid={t("validateBindCredentials")}
-              validated={
-                (form.formState.errors.config as any)?.bindCredential
-                  ? ValidatedOptions.error
-                  : ValidatedOptions.default
-              }
-              isRequired
-            >
-              <PasswordInput
-                hasReveal={!edit}
-                isRequired
-                id="kc-ui-bind-credentials"
-                data-testid="ldap-bind-credentials"
-                validated={
-                  (form.formState.errors.config as any)?.bindCredential
-                    ? ValidatedOptions.error
-                    : ValidatedOptions.default
-                }
-                {...form.register("config.bindCredential.0", {
-                  required: true,
-                })}
-              />
-            </FormGroup>
+              labelIcon={t("bindCredentialsHelp")}
+              hasReveal={!edit}
+              rules={{
+                required: t("validateBindCredentials"),
+              }}
+            />
           </>
         )}
         <FormGroup fieldId="kc-test-auth-button">
@@ -363,6 +267,6 @@ export const LdapSettingsConnection = ({
           </Button>
         </FormGroup>
       </FormAccess>
-    </>
+    </FormProvider>
   );
 };

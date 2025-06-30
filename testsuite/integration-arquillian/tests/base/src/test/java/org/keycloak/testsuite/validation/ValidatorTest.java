@@ -19,13 +19,6 @@
 
 package org.keycloak.testsuite.validation;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-import java.util.Collections;
-import java.util.Locale;
-
-import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -33,8 +26,14 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.runonserver.RunOnServer;
+import org.keycloak.validate.BuiltinValidators;
 import org.keycloak.validate.ValidationContext;
-import org.keycloak.validate.Validators;
+
+import java.util.Collections;
+import java.util.Locale;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -46,26 +45,32 @@ public class ValidatorTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void testDateValidator() {
-        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) ValidatorTest::testDateValidator);
+    public void testLocalDateValidator() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) ValidatorTest::testLocalDateValidator);
     }
 
-    private static void testDateValidator(KeycloakSession session) {
-        assertTrue(Validators.dateValidator().validate(null, new ValidationContext(session)).isValid());
-        assertTrue(Validators.dateValidator().validate("", new ValidationContext(session)).isValid());
+    @Test
+    public void testIsoDateValidator() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) ValidatorTest::testIsoDateValidator);
+    }
+
+    private static void testLocalDateValidator(KeycloakSession session) {
+        assertTrue(BuiltinValidators.dateValidator().validate(null, new ValidationContext(session)).isValid());
+        assertTrue(BuiltinValidators.dateValidator().validate("", new ValidationContext(session)).isValid());
 
         // defaults to Locale.ENGLISH as per default locale selector
-        assertFalse(Validators.dateValidator().validate("13/12/2021", new ValidationContext(session)).isValid());
-        assertFalse(Validators.dateValidator().validate("13/12/21", new ValidationContext(session)).isValid());
-        assertTrue(Validators.dateValidator().validate("12/13/2021", new ValidationContext(session)).isValid());
+        assertFalse(BuiltinValidators.dateValidator().validate("13/12/2021", new ValidationContext(session)).isValid());
+        assertFalse(BuiltinValidators.dateValidator().validate("13/12/21", new ValidationContext(session)).isValid());
+        assertTrue(BuiltinValidators.dateValidator().validate("12/13/21", new ValidationContext(session)).isValid());
+        assertTrue(BuiltinValidators.dateValidator().validate("12/13/2021", new ValidationContext(session)).isValid());
         RealmModel realm = session.getContext().getRealm();
 
         realm.setInternationalizationEnabled(true);
         realm.setDefaultLocale(Locale.FRANCE.getLanguage());
 
-        assertTrue(Validators.dateValidator().validate("13/12/21", new ValidationContext(session)).isValid());
-        assertTrue(Validators.dateValidator().validate("13/12/2021", new ValidationContext(session)).isValid());
-        assertFalse(Validators.dateValidator().validate("12/13/2021", new ValidationContext(session)).isValid());
+        assertTrue(BuiltinValidators.dateValidator().validate("13/12/21", new ValidationContext(session)).isValid());
+        assertTrue(BuiltinValidators.dateValidator().validate("13/12/2021", new ValidationContext(session)).isValid());
+        assertFalse(BuiltinValidators.dateValidator().validate("12/13/2021", new ValidationContext(session)).isValid());
 
         UserModel alice = session.users().getUserByUsername(realm, "alice");
 
@@ -75,6 +80,20 @@ public class ValidatorTest extends AbstractTestRealmKeycloakTest {
 
         context.getAttributes().put(UserModel.class.getName(), alice);
 
-        assertFalse(Validators.dateValidator().validate("13/12/2021", context).isValid());
+        assertFalse(BuiltinValidators.dateValidator().validate("13/12/2021", context).isValid());
+    }
+
+    private static void testIsoDateValidator(KeycloakSession session) {
+        assertTrue(BuiltinValidators.isoDateValidator().validate(null, new ValidationContext(session)).isValid());
+        assertTrue(BuiltinValidators.isoDateValidator().validate("", new ValidationContext(session)).isValid());
+        assertTrue(BuiltinValidators.isoDateValidator().validate("2021-12-13", new ValidationContext(session)).isValid());
+
+        assertFalse(BuiltinValidators.isoDateValidator().validate("13/12/2021", new ValidationContext(session)).isValid());
+        assertFalse(BuiltinValidators.isoDateValidator().validate("13/12/21", new ValidationContext(session)).isValid());
+        assertFalse(BuiltinValidators.isoDateValidator().validate("12/13/21", new ValidationContext(session)).isValid());
+        assertFalse(BuiltinValidators.isoDateValidator().validate("13.12.21", new ValidationContext(session)).isValid());
+        assertFalse(BuiltinValidators.isoDateValidator().validate("13.12.2021", new ValidationContext(session)).isValid());
+        assertFalse(BuiltinValidators.isoDateValidator().validate("2021-13-12", new ValidationContext(session)).isValid());
+        assertFalse(BuiltinValidators.isoDateValidator().validate("21-13-12", new ValidationContext(session)).isValid());
     }
 }

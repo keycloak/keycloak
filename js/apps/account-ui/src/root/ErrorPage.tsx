@@ -10,9 +10,13 @@ import {
 import { useTranslation } from "react-i18next";
 import { isRouteErrorResponse, useRouteError } from "react-router-dom";
 
-export const ErrorPage = () => {
+type ErrorPageProps = {
+  error?: unknown;
+};
+
+export const ErrorPage = (props: ErrorPageProps) => {
   const { t } = useTranslation();
-  const error = useRouteError();
+  const error = useRouteError() ?? props.error;
   const errorMessage = getErrorMessage(error);
 
   function onRetry() {
@@ -50,7 +54,7 @@ function getErrorMessage(error: unknown): string | null {
   }
 
   if (isRouteErrorResponse(error)) {
-    return error.error ? getErrorMessage(error.error) : null;
+    return error.statusText;
   }
 
   if (error instanceof Error) {

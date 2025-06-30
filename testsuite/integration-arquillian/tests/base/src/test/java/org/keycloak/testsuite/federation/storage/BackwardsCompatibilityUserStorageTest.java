@@ -22,16 +22,14 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.broker.provider.util.SimpleHttp;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.account.CredentialMetadataRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -43,8 +41,8 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.federation.BackwardsCompatibilityUserStorageFactory;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
@@ -87,13 +85,6 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeyc
 
 
     private TimeBasedOTP totp = new TimeBasedOTP();
-
-
-
-    @BeforeClass
-    public static void checkNotMapStorage() {
-        ProfileAssume.assumeFeatureDisabled(Feature.MAP_STORAGE);
-    }
 
     @Before
     public void addProvidersBeforeTest() throws URISyntaxException, IOException {
@@ -152,7 +143,7 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeyc
 
         // Update his password
         CredentialRepresentation passwordRep = new CredentialRepresentation();
-        passwordRep.setType(CredentialModel.PASSWORD);
+        passwordRep.setType(PasswordCredentialModel.TYPE);
         passwordRep.setValue(password);
         passwordRep.setTemporary(false);
 
@@ -259,7 +250,7 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeyc
             String otpCredentialId = otpCreds.get(0).getCredential().getId();
 
             // Delete OTP credential from federated storage
-            int deleteStatus = SimpleHttp.doDelete(accountCredentialsUrl + "/" + otpCredentialId, httpClient)
+            int deleteStatus = SimpleHttpDefault.doDelete(accountCredentialsUrl + "/" + otpCredentialId, httpClient)
                 .auth(accountToken).acceptJson().asStatus();
             Assert.assertEquals(204, deleteStatus);
 
@@ -362,7 +353,7 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeyc
     }
 
     private List<CredentialMetadataRepresentation> getOtpCredentialFromAccountREST(String accountCredentialsUrl, CloseableHttpClient httpClient, TokenUtil tokenUtil) throws IOException {
-        List<AccountCredentialResource.CredentialContainer> credentials = SimpleHttp.doGet(accountCredentialsUrl, httpClient)
+        List<AccountCredentialResource.CredentialContainer> credentials = SimpleHttpDefault.doGet(accountCredentialsUrl, httpClient)
                 .auth(tokenUtil.getToken()).asJson(new TypeReference<>() {});
 
         return credentials.stream()

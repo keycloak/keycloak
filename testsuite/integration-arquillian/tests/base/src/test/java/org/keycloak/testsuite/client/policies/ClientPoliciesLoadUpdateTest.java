@@ -60,7 +60,7 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureClientA
 
 /**
  * This test class is for testing loading and updating profiles and policies file of client policies.
- * 
+ *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
 public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
@@ -84,7 +84,7 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
         ClientProfilesRepresentation actualProfilesRep = getProfilesWithGlobals();
 
         // same profiles
-        assertExpectedProfiles(actualProfilesRep, Arrays.asList(FAPI1_BASELINE_PROFILE_NAME, FAPI1_ADVANCED_PROFILE_NAME, FAPI_CIBA_PROFILE_NAME, FAPI2_SECURITY_PROFILE_NAME, FAPI2_MESSAGE_SIGNING_PROFILE_NAME), Collections.emptyList());
+        assertExpectedProfiles(actualProfilesRep, Arrays.asList(FAPI1_BASELINE_PROFILE_NAME, FAPI1_ADVANCED_PROFILE_NAME, FAPI_CIBA_PROFILE_NAME, FAPI2_SECURITY_PROFILE_NAME, FAPI2_MESSAGE_SIGNING_PROFILE_NAME, OAUTH2_1_CONFIDENTIAL_CLIENT_PROFILE_NAME, OAUTH2_1_PUBLIC_CLIENT_PROFILE_NAME, SAML_SECURITY_PROFILE_NAME), Collections.emptyList());
 
         // each profile - fapi-1-baseline
         ClientProfileRepresentation actualProfileRep =  getProfileRepresentation(actualProfilesRep, FAPI1_BASELINE_PROFILE_NAME, true);
@@ -175,7 +175,7 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
                             null))
                     .addExecutor(PKCEEnforcerExecutorFactory.PROVIDER_ID,
                         createPKCEEnforceExecutorConfig(Boolean.FALSE))
-                    .addExecutor("no-such-executor", 
+                    .addExecutor("no-such-executor",
                             createPKCEEnforceExecutorConfig(Boolean.TRUE))
                     .toRepresentation();
 
@@ -219,6 +219,50 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
         } catch (ClientPolicyException cpe) {
             assertEquals("update profiles failed", cpe.getError());
         }
+    }
+
+    @Test
+    public void testUpdatingGlobalProfilesNotAllowed() throws Exception {
+        ClientProfilesRepresentation clientProfilesRep = adminClient.realm(REALM_NAME).clientPoliciesProfilesResource().getProfiles(true);
+        List<ClientProfileRepresentation> origGlobalProfiles = clientProfilesRep.getGlobalProfiles();
+
+        // Attempt to update description of some global profile. Should fail
+        clientProfilesRep = adminClient.realm(REALM_NAME).clientPoliciesProfilesResource().getProfiles(true);
+        clientProfilesRep.getGlobalProfiles().stream()
+                .filter(clientProfile -> FAPI1_BASELINE_PROFILE_NAME.equals(clientProfile.getName()))
+                .forEach(clientProfile -> clientProfile.setDescription("some new description"));
+        try {
+            updateProfiles(clientProfilesRep);
+            fail();
+        } catch (ClientPolicyException cpe) {
+            assertEquals("update profiles failed", cpe.getError());
+        }
+
+        // Attempt to add new global profile. Should fail
+        clientProfilesRep = adminClient.realm(REALM_NAME).clientPoliciesProfilesResource().getProfiles(true);
+        ClientProfileRepresentation newProfile = new ClientProfileRepresentation();
+        newProfile.setName("new-name");
+        newProfile.setDescription("desc");
+        clientProfilesRep.getGlobalProfiles().add(newProfile);
+        try {
+            updateProfiles(clientProfilesRep);
+            fail();
+        } catch (ClientPolicyException cpe) {
+            assertEquals("update profiles failed", cpe.getError());
+        }
+
+        // Attempt to update without global profiles. Should be OK
+        clientProfilesRep = adminClient.realm(REALM_NAME).clientPoliciesProfilesResource().getProfiles(true);
+        clientProfilesRep.setGlobalProfiles(null);
+        updateProfiles(clientProfilesRep);
+
+        // Attempt to update with global profiles, but not change them. Should be OK
+        clientProfilesRep = adminClient.realm(REALM_NAME).clientPoliciesProfilesResource().getProfiles(true);
+        updateProfiles(clientProfilesRep);
+
+        // Doublecheck global profiles were not changed
+        clientProfilesRep = adminClient.realm(REALM_NAME).clientPoliciesProfilesResource().getProfiles(true);
+        Assert.assertEquals(origGlobalProfiles, clientProfilesRep.getGlobalProfiles());
     }
 
     @Test
@@ -306,22 +350,22 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
         String beforeUpdatePoliciesJson = ClientPoliciesUtil.convertClientPoliciesRepresentationToJson(getPolicies());
 
         // load policies
-        ClientPolicyRepresentation duplicatedPoliciesRep = 
+        ClientPolicyRepresentation duplicatedPoliciesRep =
                 (new ClientPolicyBuilder()).createPolicy(
                         "builtin-duplicated-new-policy",
                         "builtin duplicated new policy is ignored.",
                         Boolean.TRUE)
-                    .addCondition(ClientRolesConditionFactory.PROVIDER_ID, 
+                    .addCondition(ClientRolesConditionFactory.PROVIDER_ID,
                         createClientRolesConditionConfig(Arrays.asList(SAMPLE_CLIENT_ROLE)))
                         .addProfile(FAPI1_BASELINE_PROFILE_NAME)
                     .toRepresentation();
 
-        ClientPolicyRepresentation loadedPolicyRep = 
+        ClientPolicyRepresentation loadedPolicyRep =
                 (new ClientPolicyBuilder()).createPolicy(
                         "new-policy",
                         "duplicated profiles are ignored.",
                         Boolean.TRUE)
-                    .addCondition(ClientAccessTypeConditionFactory.PROVIDER_ID, 
+                    .addCondition(ClientAccessTypeConditionFactory.PROVIDER_ID,
                         createClientAccessTypeConditionConfig(Arrays.asList(ClientAccessTypeConditionFactory.TYPE_PUBLIC, ClientAccessTypeConditionFactory.TYPE_BEARERONLY)))
                         .addProfile("lack-of-builtin-field-test-profile")
                         .addProfile("ordinal-test-profile")

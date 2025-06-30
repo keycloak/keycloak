@@ -27,12 +27,20 @@ public interface Algorithm {
     String RS256 = "RS256";
     String RS384 = "RS384";
     String RS512 = "RS512";
-    String ES256 = "ES256";
-    String ES384 = "ES384";
-    String ES512 = "ES512";
     String PS256 = "PS256";
     String PS384 = "PS384";
     String PS512 = "PS512";
+
+    /* ECDSA signing algorithms  */
+    String ES256 = "ES256";
+    String ES384 = "ES384";
+    String ES512 = "ES512";
+
+    /* EdDSA signing algorithms  */
+    String EdDSA = "EdDSA";
+    /* EdDSA Curve */
+    String Ed25519 = "Ed25519";
+    String Ed448 = "Ed448";
 
     /* RSA Encryption Algorithms */
     String RSA1_5 = CryptoConstants.RSA1_5;

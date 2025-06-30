@@ -10,8 +10,7 @@ import {
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { MapperList } from "../../client-scopes/details/MapperList";
 import { useAlerts } from "../../components/alert/Alerts";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
@@ -28,9 +27,11 @@ import {
   toDedicatedScope,
 } from "../routes/DedicatedScopeDetails";
 import { toMapper } from "../routes/Mapper";
-import { DedicatedScope } from "./DecicatedScope";
+import { DedicatedScope } from "./DedicatedScope";
 
 export default function DedicatedScopes() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { realm, clientId } = useParams<DedicatedScopeDetailsParams>();
@@ -98,11 +99,11 @@ export default function DedicatedScopes() {
   return (
     <>
       <ViewHeader
-        titleKey={client.clientId!}
+        titleKey={client.clientId! + "-dedicated"}
         subKey="dedicatedScopeExplain"
         divider={false}
       />
-      <PageSection variant="light" className="pf-u-p-0">
+      <PageSection variant="light" className="pf-v5-u-p-0">
         <RoutableTabs
           isBox
           mountOnEnter

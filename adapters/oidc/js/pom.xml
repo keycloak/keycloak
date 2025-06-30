@@ -19,9 +19,9 @@
         <js.adapter.projectDir>${js.projectDir}/libs/keycloak-js</js.adapter.projectDir>
         <js.adapter.distDir>${js.adapter.projectDir}/dist</js.adapter.distDir>
         <!-- as the frontend-maven-plugin depends on workingDirectory, list all parts which should be ignored from the checksum -->
-        <maven.build.cache.exclude.1>${maven.multiModuleProjectDirectory}/js/libs/keycloak-js/node_modules</maven.build.cache.exclude.1>
+        <maven.build.cache.exclude.value.1>${maven.multiModuleProjectDirectory}/js/libs/keycloak-js/node_modules</maven.build.cache.exclude.value.1>
         <!-- TODO: this is almost correct, as the DIST folder includes also two source files -->
-        <maven.build.cache.exclude.2>${maven.multiModuleProjectDirectory}/js/libs/keycloak-js/dist</maven.build.cache.exclude.2>
+        <maven.build.cache.exclude.value.2>${maven.multiModuleProjectDirectory}/js/libs/keycloak-js/dist</maven.build.cache.exclude.value.2>
     </properties>
 
     <build>
@@ -51,35 +51,7 @@
             <plugin>
                 <groupId>com.github.eirslett</groupId>
                 <artifactId>frontend-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>install-node-and-pnpm</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>pnpm-install</id>
-                        <goals>
-                            <goal>pnpm</goal>
-                        </goals>
-                        <configuration>
-                            <arguments>install --frozen-lockfile --ignore-scripts</arguments>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>run-build</id>
-                        <goals>
-                            <goal>pnpm</goal>
-                        </goals>
-                        <configuration>
-                            <arguments>run build</arguments>
-                        </configuration>
-                    </execution>
-                </executions>
                 <configuration>
-                    <nodeVersion>${node.version}</nodeVersion>
-                    <pnpmVersion>${pnpm.version}</pnpmVersion>
-                    <installDirectory>${js.projectDir}</installDirectory>
                     <workingDirectory>${js.projectDir}/libs/keycloak-js</workingDirectory>
                 </configuration>
             </plugin>

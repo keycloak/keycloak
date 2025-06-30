@@ -31,24 +31,25 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import io.quarkus.runtime.LaunchMode;
-import io.quarkus.runtime.configuration.ProfileManager;
 import io.smallrye.config.SmallRyeConfig;
 
 import org.apache.commons.lang3.SystemUtils;
 import org.keycloak.common.Profile;
 import org.keycloak.common.profile.PropertiesFileProfileConfigResolver;
+import org.keycloak.common.profile.PropertiesProfileConfigResolver;
+import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 public final class Environment {
 
     public static final String IMPORT_EXPORT_MODE = "import_export";
-    public static final String PROFILE ="kc.profile";
-    public static final String ENV_PROFILE ="KC_PROFILE";
     public static final String DATA_PATH = File.separator + "data";
     public static final String DEFAULT_THEMES_PATH = File.separator +  "themes";
-    public static final String DEV_PROFILE_VALUE = "dev";
     public static final String PROD_PROFILE_VALUE = "prod";
     public static final String LAUNCH_MODE = "kc.launch.mode";
+
+    private static volatile AbstractCommand parsedCommand;
+
     private Environment() {}
 
     public static Boolean isRebuild() {
@@ -99,19 +100,9 @@ public final class Environment {
         return "kc.sh";
     }
 
-    public static String getProfile() {
-        String profile = System.getProperty(PROFILE);
-        
-        if (profile == null) {
-            profile = System.getenv(ENV_PROFILE);
-        }
-
-        return profile;
-    }
-
     public static void setProfile(String profile) {
-        System.setProperty(PROFILE, profile);
-        System.setProperty(ProfileManager.QUARKUS_PROFILE_PROP, profile);
+        System.setProperty(org.keycloak.common.util.Environment.PROFILE, profile);
+        System.setProperty(LaunchMode.current().getProfileKey(), profile);
         System.setProperty(SmallRyeConfig.SMALLRYE_CONFIG_PROFILE, profile);
         if (isTestLaunchMode()) {
             System.setProperty("mp.config.profile", profile);
@@ -119,37 +110,37 @@ public final class Environment {
     }
 
     public static String getCurrentOrPersistedProfile() {
-        String profile = getProfile();
+        String profile = org.keycloak.common.util.Environment.getProfile();
         if(profile == null) {
-            profile = PersistedConfigSource.getInstance().getValue(PROFILE);
+            profile = PersistedConfigSource.getInstance().getValue(org.keycloak.common.util.Environment.PROFILE);
         }
         return profile;
     }
 
     public static String getProfileOrDefault(String defaultProfile) {
-        String profile = getProfile();
+        String profile = org.keycloak.common.util.Environment.getProfile();
 
         if (profile == null) {
             profile = defaultProfile;
         }
-        
+
         return profile;
     }
 
     public static boolean isDevMode() {
-        if (DEV_PROFILE_VALUE.equalsIgnoreCase(getProfile())) {
+        if (org.keycloak.common.util.Environment.isDevMode()) {
             return true;
         }
 
-        return DEV_PROFILE_VALUE.equals(getBuildTimeProperty(PROFILE).orElse(null));
+        return org.keycloak.common.util.Environment.DEV_PROFILE_VALUE.equals(getBuildTimeProperty(org.keycloak.common.util.Environment.PROFILE).orElse(null));
     }
 
     public static boolean isDevProfile(){
-        return Optional.ofNullable(getProfile()).orElse("").equalsIgnoreCase(DEV_PROFILE_VALUE);
+        return Optional.ofNullable(org.keycloak.common.util.Environment.getProfile()).orElse("").equalsIgnoreCase(org.keycloak.common.util.Environment.DEV_PROFILE_VALUE);
     }
 
     public static boolean isImportExportMode() {
-        return IMPORT_EXPORT_MODE.equalsIgnoreCase(getProfile());
+        return IMPORT_EXPORT_MODE.equalsIgnoreCase(org.keycloak.common.util.Environment.getProfile());
     }
 
     public static boolean isWindows() {
@@ -157,7 +148,7 @@ public final class Environment {
     }
 
     public static void forceDevProfile() {
-        setProfile(DEV_PROFILE_VALUE);
+        setProfile(org.keycloak.common.util.Environment.DEV_PROFILE_VALUE);
     }
 
     public static Map<String, File> getProviderFiles() {
@@ -249,9 +240,24 @@ public final class Environment {
         Profile profile = Profile.getInstance();
 
         if (profile == null) {
-            profile = Profile.configure(new QuarkusProfileConfigResolver(), new PropertiesFileProfileConfigResolver());
+            profile = Profile.configure(new QuarkusProfileConfigResolver(), new PropertiesProfileConfigResolver(QuarkusProfileConfigResolver::getConfig), new PropertiesFileProfileConfigResolver());
         }
 
         return profile;
+    }
+
+    /**
+     * Get parsed AbstractCommand we obtained from the CLI
+     */
+    public static Optional<AbstractCommand> getParsedCommand() {
+        return Optional.ofNullable(parsedCommand);
+    }
+
+    public static boolean isParsedCommand(String commandName) {
+        return getParsedCommand().filter(f -> f.getName().equals(commandName)).isPresent();
+    }
+
+    public static void setParsedCommand(AbstractCommand command) {
+        Environment.parsedCommand = command;
     }
 }

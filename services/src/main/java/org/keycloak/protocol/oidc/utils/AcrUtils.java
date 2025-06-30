@@ -102,7 +102,7 @@ public class AcrUtils {
         try {
             return JsonSerialization.readValue(map, new TypeReference<Map<String, Integer>>() {});
         } catch (IOException e) {
-            LOGGER.warnf("Invalid client configuration (ACR-LOA map) for client '%s'", client.getClientId());
+            LOGGER.warnf("Invalid client configuration (ACR-LOA map) for client '%s'. Error details: %s", client.getClientId(), e.getMessage());
             return Collections.emptyMap();
         }
     }
@@ -119,7 +119,7 @@ public class AcrUtils {
         try {
             return JsonSerialization.readValue(map, new TypeReference<Map<String, Integer>>() {});
         } catch (IOException e) {
-            LOGGER.warn("Invalid realm configuration (ACR-LOA map)");
+            LOGGER.warnf("Invalid realm configuration (ACR-LOA map). Details: %s", e.getMessage());
             return Collections.emptyMap();
         }
     }

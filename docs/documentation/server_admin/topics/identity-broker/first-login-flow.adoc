@@ -115,3 +115,20 @@ You could set the also set `Sync Mode` to `force` if you want to update the user
 NOTE: This flow can be used if you want to delegate the identity to other identity providers (such as GitHub, Facebook ...) but you want to manage which users that can log in.
 
 With this configuration, {project_name} is unable to determine which internal account corresponds to the external identity. The *Verify Existing Account By Re-authentication* authenticator asks the provider for the username and password.
+
+[[_override_existing_broker_link]]
+==== Override existing broker link
+When an another account needs to be linked to the same {project_name} account within the same identity provider, you can configure the following authenticator.
+
+Confirm Override Existing Link::
+This authenticator will detect the existing broker link for the user and display a confirmation page to confirm overriding the existing broker link. Set the authenticator requirement to REQUIRED.
+
+A typical use of this authenticator is a scenario such as the following:
+
+* For example, consider a {project_name} user `john` with the email `john@gmail.com`. That user is linked to the identity provider `google` with the `google` username `john@gmail.com` .
+* Then for instance {project_name} user `john` creates new Google account with email `john-new@gmail.com`
+* Then during login to {project_name}, the user authenticated to the identity provider `google` with a new username such as `john-new@gmail.com`, which is not linked to any {project_name} account yet (as {project_name} account `john` is still linked with the `google` user `john@gmail.com`) and hence the first-broker-login flow is triggered.
+* During first-broker-login, the {project_name} user `john` is authenticated somehow (either by default first-broker-login re-authentication or for instance by authenticator like `Detect existing broker user`)
+* Now with this authenticator in the authentication flow, it is possible to override the IDP link to the `google` identity provider of {project_name} user `john` with the new `google` link to `google` user `john-new@gmail.com` after user `john` confirms this.
+
+When creating authentication flows with this authenticator, make sure to add this authenticator once other authenticators that are already established the {project_name} user by other means (either by re-authentication or after `Detect existing broker user` as mentioned above.

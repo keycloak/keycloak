@@ -37,6 +37,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicNameValuePair;
+import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assume;
@@ -152,8 +153,8 @@ public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
 
     protected void assertSuccessfulTokenResponse(OAuthClient.AccessTokenResponse tokenResponse) {
         assertEquals(200, tokenResponse.getStatusCode());
-        Assert.assertThat(tokenResponse.getIdToken(), Matchers.notNullValue());
-        Assert.assertThat(tokenResponse.getAccessToken(), Matchers.notNullValue());
+        MatcherAssert.assertThat(tokenResponse.getIdToken(), Matchers.notNullValue());
+        MatcherAssert.assertThat(tokenResponse.getAccessToken(), Matchers.notNullValue());
 
         // Scope parameter must be present per FAPI
         Assert.assertNotNull(tokenResponse.getScope());
@@ -193,7 +194,9 @@ public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
             List<NameValuePair> parameters = new LinkedList<>();
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
             parameters.add(new BasicNameValuePair(OAuth2Constants.CODE, code));
-            parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_VERIFIER, codeVerifier));
+            if (codeVerifier != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_VERIFIER, codeVerifier));
+            }
             parameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, oauth.getRedirectUri()));
             parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
             parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, signedJwt));

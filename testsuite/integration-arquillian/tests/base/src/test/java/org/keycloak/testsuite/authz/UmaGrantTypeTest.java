@@ -28,6 +28,7 @@ import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -42,7 +43,6 @@ import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.UriBuilder;
 
-import com.google.common.base.Charsets;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -445,7 +445,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.UMA_GRANT_TYPE));
         parameters.add(new BasicNameValuePair("ticket", ticket));
 
-        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, Charsets.UTF_8);
+        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
         post.setEntity(formEntity);
 
         CloseableHttpResponse response = oauth.getHttpClient().get().execute(post);

@@ -16,31 +16,10 @@
  */
 package org.keycloak.services.resources.admin;
 
-import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
-import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.jboss.resteasy.annotations.cache.NoCache;
-import jakarta.ws.rs.NotFoundException;
-
-import org.keycloak.common.util.ObjectUtil;
-import org.keycloak.events.admin.OperationType;
-import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.GroupModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.representations.idm.GroupRepresentation;
-import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.resources.KeycloakOpenAPI;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
-import org.keycloak.services.resources.admin.permissions.GroupPermissionEvaluator;
-import org.keycloak.utils.GroupUtils;
-import org.keycloak.utils.SearchQueryUtils;
-
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -53,6 +32,28 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
+
+import jakarta.ws.rs.core.Response.Status;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.common.util.ObjectUtil;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.organization.utils.Organizations;
+import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.resources.KeycloakOpenAPI;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.permissions.GroupPermissionEvaluator;
+import org.keycloak.utils.GroupUtils;
+import org.keycloak.utils.SearchQueryUtils;
 
 /**
  * @resource Groups
@@ -94,21 +95,23 @@ public class GroupsResource {
         GroupPermissionEvaluator groupsEvaluator = auth.groups();
         groupsEvaluator.requireList();
 
-        Stream<GroupModel> stream = null;
+        Stream<GroupModel> stream;
         if (Objects.nonNull(searchQuery)) {
             Map<String, String> attributes = SearchQueryUtils.getFields(searchQuery);
-            stream = ModelToRepresentation.searchGroupModelsByAttributes(session, realm, !briefRepresentation, populateHierarchy, attributes, firstResult, maxResults);
+            stream = ModelToRepresentation.searchGroupModelsByAttributes(session, realm, attributes, firstResult, maxResults);
         } else if (Objects.nonNull(search)) {
-            stream = ModelToRepresentation.searchForGroupModelByName(session, realm, !briefRepresentation, search.trim(), exact, firstResult, maxResults);
-        } else if(Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
-            stream = ModelToRepresentation.toGroupModelHierarchy(realm, !briefRepresentation, firstResult, maxResults);
+            stream = session.groups().searchForGroupByNameStream(realm, search.trim(), exact, firstResult, maxResults);
         } else {
-            stream = realm.getTopLevelGroupsStream();
+            stream = session.groups().getTopLevelGroupsStream(realm, firstResult, maxResults);
         }
 
+        if (populateHierarchy) {
+            return GroupUtils.populateGroupHierarchyFromSubGroups(session, realm, stream, !briefRepresentation, groupsEvaluator);
+        }
         boolean canViewGlobal = groupsEvaluator.canView();
-        return stream.filter(group -> canViewGlobal || groupsEvaluator.canView(group))
-                .map(group -> GroupUtils.toGroupHierarchy(groupsEvaluator, group, search, exact, !briefRepresentation, false));
+        return stream
+            .filter(g -> canViewGlobal || groupsEvaluator.canView(g))
+            .map(g -> GroupUtils.populateSubGroupCount(g, GroupUtils.toRepresentation(groupsEvaluator, g, !briefRepresentation)));
     }
 
     /**
@@ -117,12 +120,19 @@ public class GroupsResource {
      * @param id
      * @return
      */
-    @Path("{id}")
-    public GroupResource getGroupById(@PathParam("id") String id) {
+    @Path("{group-id}")
+    @Operation( summary = "Get group details. Does not expand hierarchy.  Subgroups will not be set.")
+    public GroupResource getGroupById(@PathParam("group-id") String id) {
         GroupModel group = realm.getGroupById(id);
+
         if (group == null) {
             throw new NotFoundException("Could not find group by id");
         }
+
+        if (!Organizations.canManageOrganizationGroup(session, group)) {
+            throw ErrorResponse.error("Cannot manage organization related group via non Organization API.", Status.BAD_REQUEST);
+        }
+
         return new GroupResource(realm, group, session, this.auth, adminEvent);
     }
 
@@ -139,6 +149,8 @@ public class GroupsResource {
     @Operation( summary = "Returns the groups counts.")
     public Map<String, Long> getGroupCount(@QueryParam("search") String search,
                                            @QueryParam("top") @DefaultValue("false") boolean onlyTopGroups) {
+        GroupPermissionEvaluator groupsEvaluator = auth.groups();
+        groupsEvaluator.requireList();
         Long results;
         Map<String, Long> map = new HashMap<>();
         if (Objects.nonNull(search)) {

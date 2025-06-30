@@ -103,7 +103,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-saml-adapter-core</artifactId>
+            <artifactId>keycloak-saml-adapter-core-jakarta</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -241,7 +241,6 @@
                         </goals>
                         <phase>compile</phase>
                         <configuration>
-                            <wildfly-channel-resolution-mode>REQUIRED</wildfly-channel-resolution-mode>
                             <generate-channel-manifest>true</generate-channel-manifest>
                             <add-feature-packs-as-required-manifests>false</add-feature-packs-as-required-manifests>
                             <fork-embedded>false</fork-embedded>
@@ -289,6 +288,7 @@
                         <groupId>org.wildfly.galleon-plugins</groupId>
                         <artifactId>wildfly-galleon-maven-plugin</artifactId>
                         <configuration>
+                            <wildfly-channel-resolution-mode>REQUIRED</wildfly-channel-resolution-mode>
                             <config-file>wildfly-feature-pack-build-eap.xml</config-file>
                         </configuration>
                     </plugin>

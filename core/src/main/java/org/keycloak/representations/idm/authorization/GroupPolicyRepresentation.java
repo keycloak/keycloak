@@ -89,7 +89,7 @@ public class GroupPolicyRepresentation extends AbstractPolicyRepresentation {
         }
     }
 
-    public static class GroupDefinition {
+    public static class GroupDefinition implements Comparable<GroupDefinition> {
 
         private String id;
         private String path;
@@ -135,6 +135,14 @@ public class GroupPolicyRepresentation extends AbstractPolicyRepresentation {
 
         public void setExtendChildren(boolean extendChildren) {
             this.extendChildren = extendChildren;
+        }
+
+        @Override
+        public int compareTo(GroupDefinition o) {
+            if (o.id == null || id == null) {
+                return 1;
+            }
+            return id.compareTo(o.id);
         }
     }
 }

@@ -13,7 +13,7 @@
     <artifactId>integration-arquillian-servers-auth-server-quarkus</artifactId>
 
     <properties>
-        <auth.server.home>${project.build.directory}/unpacked/keycloak-${project.version}</auth.server.home>
+        <auth.server.home>${project.build.directory}/unpacked/${dist.archive.dir}</auth.server.home>
         <common.resources>${basedir}/../common</common.resources>
         <session.cache.owners>2</session.cache.owners>
         <offline.session.cache.owners>2</offline.session.cache.owners>
@@ -63,7 +63,7 @@
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>${auth.server.home}</outputDirectory>
+                            <outputDirectory>${auth.server.home}/conf</outputDirectory>
                             <resources>
                                 <resource>
                                     <directory>${common.resources}/keystore</directory>
@@ -71,6 +71,9 @@
                                         <include>ca.crt</include>
                                         <include>client.crt</include>
                                         <include>client.key</include>
+                                        <include>client.p12</include>
+                                        <include>client-ca.crt</include>
+                                        <include>client-ca.key</include>
                                         <include>*.crl</include>
                                     </includes>
                                 </resource>
@@ -78,7 +81,9 @@
                                     <directory>${common.resources}/pki/root/ca</directory>
                                     <includes>
                                         <include>certs/clients/test-user-san@localhost.cert.pem</include>
+                                        <include>certs/clients/test-user-san@localhost.p12</include>
                                         <include>certs/clients/test-user@localhost.key.pem</include>
+                                        <include>certs/clients/test-user-san-cert-test-user-key@localhost.p12</include>
                                     </includes>
                                 </resource>
                             </resources>
@@ -182,6 +187,31 @@
                                     <version>${project.version}</version>
                                     <type>zip</type>
                                     <outputDirectory>${project.build.directory}/unpacked</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>includeOracleJdbcDriver</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>com.oracle.database.jdbc</groupId>
+                                    <artifactId>ojdbc11</artifactId>
+                                    <version>${oracle-jdbc.version}</version>
+                                    <type>jar</type>
+                                    <outputDirectory>${auth.server.home}/providers</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.oracle.database.nls</groupId>
+                                    <artifactId>orai18n</artifactId>
+                                    <version>${oracle-jdbc.version}</version>
+                                    <type>jar</type>
+                                    <outputDirectory>${auth.server.home}/providers</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
@@ -359,23 +389,40 @@
                                 <configuration>
                                     <artifactItems>
                                         <artifactItem>
-                                            <groupId>com.oracle.database.jdbc</groupId>
-                                            <artifactId>ojdbc11</artifactId>
-                                            <version>${oracle-jdbc.version}</version>
-                                            <type>jar</type>
-                                            <outputDirectory>${auth.server.home}/providers</outputDirectory>
-                                        </artifactItem>
-                                        <artifactItem>
-                                            <groupId>com.oracle.database.nls</groupId>
-                                            <artifactId>orai18n</artifactId>
-                                            <version>${oracle-jdbc.version}</version>
-                                            <type>jar</type>
-                                            <outputDirectory>${auth.server.home}/providers</outputDirectory>
-                                        </artifactItem>
-                                        <artifactItem>
                                             <groupId>com.microsoft.sqlserver</groupId>
                                             <artifactId>mssql-jdbc</artifactId>
                                             <version>${mssql-jdbc.version}</version>
+                                            <type>jar</type>
+                                            <outputDirectory>${auth.server.home}/providers</outputDirectory>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>db-aurora-postgres</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>includeProprietaryDependencies</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>software.amazon.jdbc</groupId>
+                                            <artifactId>aws-advanced-jdbc-wrapper</artifactId>
+                                            <version>${aws-jdbc-wrapper.version}</version>
                                             <type>jar</type>
                                             <outputDirectory>${auth.server.home}/providers</outputDirectory>
                                         </artifactItem>

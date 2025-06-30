@@ -46,8 +46,6 @@ import org.keycloak.sessions.RootAuthenticationSessionModel;
  */
 public class InfinispanAuthenticationSessionProvider implements AuthenticationSessionProvider {
 
-    private static final Logger log = Logger.getLogger(InfinispanAuthenticationSessionProvider.class);
-
     private final KeycloakSession session;
     private final Cache<String, RootAuthenticationSessionEntity> cache;
     private final InfinispanKeyGenerator keyGenerator;
@@ -78,8 +76,7 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
 
     @Override
     public RootAuthenticationSessionModel createRootAuthenticationSession(RealmModel realm, String id) {
-        RootAuthenticationSessionEntity entity = new RootAuthenticationSessionEntity();
-        entity.setId(id);
+        RootAuthenticationSessionEntity entity = new RootAuthenticationSessionEntity(id);
         entity.setRealmId(realm.getId());
         entity.setTimestamp(Time.currentTime());
 
@@ -140,10 +137,6 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
 //        clusterEventsSenderTx.addEvent(
 //                ClientRemovedSessionEvent.create(session, InfinispanAuthenticationSessionProviderFactory.CLIENT_REMOVED_AUTHSESSION_EVENT, realm.getId(), false, client.getId()),
 //                ClusterProvider.DCNotify.ALL_DCS);
-    }
-
-    protected void onClientRemovedEvent(String realmId, String clientUuid) {
-
     }
 
 

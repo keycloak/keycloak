@@ -64,7 +64,7 @@ The procedure to select the algorithm is:
 . Open *Fine Grain OpenID Connect Configuration*.
 . Select the algorithm from *ID Token Encryption Content Encryption Algorithm* pulldown menu.
 
-== Open ID Connect Compatibility Modes
+== OpenID Connect Compatibility Modes
 
 This section exists for backward compatibility.  Click the question mark icons for details on each field.
 
@@ -91,11 +91,6 @@ In the following cases, {project_name} will verify the client sending the access
 * A logout request is sent to non-OIDC compliant {project_name} proprietary Logout endpoint with a holder-of-key refresh token.
 
 See https://datatracker.ietf.org/doc/html/draft-ietf-oauth-mtls-08#section-3[Mutual TLS Client Certificate Bound Access Tokens] in the OAuth 2.0 Mutual TLS Client Authentication and Certificate Bound Access Tokens for more details.
-
-[NOTE]
-====
-Currently, {project_name} client adapters do not support holder-of-key token verification. {project_name} adapters treat access and refresh tokens as bearer tokens.
-====
 
 [[_dpop-bound-tokens]]
 *OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer (DPoP)*
@@ -125,13 +120,7 @@ In the following cases, {project_name} will verify the client sending the access
 
 See https://datatracker.ietf.org/doc/html/rfc9449[OAuth 2.0 Demonstrating Proof of Possession (DPoP)] for more details.
 
-[NOTE]
-====
-Currently, {project_name} client adapters do not support DPoP holder-of-key token verification. {project_name} adapters treat access and refresh tokens as bearer tokens.
-====
-
 :tech_feature_name: DPoP
-:tech_feature_setting: -Dkeycloak.profile.feature.dpop=enabled
 :tech_feature_id: dpop
 include::../../templates/techpreview.adoc[]
 

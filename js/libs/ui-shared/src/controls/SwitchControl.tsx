@@ -12,7 +12,7 @@ import { FormLabel } from "./FormLabel";
 export type SwitchControlProps<
   T extends FieldValues,
   P extends FieldPath<T> = FieldPath<T>,
-> = SwitchProps &
+> = Omit<SwitchProps, "name" | "defaultValue" | "ref"> &
   UseControllerProps<T, P> & {
     name: string;
     label?: string;
@@ -25,32 +25,38 @@ export type SwitchControlProps<
 export const SwitchControl = <
   T extends FieldValues,
   P extends FieldPath<T> = FieldPath<T>,
->(
-  props: SwitchControlProps<T, P>,
-) => {
-  const defaultValue = props.defaultValue ?? (false as PathValue<T, P>);
+>({
+  labelOn,
+  stringify,
+  defaultValue,
+  labelIcon,
+  ...props
+}: SwitchControlProps<T, P>) => {
+  const fallbackValue = stringify ? "false" : false;
+  const defValue = defaultValue ?? (fallbackValue as PathValue<T, P>);
   const { control } = useFormContext();
   return (
     <FormLabel
+      hasNoPaddingTop
       name={props.name}
       isRequired={props.rules?.required === true}
       label={props.label}
-      labelIcon={props.labelIcon}
+      labelIcon={labelIcon}
     >
       <Controller
         control={control}
         name={props.name}
-        defaultValue={defaultValue}
+        defaultValue={defValue}
         render={({ field: { onChange, value } }) => (
           <Switch
+            {...props}
             id={props.name}
             data-testid={props.name}
-            label={props.labelOn}
-            labelOff={props.labelOff}
-            isChecked={props.stringify ? value === "true" : value}
-            onChange={(checked, e) => {
-              const value = props.stringify ? checked.toString() : checked;
-              props.onChange?.(checked, e);
+            label={labelOn}
+            isChecked={stringify ? value === "true" : value}
+            onChange={(e, checked) => {
+              const value = stringify ? checked.toString() : checked;
+              props.onChange?.(e, checked);
               onChange(value);
             }}
           />

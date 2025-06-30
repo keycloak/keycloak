@@ -9,6 +9,10 @@ import {
   DataListItem,
   DataListItemCells,
   DataListItemRow,
+  DragDrop,
+  Draggable,
+  DraggableItemPosition,
+  Droppable,
   Modal,
   ModalVariant,
   Text,
@@ -17,51 +21,74 @@ import {
 import { sortBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
+import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
+import { useFetch } from "../utils/useFetch";
 
 type ManageOrderDialogProps = {
-  providers: IdentityProviderRepresentation[];
   onClose: () => void;
 };
 
-export const ManageOrderDialog = ({
-  providers,
-  onClose,
-}: ManageOrderDialogProps) => {
+export const ManageOrderDialog = ({ onClose }: ManageOrderDialogProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
-  const [alias, setAlias] = useState("");
   const [liveText, setLiveText] = useState("");
-  const [order, setOrder] = useState(
-    providers.map((provider) => provider.alias!),
+  const [providers, setProviders] =
+    useState<IdentityProviderRepresentation[]>();
+  const [order, setOrder] = useState<string[]>([]);
+
+  const onDragStart = ({ index }: DraggableItemPosition) => {
+    setLiveText(t("onDragStart", { item: order[index] }));
+    return true;
+  };
+
+  const onDragMove = ({ index }: DraggableItemPosition) => {
+    setLiveText(t("onDragMove", { item: order[index] }));
+  };
+
+  const onDragFinish = (
+    source: DraggableItemPosition,
+    dest?: DraggableItemPosition,
+  ) => {
+    if (dest) {
+      const result = [...order];
+      const [removed] = result.splice(source.index, 1);
+      result.splice(dest.index, 0, removed);
+      setLiveText(t("onDragFinish", { list: result }));
+      setOrder(result);
+      return true;
+    } else {
+      setLiveText(t("onDragCancel"));
+      return false;
+    }
+  };
+
+  useFetch(
+    () => adminClient.identityProviders.find(),
+    (providers) => {
+      setProviders(providers);
+      setOrder(
+        sortBy(providers, ["config.guiOrder", "alias"]).map(
+          (provider) => provider.alias!,
+        ),
+      );
+    },
+    [],
   );
 
-  const onDragStart = (id: string) => {
-    setAlias(id);
-    setLiveText(t("onDragStart", { item: id }));
-  };
-
-  const onDragMove = () => {
-    setLiveText(t("onDragMove", { item: alias }));
-  };
-
-  const onDragCancel = () => {
-    setLiveText(t("onDragCancel"));
-  };
-
-  const onDragFinish = (providerOrder: string[]) => {
-    setLiveText(t("onDragFinish", { list: providerOrder }));
-    setOrder(providerOrder);
-  };
+  if (!providers) {
+    return <KeycloakSpinner />;
+  }
 
   return (
     <Modal
       variant={ModalVariant.small}
       title={t("manageDisplayOrder")}
-      isOpen={true}
+      isOpen
       onClose={onClose}
       actions={[
         <Button
@@ -98,45 +125,43 @@ export const ManageOrderDialog = ({
         </Button>,
       ]}
     >
-      <TextContent className="pf-u-pb-lg">
+      <TextContent className="pf-v5-u-pb-lg">
         <Text>{t("orderDialogIntro")}</Text>
       </TextContent>
 
-      <DataList
-        aria-label={t("manageOrderTableAria")}
-        data-testid="manageOrderDataList"
-        isCompact
-        onDragFinish={onDragFinish}
-        onDragStart={onDragStart}
+      <DragDrop
+        onDrag={onDragStart}
         onDragMove={onDragMove}
-        onDragCancel={onDragCancel}
-        itemOrder={order}
+        onDrop={onDragFinish}
       >
-        {sortBy(providers, "config.guiOrder", "alias").map((provider) => (
-          <DataListItem
-            aria-label={provider.alias}
-            id={provider.alias}
-            key={provider.alias}
+        <Droppable hasNoWrapper>
+          <DataList
+            aria-label={t("manageOrderTableAria")}
+            data-testid="manageOrderDataList"
+            isCompact
           >
-            <DataListItemRow>
-              <DataListControl>
-                <DataListDragButton aria-label={t("dragHelp")} />
-              </DataListControl>
-              <DataListItemCells
-                dataListCells={[
-                  <DataListCell
-                    key={provider.alias}
-                    data-testid={provider.alias}
-                  >
-                    {provider.alias}
-                  </DataListCell>,
-                ]}
-              />
-            </DataListItemRow>
-          </DataListItem>
-        ))}
-      </DataList>
-      <div className="pf-screen-reader" aria-live="assertive">
+            {order.map((alias) => (
+              <Draggable hasNoWrapper key={alias}>
+                <DataListItem aria-label={alias} id={alias}>
+                  <DataListItemRow>
+                    <DataListControl>
+                      <DataListDragButton aria-label={t("dragHelp")} />
+                    </DataListControl>
+                    <DataListItemCells
+                      dataListCells={[
+                        <DataListCell key={alias} data-testid={alias}>
+                          {alias}
+                        </DataListCell>,
+                      ]}
+                    />
+                  </DataListItemRow>
+                </DataListItem>
+              </Draggable>
+            ))}
+          </DataList>
+        </Droppable>
+      </DragDrop>
+      <div className="pf-v5-screen-reader" aria-live="assertive">
         {liveText}
       </div>
     </Modal>

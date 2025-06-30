@@ -17,12 +17,6 @@
 
 package org.keycloak.cluster.infinispan;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.VersionedValue;
@@ -31,6 +25,7 @@ import org.infinispan.client.hotrod.annotation.ClientCacheEntryModified;
 import org.infinispan.client.hotrod.annotation.ClientListener;
 import org.infinispan.client.hotrod.event.ClientCacheEntryCreatedEvent;
 import org.infinispan.client.hotrod.event.ClientCacheEntryModifiedEvent;
+import org.infinispan.factories.ComponentRegistry;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.persistence.manager.PersistenceManager;
 import org.infinispan.persistence.remote.RemoteStore;
@@ -38,6 +33,12 @@ import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationB
 import org.junit.Assert;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.InfinispanUtil;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Test that hotrod ClientListeners are correctly executed as expected
@@ -68,11 +69,11 @@ import org.keycloak.connections.infinispan.InfinispanUtil;
 public class ConcurrencyJDGRemoteCacheClientListenersTest {
 
     // Helper map to track if listeners were executed
-    private static Map<String, EntryInfo> state = new HashMap<>();
+    private static final Map<String, EntryInfo> state = new HashMap<>();
 
-    private static AtomicInteger totalListenerCalls = new AtomicInteger(0);
+    private static final AtomicInteger totalListenerCalls = new AtomicInteger(0);
 
-    private static AtomicInteger totalErrors = new AtomicInteger(0);
+    private static final AtomicInteger totalErrors = new AtomicInteger(0);
 
 
     public static void main(String[] args) throws Exception {
@@ -134,7 +135,8 @@ public class ConcurrencyJDGRemoteCacheClientListenersTest {
 
         System.out.println("Retrieved cache: " + threadId);
 
-        RemoteStore remoteStore = cache.getAdvancedCache().getComponentRegistry().getComponent(PersistenceManager.class).getStores(RemoteStore.class).iterator().next();
+        RemoteStore<?, ?> remoteStore = ComponentRegistry.componentOf(cache, PersistenceManager.class)
+                .getStores(RemoteStore.class).iterator().next();
         HotRodListener listener = new HotRodListener(cache, threadId);
         remoteStore.getRemoteCache().addClientListener(listener);
 
@@ -147,7 +149,7 @@ public class ConcurrencyJDGRemoteCacheClientListenersTest {
 
         private final RemoteCache<String, Integer> remoteCache;
         private final int threadId;
-        private Executor executor;
+        private final Executor executor;
 
         public HotRodListener(Cache<String, Integer> cache, int threadId) {
             this.remoteCache = InfinispanUtil.getRemoteCache(cache);
@@ -158,26 +160,15 @@ public class ConcurrencyJDGRemoteCacheClientListenersTest {
         //private AtomicInteger listenerCount = new AtomicInteger(0);
 
         @ClientCacheEntryCreated
-        public void created(ClientCacheEntryCreatedEvent event) {
-            String cacheKey = (String) event.getKey();
-
-            executor.execute(() -> {
-
-                event(cacheKey, event.getVersion(), true);
-
-            });
+        public void created(ClientCacheEntryCreatedEvent<String> event) {
+            executor.execute(() -> event(event.getKey(), event.getVersion(), true));
 
         }
 
 
         @ClientCacheEntryModified
-        public void updated(ClientCacheEntryModifiedEvent event) {
-            String cacheKey = (String) event.getKey();
-            executor.execute(() -> {
-
-                event(cacheKey, event.getVersion(), false);
-
-            });
+        public void updated(ClientCacheEntryModifiedEvent<String> event) {
+            executor.execute(() -> event(event.getKey(), event.getVersion(), false));
         }
 
 

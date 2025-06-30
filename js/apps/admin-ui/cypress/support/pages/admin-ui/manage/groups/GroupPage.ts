@@ -17,7 +17,7 @@ export default class GroupPage extends PageObject {
   protected actionDrpDwnButton = "action-dropdown";
   #searchField = "[data-testid='group-search']";
 
-  public openCreateGroupModal(emptyState: boolean) {
+  openCreateGroupModal(emptyState: boolean) {
     if (emptyState) {
       cy.findByTestId(this.createGroupEmptyStateBtn).click();
     } else {
@@ -26,7 +26,7 @@ export default class GroupPage extends PageObject {
     return this;
   }
 
-  public createGroup(groupName: string, emptyState: boolean) {
+  createGroup(groupName: string, emptyState: boolean) {
     this.openCreateGroupModal(emptyState);
     groupModal
       .assertCreateGroupModalVisible(true)
@@ -42,10 +42,21 @@ export default class GroupPage extends PageObject {
     return this;
   }
 
-  protected search(searchField: string, searchValue: string, wait: boolean) {
+  protected search(
+    searchField: string,
+    searchValue: string,
+    wait: boolean,
+    exact = true,
+  ) {
     if (wait) {
       const searchUrl = `/admin/realms/master/**/*${searchValue}*`;
       cy.intercept(searchUrl).as("search");
+    }
+
+    if (exact) {
+      cy.findByTestId("exact-search").check();
+    } else {
+      cy.findByTestId("exact-search").uncheck();
     }
 
     cy.get(searchField + " input").clear();
@@ -62,26 +73,26 @@ export default class GroupPage extends PageObject {
     }
   }
 
-  public goToGroupChildGroupsTab(groupName: string) {
+  goToGroupChildGroupsTab(groupName: string) {
     listingPage.goToItemDetails(groupName);
     cy.intercept("GET", "*/admin/realms/master/groups/*").as("get");
     sidebarPage.waitForPageLoad();
     return this;
   }
 
-  public selectGroupItemCheckbox(items: string[]) {
+  selectGroupItemCheckbox(items: string[]) {
     for (const item of items) {
       listingPage.clickItemCheckbox(item);
     }
     return this;
   }
 
-  public selectGroupItemCheckboxAllRows() {
+  selectGroupItemCheckboxAllRows() {
     listingPage.clickTableHeaderItemCheckboxAllRows();
     return this;
   }
 
-  public deleteSelectedGroups(confirmModal = true) {
+  deleteSelectedGroups(confirmModal = true) {
     this.clickToolbarAction("Delete");
     if (confirmModal) {
       groupModal.confirmModal();
@@ -89,12 +100,12 @@ export default class GroupPage extends PageObject {
     return this;
   }
 
-  public showDeleteSelectedGroupsDialog() {
+  showDeleteSelectedGroupsDialog() {
     this.clickToolbarAction("Delete");
     return this;
   }
 
-  public deleteGroupItem(groupName: string, confirmModal = true) {
+  deleteGroupItem(groupName: string, confirmModal = true) {
     listingPage.deleteItem(groupName);
     if (confirmModal) {
       groupModal.confirmModal();
@@ -102,10 +113,7 @@ export default class GroupPage extends PageObject {
     return this;
   }
 
-  public moveGroupItemAction(
-    groupName: string,
-    destinationGroupName: string[],
-  ) {
+  moveGroupItemAction(groupName: string, destinationGroupName: string[]) {
     listingPage.clickRowDetails(groupName);
     listingPage.clickDetailMenu("Move to");
     moveGroupModal
@@ -124,66 +132,68 @@ export default class GroupPage extends PageObject {
     return this;
   }
 
-  public clickBreadcrumbItem(groupName: string) {
+  clickBreadcrumbItem(groupName: string) {
     super.clickBreadcrumbItem(groupName);
     return this;
   }
 
-  public assertGroupItemExist(groupName: string, exist: boolean) {
+  assertGroupItemExist(groupName: string, exist: boolean) {
     listingPage.itemExist(groupName, exist);
     return this;
   }
 
-  public assertNoGroupsInThisRealmEmptyStateMessageExist(exist: boolean) {
+  assertNoGroupsInThisRealmEmptyStateMessageExist(exist: boolean) {
     this.assertEmptyStateExist(exist);
     return this;
   }
 
-  public assertGroupItemsEqual(number: number) {
+  assertGroupItemsEqual(number: number) {
     listingPage.itemsEqualTo(number);
     return this;
   }
 
-  public assertNoSearchResultsMessageExist(exist: boolean) {
-    super.assertEmptyStateExist(exist);
+  assertNoSearchResultsMessageExist(exist: boolean) {
+    if (!exist) {
+      cy.get("keycloak_groups_treeview").should("be.visible");
+    } else {
+      cy.get("keycloak_groups_treeview").should("not.exist");
+    }
     return this;
   }
 
-  public assertNotificationGroupDeleted() {
+  assertNotificationGroupDeleted() {
     masthead.checkNotificationMessage("Group deleted");
     return this;
   }
 
-  public assertNotificationGroupsDeleted() {
+  assertNotificationGroupsDeleted() {
     masthead.checkNotificationMessage("Groups deleted");
     return this;
   }
 
-  public assertNotificationGroupCreated() {
+  assertNotificationGroupCreated() {
     masthead.checkNotificationMessage("Group created");
     return this;
   }
 
-  public assertNotificationGroupMoved() {
+  assertNotificationGroupMoved() {
     masthead.checkNotificationMessage("Group moved");
     return this;
   }
 
-  public assertNotificationGroupUpdated() {
+  assertNotificationGroupUpdated() {
     masthead.checkNotificationMessage("Group updated");
     return this;
   }
 
-  public assertNotificationCouldNotCreateGroupWithEmptyName() {
+  assertNotificationCouldNotCreateGroupWithEmptyName() {
     masthead.checkNotificationMessage(
       "Could not create group Group name is missing",
     );
     return this;
   }
 
-  public assertNotificationCouldNotCreateGroupWithDuplicatedName(
-    groupName: string,
-  ) {
+  assertNotificationCouldNotCreateGroupWithDuplicatedName(groupName: string) {
     masthead.checkNotificationMessage(
       "Could not create group Top level group named '" +
         groupName +
@@ -192,7 +202,7 @@ export default class GroupPage extends PageObject {
     return this;
   }
 
-  public goToGroupActions(groupName: string) {
+  goToGroupActions(groupName: string) {
     listingPage.clickRowDetails(groupName);
 
     return this;

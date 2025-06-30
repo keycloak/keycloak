@@ -17,14 +17,12 @@
 
 package org.keycloak.protocol.oidc.utils;
 
-import org.keycloak.common.util.StreamUtil;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
-import java.io.InputStream;
 
 /**
  *
@@ -33,9 +31,7 @@ import java.io.InputStream;
 public class JWKSHttpUtils {
 
     public static JSONWebKeySet sendJwksRequest(KeycloakSession session, String jwksURI) throws IOException {
-        try (InputStream is = session.getProvider(HttpClientProvider.class).get(jwksURI)){
-            String keySetString = StreamUtil.readString(is);
-            return JsonSerialization.readValue(keySetString, JSONWebKeySet.class);
-        }
+        String keySetString = session.getProvider(HttpClientProvider.class).getString(jwksURI);
+        return JsonSerialization.readValue(keySetString, JSONWebKeySet.class);
     }
 }

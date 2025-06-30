@@ -16,21 +16,22 @@
  */
 package org.keycloak.adapters.saml.elytron.infinispan;
 
-import org.keycloak.adapters.saml.AdapterConstants;
-import org.keycloak.adapters.spi.SessionIdMapper;
-import org.keycloak.adapters.spi.SessionIdMapperUpdater;
-
-import java.util.*;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-import javax.servlet.ServletContext;
 import org.infinispan.Cache;
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.Configuration;
+import org.infinispan.factories.ComponentRegistry;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.persistence.manager.PersistenceManager;
 import org.infinispan.persistence.remote.RemoteStore;
 import org.jboss.logging.Logger;
+import org.keycloak.adapters.saml.AdapterConstants;
+import org.keycloak.adapters.spi.SessionIdMapper;
+import org.keycloak.adapters.spi.SessionIdMapperUpdater;
+
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.servlet.ServletContext;
+import java.util.Set;
 
 /**
  *
@@ -93,21 +94,19 @@ public class InfinispanSessionCacheIdMapperUpdater {
             }
 
             Cache<String, String[]> ssoCache = cacheManager.getCache(cacheName, true);
-            final SsoSessionCacheListener listener = new SsoSessionCacheListener(ssoCache, mapper);
+            SsoSessionCacheListener listener = new SsoSessionCacheListener(ssoCache, mapper);
             ssoCache.addListener(listener);
 
             addSsoCacheCrossDcListener(ssoCache, listener);
 
             LOG.debugv("Added distributed SSO session cache, lookup={0}, cache name={1}", cacheContainerLookup, cacheName);
 
-            SsoCacheSessionIdMapperUpdater updater = new SsoCacheSessionIdMapperUpdater(ssoCache, previousIdMapperUpdater) {
+            return new SsoCacheSessionIdMapperUpdater(ssoCache, previousIdMapperUpdater) {
                 @Override
-                public void close() throws Exception {
+                public void close() {
                     ssoCache.stop();
                 }
             };
-
-            return updater;
         } catch (NamingException ex) {
             LOG.warnv("Failed to obtain distributed session cache container, lookup={0}", cacheContainerLookup);
             return previousIdMapperUpdater;
@@ -136,7 +135,7 @@ public class InfinispanSessionCacheIdMapperUpdater {
             return;
         }
 
-        final Set<RemoteStore> stores = getRemoteStores(ssoCache);
+        Set<RemoteStore> stores = getRemoteStores(ssoCache);
         if (stores == null || stores.isEmpty()) {
             return;
         }
@@ -148,7 +147,7 @@ public class InfinispanSessionCacheIdMapperUpdater {
         }
     }
 
-    public static Set<RemoteStore> getRemoteStores(Cache ispnCache) {
-        return ispnCache.getAdvancedCache().getComponentRegistry().getComponent(PersistenceManager.class).getStores(RemoteStore.class);
+    public static Set<RemoteStore> getRemoteStores(Cache<?, ?> ispnCache) {
+        return ComponentRegistry.componentOf(ispnCache, PersistenceManager.class).getStores(RemoteStore.class);
     }
 }

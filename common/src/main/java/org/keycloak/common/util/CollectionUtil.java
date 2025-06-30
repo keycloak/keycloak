@@ -18,9 +18,8 @@
 package org.keycloak.common.util;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -35,15 +34,7 @@ public class CollectionUtil {
     }
 
     public static String join(Collection<String> strings, String separator) {
-        Iterator<String> iter = strings.iterator();
-        StringBuilder sb = new StringBuilder();
-        if(iter.hasNext()){
-            sb.append(iter.next());
-            while(iter.hasNext()){
-                sb.append(separator).append(iter.next());
-            }
-        }
-        return sb.toString();
+        return strings.stream().collect(Collectors.joining(String.valueOf(separator)));
     }
 
     // Return true if all items from col1 are in col2 and viceversa. Order is not taken into account
@@ -53,22 +44,20 @@ public class CollectionUtil {
         }
         Map<T, Integer> countMap = new HashMap<>();
         for(T o : col1) {
-            Integer v = countMap.get(o);
-            countMap.put(o, v==null ? 1 : v+1);
+            countMap.merge(o, 1, (v1, v2) -> v1 + v2);
         }
         for(T o : col2) {
             Integer v = countMap.get(o);
             if (v==null) {
                 return false;
             }
-            countMap.put(o, v-1);
-        }
-        for(Integer count : countMap.values()) {
-            if (count!=0) {
-                return false;
+            if (v == 1) {
+                countMap.remove(o);
+            } else {
+                countMap.put(o, v-1);
             }
         }
-        return true;
+        return countMap.isEmpty();
     }
 
     public static boolean isEmpty(Collection<?> collection) {
@@ -79,14 +68,7 @@ public class CollectionUtil {
         return !isEmpty(collection);
     }
 
-    public static <T> Set<T> intersection(Collection<T> col1, Collection<T> col2) {
-        if (isEmpty(col1) || isEmpty(col2)) return Collections.emptySet();
-
-        final Collection<T> iteratorCollection = col1.size() <= col2.size() ? col1 : col2;
-        final Collection<T> searchCollection = iteratorCollection.equals(col1) ? col2 : col1;
-
-        return iteratorCollection.stream()
-                .filter(searchCollection::contains)
-                .collect(Collectors.toSet());
+    public static <T> Set<T> collectionToSet(Collection<T> collection) {
+        return collection == null ? null : new HashSet<>(collection);
     }
 }

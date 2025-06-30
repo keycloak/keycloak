@@ -3,7 +3,7 @@ import { Controller, useFormContext } from "react-hook-form";
 import { FormGroup } from "@patternfly/react-core";
 import { CodeEditor, Language } from "@patternfly/react-code-editor";
 
-import { HelpItem } from "ui-shared";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
 
 export const JavaScript = () => {
   const { t } = useTranslation();

@@ -48,6 +48,7 @@ import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.models.Constants;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -214,7 +215,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         assertNull(header.getContentType());
 
         header = new JWSInput(response.getRefreshToken()).getHeader();
-        assertEquals("HS256", header.getAlgorithm().name());
+        assertEquals(Constants.INTERNAL_SIGNATURE_ALGORITHM, header.getAlgorithm().name());
         assertEquals("JWT", header.getType());
         assertNull(header.getContentType());
 
@@ -234,13 +235,10 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         assertEquals(sessionId, sid);
 
         assertNull(token.getNbf());
-        assertEquals(0, token.getNotBefore());
 
         assertNotNull(token.getIat());
-        assertEquals(token.getIat().intValue(), token.getIssuedAt());
 
         assertNotNull(token.getExp());
-        assertEquals(token.getExp().intValue(), token.getExpiration());
 
         assertEquals(1, token.getRealmAccess().getRoles().size());
         assertTrue(token.getRealmAccess().isUserInRole("user"));
@@ -344,7 +342,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         assertEquals("invalid_grant", response.getError());
         assertEquals("Incorrect redirect_uri", response.getErrorDescription());
 
-        events.expectCodeToToken(codeId, loginEvent.getSessionId()).error("invalid_code")
+        events.expectCodeToToken(codeId, loginEvent.getSessionId()).error(Errors.INVALID_REDIRECT_URI)
                 .removeDetail(Details.TOKEN_ID)
                 .removeDetail(Details.REFRESH_TOKEN_ID)
                 .removeDetail(Details.REFRESH_TOKEN_TYPE)
@@ -1272,44 +1270,54 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
     @Test
     public void accessTokenRequest_ClientPS384_RealmRS256() throws Exception {
-        conductAccessTokenRequest(Algorithm.HS256, Algorithm.PS384, Algorithm.RS256);
+        conductAccessTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.PS384, Algorithm.RS256);
     }
 
     @Test
     public void accessTokenRequest_ClientPS256_RealmPS256() throws Exception {
-        conductAccessTokenRequest(Algorithm.HS256, Algorithm.PS256, Algorithm.PS256);
+        conductAccessTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.PS256, Algorithm.PS256);
     }
 
     @Test
     public void accessTokenRequest_ClientPS512_RealmPS256() throws Exception {
-        conductAccessTokenRequest(Algorithm.HS256, Algorithm.PS512, Algorithm.PS256);
+        conductAccessTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.PS512, Algorithm.PS256);
     }
 
     @Test
     public void accessTokenRequest_ClientRS384_RealmRS256() throws Exception {
-        conductAccessTokenRequest(Algorithm.HS256, Algorithm.RS384, Algorithm.RS256);
+        conductAccessTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.RS384, Algorithm.RS256);
     }
 
     @Test
     public void accessTokenRequest_ClientRS512_RealmRS512() throws Exception {
-        conductAccessTokenRequest(Algorithm.HS256, Algorithm.RS512, Algorithm.RS512);
+        conductAccessTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.RS512, Algorithm.RS512);
     }
 
     @Test
     public void accessTokenRequest_ClientES256_RealmPS256() throws Exception {
-        conductAccessTokenRequest(Algorithm.HS256, Algorithm.ES256, Algorithm.PS256);
+        conductAccessTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.ES256, Algorithm.PS256);
     }
 
     @Test
     public void accessTokenRequest_ClientES384_RealmES384() throws Exception {
-        conductAccessTokenRequest(Algorithm.HS256, Algorithm.ES384, Algorithm.ES384);
+        conductAccessTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.ES384, Algorithm.ES384);
     }
 
     @Test
     public void accessTokenRequest_ClientES512_RealmRS256() throws Exception {
-        conductAccessTokenRequest(Algorithm.HS256, Algorithm.ES512, Algorithm.RS256);
+        conductAccessTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.ES512, Algorithm.RS256);
     }
 
+    @Test
+    public void accessTokenRequest_ClientEdDSA_RealmES256() throws Exception {
+        conductAccessTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.EdDSA, Algorithm.ES256);
+    }
+
+    @Test
+    public void accessTokenRequest_ClientEdDSA_RealmEdDSA() throws Exception {
+        conductAccessTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.EdDSA, Algorithm.EdDSA);
+    }
+    
     @Test
     public void validateECDSASignatures() {
         validateTokenECDSASignature(Algorithm.ES256);
@@ -1354,7 +1362,6 @@ public class AccessTokenTest extends AbstractKeycloakTest {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
             TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
         }
-        return;
     }
 
     private void tokenRequest(String expectedRefreshAlg, String expectedAccessAlg, String expectedIdTokenAlg) throws Exception {
@@ -1373,17 +1380,17 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         assertEquals("Bearer", response.getTokenType());
 
         JWSHeader header = new JWSInput(response.getAccessToken()).getHeader();
-        assertEquals(expectedAccessAlg, header.getAlgorithm().name());
+        verifySignatureAlgorithm(header, expectedAccessAlg);
         assertEquals("JWT", header.getType());
         assertNull(header.getContentType());
 
         header = new JWSInput(response.getIdToken()).getHeader();
-        assertEquals(expectedIdTokenAlg, header.getAlgorithm().name());
+        verifySignatureAlgorithm(header, expectedIdTokenAlg);
         assertEquals("JWT", header.getType());
         assertNull(header.getContentType());
 
         header = new JWSInput(response.getRefreshToken()).getHeader();
-        assertEquals(expectedRefreshAlg, header.getAlgorithm().name());
+        verifySignatureAlgorithm(header, expectedRefreshAlg);
         assertEquals("JWT", header.getType());
         assertNull(header.getContentType());
 
@@ -1399,6 +1406,10 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         assertEquals(token.getId(), event.getDetails().get(Details.TOKEN_ID));
         assertEquals(oauth.parseRefreshToken(response.getRefreshToken()).getId(), event.getDetails().get(Details.REFRESH_TOKEN_ID));
         assertEquals(sessionId, token.getSessionState());
+    }
+
+    private void verifySignatureAlgorithm(JWSHeader header, String expectedAlgorithm) {
+        assertEquals(expectedAlgorithm, header.getAlgorithm().name());
     }
 
     // KEYCLOAK-16009

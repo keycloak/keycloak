@@ -2,9 +2,12 @@ import { useTranslation } from "react-i18next";
 import { Modal, ModalVariant } from "@patternfly/react-core";
 import {
   Table,
-  TableBody,
-  TableHeader,
   TableVariant,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  Tr,
 } from "@patternfly/react-table";
 
 type CredentialDataDialogProps = {
@@ -29,11 +32,23 @@ export const CredentialDataDialog = ({
         aria-label={t("passwordDataTitle")}
         data-testid="password-data-dialog"
         variant={TableVariant.compact}
-        cells={[t("showPasswordDataName"), t("showPasswordDataValue")]}
-        rows={credentialData}
       >
-        <TableHeader />
-        <TableBody />
+        <Thead>
+          <Tr>
+            <Th>{t("showPasswordDataName")}</Th>
+            <Th>{t("showPasswordDataValue")}</Th>
+          </Tr>
+        </Thead>
+        <Tbody>
+          {credentialData.map((cred, index) => {
+            return (
+              <Tr key={index}>
+                <Td>{cred[0]}</Td>
+                <Td>{cred[1]}</Td>
+              </Tr>
+            );
+          })}
+        </Tbody>
       </Table>
     </Modal>
   );

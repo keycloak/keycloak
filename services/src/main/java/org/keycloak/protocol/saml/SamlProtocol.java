@@ -38,11 +38,13 @@ import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
@@ -50,9 +52,11 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.ClientData;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
+import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.protocol.saml.mappers.NameIdMapperHelper;
 import org.keycloak.protocol.saml.mappers.SAMLAttributeStatementMapper;
 import org.keycloak.protocol.saml.mappers.SAMLLoginResponseMapper;
@@ -78,6 +82,7 @@ import org.keycloak.saml.processing.api.saml.v2.response.SAML2Response;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 import org.keycloak.services.ErrorPage;
+import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.messages.Messages;
@@ -241,11 +246,41 @@ public class SamlProtocol implements LoginProtocol {
         }
     }
 
+    @Override
+    public ClientData getClientData(AuthenticationSessionModel authSession) {
+        String responseMode = isPostBinding(authSession) ? SamlProtocol.SAML_POST_BINDING : SamlProtocol.SAML_REDIRECT_BINDING;
+        return new ClientData(authSession.getRedirectUri(),
+                null,
+                responseMode,
+                authSession.getClientNote(GeneralConstants.RELAY_STATE));
+    }
+
+    @Override
+    public Response sendError(ClientModel client, ClientData clientData, Error error) {
+        logger.tracef("Calling sendError with clientData when authenticating with client '%s' in realm '%s'. Error: %s", client.getClientId(), realm.getName(), error);
+
+        SamlClient samlClient = new SamlClient(client);
+        boolean postBinding = samlClient.forcePostBinding() || SamlProtocol.SAML_POST_BINDING.equals(clientData.getResponseMode());
+        event.detail(Details.REDIRECT_URI, clientData.getRedirectUri());
+        String validRedirectUri = RedirectUtils.verifyRedirectUri(session, clientData.getRedirectUri(), client);
+        if (validRedirectUri == null) {
+            event.error(Errors.INVALID_REDIRECT_URI);
+            throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.INVALID_REDIRECT_URI);
+        }
+
+        return samlErrorMessage(
+                null, samlClient, postBinding,
+                validRedirectUri, translateErrorToSAMLStatus(error), clientData.getState()
+        );
+    }
+
     private Response samlErrorMessage(
             AuthenticationSessionModel authSession, SamlClient samlClient, boolean isPostBinding,
-            String destination, JBossSAMLURIConstants statusDetail, String relayState) {
+            String destination, SAMLError samlError, String relayState) {
         JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder(session).relayState(relayState);
-        SAML2ErrorResponseBuilder builder = new SAML2ErrorResponseBuilder().destination(destination).issuer(getResponseIssuer(realm)).status(statusDetail.get());
+        SAML2ErrorResponseBuilder builder = new SAML2ErrorResponseBuilder().destination(destination).issuer(getResponseIssuer(realm))
+                .status(samlError.error().get())
+                .statusMessage(samlError.errorDescription());
         KeyManager keyManager = session.keys();
         if (samlClient.requiresRealmSignature()) {
             KeyManager.ActiveRsaKey keys = keyManager.getActiveRsaKey(realm);
@@ -276,18 +311,20 @@ public class SamlProtocol implements LoginProtocol {
         }
     }
 
-    private JBossSAMLURIConstants translateErrorToSAMLStatus(Error error) {
+    private SAMLError translateErrorToSAMLStatus(Error error) {
         switch (error) {
         case CANCELLED_BY_USER:
         case CANCELLED_AIA:
         case CONSENT_DENIED:
-            return JBossSAMLURIConstants.STATUS_REQUEST_DENIED;
+            return new SAMLError(JBossSAMLURIConstants.STATUS_REQUEST_DENIED, null);
         case PASSIVE_INTERACTION_REQUIRED:
         case PASSIVE_LOGIN_REQUIRED:
-            return JBossSAMLURIConstants.STATUS_NO_PASSIVE;
+            return new SAMLError(JBossSAMLURIConstants.STATUS_NO_PASSIVE, null);
+        case ALREADY_LOGGED_IN:
+            return new SAMLError(JBossSAMLURIConstants.STATUS_AUTHNFAILED, Constants.AUTHENTICATION_EXPIRED_MESSAGE);
         default:
             logger.warn("Untranslated protocol Error: " + error.name() + " so we return default SAML error");
-            return JBossSAMLURIConstants.STATUS_REQUEST_DENIED;
+            return new SAMLError(JBossSAMLURIConstants.STATUS_REQUEST_DENIED, null);
         }
     }
 
@@ -485,7 +522,7 @@ public class SamlProtocol implements LoginProtocol {
 
         if (nameId == null) {
             return samlErrorMessage(null, samlClient, isPostBinding(authSession), redirectUri,
-                    JBossSAMLURIConstants.STATUS_INVALID_NAMEIDPOLICY, relayState);
+                    new SAMLError(JBossSAMLURIConstants.STATUS_INVALID_NAMEIDPOLICY, null), relayState);
         }
 
         builder.nameIdentifier(nameIdFormat, nameId);
@@ -1059,6 +1096,13 @@ public class SamlProtocol implements LoginProtocol {
         return Response.ok(str, MediaType.TEXT_HTML_TYPE)
                 .header("Pragma", "no-cache")
                 .header("Cache-Control", "no-cache, no-store").build();
+    }
+
+    /**
+     * @param error mandatory parameter
+     * @param errorDescription optional parameter
+     */
+    private record SAMLError(JBossSAMLURIConstants error, String errorDescription) {
     }
 
 }

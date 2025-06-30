@@ -30,6 +30,7 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Errors;
@@ -42,6 +43,7 @@ import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentatio
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.UserInfo;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
@@ -67,7 +69,6 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.keycloak.util.BasicAuthHelper;
 import org.openqa.selenium.Cookie;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.LinkedList;
 
@@ -84,6 +85,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
     private static final String DEVICE_APP = "test-device";
     private static final String DEVICE_APP_PUBLIC = "test-device-public";
     private static final String DEVICE_APP_PUBLIC_CUSTOM_CONSENT = "test-device-public-custom-consent";
+    private static final String DEVICE_APP_WITHOUT_SCOPES = "test-device-without-scopes";
     private static final String SHORT_DEVICE_FLOW_URL = "https://keycloak.org/device";
 
     @Rule
@@ -106,7 +108,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
 
         ClientRepresentation app = ClientBuilder.create()
                 .id(KeycloakModelUtils.generateId())
-                .clientId("test-device")
+                .clientId(DEVICE_APP)
                 .secret("secret")
                 .attribute(OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED, "true")
                 .build();
@@ -125,6 +127,13 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
                 .attribute(ClientScopeModel.CONSENT_SCREEN_TEXT, "This is the custom consent screen text.")
                 .build();
         realm.client(appPublicCustomConsent);
+
+        ClientRepresentation appWithoutScopes = ClientBuilder.create().publicClient()
+                .id(KeycloakModelUtils.generateId())
+                .clientId(DEVICE_APP_WITHOUT_SCOPES)
+                .attribute(OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED, "true")
+                .build();
+        realm.client(appWithoutScopes);
 
         userId = KeycloakModelUtils.generateId();
         UserRepresentation user = UserBuilder.create()
@@ -439,7 +448,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
 
         Assert.assertEquals(400, tokenResponse.getStatusCode());
         Assert.assertEquals("invalid_grant", tokenResponse.getError());
-        Assert.assertEquals("PKCE verification failed", tokenResponse.getErrorDescription());
+        Assert.assertEquals("PKCE verification failed: Code mismatch", tokenResponse.getErrorDescription());
     }
 
 
@@ -477,6 +486,35 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         AccessToken token = oauth.verifyToken(tokenString);
 
         assertNotNull(token);
+    }
+
+    @Test
+    public void testPublicClientConsentWithoutScopes() throws Exception {
+
+        ClientsResource clients = realmsResouce().realm(REALM_NAME).clients();
+        ClientRepresentation clientRep = clients.findByClientId(DEVICE_APP_WITHOUT_SCOPES).get(0);
+        ClientResource client =  clients.get(clientRep.getId());
+
+        List<ClientScopeRepresentation> defaultClientScopes =  client.getDefaultClientScopes();
+        defaultClientScopes.forEach(scope -> client.removeDefaultClientScope(scope.getId()));
+
+        List<ClientScopeRepresentation> optionalClientScopes =  client.getOptionalClientScopes();
+        optionalClientScopes.forEach(scope -> client.removeOptionalClientScope(scope.getId()));
+
+        // Device Authorization Request from device
+        oauth.realm(REALM_NAME);
+        oauth.clientId(DEVICE_APP_WITHOUT_SCOPES);
+        OAuthClient.DeviceAuthorizationResponse response = oauth.doDeviceAuthorizationRequest(DEVICE_APP_WITHOUT_SCOPES, null);
+
+        Assert.assertEquals(200, response.getStatusCode());
+        assertNotNull(response.getVerificationUriComplete());
+        openVerificationPage(response.getVerificationUriComplete());
+        loginPage.assertCurrent();
+
+        // Do Login
+        oauth.fillLoginForm("device-login", "password");
+        // Consent
+        grantPage.assertCurrent();
     }
 
     @Test

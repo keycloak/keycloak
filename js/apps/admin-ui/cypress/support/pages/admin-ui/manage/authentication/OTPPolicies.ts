@@ -10,15 +10,14 @@ export default class OTPPolicies {
   }
 
   increaseInitialCounter() {
-    cy.get('#initialCounter > .pf-c-input-group > [aria-label="Plus"]').click();
+    cy.get('#otpPolicyInitialCounter [aria-label="Plus"]').click();
     return this;
   }
 
   checkSupportedApplications(...supportedApplications: string[]) {
-    cy.findByTestId("supportedApplications").should(
-      "have.text",
-      supportedApplications.join(""),
-    );
+    cy.findByTestId("supportedApplications")
+      .children()
+      .should("have.text", supportedApplications.join(""));
     return this;
   }
 

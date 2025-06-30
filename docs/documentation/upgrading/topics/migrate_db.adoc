@@ -1,21 +1,15 @@
 [[_migrate_db]]
 
-== Database migration
+== Migrating the database
 
 {project_name} can automatically migrate the database schema, or you can choose to do it manually. By default the
 database is automatically migrated when you start the new installation for the first time.
 
 === Automatic relational database migration
 
-To perform an automatic migration, start the server connected to the desired database.
-If the database schema has changed for the new version of the server, it will be migrated.
+To perform an automatic migration, start the server connected to the desired database.  If the database schema has changed for the new server version, the migration starts automatically unless the database has too many records.
 
-Creating an index on huge tables with millions of records can easily take a huge amount of time
-and potentially cause major service disruption on upgrades.
-For those cases, we added a threshold (the number of records) for automated index creation.
-By default, this threshold is `300000` records.
-When the number of records is higher than the threshold, the index is not created automatically,
-and there will be a warning message in server logs including SQL commands which can be applied later manually.
+For example, creating an index on tables with millions of records can be time-consuming and cause a major service disruption.  Therefore, a threshold of `300000` records exists for automatic migration.  If the number of records exceeds this threshold, the index is not created. Instead, you find a warning in the server logs with the SQL commands that you can apply manually.
 
 To change the threshold, set the `index-creation-threshold` property, value for the default `connections-liquibase` provider:
 
@@ -31,10 +25,10 @@ default `connections-jpa` provider:
 
 [source,bash]
 ----
-kc.[sh|bat] start --spi-connections-jpa-legacy-migration-strategy=manual
+kc.[sh|bat] start --spi-connections-jpa-quarkus-migration-strategy=manual
 ----
 
-When you start the server with this configuration it checks if the database needs to be migrated.
+When you start the server with this configuration, the server checks if the database needs to be migrated.
 The required changes are written to the `bin/keycloak-database-update.sql` SQL file that you can review and manually run against the database.
 
 To change the path and name of the exported SQL file, set the `migration-export` property for the
@@ -42,9 +36,9 @@ default `connections-jpa` provider:
 
 [source,bash]
 ----
-kc.[sh|bat] start --spi-connections-jpa-legacy-migration-export=<path>/<file.sql>
+kc.[sh|bat] start --spi-connections-jpa-quarkus-migration-export=<path>/<file.sql>
 ----
 
-For further details on how to apply this file to the database, see the documentation for the relational database you're using.
+For further details on how to apply this file to the database, see the documentation for your relational database.
 After the changes have been written to the file, the server exits.
 

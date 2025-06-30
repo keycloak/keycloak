@@ -1,6 +1,6 @@
 == Secure the first application
 
-To secure the first application, you start by registering the application with your Keycloak instance:
+To secure the first application, you start by registering the application with your {project_name} instance:
 
 . Open the {links-admin-console}.
 . Click the word *master* in the top-left corner, then click *myrealm*.
@@ -9,12 +9,11 @@ To secure the first application, you start by registering the application with y
 . Fill in the form with the following values:
 ** *Client type*: `OpenID Connect`
 ** *Client ID*: `myclient`
++
+image::add-client-1.png[Add Client]
 . Click *Next*
 . Confirm that *Standard flow* is enabled.
 . Click *Next*.
-+
-image::add-client-1.png[Add Client]
-
 . Make these changes under *Login settings*.
 * Set *Valid redirect URIs* to `+https://www.keycloak.org/app/*+`
 * Set *Web origins* to `+https://www.keycloak.org+`
@@ -31,8 +30,8 @@ endif::[]
 
 ifeval::[{links-local}!=true]
 . Open https://www.keycloak.org/app/.
-. Change `Keycloak URL` to the URL of your Keycloak instance.
+. Change `Keycloak URL` to the URL of your {project_name} instance.
 . Click *Save*.
 endif::[]
 
-. Click *Sign in* to authenticate to this application using the Keycloak server you started earlier.
+. Click *Sign in* to authenticate to this application using the {project_name} server you started earlier.

@@ -35,7 +35,7 @@ import java.util.Set;
  * 
  * The way it works:
  * - Get list of classloaders, which will be used as "delegates" when loaded classes or resources.
- *   - Can be retrived from provided classloaders or alternatively from the provided classes where the "delegate classloaders" will be determined from the classloaders of given classes
+ *   - Can be retrieved from provided classloaders or alternatively from the provided classes where the "delegate classloaders" will be determined from the classloaders of given classes
  * - For each class or resource that is 'requested':
  *   - First try all provided classloaders and if we have a match, return that
  *   - If no match was found: proceed with 'normal' classloading in 'current classpath' scope

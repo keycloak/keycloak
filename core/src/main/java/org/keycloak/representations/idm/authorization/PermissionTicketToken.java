@@ -44,9 +44,9 @@ public class PermissionTicketToken extends JsonWebToken {
         if (accessToken != null) {
             id(TokenIdGenerator.generateId());
             subject(accessToken.getSubject());
-            expiration(accessToken.getExpiration());
-            notBefore(accessToken.getNotBefore());
-            issuedAt(accessToken.getIssuedAt());
+            this.exp(accessToken.getExp());
+            this.nbf(accessToken.getNbf());
+            iat(accessToken.getIat());
             issuedFor(accessToken.getIssuedFor());
         }
         if (audience != null) {

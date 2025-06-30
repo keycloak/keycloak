@@ -16,89 +16,43 @@
  */
 package org.keycloak.client.admin.cli;
 
-import org.jboss.aesh.console.AeshConsoleBuilder;
-import org.jboss.aesh.console.AeshConsoleImpl;
-import org.jboss.aesh.console.Prompt;
-import org.jboss.aesh.console.command.registry.AeshCommandRegistryBuilder;
-import org.jboss.aesh.console.command.registry.CommandRegistry;
-import org.jboss.aesh.console.settings.Settings;
-import org.jboss.aesh.console.settings.SettingsBuilder;
-import org.keycloak.client.admin.cli.aesh.AeshEnhancer;
-import org.keycloak.client.admin.cli.aesh.Globals;
-import org.keycloak.client.admin.cli.aesh.ValveInputStream;
 import org.keycloak.client.admin.cli.commands.KcAdmCmd;
-import org.keycloak.client.admin.cli.util.ClassLoaderUtil;
-import org.keycloak.common.crypto.CryptoIntegration;
-
-import java.util.ArrayList;
-import java.util.Arrays;
+import org.keycloak.client.cli.common.CommandState;
+import org.keycloak.client.cli.common.Globals;
+import org.keycloak.client.cli.util.OsUtil;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 public class KcAdmMain {
 
+    public static final String DEFAULT_CONFIG_FILE_PATH = System.getProperty("user.home") + "/.keycloak/kcadm.config";
+
+    public static final String DEFAULT_CONFIG_FILE_STRING = OsUtil.OS_ARCH.isWindows() ? "%HOMEDRIVE%%HOMEPATH%\\.keycloak\\kcadm.config" : "~/.keycloak/kcadm.config";
+
+    public static final String CMD = OsUtil.OS_ARCH.isWindows() ? "kcadm.bat" : "kcadm.sh";
+
+    public static final CommandState COMMAND_STATE = new CommandState() {
+
+        @Override
+        public String getCommand() {
+            return CMD;
+        }
+
+        @Override
+        public String getDefaultConfigFilePath() {
+            return DEFAULT_CONFIG_FILE_PATH;
+        }
+
+        @Override
+        public boolean isTokenGlobal() {
+            return true;
+        };
+
+    };
+
     public static void main(String [] args) {
-        String libDir = System.getProperty("kc.lib.dir");
-        if (libDir == null) {
-            throw new RuntimeException("System property kc.lib.dir needs to be set");
-        }
-        ClassLoader cl = ClassLoaderUtil.resolveClassLoader(libDir);
-        Thread.currentThread().setContextClassLoader(cl);
-
-        CryptoIntegration.init(cl);
-        
-        Globals.stdin = new ValveInputStream();
-
-        Settings settings = new SettingsBuilder()
-        .logging(false)
-        .readInputrc(false)
-        .disableCompletion(true)
-        .disableHistory(true)
-        .enableAlias(false)
-        .enableExport(false)
-        .inputStream(Globals.stdin)
-        .create();
-        
-        CommandRegistry registry = new AeshCommandRegistryBuilder()
-        .command(KcAdmCmd.class)
-                .create();
-                
-        AeshConsoleImpl console = (AeshConsoleImpl) new AeshConsoleBuilder()
-        .settings(settings)
-        .commandRegistry(registry)
-        .prompt(new Prompt(""))
-        //                .commandInvocationProvider(new CommandInvocationServices() {
-            //
-            //                })
-            .create();
-            
-            AeshEnhancer.enhance(console);
-            
-            // work around parser issues with quotes and brackets
-            ArrayList<String> arguments = new ArrayList<>();
-            arguments.add("kcadm");
-            arguments.addAll(Arrays.asList(args));
-            Globals.args = arguments;
-            
-            StringBuilder b = new StringBuilder();
-            for (String s : args) {
-                // quote if necessary
-                boolean needQuote = false;
-                needQuote = s.indexOf(' ') != -1 || s.indexOf('\"') != -1 || s.indexOf('\'') != -1;
-                b.append(' ');
-                if (needQuote) {
-                    b.append('\'');
-                }
-                b.append(s);
-                if (needQuote) {
-                    b.append('\'');
-                }
-            }
-            console.setEcho(false);
-            
-            console.execute("kcadm" + b.toString());
-            
-            console.start();
-        }
+        Globals.main(args, new KcAdmCmd(), CMD, DEFAULT_CONFIG_FILE_STRING);
     }
+
+}

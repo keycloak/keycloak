@@ -4,7 +4,7 @@
 = OIDC token and SAML assertion mappings
 
 [role="_abstract"]
-Applications receiving ID tokens, access tokens, or SAML assertions may require different roles and user metadata. 
+Applications receiving ID tokens, access tokens, or SAML assertions may require different roles and user metadata.
 
 You can use {project_name} to:
 
@@ -17,7 +17,7 @@ You perform these actions in the *Mappers* tab in the Admin Console.
 .Mappers tab
 image:images/mappers-oidc.png[]
 
-New clients do not have built-in mappers but they can inherit some mappers from client scopes. See the <<_client_scopes, client scopes section>> for more details. 
+New clients do not have built-in mappers, but they can inherit some mappers from client scopes. See the <<_client_scopes, client scopes section>> for more details.
 
 Protocol mappers map items (such as an email address, for example) to
 a specific claim in the identity and access token. The function of a mapper should be self-explanatory from its name. You  add pre-configured mappers by clicking *Add Builtin*.
@@ -33,6 +33,7 @@ You can use most OIDC mappers to control where the claim gets placed. You opt to
 
 include::proc-creating-mappers.adoc[]
 
+[[_protocol-mappers_priority]]
 == Priority order
 
 Mapper implementations have _priority order_. _Priority order_ is not the configuration property of the mapper. It is the property of the concrete implementation of the mapper.
@@ -66,3 +67,28 @@ Service account sessions provide the following details:
 Use the *Script Mapper* to map claims to tokens by running user-defined JavaScript code. For more details about deploying scripts to the server, see link:{developerguide_jsproviders_link}[{developerguide_jsproviders_name}].
 
 When scripts deploy, you should be able to select the deployed scripts from the list of available mappers.
+
+== Pairwise subject identifier mapper
+
+Subject claim _sub_ is mapped by default by *Subject (sub)* protocol mapper in the default client scope *basic*.
+
+To use a pairwise subject identifier by using a protocol mapper such as *Pairwise subject identifier*, you can remove the *Subject (sub)* protocol mapper from the *basic* client scope.
+However it is not strictly needed as the *Subject (sub)* protocol mapper is executed before the *Pairwise subject identifier* mapper and hence the pairwise value will override the value added
+by the Subject mapper. This is due to the <<_protocol-mappers_priority, priority>> of the Subject mapper. So the only advantage of removing the built-in *Subject (sub)* mapper might be to
+save a little bit of performance by avoiding the use of the protocol mapper, which may not have any effect.
+
+[[_using_lightweight_access_token]]
+== Using lightweight access token
+The access token in {project_name} contains sensitive information, including Personal Identifiable Information (PII).
+Therefore, if the resource server does not want to disclose this type of information to third party entities such as clients, {project_name} supports lightweight access tokens that remove PII from access tokens.
+Further, when the resource server acquires the PII removed from the access token, it can acquire the PII by sending the access token to {project_name}'s token introspection endpoint.
+
+Information that cannot be removed from a lightweight access token::
+  Protocol mappers can controls which information is put onto an access token and the lightweight access token use the protocol mappers. Therefore, the following information cannot be removed from the lightweight access. +
+  `exp`, `iat`, `jti`, `iss`, `typ`, `azp`, `sid`, `scope`, `cnf`
+
+Using a lightweight access token in {project_name}::
+  By applying `use-lightweight-access-token` executor of <<_client_policies, client policies>> to a client, the client can receive a lightweight access token instead of an access token. The lightweight access token contains a claim controlled by a protocol mapper where its setting `Add to lightweight access token`(default OFF) is turned ON. Also, by turning ON its setting `Add to token introspection` of the protocol mapper, the client can obtain the claim by sending the access token to {project_name}'s token introspection endpoint.
+
+Introspection endpoint::
+  In some cases, it might be useful to trigger the token introspection endpoint with the HTTP header `Accept: application/jwt` instead of `Accept: application/json`, which can be useful especially for lightweight access tokens. See the details in the link:{adapterguide_link}#_token_introspection_endpoint[Token Introspection endpoint] section.

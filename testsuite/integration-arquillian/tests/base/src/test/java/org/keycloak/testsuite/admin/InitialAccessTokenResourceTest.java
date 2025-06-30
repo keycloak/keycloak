@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.admin;
 
+import jakarta.ws.rs.BadRequestException;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientInitialAccessResource;
@@ -26,6 +27,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.AdminEventPaths;
 
@@ -64,9 +66,9 @@ public class InitialAccessTokenResourceTest extends AbstractAdminTest {
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientInitialAccessPath(response.getId()), rep, ResourceType.CLIENT_INITIAL_ACCESS_MODEL);
 
         assertNotNull(response.getId());
-        assertEquals(new Integer(2), response.getCount());
-        assertEquals(new Integer(2), response.getRemainingCount());
-        assertEquals(new Integer(100), response.getExpiration());
+        assertEquals(Integer.valueOf(2), response.getCount());
+        assertEquals(Integer.valueOf(2), response.getRemainingCount());
+        assertEquals(Integer.valueOf(100), response.getExpiration());
         assertThat(response.getTimestamp(), allOf(greaterThanOrEqualTo(time), lessThanOrEqualTo(Time.currentTime())));
         assertNotNull(response.getToken());
 
@@ -92,6 +94,35 @@ public class InitialAccessTokenResourceTest extends AbstractAdminTest {
         list = resource.list();
         assertEquals(2, list.size());
         assertEquals(5, list.get(0).getCount() + list.get(1).getCount());
+    }
+
+    @Test
+    public void testInvalidParametersWhileCreatingInitialAccessTokens() {
+        // Set Count as -1
+        ClientInitialAccessCreatePresentation rep = new ClientInitialAccessCreatePresentation();
+        rep.setCount(-1);
+        rep.setExpiration(100);
+        try {
+            resource.create(rep);
+            Assert.fail("Invalid value for count");
+        }catch (BadRequestException e){
+            OAuth2ErrorRepresentation error = e.getResponse().readEntity(OAuth2ErrorRepresentation.class);
+            Assert.assertEquals("Invalid value for count", error.getError());
+            Assert.assertEquals("The count cannot be less than 0", error.getErrorDescription());
+        }
+
+        // Set Expiration as -10
+        rep = new ClientInitialAccessCreatePresentation();
+        rep.setCount(100);
+        rep.setExpiration(-10);
+        try {
+            resource.create(rep);
+            Assert.fail("Invalid value for expiration");
+        }catch (BadRequestException e){
+            OAuth2ErrorRepresentation error = e.getResponse().readEntity(OAuth2ErrorRepresentation.class);
+            Assert.assertEquals("Invalid value for expiration", error.getError());
+            Assert.assertEquals("The expiration time interval cannot be less than 0", error.getErrorDescription());
+        }
     }
 
 

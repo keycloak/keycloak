@@ -8,3 +8,7 @@ spec:
       -
   http:
     tlsSecret: my-tls-secret
+  resources:
+    limits:
+      cpu: 3
+      memory: 5Gi

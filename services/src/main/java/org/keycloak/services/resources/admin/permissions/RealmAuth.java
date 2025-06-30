@@ -20,8 +20,9 @@ package org.keycloak.services.resources.admin.permissions;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ImpersonationConstants;
-import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.resources.admin.AdminAuth;
+
+import jakarta.ws.rs.ForbiddenException;
 
 
 /**

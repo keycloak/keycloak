@@ -20,8 +20,6 @@
             xsi:schemaLocation="http://jboss.org/schema/arquillian
         http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
 
-    <defaultProtocol type="Servlet 3.0" />
-	
     <extension qualifier="webdriver">
         <property name="browser">${browser}</property>
         <property name="downloadBinaries">${webdriverDownloadBinaries}</property>
@@ -38,7 +36,7 @@
         <property name="firefoxLegacy">${firefoxLegacyDriver}</property>
         <property name="firefoxDriverVersion">${firefoxDriverVersion}</property>
         <property name="firefoxUserPreferences">${firefoxUserPreferences}</property>
-        <property name="firefoxHeadless">${firefoxHeadless}</property>
+        <property name="firefoxArguments">${firefoxArguments}</property>
 
         <!-- chrome -->
         <property name="chromeBinary">${chromeBinary}</property>
@@ -85,7 +83,7 @@
         <property name="firefoxLegacy">${firefoxLegacyDriver}</property>
         <property name="firefoxDriverVersion">${firefoxDriverVersion}</property>
         <property name="firefoxUserPreferences">${firefoxUserPreferences}</property>
-        <property name="firefoxHeadless">${firefoxHeadless}</property>
+        <property name="firefoxArguments">${firefoxArguments}</property>
 
         <!-- chrome -->
         <property name="chromeBinary">${chromeBinary}</property>
@@ -93,9 +91,10 @@
         <property name="chromeDriverVersion">${chromeDriverVersion}</property>
     </extension>
 
-    <extension qualifier="webdriver-phantomjsbrowser">
-        <property name="browser">phantomjs</property>
-        <property name="downloadBinaries">${webdriverDownloadBinaries}</property>
+    <extension qualifier="webdriver-htmlunitbrowser">
+        <property name="browser">htmlunit</property>
+        <property name="htmlUnit.version">${htmlUnitBrowserVersion}</property>
+        <property name="htmlUnitWebClientOptions">cssEnabled=false;historyPageCacheLimit=1</property>
     </extension>
 
     <extension qualifier="graphene-secondbrowser">
@@ -421,7 +420,6 @@
                     "keycloak.connectionsInfinispan.remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:11222}",
                     "keycloak.connectionsInfinispan.remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:true}",
                     "keycloak.connectionsInfinispan.hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}",
-                    "keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase": "${keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase:true}",
                     "keycloak.connectionsJpa.url": "${keycloak.connectionsJpa.url.crossdc:jdbc:h2:mem:test-dc-shared}",
                     "keycloak.connectionsJpa.driver": "${keycloak.connectionsJpa.driver.crossdc:org.h2.Driver}",
                     "keycloak.connectionsJpa.driverDialect": "${keycloak.connectionsJpa.driverDialect.crossdc:}"
@@ -448,7 +446,6 @@
                     "keycloak.connectionsInfinispan.remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:11222}",
                     "keycloak.connectionsInfinispan.remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:true}",
                     "keycloak.connectionsInfinispan.hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}",
-                    "keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase": "${keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase:true}",
                     "keycloak.connectionsJpa.url": "${keycloak.connectionsJpa.url.crossdc:jdbc:h2:mem:test-dc-shared}",
                     "keycloak.connectionsJpa.driver": "${keycloak.connectionsJpa.driver.crossdc:org.h2.Driver}",
                     "keycloak.connectionsJpa.driverDialect": "${keycloak.connectionsJpa.driverDialect.crossdc:}"
@@ -476,7 +473,6 @@
                     "keycloak.connectionsInfinispan.remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort.2:11222}",
                     "keycloak.connectionsInfinispan.remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:true}",
                     "keycloak.connectionsInfinispan.hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}",
-                    "keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase": "${keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase:true}",
                     "keycloak.connectionsJpa.url": "${keycloak.connectionsJpa.url.crossdc:jdbc:h2:mem:test-dc-shared}",
                     "keycloak.connectionsJpa.driver": "${keycloak.connectionsJpa.driver.crossdc:org.h2.Driver}",
                     "keycloak.connectionsJpa.driverDialect": "${keycloak.connectionsJpa.driverDialect.crossdc:}"
@@ -503,7 +499,6 @@
                     "keycloak.connectionsInfinispan.remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort.2:11222}",
                     "keycloak.connectionsInfinispan.remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:true}",
                     "keycloak.connectionsInfinispan.hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}",
-                    "keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase": "${keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase:true}",
                     "keycloak.connectionsJpa.url": "${keycloak.connectionsJpa.url.crossdc:jdbc:h2:mem:test-dc-shared}",
                     "keycloak.connectionsJpa.driver": "${keycloak.connectionsJpa.driver.crossdc:org.h2.Driver}",
                     "keycloak.connectionsJpa.driverDialect": "${keycloak.connectionsJpa.driverDialect.crossdc:}"
@@ -521,7 +516,7 @@
                     -Djboss.socket.binding.port-offset=${auth.server.crossdc01.port.offset}
                     -Djboss.default.multicast.address=234.56.78.1
                     -Dremote.cache.port=12232
-                    -Djboss.site.name=dc0
+                    -Dkeycloak.connectionsInfinispan.siteName=dc0
                     -Djboss.node.name=auth-server-${node.name}-cross-dc-0_1
                     -Dauth.server.truststore=${auth.server.truststore}
                     -Dauth.server.truststore.password=${auth.server.truststore.password}
@@ -553,7 +548,7 @@
                     -Djboss.socket.binding.port-offset=${auth.server.crossdc02.port.offset}
                     -Djboss.default.multicast.address=234.56.78.1
                     -Dremote.cache.port=12232
-                    -Djboss.site.name=dc0
+                    -Dkeycloak.connectionsInfinispan.siteName=dc0
                     -Djboss.node.name=auth-server-${node.name}-cross-dc-0_2-manual
                     -Dauth.server.truststore=${auth.server.truststore}
                     -Dauth.server.truststore.password=${auth.server.truststore.password}
@@ -586,7 +581,7 @@
                     -Djboss.socket.binding.port-offset=${auth.server.crossdc11.port.offset}
                     -Djboss.default.multicast.address=234.56.78.2
                     -Dremote.cache.port=13232
-                    -Djboss.site.name=dc1
+                    -Dkeycloak.connectionsInfinispan.siteName=dc1
                     -Djboss.node.name=auth-server-${node.name}-cross-dc-1_1
                     -Dauth.server.truststore=${auth.server.truststore}
                     -Dauth.server.truststore.password=${auth.server.truststore.password}
@@ -618,7 +613,7 @@
                     -Djboss.socket.binding.port-offset=${auth.server.crossdc12.port.offset}
                     -Djboss.default.multicast.address=234.56.78.2
                     -Dremote.cache.port=13232
-                    -Djboss.site.name=dc1
+                    -Dkeycloak.connectionsInfinispan.siteName=dc1
                     -Djboss.node.name=auth-server-${node.name}-cross-dc-1_2-manual
                     -Dauth.server.truststore=${auth.server.truststore}
                     -Dauth.server.truststore.password=${auth.server.truststore.password}
@@ -651,6 +646,7 @@
             <property name="javaOpts">-Xms512m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=512m
                 -Djava.net.preferIPv4Stack=true -Dauth.server.db.host=some
             </property>
+            <property name="defaultFeatures">${auth.server.feature}</property>
         </configuration>
     </container>
 
@@ -661,6 +657,7 @@
                 org.keycloak.testsuite.arquillian.containers.KeycloakQuarkusEmbeddedDeployableContainer
             </property>
             <property name="bindHttpPortOffset">${auth.server.port.offset}</property>
+            <property name="defaultFeatures">${auth.server.feature}</property>
         </configuration>
     </container>
 
@@ -698,6 +695,7 @@
                 <property name="bindHttpsPort">${auth.server.https.port}</property>
                 <property name="bindHttpPortOffset">2</property>
                 <property name="bindHttpsPortOffset">2</property>
+                <property name="managementPort">9001</property>
                 <property name="route">node2</property>
                 <property name="remoteMode">${quarkus.remote}</property>
                 <property name="profile">ha</property>

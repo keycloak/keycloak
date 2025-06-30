@@ -20,7 +20,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientScopeModel;
@@ -102,6 +102,7 @@ public class ClientScopesResource {
     public Response createClientScope(ClientScopeRepresentation rep) {
         auth.clients().requireManageClientScopes();
         ClientScopeResource.validateClientScopeName(rep.getName());
+        ClientScopeResource.validateClientScopeProtocol(rep.getProtocol());
         ClientScopeResource.validateDynamicClientScope(rep);
         try {
             ClientScopeModel clientModel = RepresentationToModel.createClientScope(session, realm, rep);
@@ -120,9 +121,9 @@ public class ClientScopesResource {
      * @param id id of client scope (not name)
      * @return
      */
-    @Path("{id}")
+    @Path("{client-scope-id}")
     @NoCache
-    public ClientScopeResource getClientScope(final @PathParam("id") String id) {
+    public ClientScopeResource getClientScope(final @PathParam("client-scope-id") String id) {
         auth.clients().requireListClientScopes();
         ClientScopeModel clientModel = realm.getClientScopeById(id);
         if (clientModel == null) {

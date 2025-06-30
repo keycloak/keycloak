@@ -3,7 +3,6 @@
 === Fine grain admin permissions
 
 :tech_feature_name: Fine Grain Admin Permissions
-:tech_feature_setting: -Dkeycloak.profile.feature.admin_fine_grained_authz=enabled
 :tech_feature_id: admin-fine-grained-authz
 include::../templates/techpreview.adoc[]
 
@@ -173,7 +172,7 @@ users you'll see that each user detail page is read only, except for the `Role M
 Going to this tab you'll find that there are no `Available` roles for the admin to
 map to the user except when we browse the `sales-application` roles.
 
-.Add viewleads
+.Assign viewLeads
 image:images/fine-grain-add-view-leads.png[Fine grain add view leads]
 
 We've only specified that the `sales-admin` can map the `viewLeads` role.

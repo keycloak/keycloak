@@ -33,8 +33,14 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserLookupProvider;
+import org.keycloak.userprofile.AttributeMetadata;
+import org.keycloak.userprofile.UserProfileDecorator;
+import org.keycloak.userprofile.UserProfileMetadata;
+import org.keycloak.userprofile.UserProfileUtil;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -49,7 +55,8 @@ public class SSSDFederationProvider implements UserStorageProvider,
         UserLookupProvider,
         CredentialInputUpdater,
         CredentialInputValidator,
-        ImportedUserValidation {
+        ImportedUserValidation,
+        UserProfileDecorator {
 
     private static final Logger logger = Logger.getLogger(SSSDFederationProvider.class);
 
@@ -210,5 +217,32 @@ public class SSSDFederationProvider implements UserStorageProvider,
     @Override
     public Stream<String> getDisableableCredentialTypesStream(RealmModel realm, UserModel user) {
         return Stream.empty();
+    }
+
+    @Override
+    public List<AttributeMetadata> decorateUserProfile(String providerId, UserProfileMetadata metadata) {
+        // guiOrder if new attributes are needed
+        int guiOrder = (int) metadata.getAttributes().stream()
+                .map(AttributeMetadata::getName)
+                .distinct()
+                .count();
+
+        List<AttributeMetadata> metadatas = new ArrayList<>();
+
+        // firstName, lastName, username and email should be read-only
+        for (String attrName : List.of(UserModel.FIRST_NAME, UserModel.LAST_NAME, UserModel.EMAIL, UserModel.USERNAME)) {
+            List<AttributeMetadata> attrMetadatas = metadata.getAttribute(attrName);
+            if (attrMetadatas.isEmpty()) {
+                logger.debugf("Adding user profile attribute '%s' for sssd provider and context '%s'.", attrName, metadata.getContext());
+                metadatas.add(UserProfileUtil.createAttributeMetadata(attrName, metadata, null, guiOrder++, model.getName()));
+            } else {
+                for (AttributeMetadata attrMetadata : attrMetadatas) {
+                    logger.debugf("Cloning attribute '%s' as read-only for sssd provider and context '%s'.", attrName, metadata.getContext());
+                    metadatas.add(attrMetadata.clone().addWriteCondition(AttributeMetadata.ALWAYS_FALSE));
+                }
+            }
+        }
+
+        return metadatas;
     }
 }

@@ -23,12 +23,16 @@ import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ConfigurationValidationHelper;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.keycloak.provider.ProviderConfigProperty.LIST_TYPE;
 import static org.keycloak.provider.ProviderConfigProperty.STRING_TYPE;
@@ -36,7 +40,7 @@ import static org.keycloak.provider.ProviderConfigProperty.STRING_TYPE;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class JavaKeystoreKeyProviderFactory extends AbstractRsaKeyProviderFactory {
+public class JavaKeystoreKeyProviderFactory implements KeyProviderFactory {
     private static final Logger logger = Logger.getLogger(JavaKeystoreKeyProviderFactory.class);
 
     public static final String ID = "java-keystore";
@@ -62,6 +66,7 @@ public class JavaKeystoreKeyProviderFactory extends AbstractRsaKeyProviderFactor
 
     private List<ProviderConfigProperty> configProperties;
 
+
     @Override
     public void init(Config.Scope config) {
         String[] supportedKeystoreTypes = CryptoIntegration.getProvider().getSupportedKeyStoreTypes()
@@ -71,7 +76,11 @@ public class JavaKeystoreKeyProviderFactory extends AbstractRsaKeyProviderFactor
                 "Keystore type. This parameter is not mandatory. If omitted, the type will be detected from keystore file or default keystore type will be used", LIST_TYPE,
                 supportedKeystoreTypes.length > 0 ? supportedKeystoreTypes[0] : null, supportedKeystoreTypes);
 
-        configProperties = AbstractRsaKeyProviderFactory.configurationBuilder()
+        configProperties = ProviderConfigurationBuilder.create()
+                .property(Attributes.PRIORITY_PROPERTY)
+                .property(Attributes.ENABLED_PROPERTY)
+                .property(Attributes.ACTIVE_PROPERTY)
+                .property(mergedAlgorithmProperties())
                 .property(KEYSTORE_PROPERTY)
                 .property(KEYSTORE_PASSWORD_PROPERTY)
                 .property(keystoreTypeProperty)
@@ -88,9 +97,11 @@ public class JavaKeystoreKeyProviderFactory extends AbstractRsaKeyProviderFactor
 
     @Override
     public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel model) throws ComponentValidationException {
-        super.validateConfiguration(session, realm, model);
 
         ConfigurationValidationHelper.check(model)
+                .checkLong(Attributes.PRIORITY_PROPERTY, false)
+                .checkBoolean(Attributes.ENABLED_PROPERTY, false)
+                .checkBoolean(Attributes.ACTIVE_PROPERTY, false)
                 .checkSingle(KEYSTORE_PROPERTY, true)
                 .checkSingle(KEYSTORE_PASSWORD_PROPERTY, true)
                 .checkSingle(keystoreTypeProperty, false)
@@ -103,6 +114,19 @@ public class JavaKeystoreKeyProviderFactory extends AbstractRsaKeyProviderFactor
             logger.error("Failed to load keys.", t);
             throw new ComponentValidationException("Failed to load keys. " + t.getMessage(), t);
         }
+    }
+
+    // merge the algorithms supported for RSA and EC keys and provide them as one configuration property
+    private static ProviderConfigProperty mergedAlgorithmProperties() {
+        List<String> ecAlgorithms = List.of(Algorithm.ES256, Algorithm.ES384, Algorithm.ES512);
+        List<String> algorithms = Stream.of(Attributes.RS_ALGORITHM_PROPERTY.getOptions(),
+                        ecAlgorithms, Attributes.RS_ENC_ALGORITHM_PROPERTY.getOptions())
+                .flatMap(Collection::stream)
+                .toList();
+        return new ProviderConfigProperty(Attributes.RS_ALGORITHM_PROPERTY.getName(), Attributes.RS_ALGORITHM_PROPERTY.getLabel(),
+                Attributes.RS_ALGORITHM_PROPERTY.getHelpText(), Attributes.RS_ALGORITHM_PROPERTY.getType(),
+                Attributes.RS_ALGORITHM_PROPERTY.getDefaultValue(), algorithms.toArray(String[]::new));
+
     }
 
     @Override

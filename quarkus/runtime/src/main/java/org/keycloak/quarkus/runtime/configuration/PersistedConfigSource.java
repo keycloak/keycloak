@@ -51,7 +51,7 @@ public final class PersistedConfigSource extends PropertiesConfigSource {
      * to ignore this config source. Otherwise, default values are not resolved at runtime because the property will be
      * resolved from this config source, if persisted.
      */
-    private static final ThreadLocal<Boolean> ENABLED = new ThreadLocal<>();
+    private static final ThreadLocal<Boolean> ENABLED = ThreadLocal.withInitial(() -> true);
 
     private PersistedConfigSource() {
         super(readProperties(), "", 200);
@@ -146,16 +146,24 @@ public final class PersistedConfigSource extends PropertiesConfigSource {
         return null;
     }
 
-    public void enable(boolean enabled) {
-        if (enabled) {
-            ENABLED.remove();
-        } else {
-            ENABLED.set(enabled);
-        }
+    public void enable() {
+        ENABLED.set(true);
+    }
+
+    public void disable() {
+        ENABLED.set(false);
     }
 
     private boolean isEnabled() {
-        Boolean result = ENABLED.get();
-        return result == null ? true : result;
+        return Boolean.TRUE.equals(ENABLED.get());
+    }
+
+    public <T> T runWithDisabled(Supplier<T> execution) {
+        try {
+            disable();
+            return execution.get();
+        } finally {
+            enable();
+        }
     }
 }

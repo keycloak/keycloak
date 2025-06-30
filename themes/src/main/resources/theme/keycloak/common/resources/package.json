@@ -1,11 +1,26 @@
 {
   "name": "keycloak-npm-dependencies",
-  "version": "1.0.0",
-  "description": "Keycloak NPM Dependencies",
-  "license": "Apache-2.0",
-  "repository": "https://github.com/keycloak/keycloak",
+  "type": "module",
+  "scripts": {
+    "build": "pnpm build:clean && rollup --config",
+    "build:clean": "shx rm -rf vendor"
+  },
   "dependencies": {
-    "jquery": "3.7.1",
-    "patternfly": "3.59.5"
+    "@patternfly-v5/patternfly": "npm:@patternfly/patternfly@^5.3.1",
+    "@patternfly/patternfly": "^4.224.5",
+    "alpinejs": "^3.14.0",
+    "jquery": "^3.7.1",
+    "patternfly": "^3.59.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "rfc4648": "^1.5.3"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^26.0.1",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-replace": "^5.0.7",
+    "@rollup/plugin-terser": "^0.4.4",
+    "rollup": "^4.18.0",
+    "shx": "^0.3.4"
   }
 }

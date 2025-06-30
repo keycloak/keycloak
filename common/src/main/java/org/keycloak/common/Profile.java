@@ -18,19 +18,22 @@
 package org.keycloak.common;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.Profile.Feature.Type;
 import org.keycloak.common.profile.ProfileConfigResolver;
+import org.keycloak.common.profile.ProfileConfigResolver.FeatureConfig;
 import org.keycloak.common.profile.ProfileException;
-import org.keycloak.common.profile.PropertiesFileProfileConfigResolver;
-import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.common.util.KerberosJdkProvider;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -40,18 +43,22 @@ import java.util.stream.Stream;
  */
 public class Profile {
 
+    private static volatile Map<String, TreeSet<Feature>> FEATURES;
+
     public enum Feature {
         AUTHORIZATION("Authorization Service", Type.DEFAULT),
 
         ACCOUNT_API("Account Management REST API", Type.DEFAULT),
-        ACCOUNT2("Account Management Console version 2", Type.DEFAULT, Feature.ACCOUNT_API),
-        ACCOUNT3("Account Management Console version 3", Type.PREVIEW, Feature.ACCOUNT_API),
+
+        ACCOUNT3("Account Console version 3", Type.DEFAULT, Feature.ACCOUNT_API),
 
         ADMIN_FINE_GRAINED_AUTHZ("Fine-Grained Admin Permissions", Type.PREVIEW),
 
         ADMIN_API("Admin API", Type.DEFAULT),
 
         ADMIN2("New Admin Console", Type.DEFAULT, Feature.ADMIN_API),
+
+        LOGIN2("New Login Theme", Type.EXPERIMENTAL),
 
         DOCKER("Docker Registry protocol", Type.DISABLED_BY_DEFAULT),
 
@@ -67,11 +74,7 @@ public class Profile {
 
         CIBA("OpenID Connect Client Initiated Backchannel Authentication (CIBA)", Type.DEFAULT),
 
-        MAP_STORAGE("New store", Type.EXPERIMENTAL),
-
         PAR("OAuth 2.0 Pushed Authorization Requests (PAR)", Type.DEFAULT),
-
-        DECLARATIVE_USER_PROFILE("Configure user profiles using a declarative style", Type.PREVIEW),
 
         DYNAMIC_SCOPES("Dynamic OAuth 2.0 scopes", Type.EXPERIMENTAL),
 
@@ -86,36 +89,88 @@ public class Profile {
 
         UPDATE_EMAIL("Update Email Action", Type.PREVIEW),
 
-        JS_ADAPTER("Host keycloak.js and keycloak-authz.js through the Keycloak sever", Type.DEFAULT),
+        JS_ADAPTER("Host keycloak.js and keycloak-authz.js through the Keycloak server", Type.DEFAULT),
 
         FIPS("FIPS 140-2 mode", Type.DISABLED_BY_DEFAULT),
 
         DPOP("OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer", Type.PREVIEW),
 
-        LINKEDIN_OAUTH("LinkedIn Social Identity Provider based on OAuth", Type.DEPRECATED),
-
         DEVICE_FLOW("OAuth 2.0 Device Authorization Grant", Type.DEFAULT),
 
-        TRANSIENT_USERS("Transient users for brokering", Type.PREVIEW),
+        TRANSIENT_USERS("Transient users for brokering", Type.EXPERIMENTAL),
+
+        MULTI_SITE("Multi-site support", Type.DISABLED_BY_DEFAULT),
+
+        CLIENT_TYPES("Client Types", Type.EXPERIMENTAL),
+
+        HOSTNAME_V1("Hostname Options V1", Type.DEPRECATED, 1),
+        HOSTNAME_V2("Hostname Options V2", Type.DEFAULT, 2),
+
+        PERSISTENT_USER_SESSIONS("Persistent online user sessions across restarts and upgrades", Type.PREVIEW),
+
+        OID4VC_VCI("Support for the OID4VCI protocol as part of OID4VC.", Type.EXPERIMENTAL),
+
+        DECLARATIVE_UI("declarative ui spi", Type.EXPERIMENTAL),
+
+        ORGANIZATION("Organization support within realms", Type.PREVIEW),
+
+        PASSKEYS("Passkeys", Type.PREVIEW)
         ;
 
         private final Type type;
         private final String label;
+        private final String unversionedKey;
+        private final String key;
 
         private Set<Feature> dependencies;
-        Feature(String label, Type type) {
-            this.label = label;
-            this.type = type;
-        }
+        private int version;
 
         Feature(String label, Type type, Feature... dependencies) {
+            this(label, type, 1, dependencies);
+        }
+
+        /**
+         * allowNameKey should be false for new versioned features to disallow using a legacy name, like account2
+         */
+        Feature(String label, Type type, int version, Feature... dependencies) {
             this.label = label;
             this.type = type;
+            this.version = version;
+            this.key = name().toLowerCase().replaceAll("_", "-");
+            if (this.name().endsWith("_V" + version)) {
+                unversionedKey = key.substring(0, key.length() - (String.valueOf(version).length() + 2));
+            } else {
+                this.unversionedKey = key;
+                if (this.version > 1) {
+                    throw new IllegalStateException("It is expected that the enum name ends with the version");
+                }
+            }
             this.dependencies = Arrays.stream(dependencies).collect(Collectors.toSet());
         }
 
+        /**
+         * Get the key that uniquely identifies this feature, may be used by users if
+         * allowNameKey is true.
+         * <p>
+         * {@link #getVersionedKey()} should instead be shown to users where possible.
+         */
         public String getKey() {
-            return name().toLowerCase().replaceAll("_", "-");
+            return key;
+        }
+
+        /**
+         * Return the key without any versioning.  All features of the same type
+         * will share this key.
+         */
+        public String getUnversionedKey() {
+            return unversionedKey;
+        }
+
+        /**
+         * Return the key in the form key:v{version}
+         */
+        public String getVersionedKey() {
+            return getUnversionedKey() + ":v" + version;
         }
 
         public String getLabel() {
@@ -130,13 +185,18 @@ public class Profile {
             return dependencies;
         }
 
+        public int getVersion() {
+            return version;
+        }
+
         public enum Type {
+            // in priority order
             DEFAULT("Default"),
             DISABLED_BY_DEFAULT("Disabled by default"),
+            DEPRECATED("Deprecated"),
             PREVIEW("Preview"),
             PREVIEW_DISABLED_BY_DEFAULT("Preview disabled by default"), // Preview features, which are not automatically enabled even with enabled preview profile (Needs to be enabled explicitly)
-            EXPERIMENTAL("Experimental"),
-            DEPRECATED("Deprecated");
+            EXPERIMENTAL("Experimental");
 
             private final String label;
 
@@ -150,15 +210,11 @@ public class Profile {
         }
     }
 
+    private static final Set<String> ESSENTIAL_FEATURES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(Feature.HOSTNAME_V2.getUnversionedKey())));
+
     private static final Logger logger = Logger.getLogger(Profile.class);
 
-    private static final List<ProfileConfigResolver> DEFAULT_RESOLVERS = new LinkedList<>();
-    static {
-        DEFAULT_RESOLVERS.add(new PropertiesProfileConfigResolver(System.getProperties()));
-        DEFAULT_RESOLVERS.add(new PropertiesFileProfileConfigResolver());
-    };
-
-    private static Profile CURRENT;
+    private static volatile Profile CURRENT;
 
     private final ProfileName profileName;
 
@@ -170,11 +226,131 @@ public class Profile {
 
     public static Profile configure(ProfileConfigResolver... resolvers) {
         ProfileName profile = Arrays.stream(resolvers).map(ProfileConfigResolver::getProfileName).filter(Objects::nonNull).findFirst().orElse(ProfileName.DEFAULT);
-        Map<Feature, Boolean> features = Arrays.stream(Feature.values()).collect(Collectors.toMap(f -> f, f -> isFeatureEnabled(profile, f, resolvers)));
+
+        Map<Feature, Boolean> features = new LinkedHashMap<>();
+
+        for (Map.Entry<String, TreeSet<Feature>> entry : getOrderedFeatures().entrySet()) {
+
+            // first check by unversioned key - if enabled, choose the highest priority feature
+            String unversionedFeature = entry.getKey();
+            ProfileConfigResolver.FeatureConfig unversionedConfig = getFeatureConfig(unversionedFeature, resolvers);
+            Feature enabledFeature = null;
+            if (unversionedConfig == FeatureConfig.ENABLED) {
+                enabledFeature = entry.getValue().iterator().next();
+            } else if (unversionedConfig == FeatureConfig.DISABLED && ESSENTIAL_FEATURES.contains(unversionedFeature)) {
+                throw new ProfileException(String.format("Feature %s cannot be disabled.", unversionedFeature));
+            }
+
+            // now check each feature version to ensure consistency and select any features enabled by default
+            boolean isExplicitlyEnabledFeature = false;
+            for (Feature f : entry.getValue()) {
+                ProfileConfigResolver.FeatureConfig configuration = getFeatureConfig(f.getVersionedKey(), resolvers);
+
+                if (configuration != FeatureConfig.UNCONFIGURED && unversionedConfig != FeatureConfig.UNCONFIGURED) {
+                    throw new ProfileException("Versioned feature " + f.getVersionedKey() + " is not expected as " + unversionedFeature + " is already " + unversionedConfig.name().toLowerCase());
+                }
+
+                switch (configuration) {
+                case ENABLED:
+                    if (isExplicitlyEnabledFeature) {
+                        throw new ProfileException(
+                                String.format("Multiple versions of the same feature %s, %s should not be enabled.",
+                                        enabledFeature.getVersionedKey(), f.getVersionedKey()));
+                    }
+                    // even if something else was enabled by default, explicitly enabling a lower priority feature takes precedence
+                    enabledFeature = f;
+                    isExplicitlyEnabledFeature = true;
+                    break;
+                case DISABLED:
+                    throw new ProfileException("Feature " + f.getVersionedKey() + " should not be disabled using a versioned key.");
+                default:
+                    if (unversionedConfig == FeatureConfig.UNCONFIGURED && enabledFeature == null && isEnabledByDefault(profile, f)) {
+                        enabledFeature = f;
+                    }
+                    break;
+                }
+            }
+            for (Feature f : entry.getValue()) {
+                features.put(f, f == enabledFeature);
+            }
+        }
+
         verifyConfig(features);
 
         CURRENT = new Profile(profile, features);
         return CURRENT;
+    }
+
+    private static boolean isEnabledByDefault(ProfileName profile, Feature f) {
+        switch (f.getType()) {
+        case DEFAULT:
+            return true;
+        case PREVIEW:
+            return profile.equals(ProfileName.PREVIEW);
+        default:
+            return false;
+        }
+    }
+
+    private static ProfileConfigResolver.FeatureConfig getFeatureConfig(String feature,
+            ProfileConfigResolver... resolvers) {
+        ProfileConfigResolver.FeatureConfig configuration = Arrays.stream(resolvers).map(r -> r.getFeatureConfig(feature))
+                .filter(r -> !r.equals(ProfileConfigResolver.FeatureConfig.UNCONFIGURED))
+                .findFirst()
+                .orElse(ProfileConfigResolver.FeatureConfig.UNCONFIGURED);
+        return configuration;
+    }
+
+    /**
+     * Compute a map of unversioned feature keys to ordered sets (highest first) of features.  The priority order for features is:
+     * <p>
+     * <ul>
+     * <li>The highest default supported version
+     * <li>The highest non-default supported version
+     * <li>The highest deprecated version
+     * <li>The highest preview version
+     * <li>The highest experimental version
+     * <ul>
+     * <p>
+     * Note the {@link Type} enum is ordered based upon priority.
+     */
+    private static Map<String, TreeSet<Feature>> getOrderedFeatures() {
+        if (FEATURES == null) {
+            // "natural" ordering low to high between two features
+            Comparator<Feature> comparator = Comparator.comparing(Feature::getType).thenComparingInt(Feature::getVersion);
+            // aggregate the features by unversioned key
+            HashMap<String, TreeSet<Feature>> features = new HashMap<>();
+            Stream.of(Feature.values()).forEach(f -> features.compute(f.getUnversionedKey(), (k, v) -> {
+                if (v == null) {
+                    v = new TreeSet<>(comparator.reversed()); // we want the highest priority first
+                }
+                v.add(f);
+                return v;
+            }));
+            FEATURES = features;
+        }
+        return FEATURES;
+    }
+
+    public static Set<String> getAllUnversionedFeatureNames() {
+        return Collections.unmodifiableSet(getOrderedFeatures().keySet());
+    }
+
+    public static Set<String> getDisableableUnversionedFeatureNames() {
+        return getOrderedFeatures().keySet().stream().filter(f -> !ESSENTIAL_FEATURES.contains(f)).collect(Collectors.toSet());
+    }
+
+    /**
+     * Get all of the feature versions for the given feature. They will be ordered by priority.
+     * <p>
+     * If the feature does not exist an empty collection will be returned.
+     */
+    public static Set<Feature> getFeatureVersions(String feature) {
+        TreeSet<Feature> versions = getOrderedFeatures().get(feature);
+        if (versions == null) {
+            return Collections.emptySet();
+        }
+        return Collections.unmodifiableSet(versions);
     }
 
     public static Profile init(ProfileName profileName, Map<Feature, Boolean> features) {
@@ -238,28 +414,6 @@ public class Profile {
         PREVIEW
     }
 
-    private static Boolean isFeatureEnabled(ProfileName profile, Feature feature, ProfileConfigResolver... resolvers) {
-        ProfileConfigResolver.FeatureConfig configuration = Arrays.stream(resolvers).map(r -> r.getFeatureConfig(feature))
-                .filter(r -> !r.equals(ProfileConfigResolver.FeatureConfig.UNCONFIGURED))
-                .findFirst()
-                .orElse(ProfileConfigResolver.FeatureConfig.UNCONFIGURED);
-        switch (configuration) {
-            case ENABLED:
-                return true;
-            case DISABLED:
-                return false;
-            default:
-                switch (feature.getType()) {
-                    case DEFAULT:
-                        return true;
-                    case PREVIEW:
-                        return profile.equals(ProfileName.PREVIEW);
-                    default:
-                        return false;
-                }
-        }
-    }
-
     private static void verifyConfig(Map<Feature, Boolean> features) {
         for (Feature f : features.keySet()) {
             if (features.get(f) && f.getDependencies() != null) {
@@ -285,7 +439,7 @@ public class Profile {
 
         String enabledFeaturesOfType = features.entrySet().stream()
                 .filter(e -> e.getValue() && checkedFeatureTypes.contains(e.getKey().getType()))
-                .map(e -> e.getKey().getKey()).sorted().collect(Collectors.joining(", "));
+                .map(e -> e.getKey().getVersionedKey()).sorted().collect(Collectors.joining(", "));
 
         if (!enabledFeaturesOfType.isEmpty()) {
             logger.logv(level, "{0} features enabled: {1}", type.getLabel(), enabledFeaturesOfType);

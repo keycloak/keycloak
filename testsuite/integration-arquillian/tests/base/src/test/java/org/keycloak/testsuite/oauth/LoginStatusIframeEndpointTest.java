@@ -40,7 +40,12 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.oidc.PkceGenerator;
 import org.keycloak.testsuite.runonserver.ServerVersion;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
+import org.keycloak.testsuite.util.AdminClientUtil;
+import org.keycloak.testsuite.util.RealmBuilder;
 
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.Collections;
@@ -200,8 +205,23 @@ public class LoginStatusIframeEndpointTest extends AbstractKeycloakTest {
         }
     }
 
+    @Test
+    public void checkEmptyCsp() throws Exception {
+        try (RealmAttributeUpdater realmUpdater = new RealmAttributeUpdater(adminClient.realm("test"))
+                .setBrowserSecurityHeader(BrowserSecurityHeaders.CONTENT_SECURITY_POLICY.getKey(), "")
+                .update();
+                Client client = AdminClientUtil.createResteasyClient();
+                Response response = client.target(suiteContext.getAuthServerInfo().getContextRoot()
+                        + "/auth/realms/test/protocol/openid-connect/login-status-iframe.html").request().get()) {
+            assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+            assertNull(response.getHeaderString(BrowserSecurityHeaders.CONTENT_SECURITY_POLICY.getKey()));
+            assertNull(response.getHeaderString(BrowserSecurityHeaders.X_FRAME_OPTIONS.getHeaderName()));
+        }
+    }
+
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
+        testRealms.add(RealmBuilder.create().name("test").build());
     }
 
 }

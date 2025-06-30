@@ -23,6 +23,7 @@ package org.keycloak.events;
 public interface Details {
     String PREF_PREVIOUS = "previous_";
     String PREF_UPDATED = "updated_";
+    String FIELDS_TO_UPDATE = "fields_to_update";
     
     String CUSTOM_REQUIRED_ACTION="custom_required_action";
     String CONTEXT = "context";
@@ -49,8 +50,10 @@ public interface Details {
     String UPDATED_LAST_NAME = PREF_UPDATED + "last_name";
     String REMEMBER_ME = "remember_me";
     String TOKEN_ID = "token_id";
+    String ORG_ID = "org_id";
     String REFRESH_TOKEN_ID = "refresh_token_id";
     String REFRESH_TOKEN_TYPE = "refresh_token_type";
+    String REFRESH_TOKEN_SUB = "refresh_token_sub";
     String VALIDATE_ACCESS_TOKEN = "validate_access_token";
     String UPDATED_REFRESH_TOKEN_ID = "updated_refresh_token_id";
     String NODE_HOST = "node_host";
@@ -63,6 +66,8 @@ public interface Details {
     String REQUESTED_ISSUER = "requested_issuer";
     String REQUESTED_SUBJECT = "requested_subject";
     String RESTART_AFTER_TIMEOUT = "restart_after_timeout";
+    String REDIRECTED_TO_CLIENT = "redirected_to_client";
+    String LOGIN_RETRY = "login_retry";
 
     String CONSENT = "consent";
     String CONSENT_VALUE_NO_CONSENT_REQUIRED = "no_consent_required"; // No consent is required by client
@@ -86,5 +91,13 @@ public interface Details {
 
     String CREDENTIAL_TYPE = "credential_type";
     String SELECTED_CREDENTIAL_ID = "selected_credential_id";
+    String CREDENTIAL_ID = "credential_id";
     String AUTHENTICATION_ERROR_DETAIL = "authentication_error_detail";
+    String CREDENTIAL_USER_LABEL = "credential_user_label";
+
+    String NOT_BEFORE = "not_before";
+    String NUM_FAILURES = "num_failures";
+
+    String LOGOUT_TRIGGERED_BY_ACTION_TOKEN = "logout_triggered_by_action_token";
+    String LOGOUT_TRIGGERED_BY_REQUIRED_ACTION = "logout_triggered_by_required_action";
 }

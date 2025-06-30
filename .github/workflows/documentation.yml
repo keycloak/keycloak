@@ -5,8 +5,12 @@ on:
     branches-ignore:
       - main
       - dependabot/**
+      - quarkus-next
   pull_request:
   workflow_dispatch:
+
+env:
+  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
 
 concurrency:
   # Only cancel jobs for PR updates
@@ -52,12 +56,11 @@ jobs:
         name: Build and verify Keycloak documentation
         shell: bash
         run: |
-          MVN_HTTP_CONFIG="-Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.class=standard -Dmaven.wagon.http.retryHandler.count=3 -Dmaven.wagon.httpconnectionManager.ttlSeconds=120"
-          ./mvnw install -Dtest=!ExternalLinksTest -am -pl docs/documentation/tests,docs/documentation/dist -nsu -B -e $MVN_HTTP_CONFIG -Pdocumentation
+          ./mvnw install -Dtest=!ExternalLinksTest -am -pl docs/documentation/tests,docs/documentation/dist -e -Pdocumentation
 
       - id: upload-keycloak-documentation
         name: Upload Keycloak documentation
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: keycloak-documentation
           path: docs/documentation/dist/target/*.zip
@@ -83,8 +86,7 @@ jobs:
         name: Build and verify Keycloak documentation
         shell: bash
         run: |
-          MVN_HTTP_CONFIG="-Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.class=standard -Dmaven.wagon.http.retryHandler.count=3 -Dmaven.wagon.httpconnectionManager.ttlSeconds=120"
-          ./mvnw install -Dtest=ExternalLinksTest -am -pl docs/documentation/tests -nsu -B -e -Pdocumentation $MVN_HTTP_CONFIG 
+          ./mvnw install -Dtest=ExternalLinksTest -am -pl docs/documentation/tests -e -Pdocumentation 
 
   check:
     name: Status Check - Keycloak Documentation

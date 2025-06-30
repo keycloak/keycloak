@@ -16,8 +16,8 @@
  */
 package org.keycloak.operator.controllers;
 
-import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadata;
-import io.quarkiverse.operatorsdk.bundle.runtime.SharedCSVMetadata;
+import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
+import io.quarkiverse.operatorsdk.annotations.SharedCSVMetadata;
 
 @CSVMetadata(
     version = "KCOP_NEXT",
@@ -78,37 +78,43 @@ import io.quarkiverse.operatorsdk.bundle.runtime.SharedCSVMetadata;
         categories = "Security",
         certified = false,
         almExamples =
-            "[\n" +
-            "  {\n" +
-            "    \"apiVersion\": \"k8s.keycloak.org/v2alpha1\",\n" +
-            "    \"kind\": \"Keycloak\",\n" +
-            "    \"metadata\": {\n" +
-            "      \"name\": \"example-keycloak\",\n" +
-            "      \"labels\": {\n" +
-            "        \"app\": \"sso\"\n" +
-            "      }\n" +
-            "    },\n" +
-            "    \"spec\": {\n" +
-            "      \"instances\": 1,\n" +
-            "      \"hostname\": \"example.org\",\n" +
-            "      \"tlsSecret\": \"my-tls-secret\"\n" +
-            "    }\n" +
-            "  },\n" +
-            "  {\n" +
-            "    \"apiVersion\": \"k8s.keycloak.org/v2alpha1\",\n" +
-            "    \"kind\": \"KeycloakRealmImport\",\n" +
-            "    \"metadata\": {\n" +
-            "      \"name\": \"example-keycloak-realm-import\",\n" +
-            "      \"labels\": {\n" +
-            "        \"app\": \"sso\"\n" +
-            "      }\n" +
-            "    },\n" +
-            "    \"spec\": {\n" +
-            "      \"keycloakCRName\": \"example-keycloak\",\n" +
-            "      \"realm\": {}\n" +
-            "    }\n" +
-            "  }\n" +
-            "]",
+            // language=JSON
+            """
+                [
+                  {
+                    "apiVersion": "k8s.keycloak.org/v2alpha1",
+                    "kind": "Keycloak",
+                    "metadata": {
+                      "name": "example-keycloak",
+                      "labels": {
+                        "app": "sso"
+                      }
+                    },
+                    "spec": {
+                      "instances": 1,
+                      "hostname": {
+                        "hostname": "example.org"
+                      },
+                      "http": {
+                        "tlsSecret": "my-tls-secret"
+                      }
+                    }
+                  },
+                  {
+                    "apiVersion": "k8s.keycloak.org/v2alpha1",
+                    "kind": "KeycloakRealmImport",
+                    "metadata": {
+                      "name": "example-keycloak-realm-import",
+                      "labels": {
+                        "app": "sso"
+                      }
+                    },
+                    "spec": {
+                      "keycloakCRName": "example-keycloak",
+                      "realm": {}
+                    }
+                  }
+                ]""",
         others = {
             @CSVMetadata.Annotations.Annotation(
                 name = "support",
@@ -121,15 +127,17 @@ import io.quarkiverse.operatorsdk.bundle.runtime.SharedCSVMetadata;
         }
     ),
     description =
-        "A Kubernetes Operator based on the Operator SDK for installing and managing Keycloak.\n" +
-        "\n" +
-        "Keycloak lets you add authentication to applications and secure services with minimum fuss. No need to deal with storing users or authenticating users. It's all available out of the box.\n" +
-        "\n" +
-        "The operator can deploy and manage Keycloak instances on Kubernetes and OpenShift.\n" +
-        "The following features are supported:\n" +
-        "\n" +
-        "* Install Keycloak to a namespace\n" +
-        "* Import Keycloak Realms\n",
+        """
+            A Kubernetes Operator based on the Operator SDK for installing and managing Keycloak.
+
+            Keycloak lets you add authentication to applications and secure services with minimum fuss. No need to deal with storing users or authenticating users. It's all available out of the box.
+
+            The operator can deploy and manage Keycloak instances on Kubernetes and OpenShift.
+            The following features are supported:
+
+            * Install Keycloak to a namespace
+            * Import Keycloak Realms
+            """,
     icon = @CSVMetadata.Icon(
         fileName = "KeycloakController.icon.png",
         mediatype = "image/png"

@@ -41,7 +41,6 @@
     </properties>
 
     <modules>
-        <module>adapters</module>
         <module>saml-adapters</module>
         <module>feature-packs</module>
         <module>galleon-feature-packs</module>

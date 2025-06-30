@@ -37,7 +37,7 @@ public class KeycloakDiscoveryServiceDependentResource extends CRUDKubernetesDep
     public static class NameResourceDiscriminator implements ResourceDiscriminator<Service, Keycloak> {
         @Override
         public Optional<Service> distinguish(Class<Service> resource, Keycloak primary, Context<Keycloak> context) {
-            return KeycloakServiceDependentResource.getService(KeycloakDiscoveryServiceDependentResource::getName, primary, context);
+            return Utils.getByName(Service.class, KeycloakDiscoveryServiceDependentResource::getName, primary, context);
         }
     }
 
@@ -48,6 +48,7 @@ public class KeycloakDiscoveryServiceDependentResource extends CRUDKubernetesDep
     private ServiceSpec getServiceSpec(Keycloak keycloak) {
       return new ServiceSpecBuilder()
               .addNewPort()
+              .withName(Constants.KEYCLOAK_DISCOVERY_TCP_PORT_NAME)
               .withProtocol("TCP")
               .withPort(Constants.KEYCLOAK_DISCOVERY_SERVICE_PORT)
               .endPort()

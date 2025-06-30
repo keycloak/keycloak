@@ -1,27 +1,32 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
+  UnmanagedAttributePolicy,
+  UserProfileConfig,
+} from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
+import {
+  FormErrorText,
+  HelpItem,
+  SelectControl,
+  TextControl,
+  useEnvironment,
+} from "@keycloak/keycloak-ui-shared";
+import {
   ActionGroup,
   Button,
   ClipboardCopy,
   FormGroup,
   PageSection,
-  Select,
-  SelectOption,
-  SelectVariant,
   Stack,
   StackItem,
-  Switch,
 } from "@patternfly/react-core";
 import { useEffect, useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
+import { DefaultSwitchControl } from "../components/SwitchControl";
 import { FormattedLink } from "../components/external-link/FormattedLink";
 import { FormAccess } from "../components/form/FormAccess";
 import { KeyValueInput } from "../components/key-value-form/KeyValueInput";
-import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { useRealm } from "../context/realm-context/RealmContext";
 import {
   addTrailingSlash,
@@ -29,35 +34,91 @@ import {
   convertToFormValues,
 } from "../util";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
+import { UIRealmRepresentation } from "./RealmSettingsTabs";
+import { useFetch } from "../utils/useFetch";
+import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 
 type RealmSettingsGeneralTabProps = {
-  realm: RealmRepresentation;
-  save: (realm: RealmRepresentation) => void;
+  realm: UIRealmRepresentation;
+  save: (realm: UIRealmRepresentation) => Promise<void>;
 };
-
-type FormFields = Omit<RealmRepresentation, "groups">;
 
 export const RealmSettingsGeneralTab = ({
   realm,
   save,
 }: RealmSettingsGeneralTabProps) => {
+  const { adminClient } = useAdminClient();
+
+  const { realm: realmName } = useRealm();
+  const [userProfileConfig, setUserProfileConfig] =
+    useState<UserProfileConfig>();
+
+  useFetch(
+    () => adminClient.users.getProfile({ realm: realmName }),
+    (config) => setUserProfileConfig(config),
+    [],
+  );
+
+  if (!userProfileConfig) {
+    return <KeycloakSpinner />;
+  }
+
+  return (
+    <RealmSettingsGeneralTabForm
+      realm={realm}
+      save={save}
+      userProfileConfig={userProfileConfig}
+    />
+  );
+};
+
+type RealmSettingsGeneralTabFormProps = {
+  realm: UIRealmRepresentation;
+  save: (realm: UIRealmRepresentation) => Promise<void>;
+  userProfileConfig: UserProfileConfig;
+};
+
+type FormFields = Omit<RealmRepresentation, "groups"> & {
+  unmanagedAttributePolicy: UnmanagedAttributePolicy;
+};
+
+const REQUIRE_SSL_TYPES = ["all", "external", "none"];
+
+const UNMANAGED_ATTRIBUTE_POLICIES = [
+  UnmanagedAttributePolicy.Disabled,
+  UnmanagedAttributePolicy.Enabled,
+  UnmanagedAttributePolicy.AdminView,
+  UnmanagedAttributePolicy.AdminEdit,
+];
+
+function RealmSettingsGeneralTabForm({
+  realm,
+  save,
+  userProfileConfig,
+}: RealmSettingsGeneralTabFormProps) {
+  const {
+    environment: { serverBaseUrl },
+  } = useEnvironment();
+
   const { t } = useTranslation();
   const { realm: realmName } = useRealm();
   const form = useForm<FormFields>();
   const {
-    register,
     control,
     handleSubmit,
     setValue,
     formState: { isDirty, errors },
   } = form;
   const isFeatureEnabled = useIsFeatureEnabled();
-  const [open, setOpen] = useState(false);
-
-  const requireSslTypes = ["all", "external", "none"];
+  const isOrganizationsEnabled = isFeatureEnabled(Feature.Organizations);
 
   const setupForm = () => {
     convertToFormValues(realm, setValue);
+    setValue(
+      "unmanagedAttributePolicy",
+      userProfileConfig.unmanagedAttributePolicy ||
+        UNMANAGED_ATTRIBUTE_POLICIES[0],
+    );
     if (realm.attributes?.["acr.loa.map"]) {
       const result = Object.entries(
         JSON.parse(realm.attributes["acr.loa.map"]),
@@ -72,230 +133,160 @@ export const RealmSettingsGeneralTab = ({
 
   useEffect(setupForm, []);
 
+  const onSubmit = handleSubmit(
+    async ({ unmanagedAttributePolicy, ...data }) => {
+      const upConfig = { ...userProfileConfig };
+
+      if (unmanagedAttributePolicy === UnmanagedAttributePolicy.Disabled) {
+        delete upConfig.unmanagedAttributePolicy;
+      } else {
+        upConfig.unmanagedAttributePolicy = unmanagedAttributePolicy;
+      }
+
+      await save({ ...data, upConfig });
+    },
+  );
+
   return (
     <PageSection variant="light">
-      <FormAccess
-        isHorizontal
-        role="manage-realm"
-        className="pf-u-mt-lg"
-        onSubmit={handleSubmit(save)}
-      >
-        <FormGroup
-          label={t("realmId")}
-          fieldId="kc-realm-id"
-          isRequired
-          validated={errors.realm ? "error" : "default"}
-          helperTextInvalid={errors.realm?.message}
+      <FormProvider {...form}>
+        <FormAccess
+          isHorizontal
+          role="manage-realm"
+          className="pf-u-mt-lg"
+          onSubmit={onSubmit}
         >
-          <Controller
-            name="realm"
-            control={control}
-            rules={{
-              required: { value: true, message: t("required") },
-              pattern: {
-                value: /^[a-zA-Z0-9-_]+$/,
-                message: t("realm:invalidRealmName"),
-              },
-            }}
-            defaultValue=""
-            render={({ field }) => (
-              <ClipboardCopy data-testid="realmName" onChange={field.onChange}>
-                {field.value}
-              </ClipboardCopy>
-            )}
-          />
-        </FormGroup>
-        <FormGroup label={t("displayName")} fieldId="kc-display-name">
-          <KeycloakTextInput
-            id="kc-display-name"
-            {...register("displayName")}
-          />
-        </FormGroup>
-        <FormGroup label={t("htmlDisplayName")} fieldId="kc-html-display-name">
-          <KeycloakTextInput
-            id="kc-html-display-name"
-            {...register("displayNameHtml")}
-          />
-        </FormGroup>
-        <FormGroup
-          label={t("frontendUrl")}
-          fieldId="kc-frontend-url"
-          labelIcon={
-            <HelpItem
-              helpText={t("frontendUrlHelp")}
-              fieldLabelId="frontendUrl"
-            />
-          }
-        >
-          <KeycloakTextInput
-            type="url"
-            id="kc-frontend-url"
-            {...register(convertAttributeNameToForm("attributes.frontendUrl"))}
-          />
-        </FormGroup>
-        <FormGroup
-          label={t("requireSsl")}
-          fieldId="kc-require-ssl"
-          labelIcon={
-            <HelpItem
-              helpText={t("requireSslHelp")}
-              fieldLabelId="requireSsl"
-            />
-          }
-        >
-          <Controller
-            name="sslRequired"
-            defaultValue="none"
-            control={control}
-            render={({ field }) => (
-              <Select
-                toggleId="kc-require-ssl"
-                onToggle={() => setOpen(!open)}
-                onSelect={(_, value) => {
-                  field.onChange(value as string);
-                  setOpen(false);
-                }}
-                selections={field.value}
-                variant={SelectVariant.single}
-                aria-label={t("requireSsl")}
-                isOpen={open}
-              >
-                {requireSslTypes.map((sslType) => (
-                  <SelectOption
-                    selected={sslType === field.value}
-                    key={sslType}
-                    value={sslType}
-                  >
-                    {t(`sslType.${sslType}`)}
-                  </SelectOption>
-                ))}
-              </Select>
-            )}
-          />
-        </FormGroup>
-        <FormGroup
-          label={t("acrToLoAMapping")}
-          fieldId="acrToLoAMapping"
-          labelIcon={
-            <HelpItem
-              helpText={t("acrToLoAMappingHelp")}
-              fieldLabelId="acrToLoAMapping"
-            />
-          }
-        >
-          <FormProvider {...form}>
-            <KeyValueInput
-              name={convertAttributeNameToForm("attributes.acr.loa.map")}
-            />
-          </FormProvider>
-        </FormGroup>
-        <FormGroup
-          hasNoPaddingTop
-          label={t("userManagedAccess")}
-          labelIcon={
-            <HelpItem
-              helpText={t("userManagedAccessHelp")}
-              fieldLabelId="userManagedAccess"
-            />
-          }
-          fieldId="kc-user-managed-access"
-        >
-          <Controller
-            name="userManagedAccessAllowed"
-            control={control}
-            defaultValue={false}
-            render={({ field }) => (
-              <Switch
-                id="kc-user-managed-access"
-                data-testid="user-managed-access-switch"
-                label={t("on")}
-                labelOff={t("off")}
-                isChecked={field.value}
-                onChange={field.onChange}
-                aria-label={t("userManagedAccess")}
-              />
-            )}
-          />
-        </FormGroup>
-        {isFeatureEnabled(Feature.DeclarativeUserProfile) && (
-          <FormGroup
-            hasNoPaddingTop
-            label={t("userProfileEnabled")}
-            labelIcon={
-              <HelpItem
-                helpText={t("userProfileEnabledHelp")}
-                fieldLabelId="userProfileEnabled"
-              />
-            }
-            fieldId="kc-user-profile-enabled"
-          >
+          <FormGroup label={t("realmId")} fieldId="kc-realm-id" isRequired>
             <Controller
-              name={
-                convertAttributeNameToForm(
-                  "attributes.userProfileEnabled",
-                ) as any
-              }
+              name="realm"
               control={control}
-              defaultValue="false"
+              rules={{
+                required: { value: true, message: t("required") },
+              }}
+              defaultValue=""
               render={({ field }) => (
-                <Switch
-                  id="kc-user-profile-enabled"
-                  data-testid="user-profile-enabled-switch"
-                  label={t("on")}
-                  labelOff={t("off")}
-                  isChecked={field.value === "true"}
-                  onChange={(value) => field.onChange(value.toString())}
-                  aria-label={t("userProfileEnabled")}
-                />
+                <ClipboardCopy
+                  data-testid="realmName"
+                  onChange={field.onChange}
+                >
+                  {field.value}
+                </ClipboardCopy>
               )}
             />
+            {errors.realm && (
+              <FormErrorText
+                data-testid="realm-id-error"
+                message={errors.realm.message as string}
+              />
+            )}
           </FormGroup>
-        )}
-        <FormGroup
-          label={t("endpoints")}
-          labelIcon={
-            <HelpItem helpText={t("endpointsHelp")} fieldLabelId="endpoints" />
-          }
-          fieldId="kc-endpoints"
-        >
-          <Stack>
-            <StackItem>
-              <FormattedLink
-                href={`${addTrailingSlash(
-                  adminClient.baseUrl,
-                )}realms/${realmName}/.well-known/openid-configuration`}
-                title={t("openIDEndpointConfiguration")}
+          <TextControl name="displayName" label={t("displayName")} />
+          <TextControl name="displayNameHtml" label={t("htmlDisplayName")} />
+          <TextControl
+            name={convertAttributeNameToForm("attributes.frontendUrl")}
+            type="url"
+            label={t("frontendUrl")}
+            labelIcon={t("frontendUrlHelp")}
+          />
+          <SelectControl
+            name="sslRequired"
+            label={t("requireSsl")}
+            labelIcon={t("requireSslHelp")}
+            controller={{
+              defaultValue: "none",
+            }}
+            options={REQUIRE_SSL_TYPES.map((sslType) => ({
+              key: sslType,
+              value: t(`sslType.${sslType}`),
+            }))}
+          />
+          <FormGroup
+            label={t("acrToLoAMapping")}
+            fieldId="acrToLoAMapping"
+            labelIcon={
+              <HelpItem
+                helpText={t("acrToLoAMappingHelp")}
+                fieldLabelId="acrToLoAMapping"
               />
-            </StackItem>
-            <StackItem>
-              <FormattedLink
-                href={`${addTrailingSlash(
-                  adminClient.baseUrl,
-                )}realms/${realmName}/protocol/saml/descriptor`}
-                title={t("samlIdentityProviderMetadata")}
+            }
+          >
+            <KeyValueInput
+              label={t("acrToLoAMapping")}
+              name={convertAttributeNameToForm("attributes.acr.loa.map")}
+            />
+          </FormGroup>
+          <DefaultSwitchControl
+            name="userManagedAccessAllowed"
+            label={t("userManagedAccess")}
+            labelIcon={t("userManagedAccessHelp")}
+          />
+          {isOrganizationsEnabled && (
+            <DefaultSwitchControl
+              name="organizationsEnabled"
+              label={t("organizationsEnabled")}
+              labelIcon={t("organizationsEnabledHelp")}
+            />
+          )}
+          <SelectControl
+            name="unmanagedAttributePolicy"
+            label={t("unmanagedAttributes")}
+            labelIcon={t("unmanagedAttributesHelpText")}
+            controller={{
+              defaultValue: UNMANAGED_ATTRIBUTE_POLICIES[0],
+            }}
+            options={UNMANAGED_ATTRIBUTE_POLICIES.map((policy) => ({
+              key: policy,
+              value: t(`unmanagedAttributePolicy.${policy}`),
+            }))}
+          />
+          <FormGroup
+            label={t("endpoints")}
+            labelIcon={
+              <HelpItem
+                helpText={t("endpointsHelp")}
+                fieldLabelId="endpoints"
               />
-            </StackItem>
-          </Stack>
-        </FormGroup>
-
-        <ActionGroup>
-          <Button
-            variant="primary"
-            type="submit"
-            data-testid="general-tab-save"
-            isDisabled={!isDirty}
+            }
+            fieldId="kc-endpoints"
           >
-            {t("save")}
-          </Button>
-          <Button
-            data-testid="general-tab-revert"
-            variant="link"
-            onClick={setupForm}
-          >
-            {t("revert")}
-          </Button>
-        </ActionGroup>
-      </FormAccess>
+            <Stack>
+              <StackItem>
+                <FormattedLink
+                  href={`${addTrailingSlash(
+                    serverBaseUrl,
+                  )}realms/${realmName}/.well-known/openid-configuration`}
+                  title={t("openIDEndpointConfiguration")}
+                />
+              </StackItem>
+              <StackItem>
+                <FormattedLink
+                  href={`${addTrailingSlash(
+                    serverBaseUrl,
+                  )}realms/${realmName}/protocol/saml/descriptor`}
+                  title={t("samlIdentityProviderMetadata")}
+                />
+              </StackItem>
+            </Stack>
+          </FormGroup>
+          <ActionGroup>
+            <Button
+              variant="primary"
+              type="submit"
+              data-testid="general-tab-save"
+              isDisabled={!isDirty}
+            >
+              {t("save")}
+            </Button>
+            <Button
+              data-testid="general-tab-revert"
+              variant="link"
+              onClick={setupForm}
+            >
+              {t("revert")}
+            </Button>
+          </ActionGroup>
+        </FormAccess>
+      </FormProvider>
     </PageSection>
   );
-};
+}

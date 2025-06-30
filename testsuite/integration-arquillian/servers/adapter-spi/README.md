@@ -5,7 +5,6 @@ This module is primarily used for custom adapters in the testsuite.
 ## Undertow
 Modules related to Undertow:
 * Keycloak Undertow Adapter SPI (`undertow-adapter-spi-jakarta`)
-* Keycloak Undertow OIDC adapter (`undertow-adapter-jakarta`)
 * Keycloak Undertow SAML adapter (`undertow-adapter-saml-jakarta`)
 
 These modules are automatically generated from the Keycloak adapters module (`/adapters`) and converted to adapters supporting JakartaEE.

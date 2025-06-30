@@ -17,7 +17,6 @@
 
 package org.keycloak.representations;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.TokenCategory;
@@ -66,10 +65,8 @@ public class IDToken extends JsonWebToken {
 
     protected Long auth_time;
 
-    // session_state is deprecated, sid should be used instead
-    @JsonProperty(SESSION_STATE)
-    @JsonAlias(SESSION_ID)
-    protected String sessionState;
+    @JsonProperty(SESSION_ID)
+    protected String sessionId;
 
     @JsonProperty(AT_HASH)
     protected String accessTokenHash;
@@ -143,7 +140,7 @@ public class IDToken extends JsonWebToken {
     // Financial API - Part 2: Read and Write API Security Profile
     // http://openid.net/specs/openid-financial-api-part-2.html#authorization-server
     @JsonProperty(S_HASH)
-    protected String stateHash; 
+    protected String stateHash;
 
     public String getNonce() {
         return nonce;
@@ -157,37 +154,25 @@ public class IDToken extends JsonWebToken {
         return auth_time;
     }
 
-    /**
-     * @deprecated int will overflow with values after 2038. Use {@link #getAuth_time()} instead.
-     */
-    @Deprecated
-    @JsonIgnore
-    public int getAuthTime() {
-        return auth_time != null ? auth_time.intValue() : 0;
-    }
-
     public void setAuth_time(Long auth_time) {
         this.auth_time = auth_time;
     }
 
-    /**
-     * @deprecated int will overflow with values after 2038. Use {@link #setAuth_time(Long)} ()} instead.
-     */
-    public void setAuthTime(int authTime) {
-        this.auth_time = Long.valueOf(authTime);
-    }
-
-    @JsonProperty(SESSION_ID)
     public String getSessionId() {
-        return sessionState;
+        return sessionId;
     }
 
+    public void setSessionId(String sessionId) {
+        this.sessionId = sessionId;
+    }
+
+    /**
+     * @deprecated Use {@link #getSessionId()} instead.
+     */
+    @Deprecated
+    @JsonIgnore
     public String getSessionState() {
-        return sessionState;
-    }
-
-    public void setSessionState(String sessionState) {
-        this.sessionState = sessionState;
+        return getSessionId();
     }
 
     public String getAccessTokenHash() {

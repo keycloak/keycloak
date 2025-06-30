@@ -16,6 +16,8 @@
  */
 package org.keycloak.services.resources.admin;
 
+import static org.keycloak.models.utils.StripSecretsUtils.stripSecrets;
+
 import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
@@ -49,6 +51,7 @@ public class AdminEventBuilder {
     private final RealmModel realm;
     private final AdminEvent adminEvent;
     private final Map<String, EventListenerProvider> listeners;
+    private final KeycloakSession session;
 
     private EventStoreProvider store;
 
@@ -74,6 +77,7 @@ public class AdminEventBuilder {
             authUser(auth.getUser());
             authIpAddress(ipAddress);
         }
+        this.session = session;
     }
 
     /**
@@ -99,11 +103,7 @@ public class AdminEventBuilder {
 
     public AdminEventBuilder realm(RealmModel realm) {
         adminEvent.setRealmId(realm.getId());
-        return this;
-    }
-
-    public AdminEventBuilder realm(String realmId) {
-        adminEvent.setRealmId(realmId);
+        adminEvent.setRealmName(realm.getName());
         return this;
     }
 
@@ -169,6 +169,7 @@ public class AdminEventBuilder {
         } else {
             authDetails.setRealmId(realm.getId());
         }
+        authDetails.setRealmName(realm.getName());
         adminEvent.setAuthDetails(authDetails);
         return this;
     }
@@ -253,9 +254,7 @@ public class AdminEventBuilder {
             return this;
         }
 
-        if (value instanceof UserRepresentation) {
-            StripSecretsUtils.strip((UserRepresentation) value);
-        }
+        stripSecrets(session, value);
 
         try {
             adminEvent.setRepresentation(JsonSerialization.writeValueAsString(value));

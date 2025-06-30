@@ -166,8 +166,13 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
     @Override
     public String getScopeString() {
+        return getScopeString(false);
+    }
+
+    @Override
+    public String getScopeString(boolean ignoreIncludeInTokenScope) {
         if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
-            String scopeParam = buildScopesStringFromAuthorizationRequest();
+            String scopeParam = buildScopesStringFromAuthorizationRequest(ignoreIncludeInTokenScope);
             logger.tracef("Generated scope param with Dynamic Scopes enabled: %1s", scopeParam);
             String scopeSent = clientSession.getNote(OAuth2Constants.SCOPE);
             if (TokenUtil.isOIDCRequest(scopeSent)) {
@@ -178,7 +183,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
         // Add both default and optional scopes to scope parameter. Don't add client itself
         String scopeParam = getClientScopesStream()
                 .filter(((Predicate<ClientScopeModel>) ClientModel.class::isInstance).negate())
-                .filter(ClientScopeModel::isIncludeInTokenScope)
+                .filter(scope-> scope.isIncludeInTokenScope() || ignoreIncludeInTokenScope)
                 .map(ClientScopeModel::getName)
                 .collect(Collectors.joining(" "));
 
@@ -196,12 +201,14 @@ public class DefaultClientSessionContext implements ClientSessionContext {
      * they should be included in tokens or not.
      * Then return the scope name from the data stored in the RAR object representation.
      *
+     * @param ignoreIncludeInTokenScope ignore include in token scope from client scope options
+     *
      * @return see description
      */
-    private String buildScopesStringFromAuthorizationRequest() {
+    private String buildScopesStringFromAuthorizationRequest(boolean ignoreIncludeInTokenScope) {
         return AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, clientSession.getNote(OAuth2Constants.SCOPE)).getAuthorizationDetailEntries().stream()
                 .filter(authorizationDetails -> authorizationDetails.getSource().equals(AuthorizationRequestSource.SCOPE))
-                .filter(authorizationDetails -> authorizationDetails.getClientScope().isIncludeInTokenScope())
+                .filter(authorizationDetails -> authorizationDetails.getClientScope().isIncludeInTokenScope() || ignoreIncludeInTokenScope)
                 .filter(authorizationDetails -> isClientScopePermittedForUser(authorizationDetails.getClientScope()))
                 .map(authorizationDetails -> authorizationDetails.getAuthorizationDetails().getScopeNameFromCustomData())
                 .collect(Collectors.joining(" "));

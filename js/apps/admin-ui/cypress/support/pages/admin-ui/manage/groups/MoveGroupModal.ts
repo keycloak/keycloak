@@ -2,7 +2,7 @@ import ModalUtils from "../../../../util/ModalUtils";
 
 export default class MoveGroupModal extends ModalUtils {
   #moveButton = "moveHere-button";
-  #title = ".pf-c-modal-box__title";
+  #title = ".pf-v5-c-modal-box__title";
 
   clickRow(groupName: string) {
     cy.findByTestId(groupName).click();
@@ -10,7 +10,7 @@ export default class MoveGroupModal extends ModalUtils {
   }
 
   clickRoot() {
-    cy.get(".pf-c-breadcrumb__item > button").click();
+    cy.get(".pf-v5-c-breadcrumb__item > button").click();
     return this;
   }
 

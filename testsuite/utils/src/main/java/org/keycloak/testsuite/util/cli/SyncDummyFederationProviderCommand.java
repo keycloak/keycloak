@@ -19,7 +19,7 @@ package org.keycloak.testsuite.util.cli;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.LegacyRealmModel;
+import org.keycloak.models.StorageProviderRealmModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.storage.managers.UserStorageSyncManager;
 import org.keycloak.storage.UserStorageProviderModel;
@@ -71,7 +71,7 @@ public class SyncDummyFederationProviderCommand extends AbstractCommand {
             return null;
         }
 
-        return ((LegacyRealmModel) realm).getUserStorageProvidersStream()
+        return ((StorageProviderRealmModel) realm).getUserStorageProvidersStream()
                 .filter(fedProvider -> Objects.equals(fedProvider.getName(), displayName))
                 .findFirst()
                 .orElse(null);

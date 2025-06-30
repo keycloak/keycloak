@@ -23,7 +23,7 @@ import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import java.util.List;
+
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicMarkableReference;

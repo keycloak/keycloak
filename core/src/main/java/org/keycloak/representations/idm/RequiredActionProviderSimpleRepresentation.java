@@ -52,4 +52,5 @@ public class RequiredActionProviderSimpleRepresentation {
     public void setProviderId(String providerId) {
         this.providerId = providerId;
     }
+
 }

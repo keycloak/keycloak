@@ -105,8 +105,8 @@ public class EcpAuthenticationHandler extends AbstractSamlAuthenticationHandler 
     }
 
     @Override
-    protected AbstractInitiateLogin createChallenge() {
-        return new AbstractInitiateLogin(deployment, sessionStore) {
+    protected AbstractInitiateLogin createChallenge(boolean saveChallenge) {
+        return new AbstractInitiateLogin(deployment, sessionStore, saveChallenge) {
             @Override
             protected void sendAuthnRequest(HttpFacade httpFacade, SAML2AuthnRequestBuilder authnRequestBuilder, BaseSAML2BindingBuilder binding) {
                 try {

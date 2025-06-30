@@ -48,13 +48,13 @@ public class RecoveryAuthnCodesFormAuthenticator implements Authenticator {
         MultivaluedMap<String, String> formParamsMap = authnFlowContext.getHttpRequest().getDecodedFormParameters();
         String recoveryAuthnCodeUserInput = formParamsMap.getFirst(RecoveryAuthnCodesUtils.FIELD_RECOVERY_CODE_IN_BROWSER_FLOW);
 
-        if (ObjectUtil.isBlank(recoveryAuthnCodeUserInput)) {
+        if (ObjectUtil.isBlank(recoveryAuthnCodeUserInput)
+                || "true".equals(authnFlowContext.getAuthenticationSession().getAuthNote(AbstractUsernameFormAuthenticator.SESSION_INVALID))) {
             authnFlowContext.forceChallenge(createLoginForm(authnFlowContext, true,
                     RecoveryAuthnCodesUtils.RECOVERY_AUTHN_CODES_INPUT_DEFAULT_ERROR_MESSAGE,
                     RecoveryAuthnCodesUtils.FIELD_RECOVERY_CODE_IN_BROWSER_FLOW));
             return result;
         }
-        RealmModel targetRealm = authnFlowContext.getRealm();
         UserModel authenticatedUser = authnFlowContext.getUser();
         if (!isDisabledByBruteForce(authnFlowContext, authenticatedUser)) {
             boolean isValid = authenticatedUser.credentialManager().isValid(
@@ -81,6 +81,9 @@ public class RecoveryAuthnCodesFormAuthenticator implements Authenticator {
                     authenticatedUser.addRequiredAction(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES);
                 }
             }
+        }
+        else {
+            authnFlowContext.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.SESSION_INVALID, "true");
         }
         return result;
     }

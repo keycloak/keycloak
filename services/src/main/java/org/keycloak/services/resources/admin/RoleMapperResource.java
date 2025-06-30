@@ -19,9 +19,10 @@ package org.keycloak.services.resources.admin;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 
 import jakarta.ws.rs.NotFoundException;
 import org.keycloak.common.ClientConnection;
@@ -30,6 +31,7 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleMapperModel;
@@ -38,6 +40,7 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ClientMappingsRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
@@ -227,6 +230,7 @@ public class RoleMapperResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLE_MAPPER)
     @Operation( summary = "Add realm-level role mappings to the user")
+    @APIResponse(responseCode = "204", description = "No Content")
     public void addRealmRoleMappings(@Parameter(description = "Roles to add") List<RoleRepresentation> roles) {
         managePermission.require();
 
@@ -241,6 +245,9 @@ public class RoleMapperResource {
                 auth.roles().requireMapRole(roleModel);
                 roleMapper.grantRole(roleModel);
             }
+        } catch (ModelIllegalStateException e) {
+            logger.error(e.getMessage(), e);
+            throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (ModelException | ReadOnlyException me) {
             logger.warn(me.getMessage(), me);
             throw new ErrorResponseException("invalid_request", "Could not add user role mappings!", Response.Status.BAD_REQUEST);
@@ -281,6 +288,9 @@ public class RoleMapperResource {
                 auth.roles().requireMapRole(roleModel);
                 try {
                     roleMapper.deleteRoleMapping(roleModel);
+                } catch (ModelIllegalStateException e) {
+                    logger.error(e.getMessage(), e);
+                    throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
                 } catch (ModelException | ReadOnlyException me) {
                     logger.warn(me.getMessage(), me);
                     throw new ErrorResponseException("invalid_request", "Could not remove user role mappings!", Response.Status.BAD_REQUEST);
@@ -297,8 +307,8 @@ public class RoleMapperResource {
         return auth.roles().canMapRole(roleModel);
     }
 
-    @Path("clients/{client}")
-    public ClientRoleMappingsResource getUserClientRoleMappingsResource(@PathParam("client") String client) {
+    @Path("clients/{client-id}")
+    public ClientRoleMappingsResource getUserClientRoleMappingsResource(@PathParam("client-id") @Parameter(description = "client id (not clientId!)") String client) {
         ClientModel clientModel = realm.getClientById(client);
         if (clientModel == null) {
             throw new NotFoundException("Client not found");

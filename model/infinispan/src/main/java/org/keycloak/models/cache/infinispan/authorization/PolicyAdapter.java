@@ -21,7 +21,6 @@ import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
-import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
@@ -86,7 +85,7 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
     protected boolean isUpdated() {
         if (updated != null) return true;
         if (!invalidated) return false;
-        updated = cacheSession.getPolicyStoreDelegate().findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, cacheSession.getResourceServerStore().findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, cached.getResourceServerId()), cached.getId());
+        updated = cacheSession.getPolicyStoreDelegate().findById(cacheSession.getResourceServerStore().findById(cached.getResourceServerId()), cached.getId());
         if (updated == null) throw new IllegalStateException("Not found in database");
         return true;
     }
@@ -113,7 +112,7 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
 
     @Override
     public ResourceServer getResourceServer() {
-        return cacheSession.getResourceServerStore().findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, cached.getResourceServerId());
+        return cacheSession.getResourceServerStore().findById(cached.getResourceServerId());
     }
 
     @Override
@@ -209,7 +208,7 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
         PolicyStore policyStore = cacheSession.getPolicyStore();
         String resourceServerId = cached.getResourceServerId();
         for (String id : cached.getAssociatedPoliciesIds(modelSupplier)) {
-            Policy policy = policyStore.findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, cacheSession.getResourceServerStore().findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, resourceServerId), id);
+            Policy policy = policyStore.findById(cacheSession.getResourceServerStore().findById(resourceServerId), id);
             if (policy == null) {
                 // probably because the policy was removed
                 continue;
@@ -230,7 +229,7 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
         ResourceStore resourceStore = cacheSession.getResourceStore();
         ResourceServer resourceServer = getResourceServer();
         for (String resourceId : cached.getResourcesIds(modelSupplier)) {
-            Resource resource = resourceStore.findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, resourceServer, resourceId);
+            Resource resource = resourceStore.findById(resourceServer, resourceId);
             cacheSession.cacheResource(resource);
             resources.add(resource);
         }
@@ -295,7 +294,7 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
         ResourceServer resourceServer = getResourceServer();
         ScopeStore scopeStore = cacheSession.getScopeStore();
         for (String scopeId : cached.getScopesIds(modelSupplier)) {
-            Scope scope = scopeStore.findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, resourceServer, scopeId);
+            Scope scope = scopeStore.findById(resourceServer, scopeId);
             cacheSession.cacheScope(scope);
             scopes.add(scope);
         }
@@ -330,6 +329,6 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
     }
 
     private Policy getPolicyModel() {
-        return cacheSession.getPolicyStoreDelegate().findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, cacheSession.getResourceServerStore().findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, cached.getResourceServerId()), cached.getId());
+        return cacheSession.getPolicyStoreDelegate().findById(cacheSession.getResourceServerStore().findById(cached.getResourceServerId()), cached.getId());
     }
 }

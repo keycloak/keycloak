@@ -25,4 +25,4 @@ export PATH=$JAVA_HOME/bin:$PATH
 echo "--2-- $(which javac)"
 echo "--3-- $(readlink -f $( which javac ))"
 
-./mvnw -pl quarkus/deployment,quarkus/dist,themes, -am -DskipTests clean install | tee log-$(date +%H-%M-%y-%m-%d).txt
+./mvnw clean install -DskipTests | tee log-$(date +%H-%M-%y-%m-%d).txt

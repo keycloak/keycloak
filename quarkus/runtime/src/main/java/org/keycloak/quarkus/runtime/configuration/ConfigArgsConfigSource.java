@@ -17,7 +17,6 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
-import static java.util.Arrays.asList;
 import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_SHORT_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR_CHAR;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
@@ -26,37 +25,40 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 import io.smallrye.config.PropertiesConfigSource;
 
+import org.keycloak.quarkus.runtime.cli.command.Main;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
-import org.keycloak.utils.StringUtil;
 
 /**
  * <p>A configuration source for mapping configuration arguments to their corresponding properties so that they can be recognized
  * when building and running the server.
- * 
+ *
  * <p>The mapping is based on the system property {@code kc.config.args}, where the value is a comma-separated list of
  * the arguments passed during build or runtime. E.g: "--http-enabled=true,--http-port=8180,--database-vendor=postgres".
- * 
- * <p>Each argument is going to be mapped to its corresponding configuration property by prefixing the key with the {@link MicroProfileConfigProvider#NS_KEYCLOAK} namespace. 
+ *
+ * <p>Each argument is going to be mapped to its corresponding configuration property by prefixing the key with the {@link MicroProfileConfigProvider#NS_KEYCLOAK} namespace.
  */
 public class ConfigArgsConfigSource extends PropertiesConfigSource {
+
+    public static final Set<String> SHORT_OPTIONS_ACCEPTING_VALUE = Set.of(Main.PROFILE_SHORT_NAME, Main.CONFIG_FILE_SHORT_NAME);
 
     public static final String CLI_ARGS = "kc.config.args";
     public static final String NAME = "CliConfigSource";
     private static final String ARG_SEPARATOR = ";;";
-    private static final Pattern ARG_SPLIT = Pattern.compile(";;");
     private static final Pattern ARG_KEY_VALUE_SPLIT = Pattern.compile("=");
 
     protected ConfigArgsConfigSource() {
-        super(parseArgument(), NAME, 600);
+        super(parseArguments(), NAME, 600);
     }
 
-    public static void setCliArgs(String[] args) {
+    public static void setCliArgs(String... args) {
         System.setProperty(CLI_ARGS, String.join(ARG_SEPARATOR, args));
     }
 
@@ -98,23 +100,23 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
         return properties.get(propertyName.replace(OPTION_PART_SEPARATOR_CHAR, '.'));
     }
 
-    private static Map<String, String> parseArgument() {
+    private static Map<String, String> parseArguments() {
         String rawArgs = getRawConfigArgs();
-        
+
         if (rawArgs == null || "".equals(rawArgs.trim())) {
             return Collections.emptyMap();
         }
 
         Map<String, String> properties = new HashMap<>();
 
-        parseConfigArgs(new BiConsumer<String, String>() {
+        parseConfigArgs(getAllCliArgs(), new BiConsumer<String, String>() {
             @Override
             public void accept(String key, String value) {
                 key = NS_KEYCLOAK_PREFIX + key.substring(2);
 
                 properties.put(key, value);
 
-                PropertyMapper mapper = PropertyMappers.getMapper(key);
+                PropertyMapper<?> mapper = PropertyMappers.getMapper(key);
 
                 if (mapper != null) {
                     String to = mapper.getTo();
@@ -126,56 +128,47 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
                     properties.put(mapper.getFrom(), value);
                 }
             }
-        });
+        }, ignored -> {});
 
         return properties;
     }
 
-    public static void parseConfigArgs(BiConsumer<String, String> cliArgConsumer) {
-        // init here because the class might be loaded by CL without init
-        List<String> ignoredArgs = asList("--verbose", "-v", "--help", "-h");
-        String rawArgs = getRawConfigArgs();
-
-        if (StringUtil.isBlank(rawArgs)) {
-            return;
-        }
-
-        String[] args = ARG_SPLIT.split(rawArgs);
-
-        for (int i = 0; i < args.length; i++) {
-            String arg = args[i];
-
-            if (ignoredArgs.contains(arg)) {
-                continue;
-            }
+    public static void parseConfigArgs(List<String> args, BiConsumer<String, String> valueArgConsumer, Consumer<String> unaryConsumer) {
+        for (int i = 0; i < args.size(); i++) {
+            String arg = args.get(i);
 
             if (!arg.startsWith(ARG_SHORT_PREFIX)) {
+                unaryConsumer.accept(arg);
                 continue;
             }
 
             String[] keyValue = ARG_KEY_VALUE_SPLIT.split(arg, 2);
             String key = keyValue[0];
 
-            if ("".equals(key.trim())) {
-                throw new IllegalArgumentException("Invalid argument key");
-            }
-
             String value;
 
             if (keyValue.length == 1) {
-                if (args.length <= i + 1) {
+                if (args.size() <= i + 1) {
+                    unaryConsumer.accept(arg);
                     continue;
                 }
-                value = args[i + 1];
-            } else if (keyValue.length == 2) {
+                PropertyMapper<?> mapper = PropertyMappers.getMapper(key);
+                // the weaknesses here:
+                // - needs to know all of the short name options that accept a value
+                // - does not know all of the picocli parsing rules. picocli will accept -cffile, and short option grouping - that's not accounted for
+                if (mapper != null || SHORT_OPTIONS_ACCEPTING_VALUE.contains(key) || arg.startsWith("--spi")) {
+                    i++; // consume next as a value to the key
+                    value = args.get(i);
+                } else {
+                    unaryConsumer.accept(arg);
+                    continue;
+                }
+            } else {
                 // the argument has a simple value. Eg.: key=pair
                 value = keyValue[1];
-            } else {
-                // to support cases like --db-url=jdbc:mariadb://localhost/kc?a=1
-                value = arg.substring(key.length() + 1);
             }
 
-            cliArgConsumer.accept(key, value);
+            valueArgConsumer.accept(key, value);
         }
     }
 }

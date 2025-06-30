@@ -9,10 +9,8 @@ import {
 import { useEffect } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
+import { FormPanel, HelpItem } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../components/form/FormAccess";
-import { HelpItem } from "ui-shared";
-import { FormPanel } from "../components/scroll-form/FormPanel";
 import { TimeSelector } from "../components/time-selector/TimeSelector";
 import { convertToFormValues } from "../util";
 
@@ -163,7 +161,7 @@ export const RealmSettingsSessionsTab = ({
         <FormAccess
           isHorizontal
           role="manage-realm"
-          className="pf-u-mt-lg"
+          className="pf-v5-u-mt-lg"
           onSubmit={handleSubmit(save)}
         >
           <FormGroup
@@ -224,7 +222,7 @@ export const RealmSettingsSessionsTab = ({
         <FormAccess
           isHorizontal
           role="manage-realm"
-          className="pf-u-mt-lg"
+          className="pf-v5-u-mt-lg"
           onSubmit={handleSubmit(save)}
         >
           <FormGroup
@@ -317,7 +315,7 @@ export const RealmSettingsSessionsTab = ({
         <FormAccess
           isHorizontal
           role="manage-realm"
-          className="pf-u-mt-lg"
+          className="pf-v5-u-mt-lg"
           onSubmit={handleSubmit(save)}
         >
           <FormGroup

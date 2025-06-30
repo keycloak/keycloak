@@ -51,16 +51,15 @@ public final class CRLUtils {
      * @throws GeneralSecurityException if some error in validation happens. Typically certificate not valid, or CRL signature not valid
      */
     public static void check(X509Certificate[] certs, X509CRL crl, KeycloakSession session) throws GeneralSecurityException {
-        if (certs.length < 2) {
-            throw new GeneralSecurityException("Not possible to verify signature on CRL. X509 certificate doesn't have CA chain available on it");
+        if (certs == null || certs.length < 1) {
+            throw new GeneralSecurityException("Not possible to verify signature on CRL because no certificate chain was passed.");
         }
 
         X500Principal crlIssuerPrincipal = crl.getIssuerX500Principal();
         X509Certificate crlSignatureCertificate = null;
 
         // Try to find the certificate in the CA chain, which was used to sign the CRL
-        for (int i=1 ; i<certs.length ; i++) {
-            X509Certificate currentCACert = certs[i];
+        for (X509Certificate currentCACert: certs) {
             if (crlIssuerPrincipal.equals(currentCACert.getSubjectX500Principal())) {
                 crlSignatureCertificate = currentCACert;
 
@@ -110,11 +109,8 @@ public final class CRLUtils {
 
         // Check if CRL issuer has trust anchor with the checked certificate (See https://tools.ietf.org/html/rfc5280#section-6.3.3 , paragraph (f))
         Set<X500Principal> certificateCAPrincipals = Arrays.asList(certs).stream()
-                .map(X509Certificate::getSubjectX500Principal)
+                .map(X509Certificate::getIssuerX500Principal)
                 .collect(Collectors.toSet());
-
-        // Remove the checked certificate itself
-        certificateCAPrincipals.remove(certs[0].getSubjectX500Principal());
 
         X509Certificate currentCRLAnchorCertificate = crlSignatureCertificate;
         X500Principal currentCRLAnchorPrincipal = crlIssuerPrincipal;

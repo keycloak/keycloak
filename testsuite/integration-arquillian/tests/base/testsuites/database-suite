@@ -17,4 +17,4 @@ TransactionsTest
 UserProfileTest
 org.keycloak.testsuite.admin.**
 org.keycloak.testsuite.authz.**ManagementTest
-org.keycloak.testsuite.zerodowntime.**
+org.keycloak.testsuite.organization.admin.**

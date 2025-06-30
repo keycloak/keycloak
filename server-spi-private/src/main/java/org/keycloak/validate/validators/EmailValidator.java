@@ -16,15 +16,19 @@
  */
 package org.keycloak.validate.validators;
 
-import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.utils.EmailValidationUtil;
 import org.keycloak.validate.AbstractStringValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
+import org.keycloak.validate.ValidationResult;
 import org.keycloak.validate.ValidatorConfig;
 
 /**
@@ -39,6 +43,7 @@ public class EmailValidator extends AbstractStringValidator implements Configure
 
     public static final String MESSAGE_INVALID_EMAIL = "error-invalid-email";
 
+    public static final String MAX_LOCAL_PART_LENGTH_PROPERTY = "max-local-length";
 
     @Override
     public String getId() {
@@ -47,7 +52,14 @@ public class EmailValidator extends AbstractStringValidator implements Configure
 
     @Override
     protected void doValidate(String value, String inputHint, ValidationContext context, ValidatorConfig config) {
-        if (!EmailValidationUtil.isValidEmail(value)) {
+        Integer maxEmailLocalPartLength = null;
+        if (config != null) {
+            maxEmailLocalPartLength = config.getInt(MAX_LOCAL_PART_LENGTH_PROPERTY);
+        }
+
+        if (!(maxEmailLocalPartLength != null
+                ? EmailValidationUtil.isValidEmail(value, maxEmailLocalPartLength)
+                : EmailValidationUtil.isValidEmail(value))) {
             context.addError(new ValidationError(ID, inputHint, MESSAGE_INVALID_EMAIL, value));
         }
     }
@@ -59,6 +71,25 @@ public class EmailValidator extends AbstractStringValidator implements Configure
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return Collections.emptyList();
+        return ProviderConfigurationBuilder.create().property()
+                .name(MAX_LOCAL_PART_LENGTH_PROPERTY)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .label("Maximum length for the local part")
+                .helpText("Maximum length for the local part of the email")
+                .defaultValue(EmailValidationUtil.MAX_LOCAL_PART_LENGTH)
+                .required(false)
+                .add().build();
+    }
+
+    @Override
+    public ValidationResult validateConfig(KeycloakSession session, ValidatorConfig config) {
+        Set<ValidationError> errors = new LinkedHashSet<>();
+        if (config != null && config.containsKey(MAX_LOCAL_PART_LENGTH_PROPERTY)) {
+            Integer maxLocalPartLength = config.getInt(MAX_LOCAL_PART_LENGTH_PROPERTY);
+            if (maxLocalPartLength == null || maxLocalPartLength <= 0) {
+                errors.add(new ValidationError(ID, MAX_LOCAL_PART_LENGTH_PROPERTY, ValidatorConfigValidator.MESSAGE_CONFIG_INVALID_NUMBER_VALUE, config.get(MAX_LOCAL_PART_LENGTH_PROPERTY)));
+            }
+        }
+        return new ValidationResult(errors);
     }
 }

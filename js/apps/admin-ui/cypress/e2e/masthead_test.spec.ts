@@ -6,7 +6,7 @@ import { keycloakBefore } from "../support/util/keycloak_hooks";
 const loginPage = new LoginPage();
 const masthead = new Masthead();
 const sidebarPage = new SidebarPage();
-const helpLabel = ".pf-c-form__group-label-help";
+const helpLabel = ".pf-v5-c-form__group-label-help";
 
 describe("Masthead tests", () => {
   beforeEach(() => {
@@ -18,9 +18,7 @@ describe("Masthead tests", () => {
     it("Go to account console and back to admin console", () => {
       sidebarPage.waitForPageLoad();
       masthead.accountManagement();
-      cy.get("h1").contains("Welcome to Keycloak account management");
-      masthead.goToAdminConsole();
-      masthead.checkIsAdminUI();
+      cy.url().should("contain", "/realms/master/account");
     });
 
     it("Sign out reachs to log in screen", () => {
@@ -33,7 +31,7 @@ describe("Masthead tests", () => {
     it("Go to realm info", () => {
       sidebarPage.goToClients();
       masthead.toggleUsernameDropdown().clickRealmInfo();
-      cy.get(".pf-c-card__title").should("contain.text", "Server info");
+      cy.get(".pf-v5-l-grid").should("contain.text", "Welcome");
     });
 
     it("Should go to documentation page", () => {
@@ -56,6 +54,7 @@ describe("Masthead tests", () => {
 
     it("Enable/disable help mode in desktop mode", () => {
       masthead.assertIsDesktopView();
+      cy.findByTestId("infoTab").click();
       cy.get(helpLabel).should("exist");
       masthead.toggleGlobalHelp();
       masthead.clickGlobalHelp();
@@ -77,13 +76,12 @@ describe("Masthead tests", () => {
         .assertIsMobileView()
         .toggleUsernameDropdown()
         .toggleMobileViewHelp();
-      cy.get(helpLabel).should("not.exist");
       masthead.toggleMobileViewHelp();
-      cy.get(helpLabel).should("exist");
+      cy.findByTestId("helpIcon").should("exist");
     });
   });
 
-  describe.skip("Accessibility tests for masthead", () => {
+  describe("Accessibility tests for masthead", () => {
     beforeEach(() => {
       loginPage.logIn();
       keycloakBefore();

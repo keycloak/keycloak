@@ -16,12 +16,9 @@
  */
 package org.keycloak.services.resources;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.util.Resteasy;
 import org.keycloak.config.ConfigProviderFactory;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ExportImportManager;
@@ -33,7 +30,8 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
-import org.keycloak.models.locking.GlobalLockProvider;
+import org.keycloak.models.dblock.DBLockManager;
+import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.models.utils.RepresentationToModel;
@@ -41,74 +39,44 @@ import org.keycloak.platform.Platform;
 import org.keycloak.platform.PlatformProvider;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.ServicesLogger;
-import org.keycloak.services.error.KeycloakErrorHandler;
-import org.keycloak.services.error.KcUnrecognizedPropertyExceptionHandler;
-import org.keycloak.services.error.KeycloakMismatchedInputExceptionHandler;
-import org.keycloak.services.filters.KeycloakSecurityHeadersFilter;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.resources.admin.AdminRoot;
-import org.keycloak.services.util.ObjectMapperResolver;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 import org.keycloak.util.JsonSerialization;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.ServiceLoader;
+
+import com.fasterxml.jackson.core.type.TypeReference;
 
 import jakarta.transaction.SystemException;
 import jakarta.transaction.Transaction;
 import jakarta.ws.rs.core.Application;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.ServiceLoader;
-import java.util.Set;
-
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
+ *
  */
-public class KeycloakApplication extends Application {
+public abstract class KeycloakApplication extends Application {
 
     private static final Logger logger = Logger.getLogger(KeycloakApplication.class);
 
     protected final PlatformProvider platform = Platform.getPlatform();
 
-    protected Set<Object> singletons = new HashSet<>();
-    protected Set<Class<?>> classes = new HashSet<>();
-
     private static KeycloakSessionFactory sessionFactory;
 
     public KeycloakApplication() {
-
         try {
 
             logger.debugv("PlatformProvider: {0}", platform.getClass().getName());
-            logger.debugv("RestEasy provider: {0}", Resteasy.getProvider().getClass().getName());
 
             loadConfig();
-
-            classes.add(RobotsResource.class);
-            classes.add(RealmsResource.class);
-            if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_API)) {
-                classes.add(AdminRoot.class);
-            }
-            classes.add(ThemeResource.class);
-
-            if (Profile.isFeatureEnabled(Profile.Feature.JS_ADAPTER)) {
-                classes.add(JsResource.class);
-            }
-
-            classes.add(KeycloakSecurityHeadersFilter.class);
-            classes.add(KeycloakErrorHandler.class);
-            classes.add(KcUnrecognizedPropertyExceptionHandler.class);
-            classes.add(KeycloakMismatchedInputExceptionHandler.class);
-
-            singletons.add(new ObjectMapperResolver());
-            classes.add(WelcomeResource.class);
 
             platform.onStartup(this::startup);
             platform.onShutdown(this::shutdown);
@@ -116,7 +84,6 @@ public class KeycloakApplication extends Application {
         } catch (Throwable t) {
             platform.exit(t);
         }
-
     }
 
     protected void startup() {
@@ -125,24 +92,18 @@ public class KeycloakApplication extends Application {
 
         ExportImportManager[] exportImportManager = new ExportImportManager[1];
 
-        // Release all locks acquired by currently used GlobalLockProvider if keycloak.globalLock.forceUnlock is equal
-        //   to true. This can be used to recover from a state where there are some stale locks that were not correctly
-        //   unlocked
-        if (Boolean.getBoolean("keycloak.globalLock.forceUnlock")) {
-            KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
-                @Override
-                public void run(KeycloakSession session) {
-                    GlobalLockProvider locks = session.getProvider(GlobalLockProvider.class);
-                    locks.forceReleaseAllLocks();
-                }
-            });
-        }
-
         KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
             @Override
             public void run(KeycloakSession session) {
-                GlobalLockProvider locks = session.getProvider(GlobalLockProvider.class);
-                exportImportManager[0] = locks.withLock(GlobalLockProvider.Constants.KEYCLOAK_BOOT, innerSession -> bootstrap());
+                DBLockManager dbLockManager = new DBLockManager(session);
+                dbLockManager.checkForcedUnlock();
+                DBLockProvider dbLock = dbLockManager.getDBLock();
+                dbLock.waitForLock(DBLockProvider.Namespace.KEYCLOAK_BOOT);
+                try {
+                    exportImportManager[0] = bootstrap();
+                } finally {
+                    dbLock.releaseLock();
+                }
             }
         });
 
@@ -222,24 +183,10 @@ public class KeycloakApplication extends Application {
 
     }
 
-    protected KeycloakSessionFactory createSessionFactory() {
-        DefaultKeycloakSessionFactory factory = new DefaultKeycloakSessionFactory();
-        factory.init();
-        return factory;
-    }
+    protected abstract KeycloakSessionFactory createSessionFactory();
 
     public static KeycloakSessionFactory getSessionFactory() {
         return sessionFactory;
-    }
-
-    @Override
-    public Set<Class<?>> getClasses() {
-        return classes;
-    }
-
-    @Override
-    public Set<Object> getSingletons() {
-        return singletons;
     }
 
     public void importRealms(ExportImportManager exportImportManager) {
@@ -317,10 +264,7 @@ public class KeycloakApplication extends Application {
                                 if (users.getUserByUsername(realm, userRep.getUsername()) != null) {
                                     ServicesLogger.LOGGER.notCreatingExistingUser(userRep.getUsername());
                                 } else {
-                                    UserModel user = users.addUser(realm, userRep.getUsername());
-                                    user.setEnabled(userRep.isEnabled());
-                                    RepresentationToModel.createCredentials(userRep, session, realm, user, false);
-                                    RepresentationToModel.createRoleMappings(userRep, user, realm);
+                                    UserModel user = RepresentationToModel.createUser(session, realm, userRep);
                                     ServicesLogger.LOGGER.addUserSuccess(userRep.getUsername(), realmRep.getRealm());
                                 }
                             });

@@ -1,31 +1,26 @@
-import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
   Button,
   FormGroup,
+  MenuToggle,
   Select,
+  SelectList,
   SelectOption,
-  SelectVariant,
-  Switch,
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
+import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { FormAccess } from "../../components/form/FormAccess";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
 import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { convertAttributeNameToForm } from "../../util";
-import { useFetch } from "../../utils/useFetch";
+import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import { FormFields } from "../ClientDetails";
 import { TokenLifespan } from "./TokenLifespan";
-
-import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 
 type AdvancedSettingsProps = {
   save: () => void;
@@ -43,17 +38,10 @@ export const AdvancedSettings = ({
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
-  const [realm, setRealm] = useState<RealmRepresentation>();
-  const { realm: realmName } = useRealm();
+  const { realmRepresentation: realm } = useRealm();
 
   const isFeatureEnabled = useIsFeatureEnabled();
   const isDPoPEnabled = isFeatureEnabled(Feature.DPoP);
-
-  useFetch(
-    () => adminClient.realms.findOne({ realm: realmName }),
-    setRealm,
-    [],
-  );
 
   const { control } = useFormContext();
   return (
@@ -99,7 +87,6 @@ export const AdvancedSettings = ({
             defaultValue={realm?.accessTokenLifespan}
             units={["minute", "day", "hour"]}
           />
-
           <TokenLifespan
             id="clientSessionIdle"
             name={convertAttributeNameToForm(
@@ -108,7 +95,6 @@ export const AdvancedSettings = ({
             defaultValue={realm?.clientSessionIdleTimeout}
             units={["minute", "day", "hour"]}
           />
-
           <TokenLifespan
             id="clientSessionMax"
             name={convertAttributeNameToForm(
@@ -117,7 +103,6 @@ export const AdvancedSettings = ({
             defaultValue={realm?.clientSessionMaxLifespan}
             units={["minute", "day", "hour"]}
           />
-
           <TokenLifespan
             id="clientOfflineSessionIdle"
             name={convertAttributeNameToForm(
@@ -127,78 +112,37 @@ export const AdvancedSettings = ({
             units={["minute", "day", "hour"]}
           />
 
-          <TokenLifespan
-            id="clientOfflineSessionMax"
-            name={convertAttributeNameToForm(
-              "attributes.client.offline.session.max.lifespan",
-            )}
-            defaultValue={
-              realm?.offlineSessionMaxLifespanEnabled
-                ? realm.offlineSessionMaxLifespan
-                : undefined
-            }
-            units={["minute", "day", "hour"]}
-          />
-
-          <FormGroup
-            label={t("oAuthMutual")}
-            fieldId="oAuthMutual"
-            hasNoPaddingTop
-            labelIcon={
-              <HelpItem
-                helpText={t("oAuthMutualHelp")}
-                fieldLabelId="oAuthMutual"
-              />
-            }
-          >
-            <Controller
-              name={convertAttributeNameToForm<FormFields>(
-                "attributes.tls.client.certificate.bound.access.tokens",
+          {realm?.offlineSessionMaxLifespanEnabled && (
+            <TokenLifespan
+              id="clientOfflineSessionMax"
+              name={convertAttributeNameToForm(
+                "attributes.client.offline.session.max.lifespan",
               )}
-              defaultValue={false}
-              control={control}
-              render={({ field }) => (
-                <Switch
-                  id="oAuthMutual-switch"
-                  label={t("on")}
-                  labelOff={t("off")}
-                  isChecked={field.value === "true"}
-                  onChange={(value) => field.onChange("" + value)}
-                  aria-label={t("oAuthMutual")}
-                />
-              )}
-            />
-          </FormGroup>
-          {isDPoPEnabled && (
-            <FormGroup
-              label={t("oAuthDPoP")}
-              fieldId="oAuthDPoP"
-              hasNoPaddingTop
-              labelIcon={
-                <HelpItem
-                  helpText={t("oAuthDPoPHelp")}
-                  fieldLabelId="oAuthDPoP"
-                />
+              defaultValue={
+                realm?.offlineSessionMaxLifespanEnabled
+                  ? realm.offlineSessionMaxLifespan
+                  : undefined
               }
-            >
-              <Controller
-                name={convertAttributeNameToForm<FormFields>(
-                  "attributes.dpop.bound.access.tokens",
-                )}
-                defaultValue={false}
-                control={control}
-                render={({ field }) => (
-                  <Switch
-                    id="oAuthDPoP-switch"
-                    label={t("on")}
-                    labelOff={t("off")}
-                    isChecked={field.value === "true"}
-                    onChange={(value) => field.onChange("" + value)}
-                    aria-label={t("oAuthDPoP")}
-                  />
-                )}
-              />
-            </FormGroup>
+              units={["minute", "day", "hour"]}
+            />
+          )}
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm<FormFields>(
+              "attributes.tls.client.certificate.bound.access.tokens",
+            )}
+            label={t("oAuthMutual")}
+            labelIcon={t("oAuthMutualHelp")}
+            stringify
+          />
+          {isDPoPEnabled && (
+            <DefaultSwitchControl
+              name={convertAttributeNameToForm<FormFields>(
+                "attributes.dpop.bound.access.tokens",
+              )}
+              label={t("oAuthDPoP")}
+              labelIcon={t("oAuthDPoPHelp")}
+              stringify
+            />
           )}
           <FormGroup
             label={t("keyForCodeExchange")}
@@ -219,53 +163,60 @@ export const AdvancedSettings = ({
               control={control}
               render={({ field }) => (
                 <Select
-                  toggleId="keyForCodeExchange"
-                  variant={SelectVariant.single}
-                  onToggle={setOpen}
+                  toggle={(ref) => (
+                    <MenuToggle
+                      id="keyForCodeExchange"
+                      ref={ref}
+                      onClick={() => setOpen(!open)}
+                      isExpanded={open}
+                    >
+                      {[field.value || t("choose")]}
+                    </MenuToggle>
+                  )}
                   isOpen={open}
+                  onOpenChange={(isOpen) => setOpen(isOpen)}
                   onSelect={(_, value) => {
                     field.onChange(value);
                     setOpen(false);
                   }}
-                  selections={[field.value || t("choose")]}
+                  selected={field.value}
                 >
-                  {["", "S256", "plain"].map((v) => (
-                    <SelectOption key={v} value={v}>
-                      {v || t("choose")}
-                    </SelectOption>
-                  ))}
+                  <SelectList>
+                    {["", "S256", "plain"].map((v) => (
+                      <SelectOption key={v} value={v}>
+                        {v || t("choose")}
+                      </SelectOption>
+                    ))}
+                  </SelectList>
                 </Select>
               )}
             />
           </FormGroup>
-          <FormGroup
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm<FormFields>(
+              "attributes.require.pushed.authorization.requests",
+            )}
             label={t("pushedAuthorizationRequestRequired")}
-            fieldId="pushedAuthorizationRequestRequired"
-            labelIcon={
-              <HelpItem
-                helpText={t("pushedAuthorizationRequestRequiredHelp")}
-                fieldLabelId="pushedAuthorizationRequestRequired"
-              />
-            }
-          >
-            <Controller
-              name={convertAttributeNameToForm<FormFields>(
-                "attributes.require.pushed.authorization.requests",
-              )}
-              defaultValue="false"
-              control={control}
-              render={({ field }) => (
-                <Switch
-                  id="pushedAuthorizationRequestRequired"
-                  label={t("on")}
-                  labelOff={t("off")}
-                  isChecked={field.value === "true"}
-                  onChange={(value) => field.onChange(value.toString())}
-                  aria-label={t("pushedAuthorizationRequestRequired")}
-                />
-              )}
-            />
-          </FormGroup>
+            labelIcon={t("pushedAuthorizationRequestRequiredHelp")}
+            stringify
+          />
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm<FormFields>(
+              "attributes.client.use.lightweight.access.token.enabled",
+            )}
+            label={t("lightweightAccessToken")}
+            labelIcon={t("lightweightAccessTokenHelp")}
+            stringify
+          />
+
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm<FormFields>(
+              "attributes.client.introspection.response.allow.jwt.claim.enabled",
+            )}
+            label={t("supportJwtClaimInIntrospectionResponse")}
+            labelIcon={t("supportJwtClaimInIntrospectionResponseHelp")}
+            stringify
+          />
           <FormGroup
             label={t("acrToLoAMapping")}
             fieldId="acrToLoAMapping"
@@ -277,6 +228,7 @@ export const AdvancedSettings = ({
             }
           >
             <KeyValueInput
+              label={t("acrToLoAMapping")}
               name={convertAttributeNameToForm("attributes.acr.loa.map")}
             />
           </FormGroup>

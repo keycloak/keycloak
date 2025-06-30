@@ -17,4 +17,15 @@ describe("Server Info", () => {
     const serverInfo = await client.serverInfo.find();
     expect(serverInfo).to.be.ok;
   });
+
+  it("list effective message bundles of a realm", async () => {
+    const messageBundles = await client.serverInfo.findEffectiveMessageBundles({
+      realm: "master",
+      themeType: "admin",
+      locale: "en",
+    });
+
+    expect(messageBundles).to.be.ok;
+    expect(messageBundles.length).to.be.greaterThan(0);
+  });
 });

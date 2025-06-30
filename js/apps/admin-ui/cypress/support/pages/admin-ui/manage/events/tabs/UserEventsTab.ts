@@ -22,10 +22,10 @@ export class UserEventSearchData {
 const emptyStatePage = new EmptyStatePage();
 
 export default class UserEventsTab extends PageObject {
-  #searchUserEventDrpDwnToggle = "userEventsSearchSelectorToggle";
+  #searchUserEventDrpDwnToggle = "dropdown-panel-btn";
   #searchUserIdInput = "#kc-userId";
   #searchEventTypeSelectToggle =
-    ".pf-c-select.keycloak__events_search__type_select";
+    ".pf-v5-c-select.keycloak__events_search__type_select";
   #searchClientInput = "#kc-client";
   #searchDateFromInput = "#kc-dateFrom";
   #searchDateToInput = "#kc-dateTo";

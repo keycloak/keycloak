@@ -20,7 +20,6 @@ import org.jboss.arquillian.container.test.spi.client.deployment.ApplicationArch
 import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.logging.Logger;
 import org.jboss.shrinkwrap.api.Archive;
-import org.keycloak.testsuite.utils.annotation.UseServletFilter;
 import org.keycloak.testsuite.utils.arquillian.DeploymentArchiveProcessorUtils;
 
 /**
@@ -49,10 +48,6 @@ public class UndertowDeploymentArchiveProcessor implements ApplicationArchivePro
 
     private void modifyWebXML(Archive<?> archive, TestClass testClass) {
         if (!archive.contains(DeploymentArchiveProcessorUtils.WEBXML_PATH)) return;
-        if (!testClass.getJavaClass().isAnnotationPresent(UseServletFilter.class)) return;
-
-        log.debug("Modifying WEB.XML in " + archive.getName() + " for Servlet Filter.");
-        DeploymentArchiveProcessorUtils.modifyWebXMLForServletFilter(archive, testClass);
     }
 
     private void modifyOIDCAdapterConfig(Archive<?> archive, String adapterConfigPath) {

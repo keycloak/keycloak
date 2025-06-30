@@ -1,10 +1,8 @@
 #!/usr/bin/env node
-import KcAdminClient from "@keycloak/keycloak-admin-client";
 import { Octokit } from "@octokit/rest";
 import gunzip from "gunzip-maybe";
 import { spawn } from "node:child_process";
 import fs from "node:fs";
-import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { pipeline } from "node:stream/promises";
 import { fileURLToPath } from "node:url";
@@ -18,11 +16,15 @@ const LOCAL_DIST_NAME = "keycloak-999.0.0-SNAPSHOT.tar.gz";
 const SCRIPT_EXTENSION = process.platform === "win32" ? ".bat" : ".sh";
 const ADMIN_USERNAME = "admin";
 const ADMIN_PASSWORD = "admin";
-const AUTH_DELAY = 10000;
-const AUTH_RETRY_LIMIT = 3;
 
 const options = {
   local: {
+    type: "boolean",
+  },
+  "account-dev": {
+    type: "boolean",
+  },
+  "admin-dev": {
     type: "boolean",
   },
 };
@@ -34,29 +36,37 @@ async function startServer() {
 
   await downloadServer(scriptArgs.local);
 
+  const env = {
+    KEYCLOAK_ADMIN: ADMIN_USERNAME,
+    KEYCLOAK_ADMIN_PASSWORD: ADMIN_PASSWORD,
+    ...process.env,
+  };
+
+  if (scriptArgs["account-dev"]) {
+    env.KC_ACCOUNT_VITE_URL = "http://localhost:5173";
+  }
+
+  if (scriptArgs["admin-dev"]) {
+    env.KC_ADMIN_VITE_URL = "http://localhost:5174";
+  }
+
   console.info("Starting server…");
+
   const child = spawn(
     path.join(SERVER_DIR, `bin/kc${SCRIPT_EXTENSION}`),
     [
       "start-dev",
-      "--http-port=8180",
-      "--features=account3,admin-fine-grained-authz,declarative-user-profile",
+      `--features="login2,account3,admin-fine-grained-authz,transient-users,oid4vc-vci"`,
       ...keycloakArgs,
     ],
     {
-      env: {
-        KEYCLOAK_ADMIN: ADMIN_USERNAME,
-        KEYCLOAK_ADMIN_PASSWORD: ADMIN_PASSWORD,
-        ...process.env,
-      },
+      shell: true,
+      env,
     },
   );
 
   child.stdout.pipe(process.stdout);
   child.stderr.pipe(process.stderr);
-
-  await wait(AUTH_DELAY);
-  await importClient();
 }
 
 function handleArgs(args) {
@@ -101,35 +111,6 @@ async function downloadServer(local) {
   await extractTarball(assetStream, SERVER_DIR, { strip: 1 });
 }
 
-async function importClient() {
-  const adminClient = new KcAdminClient({
-    baseUrl: "http://127.0.0.1:8180",
-    realmName: "master",
-  });
-
-  await authenticateAdminClient(adminClient);
-
-  console.info("Checking if client already exists…");
-
-  const adminConsoleClient = await adminClient.clients.find({
-    clientId: "security-admin-console-v2",
-  });
-
-  if (adminConsoleClient.length > 0) {
-    console.info("Client already exists, skipping import.");
-    return;
-  }
-
-  console.info("Importing client…");
-
-  const configPath = path.join(DIR_NAME, "security-admin-console-v2.json");
-  const config = JSON.parse(await readFile(configPath, "utf-8"));
-
-  await adminClient.clients.create(config);
-
-  console.info("Client imported successfully.");
-}
-
 async function getNightlyAsset() {
   const api = new Octokit();
   const release = await api.repos.getReleaseByTag({
@@ -155,37 +136,4 @@ async function getAssetAsStream(asset) {
 
 function extractTarball(stream, path, options) {
   return pipeline(stream, gunzip(), extract(path, options));
-}
-
-async function authenticateAdminClient(
-  adminClient,
-  numRetries = AUTH_RETRY_LIMIT,
-) {
-  console.log("Authenticating admin client…");
-
-  try {
-    await adminClient.auth({
-      username: ADMIN_USERNAME,
-      password: ADMIN_PASSWORD,
-      grantType: "password",
-      clientId: "admin-cli",
-    });
-  } catch (error) {
-    if (numRetries === 0) {
-      throw error;
-    }
-
-    console.info(
-      `Authentication failed, retrying in ${AUTH_DELAY / 1000} seconds.`,
-    );
-
-    await wait(AUTH_DELAY);
-    await authenticateAdminClient(adminClient, numRetries - 1);
-  }
-
-  console.log("Admin client authenticated successfully.");
-}
-
-async function wait(delay) {
-  return new Promise((resolve) => setTimeout(() => resolve(), delay));
 }

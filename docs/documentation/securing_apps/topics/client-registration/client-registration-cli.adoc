@@ -7,7 +7,7 @@ It is necessary to create or obtain a client configuration for any application t
 
 You can configure application clients from a command line with the Client Registration CLI, and you can use it in shell scripts.
 
-To allow a particular user to use `Client Registration CLI` the {project_name} administrator typically uses the Admin Console to configure a new user with proper roles or to configure a new client and client secret to grant access to the Client Registration REST API.
+To allow a particular user to use `Client Registration CLI`, the {project_name} administrator typically uses the Admin Console to configure a new user with proper roles or to configure a new client and client secret to grant access to the Client Registration REST API.
 
 
 [[_configuring_a_user_for_client_registration_cli]]
@@ -18,8 +18,13 @@ To allow a particular user to use `Client Registration CLI` the {project_name} a
 . Log in to the Admin Console (for example, http://localhost:8080{kc_admins_path}) as [command]`admin`.
 . Select a realm to administer.
 . If you want to use an existing user, select that user to edit; otherwise, create a new user.
-. Select *Role Mappings > Client Roles > realm-management*. If you are in the master realm, select *NAME-realm*, where `NAME` is the name of the target realm. You can grant access to any other realm to users in the master realm.
-. Select *Available Roles > manage-client* to grant a full set of client management permissions. Another option is to choose *view-clients* for read-only or *create-client* to create new clients.
+
+. Select *Role Mapping*, *Assign role*. From the option list, click *Filter by clients*. In the search bar, type `manage-clients`. Select the role, or if you are in the master realm, select the one with *NAME-realm*, where `NAME` is the name of the target realm. You can grant access to any other realm to users in the master realm.
+
+. Click *Assign* to grant a full set of client management permissions. Another option is to choose *view-clients* for read-only or *create-client* to create new clients.
+
+. Select *Available Roles*, *manage-client* to grant a full set of client management permissions. Another option is to choose *view-clients* for read-only or *create-client* to create new clients.
+
 +
 [NOTE]
 ====
@@ -28,8 +33,7 @@ These permissions grant the user the capability to perform operations without th
 
 It is possible to not assign any [command]`realm-management` roles to a user. In that case, a user can still log in with the Client Registration CLI but cannot use it without an Initial Access Token. Trying to perform any operations without a token results in a *403 Forbidden* error.
 
-The Administrator can issue Initial Access Tokens from the Admin Console through the *Realm Settings > Client Registration > Initial Access Token* menu.
-
+The administrator can issue Initial Access Tokens from the Admin Console in the Clients area on the *Initial Access Token* tab.
 
 [[_configuring_a_client_for_use_with_client_registration_cli]]
 === Configuring a client for use with the Client Registration CLI
@@ -39,21 +43,25 @@ By default, the server recognizes the Client Registration CLI as the [filename]`
 .Procedure
 
 . Create a client (for example, [filename]`reg-cli`) if you want to use a separate client configuration for the Client Registration CLI.
-. Toggle the *Standard Flow Enabled* setting it to *Off*.
-. Strengthen the security by configuring the client [filename]`Access Type` as [filename]`Confidential` and selecting *Credentials > ClientId and Secret*.
+. Uncheck *Standard Flow Enabled*.
+. Strengthen the security by toggling *Client authentication* to *On*.
+. Choose the type of account that you want to use.
+.. If you want to use a service account associated with the client, check *Service accounts roles*.
+.. If you prefer to use a regular user account, check *Direct access grants*.
+. Click *Next*.
+. Click *Save*.
+. Click the *Credentials* tab.
 +
-[NOTE]
-====
-You can configure either [filename]`Client Id and Secret` or [filename]`Signed JWT` under the *Credentials* tab .
-====
-. Enable service accounts if you want to use a service account associated with the client by selecting a client to edit in the *Clients* section of the `Admin Console`.
-.. Under *Settings*, change the *Access Type* to *Confidential*, toggle the *Service Accounts Enabled* setting to *On*, and click *Save*.
-.. Click *Service Account Roles* and select desired roles to configure the access for the service account. For the details on what roles to select, see <<_configuring_a_user_for_client_registration_cli>>.
-. Toggle the *Direct Access Grants Enabled* setting it to *On* if you want to use a regular user account instead of a service account.
-. If the client is configured as [filename]`Confidential`, provide the configured secret when running [command]`kcreg config credentials` by using the [command]`--secret` option.
-. Specify which [filename]`clientId` to use (for example, [command]`--client reg-cli`) when running [command]`kcreg config credentials`.
-. With the service account enabled, you can omit specifying the user when running [command]`kcreg config credentials` and only provide the client secret or keystore information.
+Configure either [filename]`Client Id and Secret` or [filename]`Signed JWT`.
+. If you are using service account roles, click the *Service Account Roles* tab.
++
+Select the roles to configure the access for the service account. For the details on what roles to select, see <<_configuring_a_user_for_client_registration_cli>>.
+. Click *Save*.
 
+When you run the [command]`kcreg config credentials`, use the [command]`--secret` option to supply the configured secret.
+
+* Specify which [filename]`clientId` to use (for example, [command]`--client reg-cli`) when running [command]`kcreg config credentials`.
+* With the service account enabled, you can omit specifying the user when running [command]`kcreg config credentials` and only provide the client secret or keystore information.
 
 [[_installing_client_registration_cli]]
 === Installing the Client Registration CLI

@@ -38,7 +38,6 @@ public class BasicAuth extends AbstractPageWithInjectedUrl {
 
     @Override
     public URL getInjectedUrl() {
-        //EAP6 URL fix
         URL fixedUrl = createInjectedURL("basic-auth");
         return fixedUrl != null ? fixedUrl : url;
     }

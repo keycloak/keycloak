@@ -2,17 +2,19 @@ import { FormGroup, Radio } from "@patternfly/react-core";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "ui-shared";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
 
 const DECISION_STRATEGY = ["UNANIMOUS", "AFFIRMATIVE", "CONSENSUS"] as const;
 
 type DecisionStrategySelectProps = {
   helpLabel?: string;
+  isDisabled?: boolean;
   isLimited?: boolean;
 };
 
 export const DecisionStrategySelect = ({
   helpLabel,
+  isDisabled = false,
   isLimited = false,
 }: DecisionStrategySelectProps) => {
   const { t } = useTranslation();
@@ -23,7 +25,7 @@ export const DecisionStrategySelect = ({
       label={t("decisionStrategy")}
       labelIcon={
         <HelpItem
-          helpText={t(`${helpLabel || "decisionStrategyHelp"}`)}
+          helpText={t(helpLabel || "decisionStrategyHelp")}
           fieldLabelId="decisionStrategy"
         />
       }
@@ -46,10 +48,11 @@ export const DecisionStrategySelect = ({
                 key={strategy}
                 data-testid={strategy}
                 isChecked={field.value === strategy}
+                isDisabled={isDisabled}
                 name="decisionStrategy"
                 onChange={() => field.onChange(strategy)}
                 label={t(`decisionStrategies.${strategy}`)}
-                className="pf-u-mb-md"
+                className="pf-v5-u-mb-md"
               />
             ))}
           </>

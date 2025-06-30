@@ -30,9 +30,10 @@ const emptyStatePage = new EmptyStatePage();
 const modalUtils = new ModalUtils();
 
 export default class AdminEventsTab extends PageObject {
-  #searchAdminEventDrpDwnBtn = "adminEventsSearchSelectorToggle";
+  #searchAdminEventDrpDwnBtn = "dropdown-panel-btn";
   #searchEventsBtn = "search-events-btn";
-  #operationTypesInputFld = ".pf-c-form-control.pf-c-select__toggle-typeahead";
+  #operationTypesInputFld =
+    ".pf-v5-c-form-control.pf-v5-c-select__toggle-typeahead";
   #authAttrDataRow = 'tbody > tr > [data-label="Attribute"]';
   #authValDataRow = 'tbody > tr > [data-label="Value"]';
   #refreshBtn = "refresh-btn";

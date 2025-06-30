@@ -1,0 +1,252 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Deploy an AWS Route 53 Failover Lambda"
+summary="Building block for loadbalancer resilience"
+tileVisible="false" >
+
+After a Primary cluster has failed over to a Backup cluster due to a health check failure, the Primary must only serve requests
+again after the SRE team has synchronized the two sites first as outlined in the <@links.ha id="operate-switch-back" /> {section}.
+
+If the Primary site would be marked as healthy by the Route 53 Health Check before the sites are synchronized, the Primary Site would start serving requests with outdated session and realm data.
+
+This {section} shows how an automatic fallback to a not-yet synchronized Primary site can be prevented with the help of AWS CloudWatch, SNS, and Lambda.
+
+== Architecture
+
+In the event of a Primary cluster failure, an https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/AlarmThatSendsEmail.html[AWS CloudWatch]
+alarm sends a message to an https://aws.amazon.com/sns[AWS SNS] topic, which then triggers an https://aws.amazon.com/lambda/[AWS Lambda] function.
+The Lambda function updates the Route53 health check of the Primary cluster so that it points to a non-existent path
+`/lb-check-failed-over`, thus ensuring that it is impossible for the Primary to be marked as healthy until the path is
+manually changed back to `/lb-check`.
+
+== Prerequisites
+
+* Deployment of {project_name} as described in the <@links.ha id="deploy-keycloak-kubernetes" /> {section} on a ROSA cluster running OpenShift 4.14 or later in two AWS availability zones in one AWS region.
+* A Route53 configuration as described in the <@links.ha id="deploy-aws-route53-loadbalancer" /> {section}.
+
+== Procedure
+
+. Create an SNS topic to trigger a Lambda.
++
+.Command:
+[source,bash]
+----
+<#noparse>
+PRIMARY_HEALTH_ID=233e180f-f023-45a3-954e-415303f21eab #<1>
+ALARM_NAME=${PRIMARY_HEALTH_ID}
+TOPIC_NAME=${PRIMARY_HEALTH_ID}
+FUNCTION_NAME=${PRIMARY_HEALTH_ID}
+TOPIC_ARN=$(aws sns create-topic --name ${TOPIC_NAME} \
+  --query "TopicArn" \
+  --tags "Key=HealthCheckId,Value=${PRIMARY_HEALTH_ID}" \
+  --region us-east-1 \
+  --output text
+)
+</#noparse>
+----
+<1> Replace this with the ID of the xref:create-health-checks[Health Check] associated with your Primary cluster
++
+. Create a CloudWatch alarm to a send message to the SNS topic.
++
+.Command:
+[source,bash]
+----
+<#noparse>
+aws cloudwatch put-metric-alarm \
+  --alarm-actions ${TOPIC_ARN} \
+  --actions-enabled \
+  --alarm-name ${ALARM_NAME} \
+  --dimensions "Name=HealthCheckId,Value=${PRIMARY_HEALTH_ID}" \
+  --comparison-operator LessThanThreshold \
+  --evaluation-periods 1 \
+  --metric-name HealthCheckStatus \
+  --namespace AWS/Route53 \
+  --period 60 \
+  --statistic Minimum \
+  --threshold 1.0 \
+  --treat-missing-data notBreaching \
+  --region us-east-1
+</#noparse>
+----
++
+. Create the Role used to execute the Lambda.
++
+.Command:
+[source,bash]
+----
+<#noparse>
+ROLE_ARN=$(aws iam create-role \
+  --role-name ${FUNCTION_NAME} \
+  --assume-role-policy-document \
+  '{
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Principal": {
+          "Service": "lambda.amazonaws.com"
+        },
+        "Action": "sts:AssumeRole"
+      }
+    ]
+  }' \
+  --query 'Role.Arn' \
+  --region us-east-1 \
+  --output text
+)
+</#noparse>
+----
++
+. Create a policy with the permissions required by the Lambda.
++
+.Command:
+[source,bash]
+----
+<#noparse>
+POLICY_ARN=$(aws iam create-policy \
+  --policy-name ${FUNCTION_NAME} \
+  --policy-document \
+  '{
+      "Version": "2012-10-17",
+      "Statement": [
+          {
+              "Effect": "Allow",
+              "Action": [
+                  "route53:UpdateHealthCheck"
+              ],
+              "Resource": "*"
+          }
+      ]
+  }' \
+  --query 'Policy.Arn' \
+  --region us-east-1 \
+  --output text
+)
+</#noparse>
+----
++
+. Attach the custom policy to the Lambda role.
++
+.Command:
+[source,bash]
+----
+<#noparse>
+aws iam attach-role-policy \
+  --role-name ${FUNCTION_NAME} \
+  --policy-arn ${POLICY_ARN} \
+  --region us-east-1
+</#noparse>
+----
++
+. Attach the `AWSLambdaBasicExecutionRole` policy so that the Lambda logs can be written to CloudWatch
++
+.Command:
+[source,bash]
+----
+<#noparse>
+aws iam attach-role-policy \
+  --role-name ${FUNCTION_NAME} \
+  --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole \
+  --region us-east-1
+</#noparse>
+----
++
+. Create a Lambda ZIP file.
++
+.Command:
+[source,bash]
+----
+<#noparse>
+LAMBDA_ZIP=/tmp/lambda.zip
+cat << EOF > /tmp/lambda.py
+import boto3
+import json
+
+
+def handler(event, context):
+    print(json.dumps(event, indent=4))
+
+    msg = json.loads(event['Records'][0]['Sns']['Message'])
+    healthCheckId = msg['Trigger']['Dimensions'][0]['value']
+
+    r53Client = boto3.client("route53")
+    response = r53Client.update_health_check(
+        HealthCheckId=healthCheckId,
+        ResourcePath="/lb-check-failed-over"
+    )
+
+    print(json.dumps(response, indent=4, default=str))
+    statusCode = response['ResponseMetadata']['HTTPStatusCode']
+    if statusCode != 200:
+        raise Exception("Route 53 Unexpected status code %d" + statusCode)
+
+EOF
+zip -FS --junk-paths ${LAMBDA_ZIP} /tmp/lambda.py
+</#noparse>
+----
++
+. Create the Lambda function.
++
+.Command:
+[source,bash]
+----
+<#noparse>
+FUNCTION_ARN=$(aws lambda create-function \
+  --function-name ${FUNCTION_NAME} \
+  --zip-file fileb://${LAMBDA_ZIP} \
+  --handler lambda.handler \
+  --runtime python3.11 \
+  --role ${ROLE_ARN} \
+  --query 'FunctionArn' \
+  --region eu-west-1 \#<1>
+  --output text
+)
+</#noparse>
+----
+<1> Replace with the AWS region hosting your ROSA cluster
+
+. Allow the SNS to trigger the Lambda.
++
+.Command:
+[source,bash]
+----
+<#noparse>
+aws lambda add-permission \
+  --function-name ${FUNCTION_NAME} \
+  --statement-id function-with-sns \
+  --action 'lambda:InvokeFunction' \
+  --principal 'sns.amazonaws.com' \
+  --source-arn ${TOPIC_ARN} \
+  --region eu-west-1 #<1>
+</#noparse>
+----
+<1> Replace with the AWS region hosting your ROSA cluster
+
+. Invoke the Lambda when the SNS message is received.
++
+.Command:
+[source,bash]
+----
+<#noparse>
+aws sns subscribe --protocol lambda \
+  --topic-arn ${TOPIC_ARN} \
+  --notification-endpoint ${FUNCTION_ARN} \
+  --region us-east-1
+</#noparse>
+----
+
+== Verify
+
+To test the Lambda is triggered as expected, log in to the Primary cluster and scale the {project_name} deployment to zero Pods.
+Scaling will cause the Primary's health checks to fail and the following should occur:
+
+* Route53 should start routing traffic to the {project_name} Pods on the Backup cluster.
+* The Route53 health check for the Primary cluster should have `ResourcePath=/lb-check-failed-over`
+
+To direct traffic back to the Primary site, scale up the {project_name} deployment and manually revert the changes to the Route53 health check the Lambda has performed.
+
+For more information, see the <@links.ha id="operate-switch-back" /> {section}.
+
+</@tmpl.guide>

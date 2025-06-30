@@ -1,6 +1,5 @@
 team/cloud-native:
   - area/admin/cli
-  - area/dependencies
   - area/dist/quarkus
   - area/operator
 
@@ -8,40 +7,49 @@ team/continuous-testing:
   - area/ci
   - area/testsuite
 
-team/core:
-  - area/admin/api
-  - area/admin/fine-grained-permissions
-  - area/authentication
-  - area/authentication/webauthn
-  - area/authorization-services
-  - area/core
-  - area/identity-brokering
-  - area/oidc
-  - area/saml
-  - area/token-exchange
-  - area/user-profile
-
-team/store:
-  - area/import-export
-  - area/infinispan
-  - area/ldap
-  - area/storage
-
-team/ui:
-  - area/account/ui
-  - area/adapter/javascript
-  - area/admin/client/node
-  - area/admin/ui
-
-team/other:
-  - area/account/api
+team/core-clients:
   - area/adapter/fuse
   - area/adapter/java-cli
   - area/adapter/jee
   - area/adapter/jee-saml
   - area/adapter/spring
-  - area/dist/wildfly
-  - area/docs
+  - area/adapter/javascript
+  - area/authentication
+  - area/authentication/webauthn
+  - area/login/ui
+  - area/oidc
+  - area/oid4vc
+  - area/saml
+  - area/token-exchange
+
+team/core-iam:
+  - area/admin/fine-grained-permissions
+  - area/authorization-services
+  - area/identity-brokering
+  - area/ldap
+  - area/organizations
+  - area/user-profile
+
+team/core-shared:
+  - area/account/api
+  - area/admin/api
+  - area/admin/client-java
+  - area/core
+  - area/import-export
+  - area/infinispan
+  - area/storage
+
+team/cross-dc:
+
+team/ui:
+  - area/account/ui
+  - area/admin/client-js
+  - area/admin/ui
+  - area/welcome/ui
 
 team/community:
   - area/translations
+
+no-team:
+  - area/docs
+  - area/dependencies

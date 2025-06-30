@@ -17,6 +17,7 @@
 
 package org.keycloak.connections.infinispan;
 
+import java.util.List;
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.keycloak.provider.Provider;
@@ -66,7 +67,54 @@ public interface InfinispanConnectionProvider extends Provider {
     // Constant used as the prefix of the current node if "jboss.node.name" is not configured
     String NODE_PREFIX = "node_";
 
-    <K, V> Cache<K, V> getCache(String name);
+    String[] ALL_CACHES_NAME = {
+            REALM_CACHE_NAME,
+            REALM_REVISIONS_CACHE_NAME,
+            USER_CACHE_NAME,
+            USER_REVISIONS_CACHE_NAME,
+            USER_SESSION_CACHE_NAME,
+            CLIENT_SESSION_CACHE_NAME,
+            OFFLINE_USER_SESSION_CACHE_NAME,
+            OFFLINE_CLIENT_SESSION_CACHE_NAME,
+            LOGIN_FAILURE_CACHE_NAME,
+            AUTHENTICATION_SESSIONS_CACHE_NAME,
+            WORK_CACHE_NAME,
+            AUTHORIZATION_CACHE_NAME,
+            AUTHORIZATION_REVISIONS_CACHE_NAME,
+            ACTION_TOKEN_CACHE,
+            KEYS_CACHE_NAME
+    };
+
+    // list of cache name which could be defined as distributed or replicated
+    public static List<String> DISTRIBUTED_REPLICATED_CACHE_NAMES = List.of(
+            USER_SESSION_CACHE_NAME,
+            CLIENT_SESSION_CACHE_NAME,
+            OFFLINE_USER_SESSION_CACHE_NAME,
+            OFFLINE_CLIENT_SESSION_CACHE_NAME,
+            LOGIN_FAILURE_CACHE_NAME,
+            AUTHENTICATION_SESSIONS_CACHE_NAME,
+            ACTION_TOKEN_CACHE,
+            WORK_CACHE_NAME);
+
+    /**
+     *
+     * Effectively the same as {@link InfinispanConnectionProvider#getCache(String, boolean)} with createIfAbsent set to {@code true}
+     *
+     */
+    default <K, V> Cache<K, V> getCache(String name) {
+        return getCache(name, true);
+    }
+
+    /**
+     * Provides an instance if Infinispan cache by name
+     *
+     * @param name name of the requested cache
+     * @param createIfAbsent if true the connection provider will create the requested cache on method call if it does not exist
+     * @return return a cache instance
+     * @param <K> key type
+     * @param <V> value type
+     */
+    <K, V> Cache<K, V> getCache(String name, boolean createIfAbsent);
 
     /**
      * Get remote cache of given name. Could just retrieve the remote cache from the remoteStore configured in given infinispan cache and/or

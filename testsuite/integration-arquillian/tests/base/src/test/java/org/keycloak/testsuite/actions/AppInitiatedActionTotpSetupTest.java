@@ -105,7 +105,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         String userId = events.expectRegister("setupTotp", "email@mail.com").assertEvent().getUserId();
 
         doAIA();
-        
+
         totpPage.assertCurrent();
 
         totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
@@ -115,10 +115,10 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
                 .getDetails().get(Details.CODE_ID);
 
         assertKcActionStatus(SUCCESS);
-        
+
         events.expectLogin().user(userId).session(authSessionId).detail(Details.USERNAME, "setuptotp").assertEvent();
     }
-    
+
     @Test
     public void cancelSetupTotp() throws Exception {
         try {
@@ -187,9 +187,9 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         loginPage.open();
         loginPage.clickRegister();
         registerPage.register("firstName", "lastName", "checkQrCode@mail.com", "checkQrCode", "password", "password");
-        
+
         doAIA();
-        
+
         String pageSource = driver.getPageSource();
 
         assertTrue(pageSource.contains("Install one of the following applications on your mobile"));
@@ -246,7 +246,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         registerPage.register("firstName", "lastName", "setupTotpRegisterManualModeSwitchesOnBadSubmit@mail.com", "setupTotpRegisterManualModeSwitchesOnBadSubmit", "password", "password");
 
         doAIA();
-        
+
         String pageSource = driver.getPageSource();
 
         assertTrue(pageSource.contains("Unable to scan?"));
@@ -277,7 +277,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         registerPage.register("firstName", "lastName", "setupTotpRegisterBarcodeModeSwitchesOnBadSubmit@mail.com", "setupTotpRegisterBarcodeModeSwitchesOnBadSubmit", "password", "password");
 
         doAIA();
-        
+
         String pageSource = driver.getPageSource();
 
         assertTrue(pageSource.contains("Unable to scan?"));
@@ -314,11 +314,11 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
             registerPage.register("firstName", "lastName", "setupTotpModifiedPolicy@mail.com", "setupTotpModifiedPolicy", "password", "password");
 
             doAIA();
-            
+
             String pageSource = driver.getPageSource();
 
             assertTrue(pageSource.contains("FreeOTP"));
-            assertFalse(pageSource.contains("Google Authenticator"));
+            assertTrue(pageSource.contains("Google Authenticator"));
 
             totpPage.clickManual();
 
@@ -337,9 +337,9 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
     @Test
     public void setupTotpExisting() {
         doAIA();
-        
+
         loginPage.login("test-user@localhost", "password");
-        
+
         totpPage.assertCurrent();
 
         String totpSecret = totpPage.getTotpSecret();
@@ -378,7 +378,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         String userId = events.expectRegister("setupTotp2", "email2@mail.com").assertEvent().getUserId();
 
         doAIA();
-        
+
         // Configure totp
         totpPage.assertCurrent();
 
@@ -438,7 +438,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
 
         doAIA();
-        
+
         loginPage.login("test-user@localhost", "password");
 
         totpPage.assertCurrent();
@@ -505,7 +505,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
         String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent()
             .getDetails().get(Details.CODE_ID);
-        
+
         //RequestType reqType = appPage.getRequestType();
         assertKcActionStatus(SUCCESS);
         EventRepresentation loginEvent = events.expectLogin().session(sessionId).assertEvent();

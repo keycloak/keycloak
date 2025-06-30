@@ -9,7 +9,7 @@ import { useMemo } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 import { FormAccess } from "../../components/form/FormAccess";
@@ -24,9 +24,11 @@ import { toIdentityProviders } from "../routes/IdentityProviders";
 import { GeneralSettings } from "./GeneralSettings";
 
 export default function AddIdentityProvider() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { providerId } = useParams<IdentityProviderCreateParams>();
-  const form = useForm<IdentityProviderRepresentation>();
+  const form = useForm<IdentityProviderRepresentation>({ mode: "onChange" });
   const serverInfo = useServerInfo();
 
   const providerInfo = useMemo(() => {
@@ -48,7 +50,7 @@ export default function AddIdentityProvider() {
 
   const {
     handleSubmit,
-    formState: { isDirty },
+    formState: { isValid },
   } = form;
 
   const { addAlert, addError } = useAlerts();
@@ -100,7 +102,7 @@ export default function AddIdentityProvider() {
           </FormProvider>
           <ActionGroup>
             <Button
-              isDisabled={!isDirty}
+              isDisabled={!isValid}
               variant="primary"
               type="submit"
               data-testid="createProvider"

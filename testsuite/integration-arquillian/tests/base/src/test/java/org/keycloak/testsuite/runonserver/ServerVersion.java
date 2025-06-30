@@ -1,8 +1,6 @@
 package org.keycloak.testsuite.runonserver;
 
 import org.keycloak.common.Version;
-import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.representations.idm.ComponentRepresentation;
 
 /**
  * Created by st on 26.01.17.

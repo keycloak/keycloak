@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
+import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
@@ -79,6 +80,7 @@ public class ClientManager {
      * @return
      */
     public static ClientModel createClient(KeycloakSession session, RealmModel realm, ClientRepresentation rep) {
+
         ClientModel client = RepresentationToModel.createClient(session, realm, rep);
 
         if (rep.getProtocol() != null) {
@@ -164,7 +166,13 @@ public class ClientManager {
             user.setServiceAccountClientLink(client.getId());
         }
 
-        // Add protocol mappers to retrieve clientId in access token
+        // Add protocol mappers to retrieve clientId in access token. Ignore this in case type is filled (protocol mappers can be explicitly specified for particular specific type)
+        if (!Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES) || client.getType() == null) {
+            addServiceAccountProtocolMappers(client);
+        }
+    }
+
+    private void addServiceAccountProtocolMappers(ClientModel client) {
         if (client.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, ServiceAccountConstants.CLIENT_ID_PROTOCOL_MAPPER) == null) {
             logger.debugf("Creating service account protocol mapper '%s' for client '%s'", ServiceAccountConstants.CLIENT_ID_PROTOCOL_MAPPER, client.getClientId());
             ProtocolMapperModel protocolMapper = UserSessionNoteMapper.createClaimMapper(ServiceAccountConstants.CLIENT_ID_PROTOCOL_MAPPER,

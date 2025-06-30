@@ -1,6 +1,9 @@
 package org.keycloak.config;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.List;
+
 import org.keycloak.common.crypto.FipsMode;
 
 public class HttpOptions {
@@ -11,13 +14,13 @@ public class HttpOptions {
             .defaultValue(Boolean.FALSE)
             .build();
 
-    public static final Option HTTP_HOST = new OptionBuilder<>("http-host", String.class)
+    public static final Option<String> HTTP_HOST = new OptionBuilder<>("http-host", String.class)
             .category(OptionCategory.HTTP)
             .description("The used HTTP Host.")
             .defaultValue("0.0.0.0")
             .build();
 
-    public static final Option HTTP_RELATIVE_PATH = new OptionBuilder<>("http-relative-path", String.class)
+    public static final Option<String> HTTP_RELATIVE_PATH = new OptionBuilder<>("http-relative-path", String.class)
             .category(OptionCategory.HTTP)
             .description("Set the path relative to '/' for serving resources. The path must start with a '/'.")
             .defaultValue("/")
@@ -42,39 +45,40 @@ public class HttpOptions {
         required
     }
 
-    public static final Option HTTPS_CLIENT_AUTH = new OptionBuilder<>("https-client-auth", ClientAuth.class)
+    public static final Option<ClientAuth> HTTPS_CLIENT_AUTH = new OptionBuilder<>("https-client-auth", ClientAuth.class)
             .category(OptionCategory.HTTP)
             .description("Configures the server to require/request client authentication.")
             .defaultValue(ClientAuth.none)
+            .buildTime(true)
             .build();
 
-    public static final Option HTTPS_CIPHER_SUITES = new OptionBuilder<>("https-cipher-suites", String.class)
+    public static final Option<String> HTTPS_CIPHER_SUITES = new OptionBuilder<>("https-cipher-suites", String.class)
             .category(OptionCategory.HTTP)
             .description("The cipher suites to use. If none is given, a reasonable default is selected.")
             .build();
 
-    public static final Option HTTPS_PROTOCOLS = new OptionBuilder<>("https-protocols", String.class)
+    public static final Option<List<String>> HTTPS_PROTOCOLS = OptionBuilder.listOptionBuilder("https-protocols", String.class)
             .category(OptionCategory.HTTP)
             .description("The list of protocols to explicitly enable.")
-            .defaultValue("TLSv1.3,TLSv1.2")
+            .defaultValue(Arrays.asList("TLSv1.3,TLSv1.2"))
             .build();
 
-    public static final Option HTTPS_CERTIFICATE_FILE = new OptionBuilder<>("https-certificate-file", File.class)
+    public static final Option<File> HTTPS_CERTIFICATE_FILE = new OptionBuilder<>("https-certificate-file", File.class)
             .category(OptionCategory.HTTP)
             .description("The file path to a server certificate or certificate chain in PEM format.")
             .build();
 
-    public static final Option HTTPS_CERTIFICATE_KEY_FILE = new OptionBuilder<>("https-certificate-key-file", File.class)
+    public static final Option<File> HTTPS_CERTIFICATE_KEY_FILE = new OptionBuilder<>("https-certificate-key-file", File.class)
             .category(OptionCategory.HTTP)
             .description("The file path to a private key in PEM format.")
             .build();
 
-    public static final Option HTTPS_KEY_STORE_FILE = new OptionBuilder<>("https-key-store-file", File.class)
+    public static final Option<File> HTTPS_KEY_STORE_FILE = new OptionBuilder<>("https-key-store-file", File.class)
             .category(OptionCategory.HTTP)
             .description("The key store which holds the certificate information instead of specifying separate files.")
             .build();
 
-    public static final Option HTTPS_KEY_STORE_PASSWORD = new OptionBuilder<>("https-key-store-password", String.class)
+    public static final Option<String> HTTPS_KEY_STORE_PASSWORD = new OptionBuilder<>("https-key-store-password", String.class)
             .category(OptionCategory.HTTP)
             .description("The password of the key store file.")
             .defaultValue("password")
@@ -87,14 +91,16 @@ public class HttpOptions {
                     "If '" + SecurityOptions.FIPS_MODE.getKey() + "' is set to '" + FipsMode.STRICT + "' and no value is set, it defaults to 'BCFKS'.")
             .build();
 
-    public static final Option HTTPS_TRUST_STORE_FILE = new OptionBuilder<>("https-trust-store-file", File.class)
+    public static final Option<File> HTTPS_TRUST_STORE_FILE = new OptionBuilder<>("https-trust-store-file", File.class)
             .category(OptionCategory.HTTP)
             .description("The trust store which holds the certificate information of the certificates to trust.")
+            .deprecated("Use the System Truststore instead, see the docs for details.")
             .build();
 
-    public static final Option HTTPS_TRUST_STORE_PASSWORD = new OptionBuilder<>("https-trust-store-password", String.class)
+    public static final Option<String> HTTPS_TRUST_STORE_PASSWORD = new OptionBuilder<>("https-trust-store-password", String.class)
             .category(OptionCategory.HTTP)
             .description("The password of the trust store file.")
+            .deprecated("Use the System Truststore instead, see the docs for details.")
             .build();
 
     public static final Option<String> HTTPS_TRUST_STORE_TYPE = new OptionBuilder<>("https-trust-store-type", String.class)
@@ -102,6 +108,7 @@ public class HttpOptions {
             .description("The type of the trust store file. " +
                     "If not given, the type is automatically detected based on the file name. " +
                     "If '" + SecurityOptions.FIPS_MODE.getKey() + "' is set to '" + FipsMode.STRICT + "' and no value is set, it defaults to 'BCFKS'.")
+            .deprecated("Use the System Truststore instead, see the docs for details.")
             .build();
 
     public static final Option<Boolean> HTTP_SERVER_ENABLED = new OptionBuilder<>("http-server-enabled", Boolean.class)
@@ -110,4 +117,31 @@ public class HttpOptions {
             .description("Enables or disables the HTTP/s and Socket serving.")
             .defaultValue(Boolean.TRUE)
             .build();
+
+    public static final Option<Integer> HTTP_MAX_QUEUED_REQUESTS = new OptionBuilder<>("http-max-queued-requests", Integer.class)
+            .category(OptionCategory.HTTP)
+            .description("Maximum number of queued HTTP requests. " +
+                         "Use this to shed load in an overload situation. Excess requests will return a \"503 Server not Available\" response.")
+            .build();
+
+    public static final Option<Integer> HTTP_POOL_MAX_THREADS = new OptionBuilder<>("http-pool-max-threads", Integer.class)
+            .category(OptionCategory.HTTP)
+            .description("The maximum number of threads. If this is not specified then it will be automatically sized " +
+                         "to the greater of 4 * the number of available processors and 50. " +
+                         "For example if there are 4 processors the max threads will be 50. " +
+                         "If there are 48 processors it will be 192.")
+            .build();
+
+    public static final Option<Boolean> HTTP_METRICS_HISTOGRAMS_ENABLED = new OptionBuilder<>("http-metrics-histograms-enabled", Boolean.class)
+            .category(OptionCategory.HTTP)
+            .description("Enables a histogram with default buckets for the duration of HTTP server requests.")
+            .defaultValue(Boolean.FALSE)
+            .build();
+
+    public static final Option<String> HTTP_METRICS_SLOS = new OptionBuilder<>("http-metrics-slos", String.class)
+            .category(OptionCategory.HTTP)
+            .description("Service level objectives for HTTP server requests. Use this instead of the default histogram, or use it in combination to add additional buckets. " +
+                    "Specify a list of comma-separated values defined in milliseconds. Example with buckets from 5ms to 10s: 5,10,25,50,250,500,1000,2500,5000,10000")
+            .build();
+
 }

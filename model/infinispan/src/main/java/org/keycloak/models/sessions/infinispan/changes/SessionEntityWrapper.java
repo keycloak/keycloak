@@ -43,7 +43,7 @@ public class SessionEntityWrapper<S extends SessionEntity> {
 
     private static final Logger log = Logger.getLogger(SessionEntityWrapper.class);
 
-    private UUID version;
+    private final UUID version;
     private final S entity;
     private final Map<String, String> localMetadata;
 
@@ -91,10 +91,6 @@ public class SessionEntityWrapper<S extends SessionEntity> {
         return version;
     }
 
-    public void setVersion(UUID version) {
-        this.version = version;
-    }
-
     public S getEntity() {
         return entity;
     }
@@ -114,13 +110,6 @@ public class SessionEntityWrapper<S extends SessionEntity> {
             throw new IllegalStateException("This entity is only intended for transport");
         }
         return localMetadata.get(key);
-    }
-
-    public void putLocalMetadataNote(String key, String value) {
-        if (isForTransport()) {
-            throw new IllegalStateException("This entity is only intended for transport");
-        }
-        localMetadata.put(key, value);
     }
 
     public Integer getLocalMetadataNoteInt(String key) {
