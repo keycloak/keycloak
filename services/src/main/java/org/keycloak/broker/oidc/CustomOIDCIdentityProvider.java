@@ -23,7 +23,7 @@ public class CustomOIDCIdentityProvider extends OIDCIdentityProvider {
 
     private static final String DEFAULT_CLAIMS_JSON = "{\"id_token\":{\"urn:telekom.com:all\":{\"essential\":true}}}";
     private static final String CLAIMS_ENV_VAR = "KEYCLOAK_OIDC_CLAIMS_JSON";
-    private static final boolean useOpenId =  "true".equals(System.getenv(CLAIMS_ENV_VAR));
+    private static final boolean useOpenId =  "true".equals(System.getenv("USE_OPENID"));
     
     public CustomOIDCIdentityProvider(KeycloakSession session, OIDCIdentityProviderConfig config) {
         super(session, config);
