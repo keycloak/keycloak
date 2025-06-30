@@ -124,7 +124,11 @@ public class SamlProtocolTest {
         String bindingType = SamlProtocol.getLogoutBindingTypeForClientSession(clientSession);
         assertEquals(SamlProtocol.SAML_REDIRECT_BINDING, bindingType);
 
+        // default to POST if forced with no url
+        client.setForcePostBinding(true);
+        assertEquals(SamlProtocol.SAML_REDIRECT_BINDING, bindingType);
 
+        client.setForcePostBinding(false);
         clientSession.setNote(SamlProtocol.SAML_BINDING, SamlProtocol.SAML_ARTIFACT_BINDING);
         client.defineSetLogoutUrls(false, false, true, false);
         bindingType = SamlProtocol.getLogoutBindingTypeForClientSession(clientSession);
@@ -143,9 +147,7 @@ public class SamlProtocolTest {
         client.defineSetLogoutUrls(false, false, true, false);
         bindingType = SamlProtocol.getLogoutBindingTypeForClientSession(clientSession);
         assertEquals(SamlProtocol.SAML_ARTIFACT_BINDING, bindingType);
-
     }
-
 
     @Test
     public void frontchannelLogoutSignsLogoutRequestsEvenThoughArtifactWasUsed() {
