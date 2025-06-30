@@ -124,10 +124,13 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertEquals("1h",
                 nonRunningPicocli.config.getConfigValue("quarkus.http.ssl.certificate.reload-period").getValue());
+        assertEquals("1h",
+                nonRunningPicocli.config.getConfigValue("quarkus.management.ssl.certificate.reload-period").getValue());
 
         nonRunningPicocli = pseudoLaunch("start-dev", "--https-certificates-reload-period=-1");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertNull(nonRunningPicocli.config.getConfigValue("quarkus.http.ssl.certificate.reload-period").getValue());
+        assertNull(nonRunningPicocli.config.getConfigValue("quarkus.management.ssl.certificate.reload-period").getValue());
     }
 
     @Test

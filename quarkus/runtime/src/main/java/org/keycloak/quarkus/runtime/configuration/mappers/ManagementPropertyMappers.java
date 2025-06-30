@@ -72,10 +72,9 @@ public class ManagementPropertyMappers {
                         .paramLabel("protocols")
                         .build(),
                 fromOption(ManagementOptions.HTTPS_MANAGEMENT_CERTIFICATES_RELOAD_PERIOD)
-                        .mapFrom(HttpOptions.HTTPS_CERTIFICATES_RELOAD_PERIOD)
+                        .mapFrom(HttpOptions.HTTPS_CERTIFICATES_RELOAD_PERIOD, HttpPropertyMappers::transformNegativeReloadPeriod)
                         .to("quarkus.management.ssl.certificate.reload-period")
-                        // -1 means no reload
-                        .transformer((value, context) -> "-1".equals(value) ? null : value)
+                        .transformer(HttpPropertyMappers::transformNegativeReloadPeriod)
                         .paramLabel("reload period")
                         .build(),
                 fromOption(ManagementOptions.HTTPS_MANAGEMENT_CERTIFICATE_FILE)
