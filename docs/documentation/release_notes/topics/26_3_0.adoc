@@ -22,6 +22,10 @@ For newly created realms, the browser flow now includes the Recovery Authenticat
 
 For more information about this 2FA method, see the link:{adminguide_link}#_recovery-codes[Recovery Codes] chapter in the {adminguide_name}.
 
+= Performance improvements to import, export and migration
+
+The time it takes to run imports, exports or migrations involving a large number of realms has been improved. There is no longer a cumulative performance degradation for each additional realm processed.
+
 = Simplified registration for WebAuthn and Passkeys
 
 Both WebAuthn Register actions (`webauthn-register` and `webauthn-register-passwordless`) which are also used for Passkeys now support a parameter `skip_if_exists` when initiated by the application (AIA).
