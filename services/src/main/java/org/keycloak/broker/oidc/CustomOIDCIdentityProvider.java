@@ -20,9 +20,17 @@ import java.net.URLEncoder;
 
 public class CustomOIDCIdentityProvider extends OIDCIdentityProvider {
     protected static final Logger logger = Logger.getLogger(CustomOIDCIdentityProvider.class);
+
+    private static final String DEFAULT_CLAIMS_JSON = "{\"id_token\":{\"urn:telekom.com:all\":{\"essential\":true}}}";
+    private static final String CLAIMS_ENV_VAR = "KEYCLOAK_OIDC_CLAIMS_JSON";
+    private static final boolean useOpenId =  "true".equals(System.getenv(CLAIMS_ENV_VAR));
+    
     public CustomOIDCIdentityProvider(KeycloakSession session, OIDCIdentityProviderConfig config) {
         super(session, config);
-        config.setDefaultScope(config.getDefaultScope().replace("openid", "").trim());
+        if (!useOpenId) {
+            config.setDefaultScope(config.getDefaultScope().replace("openid", "").trim());
+            logger.info("Default scopes: " + config.getDefaultScope());
+        }
     }
 
     @Override
@@ -93,17 +101,27 @@ public class CustomOIDCIdentityProvider extends OIDCIdentityProvider {
     @Override
     public SimpleHttp authenticateTokenRequest(final SimpleHttp tokenRequest) {
         SimpleHttp authenticatedRequest = super.authenticateTokenRequest(tokenRequest);
-        String claimsJson = "{\"id_token\":{\"urn:telekom.com:all\":{\"essential\":true}}}";
+        String claimsJson = getClaimsJson();
         authenticatedRequest.param("claims", URLEncoder.encode(claimsJson));
+        try {
+            logger.info("Token request - URL: " + tokenRequest.getUrl() + ", Parameters: " + tokenRequest.asString() + ", Claims: " + claimsJson);
+        } catch (Exception e) {
+            logger.error("Failed to convert tokenRequest to JSON string", e);
+        }
         return authenticatedRequest;
     }
 
     @Override
     protected UriBuilder createAuthorizationUrl(AuthenticationRequest request) {
         final UriBuilder uriBuilder = super.createAuthorizationUrl(request);
-        String claimsJson = "{\"id_token\":{\"urn:telekom.com:all\":{\"essential\":true}}}";
+        String claimsJson = getClaimsJson();
         uriBuilder.queryParam("claims", URLEncoder.encode(claimsJson));
         return uriBuilder;
+    }
+
+    private String getClaimsJson() {
+        String envValue = System.getenv(CLAIMS_ENV_VAR);
+        return (envValue != null && !envValue.trim().isEmpty()) ? envValue : DEFAULT_CLAIMS_JSON;
     }
 
     private JsonNode parseToken(String encodedIdToken) {
