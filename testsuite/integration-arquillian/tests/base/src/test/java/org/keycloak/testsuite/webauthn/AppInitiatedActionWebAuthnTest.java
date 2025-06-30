@@ -72,7 +72,7 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
  */
 public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTest implements UseVirtualAuthenticators {
 
-    private VirtualAuthenticatorManager virtualManager;
+    protected VirtualAuthenticatorManager virtualManager;
 
     protected final String WEB_AUTHN_REGISTER_PROVIDER = isPasswordless() ? WebAuthnPasswordlessRegisterFactory.PROVIDER_ID : WebAuthnRegisterFactory.PROVIDER_ID;
     protected final String DEFAULT_USERNAME = "test-user@localhost";
