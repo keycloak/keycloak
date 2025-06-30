@@ -22,18 +22,18 @@ import org.keycloak.models.cache.infinispan.entities.InRealm;
 
 public class CachedCount extends AbstractRevisioned implements InRealm {
 
-    private final RealmModel realm;
+    private final String realm;
     private final long count;
 
     public CachedCount(Long revision, RealmModel realm, String cacheKey, long count) {
         super(revision, cacheKey);
-        this.realm = realm;
+        this.realm = realm.getId();
         this.count = count;
     }
 
     @Override
     public String getRealm() {
-        return realm.getId();
+        return realm;
     }
 
     public long getCount() {
