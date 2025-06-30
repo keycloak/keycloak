@@ -2,6 +2,7 @@ package org.keycloak.protocol.docker;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.server.jaxrs.ResponseBuilderImpl;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSBuilder;
@@ -12,7 +13,6 @@ import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.ClientData;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.ProtocolMapperUtils;
@@ -95,7 +95,7 @@ public class DockerAuthV2Protocol implements LoginProtocol {
         final ClientModel client = clientSession.getClient();
 
         DockerResponseToken responseToken = new DockerResponseToken()
-                .id(KeycloakModelUtils.generateId())
+                .id(SecretGenerator.getInstance().generateSecureID())
                 .type(TokenUtil.TOKEN_TYPE_BEARER)
                 .issuer(authSession.getClientNote(DockerAuthV2Protocol.ISSUER))
                 .subject(userSession.getUser().getUsername())

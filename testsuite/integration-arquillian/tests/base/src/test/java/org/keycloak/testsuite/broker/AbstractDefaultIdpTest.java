@@ -134,6 +134,26 @@ public abstract class AbstractDefaultIdpTest extends AbstractInitializedBaseBrok
         assertEquals(expectedErrorMessageOnLoginScreen, UIUtils.getTextFromElement(errorElement));
     }
 
+    protected void testLoginHintForwarded() {
+        // Set the Default Identity Provider option to the remote IdP name
+        configureFlow(getBrokerConfiguration().getIDPAlias());
+
+        String username = "all-info-set@localhost.com";
+        String urlEncodedUsername = "all-info-set%40localhost.com";
+        createUser(bc.providerRealmName(), username, "password", "FirstName");
+
+        // Navigate to the auth page of consumer realm
+        oauth.realm(bc.consumerRealmName()).client("broker-app").loginForm().loginHint(username).open();
+
+        waitForPage(driver, "sign in to", true);
+
+        // Make sure we got redirected to the remote IdP (provider) automatically
+        Assert.assertTrue("Driver should be on the provider realm page right now",
+                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+        Assert.assertTrue("Provider page should contain login_hint parameter",
+                driver.getCurrentUrl().contains("login_hint=" + urlEncodedUsername));
+    }
+
     protected void configureFlow(String defaultIdpValue) {
         String newFlowAlias;
 

@@ -673,13 +673,13 @@ public class AuthorizationTokenService {
                     permission.setResourceId(serverResource.getId());
                     addPermission(request, resourceServer, authorization, permissionsToEvaluate, limit, requestedScopesModel, serverResource);
                 }
-            }
-        }
 
-        if (permissionsToEvaluate.isEmpty()) {
-            CorsErrorResponseException invalidResourceException = new CorsErrorResponseException(request.getCors(), "invalid_resource", "Resource with id [" + resourceId + "] does not exist.", Status.BAD_REQUEST);
-            fireErrorEvent(request.getEvent(), Errors.INVALID_REQUEST, invalidResourceException);
-            throw invalidResourceException;
+                if (permissionsToEvaluate.isEmpty()) {
+                    CorsErrorResponseException invalidResourceException = new CorsErrorResponseException(request.getCors(), "invalid_resource", "Resource with id [" + resourceId + "] does not exist.", Status.BAD_REQUEST);
+                    fireErrorEvent(request.getEvent(), Errors.INVALID_REQUEST, invalidResourceException);
+                    throw invalidResourceException;
+                }
+            }
         }
     }
 

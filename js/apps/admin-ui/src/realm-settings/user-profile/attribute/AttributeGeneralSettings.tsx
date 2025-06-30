@@ -126,6 +126,12 @@ export const AttributeGeneralSettings = () => {
             attributeName="name"
             prefix="profile.attributes"
             fieldName="displayName"
+            predefinedAttributes={[
+              "username",
+              "email",
+              "firstName",
+              "lastName",
+            ]}
           />
         </FormGroup>
         <DefaultSwitchControl

@@ -194,7 +194,7 @@ export const SigningIn = () => {
           {credentials
             .filter((cred) => cred.category == category)
             .map((container) => (
-              <Fragment key={container.category}>
+              <Fragment key={container.type}>
                 <Split className="pf-v5-u-mt-lg pf-v5-u-mb-lg">
                   <SplitItem>
                     <Title

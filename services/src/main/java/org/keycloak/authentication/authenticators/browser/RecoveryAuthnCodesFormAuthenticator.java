@@ -45,7 +45,7 @@ public class RecoveryAuthnCodesFormAuthenticator implements Authenticator {
         context.getEvent().detail(Details.CREDENTIAL_TYPE, RecoveryAuthnCodesCredentialModel.TYPE)
                 .user(context.getUser());
         if (isRecoveryAuthnCodeInputValid(context)) {
-            context.success();
+            context.success(RecoveryAuthnCodesCredentialModel.TYPE);
         }
     }
 

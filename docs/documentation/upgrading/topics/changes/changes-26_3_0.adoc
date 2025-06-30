@@ -3,21 +3,6 @@
 Breaking changes are identified as requiring changes from existing users to their configurations.
 In minor or patch releases, we will only do breaking changes to fix important bugs.
 
-=== SPI Options naming
-
-If you were relying upon SPI properties ending in `-enabled`, `-provider`, `-provider-default` being seen as build time options for either triggering an auto-build or producing an error when a build is needed, then this is a breaking change.
-For everyone else, this is a notable change, and you should update any used SPI option to the new format eventually.
-
-SPI options ending in `-enabled`, `-provider-default`, or `-provider` were previously treated as buildtime. However, in some instances, this was not correct as a provider could have a configuration property ending in one of those suffixes as well.
-
-To resolve this ambiguity, and any potential ambiguity involving SPI and provider names, a new SPI option format was introduced where the scopes and suffix are separated by `--`(double dash) instead of `-`(dash).
-
-An SPI property ending in `-enabled`, `-provider-default`, or `-provider` will only be treated as buildtime if it is using the new format, e.g. `spi-<spi-name>--<provider-name>--enabled` will be recognized as a buildtime option.
-
-For instance, the correct way to reference your custom email template is: `--spi-email-template--mycustomprovider--enabled` (not `--spi-email-template-mycustomprovider-enabled`).
-
-Options using the legacy format and ending in `-enabled`, `-provider-default`, or `-provider` will instead be treated as runtime and a warning will be emitted.
-
 === Reading information about temporarily locked users
 
 In previous releases there was an inconsistency in the REST endpoint result of getting a user (`+GET /admin/realms/{realm}/users/{user-id}+`) and searching for a user (`+GET /admin/realms/{realm}/users+`). When BruteForce is enabled and a user was temporarily locked out the former endpoint would return `enabled=false` while the latter would return `enabled=true`. If the user was updated and enabled was false due to temporary lockout then the user would be disabled permanently. Both endpoints now return `enabled=true` when a user is temporarily locked out. To check whether a user is temporarily locked out the BruteForceUserResource endpoint should be utilised (`+GET /admin/realms/{realm}/attack-detection/brute-force/users/{userId}+`).
@@ -46,9 +31,12 @@ To enhance security, only users with the `admin` role in the `master` realm (ser
 
 === Problematic cache configurations ignored
 
-Previous versions {project_name} warned about problematic configurations, for example, if a wrong number of owners was configured or a cache size was set when it should not have been set when enabling volatile user sessions.
-The current version will still warn about those settings, but will also ignore them to ensure a correct behavior and to avoid data loss.
+Previous versions of {project_name} warned about problematic configurations, for example, if a wrong number of owners was configured or a cache size was set when it should not have been set when enabling volatile user sessions.
+The docs also stated to update the `cache-ispn.xml` configuration file for volatile user sessions.
 
+The current version will always use safe settings for the number of owners and maximum cache size for the affected user and client session caches, and will log only an INFO message.
+With this behavior, there is no need any more to update the `cache-ispn.xml` configuration file.
+If you previously used a custom `cache-ispn.xml` in order to use volatile user sessions, we recommend reverting those changes and use the standard configuration file.
 
 === Email verification is now automatically set when using a OpenID Connect broker with `Trust email` is enabled and `Sync Mode` is `FORCE`
 
@@ -62,6 +50,18 @@ If the provider does not send the claim, it defaults to the original behavior an
 
 In the future, we might evaluate changing this specific configuration to avoid automatic updates on the email verification
 status on federated user accounts depending on the use cases and the demand from the community.
+
+=== Verify existing account by Email is only executed for the email and username sent by the identity provider
+
+The execution *Verify Existing Account By Email* is one of the alternatives that the *First Login Flow* has to allow a brokering account to be linked to an existing {project_name} user. This step is executed when the user logs in into {project_name} through the broker for the first time, and the identity provider account is already present in {project_name}. The execution sends an email to the current {project_name} address in order to confirm the user controls that account.
+
+Since this release, the *Verify Existing Account By Email* execution is only attempted in the *First Login Flow* if the linking attributes (email and username) sent by the external identity provider are not modified by the user during the review process. This new behavior avoids sending verification emails to an existing {project_name} account that can inadvertently accept the linking.
+
+In case the provider needs to modify the information sent by the identity provider (because emails or usernames are different in the broker), only the other alternative *Verify Existing Account By Re-authentication* is available to link the new account to the existing {project_name} user.
+
+If the data received from the identity provider is mandatory and cannot be modified, then the *Review Profile* step in the *First Login Flow* can be disabled to avoid any user intervention.
+
+For more information, see link:{adminguide_link}#_identity_broker_first_login[the First login flow section of the {adminguide_name}].
 
 === Signing out from other devices now disabled by default
 
@@ -111,15 +111,27 @@ Previously the default *browser* flow had a *Browser - Conditional OTP* conditio
 
 Upgraded realms will not be changed. The updated flow will only be available for new realms. Take this change into consideration if you have automated the realm creation.
 
-=== Volatile Session Cache Defaults
+=== Syslog counting framing now enabled based on protocol
 
-If the `persistent-user-sessions` feature is disabled, i.e. volatile sessions are configured, {project_name} now prevents
-`num_owners=1` being configured unless a shared persistent store is also configured. This is to prevent data loss on cache
-rebalances.
+Syslog messages sent over `tcp` (or `ssl-tcp`) protocol now use counting framing by default, prefixing messages with their size as required by some Syslog servers.
+
+To change this behavior, use the `--log-syslog-counting-framing` option with one of the following values: `protocol-dependent` (default), `true`, or `false`.
 
 == Deprecated features
 
 The following sections provide details on deprecated features.
+
+=== SPI options separating the provider with a single dash
+
+SPI options ending in `-enabled`, `-provider-default`, or `-provider` are treated as build-time options. However, in some instances, this was not correct as a provider could have a configuration property ending in one of those suffixes as well.
+
+To resolve this ambiguity, and any potential ambiguity involving SPI and provider names, a new SPI option format was introduced where the scopes and suffix are separated by `--`(double dash) instead of `-`(dash). The new format then reads as `+spi-<spi-name>--<provider-name>--...+`.
+
+An SPI property ending in `-enabled`, `-provider-default`, or `-provider` should use the new format or else a warning will be emitted. For example `spi-<spi-name>--<provider-name>--enabled` will be recognized as a build-time option without a warning.
+
+For instance, the correct way to reference your custom email template is: `--spi-email-template--mycustomprovider--enabled` (not `--spi-email-template-mycustomprovider-enabled`).
+
+Options using the legacy format and ending in `-enabled`, `-provider-default`, or `-provider` will still be treated as a build-time option, but may not be in future releases.
 
 === Kubernetes cache stack has been deprecated
 
@@ -176,6 +188,10 @@ recommended to use the configuration option *Warning Threshold* of the *Recovery
 
 The `org.keycloak.Config.Scope.getPropertyNames` method has been deprecated for removal.
 
+=== Deprecation of the Passkeys Conditional UI Authenticator
+
+The preview feature *Passkeys* recently introduced a new *Passkeys Conditional UI Authenticator* that you can use to integrate the passkey auto-fill or conditional UI feature in your login flow. Passkeys are now being seamlessly integrated into {project_name} inside the default username forms. Therefore, the old authenticator is invalid and it is deprecated in this release. The factory and implementation classes will be removed when *Passkeys* are supported in {project_name}.
+
 == Removed features
 
 The following features have been removed from this release.
@@ -209,4 +225,3 @@ Consider one of the following cases and recommended migration steps:
 
 * With the feature `persistent-user-session` feature enabled, the remote store configuration is ignored and {project_name} will print a warning.
 ====
-

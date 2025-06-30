@@ -19,6 +19,7 @@ package org.keycloak.client.cli.util;
 import org.keycloak.client.cli.config.ConfigData;
 import org.keycloak.client.cli.config.RealmConfigData;
 import org.keycloak.common.util.KeystoreUtil;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.representations.AccessTokenResponse;
@@ -30,7 +31,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.KeyPair;
-import java.util.UUID;
 
 import static java.lang.System.currentTimeMillis;
 import static org.keycloak.client.cli.util.ConfigUtil.checkServerInfo;
@@ -197,7 +197,7 @@ public class AuthUtil {
         KeyPair keypair = KeystoreUtil.loadKeyPairFromKeystore(keystore, storePass, keyPass, alias, keystoreType);
 
         JsonWebToken reqToken = new JsonWebToken();
-        reqToken.id(UUID.randomUUID().toString());
+        reqToken.id(SecretGenerator.getInstance().generateSecureID());
         reqToken.issuer(clientId);
         reqToken.subject(clientId);
         reqToken.audience(realmInfoUrl);

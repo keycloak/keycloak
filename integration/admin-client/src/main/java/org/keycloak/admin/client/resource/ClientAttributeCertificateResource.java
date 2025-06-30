@@ -79,7 +79,8 @@ public interface ClientAttributeCertificateResource {
     /**
      * Get a keystore file for the client, containing private key and public certificate
      *
-     * @param config Keystore configuration as JSON
+     * @param config Keystore configuration as JSON. Parameters "keySize" and "validity" of the config are supported since Keycloak 26.3. Key size is 4096 by default and validity is 3 years by default.
+     *               For older versions than Keycloak 26.3, the key size is 2048 and validity is 10 years.
      * @return
      */
     @POST

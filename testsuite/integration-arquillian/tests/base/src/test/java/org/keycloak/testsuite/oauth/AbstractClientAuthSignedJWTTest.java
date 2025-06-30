@@ -389,6 +389,8 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         keyStoreConfig.setKeyPassword(keyPassword);
         keyStoreConfig.setStorePassword(storePassword);
         keyStoreConfig.setKeyAlias(keyAlias);
+        keyStoreConfig.setKeySize(4096);
+        keyStoreConfig.setValidity(3);
 
         client = getClient(testRealm.getRealm(), client.getId()).toRepresentation();
         final String certOld = client.getAttributes().get(JWTClientAuthenticator.CERTIFICATE_ATTR);
