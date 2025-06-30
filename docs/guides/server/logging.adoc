@@ -389,6 +389,23 @@ To use UDP instead of TCP, add the `--log-syslog-protocol` option as follows:
 
 The available protocols are: `tpc`, `udp`, and `ssl-tcp`.
 
+=== Configuring the Syslog counting framing
+
+By default, Syslog messages sent over TCP or SSL-TCP are prefixed with the message size, as required by certain Syslog receivers.
+This behavior is controlled by the `--log-syslog-counting-framing` option.
+
+To explicitly enable or disable this feature, use the following command:
+
+<@kc.start parameters="--log-syslog-counting-framing=true"/>
+
+You can set the value to one of the following:
+
+* `protocol-dependent` (default) – Enable counting framing only when the `log-syslog-protocol` is `tcp` or `ssl-tcp`.
+* `true` – Always enable counting framing by prefixing messages with their size.
+* `false` – Never use counting framing.
+
+Note that using `protocol-dependent` ensures compatibility with most Syslog servers by enabling the prefix only when required by the protocol.
+
 === Configuring the Syslog log format
 To set the logging format for a logged line, perform these steps:
 
