@@ -63,4 +63,5 @@ List of organization names below is based on information collected using Keycloa
 * TRT9 - Brasil
 * UnitedHealthcare
 * Wayfair LLC
+* [Xata](https://xata.io)
 * ...More individuals
