@@ -81,7 +81,7 @@ public interface ClientScopeProvider extends Provider, ClientScopeLookupProvider
      * @param realm    the realm to retrieve the client scopes from.
      * @param protocol the protocol expected from the clientScope
      */
-    Stream<CredentialScopeModel> getClientScopesByProtocol(RealmModel realm, String protocol);
+    Stream<ClientScopeModel> getClientScopesByProtocol(RealmModel realm, String protocol);
 
     /**
      * Allows us to filter for scopes by specific attributes

@@ -19,11 +19,11 @@ package org.keycloak.protocol.oid4vc.issuance.mappers;
 
 import org.apache.commons.collections4.ListUtils;
 import org.keycloak.Config;
-import org.keycloak.models.CredentialScopeModel;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.oid4vci.Oid4VciConstants;
+import org.keycloak.constants.Oid4VciConstants;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oid4vc.OID4VCEnvironmentProviderFactory;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;

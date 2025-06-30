@@ -36,13 +36,14 @@ import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.constants.Oid4VciConstants;
 import org.keycloak.crypto.ECDSASignatureSignerContext;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.JWSBuilder;
-import org.keycloak.models.CredentialScopeModel;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
@@ -51,7 +52,6 @@ import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.JwtProofValidator;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCIssuedAtTimeClaimMapper;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
-import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.NonceResponse;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.AccessToken;
@@ -289,7 +289,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
         ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
         protocolMapperRepresentation.setName("role-mapper");
         protocolMapperRepresentation.setId(UUID.randomUUID().toString());
-        protocolMapperRepresentation.setProtocol(CredentialScopeModel.OID4VC_PROTOCOL);
+        protocolMapperRepresentation.setProtocol(Oid4VciConstants.OID4VC_PROTOCOL);
         protocolMapperRepresentation.setProtocolMapper("oid4vc-target-role-mapper");
         protocolMapperRepresentation.setConfig(
                 Map.of("claim.name", "roles")
@@ -300,7 +300,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
     public static ProtocolMapperRepresentation getIdMapper() {
         ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
         protocolMapperRepresentation.setName("id-mapper");
-        protocolMapperRepresentation.setProtocol(CredentialScopeModel.OID4VC_PROTOCOL);
+        protocolMapperRepresentation.setProtocol(Oid4VciConstants.OID4VC_PROTOCOL);
         protocolMapperRepresentation.setId(UUID.randomUUID().toString());
         protocolMapperRepresentation.setProtocolMapper("oid4vc-subject-id-mapper");
         protocolMapperRepresentation.setConfig(Map.of());
@@ -310,7 +310,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
     public static ProtocolMapperRepresentation getStaticClaimMapper(String scopeName) {
         ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
         protocolMapperRepresentation.setName(UUID.randomUUID().toString());
-        protocolMapperRepresentation.setProtocol(CredentialScopeModel.OID4VC_PROTOCOL);
+        protocolMapperRepresentation.setProtocol(Oid4VciConstants.OID4VC_PROTOCOL);
         protocolMapperRepresentation.setId(UUID.randomUUID().toString());
         protocolMapperRepresentation.setProtocolMapper("oid4vc-static-claim-mapper");
         protocolMapperRepresentation.setConfig(
@@ -397,7 +397,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
     protected ProtocolMapperRepresentation getUserAttributeMapper(String subjectProperty, String attributeName) {
         ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
         protocolMapperRepresentation.setName(attributeName + "-mapper");
-        protocolMapperRepresentation.setProtocol(CredentialScopeModel.OID4VC_PROTOCOL);
+        protocolMapperRepresentation.setProtocol(Oid4VciConstants.OID4VC_PROTOCOL);
         protocolMapperRepresentation.setId(UUID.randomUUID().toString());
         protocolMapperRepresentation.setProtocolMapper("oid4vc-user-attribute-mapper");
         protocolMapperRepresentation.setConfig(
@@ -411,7 +411,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
     protected ProtocolMapperRepresentation getIssuedAtTimeMapper(String subjectProperty, String truncateToTimeUnit, String valueSource) {
         ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
         protocolMapperRepresentation.setName(subjectProperty + "-oid4vc-issued-at-time-claim-mapper");
-        protocolMapperRepresentation.setProtocol(CredentialScopeModel.OID4VC_PROTOCOL);
+        protocolMapperRepresentation.setProtocol(Oid4VciConstants.OID4VC_PROTOCOL);
         protocolMapperRepresentation.setId(UUID.randomUUID().toString());
         protocolMapperRepresentation.setProtocolMapper("oid4vc-issued-at-time-claim-mapper");
 

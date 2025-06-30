@@ -21,7 +21,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.Test;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
-import org.keycloak.oid4vci.Oid4VciConstants;
+import org.keycloak.constants.Oid4VciConstants;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.JwtCredentialBody;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.JwtCredentialBuilder;

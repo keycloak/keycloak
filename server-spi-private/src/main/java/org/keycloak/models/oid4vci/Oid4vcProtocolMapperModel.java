@@ -16,7 +16,9 @@
  *
  */
 
-package org.keycloak.models;
+package org.keycloak.models.oid4vci;
+
+import org.keycloak.models.ProtocolMapperModel;
 
 import java.util.Arrays;
 import java.util.Collections;

@@ -38,7 +38,6 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
 import org.hibernate.annotations.Nationalized;
-import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

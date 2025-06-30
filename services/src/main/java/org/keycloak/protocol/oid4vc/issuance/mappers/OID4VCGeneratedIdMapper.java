@@ -18,7 +18,7 @@
 package org.keycloak.protocol.oid4vc.issuance.mappers;
 
 import org.apache.commons.collections4.ListUtils;
-import org.keycloak.models.CredentialScopeModel;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapper;

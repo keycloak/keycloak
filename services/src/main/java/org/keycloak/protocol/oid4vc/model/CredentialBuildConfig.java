@@ -17,20 +17,13 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
-import org.keycloak.models.CredentialScopeModel;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-
-import static org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration.CREDENTIAL_BUILD_CONFIG_KEY;
-import static org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration.DOT_SEPARATOR;
-import static org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration.VERIFIABLE_CREDENTIAL_TYPE_KEY;
 
 /**
  * Define credential-specific configurations for its builder.
