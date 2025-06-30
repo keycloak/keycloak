@@ -504,11 +504,23 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     @Test
     public void testReloadPeriod() {
         ConfigArgsConfigSource.setCliArgs("");
-        assertEquals("1h", createConfig().getConfigValue("quarkus.http.ssl.certificate.reload-period").getValue());
+        initConfig();
+        assertExternalConfig(Map.of(
+                "quarkus.http.ssl.certificate.reload-period", "1h",
+                "quarkus.management.ssl.certificate.reload-period", "1h"
+        ));
+
         ConfigArgsConfigSource.setCliArgs("--https-certificates-reload-period=-1");
-        assertNull(createConfig().getConfigValue("quarkus.http.ssl.certificate.reload-period").getValue());
+        initConfig();
+        assertExternalConfigNull("quarkus.http.ssl.certificate.reload-period");
+        assertExternalConfigNull("quarkus.management.ssl.certificate.reload-period");
+
         ConfigArgsConfigSource.setCliArgs("--https-certificates-reload-period=2h");
-        assertEquals("2h", createConfig().getConfigValue("quarkus.http.ssl.certificate.reload-period").getValue());
+        initConfig();
+        assertExternalConfig(Map.of(
+                "quarkus.http.ssl.certificate.reload-period", "2h",
+                "quarkus.management.ssl.certificate.reload-period", "2h"
+        ));
     }
 
     @Test
