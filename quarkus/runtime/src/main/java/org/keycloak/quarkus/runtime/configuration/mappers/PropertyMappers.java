@@ -97,11 +97,13 @@ public final class PropertyMappers {
     }
 
     public static boolean isSpiBuildTimeProperty(String name) {
-        return name.startsWith(KC_SPI_PREFIX) && (name.endsWith("--provider") || name.endsWith("--enabled") || name.endsWith("--provider-default"));
+        // we can't require the new property formant until we're ok with a breaking change
+        //return name.startsWith(KC_SPI_PREFIX) && (name.endsWith("--provider") || name.endsWith("--enabled") || name.endsWith("--provider-default"));
+        return name.startsWith(KC_SPI_PREFIX) && (name.endsWith("-provider") || name.endsWith("-enabled") || name.endsWith("-provider-default"));
     }
 
     public static boolean isMaybeSpiBuildTimeProperty(String name) {
-        return name.startsWith(KC_SPI_PREFIX) && (name.endsWith("-provider") || name.endsWith("-enabled") || name.endsWith("-provider-default")) && !name.contains("--");
+        return isSpiBuildTimeProperty(name) && !name.contains("--");
     }
 
     private static boolean isKeycloakRuntime(String name, PropertyMapper<?> mapper) {

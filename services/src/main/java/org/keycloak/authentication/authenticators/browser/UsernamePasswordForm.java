@@ -19,11 +19,14 @@ package org.keycloak.authentication.authenticators.browser;
 
 import org.keycloak.WebAuthnConstants;
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.managers.AuthenticationManager;
 
@@ -37,7 +40,7 @@ import jakarta.ws.rs.core.Response;
  */
 public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator implements Authenticator {
 
-    private final WebAuthnConditionalUIAuthenticator webauthnAuth;
+    protected final WebAuthnConditionalUIAuthenticator webauthnAuth;
 
     public UsernamePasswordForm() {
         webauthnAuth = null;
@@ -62,11 +65,21 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
             // normal username and form authenticator
             return;
         }
-        context.success();
+        context.success(PasswordCredentialModel.TYPE);
     }
 
     protected boolean validateForm(AuthenticationFlowContext context, MultivaluedMap<String, String> formData) {
         return validateUserAndPassword(context, formData);
+    }
+
+    protected boolean alreadyAuthenticatedUsingPasswordlessCredential(AuthenticationFlowContext context) {
+        return alreadyAuthenticatedUsingPasswordlessCredential(context.getAuthenticationSession());
+    }
+
+    protected boolean alreadyAuthenticatedUsingPasswordlessCredential(AuthenticationSessionModel authSession) {
+        // check if the authentication was already done using passwordless via passkeys
+        return webauthnAuth != null && webauthnAuth.isPasskeysEnabled() && webauthnAuth.getCredentialType().equals(
+                authSession.getAuthNote(AuthenticationProcessor.LAST_AUTHN_CREDENTIAL));
     }
 
     @Override
@@ -77,6 +90,12 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
         String rememberMeUsername = AuthenticationManager.getRememberMeUsername(context.getSession());
 
         if (context.getUser() != null) {
+            if (alreadyAuthenticatedUsingPasswordlessCredential(context)) {
+                // if already authenticated using passwordless webauthn just success
+                context.success();
+                return;
+            }
+
             LoginFormsProvider form = context.form();
             form.setAttribute(LoginFormsProvider.USERNAME_HIDDEN, true);
             form.setAttribute(LoginFormsProvider.REGISTRATION_DISABLED, true);

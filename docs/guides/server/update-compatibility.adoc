@@ -147,7 +147,7 @@ The feature `rolling-updates` is disabled.
 [[rolling-updates-for-patch-releases]]
 == Rolling updates for patch releases
 
-WARNING: This behavior is currently in an experimental mode, and it is not recommended for use in production.
+WARNING: This behavior is currently in preview mode, and it is not recommended for use in production.
 
 It is possible to configure the {project_name} compatibility command to allow rolling updates when upgrading to a newer patch version in the same `+major.minor+` release stream.
 

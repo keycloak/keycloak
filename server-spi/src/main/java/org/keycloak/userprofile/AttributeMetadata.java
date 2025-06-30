@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -52,7 +53,7 @@ public class AttributeMetadata {
     private Map<String, Object> annotations;
     private int guiOrder;
     private boolean multivalued;
-
+    private Function<AttributeContext, Map<String, Object>> annotationDecorator = (c) -> c.getMetadata().getAnnotations();
 
     AttributeMetadata(String attributeName, int guiOrder) {
         this(attributeName, guiOrder, ALWAYS_TRUE, ALWAYS_TRUE, ALWAYS_TRUE, ALWAYS_TRUE);
@@ -225,6 +226,7 @@ public class AttributeMetadata {
             cloned.setAttributeGroupMetadata(attributeGroupMetadata.clone());
         }
         cloned.setMultivalued(multivalued);
+        cloned.setAnnotationDecorator(annotationDecorator);
         return cloned;
     }
 
@@ -268,6 +270,15 @@ public class AttributeMetadata {
 
     public AttributeMetadata setValidators(List<AttributeValidatorMetadata> validators) {
         this.validators = validators;
+        return this;
+    }
+
+    public Map<String, Object> getAnnotations(AttributeContext context) {
+        return annotationDecorator.apply(context);
+    }
+
+    public AttributeMetadata setAnnotationDecorator(Function<AttributeContext, Map<String, Object>> annotationDecorator) {
+        this.annotationDecorator = annotationDecorator;
         return this;
     }
 }

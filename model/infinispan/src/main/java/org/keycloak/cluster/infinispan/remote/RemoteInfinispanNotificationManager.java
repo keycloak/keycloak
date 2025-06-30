@@ -20,7 +20,6 @@ package org.keycloak.cluster.infinispan.remote;
 import java.lang.invoke.MethodHandles;
 import java.util.Collection;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
@@ -43,6 +42,7 @@ import org.keycloak.cluster.infinispan.TaskCallback;
 import org.keycloak.cluster.infinispan.WrapperClusterEvent;
 import org.keycloak.common.util.ConcurrentMultivaluedHashMap;
 import org.keycloak.common.util.Retry;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.connections.infinispan.TopologyInfo;
 
 import static org.keycloak.cluster.infinispan.InfinispanClusterProvider.TASK_KEY_PREFIX;
@@ -90,7 +90,7 @@ public class RemoteInfinispanNotificationManager {
         }
         var wrappedEvent = WrapperClusterEvent.wrap(taskKey, events, topologyInfo.getMyNodeName(), topologyInfo.getMySiteName(), dcNotify, ignoreSender);
 
-        var eventKey = UUID.randomUUID().toString();
+        var eventKey = SecretGenerator.getInstance().generateSecureID();
 
         if (logger.isTraceEnabled()) {
             logger.tracef("Sending event with key %s: %s", eventKey, events);

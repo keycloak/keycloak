@@ -138,35 +138,17 @@ Since all the sessions in this setup are stored in-memory, there are two side ef
 * Increased memory consumption.
 
 When using volatile user sessions, the cache is the source of truth for user and client sessions.
-Therefore, it is necessary to not define an upper limit on the total number of entries that can be stored via the setting `max-count`.
-Similarly, it's crucial that we replicate each entry to two nodes to prevent data loss on node failures and rolling restarts.
+{project_name} automatically adjusts the number of entries that can be stored in memory, and increases the number of copies to prevent data loss.
 
 [WARNING]
 ====
-When using volatile user sessions, the `max-count` setting for the offline session is ignored.
-
 It is not recommended to use volatile user sessions when using offline sessions extensively due to potentially high memory usage.
 For volatile sessions, the time offline sessions are cached in memory can be limited with the SPI options `spi-user-sessions--infinispan--offline-client-session-cache-entry-lifespan-override` and `spi-user-sessions--infinispan--offline-session-cache-entry-lifespan-override`.
 ====
 
 Follow these steps to enable this setup:
 
-1. Edit {project_name}'s cache config file (`conf/cache-ispn.xml`) for caches `sessions`, `clientSessions`, `offlineSessions` and `offlineClientSessions` with the following update:
-+
---
-* Remove the `+<memory max-count="..."/>+`
-* Change `owners` attribute of the `distributed-cache` tag to 2 or more
---
-+
-An example of the resulting configuration for the `sessions` cache would look as follows.
-+
-[source,xml]
-----
-<distributed-cache name="sessions" owners="2">
-    <expiration lifespan="-1"/>
-</distributed-cache>
-----
-2. Disable `persistent-user-sessions` feature using the following command:
+1. Disable `persistent-user-sessions` feature using the following command:
 +
 ----
 bin/kc.sh start --features-disabled=persistent-user-sessions ...

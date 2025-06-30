@@ -19,6 +19,7 @@ package org.keycloak.broker.oidc;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.http.HttpRequest;
@@ -55,7 +56,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.protocol.oidc.TokenExchangeProvider;
@@ -451,7 +451,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
     protected JsonWebToken generateToken() {
         JsonWebToken jwt = new JsonWebToken();
-        jwt.id(KeycloakModelUtils.generateId());
+        jwt.id(SecretGenerator.getInstance().generateSecureID());
         jwt.type(OAuth2Constants.JWT);
         jwt.issuer(getConfig().getClientId());
         jwt.subject(getConfig().getClientId());

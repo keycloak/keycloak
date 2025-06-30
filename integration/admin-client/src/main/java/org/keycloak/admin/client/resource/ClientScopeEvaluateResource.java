@@ -30,15 +30,41 @@ import java.util.Map;
  */
 public interface ClientScopeEvaluateResource {
 
+    /**
+     * Generate example access token
+     *
+     * @param scopeParam Value of the "scope" parameter. Endpoint simulates generating of the access-token as if the "scope" parameter with specified value is used. Could be null.
+     * @param userId User ID
+     * @param audience Value of the "audience" parameter. Endpoint simulates generating of the access-token as if the "audience" parameter with specified value is used. Audience parameter is supported
+     *                 just for some grants (EG. for the token exchange). For most of the grants where "audience" parameter is not supported, it is better to use the value null to simulate generating of the appropriate token.
+     *                 Parameter is supported since Keycloak 26.2.
+     * @return generated access token
+     */
     @GET
     @Path("generate-example-access-token")
     AccessToken generateAccessToken(@QueryParam("scope") String scopeParam, @QueryParam("userId") String userId, @QueryParam("audience") String audience);
 
+    /**
+     * Generate example ID token
+     *
+     * @param scopeParam Value of the "scope" parameter. Endpoint simulates generating of the ID-token as if the "scope" parameter with specified value is used. Could be null.
+     * @param userId User ID
+     * @param audience Value of the "audience" parameter. Endpoint simulates generating of the access-token as if the "audience" parameter with specified value is used. Audience parameter is supported
+     *                 just for some grants (EG. for the token exchange). For most of the grants where "audience" parameter is not supported, it is better to use the value null to simulate generating of the appropriate token.
+     *                 Parameter is supported since Keycloak 26.2.
+     * @return generated ID token
+     */
     @GET
     @Path("generate-example-id-token")
     IDToken generateExampleIdToken(@QueryParam("scope") String scopeParam, @QueryParam("userId") String userId, @QueryParam("audience") String audience);
 
-
+    /**
+     * Generate example user-info response
+     *
+     * @param scopeParam  Value of the "scope" parameter. Endpoint simulates generating of the user-info as if the "scope" parameter with specified value is used for generating the access-token, which would then be used for the user-info request. Could be null.
+     * @param userId User ID
+     * @return generated user-info
+     */
     @GET
     @Path("generate-example-userinfo")
     Map<String, Object> generateExampleUserinfo(@QueryParam("scope") String scopeParam, @QueryParam("userId") String userId);

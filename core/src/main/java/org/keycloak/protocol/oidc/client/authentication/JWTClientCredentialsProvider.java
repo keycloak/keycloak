@@ -20,11 +20,11 @@ package org.keycloak.protocol.oidc.client.authentication;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.util.Map;
-import java.util.UUID;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.KeystoreUtil;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.AsymmetricSignatureSignerContext;
@@ -177,7 +177,7 @@ public class JWTClientCredentialsProvider implements ClientCredentialsProvider {
 
     protected JsonWebToken createRequestToken(String clientId, String realmInfoUrl) {
         JsonWebToken reqToken = new JsonWebToken();
-        reqToken.id(UUID.randomUUID().toString());
+        reqToken.id(SecretGenerator.getInstance().generateSecureID());
         reqToken.issuer(clientId);
         reqToken.subject(clientId);
         reqToken.audience(realmInfoUrl);
