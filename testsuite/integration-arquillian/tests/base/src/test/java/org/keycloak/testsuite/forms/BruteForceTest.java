@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.forms;
 
+import jakarta.ws.rs.BadRequestException;
 import org.hamcrest.MatcherAssert;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
@@ -32,6 +33,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -65,6 +67,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -185,6 +188,72 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
     protected void clearAllUserFailures() throws Exception {
         adminClient.realm("test").attackDetection().clearAllBruteForce();
+    }
+    
+    @Test
+    public void testInvalidConfiguration() throws Exception {
+        RealmRepresentation realm = testRealm().toRepresentation();
+        realm.setFailureFactor(-1);
+        try {
+            testRealm().update(realm);
+        } catch (BadRequestException ex) {
+            ErrorRepresentation error = ex.getResponse().readEntity(ErrorRepresentation.class);
+            assertEquals("Failure factor may not be a negative value", error.getErrorMessage());
+        }
+
+        realm = testRealm().toRepresentation();
+        realm.setMaxTemporaryLockouts(-1);
+        try {
+            testRealm().update(realm);
+        }  catch (BadRequestException ex) {
+            ErrorRepresentation error = ex.getResponse().readEntity(ErrorRepresentation.class);
+            assertEquals("Maximum temporary lockouts may not be a negative value", error.getErrorMessage());
+        }
+
+        realm = testRealm().toRepresentation();
+        realm.setMaxFailureWaitSeconds(-1);
+        try {
+            testRealm().update(realm);
+        }  catch (BadRequestException ex) {
+            ErrorRepresentation error = ex.getResponse().readEntity(ErrorRepresentation.class);
+            assertEquals("Maximum failure wait seconds may not be a negative value", error.getErrorMessage());
+        }
+
+        realm = testRealm().toRepresentation();
+        realm.setWaitIncrementSeconds(-1);
+        try {
+            testRealm().update(realm);
+        }   catch (BadRequestException ex) {
+            ErrorRepresentation error = ex.getResponse().readEntity(ErrorRepresentation.class);
+            assertEquals("Wait increment seconds may not be a negative value", error.getErrorMessage());
+        }
+
+        realm = testRealm().toRepresentation();
+        realm.setMinimumQuickLoginWaitSeconds(-1);
+        try {
+            testRealm().update(realm);
+        } catch (BadRequestException ex) {
+            ErrorRepresentation error = ex.getResponse().readEntity(ErrorRepresentation.class);
+            assertEquals("Minimum quick login wait seconds may not be a negative value", error.getErrorMessage());
+        }
+
+        realm = testRealm().toRepresentation();
+        realm.setQuickLoginCheckMilliSeconds(-1L);
+        try {
+            testRealm().update(realm);
+        }  catch (BadRequestException ex) {
+            ErrorRepresentation error = ex.getResponse().readEntity(ErrorRepresentation.class);
+            assertEquals("Quick login check milliseconds may not be a negative value", error.getErrorMessage());
+        }
+
+        realm = testRealm().toRepresentation();
+        realm.setMaxDeltaTimeSeconds(-1);
+        try {
+            testRealm().update(realm);
+        }   catch (BadRequestException ex) {
+            ErrorRepresentation error = ex.getResponse().readEntity(ErrorRepresentation.class);
+            assertEquals("Maximum delta time seconds may not be a negative value",  error.getErrorMessage());
+        }
     }
 
     @Test

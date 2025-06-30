@@ -567,6 +567,19 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         return unmanagedAttributes;
     }
 
+    @Override
+    public Map<String, Object> getAnnotations(String name) {
+        AttributeMetadata metadata = getMetadata(name);
+
+        if (metadata == null) {
+            return Collections.emptyMap();
+        }
+
+        AttributeContext context = createAttributeContext(metadata);
+
+        return metadata.getAnnotations(context);
+    }
+
     protected AttributeMetadata createUnmanagedAttributeMetadata(String name) {
         return new AttributeMetadata(name, Integer.MAX_VALUE) {
             final UnmanagedAttributePolicy unmanagedAttributePolicy = upConfig.getUnmanagedAttributePolicy();

@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -42,13 +43,14 @@ import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.validator.OrganizationMemberValidator;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.userprofile.config.UPConfigUtils;
@@ -57,7 +59,6 @@ import org.keycloak.userprofile.validator.BrokeringFederatedUsernameHasValueVali
 import org.keycloak.userprofile.validator.DuplicateEmailValidator;
 import org.keycloak.userprofile.validator.DuplicateUsernameValidator;
 import org.keycloak.userprofile.validator.EmailExistsAsUsernameValidator;
-import org.keycloak.userprofile.validator.ImmutableAttributeValidator;
 import org.keycloak.userprofile.validator.ReadOnlyAttributeUnchangedValidator;
 import org.keycloak.userprofile.validator.RegistrationEmailAsUsernameEmailValueValidator;
 import org.keycloak.userprofile.validator.RegistrationEmailAsUsernameUsernameValueValidator;
@@ -67,6 +68,7 @@ import org.keycloak.userprofile.validator.UsernameMutationValidator;
 import org.keycloak.validate.ValidatorConfig;
 import org.keycloak.validate.validators.EmailValidator;
 
+import static java.util.Optional.ofNullable;
 import static org.keycloak.common.util.ObjectUtil.isBlank;
 import static org.keycloak.userprofile.DefaultAttributes.READ_ONLY_ATTRIBUTE_KEY;
 import static org.keycloak.userprofile.UserProfileContext.ACCOUNT;
@@ -412,7 +414,8 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
                         new AttributeValidatorMetadata(DuplicateEmailValidator.ID),
                         new AttributeValidatorMetadata(EmailExistsAsUsernameValidator.ID),
                         new AttributeValidatorMetadata(EmailValidator.ID, ValidatorConfig.builder().config(EmailValidator.IGNORE_EMPTY_VALUE, true).build()))
-                .setAttributeDisplayName("${email}");
+                .setAttributeDisplayName("${email}")
+                .setAnnotationDecorator(DeclarativeUserProfileProviderFactory::getEmailAnnotationDecorator);
 
         List<AttributeValidatorMetadata> readonlyValidators = new ArrayList<>();
 
@@ -485,7 +488,7 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         // The user-defined configuration is always parsed during init and should be avoided as much as possible
         // If no user-defined configuration is set, the system default configuration must have been set
         // In Quarkus, the system default configuration is set at build time for optimization purposes
-        UPConfig defaultConfig = Optional.ofNullable(config.get("configFile"))
+        UPConfig defaultConfig = ofNullable(config.get("configFile"))
                 .map(Paths::get)
                 .map(UPConfigUtils::parseConfig)
                 .orElse(PARSED_DEFAULT_RAW_CONFIG);
@@ -497,5 +500,37 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
 
         PARSED_DEFAULT_RAW_CONFIG = null;
         setDefaultConfig(defaultConfig);
+    }
+
+    private static Map<String, Object> getEmailAnnotationDecorator(AttributeContext c) {
+        AttributeMetadata m = c.getMetadata();
+        Map<String, Object> rawAnnotations = Optional.ofNullable(m.getAnnotations()).orElse(Map.of());
+
+        if (Profile.isFeatureEnabled(Feature.UPDATE_EMAIL)) {
+            UserProfileProvider provider = c.getSession().getProvider(UserProfileProvider.class);
+            UPConfig upConfig = provider.getConfiguration();
+            UPAttribute attribute = upConfig.getAttribute(UserModel.EMAIL);
+            UPAttributePermissions permissions = attribute.getPermissions();
+
+            if (permissions == null) {
+                return rawAnnotations;
+            }
+
+            Set<String> writePermissions = permissions.getEdit();
+            boolean isWritable = writePermissions.contains(UPConfigUtils.ROLE_USER);
+            RealmModel realm = c.getSession().getContext().getRealm();
+
+            if ((realm.isRegistrationEmailAsUsername() && !realm.isEditUsernameAllowed()) || !isWritable) {
+                return rawAnnotations;
+            }
+
+            Map<String, Object> annotations = new HashMap<>(rawAnnotations);
+
+            annotations.put("kc.required.action.supported", isWritable);
+
+            return annotations;
+        }
+
+        return rawAnnotations;
     }
 }

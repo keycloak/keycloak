@@ -152,7 +152,7 @@ As indicated in the previous sections, URLs can be resolved in several ways: the
 ** `hostname-backchannel-dynamic` must be set to false.
 ** `hostname-strict` must be set to false.
 * If `hostname-admin` is configured, `hostname` must be set to a URL (not just hostname). Otherwise {project_name} would not know what is the correct frontend URL (incl. port etc.) when accessing the Admin Console.
-* If `hostname-backchannel-dynamic` is set to true, `hostname` must be set to a URL (not just hostname). Otherwise {project_name} would not know what is the correct frontend URL (incl. port etc.) when being access via the dynamically resolved bachchannel.
+* If `hostname-backchannel-dynamic` is set to true, `hostname` must be set to a URL (not just hostname). Otherwise {project_name} would not know what is the correct frontend URL (incl. port etc.) when being access via the dynamically resolved backchannel.
 
 Additionally if hostname is configured, then hostname-strict is ignored.
 

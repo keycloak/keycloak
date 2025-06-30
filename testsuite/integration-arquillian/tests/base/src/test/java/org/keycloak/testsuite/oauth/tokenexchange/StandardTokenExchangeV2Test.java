@@ -42,6 +42,7 @@ import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.encode.AccessTokenContext;
@@ -65,6 +66,7 @@ import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
 import org.keycloak.testsuite.pages.ConsentPage;
 import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExceptionExecutorFactory;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.updaters.ProtocolMappersUpdater;
 import org.keycloak.testsuite.updaters.RoleScopeUpdater;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
@@ -77,9 +79,7 @@ import org.keycloak.testsuite.utils.tls.TLSUtils;
 import org.keycloak.util.TokenUtil;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
@@ -88,7 +88,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
-import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientScopesConditionConfig;
@@ -372,20 +371,25 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
     public void testTransientOfflineSessionForRequester() throws Exception {
         final RealmResource realm = adminClient.realm(TEST);
         final UserRepresentation john = ApiUtil.findUserByUsername(realm, "john");
-        try (ClientAttributeUpdater clientUpdater2 = ClientAttributeUpdater.forClient(adminClient, TEST, "subject-client")
-                     .setOptionalClientScopes(List.of(OAuth2Constants.OFFLINE_ACCESS))
-                     .update();
-        ) {
+        try (RealmAttributeUpdater realUpdater = new RealmAttributeUpdater(realm)
+                .setSsoSessionMaxLifespan(600)
+                .update();
+             ClientAttributeUpdater clientUpdater = ClientAttributeUpdater.forClient(adminClient, TEST, "subject-client")
+                .setOptionalClientScopes(List.of(OAuth2Constants.OFFLINE_ACCESS))
+                .update()) {
+
             // Login, which creates offline-session
             oauth.realm(TEST);
-            final String accessToken = resourceOwnerLogin("john", "password", "subject-client", "secret", OAuth2Constants.OFFLINE_ACCESS).getAccessToken();
+            final AccessTokenResponse initialResponse = resourceOwnerLogin("john", "password", "subject-client", "secret", OAuth2Constants.OFFLINE_ACCESS);
+            String accessToken = initialResponse.getAccessToken();
 
             // Regular token-exchange with the access token as requested_token_type
             oauth.scope(OAuth2Constants.SCOPE_OPENID); // add openid scope for the user-info request
             AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", null, null);
             assertEquals(OAuth2Constants.ACCESS_TOKEN_TYPE, response.getIssuedTokenType());
-            final String exchangedTokenString = response.getAccessToken();
-            final AccessToken exchangedToken = TokenVerifier.create(exchangedTokenString, AccessToken.class).parse().getToken();
+            String exchangedTokenString = response.getAccessToken();
+            AccessToken exchangedToken = TokenVerifier.create(exchangedTokenString, AccessToken.class).parse().getToken();
+            assertTrue("Exchanged token is not active", exchangedToken.isActive());
             assertEquals(getSessionIdFromToken(accessToken), exchangedToken.getSessionId());
             assertEquals("requester-client", exchangedToken.getIssuedFor());
             assertAccessTokenContext(exchangedToken.getId(), AccessTokenContext.SessionType.OFFLINE_TRANSIENT_CLIENT,
@@ -397,6 +401,27 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
 
             // assert introspection and user-info works in 10s
             setTimeOffset(10);
+            assertIntrospectSuccess(exchangedTokenString, "requester-client", "secret", john.getId());
+            assertUserInfoSuccess(exchangedTokenString, "requester-client", "secret", john.getId());
+
+            // move time to be more than the normal expired session value, refresh and request another exchange
+            setTimeOffset(610);
+            final AccessTokenResponse refreshResponse = oauth.client("subject-client", "secret").scope(null)
+                    .refreshRequest(initialResponse.getRefreshToken()).send();
+            assertNull("Error refreshing the initial token: " + refreshResponse.getErrorDescription(), refreshResponse.getError());
+            accessToken = refreshResponse.getAccessToken();
+            oauth.scope(OAuth2Constants.SCOPE_OPENID);
+            response = tokenExchange(accessToken, "requester-client", "secret", null, null);
+            assertNull("Error exchanging the token: " + response.getErrorDescription(), response.getError());
+            exchangedTokenString = response.getAccessToken();
+            exchangedToken = TokenVerifier.create(exchangedTokenString, AccessToken.class).parse().getToken();
+            assertTrue("Exchanged token is not active", exchangedToken.isActive());
+            assertEquals(getSessionIdFromToken(accessToken), exchangedToken.getSessionId());
+            assertEquals("requester-client", exchangedToken.getIssuedFor());
+            assertAccessTokenContext(exchangedToken.getId(), AccessTokenContext.SessionType.OFFLINE_TRANSIENT_CLIENT,
+                    AccessTokenContext.TokenType.REGULAR, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
+
+            // assert introspection and user-info works
             assertIntrospectSuccess(exchangedTokenString, "requester-client", "secret", john.getId());
             assertUserInfoSuccess(exchangedTokenString, "requester-client", "secret", john.getId());
 
