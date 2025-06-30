@@ -37,3 +37,9 @@ In case the provider needs to modify the information sent by the identity provid
 If the data received from the identity provider is mandatory and cannot be modified, then the *Review Profile* step in the *First Login Flow* can be disabled to avoid any user intervention.
 
 For more information, see link:{adminguide_link}#_identity_broker_first_login[the First login flow section of the {adminguide_name}].
+
+=== Updates to the `user-profile-commons.ftl` theme template
+
+The `user-profile-commons.ftl` changed to improve support for localization. See https://github.com/keycloak/keycloak/issues/38029.
+As a result, and if you are extending this template, pages might start displaying a `locale` field. To avoid that, update
+the theme template with the changes aforementioned.
