@@ -18,5 +18,9 @@
             <artifactId>keycloak-test-framework-core</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-http-proxy</artifactId>
+        </dependency>
     </dependencies>
 </project>

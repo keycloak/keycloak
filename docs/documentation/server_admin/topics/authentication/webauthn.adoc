@@ -220,9 +220,9 @@ An administrator typically requires that Passkeys registered by users for the We
 
 Set up WebAuthn Loginless support as follows:
 
-. (if not already present) Register a new required action for WebAuthn passwordless support. Use the steps described in <<_webauthn-register, Enable WebAuthn Authenticator Registration>>. Register the `Webauthn Register Passwordless` action.
+. (If not already done) Check the required action for *WebAuthn Register Passwordless* is enabled. Use the steps described in <<_webauthn-register, Enable WebAuthn Authenticator Registration>>, but using *WebAuthn Register Passwordless* instead of *WebAuthn Register*.
 
-. Configure the `WebAuthn Passwordless Policy`. Perform the configuration in the Admin Console, `Authentication` section,  in the tab `Policies` ->  `WebAuthn Passwordless Policy`. You have to set *User Verification Requirement* to *required* and *Require Discoverable Credential* to *Yes* when you configure the policy for loginless scenario. Note that since there isn't a dedicated Loginless policy it won't be possible to mix authentication scenarios with user verification=no/discoverable credential=no and loginless scenarios (user verification=yes/discoverable credential=yes). Storage capacity is usually very limited on Passkeys meaning that you won't be able to store many discoverable credentials on your Passkey.
+. Configure the `WebAuthn Passwordless Policy`. Perform the configuration in the Admin Console, `Authentication` section,  in the tab `Policies` ->  `WebAuthn Passwordless Policy`. You have to set *User Verification Requirement* to *required* and *Require Discoverable Credential* to *Yes* when you configure the policy for loginless scenario. Storage capacity is usually very limited on Passkeys meaning that you won't be able to store many discoverable credentials on your Passkey.
 
 . Configure the authentication flow. Create a new authentication flow, add the "WebAuthn Passwordless" execution and set the Requirement setting of the execution to *Required*
 
