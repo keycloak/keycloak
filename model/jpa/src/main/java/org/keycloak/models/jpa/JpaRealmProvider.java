@@ -56,7 +56,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientProvider;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientScopeProvider;
-import org.keycloak.models.CredentialScopeModel;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.models.DeploymentStateProvider;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.GroupCreatedEvent;
@@ -1234,15 +1234,14 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     }
 
     @Override
-    public Stream<CredentialScopeModel> getClientScopesByProtocol(RealmModel realm, String protocol)
+    public Stream<ClientScopeModel> getClientScopesByProtocol(RealmModel realm, String protocol)
     {
         TypedQuery<ClientScopeEntity> query = em.createNamedQuery("getClientScopesByProtocol",
                                                                   ClientScopeEntity.class)
                                                 .setParameter("realm", realm.getId())
                                                 .setParameter("protocol", protocol);
         return query.getResultStream()
-                    .map(entity -> new ClientScopeAdapter(realm, em, session, entity))
-                    .map(CredentialScopeModel::new);
+                    .map(entity -> new ClientScopeAdapter(realm, em, session, entity));
     }
 
     /**

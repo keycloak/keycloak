@@ -77,7 +77,6 @@ import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
-import org.keycloak.models.CredentialScopeModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
@@ -725,8 +724,6 @@ public class RepresentationToModel {
             MigrationUtils.updateProtocolMappers(clientScope);
         }
 
-        addOid4vcClientScopeDefaultAttributes(resourceRep);
-
         if (resourceRep.getAttributes() != null) {
             for (Map.Entry<String, String> entry : resourceRep.getAttributes().entrySet()) {
                 clientScope.setAttribute(entry.getKey(), entry.getValue());
@@ -741,10 +738,7 @@ public class RepresentationToModel {
         if (rep.getName() != null) resource.setName(rep.getName());
         if (rep.getDescription() != null) resource.setDescription(rep.getDescription());
 
-
         if (rep.getProtocol() != null) resource.setProtocol(rep.getProtocol());
-
-        addOid4vcClientScopeDefaultAttributes(rep);
 
         if (rep.getAttributes() != null) {
             for (Map.Entry<String, String> entry : rep.getAttributes().entrySet()) {
@@ -753,35 +747,6 @@ public class RepresentationToModel {
         }
 
     }
-
-    private static void addOid4vcClientScopeDefaultAttributes(ClientScopeRepresentation rep) {
-        boolean isOid4VcScope = CredentialScopeModel.OID4VC_PROTOCOL.equals(rep.getProtocol());
-        if (!isOid4VcScope) {
-            return;
-        }
-        rep.getAttributes().computeIfAbsent(CredentialScopeModel.CONFIGURATION_ID, k -> rep.getName());
-        rep.getAttributes().computeIfAbsent(CredentialScopeModel.CREDENTIAL_IDENTIFIER, k -> rep.getName());
-        rep.getAttributes().computeIfAbsent(CredentialScopeModel.TYPES, k -> rep.getName());
-        rep.getAttributes().computeIfAbsent(CredentialScopeModel.CONTEXTS, k -> rep.getName());
-        rep.getAttributes().computeIfAbsent(CredentialScopeModel.VCT, k -> rep.getName());
-        rep.getAttributes().computeIfAbsent(CredentialScopeModel.FORMAT,
-                                            k -> CredentialScopeModel.FORMAT_DEFAULT);
-        rep.getAttributes().computeIfAbsent(CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS,
-                                            k -> CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
-        rep.getAttributes().computeIfAbsent(CredentialScopeModel.SD_JWT_NUMBER_OF_DECOYS,
-                                            k -> String.valueOf(CredentialScopeModel.SD_JWT_DECOYS_DEFAULT));
-        rep.getAttributes().computeIfAbsent(CredentialScopeModel.SD_JWT_VISIBLE_CLAIMS,
-                                            k -> CredentialScopeModel.SD_JWT_VISIBLE_CLAIMS_DEFAULT);
-        rep.getAttributes().computeIfAbsent(CredentialScopeModel.HASH_ALGORITHM,
-                                            k -> CredentialScopeModel.HASH_ALGORITHM_DEFAULT);
-        rep.getAttributes().computeIfAbsent(CredentialScopeModel.TOKEN_JWS_TYPE,
-                                            k -> CredentialScopeModel.TOKEN_TYPE_DEFAULT);
-        rep.getAttributes().computeIfAbsent(CredentialScopeModel.EXPIRY_IN_SECONDS,
-                                            k -> String.valueOf(CredentialScopeModel.EXPIRY_IN_SECONDS_DEFAULT));
-    }
-
-    // Scope mappings
-
 
     // Users
 

@@ -41,9 +41,10 @@ import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
+import org.keycloak.constants.Oid4VciConstants;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.CredentialScopeModel;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
@@ -247,7 +248,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         // Create a new ClientScope if not found
         ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
         clientScope.setName(scopeName);
-        clientScope.setProtocol(CredentialScopeModel.OID4VC_PROTOCOL);
+        clientScope.setProtocol(Oid4VciConstants.OID4VC_PROTOCOL);
         Map<String, String> attributes =
                 new HashMap<>(Map.of(ClientScopeModel.INCLUDE_IN_TOKEN_SCOPE, "true",
                                      CredentialScopeModel.EXPIRY_IN_SECONDS, "15"));

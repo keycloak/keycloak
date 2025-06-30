@@ -16,13 +16,13 @@
  */
 package org.keycloak.models;
 
+import org.keycloak.constants.Oid4VciConstants;
 import org.keycloak.provider.Provider;
 import org.keycloak.storage.client.ClientLookupProvider;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -151,7 +151,7 @@ public interface ClientProvider extends ClientLookupProvider, Provider {
     default List<String> getAcceptedClientProtocols(ClientModel client) {
         List<String> acceptedClientProtocols;
         if (client.getProtocol() == null || "openid-connect".equals(client.getProtocol())) {
-            acceptedClientProtocols = List.of("openid-connect", CredentialScopeModel.OID4VC_PROTOCOL);
+            acceptedClientProtocols = List.of("openid-connect", Oid4VciConstants.OID4VC_PROTOCOL);
         }else {
             acceptedClientProtocols = List.of(client.getProtocol());
         }

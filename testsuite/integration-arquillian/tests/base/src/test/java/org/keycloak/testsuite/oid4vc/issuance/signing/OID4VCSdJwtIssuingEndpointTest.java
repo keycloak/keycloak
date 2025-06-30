@@ -36,10 +36,10 @@ import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.CredentialScopeModel;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.oid4vci.Oid4VciConstants;
+import org.keycloak.constants.Oid4VciConstants;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.JwtCredentialBuilder;
@@ -513,7 +513,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
     public static ProtocolMapperRepresentation getJtiGeneratedIdMapper() {
         ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
         protocolMapperRepresentation.setName("generated-id-mapper");
-        protocolMapperRepresentation.setProtocol(CredentialScopeModel.OID4VC_PROTOCOL);
+        protocolMapperRepresentation.setProtocol(Oid4VciConstants.OID4VC_PROTOCOL);
         protocolMapperRepresentation.setId(UUID.randomUUID().toString());
         protocolMapperRepresentation.setProtocolMapper("oid4vc-generated-id-mapper");
         protocolMapperRepresentation.setConfig(Map.of(
@@ -528,7 +528,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                                                   .addClientScope(realmModel, jwtTypeCredentialScopeName);
         credentialScope.setAttribute(CredentialScopeModel.CREDENTIAL_IDENTIFIER,
                                      jwtTypeCredentialScopeName);
-        credentialScope.setProtocol(CredentialScopeModel.OID4VC_PROTOCOL);
+        credentialScope.setProtocol(Oid4VciConstants.OID4VC_PROTOCOL);
         return credentialScope;
     }
 

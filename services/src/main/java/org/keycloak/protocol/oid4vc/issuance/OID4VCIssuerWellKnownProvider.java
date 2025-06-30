@@ -21,6 +21,7 @@ import jakarta.ws.rs.core.UriInfo;
 import org.keycloak.constants.Oid4VciConstants;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -137,6 +138,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         Map<String, SupportedCredentialConfiguration> supportedCredentialConfigurations =
                 keycloakSession.clientScopes()
                                .getClientScopesByProtocol(realm, Oid4VciConstants.OID4VC_PROTOCOL)
+                               .map(CredentialScopeModel::new)
                                .map(CredentialScopeModel::new)
                                .map(clientScope -> {
                                    return SupportedCredentialConfiguration.parse(keycloakSession,

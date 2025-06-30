@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.stream.Stream;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientScopeProvider;
-import org.keycloak.models.CredentialScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.storage.clientscope.ClientScopeLookupProvider;
@@ -77,7 +76,7 @@ public class ClientScopeStorageManager extends AbstractStorageManager<ClientScop
     }
 
     @Override
-    public Stream<CredentialScopeModel> getClientScopesByProtocol(RealmModel realm, String protocol) {
+    public Stream<ClientScopeModel> getClientScopesByProtocol(RealmModel realm, String protocol) {
         return localStorage().getClientScopesByProtocol(realm, protocol);
     }
 
