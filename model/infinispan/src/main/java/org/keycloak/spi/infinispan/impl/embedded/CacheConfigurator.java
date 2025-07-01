@@ -216,7 +216,7 @@ public final class CacheConfigurator {
      */
     public static void configureSessionsCachesForVolatileSessions(ConfigurationBuilderHolder holder) {
         logger.debug("Configuring session cache (volatile user sessions)");
-        for (var name : Arrays.asList(USER_SESSION_CACHE_NAME, CLIENT_SESSION_CACHE_NAME, OFFLINE_USER_SESSION_CACHE_NAME, OFFLINE_CLIENT_SESSION_CACHE_NAME)) {
+        for (var name : Arrays.asList(USER_SESSION_CACHE_NAME, CLIENT_SESSION_CACHE_NAME)) {
             var builder = holder.getNamedConfigurationBuilders().get(name);
             if (builder == null) {
                 throw cacheNotFound(name);
