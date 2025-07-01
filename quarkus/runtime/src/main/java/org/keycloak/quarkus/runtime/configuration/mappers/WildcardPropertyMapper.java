@@ -29,7 +29,7 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
     private final String fromPrefix;
     private String toPrefix;
     private String toSuffix;
-    private Character replacementChar = '-';
+    private Character replacementChar = null;
 
     public WildcardPropertyMapper(Option<T> option, String to, BooleanSupplier enabled, String enabledWhen, ValueMapper mapper, String mapFrom, ValueMapper parentMapper,
             String paramLabel, boolean mask, BiConsumer<PropertyMapper<T>, ConfigValue> validator,

@@ -118,7 +118,6 @@ public class PicocliTest extends AbstractConfigurationTest {
         ConfigArgsConfigSource.setCliArgs(args);
         nonRunningPicocli.config = createConfig();
         KeycloakMain.main(args, nonRunningPicocli);
-        onAfter();
         return nonRunningPicocli;
     }
 
@@ -348,6 +347,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertTrue(nonRunningPicocli.reaug);
         assertEquals(nonRunningPicocli.getErrString(), CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         outChecker.accept(nonRunningPicocli.getOutString());
+        onAfter();
         addPersistedConfigValues((Map)nonRunningPicocli.buildProps);
         return nonRunningPicocli;
     }
@@ -467,6 +467,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getOutString(),
                 not(containsString("Usage of the default value for the db option")));
+        onAfter();
 
         // prod profiles warn about db
         nonRunningPicocli = pseudoLaunch("build");
@@ -690,13 +691,17 @@ public class PicocliTest extends AbstractConfigurationTest {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log-async=true", "--log-console-async=false", "--log-console-async-queue-length=222");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--log-console-async-queue-length'. Available only when Console log handler is activated"));
+        onAfter();
 
         nonRunningPicocli = pseudoLaunch("start-dev", "--log-async=true", "--log-console-async-queue-length=222");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
 
+        onAfter();
+
         nonRunningPicocli = pseudoLaunch("start-dev", "--log=console,file", "--log-async=true", "--log-console-async=false", "--log-console-async-queue-length=222");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--log-console-async-queue-length'. Available only when Console log handler is activated"));
+        onAfter();
 
         nonRunningPicocli = pseudoLaunch("start-dev", "--log=console,file", "--log-async=true", "--log-console-async=false", "--log-file-async-queue-length=222");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
