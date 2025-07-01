@@ -442,10 +442,10 @@ public class UsersResource {
             if (userPermissionEvaluator.canView()) {
                 return session.users().getUsersCount(realm, parameters);
             } else {
-                if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
-                    return session.users().getUsersCount(realm, parameters);
-                } else {
+                if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
                     return session.users().getUsersCount(realm, parameters, auth.groups().getGroupIdsWithViewPermission());
+                } else {
+                    return session.users().getUsersCount(realm, parameters);
                 }
             }
         } else if (last != null || first != null || email != null || username != null || emailVerified != null || enabled != null || !searchAttributes.isEmpty()) {
@@ -482,19 +482,20 @@ public class UsersResource {
             if (userPermissionEvaluator.canView()) {
                 return session.users().getUsersCount(realm, parameters);
             } else {
-                if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
-                    return session.users().getUsersCount(realm, parameters);
-                } else {
+                if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
                     return session.users().getUsersCount(realm, parameters, auth.groups().getGroupIdsWithViewPermission());
+                } else {
+                    return session.users().getUsersCount(realm, parameters);
                 }
             }
         } else if (userPermissionEvaluator.canView()) {
             return session.users().getUsersCount(realm);
         } else {
-            if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+            if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
+                return session.users().getUsersCount(realm, auth.groups().getGroupIdsWithViewPermission());
+            } else {
                 return session.users().getUsersCount(realm);
             }
-            return session.users().getUsersCount(realm, auth.groups().getGroupIdsWithViewPermission());
         }
     }
 
@@ -512,7 +513,7 @@ public class UsersResource {
     private Stream<UserRepresentation> searchForUser(Map<String, String> attributes, RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, Integer firstResult, Integer maxResults, Boolean includeServiceAccounts) {
         attributes.put(UserModel.INCLUDE_SERVICE_ACCOUNT, includeServiceAccounts.toString());
 
-        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+        if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
             Set<String> groupIds = auth.groups().getGroupIdsWithViewPermission();
             if (!groupIds.isEmpty()) {
                 session.setAttribute(UserModel.GROUPS, groupIds);
