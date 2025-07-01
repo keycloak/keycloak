@@ -10,6 +10,8 @@
     </parent>
 
     <name>Release Notes</name>
+    <description>Release Notes</description>
+
     <artifactId>release-notes</artifactId>
     <packaging>pom</packaging>
 
