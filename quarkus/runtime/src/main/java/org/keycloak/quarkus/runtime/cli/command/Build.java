@@ -21,7 +21,6 @@ import static org.keycloak.config.ClassLoaderOptions.QUARKUS_REMOVED_ARTIFACTS_P
 import static org.keycloak.config.DatabaseOptions.DB;
 import static org.keycloak.quarkus.runtime.Environment.getHomePath;
 import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
-import static org.keycloak.quarkus.runtime.cli.Picocli.println;
 
 import io.quarkus.runtime.LaunchMode;
 
@@ -58,7 +57,7 @@ import java.util.Optional;
                 + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --metrics-enabled=true%n%n"
                 + "  Change the relative path:%n%n"
                 + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --http-relative-path=/auth%n")
-public final class Build extends AbstractCommand implements Runnable {
+public final class Build extends AbstractCommand {
 
     public static final String NAME = "build";
 
@@ -69,10 +68,7 @@ public final class Build extends AbstractCommand implements Runnable {
     DryRunMixin dryRunMixin;
 
     @Override
-    public void run() {
-        if (org.keycloak.common.util.Environment.getProfile() == null) {
-            Environment.setProfile(Environment.PROD_PROFILE_VALUE);
-        }
+    protected void runCommand() {
         checkProfileAndDb();
 
         // validate before setting that we're rebuilding so that runtime options are still seen
@@ -82,7 +78,7 @@ public final class Build extends AbstractCommand implements Runnable {
         });
         System.setProperty("quarkus.launch.rebuild", "true");
 
-        println(spec.commandLine(), "Updating the configuration and installing your custom providers, if any. Please wait.");
+        picocli.println("Updating the configuration and installing your custom providers, if any. Please wait.");
 
         try {
             configureBuildClassLoader();
@@ -95,8 +91,8 @@ public final class Build extends AbstractCommand implements Runnable {
             }
 
             if (!isDevProfile()) {
-                println(spec.commandLine(), "Server configuration updated and persisted. Run the following command to review the configuration:\n");
-                println(spec.commandLine(), "\t" + Environment.getCommand() + " show-config\n");
+                picocli.println("Server configuration updated and persisted. Run the following command to review the configuration:\n");
+                picocli.println("\t" + Environment.getCommand() + " show-config\n");
             }
         } catch (Throwable throwable) {
             executionError(spec.commandLine(), "Failed to update server configuration.", throwable);
@@ -119,7 +115,7 @@ public final class Build extends AbstractCommand implements Runnable {
 
     private void checkProfileAndDb() {
         if (Environment.isDevProfile()) {
-            String cmd = Environment.getParsedCommand().map(AbstractCommand::getName).orElse(getName());
+            String cmd = picocli.getParsedCommand().map(AbstractCommand::getName).orElse(getName());
             // we allow start-dev, and import|export|bootstrap-admin --profile=dev
             // but not start --profile=dev, nor build --profile=dev
             if (Start.NAME.equals(cmd) || Build.NAME.equals(cmd)) {
