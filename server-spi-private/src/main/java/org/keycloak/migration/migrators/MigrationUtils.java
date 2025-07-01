@@ -18,6 +18,9 @@
 package org.keycloak.migration.migrators;
 
 import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.Set;
+import java.util.List;
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -84,18 +87,36 @@ public class MigrationUtils {
         }
 
         if (client.isConsentRequired()) {
-            // Automatically add consents for client and for offline_access. We know that both were defacto approved by user already and offlineSession is still valid
-            UserConsentModel consent = session.users().getConsentByClient(realm, user.getId(), client.getId());
-            if (consent != null) {
-                if (client.isDisplayOnConsentScreen()) {
-                    consent.addGrantedClientScope(client);
+
+            if (!client.isConsentSelective() || selectiveConsentApplies(client,user)){
+                // Automatically add consents for client and for offline_access. We know that both were defacto approved by user already and offlineSession is still valid
+                UserConsentModel consent = session.users().getConsentByClient(realm, user.getId(), client.getId());
+                if (consent != null) {
+                    if (client.isDisplayOnConsentScreen()) {
+                        consent.addGrantedClientScope(client);
+                    }
+                    if (offlineScope.isDisplayOnConsentScreen()) {
+                        consent.addGrantedClientScope(offlineScope);
+                    }
+                    session.users().updateConsent(realm, user.getId(), consent);
                 }
-                if (offlineScope.isDisplayOnConsentScreen()) {
-                    consent.addGrantedClientScope(offlineScope);
-                }
-                session.users().updateConsent(realm, user.getId(), consent);
             }
         }
+    }
+
+    public static boolean selectiveConsentApplies(ClientModel client, UserModel user){
+        Map<String,String> selectiveConsentAttributes = client.getSelectiveConsentAttributes();
+        Map<String,List<String>> userAttributes = user.getAttributes(); 
+        // Still unsure how to get the organization here, to be implemented
+        Set<String> selectiveConsentOrganizations = client.getSelectiveConsentOrganizations();
+        boolean matchFound = selectiveConsentAttributes.entrySet().stream()
+            .anyMatch(e -> {
+            String key = e.getKey();
+            String consentValue = e.getValue();
+            List<String> userValues = userAttributes.get(key);
+            return userValues != null && userValues.contains(consentValue);
+        });
+        return matchFound;
     }
 
     public static void setDefaultClientAuthenticatorType(ClientModel s) {

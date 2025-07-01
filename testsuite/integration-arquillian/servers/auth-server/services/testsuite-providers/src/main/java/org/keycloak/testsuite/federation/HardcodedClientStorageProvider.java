@@ -247,6 +247,25 @@ public class HardcodedClientStorageProvider implements ClientStorageProvider, Cl
         public boolean isConsentRequired() {
             return consent;
         }
+        @Override
+        public boolean isConsentSelective() {
+            return false;
+        }
+
+        @Override
+        public Set<String> getSelectiveConsentOrganizations(){
+             return Collections.EMPTY_SET;
+        }
+
+        @Override
+        public Map<String,String> getSelectiveConsentAttributes(){
+            return Collections.EMPTY_MAP;
+        }
+
+        @Override
+        public String getSelectiveConsentAttribute(String selectiveConsentAttribute){
+             return null;
+        }
 
         @Override
         public boolean isStandardFlowEnabled() {

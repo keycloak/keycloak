@@ -25,6 +25,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.jpa.entities.ClientAttributeEntity;
+import org.keycloak.models.jpa.entities.ClientSelectiveConsentAttributeEntity;
 import org.keycloak.models.jpa.entities.ClientEntity;
 import org.keycloak.models.jpa.entities.ProtocolMapperEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -568,6 +569,91 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
     @Override
     public void setConsentRequired(boolean consentRequired) {
         entity.setConsentRequired(consentRequired);
+    }
+
+
+    @Override
+    public boolean isConsentSelective() {
+        return entity.isConsentSelective();
+    }
+
+
+    @Override
+    public void setSelectiveConsent(boolean selectiveConsent) {
+        entity.setSelectiveConsent(selectiveConsent);
+    }
+
+    @Override
+    public Set<String> getSelectiveConsentOrganizations() {
+        Set<String> result = new HashSet<>();
+        result.addAll(entity.getSelectiveConsentOrganizations());
+        return result;
+    }
+
+    @Override
+    public void addSelectiveConsentOrganization(String selectiveConsentOrganization) {
+        entity.getSelectiveConsentOrganizations().add(selectiveConsentOrganization);
+    }
+
+    @Override
+    public void removeSelectiveConsentOrganization(String selectiveConsentOrganization) {
+        entity.getWebOrigins().remove(selectiveConsentOrganization);
+    }
+
+    @Override
+    public void setSelectiveConsentAttribute(String name, String value) {
+        boolean valueUndefined = value == null || "".equals(value.trim());
+
+        for (ClientSelectiveConsentAttributeEntity attr : entity.getSelectiveConsentAttributes()) {
+            if (attr.getName().equals(name)) {
+                // clean up, so that attributes previously set with either a empty or null value are removed
+                // we should remove this in future versions so that new clients never store empty/null attributes
+                if (valueUndefined) {
+                    removeSelectiveConsentAttribute(name);
+                } else {
+                    attr.setValue(value);
+                }
+                return;
+            }
+        }
+
+        // do not create attributes if empty or null
+        if (valueUndefined) {
+            return;
+        }
+
+        ClientSelectiveConsentAttributeEntity attr = new ClientSelectiveConsentAttributeEntity();
+        attr.setName(name);
+        attr.setValue(value);
+        attr.setClient(entity);
+        em.persist(attr);
+        entity.getSelectiveConsentAttributes().add(attr);
+    }
+
+    @Override
+    public void removeSelectiveConsentAttribute(String name) {
+        Iterator<ClientAttributeEntity> it = entity.getAttributes().iterator();
+        while (it.hasNext()) {
+            ClientAttributeEntity attr = it.next();
+            if (attr.getName().equals(name)) {
+                it.remove();
+                em.remove(attr);
+            }
+        }
+    }
+
+    @Override
+    public String getSelectiveConsentAttribute(String name) {
+        return getSelectiveConsentAttributes().get(name);
+    }
+
+    @Override
+    public Map<String, String> getSelectiveConsentAttributes() {
+        Map<String, String> attrs = new HashMap<>();
+        for (ClientSelectiveConsentAttributeEntity attr : entity.getSelectiveConsentAttributes()) {
+            attrs.put(attr.getName(), attr.getValue());
+        }
+        return attrs;
     }
 
     @Override

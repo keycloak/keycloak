@@ -488,6 +488,63 @@ public class ClientAdapter implements ClientModel, CachedObject {
     }
 
     @Override
+    public boolean isConsentSelective() {
+        if (isUpdated()) return updated.isConsentSelective();
+        return cached.isConsentSelective();
+    }
+
+    @Override
+    public void setSelectiveConsent(boolean selectiveConsent) {
+        getDelegateForUpdate();
+        updated.setSelectiveConsent(selectiveConsent);
+    }
+
+    public Map<String,String> getSelectiveConsentAttributes() {
+        if (isUpdated()) return updated.getSelectiveConsentAttributes();
+        return cached.getSelectiveConsentAttributes();
+    }
+
+    @Override
+    public void setSelectiveConsentAttribute(String name, String value) {
+        getDelegateForUpdate();
+        updated.setSelectiveConsentAttribute(name, value);
+
+    }
+
+    @Override
+    public void removeSelectiveConsentAttribute(String name) {
+        getDelegateForUpdate();
+        updated.removeSelectiveConsentAttribute(name);
+
+    }
+
+    @Override
+    public String getSelectiveConsentAttribute(String name) {
+        if (isUpdated()) return updated.getSelectiveConsentAttribute(name);
+        return cached.getSelectiveConsentAttributes().get(name);
+    }
+
+
+    @Override
+    public void addSelectiveConsentOrganization(String organization) {
+        getDelegateForUpdate();
+        updated.addSelectiveConsentOrganization(organization);
+
+    }
+
+    @Override
+    public void removeSelectiveConsentOrganization(String organization) {
+        getDelegateForUpdate();
+        updated.removeSelectiveConsentOrganization(organization);
+
+    }
+
+    public Set<String> getSelectiveConsentOrganizations() {
+        if (isUpdated()) return updated.getSelectiveConsentOrganizations();
+        return cached.getSelectiveConsentOrganizations();
+    }
+
+    @Override
     public boolean isStandardFlowEnabled() {
         if (isUpdated()) return updated.isStandardFlowEnabled();
         return cached.isStandardFlowEnabled();
