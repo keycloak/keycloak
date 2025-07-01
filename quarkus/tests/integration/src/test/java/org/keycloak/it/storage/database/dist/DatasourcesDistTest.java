@@ -33,7 +33,7 @@ public class DatasourcesDistTest {
     @WithEnvVars({"KC_DB_KIND_USERS", "postgres", "KC_DB_KIND_MY_AWESOME_CLIENTS", "mariadb"})
     @Launch({"build"})
     public void specifiedViaEnvVars(CLIResult result) {
-        result.assertMessage("Multiple datasources are specified: <default>, my.awesome.clients, users");
+        result.assertMessage("Multiple datasources are specified: <default>, my-awesome-clients, users");
         result.assertBuild();
     }
 
