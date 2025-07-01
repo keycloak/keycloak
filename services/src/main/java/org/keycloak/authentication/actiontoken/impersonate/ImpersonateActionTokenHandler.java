@@ -29,12 +29,16 @@ import org.keycloak.authentication.actiontoken.AbstractActionTokenHandler;
 import org.keycloak.authentication.actiontoken.ActionTokenContext;
 import org.keycloak.authentication.actiontoken.TokenUtils;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.models.DefaultActionTokenKey;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.SingleUseObjectKeyModel;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.services.ErrorPage;
@@ -97,6 +101,12 @@ public class ImpersonateActionTokenHandler extends AbstractActionTokenHandler<Im
                 .detail(Details.IMPERSONATOR_REALM, token.getImpersonatorRealm())
                 .detail(Details.IMPERSONATOR, token.getImpersonatorUsername())
                 .success();
+
+        SingleUseObjectKeyModel actionTokenKey = DefaultActionTokenKey.from(token.serializeKey());
+        if (actionTokenKey != null) {
+            SingleUseObjectProvider singleUseObjectProvider = session.singleUseObjects();
+            singleUseObjectProvider.put(actionTokenKey.serializeKey(), actionTokenKey.getExp() - Time.currentTime(), null);
+        }
 
         return Response.status(Response.Status.FOUND)
                 .location(redirect)
