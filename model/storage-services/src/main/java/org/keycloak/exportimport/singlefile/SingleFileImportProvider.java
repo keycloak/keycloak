@@ -25,7 +25,6 @@ import org.keycloak.exportimport.util.ExportImportSessionTask;
 import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.util.JsonSerialization;
 
@@ -54,18 +53,19 @@ public class SingleFileImportProvider extends AbstractFileBasedImportProvider {
         this.strategy = strategy;
     }
 
+    @Override
     public void importModel() throws IOException {
         logger.infof("Full importing from file %s", this.file.getAbsolutePath());
         checkRealmReps();
 
-        KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
+        new ExportImportSessionTask() {
 
             @Override
             protected void runExportImportTask(KeycloakSession session) {
                 ImportUtils.importRealms(session, realmReps.values(), strategy);
             }
 
-        });
+        }.runTask(factory);
     }
 
     @Override

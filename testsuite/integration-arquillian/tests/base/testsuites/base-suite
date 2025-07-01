@@ -9,7 +9,6 @@ client,4
 cluster,IGNORED
 composites,4
 cookies,4
-crossdc,IGNORED
 docker,4
 domainextension,4
 error,4

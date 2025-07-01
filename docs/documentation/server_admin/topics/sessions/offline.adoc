@@ -32,12 +32,12 @@ To specify the lifespan override for offline user sessions, start {project_name}
 
 [source,bash]
 ----
---spi-user-sessions-infinispan-offline-session-cache-entry-lifespan-override=<lifespan-in-seconds>
+--spi-user-sessions--infinispan--offline-session-cache-entry-lifespan-override=<lifespan-in-seconds>
 ----
 
 Similarly for offline client sessions:
 
 [source,bash]
 ----
---spi-user-sessions-infinispan-offline-client-session-cache-entry-lifespan-override=<lifespan-in-seconds>
+--spi-user-sessions--infinispan--offline-client-session-cache-entry-lifespan-override=<lifespan-in-seconds>
 ----

@@ -19,8 +19,10 @@
 
 package org.keycloak.testsuite.user.profile;
 
+import static java.util.Optional.ofNullable;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -2305,6 +2307,77 @@ public class UserProfileTest extends AbstractUserProfileTest {
             profile.update();
             assertEquals(attributes.get(UserModel.EMAIL), profile.getAttributes().getFirst(UserModel.EMAIL));
             assertEquals(attributes.get(UserModel.EMAIL), profile.getAttributes().getFirst(UserModel.USERNAME));
+        } finally {
+            realm.setEditUsernameAllowed(true);
+            realm.setRegistrationEmailAsUsername(false);
+        }
+    }
+
+    @EnableFeature(Feature.UPDATE_EMAIL)
+    @Test
+    public void testEmailAnnotationsInAccountContext() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testEmailAnnotationsInAccountContext);
+    }
+
+    private static void testEmailAnnotationsInAccountContext(KeycloakSession session) {
+        UserProfileProvider provider = getUserProfileProvider(session);
+        String userName = org.keycloak.models.utils.KeycloakModelUtils.generateId();
+        Map<String, String> attributes = new HashMap<>();
+
+        attributes.put(UserModel.USERNAME, userName);
+        String originalEmail = userName + "@keycloak.org";
+        attributes.put(UserModel.EMAIL, originalEmail);
+        attributes.put(UserModel.FIRST_NAME, "Joe");
+        attributes.put(UserModel.LAST_NAME, "Doe");
+        attributes.put("address", "some address");
+
+        UserProfile profile = provider.create(UserProfileContext.USER_API, attributes);
+        UserModel user = profile.create();
+        RealmModel realm = session.getContext().getRealm();
+
+        try {
+            realm.setEditUsernameAllowed(false);
+            realm.setRegistrationEmailAsUsername(true);
+            profile = provider.create(UserProfileContext.ACCOUNT, attributes, user);
+            assertFalse(ofNullable(profile.getAttributes().getAnnotations(UserModel.EMAIL)).orElse(Map.of()).containsKey("kc.required.action.supported"));
+        } finally {
+            realm.setEditUsernameAllowed(true);
+            realm.setRegistrationEmailAsUsername(false);
+        }
+
+        try {
+            realm.setEditUsernameAllowed(true);
+            realm.setRegistrationEmailAsUsername(true);
+            profile = provider.create(UserProfileContext.ACCOUNT, attributes, user);
+            assertThat(ofNullable(profile.getAttributes().getAnnotations(UserModel.EMAIL)).orElse(Map.of()).get("kc.required.action.supported"), is(true));
+        } finally {
+            realm.setEditUsernameAllowed(true);
+            realm.setRegistrationEmailAsUsername(false);
+        }
+
+        try {
+            realm.setEditUsernameAllowed(false);
+            realm.setRegistrationEmailAsUsername(false);
+            UPConfig upConfig = provider.getConfiguration();
+            UPAttribute attribute = upConfig.getAttribute(UserModel.EMAIL);
+            attribute.setPermissions(new UPAttributePermissions(Set.of(ROLE_USER), Set.of(ROLE_ADMIN)));
+            provider.setConfiguration(upConfig);
+            profile = provider.create(UserProfileContext.ACCOUNT, attributes, user);
+            assertFalse(ofNullable(profile.getAttributes().getAnnotations(UserModel.EMAIL)).orElse(Map.of()).containsKey("kc.required.action.supported"));
+        } finally {
+            realm.setEditUsernameAllowed(true);
+            realm.setRegistrationEmailAsUsername(false);
+        }
+
+        try {
+            realm.setEditUsernameAllowed(false);
+            realm.setRegistrationEmailAsUsername(false);
+            UPConfig upConfig = provider.getConfiguration();
+            UPAttribute attribute = upConfig.getAttribute(UserModel.EMAIL);
+            attribute.setPermissions(new UPAttributePermissions(Set.of(ROLE_USER), Set.of(ROLE_ADMIN, ROLE_USER)));
+            provider.setConfiguration(upConfig);
+            profile = provider.create(UserProfileContext.ACCOUNT, attributes, user);
+            assertThat(ofNullable(profile.getAttributes().getAnnotations(UserModel.EMAIL)).orElse(Map.of()).get("kc.required.action.supported"), is(true));
         } finally {
             realm.setEditUsernameAllowed(true);
             realm.setRegistrationEmailAsUsername(false);

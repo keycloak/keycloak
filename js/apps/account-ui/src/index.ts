@@ -50,7 +50,6 @@ export {
   getPermissionRequests,
   getPersonalInfo,
   getSupportedLocales,
-  linkAccount,
   savePersonalInfo,
   unLinkAccount,
 } from "./api/methods";

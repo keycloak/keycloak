@@ -11,11 +11,14 @@ import {
   clickCreatePermission,
   clickCreatePolicySaveButton,
   clickSearchButton,
-  fillUserPermissionForm,
+  deletePermission,
+  fillPermissionForm,
   goToEvaluation,
   goToPermissions,
   openSearchPanel,
-  selectUsersResource,
+  pickGroup,
+  removeGroup,
+  selectResource,
 } from "./main";
 import { fillPolicyForm, goToPolicies } from "./policy";
 
@@ -29,6 +32,8 @@ test.describe("Permissions section tests", () => {
       username: "test-user",
       enabled: true,
     });
+    await adminClient.createGroup("one", realmName);
+    await adminClient.createGroup("two", realmName);
   });
   test.afterAll(() => adminClient.deleteRealm(realmName));
 
@@ -40,8 +45,8 @@ test.describe("Permissions section tests", () => {
 
   test("should create permission", async ({ page }) => {
     await clickCreatePermission(page);
-    await selectUsersResource(page);
-    await fillUserPermissionForm(page, {
+    await selectResource(page, "Users");
+    await fillPermissionForm(page, {
       name: "test-permission",
       description: "test-description",
       scopes: ["view"],
@@ -72,8 +77,43 @@ test.describe("Permissions section tests", () => {
 
     await goToPermissions(page);
     await assertRowExists(page, "test-permission");
+    await deletePermission(page, "test-permission");
     await goToPolicies(page);
     await assertRowExists(page, "test-policy");
+  });
+
+  test("should edit group permission", async ({ page }) => {
+    await clickCreatePermission(page);
+    await selectResource(page, "Groups");
+    await fillPermissionForm(page, {
+      name: "test-group-permission",
+      scopes: ["view"],
+      enforcementMode: "specificResources",
+    });
+    await pickGroup(page, "one");
+    await pickGroup(page, "two");
+
+    await clickCreateNewPolicy(page);
+    await fillPolicyForm(
+      page,
+      {
+        name: "test-policy2",
+        description: "test-description",
+        type: "User",
+        user: "test-user",
+      },
+      true,
+    );
+
+    await clickCreatePolicySaveButton(page);
+    await assertNotificationMessage(page, "Successfully created the policy");
+    await clickSaveButton(page);
+    await removeGroup(page, "one");
+    await clickSaveButton(page);
+    await assertNotificationMessage(
+      page,
+      "Successfully updated the permission",
+    );
   });
 
   test.describe("evaluate permissions", () => {
@@ -106,7 +146,7 @@ test.describe("Permissions section tests", () => {
       });
     });
 
-    test.skip("should evaluate permissions success", async ({ page }) => {
+    test("should evaluate permissions success", async ({ page }) => {
       await goToEvaluation(page);
       await selectItem(page, page.getByTestId("user"), "other-user");
       await selectItem(page, "#resourceType", "Clients");
@@ -115,11 +155,11 @@ test.describe("Permissions section tests", () => {
       await page.getByTestId("permission-eval").click();
 
       await expect(
-        page.getByRole("heading", { name: "Success alert: Clients with" }),
+        page.getByRole("heading", { name: "Success alert: account with" }),
       ).toBeVisible();
     });
 
-    test.skip("should evaluate permissions denied", async ({ page }) => {
+    test("should evaluate permissions denied", async ({ page }) => {
       await goToEvaluation(page);
       await selectItem(page, page.getByTestId("user"), "user1");
       await selectItem(page, "#resourceType", "Clients");
@@ -128,7 +168,7 @@ test.describe("Permissions section tests", () => {
       await page.getByTestId("permission-eval").click();
 
       await expect(
-        page.getByRole("heading", { name: "Warning alert: Clients with" }),
+        page.getByRole("heading", { name: "Warning alert: account with" }),
       ).toBeVisible();
     });
   });

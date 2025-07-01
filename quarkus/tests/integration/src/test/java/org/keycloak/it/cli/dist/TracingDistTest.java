@@ -40,6 +40,10 @@ public class TracingDistTest {
     private void assertTracingDisabled(CLIResult result) {
         result.assertMessage("opentelemetry");
         result.assertNoMessage("service.name=\"keycloak\"");
+        assertSamplingDisabled(result);
+    }
+
+    private void assertSamplingDisabled(CLIResult result) {
         result.assertNoMessage("Failed to export spans.");
         result.assertNoMessage("Connection refused: localhost/127.0.0.1:4317");
     }
@@ -102,6 +106,16 @@ public class TracingDistTest {
     }
 
     @Test
+    @Launch({"start", "--hostname-strict=false", "--http-enabled=true", "--optimized", "--tracing-sampler-ratio=0.0", "--log-level=io.opentelemetry:fine"})
+    void samplingDisabledViaRatioZero(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+
+        cliResult.assertStarted();
+        assertTracingEnabled(cliResult);
+        assertSamplingDisabled(cliResult);
+    }
+
+    @Test
     @Launch({"start", "--hostname-strict=false", "--http-enabled=true", "--optimized", "--tracing-endpoint=http://endpoint:8888", "--log-level=io.opentelemetry:fine"})
     void differentEndpoint(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -143,11 +157,11 @@ public class TracingDistTest {
     }
 
     @Test
-    @Launch({"start", "--hostname-strict=false", "--http-enabled=true", "--optimized", "--tracing-sampler-ratio=0.0"})
+    @Launch({"start", "--hostname-strict=false", "--http-enabled=true", "--optimized", "--tracing-sampler-ratio=1.1"})
     void wrongSamplerRatio(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
 
-        cliResult.assertError("Ratio in 'tracing-sampler-ratio' option must be a double value in interval <0,1).");
+        cliResult.assertError("Ratio in 'tracing-sampler-ratio' option must be a double value in interval [0,1].");
     }
 
     @Test

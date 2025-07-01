@@ -28,12 +28,10 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
-import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.changes.ClientSessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.changes.SessionsChangelogBasedTransaction;
 import org.keycloak.models.sessions.infinispan.changes.Tasks;
-import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshChecker;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 
 import java.util.UUID;
@@ -44,14 +42,13 @@ import java.util.UUID;
 public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSessionModel {
 
     private final KeycloakSession kcSession;
-    private final SessionRefreshStore provider;
     private AuthenticatedClientSessionEntity entity;
     private final ClientModel client;
     private final SessionsChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx;
     private UserSessionModel userSession;
     private boolean offline;
 
-    public AuthenticatedClientSessionAdapter(KeycloakSession kcSession, SessionRefreshStore provider,
+    public AuthenticatedClientSessionAdapter(KeycloakSession kcSession,
                                              AuthenticatedClientSessionEntity entity, ClientModel client, UserSessionModel userSession,
                                              SessionsChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx, boolean offline) {
         if (userSession == null) {
@@ -59,7 +56,6 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
         }
 
         this.kcSession = kcSession;
-        this.provider = provider;
         this.entity = entity;
         this.userSession = userSession;
         this.client = client;
@@ -153,12 +149,6 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
                     return;
                 }
                 entity.setTimestamp(timestamp);
-            }
-
-            @Override
-            public CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<AuthenticatedClientSessionEntity> sessionWrapper) {
-                return new CrossDCLastSessionRefreshChecker(provider.getLastSessionRefreshStore(), provider.getOfflineLastSessionRefreshStore())
-                        .shouldSaveClientSessionToRemoteCache(kcSession, client.getRealm(), sessionWrapper, userSession, offline, timestamp);
             }
 
             @Override

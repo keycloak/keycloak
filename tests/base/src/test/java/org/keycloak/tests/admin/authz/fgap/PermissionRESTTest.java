@@ -24,9 +24,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.fail;
 import org.junit.jupiter.api.Test;
-import org.keycloak.authorization.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
@@ -36,11 +38,28 @@ import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedUser;
 
-@KeycloakIntegrationTest(config = KeycloakAdminPermissionsServerConfig.class)
+@KeycloakIntegrationTest
 public class PermissionRESTTest extends AbstractPermissionTest {
 
     @InjectUser(ref = "alice")
     private ManagedUser userAlice;
+
+    @Test
+    public void testPreventDeletingAdminPermissionsClient() {
+        try {
+            client.admin().remove();
+            fail("Expected Exception wasn't thrown.");
+        } catch (Exception ex) {
+            assertThat(ex, instanceOf(BadRequestException.class));
+        }
+    }
+
+    @Test
+    public void testManageNotAllowedForAdminPermissionsClient() {
+        ClientRepresentation representation = client.admin().toRepresentation();
+        assertFalse(representation.getAccess().get("manage"));
+        assertFalse(representation.getAccess().get("configure"));
+    }
 
     @Test
     public void resourceServerTest() {

@@ -28,10 +28,9 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.drone.Different;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
@@ -53,7 +52,7 @@ import jakarta.ws.rs.core.Response;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public class SSOTest extends AbstractTestRealmKeycloakTest {
+public class SSOTest extends AbstractChangeImportedUserPasswordsTest {
 
     @Drone
     @Different
@@ -71,14 +70,10 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-    }
-
     @Test
     public void loginSuccess() {
         loginPage.open();
-        loginPage.login("test-user@localhost", "password");
+        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.parseLoginResponse().getCode());
@@ -112,7 +107,7 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
         // Expire session
         testingClient.testing().removeUserSession("test", sessionId);
 
-        oauth.doLogin("test-user@localhost", "password");
+        oauth.doLogin("test-user@localhost", getPassword("test-user@localhost"));
 
         String sessionId4 = events.expectLogin().assertEvent().getSessionId();
         assertNotEquals(sessionId, sessionId4);
@@ -124,7 +119,7 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void multipleSessions() {
         loginPage.open();
-        loginPage.login("test-user@localhost", "password");
+        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.parseLoginResponse().getCode());
@@ -134,7 +129,7 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
         //OAuthClient oauth2 = new OAuthClient(driver2);
         OAuthClient oauth2 = oauth.newConfig().driver(driver2);
 
-        oauth2.doLogin("test-user@localhost", "password");
+        oauth2.doLogin("test-user@localhost", getPassword("test-user@localhost"));
 
         EventRepresentation login2 = events.expectLogin().assertEvent();
 
@@ -173,7 +168,7 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
     public void loginWithRequiredActionAddedInTheMeantime() {
         // SSO login
         loginPage.open();
-        loginPage.login("test-user@localhost", "password");
+        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.parseLoginResponse().getCode());
@@ -190,7 +185,7 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
         oauth.openLoginForm();
         updatePasswordPage.assertCurrent();
 
-        updatePasswordPage.changePassword("password", "password");
+        updatePasswordPage.changePassword(getPassword("test-user@localhost"), getPassword("test-user@localhost"));
         events.expectRequiredAction(EventType.UPDATE_PASSWORD).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
         events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
 
@@ -207,12 +202,12 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
     public void failIfUsingCodeFromADifferentSession() throws IOException {
         // first client user login
         oauth.openLoginForm();
-        oauth.doLogin("test-user@localhost", "password");
+        oauth.doLogin("test-user@localhost", getPassword("test-user@localhost"));
         String firstCode = oauth.parseLoginResponse().getCode();
 
         // second client user login
         OAuthClient oauth2 = oauth.newConfig().driver(driver2);
-        oauth2.doLogin("john-doh@localhost", "password");
+        oauth2.doLogin("john-doh@localhost", getPassword("john-doh@localhost"));
         String secondCode = oauth2.parseLoginResponse().getCode();
         String[] firstCodeParts = firstCode.split("\\.");
         String[] secondCodeParts = secondCode.split("\\.");

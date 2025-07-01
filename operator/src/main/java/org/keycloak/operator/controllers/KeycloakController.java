@@ -174,7 +174,7 @@ public class KeycloakController implements Reconciler<Keycloak> {
 
     @Override
     public ErrorStatusUpdateControl<Keycloak> updateErrorStatus(Keycloak kc, Context<Keycloak> context, Exception e) {
-        Log.error("--- Error reconciling", e);
+        Log.debug("--- Error reconciling", e);
         KeycloakStatus status = new KeycloakStatusAggregator(kc.getStatus(), kc.getMetadata().getGeneration())
                 .addErrorMessage("Error performing operations:\n" + e.getMessage())
                 .build();

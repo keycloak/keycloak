@@ -2,9 +2,9 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="mod_auth_openidc Apache HTTPD Module"
+title="Configuring the mod_auth_openidc Apache HTTPD Module"
 priority=50
-summary="Configuring the mod_auth_openidc Apache module with {project_name}">
+summary="Configure the mod_auth_openidc Apache module with {project_name}.">
 
 
 WARNING: {project_name} does not provide any official support to mod_auth_openidc. The instructions below are best-effort and may not be up-to-date.

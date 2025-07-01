@@ -407,7 +407,7 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
 
     /**
      * This method introduces a delay to allow replication of clientSession cache on site 1 and site 2.
-     * Without the delay these test fails from time to time. This has no effect when tests run without cross-dc
+     * Without the delay these test fails from time to time. This has no effect when tests run without remote Infinispan
      * @param offline boolean Indicates where we work with offline sessions
      */
     private void allowXSiteReplication(boolean offline) {

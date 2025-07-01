@@ -200,7 +200,7 @@ public abstract class CacheManager {
     private void put(String id, Revisioned object, long lifespan) {
         if (lifespan < 0) {
             cache.putForExternalRead(id, object);
-        } else {
+        } else if (lifespan > 0) {
             cache.putForExternalRead(id, object, lifespan, TimeUnit.MILLISECONDS);
         }
     }
@@ -215,7 +215,7 @@ public abstract class CacheManager {
 
     public void sendInvalidationEvents(KeycloakSession session, Collection<InvalidationEvent> invalidationEvents, String eventKey) {
         session.getProvider(ClusterProvider.class)
-                .notify(eventKey, invalidationEvents, true, ClusterProvider.DCNotify.ALL_DCS);
+                .notify(eventKey, invalidationEvents, true);
     }
 
 

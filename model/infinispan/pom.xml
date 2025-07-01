@@ -88,6 +88,11 @@
             <artifactId>infinispan-component-processor</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
 
         <dependency>
             <groupId>junit</groupId>
@@ -116,7 +121,7 @@
                     </execution>
                 </executions>
                 <configuration combine.self="append">
-                    <remoteLockFiles>https://raw.githubusercontent.com/keycloak/keycloak/refs/heads/release/26.0/model/infinispan/proto.lock,https://raw.githubusercontent.com/keycloak/keycloak/refs/heads/release/26.1/model/infinispan/proto.lock</remoteLockFiles>
+                    <remoteLockFiles>https://raw.githubusercontent.com/keycloak/keycloak/refs/heads/release/26.0/model/infinispan/proto.lock,https://raw.githubusercontent.com/keycloak/keycloak/refs/heads/archive/release/26.1/model/infinispan/proto.lock,https://raw.githubusercontent.com/keycloak/keycloak/refs/heads/release/26.2/model/infinispan/proto.lock</remoteLockFiles>
                 </configuration>
             </plugin>
             <plugin>

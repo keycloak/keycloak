@@ -153,7 +153,7 @@ public class PolicyJsInjectionTest extends AbstractWebAuthnVirtualTest {
 
             loginPage.open();
             loginPage.assertCurrent(TEST_REALM_NAME);
-            loginPage.login(USERNAME, PASSWORD);
+            loginPage.login(USERNAME, getPassword(USERNAME));
 
             webAuthnLoginPage.assertCurrent();
             WebAuthnAuthenticatorsList authenticators = webAuthnLoginPage.getAuthenticators();

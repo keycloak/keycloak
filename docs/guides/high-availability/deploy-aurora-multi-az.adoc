@@ -2,8 +2,8 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Deploy AWS Aurora in multiple availability zones"
-summary="Building block for a database"
+title="Deploying AWS Aurora in multiple availability zones"
+summary="Deploy an AWS Aurora as the database building block in a multi-site deployment."
 tileVisible="false" >
 
 This topic describes how to deploy an Aurora regional deployment of a PostgreSQL instance across multiple availability zones to tolerate one or more availability zone failures in a given AWS region.

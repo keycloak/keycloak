@@ -5,7 +5,7 @@
 
 <@tmpl.guide
 title="Configuring TLS"
-summary="Learn how to configure {project_name}'s https certificates for ingoing and outgoing requests.">
+summary="Configure {project_name}'s https certificates for ingoing and outgoing requests.">
 
 Transport Layer Security (short: TLS) is crucial to exchange data over a secured channel.
 For production environments, you should never expose {project_name} endpoints through HTTP, as sensitive data is at the core of what {project_name} exchanges with other applications.

@@ -59,7 +59,7 @@ import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.utils.SearchQueryUtils;
 import org.keycloak.utils.StringUtil;
@@ -186,6 +186,32 @@ public class OrganizationsResource {
         return new OrganizationResource(session, organizationModel, adminEvent);
     }
 
+    /**
+     * Returns the organizations counts.
+     *
+     * @return
+     */
+    @GET
+    @NoCache
+    @Path("count")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
+    @Operation(summary = "Returns the organizations counts.")
+    public long getOrganizationCount(
+            @Parameter(description = "A String representing either an organization name or domain") @QueryParam("search") String search,
+            @Parameter(description = "A query to search for custom attributes, in the format 'key1:value2 key2:value2'") @QueryParam("q") String searchQuery,
+            @Parameter(description = "Boolean which defines whether the param 'search' must match exactly or not") @QueryParam("exact") Boolean exact
+    ) {
+        auth.realm().requireManageRealm();
+        Organizations.checkEnabled(provider);
+
+        if (StringUtil.isNotBlank(searchQuery)) {
+            Map<String, String> attributes = SearchQueryUtils.getFields(searchQuery);
+            return provider.count(attributes);
+        }
+        return provider.count(search, exact);
+    }
+
     @Path("members/{member-id}/organizations")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -196,7 +222,10 @@ public class OrganizationsResource {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = OrganizationRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "400", description = "Bad Request")
     })
-    public Stream<OrganizationRepresentation> getOrganizations(@PathParam("member-id") String memberId) {
-        return new OrganizationMemberResource(session, null, adminEvent).getOrganizations(memberId);
+    public Stream<OrganizationRepresentation> getOrganizations(
+            @PathParam("member-id") String memberId,
+            @Parameter(description = "if false, return the full representation. Otherwise, only the basic fields are returned.")
+            @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
+        return new OrganizationMemberResource(session, null, adminEvent).getOrganizations(memberId, briefRepresentation);
     }
 }

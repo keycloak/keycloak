@@ -5,8 +5,12 @@ import { assertRequiredFieldError } from "../utils/form";
 import { login } from "../utils/login";
 import { assertNotificationMessage } from "../utils/masthead";
 import { goToClients, goToRealm } from "../utils/sidebar";
-import { searchItem } from "../utils/table";
+import { clickTableRowItem, searchItem } from "../utils/table";
 import { continueNext, createClient, save } from "./utils";
+import {
+  assertKeyForCodeExchangeInput,
+  selectKeyForCodeExchangeInput,
+} from "./details";
 
 test.describe("Clients details test", () => {
   const realmName = `clients-details-realm-${uuid()}`;
@@ -60,5 +64,13 @@ test.describe("Clients details test", () => {
     await save(page);
 
     await assertNotificationMessage(page, "Client created successfully");
+  });
+
+  test("Should be able to update a client", async ({ page }) => {
+    await clickTableRowItem(page, clientId);
+    await selectKeyForCodeExchangeInput(page, "S256");
+    await save(page);
+    await assertNotificationMessage(page, "Client successfully updated");
+    await assertKeyForCodeExchangeInput(page, "S256");
   });
 });

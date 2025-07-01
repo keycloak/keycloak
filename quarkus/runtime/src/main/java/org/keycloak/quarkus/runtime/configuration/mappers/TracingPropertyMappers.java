@@ -18,7 +18,6 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import org.keycloak.common.Profile;
-import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.utils.StringUtil;
@@ -113,11 +112,12 @@ public class TracingPropertyMappers {
 
         try {
             var ratio = Double.parseDouble(value);
-            if (ratio <= 0.0 || ratio > 1.0) {
+            // note: 0.0 is a legal value, see https://quarkus.io/guides/opentelemetry-tracing#sampler
+            if (ratio < 0.0 || ratio > 1.0) {
                 throw new NumberFormatException();
             }
         } catch (NumberFormatException e) {
-            throw new PropertyException("Ratio in 'tracing-sampler-ratio' option must be a double value in interval <0,1).");
+            throw new PropertyException("Ratio in 'tracing-sampler-ratio' option must be a double value in interval [0,1].");
         }
     }
 

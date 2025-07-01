@@ -51,7 +51,7 @@ public interface SingleUseObjectProvider extends Provider {
 
     /**
      * This method returns data just if removal was successful. Implementation should guarantee that "remove" is single-use. So if
-     * 2 threads (even on different cluster nodes or on different cross-dc nodes) calls "remove(123)" concurrently, then just one of them
+     * 2 threads (even on different cluster nodes or on different multi-site nodes) calls "remove(123)" concurrently, then just one of them
      * is allowed to succeed and return data back. It can't happen that both will succeed.
      *
      * @param key String

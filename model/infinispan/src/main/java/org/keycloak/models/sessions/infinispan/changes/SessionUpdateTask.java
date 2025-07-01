@@ -32,8 +32,6 @@ public interface SessionUpdateTask<S extends SessionEntity> {
 
     CacheOperation getOperation();
 
-    CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<S> sessionWrapper);
-
     enum CacheOperation {
 
         ADD,
@@ -58,27 +56,4 @@ public interface SessionUpdateTask<S extends SessionEntity> {
             return REPLACE;
         }
     }
-
-
-    enum CrossDCMessageStatus {
-        SYNC,
-        //ASYNC,
-        // QUEUE,
-        NOT_NEEDED;
-
-
-        CrossDCMessageStatus merge(CrossDCMessageStatus other) {
-            if (this == SYNC || other == SYNC) {
-                return SYNC;
-            }
-
-            /*if (this == ASYNC || other == ASYNC) {
-                return ASYNC;
-            }*/
-
-            return NOT_NEEDED;
-        }
-
-    }
-
 }

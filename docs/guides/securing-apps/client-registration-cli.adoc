@@ -2,9 +2,9 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Client registration CLI"
+title="Automating client registration with the CLI"
 priority=110
-summary="Automating Client Registration with the CLI">
+summary="Use the CLI to automate client registration.">
 
 The Client Registration CLI is a command-line interface (CLI) tool for application developers to configure new clients in a self-service manner when integrating with {project_name}. It is specifically designed to interact with {project_name} Client Registration REST endpoints.
 

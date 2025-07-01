@@ -6,7 +6,7 @@
 
 <@tmpl.guide
 title="Avoiding downtime with rolling updates"
-summary="Avoid downtimes when changing themes, providers or configurations in optimized images.">
+summary="Avoid downtime when changing themes, providers, or configurations in optimized images.">
 
 By default, the {project_name} Operator will perform rolling updates on configuration changes without downtime, and recreate updates with downtime when the image name or tag changes.
 
@@ -37,8 +37,9 @@ spec:
     strategy: RecreateOnImageChange|Auto|Explicit # <1>
     revision: "abc" # <2>
 ----
-<.> Set the desired update strategy here.
-<.> Revision value for `Explicit` strategy.
+<1> Set the desired update strategy here.
+
+<2> Revision value for `Explicit` strategy.
 Ignored by the other strategies.
 
 [%autowidth]
@@ -55,7 +56,7 @@ When the image field changes, the Operator scales down the StatefulSet before ap
 |On incompatible changes
 |The {project_name} Operator detects if a rolling or recreate update is possible.
 
-In the current version, {project_name} performs rolling update if the {project_name} version is the same for the old and the new image.
+In the current version, {project_name} performs a rolling update if the {project_name} version is the same for the old and the new image.
 Future versions of {project_name} will change that behavior and use additional information from the configuration, the image and the version to determine if a rolling update is possible to reduce downtimes.
 
 |`Explicit`
@@ -70,6 +71,15 @@ If it matches the previous deployment, it performs a rolling update.
 When using the `Auto` update strategy, the {project_name} Operator automatically starts a Job to assess the feasibility of a rolling update.
 Read more about the process in the <@links.server id="update-compatibility"/> {section}.
 This process consumes cluster resources for the time of the check and introduces a slight delay before the StatefulSet update begins.
+
+[WARNING]
+====
+If the Keycloak CR configured a `podTemplate` as part of the `unsupported` configuration parameters, the Keycloak Operator will do its best to use those settings for the started Job. Still it might miss some settings due to the flexibility of the `podTemplate` feature and its unsupported nature.
+
+As a consequence, the Operator might draw the wrong conclusions if a rolling update is possible from changes to the `podTemplate` or information pulled in from Secrets, ConfigMaps or Volumes in the `podTemplate`.
+
+Therefore, if you are using the unsupported `podTemplate`, you may need to use one of the other update strategies.
+====
 
 The `Explicit` update strategy delegates the update decision to the user.
 The `revision` field acts as a user-controlled trigger.
@@ -102,6 +112,31 @@ m|True
 The `message` field explains why this strategy was chosen.
 
 |===
+
+[[operator-rolling-updates-for-patch-releases]]
+== Rolling updates for patch releases
+
+WARNING: This behavior is currently in an experimental mode, and it is not recommended for use in production.
+
+It is possible to enable automatic rolling updates when upgrading to a newer patch version in the same `+major.minor+` release stream.
+
+To enable this behavior, enable feature `rolling-updates:v2` as shown in the following example:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  features:
+  enabled:
+    - rolling-updates:v2
+  update:
+    strategy: Auto
+----
+
+Read more about rolling updates for patch releases in the <@links.server id="update-compatibility" anchor="rolling-updates-for-patch-releases" /> {section}.
 
 </@tmpl.guide>
 

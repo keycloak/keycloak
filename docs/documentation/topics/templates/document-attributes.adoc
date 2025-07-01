@@ -48,6 +48,8 @@
 :adminguide_bruteforce_link: {adminguide_link}#password-guess-brute-force-attacks
 :adminguide_eventlistener_name: Event listener
 :adminguide_eventlistener_link: {adminguide_link}#event-listener
+:adminguide_finegrained_name: fine-grained admin permissions
+:adminguide_finegrained_link: {adminguide_link}#_fine_grained_permissions
 :adminguide_timeouts_name: Timeouts
 :adminguide_timeouts_link: {adminguide_link}#_timeouts
 :adminguide_clearcache_name: Clearing Server Caches
@@ -118,9 +120,6 @@
 
 :jdgserver_name: Infinispan
 :jdgserver_version: 9.4.19
-:jdgserver_version_latest: 11.0.9
-:jdgserver_crossdcdocs_link: https://infinispan.org/docs/11.0.x/titles/xsite/xsite.html
-:jdgserver_version_latest: 11.0.8
 
 :subsystem_undertow_xml_urn: urn:jboss:domain:undertow:12.0
 :subsystem_infinispan_xml_urn: urn:jboss:domain:infinispan:12.0
@@ -132,7 +131,8 @@
 :securing_apps_name: Securing applications Guides
 :securing_apps_name_short: Securing applications
 :securing_apps_link: https://www.keycloak.org/guides#securing-apps
-:securing_apps_java_policy_enforcer_link: https://www.keycloak.org/securing-apps/policy-enforcer
+:securing_apps_base_link: https://www.keycloak.org/securing-apps
+:securing_apps_java_policy_enforcer_link: {securing_apps_base_link}/policy-enforcer
 :securing_apps_java_policy_enforcer_name: Java Policy enforcer
-:securing_apps_token_exchange_link: https://www.keycloak.org/securing-apps/token-exchange
+:securing_apps_token_exchange_link: {securing_apps_base_link}/token-exchange
 :securing_apps_token_exchange_name: Token exchange Documentation

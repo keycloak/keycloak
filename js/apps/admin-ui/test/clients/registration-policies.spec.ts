@@ -62,7 +62,7 @@ test.describe("Client registration policies tab", () => {
     });
 
     test("edit anonymous client registration policy", async ({ page }) => {
-      await clickTableRowItem(page, policyName);
+      await clickTableRowItem(page, "Consent Required");
       await fillPolicyForm(page, { name: policyNameUpdated });
       await clickSaveButton(page);
 
@@ -76,7 +76,7 @@ test.describe("Client registration policies tab", () => {
     });
 
     test("delete anonymous client registration policy", async ({ page }) => {
-      await clickRowKebabItem(page, policyNameUpdated, "Delete");
+      await clickRowKebabItem(page, "Full Scope Disabled", "Delete");
       await confirmModal(page);
 
       await assertNotificationMessage(
@@ -114,7 +114,7 @@ test.describe("Client registration policies tab", () => {
     });
 
     test("edit authenticated client registration policy", async ({ page }) => {
-      await clickTableRowItem(page, policyName);
+      await clickTableRowItem(page, "Allowed Protocol Mapper Types");
       await fillPolicyForm(page, { name: policyNameUpdated });
       await clickSaveButton(page);
 
@@ -129,7 +129,7 @@ test.describe("Client registration policies tab", () => {
     test("delete authenticated client registration policy", async ({
       page,
     }) => {
-      await clickRowKebabItem(page, policyNameUpdated, "Delete");
+      await clickRowKebabItem(page, "Allowed Client Scopes", "Delete");
       await confirmModal(page);
 
       await assertNotificationMessage(

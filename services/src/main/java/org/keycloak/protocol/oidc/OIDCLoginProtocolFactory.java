@@ -67,6 +67,11 @@ import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME
 public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     private static final Logger logger = Logger.getLogger(OIDCLoginProtocolFactory.class);
 
+    /**
+     * determines the order in which the login protocols are displayed in the dropdown boxes in the UI
+     */
+    public static final int UI_ORDER = 100;
+
     public static final String USERNAME = "username";
     public static final String EMAIL = "email";
     public static final String EMAIL_VERIFIED = "email verified";
@@ -115,11 +120,21 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     public static final String CONFIG_OIDC_REQ_PARAMS_MAX_OVERALL_SIZE = "add-req-params-max-overall-size";
     public static final String CONFIG_OIDC_REQ_PARAMS_FAIL_FAST = "add-req-params-fail-fast";
 
+    /**
+     * @deprecated To be removed in Keycloak 27
+     */
+    public static final String CONFIG_OIDC_ALLOW_MULTIPLE_AUDIENCES_FOR_JWT_CLIENT_AUTHENTICATION = "allow-multiple-audiences-for-jwt-client-authentication";
+
     private OIDCProviderConfig providerConfig;
 
     @Override
     public void init(Config.Scope config) {
         this.providerConfig = new OIDCProviderConfig(config);
+        if (this.providerConfig.isAllowMultipleAudiencesForJwtClientAuthentication()) {
+            logger.warnf("It is allowed to have multiple audiences for the JWT client authentication. This option is not recommended and will be removed in one of the future releases."
+                    + " It is recommended to update your OAuth/OIDC clients to rather use single audience in the JWT token used for the client authentication.");
+        }
+
         initBuiltIns();
     }
 
@@ -532,4 +547,11 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         }
     }
 
+    /**
+     * defines the option-order in the admin-ui
+     */
+    @Override
+    public int order() {
+        return UI_ORDER;
+    }
 }

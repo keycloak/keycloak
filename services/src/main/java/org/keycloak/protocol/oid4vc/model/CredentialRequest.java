@@ -19,6 +19,8 @@ package org.keycloak.protocol.oid4vc.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 /**
  * Represents a  CredentialRequest according to OID4VCI
@@ -34,6 +36,12 @@ public class CredentialRequest {
     @JsonProperty("credential_identifier")
     private String credentialIdentifier;
 
+    @JsonProperty("proof")
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "proof_type")
+    @JsonSubTypes({
+            @JsonSubTypes.Type(value = JwtProof.class, name = ProofType.JWT),
+            @JsonSubTypes.Type(value = LdpVpProof.class, name = ProofType.LD_PROOF)
+    })
     private Proof proof;
 
     // I have the choice of either defining format specific fields here, or adding a generic structure,

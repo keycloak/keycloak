@@ -19,13 +19,11 @@ package org.keycloak.models.sessions.infinispan;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 
 import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 import org.infinispan.commons.api.BasicCache;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
-import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.SingleUseObjectProvider;
@@ -44,11 +42,11 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
     public static final Logger logger = Logger.getLogger(InfinispanSingleUseObjectProvider.class);
 
     private final KeycloakSession session;
-    private final Supplier<BasicCache<String, SingleUseObjectValueEntity>> singleUseObjectCache;
+    private final BasicCache<String, SingleUseObjectValueEntity> singleUseObjectCache;
     private final boolean persistRevokedTokens;
     private final InfinispanKeycloakTransaction tx;
 
-    public InfinispanSingleUseObjectProvider(KeycloakSession session, Supplier<BasicCache<String, SingleUseObjectValueEntity>> singleUseObjectCache, boolean persistRevokedTokens) {
+    public InfinispanSingleUseObjectProvider(KeycloakSession session, BasicCache<String, SingleUseObjectValueEntity> singleUseObjectCache, boolean persistRevokedTokens) {
         this.session = session;
         this.singleUseObjectCache = singleUseObjectCache;
         this.persistRevokedTokens = persistRevokedTokens;
@@ -60,8 +58,7 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
     public void put(String key, long lifespanSeconds, Map<String, String> notes) {
         SingleUseObjectValueEntity tokenValue = new SingleUseObjectValueEntity(notes);
         try {
-            BasicCache<String, SingleUseObjectValueEntity> cache = singleUseObjectCache.get();
-            tx.put(cache, key, tokenValue, InfinispanUtil.toHotrodTimeMs(cache, Time.toMillis(lifespanSeconds)), TimeUnit.MILLISECONDS);
+            tx.put(singleUseObjectCache, key, tokenValue, Time.toMillis(lifespanSeconds), TimeUnit.MILLISECONDS);
         } catch (HotRodClientException re) {
             // No need to retry. The hotrod (remoteCache) has some retries in itself in case of some random network error happened.
             if (logger.isDebugEnabled()) {
@@ -85,8 +82,7 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
 
         SingleUseObjectValueEntity singleUseObjectValueEntity;
 
-        BasicCache<String, SingleUseObjectValueEntity> cache = singleUseObjectCache.get();
-        singleUseObjectValueEntity = tx.get(cache, key);
+        singleUseObjectValueEntity = tx.get(singleUseObjectCache, key);
         return singleUseObjectValueEntity != null ? singleUseObjectValueEntity.getNotes() : null;
     }
 
@@ -97,8 +93,7 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
         }
 
         try {
-            BasicCache<String, SingleUseObjectValueEntity> cache = singleUseObjectCache.get();
-            SingleUseObjectValueEntity existing = cache.remove(key);
+            SingleUseObjectValueEntity existing = singleUseObjectCache.remove(key);
             return existing == null ? null : existing.getNotes();
         } catch (HotRodClientException re) {
             // No need to retry. The hotrod (remoteCache) has some retries in itself in case of some random network error happened.
@@ -117,8 +112,7 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
             throw new ModelException("Revoked tokens can't be replaced");
         }
 
-        BasicCache<String, SingleUseObjectValueEntity> cache = singleUseObjectCache.get();
-        return cache.replace(key, new SingleUseObjectValueEntity(notes)) != null;
+        return singleUseObjectCache.replace(key, new SingleUseObjectValueEntity(notes)) != null;
     }
 
     @Override
@@ -128,11 +122,9 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
         }
 
         SingleUseObjectValueEntity tokenValue = new SingleUseObjectValueEntity(null);
-        BasicCache<String, SingleUseObjectValueEntity> cache = singleUseObjectCache.get();
 
         try {
-            long lifespanMs = InfinispanUtil.toHotrodTimeMs(cache, Time.toMillis(lifespanInSeconds));
-            SingleUseObjectValueEntity existing = cache.putIfAbsent(key, tokenValue, lifespanMs, TimeUnit.MILLISECONDS);
+            SingleUseObjectValueEntity existing = singleUseObjectCache.putIfAbsent(key, tokenValue, Time.toMillis(lifespanInSeconds), TimeUnit.MILLISECONDS);
             return existing == null;
         } catch (HotRodClientException re) {
             // No need to retry. The hotrod (remoteCache) has some retries in itself in case of some random network error happened.
@@ -146,8 +138,7 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
 
     @Override
     public boolean contains(String key) {
-        BasicCache<String, SingleUseObjectValueEntity> cache = singleUseObjectCache.get();
-        return cache.containsKey(key);
+        return singleUseObjectCache.containsKey(key);
     }
 
     @Override

@@ -36,7 +36,6 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.LaxRedirectStrategy;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
@@ -56,6 +55,8 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -76,7 +77,6 @@ import org.keycloak.util.JsonSerialization;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 /**
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
  */
@@ -139,13 +139,35 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
         }
     }
 
-    protected CloseableHttpClient getHttpsAwareClient() {
-        HttpClientBuilder builder = HttpClientBuilder.create()
-              .setRedirectStrategy(new LaxRedirectStrategy());
-        if (AUTH_SERVER_SSL_REQUIRED) {
-            builder.setSSLHostnameVerifier((s, sslSession) -> true);
+    @Test
+    public void concurrentLoginSingleUserSingleClientRehash() throws Throwable {
+        log.info("*********************************************");
+        final RealmRepresentation realmRep = testRealm().toRepresentation();
+
+        try {
+            realmRep.setPasswordPolicy("hashAlgorithm(pbkdf2-sha256)");
+            testRealm().update(realmRep);
+            // change the password of the test user to the same to force re-hashing
+            CredentialRepresentation rep = new CredentialRepresentation();
+            rep.setTemporary(Boolean.FALSE);
+            rep.setValue("password");
+            rep.setType(CredentialRepresentation.PASSWORD);
+            ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost").resetPassword(rep);
+        } finally {
+            realmRep.setPasswordPolicy("");
+            testRealm().update(realmRep);
         }
-        return builder.build();
+
+        // execute the login to re-hash in parallel
+        run(2, 10, (KeycloakRunnable) (int threadIndex, Keycloak keycloak, RealmResource realm) -> {
+            try (CloseableHttpClient httpClient = getHttpsAwareClient()) {
+                createHttpClientContextForUser(httpClient, "test-user@localhost", "password");
+            }
+        });
+    }
+
+    protected CloseableHttpClient getHttpsAwareClient() {
+        return HttpClientUtils.createDefault(LaxRedirectStrategy.INSTANCE);
     }
 
     protected HttpClientContext createHttpClientContextForUser(final CloseableHttpClient httpClient, String userName, String password) throws IOException {
@@ -249,7 +271,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
             ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost").logout();
 
             // Code should be successfully exchanged for the token at max once. In some cases (EG. Cross-DC) it may not be even successfully exchanged
-            assertThat(codeToTokenSuccessCount.get(), Matchers.lessThanOrEqualTo(1));
+            assertThat(codeToTokenSuccessCount.get(), Matchers.equalTo(1));
             assertThat(codeToTokenErrorsCount.get(), Matchers.greaterThanOrEqualTo(DEFAULT_THREADS - 1));
 
             log.infof("Iteration %d passed successfully", i);

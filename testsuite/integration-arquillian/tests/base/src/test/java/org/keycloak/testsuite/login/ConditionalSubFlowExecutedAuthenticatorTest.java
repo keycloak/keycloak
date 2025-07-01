@@ -75,7 +75,7 @@ public class ConditionalSubFlowExecutedAuthenticatorTest extends AbstractTestRea
 
     @Test
     public void testWithoutOtpConfiguredExecuted() {
-        configureConditionalSubFlowExecutedAuthenticatorInFlow("test Browser - Conditional OTP", ConditionalSubFlowExecutedAuthenticatorFactory.CHECK_RESULT_EXECUTED);
+        configureConditionalSubFlowExecutedAuthenticatorInFlow("test Browser - Conditional 2FA", ConditionalSubFlowExecutedAuthenticatorFactory.CHECK_RESULT_EXECUTED);
 
         oauth.doLogin("test-user@localhost", "password");
 
@@ -85,7 +85,7 @@ public class ConditionalSubFlowExecutedAuthenticatorTest extends AbstractTestRea
 
     @Test
     public void testWithoutOtpConfiguredNotExecuted() {
-        configureConditionalSubFlowExecutedAuthenticatorInFlow("test Browser - Conditional OTP", ConditionalSubFlowExecutedAuthenticatorFactory.CHECK_RESULT_NOT_EXECUTED);
+        configureConditionalSubFlowExecutedAuthenticatorInFlow("test Browser - Conditional 2FA", ConditionalSubFlowExecutedAuthenticatorFactory.CHECK_RESULT_NOT_EXECUTED);
 
         oauth.doLogin("test-user@localhost", "password");
 
@@ -95,7 +95,7 @@ public class ConditionalSubFlowExecutedAuthenticatorTest extends AbstractTestRea
 
     @Test
     public void testWithOtpConfiguredExecuted() {
-        configureConditionalSubFlowExecutedAuthenticatorInFlow("test Browser - Conditional OTP", ConditionalSubFlowExecutedAuthenticatorFactory.CHECK_RESULT_EXECUTED);
+        configureConditionalSubFlowExecutedAuthenticatorInFlow("test Browser - Conditional 2FA", ConditionalSubFlowExecutedAuthenticatorFactory.CHECK_RESULT_EXECUTED);
 
         oauth.doLogin("user-with-one-configured-otp", "password");
 
@@ -108,7 +108,7 @@ public class ConditionalSubFlowExecutedAuthenticatorTest extends AbstractTestRea
 
     @Test
     public void testWithOtpConfiguredNotExecuted() {
-        configureConditionalSubFlowExecutedAuthenticatorInFlow("test Browser - Conditional OTP", ConditionalSubFlowExecutedAuthenticatorFactory.CHECK_RESULT_NOT_EXECUTED);
+        configureConditionalSubFlowExecutedAuthenticatorInFlow("test Browser - Conditional 2FA", ConditionalSubFlowExecutedAuthenticatorFactory.CHECK_RESULT_NOT_EXECUTED);
 
         oauth.doLogin("user-with-two-configured-otp", "password");
 

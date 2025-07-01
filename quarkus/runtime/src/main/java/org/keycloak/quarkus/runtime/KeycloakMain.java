@@ -22,14 +22,17 @@ import static org.keycloak.quarkus.runtime.Environment.isNonServerMode;
 import static org.keycloak.quarkus.runtime.Environment.isTestLaunchMode;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import picocli.CommandLine;
+
+import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
+import io.quarkus.bootstrap.runner.RunnerClassLoader;
 import io.quarkus.runtime.ApplicationLifecycleManager;
 import io.quarkus.runtime.Quarkus;
 
@@ -51,43 +54,28 @@ import io.quarkus.runtime.annotations.QuarkusMain;
 @ApplicationScoped
 public class KeycloakMain implements QuarkusApplication {
 
-    private static final String INFINISPAN_VIRTUAL_THREADS_PROP = "org.infinispan.threads.virtual";
-
-    public static final int MIN_VT_POOL_SIZE = 2;
-
     static {
-        // enable Infinispan and JGroups virtual threads by default
-        if (System.getProperty(INFINISPAN_VIRTUAL_THREADS_PROP) == null && getParallelism() >= MIN_VT_POOL_SIZE) {
-            System.setProperty(INFINISPAN_VIRTUAL_THREADS_PROP, "true");
-        }
+        InfinispanUtils.configureVirtualThreads();
     }
 
     public static void main(String[] args) {
         ensureForkJoinPoolThreadFactoryHasBeenSetToQuarkus();
-        ensureVirtualThreadsParallelism();
+        InfinispanUtils.ensureVirtualThreadsParallelism();
 
         System.setProperty("kc.version", Version.VERSION);
 
-        main(args, new Picocli());
-    }
-
-    private static void ensureVirtualThreadsParallelism() {
-        if (Boolean.parseBoolean(System.getProperty(INFINISPAN_VIRTUAL_THREADS_PROP))) {
-            if (getParallelism() < MIN_VT_POOL_SIZE) {
-                throw new RuntimeException("To be able to use Infinispan/JGroups virtual threads, you need to set the Java system property jdk.virtualThreadScheduler.parallelism to at least " + MIN_VT_POOL_SIZE);
-            }
-        }
-    }
-
-    private static int getParallelism() {
-        int parallelism;
-        String parallelismValue = System.getProperty("jdk.virtualThreadScheduler.parallelism");
-        if (parallelismValue != null) {
-            parallelism = Integer.parseInt(parallelismValue);
+        Picocli picocli;
+        if (!(Thread.currentThread().getContextClassLoader() instanceof RunnerClassLoader)) {
+            picocli = new Picocli() { // embedded launch case, avoid System.exit
+                @Override
+                public void exit(int exitCode) {
+                    Quarkus.asyncExit(exitCode);
+                };
+            };
         } else {
-            parallelism = Runtime.getRuntime().availableProcessors();
+            picocli = new Picocli();
         }
-        return parallelism;
+        main(args, picocli);
     }
 
     public static void main(String[] args, Picocli picocli) {
@@ -98,7 +86,7 @@ public class KeycloakMain implements QuarkusApplication {
             picocli.usageException(e.getMessage(), e.getCause());
             return;
         }
-        
+
         if (DryRunMixin.isDryRunBuild() && (cliArgs.contains(DryRunMixin.DRYRUN_OPTION_LONG) || Boolean.valueOf(System.getenv().get(DryRunMixin.KC_DRY_RUN_ENV)))) {
             PersistedConfigSource.getInstance().useDryRunProperties();
         }
@@ -140,27 +128,22 @@ public class KeycloakMain implements QuarkusApplication {
         return cliArgs.size() == 2 && cliArgs.get(0).equals(Start.NAME) && cliArgs.stream().anyMatch(OPTIMIZED_BUILD_OPTION_LONG::equals);
     }
 
-    public static void start(ExecutionExceptionHandler errorHandler, PrintWriter errStream) {
+    public static void start(Picocli picocli, ExecutionExceptionHandler errorHandler) {
         try {
             Quarkus.run(KeycloakMain.class, (exitCode, cause) -> {
                 if (cause != null) {
-                    errorHandler.error(errStream,
+                    errorHandler.error(picocli.getErrWriter(),
                             String.format("Failed to start server in (%s) mode", getKeycloakModeFromProfile(org.keycloak.common.util.Environment.getProfile())),
                             cause.getCause());
                 }
-
-                if (Environment.isDistribution()) {
-                    // assume that it is running the distribution
-                    // as we are replacing the default exit handler, we need to force exit
-                    System.exit(exitCode);
-                }
+                picocli.exit(exitCode);
             });
         } catch (Throwable cause) {
-            errorHandler.error(errStream,
+            errorHandler.error(picocli.getErrWriter(),
                     String.format("Unexpected error when starting the server in (%s) mode", getKeycloakModeFromProfile(org.keycloak.common.util.Environment.getProfile())),
                     cause.getCause());
-            System.exit(1);
         }
+        picocli.exit(CommandLine.ExitCode.SOFTWARE);
     }
 
     /**
@@ -168,17 +151,15 @@ public class KeycloakMain implements QuarkusApplication {
      */
     @Override
     public int run(String... args) throws Exception {
-        int exitCode = ApplicationLifecycleManager.getExitCode();
-
         if (isTestLaunchMode() || isNonServerMode()) {
             // in test mode we exit immediately
             // we should be managing this behavior more dynamically depending on the tests requirements (short/long lived)
-            Quarkus.asyncExit(exitCode);
+            Quarkus.asyncExit(ApplicationLifecycleManager.getExitCode());
         } else {
             Quarkus.waitForExit();
         }
 
-        return exitCode;
+        return ApplicationLifecycleManager.getExitCode();
     }
 
 }

@@ -2,12 +2,11 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="{project_name} Grafana dashboards"
-summary="Learn how to import {project_name} provided Grafana dashboards to your Grafana instance" >
+title="Visualizing activities in dashboards"
+summary="Install the {project_name} Grafana dashboards to visualize the metrics that capture the status and activities of your deployment.">
 
 {project_name} provides metrics to observe what is happening inside the deployment.
-To understand how metrics evolve over time, it is helpful to collect them and visualize in graphs.
-
+To understand how metrics evolve over time, it is helpful to collect and visualize them in graphs.
 
 This guide provides instructions on how to visualize collected {project_name} metrics in a running Grafana instance.
 
@@ -15,6 +14,7 @@ This guide provides instructions on how to visualize collected {project_name} me
 
 * {project_name} metrics are enabled. Follow <@links.observability id="configuration-metrics"/> {section} for more details.
 * Grafana instance is running and {project_name} metrics are collected into a Prometheus instance.
+* For the HTTP request latency heatmaps to work, enable histograms for HTTP metrics by setting `http-metrics-histograms-enabled` to `true`.
 
 == {project_name} Grafana dashboards
 
@@ -94,4 +94,9 @@ Exporting a dashboard to JSON format may be useful. For example, you may want to
 ++++
 </div>
 ++++
+
+== Further reading
+
+Continue reading on how to connect traces to dashboard in the <@links.observability id="exemplars" /> {section}.
+
 </@tmpl.guide>

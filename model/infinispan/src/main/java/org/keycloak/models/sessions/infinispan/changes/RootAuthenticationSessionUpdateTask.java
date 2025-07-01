@@ -29,8 +29,4 @@ public abstract class RootAuthenticationSessionUpdateTask implements SessionUpda
         return CacheOperation.REPLACE;
     }
 
-    @Override
-    public CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<RootAuthenticationSessionEntity> sessionWrapper) {
-        return CrossDCMessageStatus.SYNC;
-    }
 }

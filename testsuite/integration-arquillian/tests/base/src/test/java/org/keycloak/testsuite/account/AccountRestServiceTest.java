@@ -912,7 +912,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
         // Disable parent subflow - that should treat OTP execution as disabled too
         AuthenticationExecutionModel.Requirement currentBrowserReq = setExecutionRequirement(DefaultAuthenticationFlows.BROWSER_FLOW,
-                "Browser - Conditional OTP", AuthenticationExecutionModel.Requirement.DISABLED);
+                "Browser - Conditional 2FA", AuthenticationExecutionModel.Requirement.DISABLED);
 
         // Disable OTP directly in first-broker-login and direct-grant
         AuthenticationExecutionModel.Requirement currentFBLReq = setExecutionRequirement(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW,
@@ -928,14 +928,14 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
             // Enable browser subflow. OTP should be available then
             setExecutionRequirement(DefaultAuthenticationFlows.BROWSER_FLOW,
-                    "Browser - Conditional OTP", currentBrowserReq);
+                    "Browser - Conditional 2FA", currentBrowserReq);
             credentials = getCredentials();
             Assert.assertEquals(2, credentials.size());
             Assert.assertEquals(OTPCredentialModel.TYPE, credentials.get(1).getType());
 
             // Disable browser subflow and enable FirstBrokerLogin. OTP should be available then
             setExecutionRequirement(DefaultAuthenticationFlows.BROWSER_FLOW,
-                    "Browser - Conditional OTP", AuthenticationExecutionModel.Requirement.DISABLED);
+                    "Browser - Conditional 2FA", AuthenticationExecutionModel.Requirement.DISABLED);
             setExecutionRequirement(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW,
                     "OTP Form", currentFBLReq);
             credentials = getCredentials();
@@ -944,7 +944,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         } finally {
             // Revert flows
             setExecutionRequirement(DefaultAuthenticationFlows.BROWSER_FLOW,
-                    "Browser - Conditional OTP", currentBrowserReq);
+                    "Browser - Conditional 2FA", currentBrowserReq);
             setExecutionRequirement(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW,
                     "Direct Grant - Conditional OTP", currentDirectGrantReq);
         }

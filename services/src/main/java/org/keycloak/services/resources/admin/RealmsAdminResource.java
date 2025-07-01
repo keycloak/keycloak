@@ -44,8 +44,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakOpenAPI;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
-import org.keycloak.services.resources.admin.permissions.AdminPermissions;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.ExportImportManager;
 
@@ -173,17 +173,15 @@ public class RealmsAdminResource {
                     .success();
 
             return Response.created(location).build();
-        } catch (ModelDuplicateException e) {
-            logger.error("Conflict detected", e);
-            if (session.getTransactionManager().isActive()) session.getTransactionManager().setRollbackOnly();
-            throw ErrorResponse.exists("Conflict detected. See logs for details");
         } catch (PasswordPolicyNotMetException e) {
             logger.error("Password policy not met for user " + e.getUsername(), e);
-            if (session.getTransactionManager().isActive()) session.getTransactionManager().setRollbackOnly();
             throw ErrorResponse.error("Password policy not met. See logs for details", Response.Status.BAD_REQUEST);
-        } catch (ModelIllegalStateException e) {
-            logger.error(e.getMessage(), e);
-            throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
+        } catch (ModelIllegalStateException mise) {
+            logger.error(mise.getMessage(), mise);
+            throw ErrorResponse.error(mise.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
+        } catch (ModelDuplicateException mde) {
+            logger.error("Conflict detected", mde);
+            throw ErrorResponse.exists(mde.getMessage());
         } catch (ModelException e) {
             throw ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);
         }

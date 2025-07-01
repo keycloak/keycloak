@@ -45,9 +45,11 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.models.jpa.entities.CredentialEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.StripSecretsUtils;
@@ -71,6 +73,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
@@ -136,6 +139,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -782,7 +786,7 @@ public class UserTest extends AbstractAdminTest {
 
             addAttribute(user, "test", Collections.singletonList("test" + i));
             addAttribute(user, "test" + i, Collections.singletonList("test" + i));
-            addAttribute(user, "attr", Collections.singletonList("common"));
+            addAttribute(user, "attr", Arrays.asList("common", "common2"));
 
             ids.add(createUser(user));
         }
@@ -818,6 +822,11 @@ public class UserTest extends AbstractAdminTest {
 
         attributes = new HashMap<>();
         attributes.put("attr", "common");
+        assertThat(realm.users().count(null, null, null, null, null, null, null, mapToSearchQuery(attributes)), is(9));
+
+        attributes = new HashMap<>();
+        attributes.put("attr", "common");
+        attributes.put(UserModel.EXACT, Boolean.FALSE.toString());
         assertThat(realm.users().count(null, null, null, null, null, null, null, mapToSearchQuery(attributes)), is(9));
     }
 
@@ -1264,7 +1273,8 @@ public class UserTest extends AbstractAdminTest {
 
     @Test
     public void searchById() {
-        String expectedUserId = createUsers().get(0);
+        List<String> userIds = createUsers();
+        String expectedUserId = userIds.get(0);
         List<UserRepresentation> users = realm.users().search("id:" + expectedUserId, null, null);
 
         assertEquals(1, users.size());
@@ -1274,6 +1284,19 @@ public class UserTest extends AbstractAdminTest {
 
         assertEquals(1, users.size());
         assertEquals(expectedUserId, users.get(0).getId());
+
+        // Should allow searching for multiple users
+        String expectedUserId2 = userIds.get(1);
+        List<UserRepresentation> multipleUsers = realm.users().search(String.format("id:%s %s", expectedUserId, expectedUserId2), 0 , 10);;
+        assertThat(multipleUsers, hasSize(2));
+        assertThat(multipleUsers.get(0).getId(), is(expectedUserId));
+        assertThat(multipleUsers.get(1).getId(), is(expectedUserId2));
+
+        // Should take arbitrary amount of spaces in between ids
+        List<UserRepresentation> multipleUsers2 = realm.users().search(String.format("id:  %s   %s  ", expectedUserId, expectedUserId2), 0 , 10);;
+        assertThat(multipleUsers2, hasSize(2));
+        assertThat(multipleUsers2.get(0).getId(), is(expectedUserId));
+        assertThat(multipleUsers2.get(1).getId(), is(expectedUserId2));
     }
 
     @Test
@@ -1427,6 +1450,26 @@ public class UserTest extends AbstractAdminTest {
         users = realm.users().search("\"user1@localhost\"", null, null);
         assertThat(users, hasSize(1));
         assertThat(userIds.get(0), equalTo(users.get(0).getId()));
+    }
+
+    @Test
+    public void testSearchBasedOnUserProfileSettings() {
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("test_username");
+        user.setFirstName("test_first_name");
+        user.setLastName("test_last_name");
+        user.setEmail("test_email@test.com");
+        user.setEnabled(true);
+        user.setEmailVerified(true);
+        createUser(user);
+
+        UPConfig upConfig = realm.users().userProfile().getConfiguration();
+        upConfig.getAttribute(UserModel.FIRST_NAME).setPermissions(new UPAttributePermissions());
+        realm.users().userProfile().update(upConfig);
+        List<UserRepresentation> users = realm.users().list();
+        assertThat(users, hasSize(1));
+        user = users.get(0);
+        assertThat(user.getFirstName(), is(nullValue()));
     }
 
     @Test
@@ -3164,16 +3207,17 @@ public class UserTest extends AbstractAdminTest {
         UserProfileResource upResource = adminClient.realm("test").users().userProfile();
         UPConfig upConfig = upResource.getConfiguration();
         upConfig.addOrReplaceAttribute(createAttributeMetadata("aName"));
+        upConfig.getAttribute("aName").setPermissions(new UPAttributePermissions(Set.of("user", "admin"), Set.of("user", "admin")));
         upResource.update(upConfig);
 
         try {
             UsersResource users = adminClient.realms().realm("test").users();
 
             for (int i = 0; i < 110; i++) {
-                users.create(UserBuilder.create().username("test-" + i).addAttribute("aName", "aValue").build()).close();
+                users.create(UserBuilder.create().username("test2-" + i).addAttribute("aName", "aValue").build()).close();
             }
 
-            List<UserRepresentation> result = users.search("test", null, null);
+            List<UserRepresentation> result = users.search("test2", null, null);
             assertEquals(100, result.size());
             for (UserRepresentation user : result) {
                 assertThat(user.getAttributes(), Matchers.notNullValue());
@@ -3181,8 +3225,8 @@ public class UserTest extends AbstractAdminTest {
                 assertThat(user.getAttributes(), Matchers.hasEntry(is("aName"), Matchers.contains("aValue")));
             }
 
-            assertEquals(105, users.search("test", 0, 105).size());
-            assertEquals(111, users.search("test", 0, 1000).size());
+            assertEquals(105, users.search("test2", 0, 105).size());
+            assertEquals(110, users.search("test2", 0, 1000).size());
         } finally {
             upConfig.removeAttribute("aName");
             upResource.update(upConfig);
@@ -3194,6 +3238,7 @@ public class UserTest extends AbstractAdminTest {
         UserProfileResource upResource = adminClient.realm("test").users().userProfile();
         UPConfig upConfig = upResource.getConfiguration();
         upConfig.addOrReplaceAttribute(createAttributeMetadata("aName"));
+        upConfig.getAttribute("aName").setPermissions(new UPAttributePermissions());
         upResource.update(upConfig);
 
         try {
@@ -3346,15 +3391,62 @@ public class UserTest extends AbstractAdminTest {
     public void testUpdateCredentials() {
         importTestRealms();
 
+        // both credentials have a null priority - stable ordering is not guaranteed between calls
+
         // Get user user-with-one-configured-otp and assert he has no label linked to its OTP credential
         UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "user-with-one-configured-otp");
-        CredentialRepresentation otpCred = user.credentials().get(0);
+        CredentialRepresentation otpCred = user.credentials().stream().filter(cr -> "otp".equals(cr.getType()))
+                .findFirst().orElseThrow();
         Assert.assertNull(otpCred.getUserLabel());
 
         // Set and check a new label
         String newLabel = "the label";
         user.setCredentialUserLabel(otpCred.getId(), newLabel);
-        Assert.assertEquals(newLabel, user.credentials().get(0).getUserLabel());
+        Assert.assertEquals(newLabel, user.credentials().stream().filter(cr -> cr.getId().equals(otpCred.getId()))
+                .findFirst().orElseThrow().getUserLabel());
+    }
+
+    @Test
+    public void testShouldFailToSetCredentialUserLabelWhenLabelIsEmpty() {
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "user-with-one-configured-otp");
+        CredentialRepresentation otpCred = user.credentials().get(0);
+            BadRequestException ex = assertThrows(BadRequestException.class, () -> {
+                user.setCredentialUserLabel(otpCred.getId(), "   ");
+            });
+            Response response = ex.getResponse();
+            String body = response.readEntity(String.class);
+
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            assertTrue(body.contains("missingCredentialLabel"));
+            assertTrue(body.contains("Credential label must not be empty"));
+    }
+
+    @Test
+    public void testShouldFailToSetCredentialUserLabelWhenLabelAlreadyExists() {
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "user-with-two-configured-otp");
+
+        List<CredentialRepresentation> credentials = user.credentials().stream()
+                .filter(c -> c.getType().equals(OTPCredentialModel.TYPE))
+                .toList();
+        assertEquals(2, credentials.size());
+
+        String firstId = credentials.get(0).getId();
+        String secondId = credentials.get(1).getId();
+
+        user.setCredentialUserLabel(firstId, "Device");
+        user.setCredentialUserLabel(secondId, "Second Device");
+
+        // Attempt to update second credential to use the same label as the first
+        ClientErrorException ex = assertThrows(ClientErrorException.class, () -> {
+            user.setCredentialUserLabel(secondId, "Device");
+        });
+
+        Response response = ex.getResponse();
+        assertEquals(Response.Status.CONFLICT.getStatusCode(), response.getStatus());
+
+        String body = response.readEntity(String.class);
+        assertNotNull(body);
+        assertTrue(body.contains("Device already exists with the same name"));
     }
 
     @Test

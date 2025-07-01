@@ -3,15 +3,16 @@ import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient";
 import { login } from "../utils/login";
 import { assertAxeViolations } from "../utils/masthead";
+import { pickRoleType } from "../utils/roles";
 import { goToRealm, goToRealmSettings } from "../utils/sidebar";
-import { goToRealmEventsTab } from "./events";
-import { goToAddProviders, goToKeys } from "./keys";
-import { goToLoginTab } from "./login";
-import { goToLocalizationTab, goToRealmOverridesSubTab } from "./localization";
 import {
   goToClientPoliciesList,
   goToClientPoliciesTab,
 } from "./client-policies";
+import { goToRealmEventsTab } from "./events";
+import { goToAddProviders, goToKeys } from "./keys";
+import { goToLocalizationTab, goToRealmOverridesSubTab } from "./localization";
+import { goToLoginTab } from "./login";
 
 test.describe("Accessibility tests for realm settings", () => {
   const realmName = `realm-settings-accessibility-${uuid()}`;
@@ -186,7 +187,7 @@ test.describe("Accessibility tests for realm settings", () => {
     page,
   }) => {
     await page.getByTestId("rs-userRegistration-tab").click();
-    await page.getByTestId("assignRole").click();
+    await pickRoleType(page, "client");
     await assertAxeViolations(page);
   });
 });

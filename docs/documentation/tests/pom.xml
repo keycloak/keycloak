@@ -8,6 +8,7 @@
             --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
             --add-opens java.base/java.io=ALL-UNNAMED
         </surefire.system.args>
+        <version.jsoup>1.18.3</version.jsoup>
     </properties>
 
     <build>
@@ -127,6 +128,12 @@
             <groupId>org.apache.httpcomponents.client5</groupId>
             <artifactId>httpclient5</artifactId>
             <version>5.0.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>${version.jsoup}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

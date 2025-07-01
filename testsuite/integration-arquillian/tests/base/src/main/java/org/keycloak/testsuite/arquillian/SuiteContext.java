@@ -178,10 +178,6 @@ public final class SuiteContext {
         return ! authServerBackendsInfo.isEmpty();
     }
 
-    public boolean isAuthServerCrossDc() {
-        return authServerBackendsInfo.size() > 1;
-    }
-
     /**
      * @return true during migration test, but just right before and during old container running. It returns false during lifecycle of new container running
      * and during migration test itself. Use {@link #getMigrationContext().isRunningMigrationTest()} if want to check if we are in the context of migration (including lifecycle of the new container)
@@ -202,21 +198,7 @@ public final class SuiteContext {
     public String toString() {
         StringBuilder sb = new StringBuilder("SUITE CONTEXT:\nAuth server: ");
 
-        if (isAuthServerCrossDc()) {
-            for (int i = 0; i < authServerInfo.size(); i ++) {
-                ContainerInfo frontend = this.authServerInfo.get(i);
-                sb.append("\nFrontend (dc=").append(i).append("): ").append(frontend.getQualifier()).append("\n");
-            }
-
-            for (int i = 0; i < authServerBackendsInfo.size(); i ++) {
-                int dcIndex = i;
-                getDcAuthServerBackendsInfo().get(i).forEach(bInfo -> sb.append("Backend (dc=").append(dcIndex).append("): ").append(bInfo).append("\n"));
-            }
-
-            for (int dcIndex=0 ; dcIndex<cacheServersInfo.size() ; dcIndex++) {
-                sb.append("CacheServer (dc=").append(dcIndex).append("): ").append(getCacheServersInfo().get(dcIndex)).append("\n");
-            }
-        } else if (isAuthServerCluster()) {
+        if (isAuthServerCluster()) {
             sb.append(isAuthServerCluster() ? "\nFrontend: " : "")
               .append(getAuthServerInfo().getQualifier()).append(" - ").append(getAuthServerInfo().getContextRoot().toExternalForm())
               .append("\n");

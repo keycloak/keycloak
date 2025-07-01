@@ -10,12 +10,15 @@ The *Mappers* tab contains the protocol mappers and the *Scope* tab contains the
 
 This will also show you the value of the *scope* parameter. This parameter needs to be sent from the application to the {project_name} OpenID Connect authorization endpoint.
 
-.Evaluating client scopes
-image:images/client-scopes-evaluate.png[]
-
 [NOTE]
 ====
-To send a custom value for a *scope* parameter from your application, see the *Keycloak JavaScript adapter* in the link:{securing_apps_link}[securing apps] section, for javascript adapters.
+If your application uses the {securing_apps_base_link}/javascript-adapter[{project_name} JavaScript adapter], see its section to learn how to send the *scope* parameter with the desired value.
 ====
+
+You can also simulate how the access token, ID token, or UserInfo response issued to this client looks for a particular selected user and for a specific value of the `audience` parameter. Note
+that the `audience` parameter is currently only supported for the token exchange grant. It is recommended to leave it empty when simulating any other grant.
+
+.Evaluating client scopes
+image:images/client-scopes-evaluate.png[]
 
 All examples are generated for the particular user and issued for the particular client, with the specified value of the *scope* parameter. The examples include all of the claims and role mappings used.

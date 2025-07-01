@@ -120,12 +120,19 @@ test.describe("User creation", () => {
   test.describe("Existing users", () => {
     const placeHolder = "Search user";
     const existingUserId = `existing_user-${uuid()}`;
+    const existingUserId2 = `existing_user2-${uuid()}`;
 
     test.beforeAll(() =>
-      adminClient.createUser({
-        realm: realmName,
-        username: existingUserId,
-      }),
+      Promise.all([
+        adminClient.createUser({
+          realm: realmName,
+          username: existingUserId,
+        }),
+        adminClient.createUser({
+          realm: realmName,
+          username: existingUserId2,
+        }),
+      ]),
     );
 
     test("Search existing user test", async ({ page }) => {
@@ -182,7 +189,7 @@ test.describe("User creation", () => {
     });
 
     test("User attributes with multiple values test", async ({ page }) => {
-      await clickTableRowItem(page, existingUserId);
+      await clickTableRowItem(page, existingUserId2);
 
       await goToAttributesTab(page);
       await fillAttributeData(page, "key-multiple", "value1", attributesName);

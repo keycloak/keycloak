@@ -46,7 +46,7 @@ public class SessionTimeoutHelper {
     /**
      * The maximum time difference, which will be still tolerated when checking userSession idle timeout with periodic cleaner threads.
      *
-     * Just the sessions, with the timeout bigger than this value are considered really time-outed and can be garbage-collected (Considering the cross-dc
+     * Just the sessions, with the timeout bigger than this value are considered really time-outed and can be garbage-collected (Considering the multi-site
      * environment and the fact that some session updates on different DC can be postponed and seen on current DC with some delay).
      *
      * See {@link #PERIODIC_TASK_INTERVAL_SECONDS} and {@link #IDLE_TIMEOUT_WINDOW_SECONDS}

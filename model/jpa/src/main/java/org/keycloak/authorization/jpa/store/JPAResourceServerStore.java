@@ -74,7 +74,9 @@ public class JPAResourceServerStore implements ResourceServerStore {
             query.setParameter("serverId", id);
             List<String> result = query.getResultList();
             for (String policyId : result) {
-                entityManager.remove(entityManager.getReference(PolicyEntity.class, policyId));
+                PolicyEntity policyEntity = entityManager.find(PolicyEntity.class, policyId);
+                policyEntity.getAssociatedPolicies().clear();
+                entityManager.remove(policyEntity);
             }
         }
 

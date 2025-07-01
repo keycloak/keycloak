@@ -120,7 +120,7 @@ public abstract class AbstractRestServiceTest extends AbstractTestRealmKeycloakT
     }
 
     protected String getAccountUrl(String resource) {
-        String url = suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/test/account";
+        String url = getAccountRootUrl();
         if (apiVersion != null) {
             url += "/" + apiVersion;
         }

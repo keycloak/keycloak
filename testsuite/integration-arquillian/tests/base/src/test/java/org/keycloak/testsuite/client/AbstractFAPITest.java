@@ -87,7 +87,7 @@ public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
 
     @BeforeClass
     public static void verifySSL() {
-        // FAPI requires SSL and does not makes sense to test it with disabled SSL
+        // FAPI requires SSL and does not make sense to test it with disabled SSL
         Assume.assumeTrue("The FAPI test requires SSL to be enabled.", ServerURLs.AUTH_SERVER_SSL_REQUIRED);
     }
 
@@ -131,7 +131,7 @@ public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
     }
 
     protected String loginUserAndGetCode(String clientId, String nonce, boolean fragmentResponseModeExpected) {
-        oauth.clientId(clientId);
+        oauth.client(clientId);
         oauth.loginForm().nonce(nonce).codeChallenge(pkceGenerator).request(request).requestUri(requestUri).doLogin(TEST_USERNAME, TEST_USERSECRET);
 
         grantPage.assertCurrent();
@@ -144,7 +144,7 @@ public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
     }
 
     protected String loginUserAndGetCodeInJwtQueryResponseMode(String clientId, String nonce) {
-        oauth.clientId(clientId);
+        oauth.client(clientId);
         oauth.loginForm().nonce(nonce).codeChallenge(pkceGenerator).request(request).requestUri(requestUri).doLogin(TEST_USERNAME, TEST_USERSECRET);
 
         grantPage.assertCurrent();

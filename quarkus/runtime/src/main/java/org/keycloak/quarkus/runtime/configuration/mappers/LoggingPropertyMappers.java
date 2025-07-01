@@ -1,6 +1,11 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import static org.keycloak.config.LoggingOptions.DEFAULT_LOG_FORMAT;
+import static org.keycloak.config.LoggingOptions.LOG_CONSOLE_ENABLED;
+import static org.keycloak.config.LoggingOptions.LOG_FILE_ENABLED;
+import static org.keycloak.config.LoggingOptions.LOG_SYSLOG_ENABLED;
+import static org.keycloak.config.LoggingOptions.SYSLOG_COUNTING_FRAMING_PROTOCOL_DEPENDENT;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.isSet;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.isTrue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
@@ -40,6 +45,8 @@ public final class LoggingPropertyMappers {
                 fromOption(LoggingOptions.LOG)
                         .paramLabel("<handler>")
                         .build(),
+                fromOption(LoggingOptions.LOG_ASYNC)
+                        .build(),
                 // Console
                 fromOption(LoggingOptions.LOG_CONSOLE_OUTPUT)
                         .isEnabled(LoggingPropertyMappers::isConsoleEnabled, CONSOLE_ENABLED_MSG)
@@ -60,7 +67,7 @@ public final class LoggingPropertyMappers {
                         .transformer((value, ctx) -> addTracingInfo(value, LoggingOptions.LOG_CONSOLE_INCLUDE_TRACE))
                         .build(),
                 fromOption(LoggingOptions.LOG_CONSOLE_JSON_FORMAT)
-                        .isEnabled(LoggingPropertyMappers::isConsoleJsonEnabled, CONSOLE_ENABLED_MSG + " and output is set to 'json'")
+                        .isEnabled(LoggingPropertyMappers::isConsoleJsonEnabled, "%s and output is set to 'json'".formatted(CONSOLE_ENABLED_MSG))
                         .to("quarkus.log.console.json.log-format")
                         .paramLabel("format")
                         .build(),
@@ -75,6 +82,17 @@ public final class LoggingPropertyMappers {
                 fromOption(LoggingOptions.LOG_CONSOLE_ENABLED)
                         .mapFrom(LoggingOptions.LOG, LoggingPropertyMappers.resolveLogHandler(LoggingOptions.DEFAULT_LOG_HANDLER.name()))
                         .to("quarkus.log.console.enable")
+                        .build(),
+                // Console async
+                fromOption(LoggingOptions.LOG_CONSOLE_ASYNC)
+                        .mapFrom(LoggingOptions.LOG_ASYNC)
+                        .isEnabled(LoggingPropertyMappers::isConsoleEnabled, CONSOLE_ENABLED_MSG)
+                        .to("quarkus.log.console.async")
+                        .build(),
+                fromOption(LoggingOptions.LOG_CONSOLE_ASYNC_QUEUE_LENGTH)
+                        .isEnabled(LoggingPropertyMappers::isConsoleAsyncEnabled, "%s and asynchronous logging is enabled".formatted(CONSOLE_ENABLED_MSG))
+                        .to("quarkus.log.console.async.queue-length")
+                        .paramLabel("queue-length")
                         .build(),
                 // File
                 fromOption(LoggingOptions.LOG_FILE_ENABLED)
@@ -113,6 +131,17 @@ public final class LoggingPropertyMappers {
                         .to("quarkus.log.file.json.enabled")
                         .paramLabel("output")
                         .transformer(LoggingPropertyMappers::resolveLogOutput)
+                        .build(),
+                // File async
+                fromOption(LoggingOptions.LOG_FILE_ASYNC)
+                        .mapFrom(LoggingOptions.LOG_ASYNC)
+                        .isEnabled(LoggingPropertyMappers::isFileEnabled, FILE_ENABLED_MSG)
+                        .to("quarkus.log.file.async")
+                        .build(),
+                fromOption(LoggingOptions.LOG_FILE_ASYNC_QUEUE_LENGTH)
+                        .isEnabled(LoggingPropertyMappers::isFileAsyncEnabled, "%s and asynchronous logging is enabled".formatted(FILE_ENABLED_MSG))
+                        .to("quarkus.log.file.async.queue-length")
+                        .paramLabel("queue-length")
                         .build(),
                 // Log level
                 fromOption(LoggingOptions.LOG_LEVEL)
@@ -187,33 +216,82 @@ public final class LoggingPropertyMappers {
                         .paramLabel("output")
                         .transformer(LoggingPropertyMappers::resolveLogOutput)
                         .build(),
+                fromOption(LoggingOptions.LOG_SYSLOG_COUNTING_FRAMING)
+                        .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
+                        .transformer(LoggingPropertyMappers::resolveSyslogCountingFraming)
+                        .to("quarkus.log.syslog.use-counting-framing")
+                        .paramLabel("strategy")
+                        .build(),
+                // Syslog async
+                fromOption(LoggingOptions.LOG_SYSLOG_ASYNC)
+                        .mapFrom(LoggingOptions.LOG_ASYNC)
+                        .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
+                        .to("quarkus.log.syslog.async")
+                        .build(),
+                fromOption(LoggingOptions.LOG_SYSLOG_ASYNC_QUEUE_LENGTH)
+                        .isEnabled(LoggingPropertyMappers::isSyslogAsyncEnabled, "%s and asynchronous logging is enabled".formatted(SYSLOG_ENABLED_MSG))
+                        .to("quarkus.log.syslog.async.queue-length")
+                        .paramLabel("queue-length")
+                        .build(),
         };
 
         return defaultMappers;
     }
 
     public static boolean isConsoleEnabled() {
-        return isTrue(LoggingOptions.LOG_CONSOLE_ENABLED);
+        return isHandlerEnabled(LoggingOptions.Handler.console);
+    }
+
+    public static boolean isConsoleAsyncEnabled() {
+        return isHandlerAsyncEnabled(LoggingOptions.Handler.console);
     }
 
     public static boolean isConsoleJsonEnabled() {
-        return isConsoleEnabled() && Configuration.isTrue("quarkus.log.console.json.enabled");
+        return isConsoleEnabled() && isTrue("quarkus.log.console.json.enabled");
     }
 
     public static boolean isFileEnabled() {
-        return isTrue(LoggingOptions.LOG_FILE_ENABLED);
+        return isHandlerEnabled(LoggingOptions.Handler.file);
+    }
+
+    public static boolean isFileAsyncEnabled() {
+        return isHandlerAsyncEnabled(LoggingOptions.Handler.file);
     }
 
     public static boolean isFileJsonEnabled() {
-        return isFileEnabled() && Configuration.isTrue("quarkus.log.file.json.enabled");
+        return isFileEnabled() && isTrue("quarkus.log.file.json.enabled");
     }
 
     public static boolean isSyslogEnabled() {
-        return isTrue(LoggingOptions.LOG_SYSLOG_ENABLED);
+        return isHandlerEnabled(LoggingOptions.Handler.syslog);
+    }
+
+    public static boolean isSyslogAsyncEnabled() {
+        return isHandlerAsyncEnabled(LoggingOptions.Handler.syslog);
     }
 
     public static boolean isSyslogJsonEnabled() {
-        return isSyslogEnabled() && Configuration.isTrue("quarkus.log.syslog.json.enabled");
+        return isSyslogEnabled() && isTrue("quarkus.log.syslog.json.enabled");
+    }
+
+    private static boolean isHandlerEnabled(LoggingOptions.Handler handler) {
+        return switch (handler) {
+            case console -> isTrue(LOG_CONSOLE_ENABLED);
+            case file -> isTrue(LOG_FILE_ENABLED);
+            case syslog -> isTrue(LOG_SYSLOG_ENABLED);
+        };
+    }
+
+    private static boolean isHandlerAsyncEnabled(LoggingOptions.Handler handler) {
+        if (!isHandlerEnabled(handler)) {
+            return false;
+        }
+        var property = switch (handler) {
+            case console -> LoggingOptions.LOG_CONSOLE_ASYNC;
+            case file -> LoggingOptions.LOG_FILE_ASYNC;
+            case syslog -> LoggingOptions.LOG_SYSLOG_ASYNC;
+        };
+        return isSet(property) ? isTrue(property) : isTrue(LoggingOptions.LOG_ASYNC);
     }
 
     private static BiFunction<String, ConfigSourceInterceptorContext, String> resolveLogHandler(String handler) {
@@ -318,7 +396,7 @@ public final class LoggingPropertyMappers {
      */
     private static String addTracingInfo(String value, Option<Boolean> includeTraceOption) {
         var isTracingEnabled = TracingPropertyMappers.isTracingEnabled();
-        var includeTrace = Configuration.isTrue(includeTraceOption);
+        var includeTrace = isTrue(includeTraceOption);
         var isChangedLogFormat = !DEFAULT_LOG_FORMAT.equals(value);
 
         if (!isTracingEnabled || !includeTrace || isChangedLogFormat) {
@@ -340,4 +418,20 @@ public final class LoggingPropertyMappers {
             throw new PropertyException(String.format("Invalid value for option '--log-syslog-max-length': %s", e.getMessage()));
         }
     }
+
+    // Workaround BEGIN - for https://github.com/keycloak/keycloak/issues/39893
+    // Remove once the https://github.com/quarkusio/quarkus/issues/48036 is included in Keycloak as Quarkus might handle it on its own
+    private static String resolveSyslogCountingFraming(String value, ConfigSourceInterceptorContext context) {
+        if (SYSLOG_COUNTING_FRAMING_PROTOCOL_DEPENDENT.equals(value)) {
+            return Configuration.getOptionalKcValue(LoggingOptions.LOG_SYSLOG_PROTOCOL)
+                    .map(protocol -> switch (protocol) {
+                        case "tcp", "ssl-tcp" -> Boolean.TRUE.toString();
+                        case "udp" -> Boolean.FALSE.toString();
+                        default -> throw new PropertyException("Invalid Syslog protocol: " + protocol);
+                    })
+                    .orElse(Boolean.FALSE.toString());
+        }
+        return value;
+    }
+    // Workaround END
 }

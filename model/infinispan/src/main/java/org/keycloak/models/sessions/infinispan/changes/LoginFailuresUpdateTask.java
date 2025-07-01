@@ -29,8 +29,4 @@ public abstract class LoginFailuresUpdateTask implements SessionUpdateTask<Login
         return CacheOperation.REPLACE;
     }
 
-    @Override
-    public CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<LoginFailureEntity> sessionWrapper) {
-        return CrossDCMessageStatus.SYNC;
-    }
 }

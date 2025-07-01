@@ -18,9 +18,7 @@
 package org.keycloak.models.jpa;
 
 import jakarta.persistence.criteria.Path;
-import org.keycloak.authorization.AdminPermissionsSchema;
-import org.keycloak.authorization.jpa.entities.ResourceEntity;
-import org.keycloak.authorization.policy.provider.PartialEvaluationStorageProvider;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
@@ -63,7 +61,6 @@ import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
-import jakarta.persistence.criteria.Subquery;
 import org.keycloak.storage.jpa.JpaHashUtils;
 import org.keycloak.utils.StringUtil;
 
@@ -88,7 +85,7 @@ import static org.keycloak.utils.StreamsUtil.closing;
  * @version $Revision: 1 $
  */
 @SuppressWarnings("JpaQueryApiInspection")
-public class JpaUserProvider implements UserProvider, UserCredentialStore, PartialEvaluationStorageProvider {
+public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUserPartialEvaluationProvider {
 
     private static final String EMAIL = "email";
     private static final String EMAIL_VERIFIED = "emailVerified";
@@ -584,16 +581,21 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, Parti
 
     @Override
     public int getUsersCount(RealmModel realm, boolean includeServiceAccount) {
-        String namedQuery = "getRealmUserCountExcludeServiceAccount";
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Long> query = cb.createQuery(Long.class);
+        Root<UserEntity> root = query.from(UserEntity.class);
 
-        if (includeServiceAccount) {
-            namedQuery = "getRealmUserCount";
+        List<Predicate> predicates = new ArrayList<>();
+        predicates.add(cb.equal(root.get("realmId"), realm.getId()));
+
+        if (!includeServiceAccount) {
+            predicates.add(cb.isNull(root.get("serviceAccountClientLink")));
         }
 
-        Object count = em.createNamedQuery(namedQuery)
-                .setParameter("realmId", realm.getId())
-                .getSingleResult();
-        return ((Number)count).intValue();
+        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, this, realm, cb, query, root));
+        query.select(cb.count(root)).where(predicates.toArray(Predicate[]::new));
+
+        return em.createQuery(query).getSingleResult().intValue();
     }
 
     @Override
@@ -616,7 +618,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, Parti
         CriteriaQuery<Long> queryBuilder = builder.createQuery(Long.class);
         Root<UserEntity> root = queryBuilder.from(UserEntity.class);
 
-        queryBuilder.select(builder.count(root));
+        queryBuilder.select(builder.countDistinct(root));
 
         List<Predicate> predicates = new ArrayList<>();
 
@@ -625,6 +627,8 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, Parti
         for (String stringToSearch : search.trim().split("\\s+")) {
             predicates.add(builder.or(getSearchOptionPredicateArray(stringToSearch, builder, root)));
         }
+
+        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, this, realm, builder, queryBuilder, root));
 
         queryBuilder.where(predicates.toArray(Predicate[]::new));
 
@@ -643,7 +647,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, Parti
         Root<UserGroupMembershipEntity> groupMembership = queryBuilder.from(UserGroupMembershipEntity.class);
         Join<UserGroupMembershipEntity, UserEntity> userJoin = groupMembership.join("user");
 
-        queryBuilder.select(builder.count(userJoin));
+        queryBuilder.select(builder.countDistinct(userJoin));
 
         List<Predicate> predicates = new ArrayList<>();
 
@@ -665,11 +669,12 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, Parti
         CriteriaBuilder qb = em.getCriteriaBuilder();
         CriteriaQuery<Long> userQuery = qb.createQuery(Long.class);
         Root<UserEntity> from = userQuery.from(UserEntity.class);
-        Expression<Long> count = qb.count(from);
+        Expression<Long> count = qb.countDistinct(from);
 
         userQuery = userQuery.select(count);
         List<Predicate> restrictions = predicates(params, from, Map.of());
         restrictions.add(qb.equal(from.get("realmId"), realm.getId()));
+        restrictions.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, this, realm, qb, userQuery, from));
 
         userQuery = userQuery.where(restrictions.toArray(Predicate[]::new));
         TypedQuery<Long> query = em.createQuery(userQuery);
@@ -689,7 +694,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, Parti
 
         CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
         Root<UserEntity> root = countQuery.from(UserEntity.class);
-        countQuery.select(cb.count(root));
+        countQuery.select(cb.countDistinct(root));
 
         List<Predicate> restrictions = predicates(params, root, Map.of());
         restrictions.add(cb.equal(root.get("realmId"), realm.getId()));
@@ -727,13 +732,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, Parti
 
     @Override
     public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, String search, Boolean exact, Integer first, Integer max) {
-        TypedQuery<UserEntity> query;
         if (StringUtil.isBlank(search)) {
             return getGroupMembersStream(realm, group, first, max);
         }
-
-        // select g.user from UserGroupMembershipEntity g where g.groupId = :groupId and " +
-        //                "(g.user.username = :search or g.user.email = :search or g.user.firstName = :search or g.user.lastName = :search) order by g.user.username
 
         CriteriaBuilder builder = em.getCriteriaBuilder();
         CriteriaQuery<UserEntity> queryBuilder = builder.createQuery(UserEntity.class);
@@ -807,7 +808,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, Parti
 
         predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, this, realm, builder, queryBuilder, root));
 
-        queryBuilder.where(predicates.toArray(Predicate[]::new)).orderBy(builder.asc(root.get(UserModel.USERNAME)));
+        queryBuilder.distinct(true).where(predicates.toArray(Predicate[]::new)).orderBy(builder.asc(root.get(UserModel.USERNAME)));
 
         TypedQuery<UserEntity> query = em.createQuery(queryBuilder);
 
@@ -1098,112 +1099,12 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, Parti
     }
 
     @Override
-    public List<Predicate> getFilters(EvaluationContext evaluationContext) {
-        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(session.getContext().getRealm())) {
-            // support for FGAP v1
-            Set<String> userGroups = (Set<String>) session.getAttribute(UserModel.GROUPS);
-
-
-            if (userGroups != null) {
-                return List.of(getFilterByGroupMembership(session, evaluationContext, userGroups));
-            }
-
-            return List.of();
-        }
-
-        Predicate predicate = getFilterByGroupMembership(evaluationContext, false);
-
-        if (predicate != null) {
-            return List.of(predicate);
-        }
-
-        return List.of();
+    public KeycloakSession getSession() {
+        return session;
     }
 
     @Override
-    public List<Predicate> getNegateFilters(EvaluationContext evaluationContext) {
-        Predicate predicate = getFilterByGroupMembership(evaluationContext, true);
-
-        if (predicate != null) {
-            return List.of(predicate);
-        }
-
-        return List.of();
-    }
-
-    @Deprecated
-    private Predicate getFilterByGroupMembership(KeycloakSession session, EvaluationContext evaluationContext, Set<String> groupIds) {
-        CriteriaBuilder cb = em.getCriteriaBuilder();
-        CriteriaQuery<?> query = evaluationContext.criteriaQuery();
-        Subquery subquery = query.subquery(String.class);
-        Root<?> from = subquery.from(UserGroupMembershipEntity.class);
-
-        subquery.select(cb.literal(1));
-
-        List<Predicate> subPredicates = new ArrayList<>();
-
-        subPredicates.add(from.get("groupId").in(groupIds));
-
-        Path<?> root = evaluationContext.path();
-
-        subPredicates.add(cb.equal(from.get("user").get("id"), root.get("id")));
-
-        Subquery subquery1 = query.subquery(String.class);
-
-        subquery1.select(cb.literal(1));
-
-        Root from1 = subquery1.from(ResourceEntity.class);
-
-        List<Predicate> subs = new ArrayList<>();
-
-        Expression<String> groupId = from.get("groupId");
-
-        RealmModel realm = session.getContext().getRealm();
-
-        if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
-            subs.add(cb.like(from1.get("name"), groupId));
-        } else {
-            subs.add(cb.like(from1.get("name"), cb.concat("group.resource.", groupId)));
-        }
-
-        subquery1.where(subs.toArray(Predicate[]::new));
-
-        subPredicates.add(cb.exists(subquery1));
-
-        subquery.where(subPredicates.toArray(Predicate[]::new));
-
-        return cb.exists(subquery);
-    }
-
-    private Predicate getFilterByGroupMembership(EvaluationContext evaluationContext, boolean negate) {
-        if (negate && evaluationContext.deniedGroupIds().isEmpty()) {
-            return null;
-        }
-        if (!negate && evaluationContext.allowedGroupIds().isEmpty()) {
-            return null;
-        }
-
-        CriteriaBuilder cb = em.getCriteriaBuilder();
-        CriteriaQuery<?> query = evaluationContext.criteriaQuery();
-        Subquery subquery = query.subquery(String.class);
-        Root<?> from = subquery.from(UserGroupMembershipEntity.class);
-
-        subquery.select(cb.literal(1));
-
-        List<Predicate> subPredicates = new ArrayList<>();
-
-        subPredicates.add(from.get("groupId").in(negate ? evaluationContext.deniedGroupIds() : evaluationContext.allowedGroupIds()));
-
-        Path<?> root = evaluationContext.path();
-
-        subPredicates.add(cb.equal(from.get("user").get("id"), root.get("id")));
-
-        subquery.where(subPredicates.toArray(Predicate[]::new));
-
-        if (negate) {
-            return cb.not(cb.exists(subquery));
-        }
-
-        return cb.exists(subquery);
+    public EntityManager getEntityManager() {
+        return em;
     }
 }

@@ -233,7 +233,7 @@ public class DeclarativeUserTest {
 
         @Override
         public RealmConfigBuilder configure(RealmConfigBuilder realm) {
-            realm.internationalizationEnabled()
+            realm.internationalizationEnabled(true)
                     .supportedLocales("en", "de");
             return realm;
         }

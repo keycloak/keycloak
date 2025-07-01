@@ -1,14 +1,17 @@
 package org.keycloak.credential;
 
 import org.jboss.logging.Logger;
+import org.keycloak.authentication.requiredactions.RecoveryAuthnCodesAction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel;
 import org.keycloak.models.credential.dto.RecoveryAuthnCodeRepresentation;
 import org.keycloak.models.credential.dto.RecoveryAuthnCodesCredentialData;
 import org.keycloak.models.utils.RecoveryAuthnCodesUtils;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.RequiredActionHelper;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -119,6 +122,12 @@ public class RecoveryAuthnCodesCredentialProvider
     }
 
     protected int getWarningThreshold() {
-        return session.getContext().getRealm().getPasswordPolicy().getRecoveryCodesWarningThreshold();
+        RealmModel realm = session.getContext().getRealm();
+        RequiredActionProviderModel requiredAction = RequiredActionHelper.getRequiredActionByProviderId(realm, RecoveryAuthnCodesAction.PROVIDER_ID);
+        if (requiredAction != null && requiredAction.getConfig().containsKey(RecoveryAuthnCodesAction.WARNING_THRESHOLD)) {
+            return Integer.parseInt(requiredAction.getConfig().get(RecoveryAuthnCodesAction.WARNING_THRESHOLD));
+        } else {
+            return session.getContext().getRealm().getPasswordPolicy().getRecoveryCodesWarningThreshold();
+        }
     }
 }

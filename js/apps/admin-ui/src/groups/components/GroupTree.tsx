@@ -125,7 +125,7 @@ const GroupTreeContextMenu = ({
       >
         <DropdownList>
           <DropdownItem key="rename" onClick={toggleRenameOpen}>
-            {t("rename")}
+            {t("edit")}
           </DropdownItem>
           <DropdownItem key="move" onClick={toggleMoveOpen}>
             {t("moveTo")}

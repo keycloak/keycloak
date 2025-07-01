@@ -79,8 +79,8 @@ Cache:
                        Available only when metrics are enabled.
 --cache-remote-host <hostname>
                      The hostname of the external Infinispan cluster. Available only when feature
-                       'multi-site', 'clusterless' or 'cache-embedded-remote-store' is set.
-                       Required when feature 'multi-site' or 'clusterless' is set.
+                       'multi-site' or 'clusterless' is set. Required when feature 'multi-site' or
+                       'clusterless' is set.
 --cache-remote-password <password>
                      The password for the authentication to the external Infinispan cluster. It is
                        optional if connecting to an unsecure external Infinispan cluster. If the
@@ -100,10 +100,10 @@ Cache:
                        only when remote host is set.
 --cache-stack <stack>
                      Define the default stack to use for cluster communication and node discovery.
-                       Possible values are: jdbc-ping, kubernetes, jdbc-ping-udp (deprecated), tcp
-                       (deprecated), udp (deprecated), ec2 (deprecated), azure (deprecated), google
-                       (deprecated), or a custom one. Default: jdbc-ping. Available only when
-                       'cache' type is set to 'ispn'.
+                       Defaults to 'jdbc-ping' if not set. Possible values are: jdbc-ping,
+                       kubernetes (deprecated), jdbc-ping-udp (deprecated), tcp (deprecated), udp
+                       (deprecated), ec2 (deprecated), azure (deprecated), google (deprecated), or
+                       a custom one. Available only when 'cache' type is set to 'ispn'.
 
 Config:
 
@@ -120,8 +120,14 @@ Database:
                        deprecated, you should explicitly specify the db instead. Possible values
                        are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres. Default:
                        dev-file.
+--db-debug-jpql <true|false>
+                     Add JPQL information as comments to SQL statements to debug JPA SQL statement
+                       generation. Default: false.
 --db-driver <driver> The fully qualified class name of the JDBC driver. If not set, a default
                        driver is set accordingly to the chosen database.
+--db-log-slow-queries-threshold <milliseconds>
+                     Log SQL statements slower than the configured threshold with logger org.
+                       hibernate.SQL_SLOW and log-level info. Default: 10000.
 --db-password <password>
                      The password of the database user.
 --db-pool-initial-size <size>
@@ -150,10 +156,59 @@ Database:
 --db-username <username>
                      The username of the database user.
 
+Database - additional datasources:
+
+--db-active-<datasource> <true|false>
+                     Deactivate specific named datasource <datasource>. Default: true.
+--db-driver-<datasource> <driver>
+                     Used for named <datasource>. The fully qualified class name of the JDBC
+                       driver. If not set, a default driver is set accordingly to the chosen
+                       database.
+--db-kind-<datasource> <vendor>
+                     Used for named <datasource>. The database vendor. In production mode the
+                       default value of 'dev-file' is deprecated, you should explicitly specify the
+                       db instead. Possible values are: dev-file, dev-mem, mariadb, mssql, mysql,
+                       oracle, postgres. Default: dev-file.
+--db-password-<datasource> <password>
+                     Used for named <datasource>. The password of the database user.
+--db-pool-initial-size-<datasource> <size>
+                     Used for named <datasource>. The initial size of the connection pool.
+--db-pool-max-size-<datasource> <size>
+                     Used for named <datasource>. The maximum size of the connection pool. Default:
+                       100.
+--db-pool-min-size-<datasource> <size>
+                     Used for named <datasource>. The minimal size of the connection pool.
+--db-schema-<datasource> <schema>
+                     Used for named <datasource>. The database schema to be used.
+--db-url-database-<datasource> <dbname>
+                     Used for named <datasource>. Sets the database name of the default JDBC URL of
+                       the chosen vendor. If the `db-url` option is set, this option is ignored.
+--db-url-full-<datasource> <jdbc-url>
+                     Used for named <datasource>. The full database JDBC URL. If not provided, a
+                       default URL is set based on the selected database vendor. For instance, if
+                       using 'postgres', the default JDBC URL would be 'jdbc:postgresql:
+                       //localhost/keycloak'.
+--db-url-host-<datasource> <hostname>
+                     Used for named <datasource>. Sets the hostname of the default JDBC URL of the
+                       chosen vendor. If the `db-url` option is set, this option is ignored.
+--db-url-port-<datasource> <port>
+                     Used for named <datasource>. Sets the port of the default JDBC URL of the
+                       chosen vendor. If the `db-url` option is set, this option is ignored.
+--db-url-properties-<datasource> <properties>
+                     Used for named <datasource>. Sets the properties of the default JDBC URL of
+                       the chosen vendor. Make sure to set the properties accordingly to the format
+                       expected by the database vendor, as well as appending the right character at
+                       the beginning of this property value. If the `db-url` option is set, this
+                       option is ignored.
+--db-username-<datasource> <username>
+                     Used for named <datasource>. The username of the database user.
+
 Transaction:
 
 --transaction-xa-enabled <true|false>
                      If set to true, XA datasources will be used. Default: false.
+--transaction-xa-enabled-<datasource> <true|false>
+                     If set to true, XA for <datasource> datasource will be used. Default: true.
 
 Feature:
 
@@ -343,6 +398,16 @@ Logging:
 
 --log <handler>      Enable one or more log handlers in a comma-separated list. Possible values
                        are: console, file, syslog. Default: console.
+--log-async <true|false>
+                     Indicates whether to log asynchronously to all handlers. Default: false.
+--log-console-async <true|false>
+                     Indicates whether to log asynchronously to console. If not set, value from the
+                       parent property 'log-async' is used. Default: false. Available only when
+                       Console log handler is activated.
+--log-console-async-queue-length <queue-length>
+                     The queue length to use before flushing writing when logging to console.
+                       Default: 512. Available only when Console log handler is activated and
+                       asynchronous logging is enabled.
 --log-console-color <true|false>
                      Enable or disable colors when logging to console. Default: false. Available
                        only when Console log handler is activated.
@@ -371,6 +436,14 @@ Logging:
                        handler is activated.
 --log-file <file>    Set the log file path and filename. Default: data/log/keycloak.log. Available
                        only when File log handler is activated.
+--log-file-async <true|false>
+                     Indicates whether to log asynchronously to file log. If not set, value from
+                       the parent property 'log-async' is used. Default: false. Available only when
+                       File log handler is activated.
+--log-file-async-queue-length <queue-length>
+                     The queue length to use before flushing writing when logging to file log.
+                       Default: 512. Available only when File log handler is activated and
+                       asynchronous logging is enabled.
 --log-file-format <format>
                      Set a format specific to file log entries. Default: %d{yyyy-MM-dd HH:mm:ss,
                        SSS} %-5p [%c] (%t) %s%e%n. Available only when File log handler is
@@ -405,6 +478,20 @@ Logging:
 --log-syslog-app-name <name>
                      Set the app name used when formatting the message in RFC5424 format. Default:
                        keycloak. Available only when Syslog is activated.
+--log-syslog-async <true|false>
+                     Indicates whether to log asynchronously to Syslog. If not set, value from the
+                       parent property 'log-async' is used. Default: false. Available only when
+                       Syslog is activated.
+--log-syslog-async-queue-length <queue-length>
+                     The queue length to use before flushing writing when logging to Syslog.
+                       Default: 512. Available only when Syslog is activated and asynchronous
+                       logging is enabled.
+--log-syslog-counting-framing <strategy>
+                     If 'true', the message being sent is prefixed with the size of the message. If
+                       'protocol-dependent', the default value is 'true' when 'log-syslog-protocol'
+                       is 'tcp' or 'ssl-tcp', otherwise 'false'. Possible values are: true, false,
+                       protocol-dependent. Default: protocol-dependent. Available only when Syslog
+                       is activated.
 --log-syslog-endpoint <host:port>
                      Set the IP address and port of the Syslog server. Default: localhost:514.
                        Available only when Syslog is activated.
@@ -467,7 +554,7 @@ Tracing:
                        is enabled.
 --tracing-sampler-ratio <ratio>
                      OpenTelemetry sampler ratio. Probability that a span will be sampled. Expected
-                       double value in interval <0,1). Default: 1.0. Available only when Tracing is
+                       double value in interval [0,1]. Default: 1.0. Available only when Tracing is
                        enabled.
 --tracing-sampler-type <type>
                      OpenTelemetry sampler to use for tracing. Possible values are: always_on,
@@ -498,8 +585,8 @@ Truststore:
 
 --tls-hostname-verifier <tls-hostname-verifier>
                      The TLS hostname verification policy for out-going HTTPS and SMTP requests.
-                       Possible values are: ANY, WILDCARD (deprecated), STRICT (deprecated),
-                       DEFAULT. Default: DEFAULT.
+                       ANY should not be used in production. Possible values are: ANY, WILDCARD
+                       (deprecated), STRICT (deprecated), DEFAULT. Default: DEFAULT.
 --truststore-paths <truststore-paths>
                      List of pkcs12 (p12, pfx, or pkcs12 file extensions), PEM files, or
                        directories containing those files that will be used as a system truststore.

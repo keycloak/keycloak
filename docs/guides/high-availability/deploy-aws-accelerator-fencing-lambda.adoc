@@ -2,8 +2,8 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Deploy an AWS Lambda to disable a non-responding site"
-summary="Building block for load balancer resilience"
+title="Deploying an AWS Lambda to disable a non-responding site"
+summary="Deploy an AWS Lambda as part of the load-balancer building block in a multi-site deployment."
 tileVisible="false" >
 
 This {section} explains how to resolve split-brain scenarios between two sites in a multi-site deployment.

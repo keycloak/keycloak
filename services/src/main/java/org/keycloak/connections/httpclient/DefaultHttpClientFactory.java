@@ -364,4 +364,8 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
         return value;
     }
 
+    // For testing purposes
+    public Config.Scope getConfig() {
+        return config;
+    }
 }

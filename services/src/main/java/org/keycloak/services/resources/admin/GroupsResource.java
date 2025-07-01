@@ -36,11 +36,12 @@ import java.util.stream.Stream;
 import jakarta.ws.rs.core.Response.Status;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
-import org.keycloak.authorization.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -52,8 +53,8 @@ import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
-import org.keycloak.services.resources.admin.permissions.GroupPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.GroupPermissionEvaluator;
 import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.SearchQueryUtils;
 
@@ -93,7 +94,8 @@ public class GroupsResource {
                                                  @QueryParam("first") Integer firstResult,
                                                  @QueryParam("max") Integer maxResults,
                                                  @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation,
-                                                 @QueryParam("populateHierarchy") @DefaultValue("true") boolean populateHierarchy) {
+                                                 @QueryParam("populateHierarchy") @DefaultValue("true") boolean populateHierarchy,
+                                                 @Parameter(description = "Boolean which defines whether to return the count of subgroups for each group (default: true") @QueryParam("subGroupsCount") @DefaultValue("true") Boolean subGroupsCount) {
         GroupPermissionEvaluator groupsEvaluator = auth.groups();
         groupsEvaluator.requireList();
 
@@ -108,14 +110,22 @@ public class GroupsResource {
         }
 
         if (populateHierarchy) {
-            return GroupUtils.populateGroupHierarchyFromSubGroups(session, realm, stream, !briefRepresentation, groupsEvaluator);
+            return GroupUtils.populateGroupHierarchyFromSubGroups(session, realm, stream, !briefRepresentation, groupsEvaluator, subGroupsCount);
         }
 
         if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
             stream = stream.filter(groupsEvaluator::canView);
         }
 
-        return stream.map(g -> GroupUtils.populateSubGroupCount(g, GroupUtils.toRepresentation(groupsEvaluator, g, !briefRepresentation)));
+        return stream.map(g -> {
+            GroupRepresentation rep = GroupUtils.toRepresentation(groupsEvaluator, g, !briefRepresentation);
+
+            if (subGroupsCount) {
+                return GroupUtils.populateSubGroupCount(g, rep);
+            }
+
+            return rep;
+        });
     }
 
     /**

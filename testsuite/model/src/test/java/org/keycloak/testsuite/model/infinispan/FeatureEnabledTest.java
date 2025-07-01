@@ -76,7 +76,7 @@ public class FeatureEnabledTest extends KeycloakModelTest {
         inComittedTransaction(session -> {
             var clusterProvider = session.getProvider(InfinispanConnectionProvider.class);
             Arrays.stream(CLUSTERED_CACHE_NAMES).forEach(s -> assertEmbeddedCacheExists(clusterProvider, s));
-            Arrays.stream(CLUSTERED_CACHE_NAMES).forEach(s -> assertRemoteCacheDoesNotExists(clusterProvider, s));
+            Arrays.stream(CLUSTERED_CACHE_NAMES).forEach(s -> assertRemoteCacheCallThrowsException(clusterProvider, s));
         });
     }
 
@@ -97,8 +97,11 @@ public class FeatureEnabledTest extends KeycloakModelTest {
         assertNotNull(String.format("Remote cache '%s' should exist", cacheName), provider.getRemoteCache(cacheName));
     }
 
-    private static void assertRemoteCacheDoesNotExists(InfinispanConnectionProvider provider, String cacheName) {
-        assertNull(String.format("Remote cache '%s' should not exist", cacheName), provider.getRemoteCache(cacheName));
+    private static void assertRemoteCacheCallThrowsException(InfinispanConnectionProvider provider, String cacheName) {
+        try {
+            provider.getRemoteCache(cacheName);
+            fail(String.format("Remote cache '%s' should not exist", cacheName));
+        } catch (IllegalStateException expected) {}
     }
 
 }

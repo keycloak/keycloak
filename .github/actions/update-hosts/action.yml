@@ -1,0 +1,21 @@
+name: Update /etc/hosts
+description: Update /etc/hosts file to hardcode known nip.io hostnames. This is to avoid test instability due to DNS resolution issues.
+
+runs:
+  using: composite
+  steps:
+
+    - id: update-hosts-linux
+      name: Update /etc/hosts
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        printf "\n\n$(cat .github/actions/update-hosts/nipio-hosts)" | sudo tee -a /etc/hosts
+
+    - id: update-hosts-windows
+      name: Update C:\Windows\System32\drivers\etc\hosts
+      if: runner.os == 'Windows'
+      shell: powershell
+      run: |
+        "`n`n" | Add-Content C:\Windows\System32\drivers\etc\hosts
+        Get-Content .github/actions/update-hosts/nipio-hosts | Add-Content C:\Windows\System32\drivers\etc\hosts

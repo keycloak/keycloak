@@ -50,4 +50,9 @@ public class BackwardsCompatibilityUserStorageFactory implements UserStorageProv
         return user.getOtp() != null;
     }
 
+    public boolean hasRecoveryCodes(String username) {
+        BackwardsCompatibilityUserStorage.MyUser user = userPasswords.get(username);
+        if (user == null) return false;
+        return user.getRecoveryCodes() != null;
+    }
 }

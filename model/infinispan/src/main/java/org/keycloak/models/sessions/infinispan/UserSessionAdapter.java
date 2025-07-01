@@ -26,11 +26,8 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.sessions.infinispan.changes.SessionsChangelogBasedTransaction;
-import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshChecker;
-import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.changes.Tasks;
 import org.keycloak.models.sessions.infinispan.changes.UserSessionUpdateTask;
-import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshListener;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionStore;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
@@ -97,8 +94,13 @@ public class UserSessionAdapter<T extends SessionRefreshStore & UserSessionProvi
                     final AuthenticatedClientSessionModel clientSession = provider.getClientSession(this, client, value.toString(), offline);
                     if (clientSession != null) {
                         result.put(key, clientSession);
+                    } else {
+                        // Either the client session has expired, or it hasn't been added by a concurrently running login yet.
+                        // So it is unsafe to clear it, so we need to keep it for now. Otherwise, the test ConcurrentLoginTest.concurrentLoginSingleUser will fail.
+                        // removedClientUUIDS.add(key);
                     }
                 } else {
+                    // client does no longer exist
                     removedClientUUIDS.add(key);
                 }
             });
@@ -121,6 +123,8 @@ public class UserSessionAdapter<T extends SessionRefreshStore & UserSessionProvi
         ClientModel client = realm.getClientById(clientUUID);
 
         if (client != null) {
+            // Might return null either the client session has expired, or it hasn't been added by a concurrently running login yet.
+            // So it is unsafe to clear it, so we need to keep it for now. Otherwise, the test ConcurrentLoginTest.concurrentLoginSingleUser will fail.
             return provider.getClientSession(this, client, clientSessionId, offline);
         }
 
@@ -128,30 +132,10 @@ public class UserSessionAdapter<T extends SessionRefreshStore & UserSessionProvi
         return null;
     }
 
-    private static final int MINIMUM_INACTIVE_CLIENT_SESSIONS_TO_CLEANUP = 5;
-
     @Override
     public void removeAuthenticatedClientSessions(Collection<String> removedClientUUIDS) {
         if (removedClientUUIDS == null || removedClientUUIDS.isEmpty()) {
             return;
-        }
-
-        // Performance: do not remove the clientUUIDs from the user session until there is enough of them;
-        // an invalid session is handled as nonexistent in UserSessionAdapter.getAuthenticatedClientSessions()
-        if (removedClientUUIDS.size() >= MINIMUM_INACTIVE_CLIENT_SESSIONS_TO_CLEANUP) {
-            // Update user session
-            UserSessionUpdateTask task = new UserSessionUpdateTask() {
-                @Override
-                public void runUpdate(UserSessionEntity entity) {
-                    removedClientUUIDS.forEach(entity.getAuthenticatedClientSessions()::remove);
-                }
-
-                @Override
-                public boolean isOffline() {
-                    return offline;
-                }
-            };
-            update(task);
         }
 
         // do not iterate the removedClientUUIDS and remove the clientSession directly as the addTask can manipulate
@@ -160,6 +144,20 @@ public class UserSessionAdapter<T extends SessionRefreshStore & UserSessionProvi
                 .map(entity.getAuthenticatedClientSessions()::get)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+
+        // Update user session
+        UserSessionUpdateTask task = new UserSessionUpdateTask() {
+            @Override
+            public void runUpdate(UserSessionEntity entity) {
+                removedClientUUIDS.forEach(entity.getAuthenticatedClientSessions()::remove);
+            }
+
+            @Override
+            public boolean isOffline() {
+                return offline;
+            }
+        };
+        update(task);
 
         clientSessionUuids.forEach(clientSessionId -> this.clientSessionUpdateTx.addTask(clientSessionId, Tasks.removeSync(offline)));
     }
@@ -234,10 +232,7 @@ public class UserSessionAdapter<T extends SessionRefreshStore & UserSessionProvi
         if (!MultiSiteUtils.isPersistentSessionsEnabled() && offline) {
             // Received the message from the other DC that we should update the lastSessionRefresh in local cluster. Don't update DB in that case.
             // The other DC already did.
-            Boolean ignoreRemoteCacheUpdate = (Boolean) session.getAttribute(CrossDCLastSessionRefreshListener.IGNORE_REMOTE_CACHE_UPDATE);
-            if (ignoreRemoteCacheUpdate == null || !ignoreRemoteCacheUpdate) {
-                provider.getPersisterLastSessionRefreshStore().putLastSessionRefresh(session, entity.getId(), realm.getId(), lastSessionRefresh);
-            }
+            provider.getPersisterLastSessionRefreshStore().putLastSessionRefresh(session, entity.getId(), realm.getId(), lastSessionRefresh);
         }
 
         UserSessionUpdateTask task = new UserSessionUpdateTask() {
@@ -248,12 +243,6 @@ public class UserSessionAdapter<T extends SessionRefreshStore & UserSessionProvi
                     return;
                 }
                 entity.setLastSessionRefresh(lastSessionRefresh);
-            }
-
-            @Override
-            public CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<UserSessionEntity> sessionWrapper) {
-                return new CrossDCLastSessionRefreshChecker(provider.getLastSessionRefreshStore(), provider.getOfflineLastSessionRefreshStore())
-                        .shouldSaveUserSessionToRemoteCache(UserSessionAdapter.this.session, UserSessionAdapter.this.realm, sessionWrapper, offline, lastSessionRefresh);
             }
 
             @Override

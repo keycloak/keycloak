@@ -62,7 +62,6 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshStoreFactory;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.ResetTimeOffsetEvent;
 import org.keycloak.protocol.oidc.encode.AccessTokenContext;
@@ -114,7 +113,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -744,8 +742,6 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Produces(MediaType.APPLICATION_JSON)
     public Response suspendPeriodicTasks() {
         suspendTask(ClearExpiredUserSessions.TASK_NAME);
-        suspendTask(CrossDCLastSessionRefreshStoreFactory.LSR_PERIODIC_TASK_NAME);
-        suspendTask(CrossDCLastSessionRefreshStoreFactory.LSR_OFFLINE_PERIODIC_TASK_NAME);
 
         return Response.noContent().build();
     }
@@ -889,11 +885,10 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Consumes(MediaType.APPLICATION_JSON)
     public void resetFeature(@PathParam("feature") String featureKey) {
 
-        Profile.Feature feature;
+        featureKey = featureKey.contains(":") ? featureKey.split(":")[0] : featureKey;
+        Profile.Feature feature = Profile.getFeatureVersions(featureKey).iterator().next();
 
-        try {
-            feature = Profile.Feature.valueOf(featureKey);
-        } catch (IllegalArgumentException e) {
+        if (feature == null) {
             System.err.printf("Feature '%s' doesn't exist!!\n", featureKey);
             throw new BadRequestException();
         }
@@ -911,16 +906,18 @@ public class TestingResourceProvider implements RealmResourceProvider {
     private Set<Profile.Feature> updateFeature(String featureKey, boolean shouldEnable) {
         Collection<Profile.Feature> features = null;
 
-        try {
-            features = Arrays.asList(Profile.Feature.valueOf(featureKey));
-        } catch (IllegalArgumentException e) {
-            Set<Feature> featureVersions = Profile.getFeatureVersions(featureKey);
-            if (!shouldEnable) {
-                features = featureVersions;
-            } else if (!featureVersions.isEmpty()) {
-                // the set is ordered by preferred feature
-                features = Arrays.asList(featureVersions.iterator().next());
+        if (featureKey.contains(":")) {
+            String unversionedKey = featureKey.split(":")[0];
+            int version = Integer.parseInt(featureKey.split(":")[1].replace("v", ""));
+
+            for (Feature versionedFeature : Profile.getFeatureVersions(unversionedKey)) {
+                if (versionedFeature.getVersion() == version) {
+                    features = Set.of(versionedFeature);
+                    break;
+                }
             }
+        } else {
+            features = Profile.getFeatureVersions(featureKey);
         }
 
         if (features == null || features.isEmpty()) {

@@ -92,26 +92,6 @@ public abstract class AbstractClientTest extends AbstractAuthTest {
         return result;
     }
 
-    protected String createOidcClient(String name) {
-        return createClient(createOidcClientRep(name));
-    }
-
-    protected ClientRepresentation createOidcClientRep(String name) {
-        ClientRepresentation clientRep = new ClientRepresentation();
-        clientRep.setClientId(name);
-        clientRep.setName(name);
-        clientRep.setProtocol("openid-connect");
-        return clientRep;
-    }
-
-    protected String createSamlClient(String name) {
-        ClientRepresentation clientRep = new ClientRepresentation();
-        clientRep.setClientId(name);
-        clientRep.setName(name);
-        clientRep.setProtocol("saml");
-        return createClient(clientRep);
-    }
-
     protected String createClient(ClientRepresentation clientRep) {
         Response resp = testRealmResource().clients().create(clientRep);
         resp.close();

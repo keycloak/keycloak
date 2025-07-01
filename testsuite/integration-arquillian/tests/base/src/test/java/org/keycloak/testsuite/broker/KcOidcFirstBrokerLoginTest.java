@@ -14,6 +14,7 @@ import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.broker.oidc.TestKeycloakOidcIdentityProviderFactory;
@@ -24,6 +25,7 @@ import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.ClientScopeBuilder;
+import org.keycloak.testsuite.util.MailServerConfiguration;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.By;
@@ -37,11 +39,14 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.ApiUtil.removeUserByUsername;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
 import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.testsuite.util.MailAssert.assertEmailAndGetUrl;
 import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.ATTRIBUTE_DEPARTMENT;
 import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.PERMISSIONS_ADMIN_EDITABLE;
 import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.PERMISSIONS_ALL;
@@ -817,6 +822,58 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         assertFalse(federatedIdentities.isEmpty());
         FederatedIdentityRepresentation federatedIdentity = federatedIdentities.get(0);
         assertEquals(expectedBrokeredUserName.toLowerCase(), federatedIdentity.getUserName());
+    }
+
+    @Test
+    public void testLinkAccountAndVerifyEmailUsingDifferentBrowser() {
+        RealmResource realm = adminClient.realm(bc.consumerRealmName());
+        RealmRepresentation realmRep = realm.toRepresentation();
+
+        realmRep.setVerifyEmail(true);
+
+        realm.update(realmRep);
+
+        IdentityProviderRepresentation idpRep = identityProviderResource.toRepresentation();
+
+        idpRep.setTrustEmail(false);
+
+        identityProviderResource.update(idpRep);
+
+        configureSMTPServer();
+
+        // to avoid update profile required action
+        RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
+        UserRepresentation brokerUser = providerRealm.users().search(bc.getUserLogin()).get(0);
+        brokerUser.setFirstName("f");
+        brokerUser.setLastName("l");
+        providerRealm.users().get(brokerUser.getId()).update(brokerUser);
+        // creates a user in the consumer realm to link the account
+        brokerUser.setId(null);
+        realm.users().create(brokerUser).close();
+
+        // link the account
+        oauth.clientId("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
+        logInWithBroker(bc);
+        idpConfirmLinkPage.clickLinkAccount();
+        String verificationUrl = assertEmailAndGetUrl(MailServerConfiguration.FROM, USER_EMAIL,
+                "Someone wants to link your", false);
+        assertNotNull(verificationUrl);
+
+        // confirm the email using a different browser
+        driver2.navigate().to(verificationUrl.trim());
+        driver2.findElement(By.linkText("» Click here to proceed")).click();
+
+        // clear cookies to start a fresh browser instance and try to log in again
+        driver.manage().deleteAllCookies();
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
+        waitForPage(driver, "sign in to", true);
+        loginPage.clickSocial(bc.getIDPAlias());
+        waitForPage(driver, "sign in to", true);
+        loginPage.login(bc.getUserPassword());
+        Assert.assertTrue(appPage.isCurrent());
     }
 
     public void addDepartmentScopeIntoRealm() {

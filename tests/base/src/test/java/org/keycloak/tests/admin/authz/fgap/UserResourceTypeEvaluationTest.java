@@ -23,11 +23,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.keycloak.authorization.AdminPermissionsSchema.IMPERSONATE;
-import static org.keycloak.authorization.AdminPermissionsSchema.MANAGE;
-import static org.keycloak.authorization.AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP;
-import static org.keycloak.authorization.AdminPermissionsSchema.MAP_ROLES;
-import static org.keycloak.authorization.AdminPermissionsSchema.VIEW;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.IMPERSONATE;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLES;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
 
 import java.util.List;
 import java.util.Set;
@@ -35,13 +35,11 @@ import java.util.Set;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
-import org.keycloak.admin.client.resource.ScopePermissionsResource;
 import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.authorization.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -55,7 +53,7 @@ import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 
-@KeycloakIntegrationTest(config = KeycloakAdminPermissionsServerConfig.class)
+@KeycloakIntegrationTest
 public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
 
     @InjectUser(ref = "alice")
@@ -67,17 +65,6 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
     private final String usersType = AdminPermissionsSchema.USERS.getType();
 
     private final String newUserUsername = "new_user";
-
-    @AfterEach
-    public void onAfter() {
-        ScopePermissionsResource permissions = getScopePermissionsResource(client);
-
-        for (ScopePermissionRepresentation permission : permissions.findAll(null, null, null, -1, -1)) {
-            permissions.findById(permission.getId()).remove();
-        }
-
-        realm.admin().users().search(newUserUsername).forEach(user -> realm.admin().users().get(user.getId()).remove());
-    }
 
     @Test
     public void testSingleUserPermission() {
@@ -143,7 +130,7 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
 
         //create all-users permission for "myadmin" (so that myadmin can manage all users in the realm)
         UserPolicyRepresentation policy = createUserPolicy(realm, client,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
-        createAllPermission(client, usersType, policy, Set.of(MANAGE));
+        createAllPermission(client, usersType, policy, Set.of(VIEW, MANAGE));
 
         // creating user requires manage scope
         String newUserId = ApiUtil.handleCreatedResponse(realmAdminClient.realm(realm.getName()).users().create(UserConfigBuilder.create().username(newUserUsername).build()));
@@ -157,7 +144,7 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
     public void testManageUserPermission() {
         String myadminId = realm.admin().users().search("myadmin").get(0).getId();
         UserPolicyRepresentation policy = createUserPolicy(realm, client,"Only My Admin User Policy", myadminId);
-        ScopePermissionRepresentation allUsersPermission = createAllPermission(client, usersType, policy, Set.of(MANAGE));
+        ScopePermissionRepresentation allUsersPermission = createAllPermission(client, usersType, policy, Set.of(VIEW, MANAGE));
 
         // creating user requires manage scope
         String newUserId = ApiUtil.handleCreatedResponse(realmAdminClient.realm(realm.getName()).users().create(UserConfigBuilder.create().username(newUserUsername).build()));
@@ -167,7 +154,7 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         getScopePermissionsResource(client).findById(allUsersPermission.getId()).remove();
 
         // create user-permissions
-        createPermission(client, UserConfigBuilder.create().id(newUserId).build().getId(), usersType, Set.of(MANAGE), policy);
+        createPermission(client, UserConfigBuilder.create().id(newUserId).build().getId(), usersType, Set.of(VIEW, MANAGE), policy);
 
         // it should be possible to update the user due to single user-permission
         realmAdminClient.realm(realm.getName()).users().get(newUserId).update(UserConfigBuilder.create().email("email@test.com").build());
@@ -355,28 +342,26 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
     public void testNoTransitiveUserPermissions() {
         //create all-users manage permission for "myadmin"
         UserPolicyRepresentation policy = createUserPolicy(realm, client,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
-        createAllPermission(client, usersType, policy, Set.of(VIEW, MANAGE));
+        createAllPermission(client, usersType, policy, Set.of(MANAGE));
 
-        // with manage permission it is possible also view
+        // with manage permission it is NOT possible to view
         List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertFalse(search.isEmpty());
+        assertTrue(search.isEmpty());
 
-        // with manage permission it is possible also map roles
+        // with manage permission it is NOT possible to map roles
         try {
             realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).roles().realmLevel().add(List.of(new RoleRepresentation()));
             fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
-            // expecting here NotFoundException: https://github.com/keycloak/keycloak/blob/792b673f49d5faeed8b3bb2c61fb4a3b404df695/services/src/main/java/org/keycloak/services/resources/admin/RoleMapperResource.java#L243
-            assertThat(ex, instanceOf(NotFoundException.class));
+            assertThat(ex, instanceOf(ForbiddenException.class));
         }
 
-        // with manage permission it is possible also manage group membership
+        // with manage permission it is NOT possible to manage group membership
         try {
             realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).joinGroup("no-such");
             fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
-            // expecting here NotFoundException: https://github.com/keycloak/keycloak/blob/b5c95e9f1c58bc500316dd5c0f2d3bb5e197ca99/services/src/main/java/org/keycloak/services/resources/admin/UserResource.java#L1060
-            assertThat(ex, instanceOf(NotFoundException.class));
+            assertThat(ex, instanceOf(ForbiddenException.class));
         }
 
         // with manage permission it is NOT possible to impersonate

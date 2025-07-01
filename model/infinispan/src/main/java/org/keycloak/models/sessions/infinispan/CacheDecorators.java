@@ -21,8 +21,6 @@ import org.infinispan.AdvancedCache;
 import org.infinispan.Cache;
 import org.infinispan.context.Flag;
 
-import static org.keycloak.connections.infinispan.InfinispanUtil.getRemoteStores;
-
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -38,35 +36,12 @@ public class CacheDecorators {
     }
 
     /**
-     * Adds {@link Flag#SKIP_CACHE_LOAD} and {@link Flag#SKIP_CACHE_STORE} flags to the cache.
+     * Adds {@link Flag#IGNORE_RETURN_VALUES} flag to the cache.
      * @param cache
-     * @return Cache with the flags applied.
+     * @return Cache with the flag applied.
      */
-    public static <K, V> AdvancedCache<K, V> skipCacheLoadersIfRemoteStoreIsEnabled(Cache<K, V> cache) {
-        if (!getRemoteStores(cache).isEmpty()) {
-            // Disabling of the cache load and cache store is only needed when a remote store is used and handled separately.
-            return cache.getAdvancedCache().withFlags(Flag.SKIP_CACHE_LOAD, Flag.SKIP_CACHE_STORE);
-        } else {
-            // If there is no remote store, use write through for all stores of the cache.
-            // Mixing remote and non-remote caches is not supported.
-            return cache.getAdvancedCache().withFlags(Flag.SKIP_CACHE_LOAD);
-        }
-    }
-
-    /**
-     * Adds {@link Flag#SKIP_CACHE_STORE} flag to the cache.
-     * @param cache
-     * @return Cache with the flags applied.
-     */
-    public static <K, V> AdvancedCache<K, V> skipCacheStoreIfRemoteCacheIsEnabled(Cache<K, V> cache) {
-        if (!getRemoteStores(cache).isEmpty()) {
-            // Disabling of the cache load and cache store is only needed when a remote store is used and handled separately.
-            return cache.getAdvancedCache().withFlags(Flag.SKIP_CACHE_STORE);
-        } else {
-            // If there is no remote store, use write through for all stores of the cache.
-            // Mixing remote and non-remote caches is not supported.
-            return cache.getAdvancedCache();
-        }
+    public static <K, V> AdvancedCache<K, V> ignoreReturnValues(Cache<K, V> cache) {
+        return cache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES);
     }
 
 }

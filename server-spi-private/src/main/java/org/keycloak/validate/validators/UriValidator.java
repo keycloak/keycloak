@@ -163,7 +163,7 @@ public class UriValidator extends AbstractSimpleValidator implements ConfiguredP
         // This cannot be moved higher because it acts on differently based on environment (e.g. sometimes it checks
         // scheme, sometimes it doesn't).
         if (requireValidUrl && valid) {
-            URL ignored = uri.toURL(); // throws an exception
+            uri.toURL(); // throws an exception
         }
 
         return valid;

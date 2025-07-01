@@ -112,16 +112,15 @@ To start a test mail server for testing email sending run:
     
 or run org.keycloak.testsuite.MailServer from your favourite IDE!
 
-To configure Keycloak to use the above server add the following system properties:
+To configure Keycloak to use the above server, enter the following values in the realm configuration in the tab **Email**:
 
-    keycloak.mail.smtp.from=auto@keycloak.org
-    keycloak.mail.smtp.host=localhost
-    keycloak.mail.smtp.port=3025
-    
-For example if using the test utils Keycloak server start it with:
+| Field | Value             | 
+|-------|-------------------|
+| From  | auto@keycloak.org |
+| Host  | localhost         |
+| Port  | 3025              |
 
-    mvn exec:java -Pkeycloak-server -Dkeycloak.mail.smtp.from=auto@keycloak.org -Dkeycloak.mail.smtp.host=localhost -Dkeycloak.mail.smtp.port=3025
-    
+
 LDAP server
 -----------
 

@@ -7,9 +7,13 @@ public class ApiUtil {
 
     public static String handleCreatedResponse(Response response) {
         try (response) {
-            String uuid = getCreatedId(response);
-            response.close();
-            return uuid;
+            if (response.getStatus() != Response.Status.CONFLICT.getStatusCode()) {
+                String uuid = getCreatedId(response);
+                response.close();
+                return uuid;
+            } else {
+                return null;
+            }
         }
     }
 

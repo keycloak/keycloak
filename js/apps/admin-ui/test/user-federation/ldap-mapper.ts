@@ -1,10 +1,6 @@
 import ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import { Page } from "@playwright/test";
-import {
-  changeRoleTypeFilter,
-  confirmModalAssign,
-  pickRole,
-} from "../utils/roles";
+import { pickRoleType, confirmModalAssign, pickRole } from "../utils/roles";
 
 export async function goToMapperTab(page: Page) {
   await page.getByTestId("ldap-mappers-tab").click();
@@ -43,8 +39,7 @@ export async function fillHardwareAttributeMapper(
       .fill(data.config?.["ldap.attribute.value"][0] || "");
 
   if (data.config?.role) {
-    await page.getByTestId("add-roles").click();
-    await changeRoleTypeFilter(page, "roles");
+    await pickRoleType(page, "roles");
     await pickRole(page, data.config.role[0], true);
     await confirmModalAssign(page);
   }

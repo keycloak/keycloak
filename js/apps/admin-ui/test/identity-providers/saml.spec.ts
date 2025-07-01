@@ -71,7 +71,6 @@ test.describe("SAML identity provider test", () => {
     },
     { type: "saml-user-attribute", name: "Attribute Importer" },
     { type: "oidc-hardcoded-role", name: "Hardcoded Role" },
-    { type: "hardcoded-attribute", name: "Hardcoded Attribute" },
     { type: "saml-role", name: "SAML Attribute To Role" },
   ];
 

@@ -92,6 +92,14 @@ public interface InfinispanConnectionProvider extends Provider {
             CRL_CACHE_NAME,
     };
 
+    // list of cache name for user and client session caches, both offline and online
+    String[] USER_AND_CLIENT_SESSION_CACHES = {
+            USER_SESSION_CACHE_NAME,
+            CLIENT_SESSION_CACHE_NAME,
+            OFFLINE_USER_SESSION_CACHE_NAME,
+            OFFLINE_CLIENT_SESSION_CACHE_NAME,
+    };
+
     // list of cache name which could be defined as distributed or replicated
     String[] CLUSTERED_CACHE_NAMES = {
             USER_SESSION_CACHE_NAME,
@@ -105,6 +113,21 @@ public interface InfinispanConnectionProvider extends Provider {
     };
 
     String[] ALL_CACHES_NAME = Stream.concat(Arrays.stream(LOCAL_CACHE_NAMES), Arrays.stream(CLUSTERED_CACHE_NAMES)).toArray(String[]::new);
+
+    String[] LOCAL_MAX_COUNT_CACHES = new String[]{
+            AUTHORIZATION_CACHE_NAME,
+            CRL_CACHE_NAME,
+            KEYS_CACHE_NAME,
+            REALM_CACHE_NAME,
+            USER_CACHE_NAME
+    };
+
+    String[] CLUSTERED_MAX_COUNT_CACHES = new String[]{
+            CLIENT_SESSION_CACHE_NAME,
+            OFFLINE_USER_SESSION_CACHE_NAME,
+            OFFLINE_CLIENT_SESSION_CACHE_NAME,
+            USER_SESSION_CACHE_NAME
+    };
 
     /**
      *

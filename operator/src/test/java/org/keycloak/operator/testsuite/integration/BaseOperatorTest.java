@@ -50,6 +50,7 @@ import org.awaitility.Awaitility;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logging.Logger.Level;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
@@ -62,6 +63,8 @@ import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
+import org.keycloak.operator.testsuite.apiserver.ApiServerHelper;
+import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 import org.opentest4j.TestAbortedException;
 
@@ -108,7 +111,7 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
   public static final String TEST_RESULTS_DIR = "target/operator-test-results/";
   public static final String POD_LOGS_DIR = TEST_RESULTS_DIR + "pod-logs/";
 
-  public enum OperatorDeployment {local,remote}
+  public enum OperatorDeployment {local_apiserver,local,remote}
 
   protected static OperatorDeployment operatorDeployment;
   protected static QuarkusConfigurationService configuration;
@@ -120,16 +123,26 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
   private static Operator operator;
   protected static boolean isOpenShift;
 
+  private static ApiServerHelper kubeApi;
+
   @BeforeAll
-  public static void before() throws FileNotFoundException {
+  public static void before(TestInfo testInfo) throws FileNotFoundException {
     configuration = CDI.current().select(QuarkusConfigurationService.class).get();
-    operatorDeployment = ConfigProvider.getConfig().getOptionalValue(OPERATOR_DEPLOYMENT_PROP, OperatorDeployment.class).orElse(OperatorDeployment.local);
+    operatorDeployment = ConfigProvider.getConfig().getOptionalValue(OPERATOR_DEPLOYMENT_PROP, OperatorDeployment.class).orElse(OperatorDeployment.local_apiserver);
+    if (testInfo.getTestClass().map(m -> m.getAnnotation(DisabledIfApiServerTest.class)).isPresent()) {
+      Assumptions.assumeFalse(operatorDeployment == OperatorDeployment.local_apiserver);
+    }
     deploymentTarget = ConfigProvider.getConfig().getOptionalValue(QUARKUS_KUBERNETES_DEPLOYMENT_TARGET, String.class).orElse("kubernetes");
     customImage = ConfigProvider.getConfig().getOptionalValue(OPERATOR_CUSTOM_IMAGE, String.class).orElse(null);
 
     setDefaultAwaitilityTimings();
-    calculateNamespace();
+
+    if (operatorDeployment == OperatorDeployment.local_apiserver) {
+      kubeApi = new ApiServerHelper();
+    }
+
     createK8sClient();
+    createNamespace();
     kubernetesIp = ConfigProvider.getConfig().getOptionalValue(OPERATOR_KUBERNETES_IP, String.class).orElseGet(() -> {
         try {
             return new URL(k8sclient.getConfiguration().getMasterUrl()).getHost();
@@ -139,30 +152,39 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
     });
     Log.info("Creating CRDs");
     createCRDs(k8sclient);
-    createNamespace();
     isOpenShift = isOpenShift(k8sclient);
 
     if (operatorDeployment == OperatorDeployment.remote) {
       createRBACresourcesAndOperatorDeployment();
     } else {
       createOperator();
-      registerReconcilers();
-      operator.start();
     }
 
-    deployDB();
+    if (operatorDeployment == OperatorDeployment.local_apiserver) {
+      deployDBSecret();
+    } else {
+      deployDB();
+    }
   }
 
   @BeforeEach
   public void beforeEach(TestInfo testInfo) {
-    String testClassName = testInfo.getTestClass().map(c -> c.getSimpleName() + ".").orElse("");
-    Log.info("\n------- STARTING: " + testClassName + testInfo.getDisplayName() + "\n"
-            + "------- Namespace: " + namespace + "\n"
-            + "------- Mode: " + ((operatorDeployment == OperatorDeployment.remote) ? "remote" : "local"));
+      if (testInfo.getTestMethod().map(m -> m.getAnnotation(DisabledIfApiServerTest.class)).isPresent()) {
+          Assumptions.assumeTrue(operatorDeployment != OperatorDeployment.local_apiserver);
+      }
+      String testClassName = testInfo.getTestClass().map(c -> c.getSimpleName() + ".").orElse("");
+      Log.info("\n------- STARTING: " + testClassName + testInfo.getDisplayName() + "\n"
+              + "------- Namespace: " + namespace + "\n"
+              + "------- Mode: " + operatorDeployment.name());
   }
 
   private static void createK8sClient() {
-    k8sclient = new KubernetesClientBuilder().withConfig(new ConfigBuilder(Config.autoConfigure(null)).withNamespace(namespace).build()).build();
+      namespace = getNewRandomNamespaceName();
+      if (operatorDeployment == OperatorDeployment.local_apiserver) {
+          k8sclient = kubeApi.createClient(namespace);
+      } else {
+          k8sclient = new KubernetesClientBuilder().withConfig(new ConfigBuilder(Config.autoConfigure(null)).withNamespace(namespace).build()).build();
+      }
   }
 
   private static void createRBACresourcesAndOperatorDeployment() throws FileNotFoundException {
@@ -194,17 +216,6 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
     Awaitility.await().pollInterval(100, TimeUnit.MILLISECONDS).untilAsserted(() -> client.resources(KeycloakRealmImport.class).list());
   }
 
-  private static void registerReconcilers() {
-    Log.info("Registering reconcilers for operator : " + operator + " [" + operatorDeployment + "]");
-
-    Instance<Reconciler<? extends HasMetadata>> reconcilers = CDI.current().select(new TypeLiteral<>() {});
-
-    for (Reconciler<?> reconciler : reconcilers) {
-      Log.info("Register and apply : " + reconciler.getClass().getName());
-      operator.register(reconciler, overrider -> overrider.settingNamespace(namespace));
-    }
-  }
-
   private static void createOperator() {
     // create the operator to use the current client / namespace and injected dependent resources
     // to be replaced later with full cdi construction or test mechanics from quarkus operator sdk
@@ -214,15 +225,20 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
             return k8sclient;
         }
     });
+    Log.info("Registering reconcilers for operator : " + operator + " [" + operatorDeployment + "]");
+
+    Instance<Reconciler<? extends HasMetadata>> reconcilers = CDI.current().select(new TypeLiteral<>() {});
+
+    for (Reconciler<?> reconciler : reconcilers) {
+      Log.info("Register and apply : " + reconciler.getClass().getName());
+      operator.register(reconciler, overrider -> overrider.settingNamespace(k8sclient.getNamespace()));
+    }
+    operator.start();
   }
 
   private static void createNamespace() {
     Log.info("Creating Namespace " + namespace);
     k8sclient.resource(new NamespaceBuilder().withNewMetadata().addToLabels("app","keycloak-test").withName(namespace).endMetadata().build()).create();
-  }
-
-  private static void calculateNamespace() {
-    namespace = getNewRandomNamespaceName();
   }
 
   public static String getNewRandomNamespaceName() {
@@ -239,7 +255,7 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
     // Check DB has deployed and ready
     Log.info("Checking Postgres is running");
     Awaitility.await()
-            .untilAsserted(() -> assertThat(k8sclient.apps().statefulSets().inNamespace(namespace).withName(POSTGRESQL_NAME).get().getStatus().getReadyReplicas()).isEqualTo(1));
+            .untilAsserted(() -> assertThat(k8sclient.apps().statefulSets().withName(POSTGRESQL_NAME).get().getStatus().getReadyReplicas()).isEqualTo(1));
   }
 
   protected static void deployDBSecret() {
@@ -249,17 +265,17 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
   protected static void deleteDB() {
     // Delete the Postgres StatefulSet
     Log.infof("Waiting for postgres to be deleted");
-    k8sclient.apps().statefulSets().inNamespace(namespace).withName(POSTGRESQL_NAME).withTimeout(2, TimeUnit.MINUTES).delete();
+    k8sclient.apps().statefulSets().withName(POSTGRESQL_NAME).withTimeout(2, TimeUnit.MINUTES).delete();
   }
 
   // TODO improve this (preferably move to JOSDK)
   protected void savePodLogs() {
     Log.infof("Saving pod logs to %s", POD_LOGS_DIR);
-    for (var pod : k8sclient.pods().inNamespace(namespace).list().getItems()) {
+    for (var pod : k8sclient.pods().list().getItems()) {
       try {
         String podName = pod.getMetadata().getName();
         Log.infof("Processing %s", podName);
-        String podLog = k8sclient.pods().inNamespace(namespace).withName(podName).getLog();
+        String podLog = k8sclient.pods().withName(podName).getLog();
         File file = new File(POD_LOGS_DIR + String.format("%s-%s.txt", namespace, podName)); // using namespace for now, if more tests fail, the log might get overwritten
         file.getAbsoluteFile().getParentFile().mkdirs();
         try (var fw = new FileWriter(file, false)) {
@@ -272,11 +288,26 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
   }
 
   private static void setDefaultAwaitilityTimings() {
-    Awaitility.setDefaultPollInterval(Duration.ofMillis(500));
-    Awaitility.setDefaultTimeout(Duration.ofSeconds(360));
+    if (operatorDeployment == OperatorDeployment.local_apiserver) {
+        Awaitility.setDefaultPollInterval(Duration.ofMillis(250));
+        Awaitility.setDefaultTimeout(Duration.ofSeconds(60));
+    } else {
+        Awaitility.setDefaultPollInterval(Duration.ofMillis(500));
+        Awaitility.setDefaultTimeout(Duration.ofSeconds(360));
+    }
   }
 
   public void cleanup() {
+      if (operatorDeployment == OperatorDeployment.local_apiserver) {
+          // by default garbage collection is not supported by envtest
+          // so might as well do a namespace per test
+          k8sclient.namespaces().withName(namespace).delete();
+          stopOperator();
+          createNamespace();
+          createOperator();
+          deployDBSecret();
+          return;
+      }
       Log.info("Deleting Keycloak CR");
 
       // this can be simplified to just the root deletion after we pick up the fix
@@ -289,7 +320,6 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
           k8sclient
                   .apps()
                   .statefulSets()
-                  .inNamespace(namespace)
                   .withLabels(Constants.DEFAULT_LABELS).informOnCondition(List::isEmpty).get(20, TimeUnit.SECONDS);
       } catch (Exception e) {
           throw KubernetesClientException.launderThrowable(e);
@@ -321,7 +351,9 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
           if (operatorDeployment == OperatorDeployment.remote) {
               log(k8sclient.apps().deployments().withName("keycloak-operator"), Deployment::getStatus, false);
           }
-          logFailed(k8sclient.apps().statefulSets().withName(POSTGRESQL_NAME), StatefulSet::getStatus);
+          if (operatorDeployment != OperatorDeployment.local_apiserver) {
+              logFailed(k8sclient.apps().statefulSets().withName(POSTGRESQL_NAME), StatefulSet::getStatus);
+          }
           k8sclient.pods().withLabel("app", "keycloak-realm-import").list().getItems()
                   .forEach(pod -> log(k8sclient.pods().resource(pod), Pod::getStatus, false));
       } finally {
@@ -435,8 +467,32 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
 
   @AfterAll
   public static void after() throws FileNotFoundException {
+      if (operatorDeployment == OperatorDeployment.remote) {
+          cleanRBACresourcesAndOperatorDeployment();
+      }
 
-    if (operatorDeployment == OperatorDeployment.local) {
+      if (k8sclient != null) {
+          Log.info("Deleting namespace : " + namespace);
+          assertThat(k8sclient.namespaces().withName(namespace).delete()).isNotEmpty();
+      }
+
+      if (operator != null) {
+          stopOperator();
+          operator = null;
+      }
+
+      if (k8sclient != null) {
+          k8sclient.close();
+          k8sclient = null;
+      }
+
+      if (kubeApi != null) {
+          kubeApi.stop();
+          kubeApi = null;
+      }
+  }
+
+  private static void stopOperator() {
       Log.info("Stopping Operator");
       operator.stop();
 
@@ -448,13 +504,6 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
       Log.info("Creating new K8s Client");
       // create a new client bc operator has closed the old one
       createK8sClient();
-    } else {
-      cleanRBACresourcesAndOperatorDeployment();
-    }
-
-    Log.info("Deleting namespace : " + namespace);
-    assertThat(k8sclient.namespaces().withName(namespace).delete()).isNotEmpty();
-    k8sclient.close();
   }
 
   public static String getCurrentNamespace() {

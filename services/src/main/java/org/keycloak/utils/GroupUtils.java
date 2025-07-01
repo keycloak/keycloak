@@ -5,13 +5,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import org.keycloak.authorization.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
-import org.keycloak.services.resources.admin.permissions.GroupPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.GroupPermissionEvaluator;
 
 
 
@@ -26,7 +26,7 @@ public class GroupUtils {
      * @param groups The groups that we want to populate the hierarchy for
      * @return A stream of groups that contain all relevant groups from the root down with no extra siblings
      */
-    public static Stream<GroupRepresentation> populateGroupHierarchyFromSubGroups(KeycloakSession session, RealmModel realm, Stream<GroupModel> groups, boolean full, GroupPermissionEvaluator groupEvaluator) {
+    public static Stream<GroupRepresentation> populateGroupHierarchyFromSubGroups(KeycloakSession session, RealmModel realm, Stream<GroupModel> groups, boolean full, GroupPermissionEvaluator groupEvaluator, boolean subGroupsCount) {
         Map<String, GroupRepresentation> groupIdToGroups = new HashMap<>();
         groups.forEach(group -> {
 
@@ -36,7 +36,11 @@ public class GroupUtils {
             }
 
             GroupRepresentation currGroup = toRepresentation(groupEvaluator, group, full);
-            populateSubGroupCount(group, currGroup);
+
+            if (subGroupsCount) {
+                populateSubGroupCount(group, currGroup);
+            }
+
             groupIdToGroups.putIfAbsent(currGroup.getId(), currGroup);
 
             while(currGroup.getParentId() != null) {
@@ -51,7 +55,11 @@ public class GroupUtils {
 
                 GroupRepresentation parent = groupIdToGroups.computeIfAbsent(currGroup.getParentId(),
                     id -> toRepresentation(groupEvaluator, parentModel, full));
-                populateSubGroupCount(parentModel, parent);
+
+                if (subGroupsCount) {
+                    populateSubGroupCount(parentModel, parent);
+                }
+
                 GroupRepresentation finalCurrGroup = currGroup;
 
                 // check the parent for existing subgroups that match the group we're currently operating on and merge them if needed

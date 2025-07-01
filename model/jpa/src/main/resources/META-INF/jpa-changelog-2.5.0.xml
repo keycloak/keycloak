@@ -27,6 +27,8 @@
 
     <changeSet author="hmlnarik@redhat.com" id="2.5.0-unicode-oracle">
         <validCheckSum>7:e4c7e8f2256210aee71ddc42f538b57a</validCheckSum>
+        <validCheckSum>8:8b6fd445958882efe55deb26fc541a7b</validCheckSum>
+        <validCheckSum>9:3a32bace77c84d7678d035a7f5a8084e</validCheckSum>
         <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
             <dbms type="oracle" />
         </preConditions>
@@ -52,7 +54,7 @@
         <addColumn tableName="COMPONENT_CONFIG">
             <column name="VALUE_NEW" type="NCLOB" />
         </addColumn>
-        <sql>UPDATE COMPONENT_CONFIG SET VALUE_NEW = VALUE, VALUE = NULL</sql>
+        <sql>UPDATE ${database.defaultSchemaName}.COMPONENT_CONFIG SET VALUE_NEW = VALUE, VALUE = NULL</sql>
         <dropColumn tableName="COMPONENT_CONFIG" columnName="VALUE"/>
         <renameColumn tableName="COMPONENT_CONFIG" oldColumnName="VALUE_NEW" newColumnName="VALUE" columnDataType="NCLOB"/>
 <!--

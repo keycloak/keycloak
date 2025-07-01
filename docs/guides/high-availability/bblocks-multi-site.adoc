@@ -3,7 +3,7 @@
 
 <@tmpl.guide
 title="Building blocks multi-site deployments"
-summary="Overview of building blocks, alternatives and not considered options" >
+summary="Learn about building blocks and suggested setups for multi-site deployments." >
 
 The following building blocks are needed to set up a multi-site deployment with synchronous replication.
 

@@ -56,7 +56,13 @@ export async function clickGenerate(page: Page) {
 export async function assertNameIdFormatDropdown(page: Page) {
   const items = ["username", "email", "transient", "persistent"];
   for (const item of items) {
-    await selectItem(page, page.locator("#saml_name_id_format"), item);
-    await expect(page.locator("#saml_name_id_format")).toHaveText(item);
+    await selectItem(
+      page,
+      page.locator("#attributes\\.saml_name_id_format"),
+      item,
+    );
+    await expect(page.locator("#attributes\\.saml_name_id_format")).toHaveText(
+      item,
+    );
   }
 }

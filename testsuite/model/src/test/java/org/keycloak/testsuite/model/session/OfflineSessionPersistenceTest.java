@@ -237,11 +237,7 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
 
                 // re-initialize the session factory N times in this test
                 if (index % 100 == 0) {
-                    // don't re-initialize all caches at the same time to avoid an unstable cluster with no leader
-                    // otherwise seen CacheInitializer#loadSessions to loop sleeping
-                    synchronized (OfflineSessionPersistenceTest.class) {
-                        reinitializeKeycloakSessionFactory();
-                    }
+                    reinitializeKeycloakSessionFactory();
                 }
             }
         });

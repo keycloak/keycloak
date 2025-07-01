@@ -8,12 +8,11 @@ import {
   Dropdown,
   DropdownItem,
   DropdownList,
+  DropdownProps,
   MenuToggle,
   Modal,
   ModalVariant,
-  ToolbarItem,
 } from "@patternfly/react-core";
-import { FilterIcon } from "@patternfly/react-icons";
 import { cellWidth, TableText } from "@patternfly/react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -21,23 +20,24 @@ import { useAdminClient } from "../../admin-client";
 import { useAccess } from "../../context/access/Access";
 import { translationFormatter } from "../../utils/translationFormatter";
 import useLocaleSort from "../../utils/useLocaleSort";
-import { ResourcesKey, Row, ServiceRole } from "./RoleMapping";
+import useToggle from "../../utils/useToggle";
+import { ResourcesKey, Row } from "./RoleMapping";
 import { getAvailableRoles } from "./queries";
 import { getAvailableClientRoles } from "./resource";
-import { PermissionsConfigurationTabsParams } from "../../permissions-configuration/routes/PermissionsConfigurationTabs";
-import { useParams } from "react-router-dom";
 
 type AddRoleMappingModalProps = {
   id: string;
   type: ResourcesKey;
+  filterType: FilterType;
   name?: string;
   isRadio?: boolean;
   onAssign: (rows: Row[]) => void;
   onClose: () => void;
-  isLDAPmapper?: boolean;
+  title?: string;
+  actionLabel?: string;
 };
 
-type FilterType = "roles" | "clients";
+export type FilterType = "roles" | "clients";
 
 const RoleDescription = ({ role }: { role: RoleRepresentation }) => {
   const { t } = useTranslation();
@@ -48,30 +48,90 @@ const RoleDescription = ({ role }: { role: RoleRepresentation }) => {
   );
 };
 
+type AddRoleButtonProps = Omit<
+  DropdownProps,
+  "children" | "toggle" | "isOpen" | "onOpenChange"
+> & {
+  label?: string;
+  variant?: "default" | "plain" | "primary" | "plainText" | "secondary";
+  isDisabled?: boolean;
+  onFilerTypeChange: (type: FilterType) => void;
+};
+
+export const AddRoleButton = ({
+  label,
+  variant,
+  isDisabled,
+  onFilerTypeChange,
+  ...rest
+}: AddRoleButtonProps) => {
+  const { t } = useTranslation();
+  const [open, toggle] = useToggle();
+
+  const { hasAccess } = useAccess();
+  const canViewRealmRoles = hasAccess("view-realm") || hasAccess("query-users");
+
+  return (
+    <Dropdown
+      onOpenChange={toggle}
+      toggle={(ref) => (
+        <MenuToggle
+          ref={ref}
+          onClick={toggle}
+          variant={variant || "primary"}
+          isDisabled={isDisabled}
+          data-testid="add-role-mapping-button"
+        >
+          {t(label || "assignRole")}
+        </MenuToggle>
+      )}
+      isOpen={open}
+      {...rest}
+    >
+      <DropdownList>
+        <DropdownItem
+          data-testid="client-role"
+          component="button"
+          onClick={() => {
+            onFilerTypeChange("clients");
+          }}
+        >
+          {t("clientRoles")}
+        </DropdownItem>
+        {canViewRealmRoles && (
+          <DropdownItem
+            data-testid="roles-role"
+            component="button"
+            onClick={() => {
+              onFilerTypeChange("roles");
+            }}
+          >
+            {t("realmRoles")}
+          </DropdownItem>
+        )}
+      </DropdownList>
+    </Dropdown>
+  );
+};
+
 export const AddRoleMappingModal = ({
   id,
   name,
   type,
-  isLDAPmapper,
+  isRadio,
+  filterType,
   onAssign,
   onClose,
+  title,
+  actionLabel,
 }: AddRoleMappingModalProps) => {
   const { adminClient } = useAdminClient();
 
   const { t } = useTranslation();
-  const { hasAccess } = useAccess();
-  const canViewRealmRoles = hasAccess("view-realm") || hasAccess("query-users");
-
-  const [searchToggle, setSearchToggle] = useState(false);
-
-  const [filterType, setFilterType] = useState<FilterType>("clients");
   const [selectedRows, setSelectedRows] = useState<Row[]>([]);
-  const [key, setKey] = useState(0);
-  const refresh = () => setKey(key + 1);
 
   const localeSort = useLocaleSort();
   const compareRow = ({ role: { name } }: Row) => name?.toUpperCase();
-  const { tab } = useParams<PermissionsConfigurationTabsParams>();
 
   const loader = async (
     first?: number,
@@ -120,15 +180,36 @@ export const AddRoleMappingModal = ({
     );
   };
 
+  const columns = [
+    {
+      name: "role.name",
+      displayKey: "name",
+      transforms: [cellWidth(30)],
+    },
+    {
+      name: "client.clientId",
+      displayKey: "clientId",
+    },
+    {
+      name: "role.description",
+      displayKey: "description",
+      cellRenderer: RoleDescription,
+    },
+  ];
+
+  if (filterType === "roles") {
+    columns.splice(1, 1);
+  }
+
   return (
     <Modal
       variant={ModalVariant.large}
       title={
-        tab !== "evaluation"
-          ? isLDAPmapper
-            ? t("assignRole")
-            : t("assignRolesTo", { client: name })
-          : t("selectRole")
+        title ||
+        t("assignRolesTo", {
+          type: filterType === "roles" ? t("realm") : t("client"),
+          client: name,
+        })
       }
       isOpen
       onClose={onClose}
@@ -143,7 +224,7 @@ export const AddRoleMappingModal = ({
             onClose();
           }}
         >
-          {tab !== "evaluation" ? t("assign") : t("select")}
+          {actionLabel || t("assign")}
         </Button>,
         <Button
           data-testid="cancel"
@@ -156,80 +237,20 @@ export const AddRoleMappingModal = ({
       ]}
     >
       <KeycloakDataTable
-        key={key}
-        onSelect={(rows) => {
-          if (tab === "evaluation") {
-            setSelectedRows(rows.length > 0 ? [rows[0]] : []);
-          } else {
-            setSelectedRows([...rows]);
-          }
-        }}
-        searchPlaceholderKey="searchByRoleName"
-        isPaginated={!(filterType === "roles" && type !== "roles")}
-        searchTypeComponent={
-          canViewRealmRoles && (
-            <ToolbarItem>
-              <Dropdown
-                onOpenChange={(isOpen) => setSearchToggle(isOpen)}
-                onSelect={() => {
-                  setFilterType(filterType === "roles" ? "clients" : "roles");
-                  setSearchToggle(false);
-                  refresh();
-                }}
-                toggle={(ref) => (
-                  <MenuToggle
-                    data-testid="filter-type-dropdown"
-                    ref={ref}
-                    onClick={() => setSearchToggle(!searchToggle)}
-                    icon={<FilterIcon />}
-                  >
-                    {filterType === "roles"
-                      ? t("filterByRoles")
-                      : t("filterByClients")}
-                  </MenuToggle>
-                )}
-                isOpen={searchToggle}
-              >
-                <DropdownList>
-                  <DropdownItem key="filter-type" data-testid={filterType}>
-                    {filterType === "roles"
-                      ? t("filterByClients")
-                      : t("filterByRoles")}
-                  </DropdownItem>
-                </DropdownList>
-              </Dropdown>
-            </ToolbarItem>
-          )
+        onSelect={(rows) => setSelectedRows([...rows])}
+        searchPlaceholderKey={
+          filterType === "roles" ? "searchByRoleName" : "search"
         }
+        isPaginated={!(filterType === "roles" && type !== "roles")}
         canSelectAll
-        isRadio={tab === "evaluation"}
+        isRadio={isRadio}
         loader={filterType === "roles" ? loader : clientRolesLoader}
         ariaLabelKey="associatedRolesText"
-        columns={[
-          {
-            name: "name",
-            cellRenderer: ServiceRole,
-            transforms: [cellWidth(30)],
-          },
-          {
-            name: "role.description",
-            displayKey: "description",
-            cellRenderer: RoleDescription,
-          },
-        ]}
+        columns={columns}
         emptyState={
           <ListEmptyState
             message={t("noRoles")}
             instructions={t("noRealmRolesToAssign")}
-            secondaryActions={[
-              {
-                text: t("filterByRoles"),
-                onClick: () => {
-                  setFilterType("roles");
-                  refresh();
-                },
-              },
-            ]}
           />
         }
       />

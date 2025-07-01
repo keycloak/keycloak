@@ -789,7 +789,7 @@ public class AuthenticationManager {
 
     public static IdentityCookieToken createIdentityToken(KeycloakSession keycloakSession, RealmModel realm, UserModel user, UserSessionModel session, String issuer) {
         IdentityCookieToken token = new IdentityCookieToken();
-        token.id(KeycloakModelUtils.generateId());
+        token.id(SecretGenerator.getInstance().generateSecureID());
         token.issuedNow();
         token.subject(user.getId());
         token.issuer(issuer);
@@ -1134,11 +1134,6 @@ public class AuthenticationManager {
         }
     }
 
-    public static Response actionRequired(final KeycloakSession session, final AuthenticationSessionModel authSession,
-            final HttpRequest request, final EventBuilder event) {
-        return actionRequired(session, authSession, request, event, new HashSet<>());
-    }
-
     private static Response actionRequired(final KeycloakSession session, final AuthenticationSessionModel authSession,
             final HttpRequest request, final EventBuilder event, Set<String> ignoredActions) {
         final var realm = authSession.getRealm();
@@ -1264,13 +1259,14 @@ public class AuthenticationManager {
 
     protected static Response executionActions(KeycloakSession session, AuthenticationSessionModel authSession,
             HttpRequest request, EventBuilder event, RealmModel realm, UserModel user, Set<String> ignoredActions) {
-        final var kcAction = authSession.getClientNote(Constants.KC_ACTION);
-        final var firstApplicableRequiredAction =
+        final String kcAction = authSession.getClientNote(Constants.KC_ACTION);
+        final RequiredActionProviderModel firstApplicableRequiredAction =
                 getFirstApplicableRequiredAction(realm, authSession, user, kcAction, ignoredActions);
+        boolean kcActionExecution = kcAction != null && kcAction.equals(firstApplicableRequiredAction.getProviderId());
 
         if (firstApplicableRequiredAction != null) {
             return executeAction(session, authSession, firstApplicableRequiredAction, request, event, realm, user,
-                    kcAction != null, ignoredActions);
+                    kcActionExecution, ignoredActions);
         }
 
         return null;
@@ -1328,9 +1324,7 @@ public class AuthenticationManager {
             return context.getChallenge();
         }
         else if (context.getStatus() == RequiredActionContext.Status.IGNORE) {
-            authSession.getAuthenticatedUser().removeRequiredAction(factory.getId());
-            authSession.removeRequiredAction(factory.getId());
-            setKcActionStatus(factory.getId(), RequiredActionContext.KcActionStatus.SUCCESS, authSession);
+            setKcActionStatus(factory.getId(), RequiredActionContext.KcActionStatus.ERROR, authSession);
             ignoredActions.add(factory.getId());
             return nextActionAfterAuthentication(session, authSession, session.getContext().getConnection(), request, session.getContext().getUri(), event, ignoredActions);
         }
@@ -1369,7 +1363,7 @@ public class AuthenticationManager {
         nonInitiatedActionAliases.addAll(user.getRequiredActionsStream().toList());
         nonInitiatedActionAliases.addAll(authSession.getRequiredActions());
 
-        final var applicableNonInitiatedActions = nonInitiatedActionAliases.stream()
+        final Map<String, RequiredActionProviderModel> applicableNonInitiatedActions = nonInitiatedActionAliases.stream()
                 .map(alias -> getApplicableRequiredAction(realm, alias))
                 .filter(Objects::nonNull)
                 .filter(model -> !ignoredActions.contains(model.getProviderId()))
@@ -1388,17 +1382,14 @@ public class AuthenticationManager {
             }
         }
 
-        final Map<String, RequiredActionProviderModel> applicableActions;
-        if (kcAction != null) {
-            applicableActions = new HashMap<>(applicableNonInitiatedActions);
-            applicableActions.put(kcAction.getAlias(), kcAction);
-        } else {
-            applicableActions = applicableNonInitiatedActions;
-        }
-
-        final var applicableActionsSorted = applicableActions.values().stream()
+        final List<RequiredActionProviderModel> applicableActionsSorted = applicableNonInitiatedActions.values().stream()
                 .sorted(RequiredActionProviderModel.RequiredActionComparator.SINGLETON)
-                .toList();
+                .collect(Collectors.toList());
+
+        // Insert "kc_action" as last action (unless present in required actions)
+        if (kcAction != null && !applicableNonInitiatedActions.containsKey(kcActionAlias)) {
+            applicableActionsSorted.add(kcAction);
+        }
 
         if (logger.isDebugEnabled()) {
             logger.debugv("applicable required actions (sorted): {0}",
@@ -1460,6 +1451,11 @@ public class AuthenticationManager {
             @Override
             public void success() {
                 throw new RuntimeException("Not allowed to call success() within evaluateTriggers()");
+            }
+
+            @Override
+            public void cancel() {
+                throw new RuntimeException("Not allowed to call cancel() within evaluateTriggers()");
             }
 
             @Override

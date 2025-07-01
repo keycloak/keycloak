@@ -68,14 +68,15 @@ public class AppAuthManager extends AuthenticationManager {
             return null;
         }
 
-        String bearerPart = split[0];
+        String typeString = split[0];
 
         if (!Profile.isFeatureEnabled(Profile.Feature.DPOP)) {
-            if (bearerPart.equalsIgnoreCase(TokenUtil.TOKEN_TYPE_DPOP)){
+            if (!typeString.equalsIgnoreCase(BEARER)) {
                 return null;
             }
         } else {
-            if (!bearerPart.equalsIgnoreCase(BEARER) && !bearerPart.equalsIgnoreCase(TokenUtil.TOKEN_TYPE_DPOP)){
+            // "Bearer" is case-insensitive for historical reasons. "DPoP" is case-sensitive to follow the spec.
+            if (!typeString.equalsIgnoreCase(BEARER) && !typeString.equals(TokenUtil.TOKEN_TYPE_DPOP)){
                 return null;
             }
         }

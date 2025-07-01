@@ -76,7 +76,6 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
 
     protected final String WEB_AUTHN_REGISTER_PROVIDER = isPasswordless() ? WebAuthnPasswordlessRegisterFactory.PROVIDER_ID : WebAuthnRegisterFactory.PROVIDER_ID;
     protected final String DEFAULT_USERNAME = "test-user@localhost";
-    protected final String DEFAULT_PASSWORD = "password";
 
     @Page
     LoginUsernameOnlyPage usernamePage;
@@ -123,6 +122,7 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
+        super.configureTestRealm(testRealm);
         RequiredActionProviderRepresentation action = new RequiredActionProviderRepresentation();
         action.setAlias(WEB_AUTHN_REGISTER_PROVIDER);
         action.setProviderId(WEB_AUTHN_REGISTER_PROVIDER);
@@ -180,7 +180,7 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
         testWebAuthnLogoutOtherSessions(false);
     }
 
-    private void testWebAuthnLogoutOtherSessions(boolean logoutOtherSessions) throws IOException {
+    protected void testWebAuthnLogoutOtherSessions(boolean logoutOtherSessions) throws IOException {
         UserResource testUser = testRealm().users().get(findUser(DEFAULT_USERNAME).getId());
 
         // perform a login using normal user/password form to have an old session
@@ -189,7 +189,7 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
                 .setBrowserFlow("browser")
                 .update()) {
             OAuthClient oauth2 = oauth.newConfig().driver(driver2);
-            oauth2.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+            oauth2.doLogin(DEFAULT_USERNAME, getPassword(DEFAULT_USERNAME));
             event1 = events.expectLogin().assertEvent();
             assertEquals(1, testUser.getUserSessions().size());
         }
@@ -207,8 +207,8 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
         final int credentialsCount = getCredentialCount.get();
 
         webAuthnRegisterPage.assertCurrent();
-        if (!logoutOtherSessions) {
-            webAuthnRegisterPage.uncheckLogoutSessions();
+        if (logoutOtherSessions) {
+            webAuthnRegisterPage.checkLogoutSessions();
         }
         assertThat(webAuthnRegisterPage.isLogoutSessionsChecked(), is(logoutOtherSessions));
         webAuthnRegisterPage.clickRegister();
@@ -235,7 +235,7 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
         usernamePage.login(DEFAULT_USERNAME);
 
         passwordPage.assertCurrent();
-        passwordPage.login(DEFAULT_PASSWORD);
+        passwordPage.login(getPassword(DEFAULT_USERNAME));
 
         appPage.assertCurrent();
         assertThat(appPage.getRequestType(), is(AppPage.RequestType.AUTH_RESPONSE));

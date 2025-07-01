@@ -16,9 +16,10 @@ const PKCE_METHODS = ["plain", "S256"] as const;
 
 type DiscoverySettingsProps = {
   readOnly: boolean;
+  isOIDC: boolean;
 };
 
-const Fields = ({ readOnly }: DiscoverySettingsProps) => {
+const Fields = ({ readOnly, isOIDC }: DiscoverySettingsProps) => {
   const { t } = useTranslation();
   const { control } = useFormContext<IdentityProviderRepresentation>();
 
@@ -55,52 +56,63 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
           required: t("required"),
         }}
       />
-      <TextControl
-        name="config.logoutUrl"
-        label={t("logoutUrl")}
-        readOnly={readOnly}
-      />
+      {isOIDC && (
+        <TextControl
+          name="config.logoutUrl"
+          label={t("logoutUrl")}
+          readOnly={readOnly}
+        />
+      )}
       <TextControl
         name="config.userInfoUrl"
         label={t("userInfoUrl")}
         readOnly={readOnly}
+        rules={{
+          required: isOIDC ? "" : t("required"),
+        }}
       />
-      <TextControl
-        name="config.issuer"
-        label={t("issuer")}
-        readOnly={readOnly}
-      />
-      <DefaultSwitchControl
-        name="config.validateSignature"
-        label={t("validateSignature")}
-        isDisabled={readOnly}
-        stringify
-      />
-      {validateSignature === "true" && (
+      {isOIDC && (
+        <TextControl
+          name="config.issuer"
+          label={t("issuer")}
+          readOnly={readOnly}
+        />
+      )}
+      {isOIDC && (
         <>
           <DefaultSwitchControl
-            name="config.useJwksUrl"
-            label={t("useJwksUrl")}
+            name="config.validateSignature"
+            label={t("validateSignature")}
             isDisabled={readOnly}
             stringify
           />
-          {useJwks === "true" ? (
-            <TextAreaControl
-              name="config.jwksUrl"
-              label={t("jwksUrl")}
-              readOnly={readOnly}
-            />
-          ) : (
+          {validateSignature === "true" && (
             <>
-              <TextAreaControl
-                name="config.publicKeySignatureVerifier"
-                label={t("validatingPublicKey")}
+              <DefaultSwitchControl
+                name="config.useJwksUrl"
+                label={t("useJwksUrl")}
+                isDisabled={readOnly}
+                stringify
               />
-              <TextControl
-                name="config.publicKeySignatureVerifierKeyId"
-                label={t("validatingPublicKeyId")}
-                readOnly={readOnly}
-              />
+              {useJwks === "true" ? (
+                <TextAreaControl
+                  name="config.jwksUrl"
+                  label={t("jwksUrl")}
+                  readOnly={readOnly}
+                />
+              ) : (
+                <>
+                  <TextAreaControl
+                    name="config.publicKeySignatureVerifier"
+                    label={t("validatingPublicKey")}
+                  />
+                  <TextControl
+                    name="config.publicKeySignatureVerifierKeyId"
+                    label={t("validatingPublicKeyId")}
+                    readOnly={readOnly}
+                  />
+                </>
+              )}
             </>
           )}
         </>
@@ -129,7 +141,10 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
   );
 };
 
-export const DiscoverySettings = ({ readOnly }: DiscoverySettingsProps) => {
+export const DiscoverySettings = ({
+  readOnly,
+  isOIDC,
+}: DiscoverySettingsProps) => {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -142,10 +157,10 @@ export const DiscoverySettings = ({ readOnly }: DiscoverySettingsProps) => {
           onToggle={() => setIsExpanded(!isExpanded)}
           isExpanded={isExpanded}
         >
-          <Fields readOnly={readOnly} />
+          <Fields readOnly={readOnly} isOIDC={isOIDC} />
         </ExpandableSection>
       )}
-      {!readOnly && <Fields readOnly={readOnly} />}
+      {!readOnly && <Fields readOnly={readOnly} isOIDC={isOIDC} />}
     </>
   );
 };

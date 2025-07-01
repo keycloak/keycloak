@@ -20,6 +20,7 @@ package org.keycloak.services.clientregistration;
 import org.keycloak.TokenCategory;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureVerifierContext;
@@ -28,7 +29,6 @@ import org.keycloak.models.ClientInitialAccessModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.TokenManager.TokenRevocationCheck;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
@@ -70,7 +70,7 @@ public class ClientRegistrationTokenUtils {
     }
 
     public static String updateRegistrationAccessToken(KeycloakSession session, RealmModel realm, ClientModel client, RegistrationAuth registrationAuth) {
-        String id = KeycloakModelUtils.generateId();
+        String id = SecretGenerator.getInstance().generateSecureID();
         client.setRegistrationToken(id);
 
         RegistrationAccessToken regToken = new RegistrationAccessToken();

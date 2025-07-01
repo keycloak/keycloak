@@ -32,6 +32,7 @@ import { useEffect, useRef, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
+import { ClientSelect } from "../../components/client/ClientSelect";
 import { UserSelect } from "../../components/users/UserSelect";
 import { useAccess } from "../../context/access/Access";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -150,6 +151,8 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
   const tabContent5 = useRef(null);
 
   const form = useForm();
+  const { watch } = form;
+  const selectedAudience: string[] = watch("targetAudience");
 
   const { hasAccess } = useAccess();
   const hasViewUsers = hasAccess("view-users");
@@ -200,13 +203,17 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
     async () => {
       const scope = selected.join(" ");
       const user = form.getValues("user");
-      if (!user) return [];
+      if (user.length === 0) {
+        return [];
+      }
+      const audience = selectedAudience.join(" ");
 
       return await Promise.all([
         adminClient.clients.evaluateGenerateAccessToken({
           id: clientId,
           userId: user[0],
           scope,
+          audience,
         }),
         adminClient.clients.evaluateGenerateUserInfo({
           id: clientId,
@@ -225,7 +232,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
       setUserInfo(prettyPrintJSON(userInfo));
       setIdToken(prettyPrintJSON(idToken));
     },
-    [form.getValues("user"), selected],
+    [form.getValues("user"), selected, selectedAudience],
   );
 
   return (
@@ -297,6 +304,16 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
               />
             </FormProvider>
           )}
+          <FormProvider {...form}>
+            <ClientSelect
+              name="targetAudience"
+              label={t("targetAudience")}
+              helpText={t("targetAudienceHelp")}
+              defaultValue={[]}
+              variant="typeaheadMulti"
+              placeholderText={t("targetAudiencePlaceHolder")}
+            />
+          </FormProvider>
         </Form>
       </PageSection>
 

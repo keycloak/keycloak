@@ -83,11 +83,6 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
     protected SelectAuthenticatorPage selectAuthenticatorPage;
 
     @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-
-    }
-
-    @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation realmRepresentation = AbstractAdminTest.loadJson(getClass().getResourceAsStream("/webauthn/testrealm-webauthn.json"), RealmRepresentation.class);
 
@@ -98,13 +93,13 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
         realmRepresentation.setWebAuthnPolicyAcceptableAaguids(acceptableAaguids);
 
         testRealms.add(realmRepresentation);
+        configureTestRealm(realmRepresentation);
     }
 
     @Test
     @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
     public void registerUserSuccess() throws IOException {
         String username = "registerUserSuccess";
-        String password = "password";
         String email = "registerUserSuccess@email";
         String userId = null;
 
@@ -115,7 +110,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
             registerPage.assertCurrent();
 
             String authenticatorLabel = SecretGenerator.getInstance().randomString(24);
-            registerPage.register("firstName", "lastName", email, username, password, password);
+            registerPage.register("firstName", "lastName", email, username, generatePassword(username));
 
             // User was registered. Now he needs to register WebAuthn credential
             webAuthnRegisterPage.assertCurrent();
@@ -170,7 +165,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
             // login by user
             loginPage.open();
-            loginPage.login(username, password);
+            loginPage.login(username, getPassword(username));
 
             webAuthnLoginPage.assertCurrent();
 
@@ -236,7 +231,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
             loginUsernamePage.login("test-user@localhost");
 
             passwordPage.assertCurrent();
-            passwordPage.login("password");
+            passwordPage.login(getPassword("test-user@localhost"));
 
             events.clear();
 
@@ -294,7 +289,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
             loginUsernamePage.login("test-user@localhost");
 
             passwordPage.assertCurrent();
-            passwordPage.login("password");
+            passwordPage.login(getPassword("test-user@localhost"));
 
             webAuthnLoginPage.assertCurrent();
 
@@ -348,7 +343,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
                 .update()) {
 
             String username = "webauthn-tester@localhost";
-            String password = "password";
+            String password = generatePassword("webauthn-tester@localhost");
 
             UserRepresentation user = new UserRepresentation();
             user.setUsername(username);
@@ -456,7 +451,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
         try (RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm()).setBrowserFlow("browser-webauthn-passwordless").update()) {
             // Login as test-user@localhost with password
             loginPage.open();
-            loginPage.login("test-user@localhost", "password");
+            loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
             errorPage.assertCurrent();
 

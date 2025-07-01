@@ -24,6 +24,7 @@ import org.keycloak.representations.idm.authorization.Logic;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Represents an authorization policy and all the configuration associated with it.
@@ -166,6 +167,15 @@ public interface Policy {
      * @return a set with all resource instances where this policy applies. Or an empty set if there is no resource associated with this policy
      */
     Set<Resource> getResources();
+
+    /**
+     * Returns the name of the {@link Resource} instances where this policy applies.
+     *
+     * @return a set with all names of resource instances where this policy applies. Or an empty set if there is no resource associated with this policy
+     */
+    default Set<String> getResourceNames() {
+        return getResources().stream().map(Resource::getName).collect(Collectors.toSet());
+    }
 
     /**
      * Returns the {@link Scope} instances where this policy applies.

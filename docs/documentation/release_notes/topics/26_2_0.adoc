@@ -8,6 +8,21 @@ For more details, see the link:{securing_apps_token_exchange_link}#_standard-tok
 
 For information on how to upgrade from the legacy token exchange used in previous {project_name} versions, see the link:{upgradingguide_link}[{upgradingguide_name}].
 
+= Fine-grained admin permissions supported
+
+This release introduces support for a new version of fine-grained admin permissions. Version 2 (V2) provides enhanced flexibility and control over administrative access within realms.
+With this feature, administrators can define permissions for administering users, groups, clients, and roles without relying on broad administrative roles. V2 offers the same level of access control over realm resources as the previous version, with plans to extend its capabilities in future versions. Some key points follow:
+
+* *Centralized Admin Console Management* - New *Permissions* section was introduced to allow management from a single place without having to navigate to different places in the Admin Console.
+* *Improved manageability* - Administrators can more easily search and evaluate permissions when building a permission model for realm resources.
+* *Resource-Specific and Global Permissions* – Permissions can be defined for individual resources (such as specific users or groups),  or entire resource types (such as all users or all groups).
+* *Explicit Operation Scoping* – Permissions are now independent, removing hidden dependencies between operations. Administrators must assign each scope explicitly, making it easier to see what is granted without needing prior knowledge of implicit relationships.
+* *Per-Realm Enablement* – Fine-Grained Admin Permissions can be enabled on a per-realm basis, allowing greater control over adoption and configuration.
+
+For more details, see link:{adminguide_finegrained_link}[{adminguide_finegrained_name}].
+
+For more information about migration, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
 = Guides for metrics and Grafana dashboards
 
 In addition to the list of useful metric names link:{observablitycategory_link}[the Observability guides category] now also contains a guide on how to display these metrics in Grafana.
@@ -34,6 +49,20 @@ To use the functionality in the Operator, enable the `Auto` update strategy and 
 Read the section https://www.keycloak.org/operator/rolling-updates[Managing Rolling Updates] in the {project_name} Operator Advanced Configuration guide for more details on this functionality.
 
 The checks to determine if a rolling update is possible are also available on the {project_name} command line so you can use them in your deployment pipeline. Continue reading in the https://www.keycloak.org/server/update-compatibility[Update Compatibility Tool] guide for more information about the functionality available on the command line.
+
+= Metrics on user activities
+
+Event metrics provide admins an aggregated view of the different user activities in a Keycloak instance.
+For now, only metrics for user events are captured. For example, you can monitor the number of logins, login failures, or token refreshes performed.
+For more information, see Monitoring user activities with event metrics.
+
+While this was a preview feature in 26.1, this is now fully supported in 26.2.
+
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/bohmber[Bernd Bohmann] for the contribution.
+endif::[]
+
+For more information, check the link:https://www.keycloak.org/observability/event-metrics[Monitoring user activities with event metrics] {section}.
 
 = Additional query parameters in Admin Events API
 
@@ -81,6 +110,18 @@ For more information, check the link:https://www.keycloak.org/server/management-
 Introduced the ability to dynamically select authentication flows based on conditions such as requested scopes, ACR (Authentication Context Class Reference) and others.
 This can be achieved using link:{adminguide_link}#_client_policies[Client Policies] by combining the new `AuthenticationFlowSelectorExecutor` with conditions like the new `ACRCondition`. For more details, see the link:{adminguide_link}#_client-policy-auth-flow[{adminguide_name}].
 
+= JWT Client authentication aligned with the latest OIDC specification
+
+The latest version of the link:https://openid.net/specs/openid-connect-core-1_0-36.html#rfc.section.9[OpenID Connect Core Specification] tightened the rules for
+audience validation in JWT client assertions for the Client Authentication methods `private_key_jwt` and `client_secret_jwt` . {project_name} now enforces by default that there is single audience
+in the JWT token used for client authentication.
+
+For information on the changed audience validation in JWT Client authentication {project_name} versions, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/thomasdarimont[Thomas Darimont] for the contribution.
+endif::[]
+
 = Federated credentials are available now when fetching user credentials
 
 Until now, querying user credentials using the User API will not return credentials managed by user storage providers and, as a consequence,
@@ -99,7 +140,7 @@ user storage provider.
 
 = Token based authentication for SMTP (XOAUTH2)
 
-The Keycloak outgoing link:{adminguide_email_name}[SMTP mail configuration] now supports token authentication (XOAUTH2).
+The Keycloak outgoing link:{adminguide_email_link}[SMTP mail configuration] now supports token authentication (XOAUTH2).
 Many service providers (Microsoft, Google) are moving towards SMTP OAuth authentication and end the support for basic authentication.
 The token is gathered using Client Credentials Grant.
 
@@ -117,4 +158,16 @@ This setting is turned off by default.
 
 ifeval::[{project_community}==true]
 Many thanks to https://github.com/laurids[Laurids Møller Jepsen] for the contribution.
+endif::[]
+
+ifeval::[{project_community}==true]
+= OpenID for Verifiable Credential Issuance documentation
+
+The OpenID for Verifiable Credential Issuance (OID4VCI) remains an experimental feature in {project_name}, but it received further improvements and especially the link:{adminguide_link}#_oid4vci[The documentation],
+with the steps how to try this feature.
+
+You will find significant development and discussions in the https://github.com/keycloak/kc-sig-fapi[Keycloak OAuth SIG]. Anyone from the Keycloak community is welcome to join and provide the feedback.
+
+Many thanks to all members of the OAuth SIG group for the participation in the development and discussions about this feature. Especially thanks to
+https://github.com/Awambeng[Awambeng Rodrick] and https://github.com/IngridPuppet[Ingrid Kamga].
 endif::[]

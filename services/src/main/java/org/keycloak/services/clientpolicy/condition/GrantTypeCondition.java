@@ -17,6 +17,7 @@
 
 package org.keycloak.services.clientpolicy.condition;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.models.KeycloakSession;
@@ -47,6 +48,7 @@ public class GrantTypeCondition extends AbstractClientPolicyConditionProvider<Gr
 
     public static class Configuration extends ClientPolicyConditionConfigurationRepresentation {
 
+        @JsonAlias("grant_types")
         protected List<String> grantTypes;
 
         public List<String> getGrantTypes() {

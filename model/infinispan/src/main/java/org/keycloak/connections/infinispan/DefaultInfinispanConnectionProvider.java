@@ -37,12 +37,10 @@ import org.infinispan.util.concurrent.BlockingManager;
 public class DefaultInfinispanConnectionProvider implements InfinispanConnectionProvider {
 
     private final EmbeddedCacheManager cacheManager;
-    private final RemoteCacheProvider remoteCacheProvider;
     private final TopologyInfo topologyInfo;
 
-    public DefaultInfinispanConnectionProvider(EmbeddedCacheManager cacheManager, RemoteCacheProvider remoteCacheProvider, TopologyInfo topologyInfo) {
+    public DefaultInfinispanConnectionProvider(EmbeddedCacheManager cacheManager, TopologyInfo topologyInfo) {
         this.cacheManager = cacheManager;
-        this.remoteCacheProvider = remoteCacheProvider;
         this.topologyInfo = topologyInfo;
     }
 
@@ -61,7 +59,7 @@ public class DefaultInfinispanConnectionProvider implements InfinispanConnection
 
     @Override
     public <K, V> RemoteCache<K, V> getRemoteCache(String cacheName) {
-        return remoteCacheProvider.getRemoteCache(cacheName);
+        throw new IllegalStateException("Remote stores cannot be used with Embedded Infinispan.");
     }
 
     @Override

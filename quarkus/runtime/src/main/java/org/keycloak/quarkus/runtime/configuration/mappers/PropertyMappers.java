@@ -85,7 +85,7 @@ public final class PropertyMappers {
         // The special handling of log properties is because some logging runtime properties are requested during build time
         // and we need to resolve them. That should be fine as they are generally not considered security sensitive.
         // See https://github.com/quarkusio/quarkus/pull/42157
-        if ((isRebuild() || Environment.isRebuildCheck()) && isKeycloakRuntime(name, mapper)
+        if (isRebuild() && isKeycloakRuntime(name, mapper)
                 && !NestedPropertyMappingInterceptor.getResolvingRoot().orElse(name).startsWith("quarkus.log.")) {
             return ConfigValue.builder().withName(name).build();
         }
@@ -97,7 +97,13 @@ public final class PropertyMappers {
     }
 
     public static boolean isSpiBuildTimeProperty(String name) {
+        // we can't require the new property formant until we're ok with a breaking change
+        //return name.startsWith(KC_SPI_PREFIX) && (name.endsWith("--provider") || name.endsWith("--enabled") || name.endsWith("--provider-default"));
         return name.startsWith(KC_SPI_PREFIX) && (name.endsWith("-provider") || name.endsWith("-enabled") || name.endsWith("-provider-default"));
+    }
+
+    public static boolean isMaybeSpiBuildTimeProperty(String name) {
+        return isSpiBuildTimeProperty(name) && !name.contains("--");
     }
 
     private static boolean isKeycloakRuntime(String name, PropertyMapper<?> mapper) {
@@ -399,7 +405,15 @@ public final class PropertyMappers {
         private static void handleMapper(PropertyMapper<?> mapper, BiConsumer<String, PropertyMapper<?>> operation) {
             operation.accept(mapper.getFrom(), mapper);
             if (!mapper.getFrom().equals(mapper.getTo())) {
-                operation.accept(mapper.getTo(), mapper);
+                String to = mapper.getTo();
+                operation.accept(to, mapper);
+                if (to.startsWith(KC_SPI_PREFIX)) {
+                    if (!mapper.getTo().contains("--")) {
+                        throw new IllegalStateException("Mapper should use the new form of the SPI option with the `--` separator: " + to);
+                    }
+                    String legacyTo = mapper.getTo().replace("--", "-");
+                    operation.accept(legacyTo, mapper);
+                }
             }
         }
     }

@@ -31,14 +31,28 @@ public class Context {
         for (File f : srcDir.listFiles((dir, f) -> f.endsWith(".adoc") && !f.equals("index.adoc"))) {
             Guide guide = parser.parse(f);
 
-            if (guidePriorities != null && guide != null) {
-                Integer priority = guidePriorities.get(guide.getId());
-                guide.setPriority(priority != null ? priority : Integer.MAX_VALUE);
-            }
-
             if (guide != null) {
+                if (guidePriorities != null) {
+                    Integer priority = guidePriorities.get(guide.getId());
+                    if (priority != null) {
+                        if (guide.getPriority() != Integer.MAX_VALUE) {
+                            throw new RuntimeException("Guide is pinned, but has a priority specified: " + f.getName());
+                        }
+                        guidePriorities.remove(guide.getId());
+                        guide.setPriority(priority);
+                    }
+                }
+
+                if (!guide.isTileVisible() && guide.getPriority() == Integer.MAX_VALUE) {
+                    throw new RuntimeException("Invisible tiles should be pinned or have an explicit priority: " + f.getName());
+                }
+
                 guides.add(guide);
             }
+        }
+
+        if (guidePriorities != null && !guidePriorities.isEmpty()) {
+            throw new RuntimeException("File 'pinned-guides' contains files that no longer exist or are misspelled: " + guidePriorities.keySet());
         }
 
         Collections.sort(guides, (o1, o2) -> {

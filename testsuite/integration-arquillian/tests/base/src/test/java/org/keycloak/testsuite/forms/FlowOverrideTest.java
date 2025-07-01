@@ -38,7 +38,6 @@ import org.keycloak.models.jpa.entities.AuthenticationFlowEntity;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
@@ -90,10 +89,6 @@ public class FlowOverrideTest extends AbstractFlowTest {
     protected ErrorPage errorPage;
 
     private TimeBasedOTP totp = new TimeBasedOTP();
-
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-    }
 
     @Before
     public void setupFlows() {
@@ -216,7 +211,7 @@ public class FlowOverrideTest extends AbstractFlowTest {
         loginPage.assertCurrent();
 
         // Fill username+password. I am successfully authenticated
-        oauth.fillLoginForm("test-user@localhost", "password");
+        oauth.fillLoginForm("test-user@localhost", getPassword("test-user@localhost"));
         appPage.assertCurrent();
 
         events.expectLogin().client("test-app-flow").detail(Details.USERNAME, "test-user@localhost").assertEvent();
@@ -248,7 +243,7 @@ public class FlowOverrideTest extends AbstractFlowTest {
         loginPage.assertCurrent();
 
         // Fill username+password. I am successfully authenticated
-        oauth.fillLoginForm("test-user@localhost", "password");
+        oauth.fillLoginForm("test-user@localhost", getPassword("test-user@localhost"));
         appPage.assertCurrent();
 
         events.expectLogin().client(clientId).detail(Details.USERNAME, "test-user@localhost").assertEvent();
@@ -299,7 +294,7 @@ public class FlowOverrideTest extends AbstractFlowTest {
             Form form = new Form();
             form.param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD);
             form.param("username", "test-user@localhost");
-            form.param("password", "password");
+            form.param("password", getPassword("test-user@localhost"));
 
             Response response = grantTarget.request()
                     .header(HttpHeaders.AUTHORIZATION, header)

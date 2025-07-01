@@ -65,6 +65,7 @@ import jakarta.transaction.InvalidTransactionException;
 import jakarta.transaction.SystemException;
 import jakarta.transaction.Transaction;
 import javax.crypto.spec.SecretKeySpec;
+import java.math.BigInteger;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.PrivateKey;
@@ -72,6 +73,7 @@ import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -85,12 +87,6 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.common.Profile;
-import org.keycloak.representations.idm.authorization.ResourceRepresentation;
-import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
-import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
 import static org.keycloak.utils.StreamsUtil.closing;
 
@@ -110,6 +106,8 @@ public final class KeycloakModelUtils {
     public static final String GROUP_PATH_SEPARATOR = "/";
     public static final String GROUP_PATH_ESCAPE = "~";
     private static final char CLIENT_ROLE_SEPARATOR = '.';
+
+    public static final int MAX_CLIENT_LOOKUPS_DURING_ROLE_RESOLVE = 25;
 
     private KeycloakModelUtils() {
     }
@@ -222,8 +220,14 @@ public final class KeycloakModelUtils {
     }
 
     public static CertificateRepresentation generateKeyPairCertificate(String subject) {
-        KeyPair keyPair = KeyUtils.generateRsaKeyPair(2048);
-        X509Certificate certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, subject);
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.YEAR, 3);
+        return generateKeyPairCertificate(subject, 4096, calendar);
+    }
+
+    public static CertificateRepresentation generateKeyPairCertificate(String subject, int keysize, Calendar endDate) {
+        KeyPair keyPair = KeyUtils.generateRsaKeyPair(keysize);
+        X509Certificate certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, subject, BigInteger.valueOf(System.currentTimeMillis()), endDate.getTime());
 
         String privateKeyPem = PemUtils.encodeKey(keyPair.getPrivate());
         String certPem = PemUtils.encodeCertificate(certificate);
@@ -338,7 +342,7 @@ public final class KeycloakModelUtils {
         runJobInTransactionWithResult(factory, context, session -> {
             task.run(session);
             return null;
-        }, task.useExistingSession(), task.getTaskName());
+        }, task.getTaskName());
     }
 
     /**
@@ -428,7 +432,7 @@ public final class KeycloakModelUtils {
      * @return The return value from the callable
      */
     public static <V> V runJobInTransactionWithResult(KeycloakSessionFactory factory, final KeycloakSessionTaskWithResult<V> callable) {
-        return runJobInTransactionWithResult(factory, null, callable, false, "Non-HTTP task");
+        return runJobInTransactionWithResult(factory, null, callable, "Non-HTTP task");
     }
 
     /**
@@ -437,18 +441,13 @@ public final class KeycloakModelUtils {
      * @param factory The session factory
      * @param context The context from the previous session to use
      * @param callable The callable to execute
-     * @param useExistingSession if the existing session should be used
      * @param taskName Name of the task. Can be useful for logging purposes
      * @return The return value from the callable
      */
     public static <V> V runJobInTransactionWithResult(KeycloakSessionFactory factory, KeycloakContext context, final KeycloakSessionTaskWithResult<V> callable,
-                                                      boolean useExistingSession, String taskName) {
+                                                      String taskName) {
         V result;
         KeycloakSession existing = KeycloakSessionUtil.getKeycloakSession();
-        if (useExistingSession && existing != null && existing.getTransactionManager().isActive()) {
-            return callable.run(existing);
-        }
-
         try (KeycloakSession session = factory.create()) {
             RequestContextHelper.getContext(session).setContextMessage(taskName);
             session.getTransactionManager().begin();
@@ -592,7 +591,7 @@ public final class KeycloakModelUtils {
         }
     }
 
-    public static String getMasterRealmAdminApplicationClientId(String realmName) {
+    public static String getMasterRealmAdminManagementClientId(String realmName) {
         return realmName + "-realm";
     }
 
@@ -937,8 +936,10 @@ public final class KeycloakModelUtils {
         }
 
         // Check client roles for all possible splits by dot
+        int counter = 0;
         int scopeIndex = roleName.lastIndexOf(CLIENT_ROLE_SEPARATOR);
-        while (scopeIndex >= 0) {
+        while (scopeIndex >= 0 && counter < MAX_CLIENT_LOOKUPS_DURING_ROLE_RESOLVE) {
+            counter++;
             String appName = roleName.substring(0, scopeIndex);
             ClientModel client = realm.getClientByClientId(appName);
             if (client != null) {
@@ -947,6 +948,10 @@ public final class KeycloakModelUtils {
             }
 
             scopeIndex = roleName.lastIndexOf(CLIENT_ROLE_SEPARATOR, scopeIndex - 1);
+        }
+        if (counter >= MAX_CLIENT_LOOKUPS_DURING_ROLE_RESOLVE) {
+            logger.warnf("Not able to retrieve role model from the role name '%s'. Please use shorter role names with the limited amount of dots, roleName", roleName.length() > 100 ? roleName.substring(0, 100) + "..." : roleName);
+            return null;
         }
 
         // determine if roleName is a realm role
@@ -1170,8 +1175,12 @@ public final class KeycloakModelUtils {
         if (clientAuthenticatorType != null)
             switch (clientAuthenticatorType) {
                 case AUTH_TYPE_CLIENT_SECRET_JWT: {
-                    if (Algorithm.HS384.equals(signingAlg)) return SecretGenerator.SECRET_LENGTH_384_BITS;
-                    if (Algorithm.HS512.equals(signingAlg)) return SecretGenerator.SECRET_LENGTH_512_BITS;
+                    if (Algorithm.HS384.equals(signingAlg))
+                        return SecretGenerator.equivalentEntropySize(SecretGenerator.SECRET_LENGTH_384_BITS, SecretGenerator.ALPHANUM.length);
+                    else if (Algorithm.HS512.equals(signingAlg))
+                        return SecretGenerator.equivalentEntropySize(SecretGenerator.SECRET_LENGTH_512_BITS, SecretGenerator.ALPHANUM.length);
+                    else
+                        return SecretGenerator.equivalentEntropySize(SecretGenerator.SECRET_LENGTH_256_BITS, SecretGenerator.ALPHANUM.length);
                 }
             }
         return SecretGenerator.SECRET_LENGTH_256_BITS;

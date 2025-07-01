@@ -22,8 +22,6 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.condition.EnabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.DryRun;
@@ -34,6 +32,7 @@ import org.keycloak.it.utils.RawKeycloakDistribution;
 import java.io.File;
 import java.nio.file.Paths;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DistributionTest
@@ -47,6 +46,9 @@ public class StartDevCommandDistTest {
     @Launch({ "start-dev" })
     void testDevModeWarning(CLIResult cliResult) {
         cliResult.assertStartedDevMode();
+        String out = cliResult.getOutput().toUpperCase();
+        assertFalse(out.contains("WARN"));
+        assertFalse(out.contains("ERROR"));
     }
 
     @DryRun

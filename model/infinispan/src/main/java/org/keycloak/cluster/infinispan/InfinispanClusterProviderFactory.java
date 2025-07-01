@@ -22,26 +22,23 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import org.infinispan.Cache;
-import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 import org.infinispan.configuration.cache.CacheMode;
+import org.infinispan.context.Flag;
 import org.infinispan.lifecycle.ComponentStatus;
 import org.infinispan.notifications.Listener;
 import org.infinispan.notifications.cachemanagerlistener.annotation.Merged;
 import org.infinispan.notifications.cachemanagerlistener.annotation.ViewChanged;
 import org.infinispan.notifications.cachemanagerlistener.event.MergeEvent;
 import org.infinispan.notifications.cachemanagerlistener.event.ViewChangedEvent;
-import org.infinispan.persistence.remote.RemoteStore;
 import org.infinispan.remoting.transport.Address;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ClusterProviderFactory;
-import org.keycloak.common.util.Retry;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -61,16 +58,8 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
 
     protected static final Logger logger = Logger.getLogger(InfinispanClusterProviderFactory.class);
 
-    // Infinispan cache
     private volatile Cache<String, Object> workCache;
-
-    // Ensure that atomic operations (like putIfAbsent) must work correctly in any of: non-clustered, clustered or cross-Data-Center (cross-DC) setups
-    private CrossDCAwareCacheFactory crossDCAwareCacheFactory;
-
-    private int clusterStartupTime;
-
-    // Just to extract notifications related stuff to separate class
-    private InfinispanNotificationsManager notificationsManager;
+    private volatile ClusterProvider clusterProvider;
 
     private final ExecutorService localExecutor = Executors.newCachedThreadPool(r -> {
         Thread thread = Executors.defaultThreadFactory().newThread(r);
@@ -82,40 +71,37 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
 
     @Override
     public ClusterProvider create(KeycloakSession session) {
-        lazyInit(session);
-        String myAddress = InfinispanUtil.getTopologyInfo(session).getMyNodeName();
-        return new InfinispanClusterProvider(clusterStartupTime, myAddress, crossDCAwareCacheFactory, notificationsManager, localExecutor);
+        return lazyInit(session);
     }
 
-    private void lazyInit(KeycloakSession session) {
-        if (workCache == null) {
-            synchronized (this) {
-                if (workCache == null) {
-                    InfinispanConnectionProvider ispnConnections = session.getProvider(InfinispanConnectionProvider.class);
-                    workCache = ispnConnections.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
+    private ClusterProvider lazyInit(KeycloakSession session) {
+        if (clusterProvider != null)
+            return clusterProvider;
 
-                    workCacheListener = new ViewChangeListener();
-                    workCache.getCacheManager().addListener(workCacheListener);
+        synchronized (this) {
+            if (clusterProvider != null)
+                return clusterProvider;
+            InfinispanConnectionProvider ispnConnections = session.getProvider(InfinispanConnectionProvider.class);
+            this.workCache = ispnConnections.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
 
-                    // See if we have RemoteStore (external JDG) configured for cross-Data-Center scenario
-                    Set<RemoteStore> remoteStores = InfinispanUtil.getRemoteStores(workCache);
-                    crossDCAwareCacheFactory = CrossDCAwareCacheFactory.getFactory(workCache, remoteStores);
+            workCacheListener = new ViewChangeListener();
+            workCache.getCacheManager().addListener(workCacheListener);
 
-                    clusterStartupTime = initClusterStartupTime(session);
+            var clusterStartupTime = initClusterStartupTime(session);
+            TopologyInfo topologyInfo = InfinispanUtil.getTopologyInfo(session);
+            var cp = new InfinispanClusterProvider(clusterStartupTime, topologyInfo, workCache, localExecutor);
 
-                    TopologyInfo topologyInfo = InfinispanUtil.getTopologyInfo(session);
-                    String myAddress = topologyInfo.getMyNodeName();
-                    String mySite = topologyInfo.getMySiteName();
+            // We need CacheEntryListener for communication within current DC
+            workCache.addListener(cp.new CacheEntryListener());
+            logger.debugf("Added listener for infinispan cache: %s", workCache.getName());
 
-                    notificationsManager = InfinispanNotificationsManager.create(session, workCache, myAddress, mySite, remoteStores);
-                }
-            }
+            this.clusterProvider = cp;
+            return clusterProvider;
         }
     }
 
-
     protected int initClusterStartupTime(KeycloakSession session) {
-        Integer existingClusterStartTime = (Integer) crossDCAwareCacheFactory.getCache().get(InfinispanClusterProvider.CLUSTER_STARTUP_TIME_KEY);
+        Integer existingClusterStartTime = (Integer) workCache.get(InfinispanClusterProvider.CLUSTER_STARTUP_TIME_KEY);
         if (existingClusterStartTime != null) {
             logger.debugf("Loaded cluster startup time: %s", Time.toDate(existingClusterStartTime).toString());
             return existingClusterStartTime;
@@ -123,7 +109,7 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
             // clusterStartTime not yet initialized. Let's try to put our startupTime
             int serverStartTime = (int) (session.getKeycloakSessionFactory().getServerStartupTimestamp() / 1000);
 
-            existingClusterStartTime = putIfAbsentWithRetries(crossDCAwareCacheFactory, InfinispanClusterProvider.CLUSTER_STARTUP_TIME_KEY, serverStartTime, -1);
+            existingClusterStartTime = (Integer) workCache.putIfAbsent(InfinispanClusterProvider.CLUSTER_STARTUP_TIME_KEY, serverStartTime);
             if (existingClusterStartTime == null) {
                 logger.debugf("Initialized cluster startup time to %s", Time.toDate(serverStartTime).toString());
                 return serverStartTime;
@@ -133,38 +119,6 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
             }
         }
     }
-
-
-    // Will retry few times for the case when backup site not available in cross-dc environment.
-    // The site might be taken offline automatically if "take-offline" properly configured
-    static <V> V putIfAbsentWithRetries(CrossDCAwareCacheFactory crossDCAwareCacheFactory, String key, V value, int taskTimeoutInSeconds) {
-        AtomicReference<V> resultRef = new AtomicReference<>();
-
-        Retry.executeWithBackoff(iteration -> {
-
-            try {
-                V result;
-                if (taskTimeoutInSeconds > 0) {
-                    long lifespanMs = InfinispanUtil.toHotrodTimeMs(crossDCAwareCacheFactory.getCache(), Time.toMillis(taskTimeoutInSeconds));
-                    result = (V) crossDCAwareCacheFactory.getCache().putIfAbsent(key, value, lifespanMs, TimeUnit.MILLISECONDS);
-                } else {
-                    result = (V) crossDCAwareCacheFactory.getCache().putIfAbsent(key, value);
-                }
-                resultRef.set(result);
-
-            } catch (HotRodClientException re) {
-                logger.warnf(re, "Failed to write key '%s' and value '%s' in iteration '%d' . Retrying", key, value, iteration);
-
-                // Rethrow the exception. Retry will take care of handle the exception and eventually retry the operation.
-                throw re;
-            }
-
-        }, 10, 10);
-
-        return resultRef.get();
-    }
-
-
 
     @Override
     public void init(Config.Scope config) {
@@ -201,15 +155,25 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
 
         @Merged
         public void mergeEvent(MergeEvent event) {
-           // During split-brain only Keycloak instances contained within the same partition will receive updates via
-           // the work cache. On split-brain heal it's necessary for us to clear all local caches so that potentially
-           // stale values are invalidated and subsequent requests are forced to read from the DB.
-           localExecutor.execute(() ->
-              Arrays.stream(InfinispanConnectionProvider.LOCAL_CACHE_NAMES)
-                    .map(name -> workCache.getCacheManager().getCache(name))
-                    .filter(cache -> cache.getCacheConfiguration().clustering().cacheMode() == CacheMode.LOCAL)
-                    .forEach(Cache::clear)
-           );
+            // During split-brain only Keycloak instances contained within the same partition will receive updates via
+            // the work cache. On split-brain healing, it's necessary for us to clear all local caches so that potentially
+            // stale values are invalidated and subsequent requests are forced to read from the DB.
+            localExecutor.execute(() ->
+                    Arrays.stream(InfinispanConnectionProvider.LOCAL_CACHE_NAMES)
+                            .map(name -> workCache.getCacheManager().getCache(name))
+                            .filter(cache -> cache.getCacheConfiguration().clustering().cacheMode() == CacheMode.LOCAL)
+                            .forEach(Cache::clear)
+            );
+
+            if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+                // If persistent user sessions are enabled, the reasoning from above is true for the user and client sessions as well.
+                // As the session caches are distributed caches and as this runs on every node, run it locally on each node.
+                localExecutor.execute(() ->
+                        Arrays.stream(InfinispanConnectionProvider.USER_AND_CLIENT_SESSION_CACHES)
+                                .map(name -> workCache.getCacheManager().getCache(name).getAdvancedCache().withFlags(Flag.CACHE_MODE_LOCAL))
+                                .forEach(Cache::clear)
+                );
+            }
         }
 
         @ViewChanged
@@ -247,8 +211,5 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
         private Set<String> convertAddresses(Collection<Address> addresses) {
             return addresses.stream().map(Object::toString).collect(Collectors.toSet());
         }
-
     }
-
-
 }

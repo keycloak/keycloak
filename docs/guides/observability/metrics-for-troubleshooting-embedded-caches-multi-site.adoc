@@ -2,8 +2,8 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Embedded Infinispan metrics for multiple sites deployments"
-summary="Learn about metrics monitoring caching health"
+title="Embedded Infinispan metrics for multi-site deployments"
+summary="Use metrics to monitor caching health."
 tileVisible="false"
 >
 

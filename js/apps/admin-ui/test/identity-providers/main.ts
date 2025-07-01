@@ -96,7 +96,7 @@ export async function assertPkceMethodExists(
   page: Page,
   exist: boolean = true,
 ) {
-  assertElementExists(page, "#pkceMethod", exist);
+  assertElementExists(page, "#config\\.pkceMethod", exist);
 }
 
 export async function goToMappersTab(page: Page) {

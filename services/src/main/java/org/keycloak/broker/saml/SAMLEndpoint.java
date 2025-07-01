@@ -542,11 +542,11 @@ public class SAMLEndpoint {
                     if (Constants.AUTHENTICATION_EXPIRED_MESSAGE.equals(statusMessage)) {
                         return callback.retryLogin(provider, authSession);
                     } else {
-                        return callback.error(statusMessage);
+                        return callback.error(config, statusMessage);
                     }
                 }
                 if (responseType.getAssertions() == null || responseType.getAssertions().isEmpty()) {
-                    return callback.error(Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+                    return callback.error(config, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
                 }
 
                 boolean assertionIsEncrypted = AssertionUtil.isAssertionEncrypted(responseType);

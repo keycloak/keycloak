@@ -63,7 +63,7 @@ public class BootstrapAdminDistTest {
     void createAdmin(LaunchResult result) {
         assertTrue(result.getErrorOutput().isEmpty(), result.getErrorOutput());
     }
-    
+
     @Test
     @Launch({ "start-dev", "--bootstrap-admin-password=MY_PASSWORD" })
     void createAdminWithCliOptions(LaunchResult result) {
@@ -94,12 +94,12 @@ public class BootstrapAdminDistTest {
         assertTrue(result.getErrorOutput().isEmpty(), result.getErrorOutput());
 
         rawDist.setManualStop(true);
-        rawDist.run("start-dev", "--log-level=debug");
+        rawDist.run("start-dev");
 
         CLIResult adminResult = rawDist.kcadm("get", "clients", "--server", "http://localhost:8080", "--realm", "master", "--client", "admin", "--secret", "admin123");
-        
+
         assertEquals(0, adminResult.exitCode());
         assertTrue(adminResult.getOutput().contains("clientId"));
     }
-    
+
 }

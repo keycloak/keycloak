@@ -11,6 +11,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.requiredactions.DeleteAccount;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -25,6 +26,7 @@ import org.keycloak.testsuite.auth.page.login.DeleteAccountActionConfirmPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.openqa.selenium.Cookie;
 
 public class DeleteAccountActionTest extends AbstractTestRealmKeycloakTest {
 
@@ -73,6 +75,44 @@ public class DeleteAccountActionTest extends AbstractTestRealmKeycloakTest {
     Assert.assertEquals(users.size(), 0);
   }
 
+    @Test
+    public void testReauthenticateAfterDeletingAccount() {
+        loginPage.open();
+
+        UserRepresentation userRep = UserBuilder.create()
+                .username("delete-user")
+                .password("password")
+                .enabled(true)
+                .requiredAction(DeleteAccount.PROVIDER_ID)
+                .build();
+        testRealm().users().create(userRep).close();
+        addDeleteAccountRoleToUserClientRoles(userRep.getUsername());
+
+        loginPage.login(userRep.getUsername(), "password");
+
+        Assert.assertTrue(deleteAccountPage.isCurrent());
+
+        Cookie authSessionCookie = driver.manage().getCookieNamed(CookieType.AUTH_SESSION_ID.getName());
+        deleteAccountPage.clickConfirmAction();
+
+        events.expect(EventType.DELETE_ACCOUNT);
+
+        List<UserRepresentation> users = testRealm().users().search(userRep.getUsername());
+
+        Assert.assertEquals(users.size(), 0);
+
+        testRealm().users().create(userRep).close();
+        addDeleteAccountRoleToUserClientRoles(userRep.getUsername());
+        loginPage.open();
+        Cookie newAuthSessionCookie = driver.manage().getCookieNamed(CookieType.AUTH_SESSION_ID.getName());
+        Assert.assertFalse(authSessionCookie.getValue().equals(newAuthSessionCookie.getValue()));
+        loginPage.login(userRep.getUsername(), "password");
+        Assert.assertTrue(deleteAccountPage.isCurrent());
+        deleteAccountPage.clickConfirmAction();
+        users = testRealm().users().search(userRep.getUsername());
+        Assert.assertEquals(users.size(), 0);
+    }
+
   @Test
   public void deleteAccountFailsWithoutRoleFails() {
     removeDeleteAccountRoleFromUserClientRoles();
@@ -87,7 +127,11 @@ public class DeleteAccountActionTest extends AbstractTestRealmKeycloakTest {
 
 
   private void addDeleteAccountRoleToUserClientRoles() {
-    UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
+    addDeleteAccountRoleToUserClientRoles("test-user@localhost");
+  }
+
+  private void addDeleteAccountRoleToUserClientRoles(String username) {
+    UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, username);
     ApiUtil.assignClientRoles(adminClient.realm("test"), user.getId(), "account", AccountRoles.DELETE_ACCOUNT);
   }
 

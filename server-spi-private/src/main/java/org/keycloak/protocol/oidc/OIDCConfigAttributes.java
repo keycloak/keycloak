@@ -64,6 +64,7 @@ public final class OIDCConfigAttributes {
     public static final String PKCE_CODE_CHALLENGE_METHOD = "pkce.code.challenge.method";
 
     public static final String TOKEN_ENDPOINT_AUTH_SIGNING_ALG = "token.endpoint.auth.signing.alg";
+    public static final String TOKEN_ENDPOINT_AUTH_SIGNING_MAX_EXP = "token.endpoint.auth.signing.max.exp";
 
     public static final String BACKCHANNEL_LOGOUT_URL = "backchannel.logout.url";
 

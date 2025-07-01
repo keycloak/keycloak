@@ -66,6 +66,6 @@ public class EmbeddedKeycloakServer implements KeycloakServer {
 
     @Override
     public String getManagementBaseUrl() {
-        return "http://localhost:9000";
+        return "http://localhost:9001";
     }
 }

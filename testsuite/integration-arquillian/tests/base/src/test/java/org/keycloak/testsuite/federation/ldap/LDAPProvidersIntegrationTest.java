@@ -106,6 +106,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
+            session.getContext().setRealm(appRealm);
 
             LDAPTestUtils.addLocalUser(session, appRealm, "marykeycloak", "mary@test.com", "password-app");
 
@@ -1093,6 +1094,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
+            session.getContext().setRealm(appRealm);
 
             ctx.getLdapModel().getConfig().putSingle(LDAPConstants.CUSTOM_USER_SEARCH_FILTER, "(|(mail=user5@email.org)(mail=user6@email.org))");
             appRealm.updateComponent(ctx.getLdapModel());
@@ -1101,6 +1103,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
+            session.getContext().setRealm(appRealm);
 
             LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "username5", "John5", "Doel5", "user5@email.org", null, "125");
             LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "username6", "John6", "Doel6", "user6@email.org", null, "126");
@@ -1141,6 +1144,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
+            session.getContext().setRealm(appRealm);
             UserStorageUtil.userCache(session).clear();
             // Add custom filter again
             ctx.getLdapModel().getConfig().putSingle(LDAPConstants.CUSTOM_USER_SEARCH_FILTER, "(|(mail=user5@email.org)(mail=user6@email.org))");
@@ -1151,6 +1155,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
+            session.getContext().setRealm(appRealm);
             UserStorageUtil.userCache(session).clear();
 
             // search by id using custom filter. Must return the user
@@ -1172,6 +1177,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
+            session.getContext().setRealm(appRealm);
 
             UserStorageProviderModel model = new UserStorageProviderModel(ctx.getLdapModel());
             model.getConfig().putSingle(LDAPConstants.EDIT_MODE, UserStorageProvider.EditMode.UNSYNCED.toString());
@@ -1181,6 +1187,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
+            session.getContext().setRealm(appRealm);
 
             UserModel user = session.users().getUserByUsername(appRealm, "johnkeycloak");
             Assert.assertNotNull(user);
@@ -1234,6 +1241,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
+            session.getContext().setRealm(appRealm);
             UserModel user = session.users().getUserByUsername(appRealm, "johnkeycloak");
 
             // change username locally
@@ -1252,6 +1260,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
+            session.getContext().setRealm(appRealm);
 
             ctx.getLdapModel().getConfig().putSingle(LDAPConstants.EDIT_MODE, UserStorageProvider.EditMode.WRITABLE.toString());
 
@@ -1270,6 +1279,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
+            session.getContext().setRealm(appRealm);
 
             LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "username8", "John8", "Doel8", "user8@email.org", null, ATTRIBUTE_VALUE);
             LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "username9", "John9", "Doel9", "user9@email.org", null, ATTRIBUTE_VALUE);
@@ -1331,45 +1341,52 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
     @Test
     public void testLDAPUserRefreshCache() {
-        testingClient.server().run(session -> {
-            UserStorageUtil.userCache(session).clear();
-        });
+        try {
+            testingClient.testing().setTestingInfinispanTimeService();
+            testingClient.server().run(session -> {
+                UserStorageUtil.userCache(session).clear();
+            });
 
-        testingClient.server().run(session -> {
-            LDAPTestContext ctx = LDAPTestContext.init(session);
-            RealmModel appRealm = ctx.getRealm();
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                RealmModel appRealm = ctx.getRealm();
+                session.getContext().setRealm(appRealm);
 
-            LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ctx.getLdapModel());
-            LDAPTestUtils.addLDAPUser(ldapProvider, appRealm, "johndirect", "John", "Direct", "johndirect@email.org", null, "1234");
+                LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ctx.getLdapModel());
+                LDAPTestUtils.addLDAPUser(ldapProvider, appRealm, "johndirect", "John", "Direct", "johndirect@email.org", null, "1234");
 
-            // Fetch user from LDAP and check that postalCode is filled
-            UserModel user = session.users().getUserByUsername(appRealm, "johndirect");
-            String postalCode = user.getFirstAttribute("postal_code");
-            Assert.assertEquals("1234", postalCode);
+                // Fetch user from LDAP and check that postalCode is filled
+                UserModel user = session.users().getUserByUsername(appRealm, "johndirect");
+                String postalCode = user.getFirstAttribute("postal_code");
+                Assert.assertEquals("1234", postalCode);
 
-            LDAPTestUtils.removeLDAPUserByUsername(ldapProvider, appRealm, ldapProvider.getLdapIdentityStore().getConfig(), "johndirect");
-        });
+                LDAPTestUtils.removeLDAPUserByUsername(ldapProvider, appRealm, ldapProvider.getLdapIdentityStore().getConfig(), "johndirect");
+            });
 
-        setTimeOffset(60 * 5); // 5 minutes in future, user should be cached still
+            setTimeOffset(60 * 5); // 5 minutes in future, user should be cached still
 
-        testingClient.server().run(session -> {
-            RealmModel appRealm = new RealmManager(session).getRealmByName("test");
-            CachedUserModel user = (CachedUserModel) session.users().getUserByUsername(appRealm, "johndirect");
-            String postalCode = user.getFirstAttribute("postal_code");
-            String email = user.getEmail();
-            Assert.assertEquals("1234", postalCode);
-            Assert.assertEquals("johndirect@email.org", email);
-        });
+            testingClient.server().run(session -> {
+                RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+                session.getContext().setRealm(appRealm);
+                CachedUserModel user = (CachedUserModel) session.users().getUserByUsername(appRealm, "johndirect");
+                String postalCode = user.getFirstAttribute("postal_code");
+                String email = user.getEmail();
+                Assert.assertEquals("1234", postalCode);
+                Assert.assertEquals("johndirect@email.org", email);
+            });
 
-        setTimeOffset(60 * 20); // 20 minutes into future, cache will be invalidated
+            setTimeOffset(60 * 20); // 20 minutes into future, cache will be invalidated
 
-        testingClient.server().run(session -> {
-            RealmModel appRealm = new RealmManager(session).getRealmByName("test");
-            UserModel user = session.users().getUserByUsername(appRealm, "johndirect");
-            Assert.assertNull(user);
-        });
-
-        setTimeOffset(0);
+            testingClient.server().run(session -> {
+                RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+                session.getContext().setRealm(appRealm);
+                UserModel user = session.users().getUserByUsername(appRealm, "johndirect");
+                Assert.assertNull(user);
+            });
+        } finally {
+            resetTimeOffset();
+            testingClient.testing().revertTestingInfinispanTimeService();
+        }
     }
 
     @Test
@@ -1434,6 +1451,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
     @Test
     public void testAlwaysReadValueFromLdapCached() throws Exception {
         try {
+            testingClient.testing().setTestingInfinispanTimeService();
             // import user from the ldap johnkeycloak and cache it reading it by id
             List<UserRepresentation> users = testRealm().users().search("johnkeycloak", true);
             Assert.assertEquals(1, users.size());
@@ -1476,6 +1494,8 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
                 johnLdapObject.setSingleAttribute(LDAPConstants.SN, "Doe");
                 ctx.getLdapProvider().getLdapIdentityStore().update(johnLdapObject);
             });
+            resetTimeOffset();
+            testingClient.testing().revertTestingInfinispanTimeService();
         }
     }
 

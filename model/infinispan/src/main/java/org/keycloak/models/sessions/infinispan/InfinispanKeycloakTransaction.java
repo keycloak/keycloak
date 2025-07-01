@@ -240,7 +240,7 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
         }
     }
 
-    // Ignore return values. Should have better performance within cluster / cross-dc env
+    // Ignore return values. Should have better performance within cluster
     private static <K, V> BasicCache<K, V> decorateCache(BasicCache<K, V> cache) {
         if (cache instanceof RemoteCache)
             return cache;

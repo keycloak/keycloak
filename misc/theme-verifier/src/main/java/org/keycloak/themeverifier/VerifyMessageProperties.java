@@ -53,9 +53,12 @@ public class VerifyMessageProperties {
             verifyProblematicBlanks();
             if (validateMessageFormatQuotes) {
                 verifyMessageFormatQuotes();
+                verifyMessageFormatPlaceholders();
             } else {
                 verifyNotMessageFormatQuotes();
+                verifyNotMessageFormatPlaceholders();
             }
+            verifyUnbalancedCurlyBraces();
         } catch (IOException e) {
             throw new MojoExecutionException("Can not read file " + file, e);
         }
@@ -65,12 +68,7 @@ public class VerifyMessageProperties {
     private final static Pattern DOUBLE_SINGLE_QUOTES = Pattern.compile("''");
 
     private void verifyNotMessageFormatQuotes() {
-        PropertyResourceBundle bundle;
-        try (FileInputStream fis = new FileInputStream(file)) {
-            bundle = new PropertyResourceBundle(fis);
-        } catch (IOException e) {
-            throw new RuntimeException("unable to read file " + file, e);
-        }
+        PropertyResourceBundle bundle = getPropertyResourceBundle();
 
         bundle.getKeys().asIterator().forEachRemaining(key -> {
             String value = bundle.getString(key);
@@ -87,12 +85,7 @@ public class VerifyMessageProperties {
     private static final Pattern SINGLE_QUOTE_START = Pattern.compile("^'[^']");
 
     private void verifyMessageFormatQuotes() {
-        PropertyResourceBundle bundle;
-        try (FileInputStream fis = new FileInputStream(file)) {
-            bundle = new PropertyResourceBundle(fis);
-        } catch (IOException e) {
-            throw new RuntimeException("unable to read file " + file, e);
-        }
+        PropertyResourceBundle bundle = getPropertyResourceBundle();
 
         bundle.getKeys().asIterator().forEachRemaining(key -> {
             String value = bundle.getString(key);
@@ -106,6 +99,71 @@ public class VerifyMessageProperties {
         });
     }
 
+    private static final Pattern DOUBLE_CURLY_BRACES_START = Pattern.compile("\\{\\{[0-9]");
+    private static final Pattern DOUBLE_CURLY_BRACES_END = Pattern.compile("[0-9]}}");
+
+    private void verifyMessageFormatPlaceholders() {
+        PropertyResourceBundle bundle = getPropertyResourceBundle();
+
+        bundle.getKeys().asIterator().forEachRemaining(key -> {
+            String value = bundle.getString(key);
+
+            if (DOUBLE_CURLY_BRACES_START.matcher(value).find()
+                    || DOUBLE_CURLY_BRACES_END.matcher(value).find()) {
+                messages.add("Double curly braces are not allowed in message formats in the backend for in '" + key + "' for file " + file + ": " + value);
+            }
+
+        });
+    }
+
+    private static final Pattern SINGLE_CURLY_BRACE_MIDDLE = Pattern.compile("[^{]\\{[0-9]");
+    private static final Pattern SINGLE_CURLY_BRACE_END = Pattern.compile("[0-9]}$");
+    private static final Pattern SINGLE_CURLY_BRACE_START = Pattern.compile("^\\{[0-9]");
+
+    private void verifyNotMessageFormatPlaceholders() {
+        PropertyResourceBundle bundle = getPropertyResourceBundle();
+
+        bundle.getKeys().asIterator().forEachRemaining(key -> {
+            String value = bundle.getString(key);
+
+            if (SINGLE_CURLY_BRACE_START.matcher(value).find()
+                    || SINGLE_CURLY_BRACE_MIDDLE.matcher(value).find()
+                    || SINGLE_CURLY_BRACE_END.matcher(value).find()) {
+                messages.add("Single curly quotes are not supported as placeholders for the frontend in '" + key + "' for file " + file + ": " + value);
+            }
+
+        });
+    }
+
+    private static final Pattern UNBALANCED_ONE = Pattern.compile("\\{\\{[^{}]*}[^}]");
+    private static final Pattern UNBALANCED_ONE_END = Pattern.compile("\\{\\{[^{}]*}$");
+    private static final Pattern UNBALANCED_TWO = Pattern.compile("[^{]\\{[^{}]*}}");
+    private static final Pattern UNBALANCED_TWO_START = Pattern.compile("^\\{[^{}]*}}");
+
+    private void verifyUnbalancedCurlyBraces() {
+        PropertyResourceBundle bundle = getPropertyResourceBundle();
+
+        bundle.getKeys().asIterator().forEachRemaining(key -> {
+            String value = bundle.getString(key);
+
+            if (UNBALANCED_ONE.matcher(value).find() || UNBALANCED_ONE_END.matcher(value).find()
+                || UNBALANCED_TWO.matcher(value).find() || UNBALANCED_TWO_START.matcher(value).find()) {
+                messages.add("Unbalanced curly braces in key '" + key + "' for file " + file + ": " + value);
+            }
+
+        });
+    }
+
+    private PropertyResourceBundle getPropertyResourceBundle() {
+        PropertyResourceBundle bundle;
+        try (FileInputStream fis = new FileInputStream(file)) {
+            bundle = new PropertyResourceBundle(fis);
+        } catch (IOException e) {
+            throw new RuntimeException("unable to read file " + file, e);
+        }
+        return bundle;
+    }
+
     PolicyFactory POLICY_SOME_HTML = new org.owasp.html.HtmlPolicyBuilder()
             .allowElements(
                     "br", "p", "strong", "b"
@@ -114,12 +172,7 @@ public class VerifyMessageProperties {
     PolicyFactory POLICY_NO_HTML = new org.owasp.html.HtmlPolicyBuilder().toFactory();
 
     private void verifySafeHtml() {
-        PropertyResourceBundle bundle;
-        try (FileInputStream fis = new FileInputStream(file)) {
-            bundle = new PropertyResourceBundle(fis);
-        } catch (IOException e) {
-            throw new RuntimeException("unable to read file " + file, e);
-        }
+        PropertyResourceBundle bundle = getPropertyResourceBundle();
 
         PropertyResourceBundle bundleEnglish;
         String englishFile = file.getAbsolutePath().replaceAll("resources-community", "resources")
@@ -155,7 +208,7 @@ public class VerifyMessageProperties {
                     start++;
                 }
                 int end = 0;
-                while (end < sanitized.length() && end < value.length() && value.charAt(value.length() - end - 1) == sanitized.charAt(sanitized.length() - end - 1)) {
+                while (end < sanitized.length() - start && end < value.length() - start && value.charAt(value.length() - end - 1) == sanitized.charAt(sanitized.length() - end - 1)) {
                     end++;
                 }
 
@@ -174,12 +227,7 @@ public class VerifyMessageProperties {
             // Only check EN original files, as the other files are checked by the translation tools
             return;
         }
-        PropertyResourceBundle bundle;
-        try (FileInputStream fis = new FileInputStream(file)) {
-            bundle = new PropertyResourceBundle(fis);
-        } catch (IOException e) {
-            throw new RuntimeException("unable to read file " + file, e);
-        }
+        PropertyResourceBundle bundle = getPropertyResourceBundle();
 
         bundle.getKeys().asIterator().forEachRemaining(key -> {
             String value = bundle.getString(key);

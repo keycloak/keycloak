@@ -53,7 +53,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.authorization.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
@@ -77,7 +77,7 @@ import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -375,7 +375,7 @@ public class ResourceSetService {
         @APIResponse(responseCode = "204", description = "No Content")
     })
     public Response find(@QueryParam("name") String name) {
-        this.auth.realm().requireViewAuthorization();
+        this.auth.realm().requireViewAuthorization(resourceServer);
         StoreFactory storeFactory = authorization.getStoreFactory();
 
         if (name == null) {
@@ -526,13 +526,13 @@ public class ResourceSetService {
 
     private void requireView() {
         if (this.auth != null) {
-            this.auth.realm().requireViewAuthorization();
+            this.auth.realm().requireViewAuthorization(resourceServer);
         }
     }
 
     private void requireManage() {
         if (this.auth != null) {
-            this.auth.realm().requireManageAuthorization();
+            this.auth.realm().requireManageAuthorization(resourceServer);
         }
     }
 

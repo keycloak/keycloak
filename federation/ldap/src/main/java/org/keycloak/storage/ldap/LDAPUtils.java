@@ -113,6 +113,12 @@ public class LDAPUtils {
                 .collect(Collectors.toSet());
         mandatoryAttrs.add(ldapConfig.getRdnLdapAttribute());
 
+        String passwordModifiedTimeAttributeName = ldapStore.getPasswordModificationTimeAttributeName();
+        String passwordModifiedTime = user.getFirstAttribute(passwordModifiedTimeAttributeName);
+        if (passwordModifiedTime != null) {
+            ldapUser.setSingleAttribute(passwordModifiedTimeAttributeName, passwordModifiedTime);
+        }
+
         ldapUser.executeOnMandatoryAttributesComplete(mandatoryAttrs, ldapObject -> {
             LDAPUtils.computeAndSetDn(ldapConfig, ldapObject);
             ldapStore.add(ldapObject);
@@ -310,8 +316,8 @@ public class LDAPUtils {
      * @return
      */
     public static List<LDAPObject> loadAllLDAPObjects(LDAPQuery ldapQuery, LDAPConfig ldapConfig) {
-        boolean pagination = ldapConfig.isPagination();
-        if (pagination) {
+
+        if (ldapConfig.isPagination() && ldapConfig.getBatchSizeForSync() > 0) {
             // For now reuse globally configured batch size in LDAP provider page
             int pageSize = ldapConfig.getBatchSizeForSync();
 

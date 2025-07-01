@@ -83,7 +83,8 @@ public class DefaultRequiredActions {
         CONFIGURE_RECOVERY_AUTHN_CODES(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name(), DefaultRequiredActions::addRecoveryAuthnCodesAction, () -> isFeatureEnabled(Profile.Feature.RECOVERY_CODES)),
         WEBAUTHN_REGISTER("webauthn-register", DefaultRequiredActions::addWebAuthnRegisterAction, () -> isFeatureEnabled(Profile.Feature.WEB_AUTHN)),
         WEBAUTHN_PASSWORDLESS_REGISTER("webauthn-register-passwordless", DefaultRequiredActions::addWebAuthnPasswordlessRegisterAction, () -> isFeatureEnabled(Profile.Feature.WEB_AUTHN)),
-        VERIFY_USER_PROFILE(UserModel.RequiredAction.VERIFY_PROFILE.name(), DefaultRequiredActions::addVerifyProfile);
+        VERIFY_USER_PROFILE(UserModel.RequiredAction.VERIFY_PROFILE.name(), DefaultRequiredActions::addVerifyProfile),
+        IDP_LINK_ACCOUNT("idp_link", DefaultRequiredActions::addIdpLink);
 
         private final String alias;
         private final Consumer<RealmModel> addAction;
@@ -222,6 +223,19 @@ public class DefaultRequiredActions {
             realm.addRequiredActionProvider(deleteCredential);
         }
     }
+    
+    public static void addIdpLink(RealmModel realm) {
+        if (realm.getRequiredActionProviderByAlias("idp_link") == null) {
+            RequiredActionProviderModel idpLink = new RequiredActionProviderModel();
+            idpLink.setEnabled(true);
+            idpLink.setAlias("idp_link");
+            idpLink.setName("Linking Identity Provider");
+            idpLink.setProviderId("idp_link");
+            idpLink.setDefaultAction(false);
+            idpLink.setPriority(110);
+            realm.addRequiredActionProvider(idpLink);
+        }
+    }
 
     public static void addUpdateLocaleAction(RealmModel realm) {
         if (realm.getRequiredActionProviderByAlias("update_user_locale") == null) {
@@ -273,7 +287,7 @@ public class DefaultRequiredActions {
             recoveryCodes.setName("Recovery Authentication Codes");
             recoveryCodes.setProviderId(PROVIDER_ID);
             recoveryCodes.setDefaultAction(false);
-            recoveryCodes.setPriority(70);
+            recoveryCodes.setPriority(120);
             realm.addRequiredActionProvider(recoveryCodes);
         }
     }

@@ -16,6 +16,9 @@
  */
 package org.keycloak.representations.account;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  *
  * @author rmartinc
@@ -25,7 +28,8 @@ public class LocalizedMessage {
     private final String key;
     private final String[] parameters;
 
-    public LocalizedMessage(String key, String... parameters) {
+    @JsonCreator
+    public LocalizedMessage(@JsonProperty("key") String key, @JsonProperty("parameters") String... parameters) {
         this.key = key;
         this.parameters = parameters == null || parameters.length == 0? null : parameters;
     }

@@ -952,5 +952,39 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             Assert.assertEquals("localuser", localGroupMembers.get(0));
         });
     }
+
+    @Test
+    public void test11_fetchUsersGroupsWithPaginationAndInvalidBatchSize() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            // batch size 0 effectively disables pagination, code must fall back to non-paginated search
+            ComponentModel mapperModel = LDAPTestUtils.getLdapProviderModel(appRealm);
+            LDAPTestUtils.updateConfigOptions(mapperModel, LDAPConstants.BATCH_SIZE_FOR_SYNC, "0");
+            appRealm.updateComponent(mapperModel);
+        });
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            // verify that getting the user's groups still works
+            UserModel john = session.users().getUserByUsername(appRealm, "johnkeycloak");
+            Set<GroupModel> johnGroups = john.getGroupsStream().collect(Collectors.toSet());
+            Assert.assertEquals(4, johnGroups.size());
+        });
+
+        String configuredBatchSize = ldapRule.getConfig().get(LDAPConstants.BATCH_SIZE_FOR_SYNC);
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            // revert batch size change
+            ComponentModel mapperModel = LDAPTestUtils.getLdapProviderModel(appRealm);
+            LDAPTestUtils.updateConfigOptions(mapperModel, LDAPConstants.BATCH_SIZE_FOR_SYNC, configuredBatchSize);
+            appRealm.updateComponent(mapperModel);
+        });
+    }
 }
 

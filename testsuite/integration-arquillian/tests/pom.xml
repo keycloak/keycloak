@@ -170,9 +170,9 @@
         <dependency.keystore>${dependency.keystore.root}/keycloak.jks</dependency.keystore>
         <dependency.keystore.password>secret</dependency.keystore.password>
 
-        <keycloak.connectionsInfinispan.remoteStoreServer>localhost</keycloak.connectionsInfinispan.remoteStoreServer>
-        <keycloak.connectionsInfinispan.remoteStorePort>12232</keycloak.connectionsInfinispan.remoteStorePort>
-        <keycloak.connectionsInfinispan.remoteStorePort.2>13232</keycloak.connectionsInfinispan.remoteStorePort.2>
+        <keycloak.cacheRemote.hostname>localhost</keycloak.cacheRemote.hostname>
+        <keycloak.cacheRemote.port>12232</keycloak.cacheRemote.port>
+        <keycloak.cacheRemote.port.2>13232</keycloak.cacheRemote.port.2>
         <keycloak.connectionsJpa.url.crossdc>jdbc:h2:mem:test-dc-shared</keycloak.connectionsJpa.url.crossdc>
         <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} %-5p [%c] %m%n</keycloak.testsuite.logging.pattern>
 
@@ -332,26 +332,6 @@
                 <plugin>
                     <artifactId>maven-resources-plugin</artifactId>
                     <executions>
-                        <execution>
-                            <id>copy-admin-user-json-file</id>
-                            <phase>generate-resources</phase>
-                            <goals>
-                                <goal>copy-resources</goal>
-                            </goals>
-                            <configuration>
-                                <skip>${skip.add.user.json}</skip>
-                                <outputDirectory>${auth.server.config.dir}</outputDirectory>
-                                <resources>
-                                    <resource>
-                                        <directory>src/test/resources</directory>
-                                        <includes>
-                                            <include>keycloak-add-user.json</include>
-                                        </includes>
-                                        <filtering>true</filtering>
-                                    </resource>
-                                </resources>
-                            </configuration>
-                        </execution>
                         <execution>
                             <id>copy-truststore</id>
                             <phase>generate-resources</phase>
@@ -582,10 +562,9 @@
                             <cache.server.java.home>${cache.server.java.home}</cache.server.java.home>
                             <cache.server.auth>${cache.server.auth}</cache.server.auth>
 
-                            <keycloak.connectionsInfinispan.remoteStorePort>${keycloak.connectionsInfinispan.remoteStorePort}</keycloak.connectionsInfinispan.remoteStorePort>
-                            <keycloak.connectionsInfinispan.remoteStorePort.2>${keycloak.connectionsInfinispan.remoteStorePort.2}</keycloak.connectionsInfinispan.remoteStorePort.2>
-                            <keycloak.connectionsInfinispan.remoteStoreServer>${keycloak.connectionsInfinispan.remoteStoreServer}</keycloak.connectionsInfinispan.remoteStoreServer>
-                            <keycloak.connectionsInfinispan.sessionsOwners>${keycloak.connectionsInfinispan.sessionsOwners}</keycloak.connectionsInfinispan.sessionsOwners>
+                            <keycloak.cacheRemote.port>${keycloak.cacheRemote.port}</keycloak.cacheRemote.port>
+                            <keycloak.cacheRemote.port.2>${keycloak.cacheRemote.port.2}</keycloak.cacheRemote.port.2>
+                            <keycloak.cacheRemote.hostname>${keycloak.cacheRemote.hostname}</keycloak.cacheRemote.hostname>
                             <keycloak.testsuite.logging.pattern>${keycloak.testsuite.logging.pattern}</keycloak.testsuite.logging.pattern>
 
                             <keycloak.connectionsJpa.url.crossdc>${keycloak.connectionsJpa.url.crossdc}</keycloak.connectionsJpa.url.crossdc>
@@ -718,7 +697,6 @@
                 <auth.server.quarkus.skip.unpack>false</auth.server.quarkus.skip.unpack>
                 <auth.server.undertow.skip.unpack>true</auth.server.undertow.skip.unpack>
                 <auth.server.jboss.skip.unpack>true</auth.server.jboss.skip.unpack>
-                <keycloak.connectionsInfinispan.sessionsOwners>2</keycloak.connectionsInfinispan.sessionsOwners>
             </properties>
             <build>
                 <plugins>
@@ -785,7 +763,6 @@
                                     -agentlib:jdwp=transport=dt_socket,server=y,suspend=${cache.server.crossdc2.debug.suspend},address=localhost:${cache.server.crossdc2.jvm.debug.port}
                                 </cache.server.crossdc2.jvm.debug.args>
 
-                                <keycloak.connectionsInfinispan.hotrodProtocolVersion>${keycloak.connectionsInfinispan.hotrodProtocolVersion}</keycloak.connectionsInfinispan.hotrodProtocolVersion>
 
                             </systemPropertyVariables>
                         </configuration>
@@ -806,7 +783,6 @@
                 <auth.server.crossdc11.home>${containers.home}/auth-server-${auth.server}-crossdc11</auth.server.crossdc11.home>
                 <auth.server.crossdc12.home>${containers.home}/auth-server-${auth.server}-crossdc12</auth.server.crossdc12.home>
 
-                <!-- property specifies keycloak-add-user.json file destination -->
                 <auth.server.config.dir>${auth.server.crossdc01.home}/standalone/configuration</auth.server.config.dir>
 
                 <cache.server.crossdc1.jvm.debug.port>6001</cache.server.crossdc1.jvm.debug.port>
@@ -898,8 +874,6 @@
                                 <auth.server.crossdc11.home>${auth.server.crossdc11.home}</auth.server.crossdc11.home>
                                 <auth.server.crossdc12.home>${auth.server.crossdc12.home}</auth.server.crossdc12.home>
 
-                                <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>${keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled}</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
-                                <keycloak.connectionsInfinispan.hotrodProtocolVersion>${keycloak.connectionsInfinispan.hotrodProtocolVersion}</keycloak.connectionsInfinispan.hotrodProtocolVersion>
 
                                 <!--8101-->
                                 <auth.server.crossdc01.port.offset>21</auth.server.crossdc01.port.offset>
@@ -951,8 +925,6 @@
                 <auth.server.crossdc>true</auth.server.crossdc>
                 <cache.server.config.dir>${cache.server.home}/standalone/configuration</cache.server.config.dir>
                 <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
-                <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>false</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
-                <keycloak.connectionsInfinispan.hotrodProtocolVersion>PROTOCOL_VERSION_30</keycloak.connectionsInfinispan.hotrodProtocolVersion>
             </properties>
             <dependencies>
                 <dependency>
@@ -1022,8 +994,6 @@
                 <cache.server.legacy>true</cache.server.legacy>
                 <cache.server.config.dir>${cache.server.home}/standalone/configuration</cache.server.config.dir>
                 <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
-                <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>false</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
-                <keycloak.connectionsInfinispan.hotrodProtocolVersion>PROTOCOL_VERSION_30</keycloak.connectionsInfinispan.hotrodProtocolVersion>
             </properties>
             <dependencies>
                 <dependency>
@@ -1093,8 +1063,6 @@
                 <cache.server>infinispan</cache.server>
                 <auth.server.crossdc>true</auth.server.crossdc>
                 <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
-                <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>false</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
-                <keycloak.connectionsInfinispan.hotrodProtocolVersion>PROTOCOL_VERSION_30</keycloak.connectionsInfinispan.hotrodProtocolVersion>
                 <skip.clean.second.cache>true</skip.clean.second.cache>
             </properties>
             <build>
@@ -1190,8 +1158,6 @@
                 <cache.server>datagrid</cache.server>
                 <auth.server.crossdc>true</auth.server.crossdc>
                 <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
-                <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>false</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
-                <keycloak.connectionsInfinispan.hotrodProtocolVersion>PROTOCOL_VERSION_30</keycloak.connectionsInfinispan.hotrodProtocolVersion>
                 <skip.clean.second.cache>true</skip.clean.second.cache>
             </properties>
             <build>
@@ -1339,8 +1305,6 @@
                 <auth.server.undertow.cluster>true</auth.server.undertow.cluster>
 
                 <auth.server.jboss.skip.unpack>true</auth.server.jboss.skip.unpack>
-
-                <keycloak.connectionsInfinispan.sessionsOwners>2</keycloak.connectionsInfinispan.sessionsOwners>
             </properties>
             <build>
                 <plugins>
@@ -1349,6 +1313,7 @@
                         <configuration>
                             <systemPropertyVariables>
                                 <pageload.timeout>20000</pageload.timeout>
+                                <keycloak.cacheEmbedded.configFile>cluster-test-ispn.xml</keycloak.cacheEmbedded.configFile>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>

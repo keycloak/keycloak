@@ -141,7 +141,7 @@ public class WebAuthnPropertyTest extends AbstractWebAuthnVirtualTest {
 
         loginPage.open();
         loginPage.assertCurrent();
-        loginPage.login(USERNAME, PASSWORD);
+        loginPage.login(USERNAME, getPassword(USERNAME));
         webAuthnLoginPage.assertCurrent();
 
         final String credType = isPasswordless() ? WebAuthnCredentialModel.TYPE_PASSWORDLESS : WebAuthnCredentialModel.TYPE_TWOFACTOR;

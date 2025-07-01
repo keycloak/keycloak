@@ -19,9 +19,9 @@ package org.keycloak;
 
 import org.keycloak.common.enums.RelativeUrlsUsed;
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.SecretGenerator;
 
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -43,7 +43,7 @@ public class AbstractOAuthClient {
     protected boolean isSecure;
     protected boolean publicClient;
     protected String getStateCode() {
-        return counter.getAndIncrement() + "/" + UUID.randomUUID().toString();
+        return counter.getAndIncrement() + "/" + SecretGenerator.getInstance().generateSecureID();
     }
 
     public String getClientId() {

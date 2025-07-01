@@ -38,7 +38,7 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.utils.StringUtil;
 
-import static org.keycloak.models.Constants.IS_TEMP_ADMIN_ATTR_NAME;
+import static org.keycloak.models.UserModel.IS_TEMP_ADMIN_ATTR_NAME;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -62,6 +62,7 @@ public class ApplianceBootstrap {
 
     public boolean isNoMasterUser() {
         RealmModel realm = session.realms().getRealmByName(Config.getAdminRealm());
+        session.getContext().setRealm(realm);
         return session.users().getUsersCount(realm) == 0;
     }
 

@@ -23,7 +23,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
-import org.keycloak.authorization.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.admin.AuthorizationService;
 import org.keycloak.client.clienttype.ClientTypeException;
 import org.keycloak.common.Profile;
@@ -46,7 +46,7 @@ import org.keycloak.services.clientpolicy.context.AdminClientRegisteredContext;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakOpenAPI;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.utils.SearchQueryUtils;
 import org.keycloak.validation.ValidationUtil;
 
@@ -63,7 +63,6 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Stream;
 
 import static java.lang.Boolean.TRUE;
@@ -139,7 +138,11 @@ public class ClientsResource {
         } else {
             ClientModel client = realm.getClientByClientId(clientId);
             if (client != null) {
-                clientModels = Stream.of(client);
+                if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+                    clientModels = Stream.of(client).filter(auth.clients()::canView);
+                } else {
+                    clientModels = Stream.of(client);
+                }
             }
         }
 

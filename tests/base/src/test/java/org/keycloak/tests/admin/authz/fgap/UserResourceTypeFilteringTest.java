@@ -17,16 +17,18 @@
 
 package org.keycloak.tests.admin.authz.fgap;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.keycloak.authorization.AdminPermissionsSchema.GROUPS_RESOURCE_TYPE;
-import static org.keycloak.authorization.AdminPermissionsSchema.USERS_RESOURCE_TYPE;
-import static org.keycloak.authorization.AdminPermissionsSchema.VIEW;
-import static org.keycloak.authorization.AdminPermissionsSchema.VIEW_MEMBERS;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.GROUPS_RESOURCE_TYPE;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.USERS_RESOURCE_TYPE;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW_MEMBERS;
 
 import java.util.HashSet;
 import java.util.List;
@@ -35,13 +37,11 @@ import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.Response;
 import org.hamcrest.Matchers;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RolePoliciesResource;
-import org.keycloak.admin.client.resource.ScopePermissionsResource;
-import org.keycloak.authorization.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -51,14 +51,14 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
-import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.testsuite.util.RoleBuilder;
 
-@KeycloakIntegrationTest(config = KeycloakAdminPermissionsServerConfig.class)
+@KeycloakIntegrationTest
 public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
 
     @InjectAdminClient(mode = InjectAdminClient.Mode.MANAGED_REALM, client = "myclient", user = "myadmin")
@@ -70,15 +70,6 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
     public void onBeforeEach() {
         for (int i = 0; i < 50; i++) {
             realm.admin().users().create(UserConfigBuilder.create().username("user-" + i).build()).close();
-        }
-    }
-
-    @AfterEach
-    public void onAfterEach() {
-        ScopePermissionsResource permissions = getScopePermissionsResource(client);
-
-        for (ScopePermissionRepresentation permission : permissions.findAll(null, null, null, -1, -1)) {
-            permissions.findById(permission.getId()).remove();
         }
     }
 
@@ -107,6 +98,23 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
         search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
         assertFalse(search.isEmpty());
         assertTrue(search.stream().map(UserRepresentation::getUsername).noneMatch(notAllowedUsers::contains));
+    }
+
+    @Test
+    public void testCountWithFilters() {
+        assertThat(realmAdminClient.realm(realm.getName()).users().count("user-"), is(0));
+        assertThat(realmAdminClient.realm(realm.getName()).users().count(null, null, null, "user-15"), is(0));
+
+        UserPolicyRepresentation allowPolicy = createUserPolicy(realm, client,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+        Set<String> allowedUsers = Set.of("user-0", "user-15", "user-30");
+        createPermission(client, allowedUsers, usersType, Set.of(VIEW), allowPolicy);
+
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
+        assertEquals(allowedUsers.size(), search.size());
+        assertTrue(search.stream().map(UserRepresentation::getUsername).allMatch(allowedUsers::contains));
+
+        assertThat(realmAdminClient.realm(realm.getName()).users().count("user-"), is(allowedUsers.size()));
+        assertThat(realmAdminClient.realm(realm.getName()).users().count(null, null, null, "user-15"), is(1));
     }
 
     @Test
@@ -318,5 +326,80 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
         realm.cleanup().add(r -> r.users().get(userId).roles().clientLevel(clientUuid).remove(List.of(viewUsers)));
 
         assertThat(realmAdminClient.realm(realm.getName()).users().list(), not(empty()));
+    }
+
+    @Test
+    public void testSearchById() {
+        UserRepresentation expected = realm.admin().users().search("user-0").get(0);
+        assertThat(realmAdminClient.realm(realm.getName()).users().search("id:" + expected.getId(), -1, -1), hasSize(0));
+        UserPolicyRepresentation negativePolicy = createUserPolicy(realm, client,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+        createPermission(client, expected.getId(), USERS_RESOURCE_TYPE, Set.of(VIEW), negativePolicy);
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
+        assertFalse(search.isEmpty());
+        assertThat(search, Matchers.hasSize(1));
+        UserRepresentation user = search.get(0);
+        assertThat(user.getUsername(), Matchers.is("user-0"));
+        assertThat(realmAdminClient.realm(realm.getName()).users().search("id:" + user.getId(), -1, -1), hasSize(1));
+    }
+
+    @Test
+    public void testViewUserUsingRoleInheritedFromGroup() {
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
+        assertTrue(search.isEmpty());
+
+        RoleRepresentation role = RoleBuilder.create().name("myrole").build();
+        realm.admin().roles().create(role);
+        role = realm.admin().roles().get(role.getName()).toRepresentation();
+
+        GroupRepresentation rep = new GroupRepresentation();
+        rep.setName("administrators");
+
+        try (Response response = realm.admin().groups().add(rep)) {
+            String adminUserId = realm.admin().users().search("myadmin").get(0).getId();
+            String groupId = ApiUtil.getCreatedId(response);
+            realm.admin().users().get(adminUserId).joinGroup(groupId);
+            realm.admin().groups().group(groupId).roles().realmLevel().add(List.of(role));
+            RolePolicyRepresentation policy = createRolePolicy(realm, client, "My Role Policy", role.getId(), Logic.POSITIVE);
+            createPermission(client, "user-9", usersType, Set.of(VIEW), policy);
+        }
+
+        search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
+        assertFalse(search.isEmpty());
+        assertEquals(1, search.size());
+    }
+
+    @Test
+    public void testViewUserUsingRoleInheritedFromCompositeRole() {
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
+        assertTrue(search.isEmpty());
+
+        RoleRepresentation role = RoleBuilder.create().name("myrole").build();
+
+        realm.admin().roles().create(role);
+        role = realm.admin().roles().get(role.getName()).toRepresentation();
+
+        RoleRepresentation compositeRole = RoleBuilder.create()
+                .name("mycompositerole")
+                .composite()
+                .realmComposite(role)
+                .build();
+        realm.admin().roles().create(compositeRole);
+        compositeRole = realm.admin().roles().get(compositeRole.getName()).toRepresentation();
+
+        GroupRepresentation rep = new GroupRepresentation();
+        rep.setName("administrators");
+
+        try (Response response = realm.admin().groups().add(rep)) {
+            String adminUserId = realm.admin().users().search("myadmin").get(0).getId();
+            String groupId = ApiUtil.getCreatedId(response);
+            realm.admin().users().get(adminUserId).joinGroup(groupId);
+            realm.admin().groups().group(groupId).roles().realmLevel().add(List.of(compositeRole));
+            RolePolicyRepresentation policy = createRolePolicy(realm, client, "My Role Policy", role.getId(), Logic.POSITIVE);
+            createPermission(client, "user-9", usersType, Set.of(VIEW), policy);
+        }
+
+        search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
+        assertFalse(search.isEmpty());
+        assertEquals(1, search.size());
     }
 }

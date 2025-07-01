@@ -141,9 +141,11 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
         addExecInfo(execs, "Organization Identity-First Login", "organization", true, 2, 1, ALTERNATIVE, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 20);
         addExecInfo(execs, "forms", null, false, 0, 4, ALTERNATIVE, true, new String[]{REQUIRED, ALTERNATIVE, DISABLED, CONDITIONAL}, 30);
         addExecInfo(execs, "Username Password Form", "auth-username-password-form", false, 1, 0, REQUIRED, null, new String[]{REQUIRED}, 10);
-        addExecInfo(execs, "Browser - Conditional OTP", null, false, 1, 1, CONDITIONAL, true, new String[]{REQUIRED, ALTERNATIVE, DISABLED, CONDITIONAL}, 20);
+        addExecInfo(execs, "Browser - Conditional 2FA", null, false, 1, 1, CONDITIONAL, true, new String[]{REQUIRED, ALTERNATIVE, DISABLED, CONDITIONAL}, 20);
         addExecInfo(execs, "Condition - user configured", "conditional-user-configured", false, 2, 0, REQUIRED, null, new String[]{REQUIRED, DISABLED}, 10);
-        addExecInfo(execs, "OTP Form", "auth-otp-form", false, 2, 1, REQUIRED, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 20);
+        addExecInfo(execs, "OTP Form", "auth-otp-form", false, 2, 1, ALTERNATIVE, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 20);
+        addExecInfo(execs, "WebAuthn Authenticator", "webauthn-authenticator", false, 2, 2, DISABLED, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 30);
+        addExecInfo(execs, "Recovery Authentication Code Form", "auth-recovery-authn-code-form", false, 2, 3, DISABLED, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 40);
         expected.add(new FlowExecutions(flow, execs));
 
         flow = newFlow("clients", "Base authentication for clients", "client-flow", true, true);
@@ -195,9 +197,11 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
         addExecInfo(execs, "Verify existing account by Email", "idp-email-verification", false, 3, 0, ALTERNATIVE, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 10);
         addExecInfo(execs, "Verify Existing Account by Re-authentication", null, false, 3, 1, ALTERNATIVE, true, new String[]{REQUIRED, ALTERNATIVE, DISABLED, CONDITIONAL}, 20);
         addExecInfo(execs, "Username Password Form for identity provider reauthentication", "idp-username-password-form", false, 4, 0, REQUIRED, null, new String[]{REQUIRED}, 10);
-        addExecInfo(execs, "First broker login - Conditional OTP", null, false, 4, 1, CONDITIONAL, true, new String[]{REQUIRED, ALTERNATIVE, DISABLED, CONDITIONAL}, 20);
+        addExecInfo(execs, "First broker login - Conditional 2FA", null, false, 4, 1, CONDITIONAL, true, new String[]{REQUIRED, ALTERNATIVE, DISABLED, CONDITIONAL}, 20);
         addExecInfo(execs, "Condition - user configured", "conditional-user-configured", false, 5, 0, REQUIRED, null, new String[]{REQUIRED, DISABLED}, 10);
-        addExecInfo(execs, "OTP Form", "auth-otp-form", false, 5, 1, REQUIRED, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 20);
+        addExecInfo(execs, "OTP Form", "auth-otp-form", false, 5, 1, ALTERNATIVE, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 20);
+        addExecInfo(execs, "WebAuthn Authenticator", "webauthn-authenticator", false, 5, 2, DISABLED, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 30);
+        addExecInfo(execs, "Recovery Authentication Code Form", "auth-recovery-authn-code-form", false, 5, 3, DISABLED, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 40);
         addExecInfo(execs, "First Broker Login - Conditional Organization", null, false, 0, 2, CONDITIONAL, true, new String[]{REQUIRED, ALTERNATIVE, DISABLED, CONDITIONAL}, 50);
         addExecInfo(execs, "Condition - user configured", "conditional-user-configured", false, 1, 0, REQUIRED, null, new String[]{REQUIRED, DISABLED}, 10);
         addExecInfo(execs, "Organization Member Onboard", "idp-add-organization-member", false, 1, 1, REQUIRED, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 20);

@@ -345,8 +345,10 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testAccountConsoleClient(masterRealm);
         testAccountConsoleClient(migrationRealm);
         testAlwaysDisplayInConsole();
-        testFirstBrokerLoginFlowMigrated(masterRealm);
-        testFirstBrokerLoginFlowMigrated(migrationRealm);
+
+        // master realm is not imported from json
+        testFirstBrokerLoginFlowMigrated(masterRealm, false);
+        testFirstBrokerLoginFlowMigrated(migrationRealm, true);
         testAccountClient(masterRealm);
         testAccountClient(migrationRealm);
         testAdminClientPkce(masterRealm);
@@ -441,6 +443,10 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
     protected void testMigrationTo26_1_0(boolean testIdentityProviderConfigMigration) {
         testRealmDefaultClientScopes(migrationRealm);
+    }
+
+    protected void testMigrationTo26_3_0() {
+        testIdpLinkActionAvailable(migrationRealm);
     }
 
     private void testClientContainsExpectedClientScopes() {
@@ -554,7 +560,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         assertEquals("oidc-audience-resolve-mapper", mappers.get(0).getProtocolMapper());
     }
 
-    private void testFirstBrokerLoginFlowMigrated(RealmResource realm) {
+    private void testFirstBrokerLoginFlowMigrated(RealmResource realm, boolean imported) {
         log.infof("Test that firstBrokerLogin flow was migrated in new realm '%s'", realm.toRepresentation().getRealm());
 
         List<AuthenticationExecutionInfoRepresentation> authExecutions = realm.flows().getExecutions(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW);
@@ -593,8 +599,9 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testAuthenticationExecution(authExecutions.get(10), null,
                 ConditionalUserConfiguredAuthenticatorFactory.PROVIDER_ID, AuthenticationExecutionModel.Requirement.REQUIRED, 5, 0);
 
+        AuthenticationExecutionModel.Requirement requirement = imported ? AuthenticationExecutionModel.Requirement.REQUIRED : AuthenticationExecutionModel.Requirement.ALTERNATIVE;
         testAuthenticationExecution(authExecutions.get(11), null,
-                OTPFormAuthenticatorFactory.PROVIDER_ID, AuthenticationExecutionModel.Requirement.REQUIRED, 5, 1);
+                OTPFormAuthenticatorFactory.PROVIDER_ID, requirement, 5, 1);
     }
 
 
@@ -995,6 +1002,8 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
                     assertEquals(1000, action.getPriority());
                 } else if (action.getAlias().equals("delete_credential")) {
                     assertEquals(100, action.getPriority());
+                } else if (action.getAlias().equals("idp_link")) {
+                    assertEquals(110, action.getPriority());
                 } else {
                     assertEquals(priority, action.getPriority());
                 }
@@ -1345,6 +1354,17 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         assertEquals("delete_credential", rep.getProviderId());
         assertEquals("Delete Credential", rep.getName());
         assertEquals(100, rep.getPriority());
+        assertTrue(rep.isEnabled());
+        assertFalse(rep.isDefaultAction());
+    }
+
+    private void testIdpLinkActionAvailable(RealmResource realm) {
+        RequiredActionProviderRepresentation rep = realm.flows().getRequiredAction("idp_link");
+        assertNotNull(rep);
+        assertEquals("idp_link", rep.getAlias());
+        assertEquals("idp_link", rep.getProviderId());
+        assertEquals("Linking Identity Provider", rep.getName());
+        assertEquals(110, rep.getPriority());
         assertTrue(rep.isEnabled());
         assertFalse(rep.isDefaultAction());
     }

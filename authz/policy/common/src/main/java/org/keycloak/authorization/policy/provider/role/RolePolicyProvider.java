@@ -30,7 +30,7 @@ import org.keycloak.authorization.identity.UserModelIdentity;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
-import org.keycloak.authorization.policy.provider.PartialEvaluationPolicyProvider;
+import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationPolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
@@ -43,6 +43,8 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.authorization.ResourceType;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
+
+import static org.keycloak.models.utils.RoleUtils.getDeepUserRoleMappings;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -138,14 +140,10 @@ public class RolePolicyProvider implements PolicyProvider, PartialEvaluationPoli
         StoreFactory storeFactory = provider.getStoreFactory();
         ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(adminPermissionsClient);
         PolicyStore policyStore = storeFactory.getPolicyStore();
-        List<RoleModel> subjectRoles = subject.getRoleMappingsStream().toList();
+        List<String> roleIds = getDeepUserRoleMappings(subject).stream().map(RoleModel::getId).toList();
         Stream<Policy> policies = Stream.of();
 
-        for (RoleModel role : subjectRoles) {
-            policies = Stream.concat(policies, policyStore.findDependentPolicies(resourceServer, resourceType.getType(), RolePolicyProviderFactory.ID, "roles", role.getId()));
-        }
-
-        return policies;
+        return Stream.concat(policies, policyStore.findDependentPolicies(resourceServer, resourceType.getType(), RolePolicyProviderFactory.ID, "roles", roleIds));
     }
 
     @Override

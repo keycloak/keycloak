@@ -29,7 +29,11 @@ public class NginxProxySslClientCertificateLookupFactory extends AbstractClientC
 
     protected static final String TRUST_PROXY_VERIFICATION = "trust-proxy-verification";
 
+    protected static final String CERT_IS_URL_ENCODED = "cert-is-url-encoded";
+
     protected boolean trustProxyVerification;
+
+    protected boolean certIsUrlEncoded;
 
     private volatile boolean isTruststoreLoaded;
 
@@ -42,6 +46,8 @@ public class NginxProxySslClientCertificateLookupFactory extends AbstractClientC
         super.init(config);
         this.trustProxyVerification = config.getBoolean(TRUST_PROXY_VERIFICATION, false);
         logger.tracev("{0}: ''{1}''", TRUST_PROXY_VERIFICATION, trustProxyVerification);
+        this.certIsUrlEncoded = config.getBoolean(CERT_IS_URL_ENCODED, true);
+        logger.tracev("{0}: ''{1}''", CERT_IS_URL_ENCODED, certIsUrlEncoded);
         this.isTruststoreLoaded = false;
         this.trustedRootCerts = ConcurrentHashMap.newKeySet();
         this.intermediateCerts = ConcurrentHashMap.newKeySet();
@@ -53,10 +59,10 @@ public class NginxProxySslClientCertificateLookupFactory extends AbstractClientC
         loadKeycloakTrustStore(session);
         if (trustProxyVerification) {
             return new NginxProxyTrustedClientCertificateLookup(sslClientCertHttpHeader,
-                    sslChainHttpHeaderPrefix, certificateChainLength);
+                    sslChainHttpHeaderPrefix, certificateChainLength, certIsUrlEncoded);
         } else {
             return new NginxProxySslClientCertificateLookup(sslClientCertHttpHeader,
-                    sslChainHttpHeaderPrefix, certificateChainLength, intermediateCerts, trustedRootCerts, isTruststoreLoaded);
+                    sslChainHttpHeaderPrefix, certificateChainLength, intermediateCerts, trustedRootCerts, isTruststoreLoaded, certIsUrlEncoded);
         }
     }
 

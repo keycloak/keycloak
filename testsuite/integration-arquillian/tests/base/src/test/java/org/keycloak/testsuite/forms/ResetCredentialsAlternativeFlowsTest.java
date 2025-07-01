@@ -64,6 +64,7 @@ import static org.junit.Assert.assertEquals;
 public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedActionTest {
 
     private String userId;
+    private String password;
 
     @Rule
     public GreenMailRule greenMail = new GreenMailRule();
@@ -116,7 +117,8 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
                 .enabled(true)
                 .build();
 
-        userId = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+        password = generatePassword();
+        userId = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, password);
         getCleanup().addUserId(userId);
     }
 
@@ -346,7 +348,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
 
             // Login & set up the initial OTP code for the user
             loginPage.open();
-            loginPage.login("login-test", "password");
+            loginPage.login("login-test", password);
             String code = oauth.parseLoginResponse().getCode();
             AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
@@ -409,7 +411,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
 
             // Login & set up the initial OTP code for the user
             loginPage.open();
-            loginPage.login("login@test.com", "password");
+            loginPage.login("login@test.com", password);
 
             // Create OTP credential with empty label
             final String emptyOtpLabel = "";
@@ -434,7 +436,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             loginPage.clickRegister();
             registerPage.assertCurrent();
 
-            registerPage.register("Bruce", "Wilson", "bwilson@keycloak.org", "bwilson", "password", "password");
+            registerPage.register("Bruce", "Wilson", "bwilson@keycloak.org", "bwilson", generatePassword());
             totpPage.assertCurrent();
 
             // Create OTP credential with empty label

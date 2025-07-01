@@ -3,8 +3,9 @@ import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient";
 import { login } from "../utils/login";
 import { assertNotificationMessage } from "../utils/masthead";
+import { confirmModal } from "../utils/modal";
 import {
-  changeRoleTypeFilter,
+  pickRoleType,
   clickHideInheritedRoles,
   clickUnassign,
   confirmModalAssign,
@@ -16,8 +17,7 @@ import {
   assertRowExists,
   clickTableRowItem,
 } from "../utils/table";
-import { assignRole, goToRoleMappingTab } from "./role";
-import { confirmModal } from "../utils/modal";
+import { goToRoleMappingTab } from "./role";
 
 test.describe("Role mappings", () => {
   const predefinedGroup = "group1";
@@ -53,8 +53,7 @@ test.describe("Role mappings", () => {
   });
 
   test("Assign roles from empty state", async ({ page }) => {
-    await assignRole(page);
-    await changeRoleTypeFilter(page, "roles");
+    await pickRoleType(page, "roles");
     await pickRole(page, "default-roles-master", true);
     await confirmModalAssign(page);
 

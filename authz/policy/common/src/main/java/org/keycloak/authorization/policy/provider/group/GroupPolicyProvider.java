@@ -30,7 +30,7 @@ import org.keycloak.authorization.attribute.Attributes.Entry;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
-import org.keycloak.authorization.policy.provider.PartialEvaluationPolicyProvider;
+import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationPolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
@@ -110,14 +110,9 @@ public class GroupPolicyProvider implements PolicyProvider, PartialEvaluationPol
         StoreFactory storeFactory = provider.getStoreFactory();
         ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(adminPermissionsClient);
         PolicyStore policyStore = storeFactory.getPolicyStore();
-        List<GroupModel> subjectGroups = user.getGroupsStream().toList();
-        Stream<Policy> policies = Stream.of();
+        List<String> groupIds = user.getGroupsStream().map(GroupModel::getId).toList();
 
-        for (GroupModel subjectGroup : subjectGroups) {
-            policies = Stream.concat(policies, policyStore.findDependentPolicies(resourceServer, resourceType.getType(), GroupPolicyProviderFactory.ID, "groups", subjectGroup.getId()));
-        }
-
-        return policies;
+        return policyStore.findDependentPolicies(resourceServer, resourceType.getType(), GroupPolicyProviderFactory.ID, "groups", groupIds);
     }
 
     @Override

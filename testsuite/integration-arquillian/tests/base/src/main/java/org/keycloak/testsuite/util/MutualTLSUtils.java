@@ -1,8 +1,10 @@
 package org.keycloak.testsuite.util;
 
+import org.apache.http.client.RedirectStrategy;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeystoreUtil;
@@ -61,6 +63,10 @@ public class MutualTLSUtils {
     }
 
     public static CloseableHttpClient newCloseableHttpClient(String keyStorePath, String keyStorePassword, String trustStorePath, String trustStorePassword) {
+        return newCloseableHttpClient(keyStorePath, keyStorePassword, trustStorePath, trustStorePassword, DefaultRedirectStrategy.INSTANCE);
+    }
+
+    public static CloseableHttpClient newCloseableHttpClient(String keyStorePath, String keyStorePassword, String trustStorePath, String trustStorePassword, RedirectStrategy redirectStrategy) {
 
         KeyStore keystore = null;
         // Load the keystore file
@@ -83,13 +89,13 @@ public class MutualTLSUtils {
         }
 
         if (keystore != null || truststore != null) {
-            return newCloseableHttpClientSSL(keystore, keyStorePassword, truststore);
+            return newCloseableHttpClientSSL(keystore, keyStorePassword, truststore, redirectStrategy);
         }
 
-        return HttpClientBuilder.create().build();
+        return HttpClientBuilder.create().setRedirectStrategy(redirectStrategy).build();
     }
 
-    public static CloseableHttpClient newCloseableHttpClientSSL(KeyStore keystore, String keyStorePassword, KeyStore truststore) {
+    public static CloseableHttpClient newCloseableHttpClientSSL(KeyStore keystore, String keyStorePassword, KeyStore truststore, RedirectStrategy redirectStrategy) {
         try {
             SSLContext sslContext = SSLContext.getInstance("TLS");
             KeyManagerFactory kmfactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
@@ -99,7 +105,7 @@ public class MutualTLSUtils {
             sslContext.init(kmfactory.getKeyManagers(), tmf.getTrustManagers(), null);
             SSLConnectionSocketFactory sf = new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
 
-            return HttpClientBuilder.create().setSSLSocketFactory(sf).build();
+            return HttpClientBuilder.create().setSSLSocketFactory(sf).setRedirectStrategy(redirectStrategy).build();
         } catch (NoSuchAlgorithmException|KeyStoreException|KeyManagementException|UnrecoverableKeyException e) {
             throw new RuntimeException(e);
         }

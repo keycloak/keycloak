@@ -46,6 +46,11 @@ public class WelcomePageTest {
     @Test
     @Order(1)
     public void localAccessNoAdmin() {
+        // get rid of the bootstrap admin added for db compatibility with the older test framework
+        // it will get added by in subsequent tests
+        var users = adminClient.realms().realm("master").users();
+        users.searchByUsername("admin", true).stream().findFirst().ifPresent(admin -> users.delete(admin.getId()));
+
         welcomePage.navigateTo();
 
         Assertions.assertEquals("Create a temporary administrative user", welcomePage.getWelcomeMessage());

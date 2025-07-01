@@ -18,9 +18,16 @@
 package org.keycloak.authentication;
 
 import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionConfigModel;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.utils.RequiredActionHelper;
+
+
 
 /**
  * RequiredAction provider.  Required actions are one-time actions that a user must perform before they are logged in.
@@ -29,6 +36,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
  * @version $Revision: 1 $
  */
 public interface RequiredActionProvider extends Provider {
+
     /**
      * Determines what type of support is provided for application-initiated
      * actions.
@@ -77,9 +85,53 @@ public interface RequiredActionProvider extends Provider {
      */
     void processAction(RequiredActionContext context);
 
+
+    /**
+     * @deprecated in favor of {@link #getMaxAuthAge(KeycloakSession)} to support individual configuration of max auth age for all required actions. This method has no effect anymore.
+     *
+     * Defines the max time after a user login, after which re-authentication is requested for an AIA. 0 means that re-authentication is always requested.
+     * On default uses configured max_auth_age value from the required action config. If not configured, it uses the default max_auth_age value from the KeycloakConstants class.
+     */
+    @Deprecated(since = "26.3.0", forRemoval = true)
+    default int getMaxAuthAge() {
+        return Constants.KC_ACTION_MAX_AGE;
+    }
+
     /**
      * Defines the max time after a user login, after which re-authentication is requested for an AIA. 0 means that re-authentication is always requested.
-     *
+     * On default uses configured max_auth_age value from the required action config. If not configured, it uses the default max_auth_age value from the KeycloakConstants class.
      */
-    default int getMaxAuthAge() { return Constants.KC_ACTION_MAX_AGE; }
+    default int getMaxAuthAge(KeycloakSession session) {
+        if (session == null) {
+            // session is null, support for legacy implementation, fallback to default maxAuthAge
+            return Constants.KC_ACTION_MAX_AGE;
+        }
+
+        KeycloakContext keycloakContext = session.getContext();
+        RealmModel realm = keycloakContext.getRealm();
+        int maxAge;
+
+        // try required action config
+        AuthenticationSessionModel authSession = keycloakContext.getAuthenticationSession();
+        if (authSession != null) {
+
+            // we need to figure out the alias for the current required action
+            String providerId = authSession.getClientNote(Constants.KC_ACTION);
+            RequiredActionProviderModel requiredAction = RequiredActionHelper.getRequiredActionByProviderId(realm, providerId);
+
+            if (requiredAction != null) {
+                RequiredActionConfigModel configModel = realm.getRequiredActionConfigByAlias(requiredAction.getAlias());
+                if (configModel != null && configModel.containsConfigKey(Constants.MAX_AUTH_AGE_KEY)) {
+                    maxAge = RequiredActionFactory.parseMaxAuthAge(configModel);
+                    if (maxAge >= 0) {
+                        return maxAge;
+                    }
+                }
+            }
+        }
+
+        // fallback to default
+        return Constants.KC_ACTION_MAX_AGE;
+    }
+
 }

@@ -4,22 +4,16 @@ import { clickSelectRow } from "./table";
 export type RoleType = "client" | "roles";
 const rolePickTableName = "Role list";
 
-export async function changeRoleTypeFilter(page: Page, roleType: RoleType) {
-  const currentFilter = await page
-    .getByTestId("filter-type-dropdown")
-    .innerText();
-  if (currentFilter.includes(roleType)) {
-    return;
-  }
+export async function pickRoleType(page: Page, roleType: RoleType) {
+  await page.getByTestId("add-role-mapping-button").click();
 
   let filter;
   if (roleType === "client") {
-    filter = "Filter by clients";
+    filter = "Client roles";
   } else {
-    filter = "Filter by realm roles";
+    filter = "Realm roles";
   }
 
-  await page.getByTestId("filter-type-dropdown").click();
   await page.getByRole("menuitem", { name: filter, exact: true }).click();
 }
 

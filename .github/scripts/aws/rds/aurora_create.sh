@@ -116,6 +116,7 @@ aws rds create-db-cluster \
 # For now only two AZs in each region are supported due to the two subnets created above
 for i in $( seq ${AURORA_INSTANCES} ); do
   aws rds create-db-instance \
+    --no-auto-minor-version-upgrade \
     --db-cluster-identifier ${AURORA_CLUSTER} \
     --db-instance-identifier "${AURORA_CLUSTER}-instance-${i}" \
     --db-instance-class ${AURORA_INSTANCE_CLASS} \

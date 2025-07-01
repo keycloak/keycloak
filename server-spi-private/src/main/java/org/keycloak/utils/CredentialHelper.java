@@ -33,8 +33,12 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.util.JsonSerialization;
 
+import java.io.IOException;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -69,15 +73,15 @@ public class CredentialHelper {
                 }));
     }
 
-     public static ConfigurableAuthenticatorFactory getConfigurableAuthenticatorFactory(KeycloakSession session, String providerId) {
-         ConfigurableAuthenticatorFactory factory = (AuthenticatorFactory)session.getKeycloakSessionFactory().getProviderFactory(Authenticator.class, providerId);
-         if (factory == null) {
-             factory = (FormActionFactory)session.getKeycloakSessionFactory().getProviderFactory(FormAction.class, providerId);
-         }
-         if (factory == null) {
-             factory = (ClientAuthenticatorFactory)session.getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, providerId);
-         }
-         return factory;
+    public static ConfigurableAuthenticatorFactory getConfigurableAuthenticatorFactory(KeycloakSession session, String providerId) {
+        ConfigurableAuthenticatorFactory factory = (AuthenticatorFactory)session.getKeycloakSessionFactory().getProviderFactory(Authenticator.class, providerId);
+        if (factory == null) {
+            factory = (FormActionFactory)session.getKeycloakSessionFactory().getProviderFactory(FormAction.class, providerId);
+        }
+        if (factory == null) {
+            factory = (ClientAuthenticatorFactory)session.getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, providerId);
+        }
+        return factory;
     }
 
     /**
@@ -103,6 +107,27 @@ public class CredentialHelper {
         //If the type is HOTP, call verify once to consume the OTP used for registration and increase the counter.
         UserCredentialModel credential = new UserCredentialModel(credentialId, otpCredentialProvider.getType(), totpCode);
         return user.credentialManager().isValid(credential);
+    }
+
+    /**
+     * Create RecoveryCodes credential either in userStorage or local storage (Keycloak DB)
+     */
+    public static void createRecoveryCodesCredential(KeycloakSession session, RealmModel realm, UserModel user, RecoveryAuthnCodesCredentialModel credentialModel, List<String> generatedCodes) {
+        var recoveryCodeCredentialProvider = session.getProvider(CredentialProvider.class, "keycloak-recovery-authn-codes");
+        String recoveryCodesJson;
+        try {
+            recoveryCodesJson =  JsonSerialization.writeValueAsString(generatedCodes);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        UserCredentialModel recoveryCodesCredential = new UserCredentialModel("", credentialModel.getType(), recoveryCodesJson);
+
+        boolean userStorageCreated = user.credentialManager().updateCredential(recoveryCodesCredential);
+        if (userStorageCreated) {
+            logger.debugf("Created RecoveryCodes credential for user '%s' in the user storage", user.getUsername());
+        } else {
+            recoveryCodeCredentialProvider.createCredential(realm, user, credentialModel);
+        }
     }
 
     /**

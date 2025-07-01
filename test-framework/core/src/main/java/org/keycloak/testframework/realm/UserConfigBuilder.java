@@ -82,6 +82,11 @@ public class UserConfigBuilder {
         return this;
     }
 
+    public UserConfigBuilder attribute(String key, String... value) {
+        rep.setAttributes(Collections.combine(rep.getAttributes(), key, value));
+        return this;
+    }
+
     public UserRepresentation build() {
         return rep;
     }

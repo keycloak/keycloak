@@ -2,9 +2,9 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Docker registry"
+title="Configuring a Docker registry"
 priority=90
-summary="Configuring a Docker registry to use {project_name}">
+summary="Configure a Docker registry to use {project_name}.">
 
 NOTE: Docker authentication is disabled by default. To enable see the https://www.keycloak.org/server/features[Enabling and disabling features] {section}.
 
