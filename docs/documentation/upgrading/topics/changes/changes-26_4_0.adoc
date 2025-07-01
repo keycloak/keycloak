@@ -1,0 +1,53 @@
+// ------------------------ Breaking changes ------------------------  //
+== Breaking changes
+
+Breaking changes are identified as requiring changes from existing users to their configurations.
+In minor or patch releases, we will only do breaking changes to fix important bugs.
+
+=== <TODO>
+
+// ------------------------ Notable changes ------------------------ //
+== Notable changes
+
+Notable changes where an internal behavior changed to prevent common misconfigurations, fix bugs or simplify running {project_name}.
+
+=== Protocol mapper names can now be updated and unique constraint
+
+The Admin UI and the REST API now allow the protocol mapper names to be updated.
+While in previous versions the protocol mapper name in the posted data was ignored, it is now used to update the client's or client scope's mapper.
+
+While previous versions used application logic to ensure the uniqueness of protocol and mapper name for each client and client scope, the migration now adds a database constraint to ensure that.
+
+You can check ahead of the migration that there are no violations,
+execute the following statement to list the violations.
+Use the returned `client_id` and `client_scope_id` to
+
+[source,sql]
+----
+select count(*), pm.name "protocol_mapper_name", pm.protocol, c.client_id as "client_id", rc.name "realm_name", cs.name as "client_scope", rcs.name as "realm_name"
+from protocol_mapper pm
+left join client c on pm.client_id = c.id
+left join realm rc on rc.id = c.realm_id
+left join client_scope cs on pm.client_scope_id = cs.id
+left join realm rcs on rcs.id = cs.realm_id
+group by pm.name, pm.protocol, c.client_id, c.client_id, rc.name, cs.name, rcs.name
+having count(*) > 1
+----
+
+// ------------------------ Deprecated features ------------------------ //
+== Deprecated features
+
+The following sections provide details on deprecated features.
+
+=== Updating a protocol mapper without passing in the protocol mapper name
+
+It is now deprecated to not pass in the name of the protocol mapper when changing a protocol mapper.
+Future versions will require passing in a protocol mapper name when updating a protocol mapper.
+
+// ------------------------ Removed features ------------------------ //
+== Removed features
+
+The following features have been removed from this release.
+
+=== <TODO>
+
