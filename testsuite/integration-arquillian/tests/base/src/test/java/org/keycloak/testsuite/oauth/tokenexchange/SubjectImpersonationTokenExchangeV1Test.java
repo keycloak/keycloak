@@ -63,6 +63,7 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
  */
 @EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
 @EnableFeature(value = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, skipRestart = true)
+@DisableFeature(value = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2, skipRestart = true)
 public class SubjectImpersonationTokenExchangeV1Test extends AbstractKeycloakTest  {
 
     @Rule
