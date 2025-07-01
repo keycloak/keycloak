@@ -49,6 +49,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserLoginFailureModel;
@@ -143,6 +144,8 @@ import static org.keycloak.userprofile.UserProfileContext.USER_API;
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class UserResource {
     private static final Logger logger = Logger.getLogger(UserResource.class);
+    private static final String LATEST_UPDATE_PASSWORD_ACTION_TOKEN = "lastUpdatePasswordActionToken";
+    private static final String LATEST_OTP_CONFIGURE_ACTION_TOKEN = "lastOtpConfigureActionToken";
 
     protected final RealmModel realm;
 
@@ -904,6 +907,8 @@ public class UserResource {
         int expiration = Time.currentTime() + result.lifespan;
         ExecuteActionsActionToken token = new ExecuteActionsActionToken(user.getId(), user.getEmail(), expiration, actions, result.redirectUri, result.clientId);
 
+        actions.forEach(action -> handleActionToken(action, token, user));
+
         try {
             UriBuilder builder = LoginActionsService.actionTokenProcessor(session.getContext().getUri());
             builder.queryParam("key", token.serialize(session, realm, session.getContext().getUri()));
@@ -1153,6 +1158,44 @@ public class UserResource {
         }
 
         return new SendEmailParams(redirectUri, client.getClientId(), lifespan);
+    }
+
+    private void handleActionToken(String action, ExecuteActionsActionToken token, UserModel user) {
+        switch (action) {
+            // TODO:
+            case "UPDATE_PASSWORD":
+                updateToLatestToken(LATEST_UPDATE_PASSWORD_ACTION_TOKEN, token, user);
+                break;
+            case "CONFIGURE_TOTP":
+                updateToLatestToken(LATEST_OTP_CONFIGURE_ACTION_TOKEN, token, user);
+                break;
+            default:
+                break;
+        }
+    }
+
+    /**
+     * Checks if for this user an older action token exists (example update password token).
+     * If yes, expire the older token, and update with the latest action token.
+     *
+     * @param tokenAttributeName The action token name.
+     * @param user               The user attempting to perform the action.
+     * @param token              The token used for this update action flow.
+     */
+    private void updateToLatestToken(String tokenAttributeName,
+                                     ExecuteActionsActionToken token,
+                                     UserModel user
+    ) {
+        String tokenToInvalidate = user.getFirstAttribute(tokenAttributeName);
+        if (tokenToInvalidate != null && !tokenToInvalidate.equals(token.serializeKey())) {
+            // Mark previous token as invalidated
+            Long tokenToInvalidateExp = ExecuteActionsActionToken.from(tokenToInvalidate).getExp();
+            SingleUseObjectProvider singleUseObjectProvider = session.singleUseObjects();
+            singleUseObjectProvider.put(tokenToInvalidate, tokenToInvalidateExp - Time.currentTime(), null);
+        }
+
+        // Update the user attribute to the latest reset action token
+        user.setSingleAttribute(tokenAttributeName, token.serializeKey());
     }
 
     private static class SendEmailParams {
