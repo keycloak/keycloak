@@ -28,7 +28,7 @@
 
     <artifactId>keycloak-crypto-default</artifactId>
     <name>Keycloak Crypto Default</name>
-    <description/>
+    <description>Keycloak Crypto Default</description>
 
     <dependencies>
         <dependency>
