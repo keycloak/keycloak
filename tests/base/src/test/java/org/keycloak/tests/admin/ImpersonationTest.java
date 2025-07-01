@@ -256,6 +256,7 @@ public class ImpersonationTest {
         // Remove test client
         ApiUtil.findClientByClientId(managedRealm.admin(), "service-account-cl").remove();
     }
+
     @Test
     public void testImpersonationByMasterRealmServiceAccount() throws Exception {
         // Create test client service account
@@ -279,6 +280,30 @@ public class ImpersonationTest {
         ApiUtil.findClientByClientId(masterRealm.admin(), "service-account-cl").remove();
     }
 
+    @Test
+    public void testImpersonationFailsWhenTokenUsedMultipleTimes() throws Exception {
+        try (
+            Keycloak client = login("admin", Config.getAdminRealm());
+            CloseableHttpClient httpClient = HttpClientBuilder.create().build()
+        ) {
+            String redirect = impersonateAndReturnRedirect(client);
+
+            HttpUriRequest req = RequestBuilder.get()
+                    .setUri(redirect)
+                    .build();
+            HttpResponse res = httpClient.execute(req);
+            Assertions.assertEquals(200, res.getStatusLine().getStatusCode());
+
+            HttpUriRequest req = RequestBuilder.get()
+                .setUri(redirect)
+                .build();
+            HttpResponse res = httpClient.execute(req);
+            Assertions.assertEquals(400, res.getStatusLine().getStatusCode());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     // Return the SSO cookie from the impersonated session
     private Set<Cookie> testSuccessfulImpersonation(String admin, String adminRealm) {
         // Login adminClient
@@ -291,11 +316,7 @@ public class ImpersonationTest {
     private Set<Cookie> impersonate(Keycloak adminClient, String admin, String adminRealm) {
         BasicCookieStore cookieStore = new BasicCookieStore();
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build()) {
-            Map<String, Object> response = adminClient.realm("test").users().get(managedUser.getId()).impersonate();
-
-            Assertions.assertNotNull(response);
-            String redirect = (String) response.get("redirect");
-            Assertions.assertNotNull(redirect);
+            String redirect = impersonateAndReturnRedirect(adminClient);
 
             HttpUriRequest req = RequestBuilder.get()
                     .setUri(redirect)
@@ -360,6 +381,15 @@ public class ImpersonationTest {
         }
     }
 
+    private String impersonateAndReturnRedirect(Keycloak adminClient) {
+        Map<String, Object> response = adminClient.realm("test").users().get(managedUser.getId()).impersonate();
+
+        Assertions.assertNotNull(response);
+        String redirect = (String) response.get("redirect");
+        Assertions.assertNotNull(redirect);
+
+        return redirect;
+    }
 
     private String establishClientId(String realm) {
         return realm.equals("master") ? Constants.ADMIN_CLI_CLIENT_ID : "myclient";
