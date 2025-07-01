@@ -294,11 +294,11 @@ public class ImpersonationTest {
             HttpResponse res = httpClient.execute(req);
             Assertions.assertEquals(200, res.getStatusLine().getStatusCode());
 
-            HttpUriRequest req = RequestBuilder.get()
+            HttpUriRequest secondReq = RequestBuilder.get()
                 .setUri(redirect)
                 .build();
-            HttpResponse res = httpClient.execute(req);
-            Assertions.assertEquals(400, res.getStatusLine().getStatusCode());
+            HttpResponse secondRes = httpClient.execute(secondReq);
+            Assertions.assertEquals(400, secondRes.getStatusLine().getStatusCode());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
