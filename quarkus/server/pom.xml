@@ -12,6 +12,8 @@
     </parent>
     
     <name>Keycloak Quarkus Server App</name>
+    <description>Keycloak Quarkus Server App</description>
+
     <artifactId>keycloak-quarkus-server-app</artifactId>
 
     <dependencies>

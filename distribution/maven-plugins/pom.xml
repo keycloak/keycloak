@@ -26,6 +26,7 @@
     <artifactId>keycloak-distribution-maven-plugins-parent</artifactId>
     <packaging>pom</packaging>
     <name>Keycloak Distribution Maven Plugins Parent</name>
+    <description>Keycloak Distribution Maven Plugins Parent</description>
 
     <dependencies>
         <dependency>
