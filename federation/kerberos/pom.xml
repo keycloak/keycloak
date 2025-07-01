@@ -27,7 +27,7 @@
 
     <artifactId>keycloak-kerberos-federation</artifactId>
     <name>Keycloak Kerberos Federation</name>
-    <description />
+    <description>Keycloak Kerberos Federation</description>
 
     <dependencies>
         <dependency>

@@ -9,7 +9,7 @@
 
     <artifactId>keycloak-themes</artifactId>
     <name>Keycloak Themes</name>
-    <description />
+    <description>Keycloak Themes</description>
     <packaging>jar</packaging>
 
     <dependencies>

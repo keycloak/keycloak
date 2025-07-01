@@ -28,7 +28,7 @@
 
     <artifactId>keycloak-crypto-fips1402</artifactId>
     <name>Keycloak Crypto FIPS 140-2 Integration</name>
-    <description/>
+    <description>Keycloak Crypto FIPS 140-2 Integration</description>
 
     <dependencies>
         <dependency>
