@@ -34,6 +34,8 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
 
     public static final String PKCE_ENABLED = "pkceEnabled";
     public static final String PKCE_METHOD = "pkceMethod";
+    public static final String TOKEN_ENDPOINT_URL = "tokenUrl";
+    public static final String TOKEN_INTROSPECTION_URL = "tokenIntrospectionUrl";
 
     public static final String JWT_X509_HEADERS_ENABLED = "jwtX509HeadersEnabled";
 
@@ -54,11 +56,11 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
     }
 
     public String getTokenUrl() {
-        return getConfig().get("tokenUrl");
+        return getConfig().get(TOKEN_ENDPOINT_URL);
     }
 
     public void setTokenUrl(String tokenUrl) {
-        getConfig().put("tokenUrl", tokenUrl);
+        getConfig().put(TOKEN_ENDPOINT_URL, tokenUrl);
     }
 
     public String getUserInfoUrl() {
@@ -67,6 +69,14 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
 
     public void setUserInfoUrl(String userInfoUrl) {
         getConfig().put("userInfoUrl", userInfoUrl);
+    }
+
+    public String getTokenIntrospectionUrl() {
+        return getConfig().get(TOKEN_INTROSPECTION_URL);
+    }
+
+    public void setTokenIntrospectionUrl(String introspectionEndpointUrl) {
+        getConfig().put(TOKEN_INTROSPECTION_URL, introspectionEndpointUrl);
     }
 
     public String getClientId() {
@@ -209,6 +219,7 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
         checkUrl(sslRequired, getAuthorizationUrl(), "authorization_url");
         checkUrl(sslRequired, getTokenUrl(), "token_url");
         checkUrl(sslRequired, getUserInfoUrl(), "userinfo_url");
+        checkUrl(sslRequired, getTokenIntrospectionUrl(), "tokenIntrospection_url");
 
         if (isPkceEnabled()) {
             String pkceMethod = getPkceMethod();
