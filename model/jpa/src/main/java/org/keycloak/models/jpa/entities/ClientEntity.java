@@ -134,6 +134,17 @@ public class ClientEntity {
     @Column(name="CONSENT_REQUIRED")
     private boolean consentRequired;
 
+    @Column(name="CONSENT_SELECTIVE")
+    private boolean selectiveConsent;
+
+    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "client")
+    protected Collection<ClientSelectiveConsentAttributeEntity> selectiveConsentAttributes = new LinkedList<>();
+
+    @ElementCollection
+    @Column(name="VALUE")
+    @CollectionTable(name = "SELECTIVE_CONSENT_ORGANIZATIONS", joinColumns={ @JoinColumn(name="CLIENT_ID") })
+    protected Set<String> selectiveConsentOrganizations;
+
     @Column(name="STANDARD_FLOW_ENABLED")
     private boolean standardFlowEnabled;
 
@@ -381,6 +392,36 @@ public class ClientEntity {
 
     public void setConsentRequired(boolean consentRequired) {
         this.consentRequired = consentRequired;
+    }
+
+    public boolean isConsentSelective() {
+        return selectiveConsent;
+    }
+
+    public void setSelectiveConsent(boolean selectiveConsent) {
+        this.selectiveConsent = selectiveConsent;
+    }
+
+    public Collection<ClientSelectiveConsentAttributeEntity> getSelectiveConsentAttributes() {
+        if (selectiveConsentAttributes == null) {
+            selectiveConsentAttributes = new LinkedList<>();
+        }
+        return selectiveConsentAttributes;
+    }
+
+    public void setSelectedConsentAttributes(Collection<ClientSelectiveConsentAttributeEntity> selectiveConsentAttributes) {
+        this.selectiveConsentAttributes = selectiveConsentAttributes;
+    }
+
+    public Set<String> getSelectiveConsentOrganizations() {
+        if (selectiveConsentOrganizations == null) {
+            selectiveConsentOrganizations = new HashSet<>();
+        }
+        return selectiveConsentOrganizations;
+    }
+
+    public void setSelectiveConsentOrganizations(Set<String> selectiveConsentOrganizations) {
+        this.selectiveConsentOrganizations = selectiveConsentOrganizations;
     }
 
     public boolean isStandardFlowEnabled() {
