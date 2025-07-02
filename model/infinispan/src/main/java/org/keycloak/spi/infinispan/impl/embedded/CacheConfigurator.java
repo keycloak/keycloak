@@ -232,6 +232,23 @@ public final class CacheConfigurator {
                 builder.clustering().hash().numOwners(2);
             }
         }
+
+        for (var name : Arrays.asList( OFFLINE_USER_SESSION_CACHE_NAME, OFFLINE_CLIENT_SESSION_CACHE_NAME)) {
+            var builder = holder.getNamedConfigurationBuilders().get(name);
+            if (builder == null) {
+                throw cacheNotFound(name);
+            }
+            if (builder.memory().maxCount() == -1) {
+                logger.infof("Offline sessions should have a max count set to avoid excessive memory usage. Setting a default cache limit of 10000 for cache %s.", name);
+                builder.memory().maxCount(10000);
+            }
+            if (builder.clustering().hash().attributes().attribute(HashConfiguration.NUM_OWNERS).get() != 1 &&
+                    builder.persistence().stores().stream().noneMatch(p -> p.attributes().attribute(AbstractStoreConfiguration.SHARED).get())
+            ) {
+                logger.infof("Setting a memory limit implies to have exactly one owne. Setting num_owners=1 to avoid data loss.", name);
+                builder.clustering().hash().numOwners(1);
+            }
+        }
     }
 
     // private methods below
