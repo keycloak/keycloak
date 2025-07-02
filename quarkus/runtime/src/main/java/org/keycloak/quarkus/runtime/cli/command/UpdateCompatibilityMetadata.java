@@ -83,7 +83,7 @@ public class UpdateCompatibilityMetadata extends AbstractUpdatesCommand {
     private void printToConsole(Map<String, Map<String, String>> metadata) {
         try {
             var json = JsonSerialization.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(metadata);
-            printOut("Metadata:%n%s".formatted(json));
+            picocli.getOutWriter().println("Metadata:%n%s".formatted(json));
         } catch (JsonProcessingException e) {
             throw new PropertyException("Unable to create JSON representation of the metadata", e);
         }
