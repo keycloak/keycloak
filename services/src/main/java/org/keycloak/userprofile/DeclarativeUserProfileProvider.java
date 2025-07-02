@@ -240,7 +240,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
 
     private Optional<ComponentModel> getComponentModel() {
         RealmModel realm = session.getContext().getRealm();
-        return realm.getComponentsStream(realm.getId(), UserProfileProvider.class.getName()).filter(componentModel -> componentModel.getProviderId().equals(DeclarativeUserProfileProviderFactory.ID)).findFirst();
+        return realm.getComponentsStream(realm.getId(), UserProfileProvider.class.getName()).filter(componentModel -> componentModel.getProviderId().equals(providerId)).findFirst();
     }
 
     /**
