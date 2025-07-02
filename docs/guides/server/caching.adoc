@@ -140,12 +140,6 @@ Since all the sessions in this setup are stored in-memory, there are two side ef
 When using volatile user sessions, the cache is the source of truth for user and client sessions.
 {project_name} automatically adjusts the number of entries that can be stored in memory, and increases the number of copies to prevent data loss.
 
-[WARNING]
-====
-It is not recommended to use volatile user sessions when using offline sessions extensively due to potentially high memory usage.
-For volatile sessions, the time offline sessions are cached in memory can be limited with the SPI options `spi-user-sessions--infinispan--offline-client-session-cache-entry-lifespan-override` and `spi-user-sessions--infinispan--offline-session-cache-entry-lifespan-override`.
-====
-
 Follow these steps to enable this setup:
 
 1. Disable `persistent-user-sessions` feature using the following command:

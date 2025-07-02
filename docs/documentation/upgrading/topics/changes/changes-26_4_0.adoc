@@ -42,6 +42,12 @@ configured directly via {project_name}: `cache-embedded-network-bind-address`, `
 `cache-embedded-network-external-address`, `cache-embedded-network-external-port`. Configuring ports using the old
 properties will still function as before, but we recommend to change to the CLI options as this may change in the future.
 
+=== Volatile user sessions affecting offline session memory requirements
+
+Starting with this release, {project_name} will cache by default only 10000 entries for offline user and client sessions in memory when volatile user sessions are enabled. This will greatly reduce memory usage.
+
+Use the options `cache-embedded-offline-sessions-max-count` and `cache-embedded-offline-client-sessions-max-count` to change size of the offline session caches.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
@@ -52,6 +58,12 @@ The following sections provide details on deprecated features.
 The `displayTest` field in the `ConsentScopeRepresentation` class returned by the Account REST service has been deprecated due to a typo in its name.
 A new field `displayText` with the correct spelling has been added to replace it. The old field will be removed in {project_name} 27.0.
 The Typescript code `ConsentScopeRepresentation` for the Account Console already contains only the new field.
+
+=== Lifetime of offline session caches
+
+The options `--spi-user-sessions--infinispan--offline-session-cache-entry-lifespan-override` and `spi-user-sessions--infinispan--offline-client-session-cache-entry-lifespan-override` are now deprecated for removal.
+
+Instead use the options `cache-embedded-offline-sessions-max-count` and `cache-embedded-offline-client-sessions-max-count` to limit the memory usage if the default of 10000 cache offline user and client sessions does not work in your scenario.
 
 // ------------------------ Removed features ------------------------ //
 == Removed features
