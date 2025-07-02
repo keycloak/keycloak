@@ -5,5 +5,4 @@ Notable changes where an internal behavior changed to prevent common misconfigur
 
 === Options for additional datasources marked as preview
 
-Options provided for settings of additional datasources have been marked as preview, as further changes might be added in the next releases.
-Unfortunately, these options have not been marked for the {project_name} 26.3.0 major release as they should.
+In the 26.3.0 release, the newly added options for configuring additional datasources were missing a preview label. This has been now corrected as the work on this feature continues over a few next releases.
