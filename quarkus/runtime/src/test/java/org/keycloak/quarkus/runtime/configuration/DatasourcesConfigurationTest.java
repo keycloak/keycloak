@@ -8,14 +8,14 @@ import org.hibernate.dialect.MariaDBDialect;
 import org.hibernate.dialect.PostgreSQLDialect;
 import org.junit.Test;
 import org.keycloak.quarkus.runtime.Environment;
-import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.mariadb.jdbc.MariaDbDataSource;
 import org.postgresql.xa.PGXADataSource;
 
 import java.util.Map;
 
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -402,17 +402,18 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
                 "db-kind-user-store", "postgres",
                 "db-url-full-user-store", "jdbc:postgresql://localhost/KEYCLOAK",
                 "db-username-user-store", "my-username",
-                "db-kind-my-store", "mariadb",
-                "db-kind-my.store", "mariadb"
+                "db-kind-my-store", "mariadb"
         ));
 
         assertExternalConfig(Map.of(
                 "quarkus.datasource.\"user-store\".db-kind", "postgresql",
                 "quarkus.datasource.\"user-store\".jdbc.url", "jdbc:postgresql://localhost/KEYCLOAK",
                 "quarkus.datasource.\"user-store\".username", "my-username",
-                "quarkus.datasource.\"my-store\".db-kind", "mariadb",
-                "quarkus.datasource.\"my.store\".db-kind", "mariadb"
+                "quarkus.datasource.\"my-store\".db-kind", "mariadb"
         ));
+
+        assertThat(Configuration.getPropertyNames(), hasItem("quarkus.datasource.\"my-store\".db-kind"));
+        assertThat(Configuration.getPropertyNames(), not(hasItem("quarkus.datasource.\"my.store\".db-kind")));
     }
 
     @Test
