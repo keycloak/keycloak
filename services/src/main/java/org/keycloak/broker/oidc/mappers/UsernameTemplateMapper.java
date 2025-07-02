@@ -19,6 +19,7 @@ package org.keycloak.broker.oidc.mappers;
 
 import org.keycloak.broker.oidc.KeycloakOIDCIdentityProviderFactory;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
+import org.keycloak.broker.oidc.CustomOIDCIdentityProviderFactory;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.saml.mappers.UsernameTemplateMapper.Target;
 import org.keycloak.models.IdentityProviderMapperModel;
@@ -65,6 +66,7 @@ public class UsernameTemplateMapper extends AbstractClaimMapper {
     public static final String[] COMPATIBLE_PROVIDERS = {
             KeycloakOIDCIdentityProviderFactory.PROVIDER_ID,
             OIDCIdentityProviderFactory.PROVIDER_ID,
+            CustomOIDCIdentityProviderFactory.PROVIDER_ID,
             BitbucketIdentityProviderFactory.PROVIDER_ID,
             FacebookIdentityProviderFactory.PROVIDER_ID,
             GitHubIdentityProviderFactory.PROVIDER_ID,

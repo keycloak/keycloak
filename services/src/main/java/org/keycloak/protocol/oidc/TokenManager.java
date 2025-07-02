@@ -122,6 +122,8 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 
 import static org.keycloak.OAuth2Constants.ORGANIZATION;
+import static org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider.FEDERATED_REFRESH_TOKEN;
+import static org.keycloak.broker.provider.IdentityProvider.FEDERATED_ACCESS_TOKEN;
 import static org.keycloak.models.light.LightweightUserAdapter.isLightweightUser;
 import static org.keycloak.representations.IDToken.NONCE;
 
@@ -295,6 +297,9 @@ public class TokenManager {
     public AccessTokenResponseBuilder refreshAccessToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm, ClientModel authorizedClient,
                                             String encodedRefreshToken, EventBuilder event, HttpHeaders headers, HttpRequest request, String scopeParameter) throws OAuthErrorException {
         RefreshToken refreshToken = verifyRefreshToken(session, realm, authorizedClient, request, encodedRefreshToken, true);
+        UserSessionModel userSession = session.sessions().getUserSession(realm, refreshToken.getSessionId());
+        String idpRefreshToken = userSession.getNote(FEDERATED_REFRESH_TOKEN);
+        userSession.getNote(FEDERATED_ACCESS_TOKEN);
 
         event.session(refreshToken.getSessionState())
                 .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())

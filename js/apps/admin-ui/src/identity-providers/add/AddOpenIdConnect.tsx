@@ -1,4 +1,5 @@
 import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
   AlertVariant,
@@ -9,7 +10,6 @@ import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -30,7 +30,11 @@ export default function AddOpenIdConnect() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isKeycloak = pathname.includes("keycloak-oidc");
-  const id = `${isKeycloak ? "keycloak-" : ""}oidc`;
+  const isCustom = pathname.includes("custom-oidc");
+  let id = `${isKeycloak ? "keycloak-" : ""}oidc`;
+  if (isCustom) {
+    id = "custom-oidc";
+  }
 
   const form = useForm<IdentityProviderRepresentation>({
     defaultValues: { alias: id },
