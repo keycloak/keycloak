@@ -1,4 +1,4 @@
-package org.keycloak.testframework.database;
+package org.keycloak.testframework.logging;
 
 import org.jboss.logging.Logger;
 import org.testcontainers.containers.output.OutputFrame;
