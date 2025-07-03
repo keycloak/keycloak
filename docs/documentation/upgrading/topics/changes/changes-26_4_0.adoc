@@ -55,6 +55,14 @@ The feature is enabled for a realm, if `Update Email` required action is enabled
 The feature slightly changes behaviour from previous versions when updating the profile during the authentication flow (e.g. when running the `UPDATE_PROFILE` required action).
 If an existing user does have an email set when updating the profile during the authentication flow, the email attribute will not be available.
 
+=== Encryption algorithms for SAML updated
+
+When a SAML client was enabled to *Encrypt Assertions*, the assertion included in the SAML response was encrypted following the link:https://www.w3.org/TR/xmlenc-core1/[XML Encryption Syntax and Processing] specification. The algorithms used for encryption were fixed and outdated. Since this release, default encryption options are up to date and better suited in terms of security. Besides, the encryption details are also configurable, just in case a specific client needs a different set of algorithms to work properly. New attributes can be defined in the client to specify the exact algorithms used for encryption. The Admin console displays them in the client tab *Settings*, section *Signature and Encryption*, when the *Encrypt Assertions* option is enabled in the *Keys* tab.
+
+In order to maintain backwards compatibility, {project_name}'s upgrade will modify the existing SAML clients to set the encryption attributes to work as before. This way old clients will receive the same encrypted assertion using the same previous algorithms. If the client supports the new default configuration, removing the attributes is recommended.
+
+For more information about client configuration, please see link:{adminguide_link}#_client-saml-configuration[Creating a SAML client] chapter in the {adminguide_name}.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
