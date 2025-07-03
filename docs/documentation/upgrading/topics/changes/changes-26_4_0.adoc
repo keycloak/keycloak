@@ -46,7 +46,10 @@ properties will still function as before, but we recommend to change to the CLI 
 
 The following sections provide details on deprecated features.
 
-=== <TODO>
+=== Deprecated `displayTest` field in `ConsentScopeRepresentation`
+
+The `displayTest` field in the `ConsentScopeRepresentation` class and TypeScript interface has been deprecated due to a typo in its name. 
+A new field `displayText` with the correct spelling has been added to replace it. The old field will be removed in KC 27.0.
 
 // ------------------------ Removed features ------------------------ //
 == Removed features
