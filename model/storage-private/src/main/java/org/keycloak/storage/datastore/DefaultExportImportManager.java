@@ -30,6 +30,7 @@ import org.keycloak.exportimport.ExportOptions;
 import org.keycloak.exportimport.util.ExportUtils;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.migration.MigrationProvider;
+import org.keycloak.migration.ModelVersion;
 import org.keycloak.migration.migrators.MigrateTo8_0_0;
 import org.keycloak.migration.migrators.MigrationUtils;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -193,6 +194,8 @@ public class DefaultExportImportManager implements ExportImportManager {
 
     @Override
     public void importRealm(RealmRepresentation rep, RealmModel newRealm, Runnable userImport) {
+        ModelVersion version = DefaultMigrationManager.getModelVersionFromRep(rep);
+
         convertDeprecatedSocialProviders(rep);
         convertDeprecatedApplications(session, rep);
         convertDeprecatedClientTemplates(rep);
@@ -393,7 +396,7 @@ public class DefaultExportImportManager implements ExportImportManager {
 
         Map<String, ClientModel> createdClients = new HashMap<>();
         if (rep.getClients() != null) {
-            createdClients = createClients(session, rep, newRealm, mappedFlows);
+            createdClients = createClients(session, version, rep, newRealm, mappedFlows);
         }
 
         importRoles(rep.getRoles(), newRealm);
@@ -561,8 +564,17 @@ public class DefaultExportImportManager implements ExportImportManager {
         return role;
     }
 
-    private static Map<String, ClientModel> createClients(KeycloakSession session, RealmRepresentation rep, RealmModel realm, Map<String, String> mappedFlows) {
+    private static void addSamlEncryptionAttributes(ClientModel app) {
+        if ("saml".equals(app.getProtocol()) && "true".equals(app.getAttribute("saml.encrypt"))) {
+            app.setAttribute("saml.encryption.algorithm", "http://www.w3.org/2001/04/xmlenc#aes128-cbc");
+            app.setAttribute("saml.encryption.keyAlgorithm", "http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p");
+            app.setAttribute("saml.encryption.digestMethod", "http://www.w3.org/2000/09/xmldsig#sha1");
+        }
+    }
+
+    private static Map<String, ClientModel> createClients(KeycloakSession session, ModelVersion version, RealmRepresentation rep, RealmModel realm, Map<String, String> mappedFlows) {
         Map<String, ClientModel> appMap = new HashMap<>();
+        final boolean samlEncryptionAttributes = version != null && version.lessThan(new ModelVersion(26, 4, 0));
         for (ClientRepresentation resourceRep : rep.getClients()) {
             if (Profile.isFeatureEnabled(Feature.ADMIN_FINE_GRAINED_AUTHZ_V2)) {
                 if (realm.getAdminPermissionsClient() != null && realm.getAdminPermissionsClient().getClientId().equals(resourceRep.getClientId())) {
@@ -573,6 +585,9 @@ public class DefaultExportImportManager implements ExportImportManager {
             String postLogoutRedirectUris = app.getAttribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS);
             if (postLogoutRedirectUris == null) {
                 app.setAttribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+");
+            }
+            if (samlEncryptionAttributes) {
+                addSamlEncryptionAttributes(app);
             }
             appMap.put(app.getClientId(), app);
 

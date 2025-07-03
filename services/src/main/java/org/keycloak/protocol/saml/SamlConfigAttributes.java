@@ -42,6 +42,10 @@ public interface SamlConfigAttributes {
     String SAML_SIGNING_CERTIFICATE_ATTRIBUTE = "saml.signing." + CertificateInfoHelper.X509CERTIFICATE;
     String SAML_ENCRYPTION_CERTIFICATE_ATTRIBUTE = "saml.encryption." + CertificateInfoHelper.X509CERTIFICATE;
     String SAML_ENCRYPTION_PRIVATE_KEY_ATTRIBUTE = "saml.encryption." + CertificateInfoHelper.PRIVATE_KEY;
+    String SAML_ENCRYPTION_ALGORITHM = "saml.encryption.algorithm";
+    String SAML_ENCRYPTION_KEY_ALGORITHM = "saml.encryption.keyAlgorithm";
+    String SAML_ENCRYPTION_DIGEST_METHOD = "saml.encryption.digestMethod";
+    String SAML_ENCRYPTION_MASK_GENERATION_FUNTION = "saml.encryption.maskGenerationFunction";
     String SAML_ASSERTION_LIFESPAN = "saml.assertion.lifespan";
     String SAML_ARTIFACT_BINDING_IDENTIFIER = "saml.artifact.binding.identifier";
     String SAML_ALLOW_ECP_FLOW = "saml.allow.ecp.flow";
