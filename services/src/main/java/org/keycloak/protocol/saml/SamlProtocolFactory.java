@@ -39,8 +39,8 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
-
 import org.keycloak.saml.validators.DestinationValidator;
+
 import javax.xml.crypto.dsig.CanonicalizationMethod;
 import java.util.ArrayList;
 import java.util.HashMap;

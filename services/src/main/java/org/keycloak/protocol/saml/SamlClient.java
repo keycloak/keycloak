@@ -213,7 +213,6 @@ public class SamlClient extends ClientConfigResolver {
 
     public void setClientEncryptingCertificate(String val) {
         client.setAttribute(SamlConfigAttributes.SAML_ENCRYPTION_CERTIFICATE_ATTRIBUTE, val);
-
     }
 
     public String getClientEncryptingPrivateKey() {
@@ -222,7 +221,38 @@ public class SamlClient extends ClientConfigResolver {
 
     public void setClientEncryptingPrivateKey(String val) {
         client.setAttribute(SamlConfigAttributes.SAML_ENCRYPTION_PRIVATE_KEY_ATTRIBUTE, val);
+    }
 
+    public String getClientEncryptingAlgorithm() {
+        return client.getAttribute(SamlConfigAttributes.SAML_ENCRYPTION_ALGORITHM);
+    }
+
+    public void setClientEncryptingAlgorithm(String val) {
+        client.setAttribute(SamlConfigAttributes.SAML_ENCRYPTION_ALGORITHM, val);
+    }
+
+    public String getClientEncryptingKeyAlgorithm() {
+        return client.getAttribute(SamlConfigAttributes.SAML_ENCRYPTION_KEY_ALGORITHM);
+    }
+
+    public void setClientEncryptingKeyAlgorithm(String val) {
+        client.setAttribute(SamlConfigAttributes.SAML_ENCRYPTION_KEY_ALGORITHM, val);
+    }
+
+    public String getClientEncryptingDigestMethod() {
+        return client.getAttribute(SamlConfigAttributes.SAML_ENCRYPTION_DIGEST_METHOD);
+    }
+
+    public void setClientEncryptingDigestMethod(String val) {
+        client.setAttribute(SamlConfigAttributes.SAML_ENCRYPTION_DIGEST_METHOD, val);
+    }
+
+    public String getClientEncryptingMaskGenerationFunction() {
+        return client.getAttribute(SamlConfigAttributes.SAML_ENCRYPTION_MASK_GENERATION_FUNTION);
+    }
+
+    public void setClientEncryptingMaskGenerationFunction(String val) {
+        client.setAttribute(SamlConfigAttributes.SAML_ENCRYPTION_MASK_GENERATION_FUNTION, val);
     }
 
     /**

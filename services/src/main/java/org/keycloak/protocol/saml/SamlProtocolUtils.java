@@ -26,6 +26,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.UriInfo;
+import org.apache.xml.security.encryption.XMLCipher;
 import org.jboss.logging.Logger;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.PemUtils;
@@ -40,6 +41,7 @@ import org.keycloak.dom.saml.v2.protocol.StatusType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.rotation.KeyLocator;
+import org.keycloak.saml.BaseSAML2BindingBuilder;
 import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
@@ -119,6 +121,28 @@ public class SamlProtocolUtils {
      */
     public static PublicKey getEncryptionKey(ClientModel client) throws VerificationException {
         return getPublicKey(client, SamlConfigAttributes.SAML_ENCRYPTION_CERTIFICATE_ATTRIBUTE);
+    }
+
+    public static void setupEncryption(SamlClient samlClient, BaseSAML2BindingBuilder<?> bindingBuilder) throws VerificationException {
+        PublicKey publicKey = getPublicKey(samlClient.getClientEncryptingCertificate());
+        bindingBuilder.encrypt(publicKey);
+        if (samlClient.getClientEncryptingAlgorithm() != null) {
+            bindingBuilder.encryptionAlgorithm(samlClient.getClientEncryptingAlgorithm());
+        }
+        if (samlClient.getClientEncryptingKeyAlgorithm() != null) {
+            bindingBuilder.keyEncryptionAlgorithm(samlClient.getClientEncryptingKeyAlgorithm());
+        }
+        if (samlClient.getClientEncryptingDigestMethod() != null &&
+                (XMLCipher.RSA_OAEP.equals(samlClient.getClientEncryptingKeyAlgorithm()) ||
+                XMLCipher.RSA_OAEP_11.equals(samlClient.getClientEncryptingKeyAlgorithm()))) {
+            // digest method is only available to rsa oaep
+            bindingBuilder.keyEncryptionDigestMethod(samlClient.getClientEncryptingDigestMethod());
+        }
+        if (samlClient.getClientEncryptingMaskGenerationFunction() != null &&
+                XMLCipher.RSA_OAEP_11.equals(samlClient.getClientEncryptingKeyAlgorithm())) {
+            // the mgf is only available for rsa oaep 11
+            bindingBuilder.keyEncryptionMgfAlgorithm(samlClient.getClientEncryptingMaskGenerationFunction());
+        }
     }
 
     public static PublicKey getPublicKey(ClientModel client, String attribute) throws VerificationException {
