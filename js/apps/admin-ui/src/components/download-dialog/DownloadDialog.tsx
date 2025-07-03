@@ -21,6 +21,7 @@ import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { addTrailingSlash, prettyPrintJSON } from "../../util";
 import { getAuthorizationHeaders } from "../../utils/getAuthorizationHeaders";
 import { ConfirmDialogModal } from "../confirm-dialog/ConfirmDialog";
+import { findTideComponent } from "../../identity-providers/utils/SignSettingsUtil";
 
 type DownloadDialogProps = {
   id: string;
@@ -77,10 +78,18 @@ export const DownloadDialog = ({
 
         return response.arrayBuffer();
       } else {
-        const snippet = await adminClient.clients.getInstallationProviders({
-          id,
-          providerId: selected,
-        });
+        // TIDECLOAK IMPLEMENTATION
+        const isTideKeyEnabled = await findTideComponent(adminClient, realm) === undefined ? false : true
+        const snippet = isTideKeyEnabled
+          ? await adminClient.tideAdmin.getInstallationProviders({
+            clientId: id,
+            providerId: selected,
+          })
+          : await adminClient.clients.getInstallationProviders({
+            id,
+            providerId: selected,
+          });
+
         if (typeof snippet === "string") {
           return sanitizeSnippet(snippet);
         } else {

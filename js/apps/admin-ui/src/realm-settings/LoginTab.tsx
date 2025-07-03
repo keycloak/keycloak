@@ -7,6 +7,7 @@ import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../components/form/FormAccess";
 import { useRealm } from "../context/realm-context/RealmContext";
 
+
 type RealmSettingsLoginTabProps = {
   realm: RealmRepresentation;
   refresh: () => void;
@@ -39,6 +40,14 @@ export const RealmSettingsLoginTab = ({
           ? switches.reduce((realm, s) => Object.assign(realm, s), realm)
           : Object.assign(realm, switches),
       );
+
+      if (name === "registrationAllowed") {
+        const tideIdp = await adminClient.identityProviders.findOne({ alias: "tide" });
+        // TIDECLOAK IMPLEMENTATION
+        if (tideIdp) {
+          await adminClient.tideAdmin.signIdpSettings();
+        }
+      }
       addAlert(t("enableSwitchSuccess", { switch: t(name) }));
       refresh();
     } catch (error) {

@@ -15,6 +15,8 @@ import {
   TwitterIcon,
 } from "@patternfly/react-icons";
 
+import TideIcon  from "../../../../assets/icons/tide-icon.svg";
+
 type IconMapperProps = {
   icon: string;
 };
@@ -56,6 +58,8 @@ function getIcon(icon: string) {
       return InstagramIcon;
     case "paypal":
       return PaypalIcon;
+    case "tide":
+      return () => <img src={TideIcon} alt="Tide Icon" width="16" height="16" />; // TIDE IMPLEMENTATION
     default:
       return CubeIcon;
   }
