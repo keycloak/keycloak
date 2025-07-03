@@ -18,6 +18,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jboss.logging.Logger;
 import org.keycloak.admin.ui.rest.model.BruteUser;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -148,7 +149,7 @@ public class BruteForceUsersResource {
     private Stream<BruteUser> searchForUser(Map<String, String> attributes, RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, Integer firstResult, Integer maxResults, Boolean includeServiceAccounts) {
         attributes.put(UserModel.INCLUDE_SERVICE_ACCOUNT, includeServiceAccounts.toString());
 
-        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+        if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
             Set<String> groupIds = auth.groups().getGroupIdsWithViewPermission();
             if (!groupIds.isEmpty()) {
                 session.setAttribute(UserModel.GROUPS, groupIds);
