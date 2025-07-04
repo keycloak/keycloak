@@ -270,8 +270,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
     private void loginSuccessAndDoRequiredActions() {
         loginPage.login("login-test", getPassword("login-test"));
         updatePasswordPage.changePassword(getPassword("login-test"), getPassword("login-test"));
-        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3")
-                .email("john@doe3.com").submit();
+        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3").submit();
         appPage.assertCurrent();
     }
 
@@ -517,8 +516,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
         updatePasswordPage.assertCurrent();
 
         updatePasswordPage.changePassword(getPassword("login-test"), getPassword("login-test"));
-        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3")
-                .email("john@doe3.com").submit();
+        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3").submit();
         appPage.assertCurrent();
     }
 
@@ -556,8 +554,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
         updatePasswordPage.assertCurrent();
 
         updatePasswordPage.changePassword(getPassword("login-test"), getPassword("login-test"));
-        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3")
-                .email("john@doe3.com").submit();
+        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3").submit();
         appPage.assertCurrent();
     }
 
