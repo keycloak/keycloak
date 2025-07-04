@@ -19,6 +19,14 @@ package org.keycloak.protocol.oid4vc.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.util.JsonSerialization;
+
+import java.util.Map;
+import java.util.Optional;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
@@ -31,7 +39,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CredentialRequest {
 
-    private String format;
+    @JsonProperty("credential_configuration_id")
+    private String credentialConfigurationId;
 
     @JsonProperty("credential_identifier")
     private String credentialIdentifier;
@@ -44,22 +53,9 @@ public class CredentialRequest {
     })
     private Proof proof;
 
-    // I have the choice of either defining format specific fields here, or adding a generic structure,
-    // opening room for spamming the server. I will prefer having format specific fields.
-    private String vct;
-
     // See: https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-format-identifier-3
     @JsonProperty("credential_definition")
     private CredentialDefinition credentialDefinition;
-
-    public String getFormat() {
-        return format;
-    }
-
-    public CredentialRequest setFormat(String format) {
-        this.format = format;
-        return this;
-    }
 
     public String getCredentialIdentifier() {
         return credentialIdentifier;
@@ -67,6 +63,15 @@ public class CredentialRequest {
 
     public CredentialRequest setCredentialIdentifier(String credentialIdentifier) {
         this.credentialIdentifier = credentialIdentifier;
+        return this;
+    }
+
+    public String getCredentialConfigurationId() {
+        return credentialConfigurationId;
+    }
+
+    public CredentialRequest setCredentialConfigurationId(String credentialConfigurationId) {
+        this.credentialConfigurationId = credentialConfigurationId;
         return this;
     }
 
@@ -79,15 +84,6 @@ public class CredentialRequest {
         return this;
     }
 
-    public String getVct() {
-        return vct;
-    }
-
-    public CredentialRequest setVct(String vct) {
-        this.vct = vct;
-        return this;
-    }
-
     public CredentialDefinition getCredentialDefinition() {
         return credentialDefinition;
     }
@@ -95,5 +91,31 @@ public class CredentialRequest {
     public CredentialRequest setCredentialDefinition(CredentialDefinition credentialDefinition) {
         this.credentialDefinition = credentialDefinition;
         return this;
+    }
+
+    public Optional<CredentialScopeModel> findCredentialScope(KeycloakSession keycloakSession) {
+        Map<String, String> searchAttributeMap =
+                Optional.ofNullable(credentialConfigurationId)
+                        .map(credentialIdentifier -> {
+                            return Map.of(CredentialScopeModel.CONFIGURATION_ID, credentialConfigurationId);
+                        }).orElseGet(() -> {
+                            return Map.of(CredentialScopeModel.CREDENTIAL_IDENTIFIER, credentialIdentifier);
+                        });
+
+        RealmModel currentRealm = keycloakSession.getContext().getRealm();
+        final boolean useOrExpression = false;
+        return keycloakSession.clientScopes()
+                              .getClientScopesByAttributes(currentRealm, searchAttributeMap, useOrExpression)
+                              .map(CredentialScopeModel::new)
+                              .findAny();
+    }
+
+    @Override
+    public String toString() {
+        try {
+            return JsonSerialization.mapper.writeValueAsString(this);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
