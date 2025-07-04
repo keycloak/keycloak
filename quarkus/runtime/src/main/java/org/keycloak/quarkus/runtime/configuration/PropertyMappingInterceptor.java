@@ -48,6 +48,9 @@ import jakarta.annotation.Priority;
  *
  * <p>This interceptor must execute after the {@link io.smallrye.config.ExpressionConfigSourceInterceptor} so that expressions
  * are properly resolved before executing this interceptor.
+ *
+ * <p>The {@link NestedPropertyMappingInterceptor} catches property mappings that need to be performed within expressions.
+ *
  * <p>
  * The reason for the used priority is to always execute the interceptor before default Application Config Source interceptors
  */
