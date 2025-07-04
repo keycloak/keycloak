@@ -39,6 +39,8 @@ export default interface ClientRepresentation {
   registrationAccessToken?: string;
   rootUrl?: string;
   secret?: string;
+  selectiveConsent?: boolean;
+  selectiveConsentAttributes?: Record<string, string>;
   serviceAccountsEnabled?: boolean;
   standardFlowEnabled?: boolean;
   surrogateAuthRequired?: boolean;

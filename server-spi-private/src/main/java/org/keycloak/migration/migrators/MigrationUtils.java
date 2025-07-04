@@ -88,7 +88,7 @@ public class MigrationUtils {
 
         if (client.isConsentRequired()) {
 
-            if (!client.isConsentSelective() || selectiveConsentApplies(client,user)){
+            if (!client.isSelectiveConsent() || (client.isSelectiveConsent() && selectiveConsentApplies(client,user))){
                 // Automatically add consents for client and for offline_access. We know that both were defacto approved by user already and offlineSession is still valid
                 UserConsentModel consent = session.users().getConsentByClient(realm, user.getId(), client.getId());
                 if (consent != null) {
@@ -104,20 +104,16 @@ public class MigrationUtils {
         }
     }
 
-    public static boolean selectiveConsentApplies(ClientModel client, UserModel user){
-        Map<String,String> selectiveConsentAttributes = client.getSelectiveConsentAttributes();
-        Map<String,List<String>> userAttributes = user.getAttributes(); 
-        // Still unsure how to get the organization here, to be implemented
-        Set<String> selectiveConsentOrganizations = client.getSelectiveConsentOrganizations();
-        boolean matchFound = selectiveConsentAttributes.entrySet().stream()
-            .anyMatch(e -> {
-            String key = e.getKey();
-            String consentValue = e.getValue();
-            List<String> userValues = userAttributes.get(key);
-            return userValues != null && userValues.contains(consentValue);
-        });
-        return matchFound;
+    public static boolean selectiveConsentApplies(ClientModel client, UserModel user) {
+        String selectiveConsentAttributeKey = client.getSelectiveConsentAttributeKey();
+        String selectiveConsentAttributeValue = client.getSelectiveConsentAttributeValue();
+        Map<String, List<String>> userAttributes = user.getAttributes();
+
+        List<String> userValues = userAttributes.get(selectiveConsentAttributeKey);
+
+        return userValues != null && userValues.contains(selectiveConsentAttributeValue);
     }
+
 
     public static void setDefaultClientAuthenticatorType(ClientModel s) {
         s.setClientAuthenticatorType(KeycloakModelUtils.getDefaultClientAuthenticatorType());

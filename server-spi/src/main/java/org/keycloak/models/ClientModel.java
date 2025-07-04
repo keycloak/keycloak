@@ -18,7 +18,6 @@
 package org.keycloak.models;
 
 import java.util.Map;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -211,15 +210,12 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
     boolean isConsentRequired();
     void setConsentRequired(boolean consentRequired);
 
-    boolean isConsentSelective();
+    boolean isSelectiveConsent();
     void setSelectiveConsent(boolean consentSelective);
-    Map<String,String> getSelectiveConsentAttributes();
-    void setSelectiveConsentAttribute(String name,String value);
-    void removeSelectiveConsentAttribute(String name);
-    String getSelectiveConsentAttribute(String value);
-    Set<String> getSelectiveConsentOrganizations();
-    void addSelectiveConsentOrganization(String string);
-    void removeSelectiveConsentOrganization(String string);
+    String getSelectiveConsentAttributeKey();
+    String getSelectiveConsentAttributeValue();
+    void setSelectiveConsentAttributeKey(String selectiveConsentAttributeKey);
+    void setSelectiveConsentAttributeValue(String selectiveConsentAttributeValue);
 
 
     boolean isStandardFlowEnabled();

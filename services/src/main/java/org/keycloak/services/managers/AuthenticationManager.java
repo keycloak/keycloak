@@ -1152,7 +1152,7 @@ public class AuthenticationManager {
         // https://tools.ietf.org/html/draft-ietf-oauth-device-flow-15#section-5.4
         // The spec says "The authorization server SHOULD display information about the device",
         // so the consent is required when running a verification flow of OAuth 2.0 Device Authorization Grant.
-        if (client.isConsentRequired() || isOAuth2DeviceVerificationFlow(authSession)) {
+        if ((client.isConsentRequired() && (!client.isSelectiveConsent() || (client.isSelectiveConsent() && selectiveConsentApplies(client, user)))) || isOAuth2DeviceVerificationFlow(authSession)) {
 
             UserConsentModel grantedConsent = getEffectiveGrantedConsent(session, authSession);
 
@@ -1184,6 +1184,17 @@ public class AuthenticationManager {
         }
         return null;
 
+    }
+
+
+    public static boolean selectiveConsentApplies(ClientModel client, UserModel user) {
+        String selectiveConsentAttributeKey = client.getSelectiveConsentAttributeKey();
+        String selectiveConsentAttributeValue = client.getSelectiveConsentAttributeValue();
+        Map<String, List<String>> userAttributes = user.getAttributes();
+
+        List<String> userValues = userAttributes.get(selectiveConsentAttributeKey);
+
+        return userValues != null && userValues.contains(selectiveConsentAttributeValue);
     }
 
     private static List<AuthorizationDetails> getClientScopesToApproveOnConsentScreen(UserConsentModel grantedConsent, KeycloakSession session, AuthenticationSessionModel authSession) {
