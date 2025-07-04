@@ -2,6 +2,7 @@ package org.keycloak.testframework.database;
 
 import org.jboss.logging.Logger;
 import org.keycloak.testframework.config.Config;
+import org.keycloak.testframework.logging.JBossLogConsumer;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 
 import java.io.IOException;
