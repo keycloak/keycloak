@@ -289,14 +289,19 @@ public class XMLEncryptionUtil {
             try {
                 String encAlgoURL = encryptedData.getEncryptionMethod().getAlgorithm();
 
-                if (System.getenv("AWS_KMS_KEY_ID") != null) {
-                    AmazonKMS amazonKMS = new AmazonKMS(System.getenv("AWS_KMS_KEY_ID"));
+                var awsKeyId = System.getenv("AWS_KMS_KEY_ID");
+                var azureKeyId = System.getenv("AZURE_VAULT_KEY_ID");
+
+                if (awsKeyId != null) {
+                    AmazonKMS amazonKMS = new AmazonKMS(awsKeyId);
                     amazonKMS.setClient();
 
                     decryptedDoc = decryptUsingHsm(encryptedKey, documentWithEncryptedElement, encDataElement, amazonKMS);
                     success = true;
-                } else if (System.getenv("AZURE_VAULT_KEY_ID") != null) {
-                    AzureKeyVault  azureKeyVault = new AzureKeyVault(System.getenv("AZURE_VAULT_KEY_ID"));
+                } else if (azureKeyId != null) {
+                    AzureKeyVault  azureKeyVault = new AzureKeyVault(azureKeyId);
+
+//                    For testing locally using an Azure Key Vault instance:
 //                    AzureKeyVault azureKeyVault = new AzureKeyVault(System.getenv("AZURE_VAULT_CLIENT_ID"), System.getenv("AZURE_VAULT_CLIENT_SECRET"), System.getenv("AZURE_VAULT_TENANT_ID"), System.getenv("AZURE_VAULT_KEY_ID"));
 
                     azureKeyVault.setClient();
