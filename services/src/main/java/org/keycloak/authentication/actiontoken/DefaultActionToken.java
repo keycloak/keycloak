@@ -21,7 +21,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.TokenVerifier.Predicate;
 import org.keycloak.common.VerificationException;
-import org.keycloak.common.util.Time;
 import org.keycloak.models.SingleUseObjectValueModel;
 import org.keycloak.models.DefaultActionTokenKey;
 import org.keycloak.models.KeycloakSession;
@@ -159,7 +158,7 @@ public class DefaultActionToken extends DefaultActionTokenKey implements SingleU
 
         this
           .issuedNow()
-          .id(getActionVerificationNonce().toString())
+          .id(UUID.randomUUID().toString())
           .issuer(issuerUri)
           .audience(issuerUri);
 
