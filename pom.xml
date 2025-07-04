@@ -234,7 +234,7 @@
 
         <!-- Set to true on release to update proto.lock files -->
         <commitProtoLockChanges>false</commitProtoLockChanges>
-        <skipProtoLock>true</skipProtoLock>
+        <skipProtoLock>false</skipProtoLock>
     </properties>
 
     <url>http://keycloak.org</url>
