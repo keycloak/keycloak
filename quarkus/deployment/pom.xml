@@ -43,6 +43,12 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-arc-deployment</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-arc-dev</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -51,6 +57,10 @@
                 <exclusion>
                     <groupId>io.quarkus</groupId>
                     <artifactId>quarkus-vertx-http-dev-ui-resources</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-assistant-dev</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>io.mvnpm</groupId>
@@ -115,6 +125,12 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-rest-deployment</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-rest-dev</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -131,6 +147,10 @@
                 <exclusion>
                     <groupId>io.quarkus</groupId>
                     <artifactId>quarkus-devservices-deployment</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-datasource-dev</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>io.quarkus</groupId>
