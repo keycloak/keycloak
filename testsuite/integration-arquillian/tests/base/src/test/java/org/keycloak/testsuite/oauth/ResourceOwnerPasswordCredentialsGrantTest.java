@@ -32,6 +32,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.common.Profile;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -773,6 +774,27 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
         assertNotNull(response.getAccessToken());
         assertNull(response.getRefreshToken());
+    }
+
+    @Test
+    public void grantAccessTokenServiceAccountUserOfOtherClient() throws Exception {
+        ClientManager.realm(adminClient.realm("test")).clientId("resource-owner").setServiceAccountsEnabled(true);
+        oauth.client("resource-owner-refresh", "secret");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("service-account-resource-owner", "password");
+
+        assertEquals(400, response.getStatusCode());
+        assertEquals(AuthenticationFlowError.UNKNOWN_USER.name(), response.getError());
+        assertEquals("Cannot find user (Unknown user)", response.getErrorDescription());
+        events.expectLogin()
+                .client("resource-owner-refresh")
+                .user((String) null)
+                .session((String) null)
+                .detail(Details.REASON, "Cannot find user (Unknown user)")
+                .error(Errors.USER_NOT_FOUND)
+                .clearDetails()
+                .assertEvent();
+
+        ClientManager.realm(adminClient.realm("test")).clientId("resource-owner").setServiceAccountsEnabled(false);
     }
 
     private int getAuthenticationSessionsCount() {
