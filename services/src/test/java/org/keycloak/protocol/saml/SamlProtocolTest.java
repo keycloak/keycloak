@@ -2085,7 +2085,7 @@ public class SamlProtocolTest {
 
         }
         @Override
-        public boolean isConsentSelective() {
+        public boolean isSelectiveConsent() {
             return false;
         }
 
@@ -2095,39 +2095,23 @@ public class SamlProtocolTest {
         }
 
         @Override
-        public Set<String> getSelectiveConsentOrganizations(){
+        public String getSelectiveConsentAttributeKey(){
+             return null;
+        }
+        
+        @Override
+        public String getSelectiveConsentAttributeValue(){
              return null;
         }
 
         @Override
-        public Map<String,String> getSelectiveConsentAttributes(){
-             return null;
+        public void setSelectiveConsentAttributeKey(String SelectiveConsentAttributeKey) {
         }
 
         @Override
-        public String getSelectiveConsentAttribute(String selectiveConsentAttribute){
-             return null;
+        public void setSelectiveConsentAttributeValue(String SelectiveConsentAttributeValue) {
         }
 
-        @Override
-        public void removeSelectiveConsentAttribute(String selectiveConsentAttribute){
-             
-        }
-
-        @Override
-        public void addSelectiveConsentOrganization(String selectiveConsentAttribute){
-
-        }
-
-        @Override
-        public void removeSelectiveConsentOrganization(String selectiveConsentAttribute){
-
-        }
-
-        @Override
-        public void setSelectiveConsentAttribute(String name, String value) {
-
-        }
         @Override
         public boolean isStandardFlowEnabled() {
             return false;

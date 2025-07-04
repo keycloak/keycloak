@@ -21,6 +21,15 @@
         <addColumn tableName="KEYCLOAK_GROUP">
             <column name="DESCRIPTION" type="NVARCHAR(255)" />
         </addColumn>
+        
     </changeSet>
+    <changeSet id="add-client-selective-consent" author="yourname">
+      <addColumn tableName="CLIENT">
+        <column name="CONSENT_SELECTIVE" type="BOOLEAN" defaultValueBoolean="false"/>
+        <column name="CONSENT_SELECTIVE_ATTRIBUTE_KEY" type="VARCHAR(255)" defaultValue=""/>
+        <column name="CONSENT_SELECTIVE_ATTRIBUTE_VALUE" type="VARCHAR(255)" defaultValue=""/>
+      </addColumn>
+    </changeSet>
+
 
 </databaseChangeLog>

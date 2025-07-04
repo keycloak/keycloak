@@ -137,13 +137,11 @@ public class ClientEntity {
     @Column(name="CONSENT_SELECTIVE")
     private boolean selectiveConsent;
 
-    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "client")
-    protected Collection<ClientSelectiveConsentAttributeEntity> selectiveConsentAttributes = new LinkedList<>();
+    @Column(name="CONSENT_SELECTIVE_ATTRIBUTE_KEY")
+    private String selectiveConsentAttributeKey;
 
-    @ElementCollection
-    @Column(name="VALUE")
-    @CollectionTable(name = "SELECTIVE_CONSENT_ORGANIZATIONS", joinColumns={ @JoinColumn(name="CLIENT_ID") })
-    protected Set<String> selectiveConsentOrganizations;
+    @Column(name="CONSENT_SELECTIVE_ATTRIBUTE_VALUE")
+    private String selectiveConsentAttributeValue;
 
     @Column(name="STANDARD_FLOW_ENABLED")
     private boolean standardFlowEnabled;
@@ -394,7 +392,7 @@ public class ClientEntity {
         this.consentRequired = consentRequired;
     }
 
-    public boolean isConsentSelective() {
+    public boolean isSelectiveConsent() {
         return selectiveConsent;
     }
 
@@ -402,26 +400,20 @@ public class ClientEntity {
         this.selectiveConsent = selectiveConsent;
     }
 
-    public Collection<ClientSelectiveConsentAttributeEntity> getSelectiveConsentAttributes() {
-        if (selectiveConsentAttributes == null) {
-            selectiveConsentAttributes = new LinkedList<>();
-        }
-        return selectiveConsentAttributes;
+    public String getSelectiveConsentAttributeKey(){
+            return selectiveConsentAttributeKey;
     }
 
-    public void setSelectedConsentAttributes(Collection<ClientSelectiveConsentAttributeEntity> selectiveConsentAttributes) {
-        this.selectiveConsentAttributes = selectiveConsentAttributes;
+    public void setSelectiveConsentAttributeKey(String selectiveConsentAttributeKey){
+           this.selectiveConsentAttributeKey=selectiveConsentAttributeKey;
     }
 
-    public Set<String> getSelectiveConsentOrganizations() {
-        if (selectiveConsentOrganizations == null) {
-            selectiveConsentOrganizations = new HashSet<>();
-        }
-        return selectiveConsentOrganizations;
+    public String getSelectiveConsentAttributeValue(){
+            return selectiveConsentAttributeValue;
     }
 
-    public void setSelectiveConsentOrganizations(Set<String> selectiveConsentOrganizations) {
-        this.selectiveConsentOrganizations = selectiveConsentOrganizations;
+    public void setSelectiveConsentAttributeValue(String selectiveConsentAttributeValue){
+           this.selectiveConsentAttributeValue=selectiveConsentAttributeValue;
     }
 
     public boolean isStandardFlowEnabled() {

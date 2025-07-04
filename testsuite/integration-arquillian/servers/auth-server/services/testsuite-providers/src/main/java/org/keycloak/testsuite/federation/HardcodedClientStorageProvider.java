@@ -248,23 +248,18 @@ public class HardcodedClientStorageProvider implements ClientStorageProvider, Cl
             return consent;
         }
         @Override
-        public boolean isConsentSelective() {
+        public boolean isSelectiveConsent() {
             return false;
         }
 
         @Override
-        public Set<String> getSelectiveConsentOrganizations(){
-             return Collections.EMPTY_SET;
+        public String getSelectiveConsentAttributeKey(){
+            return null;
         }
 
         @Override
-        public Map<String,String> getSelectiveConsentAttributes(){
-            return Collections.EMPTY_MAP;
-        }
-
-        @Override
-        public String getSelectiveConsentAttribute(String selectiveConsentAttribute){
-             return null;
+        public String getSelectiveConsentAttributeValue(){
+            return null;
         }
 
         @Override

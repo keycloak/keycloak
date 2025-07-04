@@ -759,6 +759,11 @@ public class TokenManager {
             return true;
         }
 
+            
+        if (client.isSelectiveConsent() && !AuthenticationManager.selectiveConsentApplies(client, user)) {
+            return true;
+         }
+
         UserConsentModel grantedConsent = UserConsentManager.getConsentByClient(session, client.getRealm(), user, client.getId());
 
         return requestedClientScopes

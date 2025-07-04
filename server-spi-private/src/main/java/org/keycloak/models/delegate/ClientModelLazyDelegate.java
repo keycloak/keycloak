@@ -375,8 +375,8 @@ public class ClientModelLazyDelegate implements ClientModel {
     }
 
     @Override
-    public boolean isConsentSelective() {
-        return getDelegate().isConsentSelective();
+    public boolean isSelectiveConsent() {
+        return getDelegate().isSelectiveConsent();
     }
 
     @Override
@@ -385,40 +385,25 @@ public class ClientModelLazyDelegate implements ClientModel {
     }
 
     @Override
-    public void setSelectiveConsentAttribute(String name, String value) {
-        getDelegate().setSelectiveConsentAttribute(name, value);
+    public void setSelectiveConsentAttributeKey(String selectiveConsentAttributeKey) {
+        getDelegate().setSelectiveConsentAttributeKey(selectiveConsentAttributeKey);
     }
 
     @Override
-    public void removeSelectiveConsentAttribute(String name) {
-        getDelegate().removeSelectiveConsentAttribute(name);
+    public void setSelectiveConsentAttributeValue(String selectiveConsentAttributeValue) {
+        getDelegate().setSelectiveConsentAttributeValue(selectiveConsentAttributeValue);
     }
 
     @Override
-    public String getSelectiveConsentAttribute(String name) {
-        return getDelegate().getSelectiveConsentAttribute(name);
+    public String getSelectiveConsentAttributeKey() {
+        return getDelegate().getSelectiveConsentAttributeKey();
     }
 
     @Override
-    public Map<String, String> getSelectiveConsentAttributes() {
-        return getDelegate().getSelectiveConsentAttributes();
+    public String getSelectiveConsentAttributeValue() {
+        return getDelegate().getSelectiveConsentAttributeValue();
     }
-
-    @Override
-    public void addSelectiveConsentOrganization(String organization) {
-        getDelegate().addSelectiveConsentOrganization(organization);
-    }
-
-    @Override
-    public void removeSelectiveConsentOrganization(String organization) {
-        getDelegate().removeSelectiveConsentOrganization(organization);
-    }
-
-    @Override
-    public Set<String> getSelectiveConsentOrganizations() {
-        return getDelegate().getSelectiveConsentOrganizations();
-    }
-
+   
     @Override
     public boolean isStandardFlowEnabled() {
         return getDelegate().isStandardFlowEnabled();

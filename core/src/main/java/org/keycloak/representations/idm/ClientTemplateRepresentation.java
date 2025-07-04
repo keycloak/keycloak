@@ -38,8 +38,8 @@ public class ClientTemplateRepresentation {
     protected Boolean bearerOnly;
     protected Boolean consentRequired;
     protected Boolean selectiveConsent;
-    protected Map<String,String> selectiveConsentAttributes;
-    protected List<String> selectiveConsentOrganizations;
+    protected String selectiveConsentAttributeKey;
+    protected String selectiveConsentAttributeValue;
     protected Boolean standardFlowEnabled;
     protected Boolean implicitFlowEnabled;
     protected Boolean directAccessGrantsEnabled;
@@ -115,7 +115,7 @@ public class ClientTemplateRepresentation {
         this.consentRequired = consentRequired;
     }
 
-    public Boolean isConsentSelective() {
+    public Boolean isSelectiveConsent() {
         if (consentRequired == null || !consentRequired){
             return false;
         }
@@ -126,20 +126,12 @@ public class ClientTemplateRepresentation {
         this.selectiveConsent = selectiveConsent;
     }
 
-    public void setSelectiveConsentAttributes (Map<String,String> selectiveConsentAttributes){
-        this.selectiveConsentAttributes = selectiveConsentAttributes;
+    public String getSelectiveConsentAttributeKey(){
+        return selectiveConsentAttributeKey;
     }
 
-    public void setSelectiveConsentOrganizations (List<String> selectiveConsentOrganizations){
-        this.selectiveConsentOrganizations = selectiveConsentOrganizations;
-    }   
-
-    public Map<String,String>  getSelectiveConsentAttributes (){
-        return selectiveConsentAttributes;
-    }
-
-    public List<String> getSelectiveConsentOrganizations (){
-        return selectiveConsentOrganizations;
+    public String getSelectiveConsentAttributeValue(){
+        return selectiveConsentAttributeValue;
     }
 
     public Boolean isStandardFlowEnabled() {

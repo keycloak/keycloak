@@ -488,9 +488,9 @@ public class ClientAdapter implements ClientModel, CachedObject {
     }
 
     @Override
-    public boolean isConsentSelective() {
-        if (isUpdated()) return updated.isConsentSelective();
-        return cached.isConsentSelective();
+    public boolean isSelectiveConsent() {
+        if (isUpdated()) return updated.isSelectiveConsent();
+        return cached.isSelectiveConsent();
     }
 
     @Override
@@ -499,49 +499,28 @@ public class ClientAdapter implements ClientModel, CachedObject {
         updated.setSelectiveConsent(selectiveConsent);
     }
 
-    public Map<String,String> getSelectiveConsentAttributes() {
-        if (isUpdated()) return updated.getSelectiveConsentAttributes();
-        return cached.getSelectiveConsentAttributes();
+    @Override
+    public String getSelectiveConsentAttributeKey() {
+        if (isUpdated()) return updated.getSelectiveConsentAttributeKey();
+        return cached.getSelectiveConsentAttributeKey();
     }
 
     @Override
-    public void setSelectiveConsentAttribute(String name, String value) {
+    public void setSelectiveConsentAttributeKey(String selectiveConsentAttributeKey) {
         getDelegateForUpdate();
-        updated.setSelectiveConsentAttribute(name, value);
-
+        updated.setSelectiveConsentAttributeKey(selectiveConsentAttributeKey);
     }
 
     @Override
-    public void removeSelectiveConsentAttribute(String name) {
+    public String getSelectiveConsentAttributeValue() {
+        if (isUpdated()) return updated.getSelectiveConsentAttributeValue();
+        return cached.getSelectiveConsentAttributeValue();
+    }
+
+    @Override
+    public void setSelectiveConsentAttributeValue(String selectiveConsentAttributeValue) {
         getDelegateForUpdate();
-        updated.removeSelectiveConsentAttribute(name);
-
-    }
-
-    @Override
-    public String getSelectiveConsentAttribute(String name) {
-        if (isUpdated()) return updated.getSelectiveConsentAttribute(name);
-        return cached.getSelectiveConsentAttributes().get(name);
-    }
-
-
-    @Override
-    public void addSelectiveConsentOrganization(String organization) {
-        getDelegateForUpdate();
-        updated.addSelectiveConsentOrganization(organization);
-
-    }
-
-    @Override
-    public void removeSelectiveConsentOrganization(String organization) {
-        getDelegateForUpdate();
-        updated.removeSelectiveConsentOrganization(organization);
-
-    }
-
-    public Set<String> getSelectiveConsentOrganizations() {
-        if (isUpdated()) return updated.getSelectiveConsentOrganizations();
-        return cached.getSelectiveConsentOrganizations();
+        updated.setSelectiveConsentAttributeValue(selectiveConsentAttributeValue);
     }
 
     @Override

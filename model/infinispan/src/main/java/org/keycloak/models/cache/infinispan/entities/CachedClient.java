@@ -61,8 +61,8 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
     protected boolean bearerOnly;
     protected boolean consentRequired;
     protected boolean selectiveConsent;
-    protected Map<String, String> selectiveConsentAttributes = new HashMap<>();
-    protected Set<String> selectiveConsentOrganizations = new HashSet<>();
+    protected String selectiveConsentAttributeKey;
+    protected String selectiveConsentAttributeValue;
     protected boolean standardFlowEnabled;
     protected boolean implicitFlowEnabled;
     protected boolean directAccessGrantsEnabled;
@@ -98,8 +98,9 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
         baseUrl = model.getBaseUrl();
         bearerOnly = model.isBearerOnly();
         consentRequired = model.isConsentRequired();
-        selectiveConsent = model.isConsentSelective();
-        selectiveConsentOrganizations = model.getSelectiveConsentOrganizations();
+        selectiveConsent = model.isSelectiveConsent();
+        selectiveConsentAttributeKey = model.getSelectiveConsentAttributeKey();
+        selectiveConsentAttributeValue = model.getSelectiveConsentAttributeValue();
 
         standardFlowEnabled = model.isStandardFlowEnabled();
         implicitFlowEnabled = model.isImplicitFlowEnabled();
@@ -210,16 +211,16 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
         return consentRequired;
     }
 
-    public boolean isConsentSelective() {
+    public boolean isSelectiveConsent() {
         return selectiveConsent;
     }
 
-    public Map<String, String> getSelectiveConsentAttributes() {
-        return selectiveConsentAttributes;
+    public String getSelectiveConsentAttributeKey() {
+        return selectiveConsentAttributeKey;
     }
 
-    public Set<String> getSelectiveConsentOrganizations() {
-        return selectiveConsentOrganizations;
+    public String getSelectiveConsentAttributeValue() {
+        return selectiveConsentAttributeValue;
     }
 
     public boolean isStandardFlowEnabled() {
