@@ -37,6 +37,9 @@ public class ClientTemplateRepresentation {
     protected Boolean fullScopeAllowed;
     protected Boolean bearerOnly;
     protected Boolean consentRequired;
+    protected Boolean selectiveConsent;
+    protected String selectiveConsentAttributeKey;
+    protected String selectiveConsentAttributeValue;
     protected Boolean standardFlowEnabled;
     protected Boolean implicitFlowEnabled;
     protected Boolean directAccessGrantsEnabled;
@@ -110,6 +113,25 @@ public class ClientTemplateRepresentation {
 
     public void setConsentRequired(Boolean consentRequired) {
         this.consentRequired = consentRequired;
+    }
+
+    public Boolean isSelectiveConsent() {
+        if (consentRequired == null || !consentRequired){
+            return false;
+        }
+        return selectiveConsent;
+    }
+
+    public void setSelectiveConsent(Boolean selectiveConsent) {
+        this.selectiveConsent = selectiveConsent;
+    }
+
+    public String getSelectiveConsentAttributeKey(){
+        return selectiveConsentAttributeKey;
+    }
+
+    public String getSelectiveConsentAttributeValue(){
+        return selectiveConsentAttributeValue;
     }
 
     public Boolean isStandardFlowEnabled() {

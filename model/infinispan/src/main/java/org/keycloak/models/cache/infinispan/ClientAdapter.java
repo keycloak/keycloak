@@ -488,6 +488,42 @@ public class ClientAdapter implements ClientModel, CachedObject {
     }
 
     @Override
+    public boolean isSelectiveConsent() {
+        if (isUpdated()) return updated.isSelectiveConsent();
+        return cached.isSelectiveConsent();
+    }
+
+    @Override
+    public void setSelectiveConsent(boolean selectiveConsent) {
+        getDelegateForUpdate();
+        updated.setSelectiveConsent(selectiveConsent);
+    }
+
+    @Override
+    public String getSelectiveConsentAttributeKey() {
+        if (isUpdated()) return updated.getSelectiveConsentAttributeKey();
+        return cached.getSelectiveConsentAttributeKey();
+    }
+
+    @Override
+    public void setSelectiveConsentAttributeKey(String selectiveConsentAttributeKey) {
+        getDelegateForUpdate();
+        updated.setSelectiveConsentAttributeKey(selectiveConsentAttributeKey);
+    }
+
+    @Override
+    public String getSelectiveConsentAttributeValue() {
+        if (isUpdated()) return updated.getSelectiveConsentAttributeValue();
+        return cached.getSelectiveConsentAttributeValue();
+    }
+
+    @Override
+    public void setSelectiveConsentAttributeValue(String selectiveConsentAttributeValue) {
+        getDelegateForUpdate();
+        updated.setSelectiveConsentAttributeValue(selectiveConsentAttributeValue);
+    }
+
+    @Override
     public boolean isStandardFlowEnabled() {
         if (isUpdated()) return updated.isStandardFlowEnabled();
         return cached.isStandardFlowEnabled();

@@ -134,6 +134,15 @@ public class ClientEntity {
     @Column(name="CONSENT_REQUIRED")
     private boolean consentRequired;
 
+    @Column(name="CONSENT_SELECTIVE")
+    private boolean selectiveConsent;
+
+    @Column(name="CONSENT_SELECTIVE_ATTRIBUTE_KEY")
+    private String selectiveConsentAttributeKey;
+
+    @Column(name="CONSENT_SELECTIVE_ATTRIBUTE_VALUE")
+    private String selectiveConsentAttributeValue;
+
     @Column(name="STANDARD_FLOW_ENABLED")
     private boolean standardFlowEnabled;
 
@@ -381,6 +390,30 @@ public class ClientEntity {
 
     public void setConsentRequired(boolean consentRequired) {
         this.consentRequired = consentRequired;
+    }
+
+    public boolean isSelectiveConsent() {
+        return selectiveConsent;
+    }
+
+    public void setSelectiveConsent(boolean selectiveConsent) {
+        this.selectiveConsent = selectiveConsent;
+    }
+
+    public String getSelectiveConsentAttributeKey(){
+            return selectiveConsentAttributeKey;
+    }
+
+    public void setSelectiveConsentAttributeKey(String selectiveConsentAttributeKey){
+           this.selectiveConsentAttributeKey=selectiveConsentAttributeKey;
+    }
+
+    public String getSelectiveConsentAttributeValue(){
+            return selectiveConsentAttributeValue;
+    }
+
+    public void setSelectiveConsentAttributeValue(String selectiveConsentAttributeValue){
+           this.selectiveConsentAttributeValue=selectiveConsentAttributeValue;
     }
 
     public boolean isStandardFlowEnabled() {

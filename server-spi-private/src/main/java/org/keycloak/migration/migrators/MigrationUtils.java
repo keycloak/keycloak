@@ -18,6 +18,9 @@
 package org.keycloak.migration.migrators;
 
 import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.Set;
+import java.util.List;
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -84,19 +87,33 @@ public class MigrationUtils {
         }
 
         if (client.isConsentRequired()) {
-            // Automatically add consents for client and for offline_access. We know that both were defacto approved by user already and offlineSession is still valid
-            UserConsentModel consent = session.users().getConsentByClient(realm, user.getId(), client.getId());
-            if (consent != null) {
-                if (client.isDisplayOnConsentScreen()) {
-                    consent.addGrantedClientScope(client);
+
+            if (!client.isSelectiveConsent() || (client.isSelectiveConsent() && selectiveConsentApplies(client,user))){
+                // Automatically add consents for client and for offline_access. We know that both were defacto approved by user already and offlineSession is still valid
+                UserConsentModel consent = session.users().getConsentByClient(realm, user.getId(), client.getId());
+                if (consent != null) {
+                    if (client.isDisplayOnConsentScreen()) {
+                        consent.addGrantedClientScope(client);
+                    }
+                    if (offlineScope.isDisplayOnConsentScreen()) {
+                        consent.addGrantedClientScope(offlineScope);
+                    }
+                    session.users().updateConsent(realm, user.getId(), consent);
                 }
-                if (offlineScope.isDisplayOnConsentScreen()) {
-                    consent.addGrantedClientScope(offlineScope);
-                }
-                session.users().updateConsent(realm, user.getId(), consent);
             }
         }
     }
+
+    public static boolean selectiveConsentApplies(ClientModel client, UserModel user) {
+        String selectiveConsentAttributeKey = client.getSelectiveConsentAttributeKey();
+        String selectiveConsentAttributeValue = client.getSelectiveConsentAttributeValue();
+        Map<String, List<String>> userAttributes = user.getAttributes();
+
+        List<String> userValues = userAttributes.get(selectiveConsentAttributeKey);
+
+        return userValues != null && userValues.contains(selectiveConsentAttributeValue);
+    }
+
 
     public static void setDefaultClientAuthenticatorType(ClientModel s) {
         s.setClientAuthenticatorType(KeycloakModelUtils.getDefaultClientAuthenticatorType());

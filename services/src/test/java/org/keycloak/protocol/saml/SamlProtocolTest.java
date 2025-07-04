@@ -2084,6 +2084,33 @@ public class SamlProtocolTest {
         public void setConsentRequired(boolean consentRequired) {
 
         }
+        @Override
+        public boolean isSelectiveConsent() {
+            return false;
+        }
+
+        @Override
+        public void setSelectiveConsent(boolean selectiveConsent) {
+
+        }
+
+        @Override
+        public String getSelectiveConsentAttributeKey(){
+             return null;
+        }
+        
+        @Override
+        public String getSelectiveConsentAttributeValue(){
+             return null;
+        }
+
+        @Override
+        public void setSelectiveConsentAttributeKey(String SelectiveConsentAttributeKey) {
+        }
+
+        @Override
+        public void setSelectiveConsentAttributeValue(String SelectiveConsentAttributeValue) {
+        }
 
         @Override
         public boolean isStandardFlowEnabled() {

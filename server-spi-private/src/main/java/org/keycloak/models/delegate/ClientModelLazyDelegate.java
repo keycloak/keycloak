@@ -375,6 +375,36 @@ public class ClientModelLazyDelegate implements ClientModel {
     }
 
     @Override
+    public boolean isSelectiveConsent() {
+        return getDelegate().isSelectiveConsent();
+    }
+
+    @Override
+    public void setSelectiveConsent(boolean selectiveConsent) {
+        getDelegate().setSelectiveConsent(selectiveConsent);
+    }
+
+    @Override
+    public void setSelectiveConsentAttributeKey(String selectiveConsentAttributeKey) {
+        getDelegate().setSelectiveConsentAttributeKey(selectiveConsentAttributeKey);
+    }
+
+    @Override
+    public void setSelectiveConsentAttributeValue(String selectiveConsentAttributeValue) {
+        getDelegate().setSelectiveConsentAttributeValue(selectiveConsentAttributeValue);
+    }
+
+    @Override
+    public String getSelectiveConsentAttributeKey() {
+        return getDelegate().getSelectiveConsentAttributeKey();
+    }
+
+    @Override
+    public String getSelectiveConsentAttributeValue() {
+        return getDelegate().getSelectiveConsentAttributeValue();
+    }
+   
+    @Override
     public boolean isStandardFlowEnabled() {
         return getDelegate().isStandardFlowEnabled();
     }

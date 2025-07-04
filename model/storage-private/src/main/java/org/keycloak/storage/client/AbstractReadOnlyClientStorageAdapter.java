@@ -196,6 +196,26 @@ public abstract class AbstractReadOnlyClientStorageAdapter extends AbstractClien
     }
 
     @Override
+    public void setSelectiveConsent(boolean selectiveConsent) {
+        throw new ReadOnlyException("client is read only for this update");
+
+    }
+
+   
+    @Override
+    public void setSelectiveConsentAttributeKey(String selectiveConsentAttributeKey) {
+        throw new ReadOnlyException("client is read only for this update");
+
+    }
+
+     @Override
+    public void setSelectiveConsentAttributeValue(String selectiveConsentAttributeKey) {
+        throw new ReadOnlyException("client is read only for this update");
+
+    }
+
+
+    @Override
     public void setStandardFlowEnabled(boolean standardFlowEnabled) {
         throw new ReadOnlyException("client is read only for this update");
 

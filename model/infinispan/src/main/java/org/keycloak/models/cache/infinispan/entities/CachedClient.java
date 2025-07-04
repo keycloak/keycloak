@@ -60,6 +60,9 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
     protected String baseUrl;
     protected boolean bearerOnly;
     protected boolean consentRequired;
+    protected boolean selectiveConsent;
+    protected String selectiveConsentAttributeKey;
+    protected String selectiveConsentAttributeValue;
     protected boolean standardFlowEnabled;
     protected boolean implicitFlowEnabled;
     protected boolean directAccessGrantsEnabled;
@@ -95,6 +98,10 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
         baseUrl = model.getBaseUrl();
         bearerOnly = model.isBearerOnly();
         consentRequired = model.isConsentRequired();
+        selectiveConsent = model.isSelectiveConsent();
+        selectiveConsentAttributeKey = model.getSelectiveConsentAttributeKey();
+        selectiveConsentAttributeValue = model.getSelectiveConsentAttributeValue();
+
         standardFlowEnabled = model.isStandardFlowEnabled();
         implicitFlowEnabled = model.isImplicitFlowEnabled();
         directAccessGrantsEnabled = model.isDirectAccessGrantsEnabled();
@@ -202,6 +209,18 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
 
     public boolean isConsentRequired() {
         return consentRequired;
+    }
+
+    public boolean isSelectiveConsent() {
+        return selectiveConsent;
+    }
+
+    public String getSelectiveConsentAttributeKey() {
+        return selectiveConsentAttributeKey;
+    }
+
+    public String getSelectiveConsentAttributeValue() {
+        return selectiveConsentAttributeValue;
     }
 
     public boolean isStandardFlowEnabled() {

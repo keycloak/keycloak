@@ -510,6 +510,9 @@ public class RepresentationToModel {
             add(updatePropertyAction(client::setBaseUrl, rep::getBaseUrl, client::getBaseUrl));
             add(updatePropertyAction(client::setBearerOnly, rep::isBearerOnly, client::isBearerOnly));
             add(updatePropertyAction(client::setConsentRequired, rep::isConsentRequired, client::isConsentRequired));
+            add(updatePropertyAction(client::setSelectiveConsent, rep::isSelectiveConsent, client::isSelectiveConsent));
+            add(updatePropertyAction(client::setSelectiveConsentAttributeKey, rep::getSelectiveConsentAttributeKey, client::getSelectiveConsentAttributeKey));
+            add(updatePropertyAction(client::setSelectiveConsentAttributeValue, rep::getSelectiveConsentAttributeValue, client::getSelectiveConsentAttributeValue));
             add(updatePropertyAction(client::setStandardFlowEnabled, rep::isStandardFlowEnabled, client::isStandardFlowEnabled));
             add(updatePropertyAction(client::setImplicitFlowEnabled, rep::isImplicitFlowEnabled, client::isImplicitFlowEnabled));
             add(updatePropertyAction(client::setDirectAccessGrantsEnabled, rep::isDirectAccessGrantsEnabled, client::isDirectAccessGrantsEnabled));
@@ -527,6 +530,7 @@ public class RepresentationToModel {
             // Redirect uris / Web origins
             add(updatePropertyAction(client::setRedirectUris, () -> CollectionUtil.collectionToSet(rep.getRedirectUris()), client::getRedirectUris));
             add(updatePropertyAction(client::setWebOrigins, () -> CollectionUtil.collectionToSet(rep.getWebOrigins()), () -> defaultWebOrigins(client)));
+           
         }};
 
         // Extended client attributes

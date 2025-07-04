@@ -42,6 +42,10 @@ public class ClientConfigResolver {
         return client.isConsentRequired();
     }
 
+    boolean isSelectiveConsent() {
+        return client.isSelectiveConsent();
+    }
+
     boolean isStandardFlowEnabled() {
         return client.isStandardFlowEnabled();
     }

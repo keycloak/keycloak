@@ -210,6 +210,14 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
     boolean isConsentRequired();
     void setConsentRequired(boolean consentRequired);
 
+    boolean isSelectiveConsent();
+    void setSelectiveConsent(boolean consentSelective);
+    String getSelectiveConsentAttributeKey();
+    String getSelectiveConsentAttributeValue();
+    void setSelectiveConsentAttributeKey(String selectiveConsentAttributeKey);
+    void setSelectiveConsentAttributeValue(String selectiveConsentAttributeValue);
+
+
     boolean isStandardFlowEnabled();
     void setStandardFlowEnabled(boolean standardFlowEnabled);
 
