@@ -44,6 +44,7 @@ public class CachedGroup extends AbstractRevisioned implements InRealm {
     private final LazyLoader<GroupModel, MultivaluedHashMap<String, String>> attributes;
     private final LazyLoader<GroupModel, Set<String>> roleMappings;
     private final LazyLoader<GroupModel, Set<String>> subGroups;
+    private final LazyLoader<GroupModel, Long> subGroupsCount;
     private final Type type;
 
     public CachedGroup(Long revision, RealmModel realm, GroupModel group) {
@@ -55,9 +56,11 @@ public class CachedGroup extends AbstractRevisioned implements InRealm {
         this.attributes = new DefaultLazyLoader<>(source -> new MultivaluedHashMap<>(source.getAttributes()), MultivaluedHashMap::new);
         this.roleMappings = new DefaultLazyLoader<>(source -> source.getRoleMappingsStream().map(RoleModel::getId).collect(Collectors.toSet()), Collections::emptySet);
         this.subGroups = new DefaultLazyLoader<>(source -> source.getSubGroupsStream().map(GroupModel::getId).collect(Collectors.toSet()), Collections::emptySet);
+        this.subGroupsCount = new DefaultLazyLoader<>(GroupModel::getSubGroupsCount, () -> 0L);
         this.type = group.getType();
     }
 
+    @Override
     public String getRealm() {
         return realm;
     }
@@ -88,6 +91,10 @@ public class CachedGroup extends AbstractRevisioned implements InRealm {
 
     public Set<String> getSubGroups(KeycloakSession session, Supplier<GroupModel> group) {
         return subGroups.get(session, group);
+    }
+
+    public Long getSubGroupsCount(KeycloakSession session, Supplier<GroupModel> group) {
+        return subGroupsCount.get(session, group);
     }
 
     public Type getType() {
