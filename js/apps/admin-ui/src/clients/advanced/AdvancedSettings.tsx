@@ -12,6 +12,7 @@ import { convertAttributeNameToForm } from "../../util";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import { FormFields } from "../ClientDetails";
 import { TokenLifespan } from "./TokenLifespan";
+import { SamlEncryption } from "./SamlEncryption";
 
 type AdvancedSettingsProps = {
   save: () => void;
@@ -33,39 +34,50 @@ export const AdvancedSettings = ({
   const isFeatureEnabled = useIsFeatureEnabled();
   const isDPoPEnabled = isFeatureEnabled(Feature.DPoP);
 
-  const { control } = useFormContext();
+  const { control, watch } = useFormContext();
+
+  const samlEncryption = watch(
+    convertAttributeNameToForm<FormFields>("attributes.saml.encrypt"),
+    "false",
+  );
+
   return (
     <FormAccess
       role="manage-realm"
       fineGrainedAccess={hasConfigureAccess}
       isHorizontal
     >
-      {protocol !== "openid-connect" && (
-        <FormGroup
-          label={t("assertionLifespan")}
-          fieldId="assertionLifespan"
-          labelIcon={
-            <HelpItem
-              helpText={t("assertionLifespanHelp")}
-              fieldLabelId="assertionLifespan"
-            />
-          }
-        >
-          <Controller
-            name={convertAttributeNameToForm<FormFields>(
-              "attributes.saml.assertion.lifespan",
-            )}
-            defaultValue=""
-            control={control}
-            render={({ field }) => (
-              <TimeSelector
-                units={["minute", "day", "hour"]}
-                value={field.value}
-                onChange={field.onChange}
+      {protocol === "saml" && (
+        <>
+          <FormGroup
+            label={t("assertionLifespan")}
+            fieldId="assertionLifespan"
+            labelIcon={
+              <HelpItem
+                helpText={t("assertionLifespanHelp")}
+                fieldLabelId="assertionLifespan"
               />
-            )}
-          />
-        </FormGroup>
+            }
+          >
+            <Controller
+              name={convertAttributeNameToForm<FormFields>(
+                "attributes.saml.assertion.lifespan",
+              )}
+              defaultValue=""
+              control={control}
+              render={({ field }) => (
+                <TimeSelector
+                  units={["minute", "day", "hour"]}
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              )}
+            />
+          </FormGroup>
+          {samlEncryption?.toString() === "true" && (
+            <SamlEncryption prefix="attributes.saml.encryption" />
+          )}
+        </>
       )}
       {protocol === "openid-connect" && (
         <>
