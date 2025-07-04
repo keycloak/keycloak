@@ -25,7 +25,7 @@ public class AzureKeyVault extends HSM<EncryptionAlgorithm> {
 
 	// Creates a mapping between the algorithm URIs and the key wrap algorithm
 	// expected from the Azure Key Vault
-	HashMap<String, KeyWrapAlgorithm> keyWrapAlgorithmMap = new HashMap<String, KeyWrapAlgorithm>() {
+	HashMap<String, KeyWrapAlgorithm> keyWrapAlgorithmMap = new HashMap<>() {
 		{
 			put(Constants.RSA_1_5, KeyWrapAlgorithm.RSA1_5);
 			put(Constants.RSA_OAEP_MGF1P, KeyWrapAlgorithm.RSA_OAEP);
