@@ -258,7 +258,7 @@ public class PropertyMapper<T> {
         String mappedValue = value;
 
         boolean mapped = false;
-        // use parent mapper/transformer when no mapper is explicitly specified in .mapFrom()
+        // fall back to the transformer when no mapper is explicitly specified in .mapFrom()
         var theMapper = parentValue && parentMapper != null ? this.parentMapper : this.mapper;
         if (theMapper != null && (!name.equals(getFrom()) || parentValue)) {
             mappedValue = theMapper.map(getNamedProperty().orElse(null), value, context);
