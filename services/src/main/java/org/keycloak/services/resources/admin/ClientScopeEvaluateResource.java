@@ -19,6 +19,10 @@ package org.keycloak.services.resources.admin;
 
 import static org.keycloak.protocol.ProtocolMapperUtils.isEnabled;
 
+import java.io.InputStream;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +31,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.fasterxml.jackson.annotation.JsonValue;
+import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
@@ -49,9 +55,11 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.authentication.actiontoken.TokenUtils;
+import org.keycloak.authentication.authenticators.client.ClientAuthUtil;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.TriFunction;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
@@ -64,16 +72,27 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
+import org.keycloak.saml.common.util.DocumentUtil;
+import org.keycloak.saml.common.util.TransformerUtil;
+import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
+import org.w3c.dom.Document;
+
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -192,7 +211,7 @@ public class ClientScopeEvaluateResource {
 
         logger.debugf("generateExampleUserinfo invoked. User: %s", user.getUsername());
 
-        return sessionAware(user, scopeParam, "", (userSession, clientSessionCtx, audienceClients) -> {
+        return sessionAware(OIDCLoginProtocol.LOGIN_PROTOCOL, user, scopeParam, "", (userSession, clientSessionCtx, audienceClients, authSession) -> {
             AccessToken userInfo = new AccessToken();
             TokenManager tokenManager = new TokenManager();
 
@@ -224,7 +243,7 @@ public class ClientScopeEvaluateResource {
 
         logger.debugf("generateExampleIdToken invoked. User: %s, Scope param: %s, Target Audience: %s", user.getUsername(), scopeParam);
 
-        return sessionAware(user, scopeParam, audience, (userSession, clientSessionCtx, audienceClients) ->
+        return sessionAware(OIDCLoginProtocol.LOGIN_PROTOCOL, user, scopeParam, audience, (userSession, clientSessionCtx, audienceClients, authSession) ->
         {
             TokenManager tokenManager = new TokenManager();
             TokenManager.AccessTokenResponseBuilder response = tokenManager.responseBuilder(realm, client, null, session, userSession, clientSessionCtx)
@@ -262,7 +281,7 @@ public class ClientScopeEvaluateResource {
 
         logger.debugf("generateExampleAccessToken invoked. User: %s, Scope param: %s, Target Audience: %s", user.getUsername(), scopeParam, audience);
 
-        return sessionAware(user, scopeParam, audience, (userSession, clientSessionCtx, audienceClients) ->
+        return sessionAware(OIDCLoginProtocol.LOGIN_PROTOCOL, user, scopeParam, audience, (userSession, clientSessionCtx, audienceClients, authSession) ->
         {
             TokenManager tokenManager = new TokenManager();
             AccessToken accessToken =  tokenManager.responseBuilder(realm, client, null, session, userSession, clientSessionCtx)
@@ -272,7 +291,71 @@ public class ClientScopeEvaluateResource {
         });
     }
 
-    private<R> R sessionAware(UserModel user, String scopeParam, String audienceParam, TriFunction<UserSessionModel, ClientSessionContext, ClientModel[], R> function) {
+    /**
+     * Create SAMLResponse for the given user and the current client.
+     *
+     * @return
+     */
+    @GET
+    @Path("generate-example-saml-response")
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation( summary = "Create JSON with payload of example access token")
+    public SamlExampleResponse generateExampleSamlResponse(@QueryParam("scope") String scopeParam, @QueryParam("userId") String userId, @QueryParam("audience") String audience) {
+        auth.clients().requireView(client);
+
+        UserModel user = getUserModel(userId);
+
+        logger.debugf("generateExampleSamlResponse invoked. User: %s, Scope param: %s", user.getUsername(), scopeParam);
+
+        if (audience == null) {
+            // if no audience is given, fallback to current client
+            audience = client.getClientId();
+        }
+
+        return sessionAware(SamlProtocol.LOGIN_PROTOCOL, user, scopeParam, audience, (userSession, clientSessionCtx, audienceClients, authSession) ->
+        {
+            SamlProtocol samlProtocol = new SamlProtocol(){
+                @Override
+                protected boolean isPostBinding(AuthenticatedClientSessionModel authenticatedClientSession) {
+                    // force redirect binding to read values from response URL header
+                    return false;
+                }
+            };
+            samlProtocol.setSession(session);
+            samlProtocol.setRealm(realm);
+            samlProtocol.setUriInfo(uriInfo);
+
+            String baseUrl = ResolveRelative.resolveRelativeUri(session, client.getRootUrl(), client.getBaseUrl());
+            authSession.setRedirectUri(baseUrl);
+
+            String samlResponseString;
+            try (Response samlResponse = samlProtocol.authenticated(authSession, userSession, clientSessionCtx)) {
+                URI urlWithSamlResponseParameter = samlResponse.getLocation();
+
+                String extractedSamlResponseParameter = urlWithSamlResponseParameter.getQuery().substring("SAMLResponse=".length(), urlWithSamlResponseParameter.getQuery().indexOf("&SigAlg="));
+                InputStream inputStream = RedirectBindingUtil.base64DeflateDecode(extractedSamlResponseParameter);
+                Document document = DocumentUtil.getDocument(inputStream);
+
+                // format SAML Response for display
+                Transformer transformer = TransformerUtil.getTransformer();
+                transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+                transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+
+                Writer out = new StringWriter();
+                transformer.transform(new DOMSource(document), new StreamResult(out));
+
+                samlResponseString = out.toString();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
+            return new SamlExampleResponse(samlResponseString);
+        });
+    }
+
+    private<R> R sessionAware(String protocol, UserModel user, String scopeParam, String audienceParam, ProtocolResponseGenerator<R> function) {
         AuthenticationSessionModel authSession = null;
         UserSessionModel userSession = null;
         AuthenticationSessionManager authSessionManager = new AuthenticationSessionManager(session);
@@ -282,7 +365,7 @@ public class ClientScopeEvaluateResource {
             authSession = rootAuthSession.createAuthenticationSession(client);
 
             authSession.setAuthenticatedUser(user);
-            authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            authSession.setProtocol(protocol);
             authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
             authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, scopeParam);
 
@@ -297,7 +380,7 @@ public class ClientScopeEvaluateResource {
                 clientSessionCtx.setAttribute(Constants.REQUESTED_AUDIENCE_CLIENTS, audienceClients);
             }
 
-            return function.apply(userSession, clientSessionCtx, audienceClients);
+            return function.generateProtocolResponse(userSession, clientSessionCtx, audienceClients, authSession);
 
         } finally {
             if (authSession != null) {
@@ -412,5 +495,24 @@ public class ClientScopeEvaluateResource {
         public void setProtocolMapper(String protocolMapper) {
             this.protocolMapper = protocolMapper;
         }
+    }
+
+    public static class SamlExampleResponse {
+
+        private final String samlResponse;
+
+        public SamlExampleResponse(String samlResponse) {
+            this.samlResponse = samlResponse;
+        }
+
+        @JsonValue
+        public String getSamlResponse() {
+            return samlResponse;
+        }
+    }
+
+    interface ProtocolResponseGenerator<T> {
+
+        T generateProtocolResponse(UserSessionModel userSessionModel, ClientSessionContext clientSessionContext, ClientModel[] audienceClients, AuthenticationSessionModel authSession);
     }
 }
