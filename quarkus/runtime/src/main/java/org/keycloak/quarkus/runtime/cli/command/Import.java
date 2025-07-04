@@ -29,7 +29,7 @@ import java.util.EnumSet;
 @Command(name = Import.NAME,
         header = "Import data from a directory or a file.",
         description = "%nImport data from a directory or a file.")
-public final class Import extends AbstractNonServerCommand implements Runnable {
+public final class Import extends AbstractNonServerCommand {
 
     public static final String NAME = "import";
 

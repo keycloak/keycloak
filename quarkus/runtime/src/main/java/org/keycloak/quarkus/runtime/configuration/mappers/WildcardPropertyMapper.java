@@ -9,10 +9,9 @@ import java.util.function.BooleanSupplier;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import org.keycloak.config.LoggingOptions;
 import org.keycloak.config.Option;
-import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
-import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
@@ -30,6 +29,7 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
     private final String fromPrefix;
     private String toPrefix;
     private String toSuffix;
+    private Character replacementChar = null;
 
     public WildcardPropertyMapper(Option<T> option, String to, BooleanSupplier enabled, String enabledWhen, ValueMapper mapper, String mapFrom, ValueMapper parentMapper,
             String paramLabel, boolean mask, BiConsumer<PropertyMapper<T>, ConfigValue> validator,
@@ -40,6 +40,10 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
         this.fromPrefix = getFrom().substring(0, getFrom().indexOf(WILDCARD_FROM_START));
         if (!getFrom().endsWith(">")) {
             throw new IllegalArgumentException("Invalid wildcard from format. Wildcard must be at the end of the option.");
+        }
+
+        if (option == LoggingOptions.LOG_LEVEL_CATEGORY) {
+            replacementChar = '.';
         }
 
         if (to != null) {
@@ -119,7 +123,10 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
 
     public Optional<String> getKcKeyForEnvKey(String envKey, String transformedKey) {
         if (transformedKey.startsWith(fromPrefix)) {
-            return Optional.ofNullable(getFrom(envKey.substring(fromPrefix.length()).toLowerCase().replace("_", ".")));
+            if (replacementChar != null) {
+                return Optional.ofNullable(getFrom(envKey.substring(fromPrefix.length()).toLowerCase().replace('_', replacementChar)));
+            }
+            return Optional.of(transformedKey);
         }
         return Optional.empty();
     }

@@ -181,3 +181,8 @@ We don't expect that this will impact any deployments due to the lack of support
 === JWT client authentication defines a new max expiration option for the token
 
 When a client is configured to authenticate using the *Signed JWT* or *Signed JWT with Client Secret* type, {project_name} now enforces a maximum expiration for the token. This means that, although the `exp` (expiration) claim in the token may be much later, {project_name} will not accept tokens issued before that max expiration time. The default value is 60 seconds. Note that JWT tokens should be issued right before being sent for authentication. This way, the client has one minute window to send the token for login. Nevertheless this expiration can be tuned using the *Max expiration* configuration option in the client *Credentials* tab (see link:{adminguide_link}#_client-credentials[Confidential client credentials in the {adminguide_name}] for more information).
+
+=== Updates to the `user-profile-commons.ftl` theme template
+The `user-profile-commons.ftl` changed to improve support for localization. See https://github.com/keycloak/keycloak/issues/38029.
+As a result, and if you are extending this template, pages might start displaying a `locale` field. To avoid that, update
+the theme template with the changes aforementioned.
