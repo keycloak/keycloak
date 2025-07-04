@@ -69,6 +69,13 @@ Asynchronous logging helps deployments that require high throughput and low late
 
 For more details on this opt-in feature, see the https://www.keycloak.org/server/logging[Logging guide].
 
+= Additional context information for log messages (preview)
+
+You can now add context information to each log message like the realm or the client that initiated the request.
+This helps you to track down a warning or error message in the log to a specific caller or environment
+
+For more details on this opt-in feature, see the https://www.keycloak.org/server/logging[Logging guide].
+
 = Rolling updates for patch releases for minimized downtime (preview)
 
 In the previous release, the Keycloak Operator was enhanced to support performing rolling updates of the Keycloak image if both images contain the same version.

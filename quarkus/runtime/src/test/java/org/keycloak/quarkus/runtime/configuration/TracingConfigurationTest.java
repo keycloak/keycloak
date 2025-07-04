@@ -147,42 +147,61 @@ public class TracingConfigurationTest extends AbstractConfigurationTest {
 
     @Test
     public void consoleLogTraceOn() {
-        assertLogFormat(LoggingOptions.Handler.console, true, LoggingOptions.DEFAULT_LOG_TRACING_FORMAT);
+        assertLogFormat(LoggingOptions.Handler.console, true, false, LoggingOptions.DEFAULT_LOG_FORMAT_FUNC.apply("traceId=%X{traceId}, parentId=%X{parentId}, spanId=%X{spanId}, sampled=%X{sampled} "));
+    }
+
+    @Test
+    public void consoleLogMdcOn() {
+        assertLogFormat(LoggingOptions.Handler.console, true, true, LoggingOptions.DEFAULT_LOG_FORMAT_FUNC.apply("%X "));
     }
 
     @Test
     public void consoleLogTraceOff() {
-        assertLogFormat(LoggingOptions.Handler.console, false, LoggingOptions.DEFAULT_LOG_FORMAT);
+        assertLogFormat(LoggingOptions.Handler.console, false, false, LoggingOptions.DEFAULT_LOG_FORMAT);
     }
 
     @Test
     public void fileLogTraceOn() {
-        assertLogFormat(LoggingOptions.Handler.file, true, LoggingOptions.DEFAULT_LOG_TRACING_FORMAT);
+        assertLogFormat(LoggingOptions.Handler.file, true, false, LoggingOptions.DEFAULT_LOG_FORMAT_FUNC.apply("traceId=%X{traceId}, parentId=%X{parentId}, spanId=%X{spanId}, sampled=%X{sampled} "));
+    }
+
+    @Test
+    public void fileLogMdcOn() {
+        assertLogFormat(LoggingOptions.Handler.file, true, true, LoggingOptions.DEFAULT_LOG_FORMAT_FUNC.apply("%X "));
     }
 
     @Test
     public void fileLogTraceOff() {
-        assertLogFormat(LoggingOptions.Handler.file, false, LoggingOptions.DEFAULT_LOG_FORMAT);
+        assertLogFormat(LoggingOptions.Handler.file, false, false, LoggingOptions.DEFAULT_LOG_FORMAT);
     }
 
     @Test
     public void syslogLogTraceOn() {
-        assertLogFormat(LoggingOptions.Handler.syslog, true, LoggingOptions.DEFAULT_LOG_TRACING_FORMAT);
+        assertLogFormat(LoggingOptions.Handler.syslog, true, false, LoggingOptions.DEFAULT_LOG_FORMAT_FUNC.apply("traceId=%X{traceId}, parentId=%X{parentId}, spanId=%X{spanId}, sampled=%X{sampled} "));
+    }
+
+    @Test
+    public void syslogLogMdcOn() {
+        assertLogFormat(LoggingOptions.Handler.syslog, true, true, LoggingOptions.DEFAULT_LOG_FORMAT_FUNC.apply("%X "));
     }
 
     @Test
     public void syslogLogTraceOff() {
-        assertLogFormat(LoggingOptions.Handler.syslog, false, LoggingOptions.DEFAULT_LOG_FORMAT);
+        assertLogFormat(LoggingOptions.Handler.syslog, false, false, LoggingOptions.DEFAULT_LOG_FORMAT);
     }
 
     /**
      * Assert log format for individual log handlers with different `includeTrace` option.
      * It also checks the log format is unchanged despite the `includeTrace` option, when explicitly specified.
      */
-    protected void assertLogFormat(LoggingOptions.Handler loggerType, boolean includeTrace, String expectedFormat) {
+    protected void assertLogFormat(LoggingOptions.Handler loggerType, boolean includeTrace, boolean includeMdc, String expectedFormat) {
         var envVars = new HashMap<String, String>();
         envVars.put("KC_TRACING_ENABLED", "true");
+        if (includeMdc) {
+            envVars.put("KC_LOG_MDC_ENABLED", "true");
+        }
         envVars.put("KC_LOG_" + loggerType.name().toUpperCase() + "_INCLUDE_TRACE", Boolean.toString(includeTrace));
+        envVars.put("KC_LOG_" + loggerType.name().toUpperCase() + "_INCLUDE_MDC", Boolean.toString(includeMdc));
 
         putEnvVars(envVars);
 
