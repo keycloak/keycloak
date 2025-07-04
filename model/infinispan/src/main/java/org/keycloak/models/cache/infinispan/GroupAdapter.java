@@ -271,7 +271,7 @@ public class GroupAdapter implements GroupModel {
     @Override
     public Long getSubGroupsCount() {
         if (isUpdated()) return updated.getSubGroupsCount();
-        return getGroupModel().getSubGroupsCount();
+        return cached.getSubGroupsCount(keycloakSession, modelSupplier);
     }
 
     @Override
