@@ -54,11 +54,7 @@ import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
-import org.keycloak.services.resources.admin.fgap.AdminPermissionManagement;
-import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeatures;
 import org.keycloak.testsuite.broker.AbstractInitializedBaseBrokerTest;
 import org.keycloak.testsuite.broker.BrokerConfiguration;
 import org.keycloak.testsuite.broker.BrokerTestConstants;
@@ -84,8 +80,7 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-// TODO: Remove fine grained admin permissions should not be needed. They are neded now for token_exchange_external_internal:v2, but should not be needed in the future
-@EnableFeatures({@EnableFeature(Profile.Feature.TOKEN_EXCHANGE_EXTERNAL_INTERNAL_V2), @EnableFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)})
+@EnableFeature(Profile.Feature.TOKEN_EXCHANGE_EXTERNAL_INTERNAL_V2)
 public class ExternalInternalTokenExchangeV2Test extends AbstractInitializedBaseBrokerTest {
 
     @Override
@@ -151,17 +146,6 @@ public class ExternalInternalTokenExchangeV2Test extends AbstractInitializedBase
         client.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         client.setFullScopeAllowed(false);
         client.setRedirectUris(Set.of(OAuthClient.AUTH_SERVER_ROOT + "/*"));
-
-        ClientModel brokerApp = realm.getClientByClientId("broker-app");
-
-        AdminPermissionManagement management = AdminPermissions.management(session, realm);
-        management.idps().setPermissionsEnabled(idp, true);
-        ClientPolicyRepresentation clientRep = new ClientPolicyRepresentation();
-        clientRep.setName("toIdp");
-        clientRep.addClient(client.getId(), brokerApp.getId());
-        ResourceServer server = management.realmResourceServer();
-        Policy clientPolicy = management.authz().getStoreFactory().getPolicyStore().create(server, clientRep);
-        management.idps().exchangeToPermission(idp).addAssociatedPolicy(clientPolicy);
 
         realm = session.realms().getRealmByName(BrokerTestConstants.REALM_PROV_NAME);
         client = realm.getClientByClientId("brokerapp");
