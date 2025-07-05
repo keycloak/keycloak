@@ -35,6 +35,8 @@ public final class OIDCConfigAttributes {
 
     public static final String JWKS_URL = "jwks.url";
 
+    public static final String JWKS_URL_AUTH_BEARER_TOKEN = "jwks.url.auth.bearer.token";
+
     public static final String USE_JWKS_URL = "use.jwks.url";
 
     public static final String JWKS_STRING = "jwks.string";
