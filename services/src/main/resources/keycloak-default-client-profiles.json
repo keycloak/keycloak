@@ -378,6 +378,154 @@
       ]
     },
     {
+      "name": "fapi-2-dpop-security-profile",
+      "description": "Client profile, which enforce clients to conform 'FAPI 2.0 Security Profile' with DPoP specification.",
+      "executors": [
+        {
+          "executor": "confidential-client",
+          "configuration": {}
+        },
+        {
+          "executor": "secure-client-authenticator",
+          "configuration": {
+            "allowed-client-authenticators": [
+              "client-jwt",
+              "client-x509"
+            ],
+            "default-client-authenticator": "client-jwt"
+          }
+        },
+        {
+          "executor": "secure-client-uris",
+          "configuration": {}
+        },
+        {
+          "executor": "secure-signature-algorithm",
+          "configuration": {
+            "default-algorithm": "PS256"
+          }
+        },
+        {
+          "executor": "secure-signature-algorithm-signed-jwt",
+          "configuration": {
+            "require-client-assertion": false
+          }
+        },
+        {
+          "executor": "consent-required",
+          "configuration": {
+            "auto-configure": true
+          }
+        },
+        {
+          "executor": "full-scope-disabled",
+          "configuration": {
+            "auto-configure": true
+          }
+        },
+        {
+          "executor": "reject-implicit-grant",
+          "configuration": {
+            "auto-configure": "true"
+          }
+        },
+        {
+          "executor": "pkce-enforcer",
+          "configuration": {
+            "auto-configure": "true"
+          }
+        },
+        {
+          "executor": "secure-par-content",
+          "configuration": {}
+        },
+        {
+          "executor": "dpop-bind-enforcer",
+          "configuration": {
+            "auto-configure": "true"
+          }
+        }
+      ]
+    },
+    {
+      "name": "fapi-2-dpop-message-signing",
+      "description": "Client profile, which enforce clients to conform 'FAPI 2.0 Message Signing' with DPoP specification.",
+      "executors": [
+        {
+          "executor": "confidential-client",
+          "configuration": {}
+        },
+        {
+          "executor": "secure-client-authenticator",
+          "configuration": {
+            "allowed-client-authenticators": [
+              "client-jwt",
+              "client-x509"
+            ],
+            "default-client-authenticator": "client-jwt"
+          }
+        },
+        {
+          "executor": "secure-client-uris",
+          "configuration": {}
+        },
+        {
+          "executor": "secure-signature-algorithm",
+          "configuration": {
+            "default-algorithm": "PS256"
+          }
+        },
+        {
+          "executor": "secure-signature-algorithm-signed-jwt",
+          "configuration": {
+            "require-client-assertion": false
+          }
+        },
+        {
+          "executor": "consent-required",
+          "configuration": {
+            "auto-configure": true
+          }
+        },
+        {
+          "executor": "full-scope-disabled",
+          "configuration": {
+            "auto-configure": true
+          }
+        },
+        {
+          "executor": "reject-implicit-grant",
+          "configuration": {
+            "auto-configure": "true"
+          }
+        },
+        {
+          "executor": "pkce-enforcer",
+          "configuration": {
+            "auto-configure": "true"
+          }
+        },
+        {
+          "executor" : "secure-par-content",
+          "configuration" : {}
+        },
+        {
+          "executor": "secure-request-object",
+          "configuration": {
+            "verify-nbf": true,
+            "available-period": "3600",
+            "encryption-required": false
+          }
+        },
+        {
+          "executor": "dpop-bind-enforcer",
+          "configuration": {
+            "auto-configure": "true"
+          }
+        }
+      ]
+    },
+    {
       "name": "saml-security-profile",
       "description": "Client profile that enforces SAML clients to be secure.",
       "executors": [
