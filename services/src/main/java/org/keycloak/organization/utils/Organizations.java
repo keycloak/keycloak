@@ -27,9 +27,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
-import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.authentication.actiontoken.inviteorg.InviteOrgActionToken;
 import org.keycloak.common.Profile;
@@ -41,6 +39,7 @@ import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
@@ -188,11 +187,14 @@ public class Organizations {
     }
 
     public static OrganizationModel resolveOrganization(KeycloakSession session, UserModel user, String domain) {
-        if (!session.getContext().getRealm().isOrganizationsEnabled()) {
+        KeycloakContext context = session.getContext();
+        RealmModel realm = context.getRealm();
+
+        if (!realm.isOrganizationsEnabled()) {
             return null;
         }
 
-        Optional<OrganizationModel> organization = Optional.ofNullable(session.getContext().getOrganization());
+        Optional<OrganizationModel> organization = Optional.ofNullable(context.getOrganization());
 
         if (organization.isPresent()) {
             // resolved from current keycloak session
@@ -205,11 +207,10 @@ public class Organizations {
             return null;
         }
 
-        AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
+        AuthenticationSessionModel authSession = context.getAuthenticationSession();
 
         if (authSession != null) {
             OrganizationScope scope = OrganizationScope.valueOfScope(session);
-
             List<OrganizationModel> organizations = ofNullable(authSession.getAuthNote(OrganizationModel.ORGANIZATION_ATTRIBUTE))
                     .map(provider::getById)
                     .map(List::of)
@@ -224,25 +225,29 @@ public class Organizations {
                 }
 
                 // make sure the user still maps to the organization from the authentication session
-                if (matchesOrganization(resolved, user)) {
+                if (resolved.isMember(user) || matchesOrganizationDomain(resolved, getEmailDomain(user))) {
                     return resolved;
                 }
 
                 return null;
             } else if (scope != null && user != null) {
-                // organization scope requested but no user and no single organization mapped from the scope
-                return null;
+                // resolves the organization where the user is a managed member or matches the provided email domain
+                return organizations.stream()
+                        .filter((o) -> o.isManaged(user) || matchesOrganizationDomain(o, domain))
+                        .findAny()
+                        .orElse(null);
             }
         }
 
-        organization = ofNullable(user).stream().flatMap(provider::getByMember)
+        return ofNullable(user).stream()
+                .flatMap(provider::getByMember)
                 .filter(OrganizationModel::isEnabled)
-                .findAny();
+                .findAny()
+                .orElseGet(() -> resolveOrganizationByDomain(user, domain, provider));
 
-        if (organization.isPresent()) {
-            return organization.get();
-        }
+    }
 
+    private static OrganizationModel resolveOrganizationByDomain(UserModel user, String domain, OrganizationProvider provider) {
         if (user != null && domain == null) {
             domain = getEmailDomain(user);
         }
@@ -282,15 +287,11 @@ public class Organizations {
                         (!organizationProvider.isEnabled() && org.isManaged(delegate)));
     }
 
-    private static boolean matchesOrganization(OrganizationModel organization, UserModel user) {
-        if (organization == null || user == null) {
+    private static boolean matchesOrganizationDomain(OrganizationModel organization, String domain) {
+        if (domain == null) {
             return false;
         }
 
-        String emailDomain = Optional.ofNullable(getEmailDomain(user)).orElse("");
-        Stream<OrganizationDomainModel> domains = organization.getDomains();
-        Stream<String> domainNames = domains.map(OrganizationDomainModel::getName);
-
-        return organization.isMember(user) || domainNames.anyMatch(emailDomain::equals);
+        return organization.getDomains().map(OrganizationDomainModel::getName).anyMatch(domain::equals);
     }
 }
