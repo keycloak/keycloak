@@ -327,14 +327,14 @@ public class UserStorageRestTest extends AbstractAdminTest {
     @Test
     public void testUpdateProvider() {
         ComponentRepresentation ldapRep = createBasicLDAPProviderRep();
-        ldapRep.getConfig().putSingle(LDAPConstants.BIND_DN, "cn=manager");
+        ldapRep.getConfig().putSingle(LDAPConstants.CONNECTION_TIMEOUT, "1337");
         ldapRep.getConfig().putSingle(LDAPConstants.BIND_CREDENTIAL, "password");
         String id = createComponent(ldapRep);
 
         // Assert update with invalid filter should fail
         ldapRep = realm.components().component(id).toRepresentation();
         ldapRep.getConfig().putSingle(LDAPConstants.CUSTOM_USER_SEARCH_FILTER, "(dc=something2");
-        ldapRep.getConfig().putSingle(LDAPConstants.BIND_DN, "cn=manager-updated");
+        ldapRep.getConfig().putSingle(LDAPConstants.CONNECTION_TIMEOUT, "123");
         try {
             realm.components().component(id).update(ldapRep);
             Assert.fail("Not expected to successfull update");
@@ -343,7 +343,7 @@ public class UserStorageRestTest extends AbstractAdminTest {
         }
 
         // Assert nothing was updated
-        assertFederationProvider(realm.components().component(id).toRepresentation(), id, "ldap2", "ldap", LDAPConstants.BIND_DN, "cn=manager", LDAPConstants.BIND_CREDENTIAL, "**********");
+        assertFederationProvider(realm.components().component(id).toRepresentation(), id, "ldap2", "ldap", LDAPConstants.CONNECTION_TIMEOUT, "1337", LDAPConstants.BIND_CREDENTIAL, "**********");
 
         // Change filter to be valid
         ldapRep.getConfig().putSingle(LDAPConstants.CUSTOM_USER_SEARCH_FILTER, "(dc=something2)");
@@ -352,14 +352,14 @@ public class UserStorageRestTest extends AbstractAdminTest {
 
         // Assert updated successfully
         ldapRep = realm.components().component(id).toRepresentation();
-        assertFederationProvider(ldapRep, id, "ldap2", "ldap", LDAPConstants.BIND_DN, "cn=manager-updated", LDAPConstants.BIND_CREDENTIAL, "**********",
+        assertFederationProvider(ldapRep, id, "ldap2", "ldap", LDAPConstants.CONNECTION_TIMEOUT, "123", LDAPConstants.BIND_CREDENTIAL, "**********",
                 LDAPConstants.CUSTOM_USER_SEARCH_FILTER, "(dc=something2)");
 
         // Assert update displayName
         ldapRep.setName("ldap2");
         realm.components().component(id).update(ldapRep);
 
-        assertFederationProvider(realm.components().component(id).toRepresentation(), id, "ldap2", "ldap",LDAPConstants.BIND_DN, "cn=manager-updated", LDAPConstants.BIND_CREDENTIAL, "**********",
+        assertFederationProvider(realm.components().component(id).toRepresentation(), id, "ldap2", "ldap",LDAPConstants.CONNECTION_TIMEOUT, "123", LDAPConstants.BIND_CREDENTIAL, "**********",
                 LDAPConstants.CUSTOM_USER_SEARCH_FILTER, "(dc=something2)");
 
 
