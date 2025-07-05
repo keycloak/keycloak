@@ -98,6 +98,10 @@ public abstract class AbstractWebAuthnAccountTest extends AbstractAuthTest imple
         }
     }
 
+    public VirtualAuthenticatorManager getVirtualAuthManager() {
+        return webAuthnManager;
+    }
+
     @Before
     public void navigateBeforeTest() {
         driver.manage().window().setSize(new Dimension(1920, 1080));

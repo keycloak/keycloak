@@ -17,14 +17,13 @@
 
 package org.keycloak.testsuite.webauthn.utils;
 
-import org.keycloak.WebAuthnConstants;
-
 import java.util.Arrays;
+import org.keycloak.models.Constants;
 
 public enum PropertyRequirement {
-    NOT_SPECIFIED(WebAuthnConstants.OPTION_NOT_SPECIFIED),
-    YES("Yes"),
-    NO("No");
+    NOT_SPECIFIED(Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED),
+    YES(Constants.WEBAUTHN_POLICY_OPTION_YES),
+    NO(Constants.WEBAUTHN_POLICY_OPTION_NO);
 
     private final String value;
 

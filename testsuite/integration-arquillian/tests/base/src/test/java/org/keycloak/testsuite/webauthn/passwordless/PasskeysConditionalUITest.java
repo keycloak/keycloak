@@ -38,7 +38,6 @@ import org.keycloak.testsuite.pages.PageUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions;
-import org.keycloak.testsuite.webauthn.utils.PropertyRequirement;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
 /**
@@ -72,11 +71,11 @@ public class PasskeysConditionalUITest extends AbstractWebAuthnVirtualTest {
         // set passwordless policy for discoverable keys
         try (Closeable c = getWebAuthnRealmUpdater()
                 .setWebAuthnPolicyRpEntityName("localhost")
-                .setWebAuthnPolicyRequireResidentKey(PropertyRequirement.YES.getValue())
-                .setWebAuthnPolicyUserVerificationRequirement(WebAuthnConstants.OPTION_REQUIRED)
+                .setWebAuthnPolicyRequireResidentKey(Constants.WEBAUTHN_POLICY_OPTION_YES)
+                .setWebAuthnPolicyUserVerificationRequirement(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED)
                 .update()) {
 
-            checkWebAuthnConfiguration(PropertyRequirement.YES.getValue(), WebAuthnConstants.OPTION_REQUIRED);
+            checkWebAuthnConfiguration(Constants.WEBAUTHN_POLICY_OPTION_YES, Constants.WEBAUTHN_POLICY_OPTION_REQUIRED);
 
             registerDefaultUser();
 
@@ -107,8 +106,8 @@ public class PasskeysConditionalUITest extends AbstractWebAuthnVirtualTest {
         // set passwordless policy not specified, key will not be discoverable
         try (Closeable c = getWebAuthnRealmUpdater()
                 .setWebAuthnPolicyRpEntityName("localhost")
-                .setWebAuthnPolicyRequireResidentKey(PropertyRequirement.NOT_SPECIFIED.getValue())
-                .setWebAuthnPolicyUserVerificationRequirement(WebAuthnConstants.OPTION_NOT_SPECIFIED)
+                .setWebAuthnPolicyRequireResidentKey(Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED)
+                .setWebAuthnPolicyUserVerificationRequirement(Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED)
                 .update()) {
 
             checkWebAuthnConfiguration(Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED, Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED);

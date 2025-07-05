@@ -35,8 +35,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.WebAuthnConstants.OPTION_REQUIRED;
 import static org.keycloak.models.Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+import static org.keycloak.models.Constants.WEBAUTHN_POLICY_OPTION_REQUIRED;
 import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT_RESIDENT_KEY;
 
 /**
@@ -70,7 +70,7 @@ public class ResidentKeyRegisterTest extends AbstractWebAuthnVirtualTest {
 
         if (hasResidentKey) {
             getVirtualAuthManager().useAuthenticator(DEFAULT_RESIDENT_KEY.getOptions());
-            userVerification = OPTION_REQUIRED;
+            userVerification = WEBAUTHN_POLICY_OPTION_REQUIRED;
         } else {
             userVerification = DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
         }

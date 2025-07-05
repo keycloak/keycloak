@@ -70,6 +70,11 @@ public final class Constants {
     public static final String DEFAULT_WEBAUTHN_POLICY_RP_ENTITY_NAME = "keycloak";
     // it stands for optional parameter not specified in WebAuthn
     public static final String DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED = "not specified";
+    public static final String WEBAUTHN_POLICY_OPTION_REQUIRED = "required";
+    public static final String WEBAUTHN_POLICY_OPTION_PREFERED = "preferred";
+    public static final String WEBAUTHN_POLICY_OPTION_DISCOURAGED = "discouraged";
+    public static final String WEBAUTHN_POLICY_OPTION_YES = "Yes";
+    public static final String WEBAUTHN_POLICY_OPTION_NO = "No";
 
     // Prefix used for the realm attributes and other places
     public static final String WEBAUTHN_PASSWORDLESS_PREFIX = "Passwordless";
