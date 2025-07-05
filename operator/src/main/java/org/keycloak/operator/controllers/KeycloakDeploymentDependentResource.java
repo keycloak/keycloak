@@ -151,13 +151,17 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         var existingDeployment = ContextUtils.getCurrentStatefulSet(context).orElse(null);
 
+        String serviceName = KeycloakDiscoveryServiceDependentResource.getName(primary);
         if (existingDeployment != null) {
             // copy the existing annotations to keep the status consistent
             CRDUtils.findUpdateReason(existingDeployment).ifPresent(r -> baseDeployment.getMetadata().getAnnotations()
                     .put(Constants.KEYCLOAK_UPDATE_REASON_ANNOTATION, r));
             CRDUtils.fetchIsRecreateUpdate(existingDeployment).ifPresent(b -> baseDeployment.getMetadata()
                     .getAnnotations().put(Constants.KEYCLOAK_RECREATE_UPDATE_ANNOTATION, b.toString()));
+            serviceName = existingDeployment.getSpec().getServiceName();
         }
+
+        baseDeployment.getSpec().setServiceName(serviceName);
 
         var updateType = ContextUtils.getUpdateType(context);
 
@@ -287,7 +291,6 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                         .editOrNewSpec().withImagePullSecrets(keycloakCR.getSpec().getImagePullSecrets()).endSpec()
                     .endTemplate()
                     .withReplicas(keycloakCR.getSpec().getInstances())
-                    .withServiceName(KeycloakDiscoveryServiceDependentResource.getName(keycloakCR))
                 .endSpec();
 
         var specBuilder = baseDeploymentBuilder.editSpec().editTemplate().editOrNewSpec();
