@@ -16,7 +16,8 @@ export const ListComponent = ({
   defaultValue,
   options,
   required,
-  isDisabled = false,
+  readOnly,
+  isDisabled = readOnly ?? false,
   convertToName,
 }: ComponentProps) => {
   const { t } = useTranslation();

@@ -18,4 +18,5 @@ export interface ConfigPropertyRepresentation {
   secret?: boolean;
   required?: boolean;
   placeholder?: string;
+  readOnly?: boolean;
 }
