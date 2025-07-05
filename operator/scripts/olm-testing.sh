@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/usr/bin/env bash
 set -euxo pipefail
 
 UUID=${1:-$(git rev-parse --short HEAD)}
