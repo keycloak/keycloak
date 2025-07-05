@@ -157,8 +157,8 @@ export const ResetPasswordDialog = ({
             <PasswordInput
               data-testid="passwordField"
               id="password"
-              onChange={(e) => {
-                onChange(e);
+              onChange={async (e) => {
+                await onChange(e);
                 if (passwordConfirmation !== e.currentTarget.value) {
                   setError("passwordConfirmation", {
                     message: t("confirmPasswordDoesNotMatch").toString(),

@@ -386,9 +386,9 @@ export default function NewClientPolicy() {
     titleKey: "disablePolicyConfirmTitle",
     messageKey: "disablePolicyConfirm",
     continueButtonLabel: "disable",
-    onConfirm: () => {
+    onConfirm: async () => {
       form.setValue("enabled", !form.getValues().enabled);
-      save();
+      await save();
     },
   });
 
@@ -401,8 +401,8 @@ export default function NewClientPolicy() {
       <DeleteConditionConfirm />
       <DeleteProfileConfirm />
       <AddClientProfileModal
-        onConfirm={(profiles: ClientProfileRepresentation[]) => {
-          addProfiles(profiles.map((item) => item.name!));
+        onConfirm={async (profiles: ClientProfileRepresentation[]) => {
+          await addProfiles(profiles.map((item) => item.name!));
         }}
         allProfiles={policyProfiles}
         open={profilesModalOpen}
@@ -452,12 +452,12 @@ export default function NewClientPolicy() {
               }
               isReadOnly={isGlobalPolicy}
               isEnabled={field.value}
-              onToggle={(value) => {
+              onToggle={async (value) => {
                 if (!value) {
                   toggleDisableDialog();
                 } else {
                   field.onChange(value);
-                  save();
+                  await save();
                 }
               }}
             />
