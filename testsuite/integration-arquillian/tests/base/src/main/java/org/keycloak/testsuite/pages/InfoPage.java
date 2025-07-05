@@ -32,6 +32,9 @@ public class InfoPage extends LanguageComboboxAwarePage {
     @ArquillianResource
     protected OAuthClient oauth;
 
+    @FindBy(id = "kc-page-title")
+    protected WebElement title;
+
     @FindBy(className = "instruction")
     private WebElement infoMessage;
 
@@ -46,6 +49,10 @@ public class InfoPage extends LanguageComboboxAwarePage {
 
     @FindBy(linkText = "« Zpět na aplikaci")
     private WebElement backToApplicationCs;
+
+    public String getTitle() {
+        return title.getText();
+    }
 
     public String getInfo() {
         return infoMessage.getText();
