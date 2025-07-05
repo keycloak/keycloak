@@ -16,6 +16,7 @@
  */
 package org.keycloak.client.registration.cli.commands;
 
+import io.quarkus.picocli.runtime.annotations.TopCommand;
 import org.keycloak.client.cli.common.BaseGlobalOptionsCmd;
 import org.keycloak.client.registration.cli.KcRegMain;
 
@@ -31,6 +32,7 @@ import static org.keycloak.client.registration.cli.KcRegMain.CMD;
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 
+@TopCommand
 @Command(name = "kcreg",
 header = {
         "Keycloak - Open Source Identity and Access Management",
