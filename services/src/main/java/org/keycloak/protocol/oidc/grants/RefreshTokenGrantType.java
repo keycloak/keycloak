@@ -60,14 +60,16 @@ public class RefreshTokenGrantType extends OAuth2GrantTypeBase {
 
         try {
             session.clientPolicy().triggerOnEvent(new TokenRefreshContext(formParams));
-            refreshToken = formParams.getFirst(OAuth2Constants.REFRESH_TOKEN);
         } catch (ClientPolicyException cpe) {
             event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
             event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
             event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
             event.error(cpe.getError());
-            throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
+            if (!cpe.isPermissiveMode()) {
+                throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
+            }
         }
+        refreshToken = formParams.getFirst(OAuth2Constants.REFRESH_TOKEN);
 
         AccessTokenResponse res;
         try {
@@ -76,7 +78,17 @@ public class RefreshTokenGrantType extends OAuth2GrantTypeBase {
 
             checkAndBindMtlsHoKToken(responseBuilder, clientConfig.isUseRefreshToken());
 
-            session.clientPolicy().triggerOnEvent(new TokenRefreshResponseContext(formParams, responseBuilder));
+            try {
+                session.clientPolicy().triggerOnEvent(new TokenRefreshResponseContext(formParams, responseBuilder));
+            } catch (ClientPolicyException cpe) {
+                event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+                event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+                event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+                event.error(cpe.getError());
+                if (!cpe.isPermissiveMode()) {
+                    throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
+                }
+            }
 
             res = responseBuilder.build();
 
@@ -98,12 +110,6 @@ public class RefreshTokenGrantType extends OAuth2GrantTypeBase {
                 event.error(Errors.INVALID_TOKEN);
                 throw new CorsErrorResponseException(cors, e.getError(), e.getDescription(), Response.Status.BAD_REQUEST);
             }
-        } catch (ClientPolicyException cpe) {
-            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
-            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
-            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
-            event.error(cpe.getError());
-            throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
         }
 
         event.success();
