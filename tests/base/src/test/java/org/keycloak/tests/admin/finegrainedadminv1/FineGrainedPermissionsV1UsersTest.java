@@ -1,11 +1,10 @@
-package org.keycloak.tests.admin;
+package org.keycloak.tests.admin.finegrainedadminv1;
 
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionRepresentation;
@@ -21,8 +20,6 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.UserConfigBuilder;
-import org.keycloak.testframework.server.KeycloakServerConfig;
-import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.ApiUtil;
 
@@ -41,8 +38,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 
-@KeycloakIntegrationTest(config = FineGrainedPermissionsV1UsersTest.ServerConfig.class)
-public class FineGrainedPermissionsV1UsersTest {
+@KeycloakIntegrationTest(config = AbstractFineGrainedAdminTest.FineGrainedAdminServerConf.class)
+public class FineGrainedPermissionsV1UsersTest extends AbstractFineGrainedAdminTest {
 
     @InjectRealm(lifecycle = LifeCycle.METHOD)
     ManagedRealm realm;
@@ -300,14 +297,5 @@ public class FineGrainedPermissionsV1UsersTest {
         assertThat(realm.admin().groups().group(id).getPermissions().isEnabled(), is(true));
 
         return grp;
-    }
-
-    public static class ServerConfig implements KeycloakServerConfig {
-
-        @Override
-        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ);
-        }
-
     }
 }
