@@ -281,10 +281,22 @@ public class JpaIdentityProviderStorageProvider implements IdentityProviderStora
                             // But for this all values in the table need to be smaller than 4K, otherwise the cast will fail with
                             // "ORA-22835: Buffer too small for CLOB to CHAR" (even if it is in another row).
                             // This leaves DBMS_LOB.COMPARE as the option to compare the CLOB with the value.
-                            Predicate configValuePredicate = builder.equal(builder.function("DBMS_LOB.COMPARE", Integer.class, configJoin.value(), builder.literal(value)), 0);
-                            predicates.add(builder.and(configNamePredicate, configValuePredicate));
+                            if (value.endsWith("*")) {
+                                // prefix search - use DBMS_LOB.INSTR
+                                value = value.substring(0, value.length() - 1);
+                                Predicate configValuePredicate = builder.equal(builder.function("DBMS_LOB.INSTR", Integer.class, configJoin.value(), builder.literal(value)), 1);
+                                predicates.add(builder.and(configNamePredicate, configValuePredicate));
+                            } else {
+                                Predicate configValuePredicate = builder.equal(builder.function("DBMS_LOB.COMPARE", Integer.class, configJoin.value(), builder.literal(value)), 0);
+                                predicates.add(builder.and(configNamePredicate, configValuePredicate));
+                            }
                         } else {
-                            predicates.add(builder.and(configNamePredicate, builder.equal(configJoin.value(), value)));
+                            if (value.endsWith("*")) {
+                                value = value.replace("%", "\\%").replace("_", "\\_").replace("*", "%");
+                                predicates.add(builder.and(configNamePredicate, builder.like(configJoin.value(), value)));
+                            } else {
+                                predicates.add(builder.and(configNamePredicate, builder.equal(configJoin.value(), value)));
+                            }
                         }
                     }
                 }
