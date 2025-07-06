@@ -17,6 +17,7 @@
 package org.keycloak.saml.processing.core.util;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.binary.StringUtils;
 import org.apache.xml.security.encryption.EncryptedData;
 import org.apache.xml.security.encryption.EncryptedKey;
 import org.apache.xml.security.encryption.XMLCipher;
@@ -289,20 +290,23 @@ public class XMLEncryptionUtil {
             try {
                 String encAlgoURL = encryptedData.getEncryptionMethod().getAlgorithm();
 
-                var awsKeyId = System.getenv("AWS_KMS_KEY_ID");
-                var azureKeyId = System.getenv("AZURE_VAULT_KEY_ID");
+                var awsKeyId = System.getenv("ENC_AWS_KMS_KEY_ID");
+                var azureKeyId = System.getenv("ENC_AZURE_VAULT_KEY_ID");
+                var azureClientId = System.getenv("ENC_AZURE_VAULT_CLIENT_ID");
 
-                if (awsKeyId != null) {
+                if (!StringUtil.isNullOrEmpty(awsKeyId)) {
                     AmazonKMS amazonKMS = new AmazonKMS(awsKeyId);
                     amazonKMS.setClient();
 
                     decryptedDoc = decryptUsingHsm(encryptedKey, documentWithEncryptedElement, encDataElement, amazonKMS);
                     success = true;
-                } else if (azureKeyId != null) {
-                    AzureKeyVault  azureKeyVault = new AzureKeyVault(azureKeyId);
+                } else if (!StringUtil.isNullOrEmpty(azureKeyId)) {
+                    AzureKeyVault azureKeyVault;
 
-//                    For testing locally using an Azure Key Vault instance:
-//                    AzureKeyVault azureKeyVault = new AzureKeyVault(System.getenv("AZURE_VAULT_CLIENT_ID"), System.getenv("AZURE_VAULT_CLIENT_SECRET"), System.getenv("AZURE_VAULT_TENANT_ID"), System.getenv("AZURE_VAULT_KEY_ID"));
+                    if (!StringUtil.isNullOrEmpty(azureClientId))
+                        azureKeyVault = new AzureKeyVault(azureClientId, System.getenv("ENC_AZURE_VAULT_CLIENT_SECRET"), System.getenv("ENC_AZURE_VAULT_TENANT_ID"), System.getenv("ENC_AZURE_VAULT_KEY_ID"));
+                    else
+                        azureKeyVault = new AzureKeyVault(azureKeyId);
 
                     azureKeyVault.setClient();
 
