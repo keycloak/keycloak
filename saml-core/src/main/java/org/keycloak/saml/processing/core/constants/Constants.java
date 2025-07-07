@@ -1,8 +1,6 @@
 package org.keycloak.saml.processing.core.constants;
 
 /**
- * Constants class of OneLogin's Java Toolkit.
- *
  * A class that contains several constants related to the SAML protocol
  */
 public final class Constants {
