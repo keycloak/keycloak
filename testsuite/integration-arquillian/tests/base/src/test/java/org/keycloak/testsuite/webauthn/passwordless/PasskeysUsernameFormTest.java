@@ -31,9 +31,11 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
@@ -125,6 +127,15 @@ public class PasskeysUsernameFormTest extends AbstractWebAuthnVirtualTest {
             MatcherAssert.assertThat(user, Matchers.notNullValue());
 
             logout();
+
+            // remove the password, so passkeys are the only credential in the user
+            final CredentialRepresentation passwordCredRep = userResource().credentials().stream()
+                    .filter(cred -> PasswordCredentialModel.TYPE.equals(cred.getType()))
+                    .findAny()
+                    .orElse(null);
+            Assert.assertNotNull("User has no password credential", passwordCredRep);
+            userResource().removeCredential(passwordCredRep.getId());
+
             events.clear();
 
             // the user should be automatically logged in using the discoverable key

@@ -13,7 +13,9 @@ In this {section}, you are going to understand the different approaches for impo
 Exporting and importing into single files can produce large files which may run the export / import process out of memory. If your database contains more than 50,000 users, export to a directory and not a single file.
 The default count of users per file and per transaction is fifty, but you may use a much larger value if desired.
 
-The `import` and `export` commands are essentially server launches that exit before bringing up the full server. They are not currently designed to be run from the same machine as another server instance, which may result in port or other conflicts.
+The `import` and `export` commands are essentially server launches that exit before bringing up the full server. They are not currently designed to be run from the same machine as a running server instance, which may result in port or other conflicts.
+
+It is recommended that all {project_name} nodes are stopped prior to using the `kc.[sh|bat] export` command. This ensures that the results will have no consistency issues with user or realm modifications during the export.
 ====
 
 == Providing options for database connection parameters

@@ -93,25 +93,29 @@ export const KeyForm = ({
       {format !== CERT_PEM && (
         <StoreSettings hidePassword={useFile} isSaml={isSaml} />
       )}
-      <SelectControl
-        name="keySize"
-        label={t("keySize")}
-        labelIcon={t("keySizeHelp")}
-        controller={{
-          defaultValue: keySizes[0],
-        }}
-        menuAppendTo="parent"
-        options={keySizes}
-      />
-      <NumberControl
-        name="validity"
-        label={t("validity")}
-        labelIcon={t("validityHelp")}
-        controller={{
-          defaultValue: 3,
-          rules: { required: t("required"), min: 1, max: 10 },
-        }}
-      />
+      {!useFile && (
+        <>
+          <SelectControl
+            name="keySize"
+            label={t("keySize")}
+            labelIcon={t("keySizeHelp")}
+            controller={{
+              defaultValue: keySizes[0],
+            }}
+            menuAppendTo="parent"
+            options={keySizes}
+          />
+          <NumberControl
+            name="validity"
+            label={t("validity")}
+            labelIcon={t("validityHelp")}
+            controller={{
+              defaultValue: 3,
+              rules: { required: t("required"), min: 1, max: 10 },
+            }}
+          />
+        </>
+      )}
     </Form>
   );
 };

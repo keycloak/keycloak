@@ -15,10 +15,12 @@ import org.keycloak.utils.StringUtil;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import static org.keycloak.config.DatabaseOptions.DB;
 import static org.keycloak.config.DatabaseOptions.OPTIONS_DATASOURCES;
 import static org.keycloak.config.DatabaseOptions.getDatasourceOption;
 import static org.keycloak.config.DatabaseOptions.getKeyForDatasource;
@@ -50,6 +52,11 @@ final class DatabasePropertyMappers {
                         .to("quarkus.datasource.jdbc.url")
                         .mapFrom(DatabaseOptions.DB, DatabasePropertyMappers::getDatabaseUrl)
                         .paramLabel("jdbc-url")
+                        .build(),
+                fromOption(DatabaseOptions.DB_POSTGRESQL_TARGET_SERVER_TYPE)
+                        .to("quarkus.datasource.jdbc.additional-jdbc-properties.targetServerType")
+                        .mapFrom(DatabaseOptions.DB, DatabasePropertyMappers::getPostgresqlTargetServerType)
+                        .isEnabled(() -> getPostgresqlTargetServerType(Configuration.getConfigValue(DB).getValue(), null) != null)
                         .build(),
                 fromOption(DatabaseOptions.DB_URL_HOST)
                         .paramLabel("hostname")
@@ -113,6 +120,33 @@ final class DatabasePropertyMappers {
             .hidden()
             .description("Used for internal purposes of H2 database.")
             .build();
+
+    private static String getPostgresqlTargetServerType(String db, ConfigSourceInterceptorContext context) {
+        Database.Vendor vendor = Database.getVendor(db).orElse(null);
+        if (vendor != Database.Vendor.POSTGRES) {
+            return null;
+        }
+
+        String dbDriver = Configuration.getConfigValue(DatabaseOptions.DB_DRIVER).getValue();
+        String dbUrl = Configuration.getConfigValue(DatabaseOptions.DB_URL).getValue();
+        String dbUrlProperties = Configuration.getConfigValue(DatabaseOptions.DB_URL_PROPERTIES).getValue();
+
+        if (!Objects.equals(Database.getDriver(db, true).orElse(null), dbDriver) &&
+                !Objects.equals(Database.getDriver(db, false).orElse(null), dbDriver)) {
+            // Custom JDBC-Driver, for example, AWS JDBC Wrapper.
+            return null;
+        }
+        if (dbUrlProperties != null && dbUrl != null && dbUrl.contains("${kc.db-url-properties:}") && dbUrlProperties.contains("targetServerType")) {
+            // targetServerType already set to same or different value in db-url-properties, ignore
+            return null;
+        }
+        if (dbUrl != null && dbUrl.contains("targetServerType")) {
+            // targetServerType already set to same or different value in db-url, ignore
+            return null;
+        }
+        log.debug("setting targetServerType for PostgreSQL to 'primary'");
+        return "primary";
+    }
 
     private static String getDatabaseUrl(String name, String value, ConfigSourceInterceptorContext c) {
         return Database.getDefaultUrl(name, value).orElse(null);

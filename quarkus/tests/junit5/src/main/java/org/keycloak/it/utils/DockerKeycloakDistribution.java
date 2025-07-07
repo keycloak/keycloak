@@ -56,6 +56,8 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
 
     private static final Logger LOGGER = Logger.getLogger(DockerKeycloakDistribution.class);
 
+    public static final int STARTUP_TIMEOUT_SECONDS = 120;
+
     private final boolean debug;
     private final boolean manualStop;
     private final int requestPort;
@@ -102,7 +104,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
                 .withEnv(envVars)
                 .withExposedPorts(exposedPorts)
                 .withStartupAttempts(1)
-                .withStartupTimeout(Duration.ofSeconds(120))
+                .withStartupTimeout(Duration.ofSeconds(STARTUP_TIMEOUT_SECONDS))
                 .waitingFor(Wait.forListeningPorts(8080));
     }
 

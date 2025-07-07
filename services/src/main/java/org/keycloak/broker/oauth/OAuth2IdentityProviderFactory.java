@@ -90,6 +90,12 @@ public class OAuth2IdentityProviderFactory extends AbstractIdentityProviderFacto
         config.setAuthorizationUrl(rep.getAuthorizationEndpoint());
         config.setTokenUrl(rep.getTokenEndpoint());
         config.setUserInfoUrl(rep.getUserinfoEndpoint());
+
+        // Introspection URL may or may not be available in the configuration. It is mentioned in RFC8414 , but not in the OIDC discovery specification.
+        // Hence some servers may not add it to their well-known responses
+        if (rep.getIntrospectionEndpoint() != null) {
+            config.setTokenIntrospectionUrl(rep.getIntrospectionEndpoint());
+        }
         return config.getConfig();
     }
 }
