@@ -27,6 +27,7 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oidc.TokenExchangeContext;
 
 import java.io.IOException;
 
@@ -89,6 +90,14 @@ public class OAuth2IdentityProvider extends AbstractOAuth2IdentityProvider<OAuth
         }
 
         return identity;
+    }
+
+    @Override
+    protected BrokeredIdentityContext exchangeExternalTokenV2Impl(TokenExchangeContext tokenExchangeContext) {
+        // Supporting only introspection-endpoint validation for now
+        validateExternalTokenWithIntrospectionEndpoint(tokenExchangeContext);
+
+        return exchangeExternalUserInfoValidationOnly(tokenExchangeContext.getEvent(), tokenExchangeContext.getFormParams());
     }
 
     private JsonNode fetchUserProfile(String accessToken) {
