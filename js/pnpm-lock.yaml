@@ -102,8 +102,8 @@ importers:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
       react-hook-form:
-        specifier: ^7.59.0
-        version: 7.59.0(react@18.3.1)
+        specifier: ^7.60.0
+        version: 7.60.0(react@18.3.1)
       react-i18next:
         specifier: ^15.5.3
         version: 15.5.3(i18next@25.3.0(typescript@5.8.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.8.3)
@@ -208,8 +208,8 @@ importers:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
       react-hook-form:
-        specifier: ^7.59.0
-        version: 7.59.0(react@18.3.1)
+        specifier: ^7.60.0
+        version: 7.60.0(react@18.3.1)
       react-i18next:
         specifier: ^15.5.3
         version: 15.5.3(i18next@25.3.0(typescript@5.8.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.8.3)
@@ -396,8 +396,8 @@ importers:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
       react-hook-form:
-        specifier: 7.59.0
-        version: 7.59.0(react@18.3.1)
+        specifier: 7.60.0
+        version: 7.60.0(react@18.3.1)
       react-i18next:
         specifier: ^15.5.3
         version: 15.5.3(i18next@25.3.0(typescript@5.8.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.8.3)
@@ -912,10 +912,6 @@ packages:
 
   '@eslint/eslintrc@3.3.1':
     resolution: {integrity: sha512-gtF186CXhIl1p4pJNGZw8Yc6RlshoePRvE0X91oPGb3vZ8pM3qOS9W9NGPat9LziaBV7XrJWGylNQXkGcnM3IQ==}
-    engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
-
-  '@eslint/js@9.30.0':
-    resolution: {integrity: sha512-Wzw3wQwPvc9sHM+NjakWTcPx11mbZyiYHuwWa/QfZ7cIRX7WK54PSk7bdyXDaoaopUcMatv1zaQvOAAO8hCdww==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
   '@eslint/js@9.30.1':
@@ -3582,8 +3578,8 @@ packages:
     peerDependencies:
       react: '>= 16.8 || 18.0.0'
 
-  react-hook-form@7.59.0:
-    resolution: {integrity: sha512-kmkek2/8grqarTJExFNjy+RXDIP8yM+QTl3QL6m6Q8b2bih4ltmiXxH7T9n+yXNK477xPh5yZT/6vD8sYGzJTA==}
+  react-hook-form@7.60.0:
+    resolution: {integrity: sha512-SBrYOvMbDB7cV8ZfNpaiLcgjH/a1c7aK0lK+aNigpf4xWLO8q+o4tcvVurv3c4EOyzn/3dCsYt4GKD42VvJ/+A==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       react: ^16.8.0 || ^17 || ^18 || ^19
@@ -4891,8 +4887,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@eslint/js@9.30.0': {}
-
   '@eslint/js@9.30.1': {}
 
   '@eslint/object-schema@2.1.6': {}
@@ -4974,7 +4968,7 @@ snapshots:
       p-debounce: 4.0.0
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
-      react-hook-form: 7.59.0(react@18.3.1)
+      react-hook-form: 7.60.0(react@18.3.1)
       react-i18next: 15.5.3(i18next@25.3.0(typescript@5.8.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.8.3)
       react-router-dom: 6.30.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       reactflow: 11.11.4(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -7793,7 +7787,7 @@ snapshots:
       prop-types: 15.8.1
       react: 18.3.1
 
-  react-hook-form@7.59.0(react@18.3.1):
+  react-hook-form@7.60.0(react@18.3.1):
     dependencies:
       react: 18.3.1
 
