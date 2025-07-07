@@ -37,9 +37,6 @@ public class PreAuthorizedCode {
     @JsonProperty("tx_code")
     private TxCode txCode;
 
-    @JsonProperty("interval")
-    private long interval;
-
     @JsonProperty("authorization_server")
     private String authorizationServer;
 
@@ -61,15 +58,6 @@ public class PreAuthorizedCode {
         return this;
     }
 
-    public long getInterval() {
-        return interval;
-    }
-
-    public PreAuthorizedCode setInterval(long interval) {
-        this.interval = interval;
-        return this;
-    }
-
     public String getAuthorizationServer() {
         return authorizationServer;
     }
@@ -83,11 +71,11 @@ public class PreAuthorizedCode {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof PreAuthorizedCode that)) return false;
-        return getInterval() == that.getInterval() && Objects.equals(getPreAuthorizedCode(), that.getPreAuthorizedCode()) && Objects.equals(getTxCode(), that.getTxCode()) && Objects.equals(getAuthorizationServer(), that.getAuthorizationServer());
+        return Objects.equals(getPreAuthorizedCode(), that.getPreAuthorizedCode()) && Objects.equals(getTxCode(), that.getTxCode()) && Objects.equals(getAuthorizationServer(), that.getAuthorizationServer());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getPreAuthorizedCode(), getTxCode(), getInterval(), getAuthorizationServer());
+        return Objects.hash(getPreAuthorizedCode(), getTxCode(), getAuthorizationServer());
     }
 }
