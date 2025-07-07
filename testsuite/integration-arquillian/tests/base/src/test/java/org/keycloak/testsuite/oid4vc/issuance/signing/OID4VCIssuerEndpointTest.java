@@ -408,8 +408,14 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
 
     protected static class CredentialResponseHandler {
         protected void handleCredentialResponse(CredentialResponse credentialResponse) throws VerificationException {
-            assertNotNull("The credential should have been responded.", credentialResponse.getCredential());
-            JsonWebToken jsonWebToken = TokenVerifier.create((String) credentialResponse.getCredential(), JsonWebToken.class).getToken();
+            assertNotNull("The credentials array should be present in the response.", credentialResponse.getCredentials());
+            assertFalse("The credentials array should not be empty.", credentialResponse.getCredentials().isEmpty());
+
+            // Get the first credential from the array (maintaining compatibility with single credential tests)
+            CredentialResponse.Credential credentialObj = credentialResponse.getCredentials().get(0);
+            assertNotNull("The first credential in the array should not be null.", credentialObj);
+
+            JsonWebToken jsonWebToken = TokenVerifier.create((String) credentialObj.getCredential(), JsonWebToken.class).getToken();
             assertEquals("did:web:test.org", jsonWebToken.getIssuer());
             VerifiableCredential credential = JsonSerialization.mapper.convertValue(jsonWebToken.getOtherClaims().get("vc"), VerifiableCredential.class);
             assertEquals(List.of("VerifiableCredential"), credential.getType());
