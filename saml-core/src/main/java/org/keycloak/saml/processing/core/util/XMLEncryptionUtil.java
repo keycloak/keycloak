@@ -303,10 +303,10 @@ public class XMLEncryptionUtil {
                 } else if (!StringUtil.isNullOrEmpty(azureKeyId)) {
                     AzureKeyVault azureKeyVault;
 
-                    if (!StringUtil.isNullOrEmpty(azureClientId))
-                        azureKeyVault = new AzureKeyVault(azureClientId, System.getenv("ENC_AZURE_VAULT_CLIENT_SECRET"), System.getenv("ENC_AZURE_VAULT_TENANT_ID"), System.getenv("ENC_AZURE_VAULT_KEY_ID"));
-                    else
+                    if (StringUtil.isNullOrEmpty(azureClientId))
                         azureKeyVault = new AzureKeyVault(azureKeyId);
+                    else
+                        azureKeyVault = new AzureKeyVault(azureClientId, System.getenv("ENC_AZURE_VAULT_CLIENT_SECRET"), System.getenv("ENC_AZURE_VAULT_TENANT_ID"), System.getenv("ENC_AZURE_VAULT_KEY_ID"));
 
                     azureKeyVault.setClient();
 
