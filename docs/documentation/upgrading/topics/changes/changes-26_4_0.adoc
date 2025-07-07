@@ -33,6 +33,14 @@ Starting with this release, and when using the original PostgreSQL driver, {proj
 
 You can override this behavior by setting your own value for `targetServerType` in the DB URL or additional properties.
 
+=== JGroups system properties replaced with CLI options
+
+Until now it was necessary to configure JGroups network addresses and ports using the `+jgroups.bind.*+` and `+jgroups.external_*+`
+system properties. In this release we have introduced the following CLI options to allow these addresses and ports to be
+configured directly via {project_name}: `cache-embedded-network-bind-address`, `cache-embedded-network-bind-port`,
+`cache-embedded-network-external-address`, `cache-embedded-network-external-port`. Configuring ports using the old
+properties will still function as before, but we recommend to change to the CLI options as this may change in the future.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
