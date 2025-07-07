@@ -124,7 +124,7 @@ public class Profile {
 
         ORGANIZATION("Organization support within realms", Type.DEFAULT),
 
-        PASSKEYS("Passkeys", Type.PREVIEW),
+        PASSKEYS("Passkeys", Type.PREVIEW, Feature.WEB_AUTHN),
 
         USER_EVENT_METRICS("Collect metrics based on user events", Type.DEFAULT),
 
