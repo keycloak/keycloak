@@ -1006,6 +1006,19 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     @Test
+    public void loginSuccessfulWithoutWebAuthn() {
+        testingClient.disableFeature(Profile.Feature.WEB_AUTHN);
+        try {
+            loginPage.open();
+            loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
+            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            events.expectLogin().assertEvent();
+        } finally {
+            testingClient.enableFeature(Profile.Feature.WEB_AUTHN);
+        }
+    }
+
+    @Test
     public void testExecuteActionIfSessionExists() {
         loginPage.open();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
