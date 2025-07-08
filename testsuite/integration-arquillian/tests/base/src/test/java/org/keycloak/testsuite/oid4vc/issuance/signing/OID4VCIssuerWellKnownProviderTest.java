@@ -118,6 +118,11 @@ public class OID4VCIssuerWellKnownProviderTest {
             Map<String, String> clientAttributes,
             Map<String, String> realmAttributes
     ) {
+        realmAttributes.put("credential_response_encryption.alg_values_supported", "[\"RSA-OAEP\"]");
+        realmAttributes.put("credential_response_encryption.enc_values_supported", "[\"A256GCM\"]");
+        realmAttributes.put("credential_response_encryption.encryption_required", "true");
+        realmAttributes.put("batch_credential_issuance.batch_size", "10");
+        realmAttributes.put("signed_metadata", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmb28iOiJiYXIifQ.XYZ123abc"); // example JWT
         testClient.setAttributes(new HashMap<>(clientAttributes));
         testRealm.setAttributes(new HashMap<>(realmAttributes));
         extendConfigureTestRealm(testRealm, testClient);
@@ -126,6 +131,7 @@ public class OID4VCIssuerWellKnownProviderTest {
     public static void testCredentialConfig(SuiteContext suiteContext, KeycloakTestingClient testingClient) {
         String expectedIssuer = suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/" + TEST_REALM_NAME;
         String expectedCredentialsEndpoint = expectedIssuer + "/protocol/oid4vc/credential";
+        String expectedDeferredEndpoint = expectedIssuer + "/protocol/oid4vc/deferred_credential";
         final String expectedAuthorizationServer = expectedIssuer;
         testingClient
                 .server(TEST_REALM_NAME)
@@ -136,6 +142,7 @@ public class OID4VCIssuerWellKnownProviderTest {
                     CredentialIssuer credentialIssuer = (CredentialIssuer) issuerConfig;
                     assertEquals("The correct issuer should be included.", expectedIssuer, credentialIssuer.getCredentialIssuer());
                     assertEquals("The correct credentials endpoint should be included.", expectedCredentialsEndpoint, credentialIssuer.getCredentialEndpoint());
+                    assertEquals("The correct deferred_credential_endpoint should be included.", expectedDeferredEndpoint, credentialIssuer.getDeferredCredentialEndpoint());
                     assertEquals("Since the authorization server is equal to the issuer, just 1 should be returned.", 1, credentialIssuer.getAuthorizationServers().size());
                     assertEquals("The expected server should have been returned.", expectedAuthorizationServer, credentialIssuer.getAuthorizationServers().get(0));
                     assertTrue("The test-credential should be supported.", credentialIssuer.getCredentialsSupported().containsKey("test-credential"));
@@ -146,6 +153,18 @@ public class OID4VCIssuerWellKnownProviderTest {
                     assertFalse("The test-credential claim firstName is not mandatory.", credentialIssuer.getCredentialsSupported().get("test-credential").getClaims().get("firstName").getMandatory());
                     assertEquals("The test-credential claim firstName shall be displayed as First Name", "First Name", credentialIssuer.getCredentialsSupported().get("test-credential").getClaims().get("firstName").getDisplay().get(0).getName());
                     // moved sd-jwt specific config to org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCSdJwtIssuingEndpointTest.getConfig
+
+                    CredentialIssuer.CredentialResponseEncryption encryption = credentialIssuer.getCredentialResponseEncryption();
+                    assertNotNull("credential_response_encryption should be present", encryption);
+                    assertNotNull("alg_values_supported should be present", encryption.getAlgValuesSupported());
+                    assertNotNull("enc_values_supported should be present", encryption.getEncValuesSupported());
+                    assertNotNull("encryption_required should be present", encryption.getEncryptionRequired());
+
+                    CredentialIssuer.BatchCredentialIssuance batch = credentialIssuer.getBatchCredentialIssuance();
+                    assertNotNull("batch_credential_issuance should be present", batch);
+                    assertNotNull("batch_size should be present", batch.getBatchSize());
+
+                    assertNotNull("signed_metadata should be present", credentialIssuer.getSignedMetadata());
                 }));
     }
 

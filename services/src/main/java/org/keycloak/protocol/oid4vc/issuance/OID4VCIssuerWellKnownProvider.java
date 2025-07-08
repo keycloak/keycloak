@@ -37,6 +37,9 @@ import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.services.Urls;
 import org.keycloak.urls.UrlType;
 import org.keycloak.wellknown.WellKnownProvider;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.jboss.logging.Logger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -55,6 +58,7 @@ import java.util.stream.Collectors;
  */
 public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
 
+    private static final Logger LOGGER = Logger.getLogger(OID4VCIssuerWellKnownProvider.class);
     private final KeycloakSession keycloakSession;
 
     public OID4VCIssuerWellKnownProvider(KeycloakSession keycloakSession) {
@@ -68,12 +72,62 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
 
     @Override
     public Object getConfig() {
-        return new CredentialIssuer()
-                .setCredentialIssuer(getIssuer(keycloakSession.getContext()))
-                .setCredentialEndpoint(getCredentialsEndpoint(keycloakSession.getContext()))
-                .setNonceEndpoint(getNonceEndpoint(keycloakSession.getContext()))
+        KeycloakContext context = keycloakSession.getContext();
+        CredentialIssuer issuer = new CredentialIssuer()
+                .setCredentialIssuer(getIssuer(context))
+                .setCredentialEndpoint(getCredentialsEndpoint(context))
+                .setNonceEndpoint(getNonceEndpoint(context))
+                .setDeferredCredentialEndpoint(getDeferredCredentialEndpoint(context))
                 .setCredentialsSupported(getSupportedCredentials(keycloakSession))
-                .setAuthorizationServers(List.of(getIssuer(keycloakSession.getContext())));
+                .setAuthorizationServers(List.of(getIssuer(context)))
+                .setCredentialResponseEncryption(getCredentialResponseEncryption(keycloakSession))
+                .setBatchCredentialIssuance(getBatchCredentialIssuance(keycloakSession))
+                .setSignedMetadata(getSignedMetadata(keycloakSession));
+        return issuer;
+    }
+
+    private static String getDeferredCredentialEndpoint(KeycloakContext context) {
+        return getIssuer(context) + "/protocol/" + OID4VCLoginProtocolFactory.PROTOCOL_ID + "/deferred_credential";
+    }
+
+    private CredentialIssuer.CredentialResponseEncryption getCredentialResponseEncryption(KeycloakSession session) {
+        RealmModel realm = session.getContext().getRealm();
+        String algs = realm.getAttribute("credential_response_encryption.alg_values_supported");
+        String encs = realm.getAttribute("credential_response_encryption.enc_values_supported");
+        String required = realm.getAttribute("credential_response_encryption.encryption_required");
+        if (algs != null && encs != null && required != null) {
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                return new CredentialIssuer.CredentialResponseEncryption()
+                        .setAlgValuesSupported(mapper.readValue(algs, new TypeReference<List<String>>() {
+                        }))
+                        .setEncValuesSupported(mapper.readValue(encs, new TypeReference<List<String>>() {
+                        }))
+                        .setEncryptionRequired(Boolean.parseBoolean(required));
+            } catch (Exception e) {
+                LOGGER.warnf(e, "Failed to parse credential_response_encryption fields from realm attributes.");
+            }
+        }
+        return null;
+    }
+
+    private CredentialIssuer.BatchCredentialIssuance getBatchCredentialIssuance(KeycloakSession session) {
+        RealmModel realm = session.getContext().getRealm();
+        String batchSize = realm.getAttribute("batch_credential_issuance.batch_size");
+        if (batchSize != null) {
+            try {
+                return new CredentialIssuer.BatchCredentialIssuance()
+                        .setBatchSize(Integer.parseInt(batchSize));
+            } catch (Exception e) {
+                LOGGER.warnf(e, "Failed to parse batch_credential_issuance.batch_size from realm attributes.");
+            }
+        }
+        return null;
+    }
+
+    private String getSignedMetadata(KeycloakSession session) {
+        RealmModel realm = session.getContext().getRealm();
+        return realm.getAttribute("signed_metadata");
     }
 
     /**
