@@ -4,10 +4,9 @@ import java.util.Map;
 
 public interface TestDatabase {
 
-    void start();
+    void start(DatabaseConfig databaseConfig);
 
     void stop();
 
     Map<String, String> serverConfig();
-
 }

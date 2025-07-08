@@ -81,8 +81,8 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
 
     private boolean jtaEnabled;
     private JtaTransactionManagerLookup jtaLookup;
+    private String schema;
 
-    private KeycloakSessionFactory factory;
 
     @Override
     public JpaConnectionProvider create(KeycloakSession session) {
@@ -144,9 +144,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        this.factory = factory;
         checkJtaEnabled(factory);
-
     }
 
     protected void checkJtaEnabled(KeycloakSessionFactory factory) {
@@ -193,10 +191,15 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                             }
                         }
 
-                        String schema = getSchema();
+                        String schema = config.get("schema");
+                        if (schema != null && schema.contains("-") && ! Boolean.parseBoolean(System.getProperty(GlobalConfiguration.PRESERVE_SCHEMA_CASE.getKey()))) {
+                            System.setProperty(GlobalConfiguration.PRESERVE_SCHEMA_CASE.getKey(), "true");
+                            logger.warnf("The passed schema '%s' contains a dash. Setting liquibase config option PRESERVE_SCHEMA_CASE to true. See https://github.com/keycloak/keycloak/issues/20870 for more information.", schema);
+                        }
                         if (schema != null) {
                             properties.put(JpaUtils.HIBERNATE_DEFAULT_SCHEMA, schema);
                         }
+                        this.schema = schema;
 
                         MigrationStrategy migrationStrategy = getMigrationStrategy();
                         boolean initializeEmpty = config.getBoolean("initializeEmpty", true);
@@ -393,11 +396,6 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
 
     @Override
     public String getSchema() {
-        String schema = config.get("schema");
-        if (schema != null && schema.contains("-") && ! Boolean.parseBoolean(System.getProperty(GlobalConfiguration.PRESERVE_SCHEMA_CASE.getKey()))) {
-            System.setProperty(GlobalConfiguration.PRESERVE_SCHEMA_CASE.getKey(), "true");
-            logger.warnf("The passed schema '%s' contains a dash. Setting liquibase config option PRESERVE_SCHEMA_CASE to true. See https://github.com/keycloak/keycloak/issues/20870 for more information.", schema);
-        }
         return schema;
     }
 

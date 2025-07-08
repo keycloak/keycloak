@@ -50,6 +50,8 @@ import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.migration.MigrationModel;
 import org.keycloak.models.ClientModel;
@@ -860,7 +862,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         // GroupProvider method implementation ends here
 
         // ClientProvider implementation
-        String clientScopeMapping = JpaUtils.getTableNameForNativeQuery("SCOPE_MAPPING", em);
+        JpaConnectionProviderFactory factory = (JpaConnectionProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(JpaConnectionProvider.class);
+        String clientScopeMapping = JpaUtils.getTableNameForNativeQuery(factory.getSchema(), "SCOPE_MAPPING", em);
         em.createNativeQuery("delete from " + clientScopeMapping + " where ROLE_ID = :role").setParameter("role", role.getId()).executeUpdate();
     }
 

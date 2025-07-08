@@ -1,14 +1,14 @@
 package org.keycloak.testframework.database;
 
-import org.jboss.logging.Logger;
-import org.keycloak.testframework.config.Config;
-import org.keycloak.testframework.logging.JBossLogConsumer;
-import org.testcontainers.containers.JdbcDatabaseContainer;
-
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+
+import org.jboss.logging.Logger;
+import org.keycloak.testframework.config.Config;
+import org.keycloak.testframework.logging.JBossLogConsumer;
+import org.testcontainers.containers.JdbcDatabaseContainer;
 
 public abstract class AbstractContainerTestDatabase implements TestDatabase {
 
@@ -20,11 +20,12 @@ public abstract class AbstractContainerTestDatabase implements TestDatabase {
         reuse = Config.getValueTypeConfig(TestDatabase.class, "reuse", false, Boolean.class);
     }
 
-    public void start() {
+    public void start(DatabaseConfig config) {
         container = createContainer();
         container = container.withStartupTimeout(Duration.ofMinutes(10))
                 .withLogConsumer(new JBossLogConsumer(Logger.getLogger("managed.db." + getDatabaseVendor())))
-                .withReuse(reuse);
+                .withReuse(reuse)
+                .withInitScript(config.initScript());
         withDatabaseAndUser(getDatabase(), getUsername(), getPassword());
         container.start();
 
@@ -96,5 +97,4 @@ public abstract class AbstractContainerTestDatabase implements TestDatabase {
     public abstract String getDatabaseVendor();
 
     public abstract Logger getLogger();
-
 }

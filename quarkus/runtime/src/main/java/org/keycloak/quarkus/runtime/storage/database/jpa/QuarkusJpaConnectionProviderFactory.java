@@ -103,7 +103,7 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
 
         String id = null;
         String version = null;
-        String schema = getSchema();
+        initSchema();
         boolean schemaChanged;
 
         try (Connection connection = getConnection(); KeycloakSession session = factory.create()) {
