@@ -50,11 +50,12 @@ public class CredentialResponse {
         return this;
     }
 
-    public void addCredential(Object credential) {
+    public CredentialResponse addCredential(Object credential) {
         if (this.credentials == null) {
             this.credentials = new ArrayList<>();
         }
         this.credentials.add(new Credential().setCredential(credential));
+        return this;
     }
 
     public String getTransactionId() {
