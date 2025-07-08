@@ -1,5 +1,7 @@
 package org.keycloak.config;
 
+import com.google.common.base.CaseFormat;
+import io.quarkus.runtime.logging.LogRuntimeConfig;
 import org.jboss.logmanager.handlers.SyslogHandler;
 
 import java.io.File;
@@ -279,11 +281,14 @@ public class LoggingOptions {
             .description("Set the Syslog output to JSON or default (plain) unstructured logging.")
             .build();
 
-    // we can use SyslogConfig.CountingFraming type once https://github.com/quarkusio/quarkus/pull/48479 is present
-    public static final String SYSLOG_COUNTING_FRAMING_PROTOCOL_DEPENDENT = "protocol-dependent";
+    // we can use SyslogConfig.CountingFraming type once we deal nicer with enum types for options
+    public static final String SYSLOG_COUNTING_FRAMING_PROTOCOL_DEPENDENT = CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_HYPHEN, LogRuntimeConfig.SyslogConfig.CountingFraming.PROTOCOL_DEPENDENT.toString().toLowerCase());
     public static final Option<String> LOG_SYSLOG_COUNTING_FRAMING = new OptionBuilder<>("log-syslog-counting-framing", String.class)
             .category(OptionCategory.LOGGING)
-            .expectedValues(Boolean.TRUE.toString(), Boolean.FALSE.toString(), SYSLOG_COUNTING_FRAMING_PROTOCOL_DEPENDENT)
+            .expectedValues(
+                    LogRuntimeConfig.SyslogConfig.CountingFraming.TRUE.toString().toLowerCase(),
+                    LogRuntimeConfig.SyslogConfig.CountingFraming.FALSE.toString().toLowerCase(),
+                    SYSLOG_COUNTING_FRAMING_PROTOCOL_DEPENDENT)
             .defaultValue(SYSLOG_COUNTING_FRAMING_PROTOCOL_DEPENDENT)
             .description("If 'true', the message being sent is prefixed with the size of the message. If '%s', the default value is 'true' when '%s' is 'tcp' or 'ssl-tcp', otherwise 'false'."
                     .formatted(SYSLOG_COUNTING_FRAMING_PROTOCOL_DEPENDENT, LOG_SYSLOG_PROTOCOL.getKey()))
