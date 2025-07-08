@@ -219,7 +219,7 @@ Logging:
 --log-level <category:level>
                      The log level of the root category or a comma-separated list of individual
                        categories and their levels. For the root category, you don't need to
-                       specify a category. Default: info.
+                       specify a category. Default: INFO.
 --log-level-<category> <level>
                      The log level of a category. Takes precedence over the 'log-level' option.
                        Possible values are (case insensitive): off, fatal, error, warn, info,
@@ -235,8 +235,8 @@ Truststore:
 
 --tls-hostname-verifier <tls-hostname-verifier>
                      The TLS hostname verification policy for out-going HTTPS and SMTP requests.
-                       ANY should not be used in production. Possible values are: ANY, WILDCARD
-                       (deprecated), STRICT (deprecated), DEFAULT. Default: DEFAULT.
+                       ANY should not be used in production. Possible values are: any, wildcard,
+                       strict, default. Default: default.
 --truststore-paths <truststore-paths>
                      List of pkcs12 (p12, pfx, or pkcs12 file extensions), PEM files, or
                        directories containing those files that will be used as a system truststore.

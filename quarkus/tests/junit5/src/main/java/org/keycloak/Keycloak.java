@@ -143,8 +143,11 @@ public class Keycloak {
             String value = getOptionValue(args, option);
 
             if (value == null) {
-                defaultValue = ofNullable(defaultValue).orElseGet(option.getDefaultValue()::get);
-                args.add(Configuration.toCliFormat(option.getKey()) + "=" + Option.getDefaultValueString(defaultValue));
+                var defaultValueString = ofNullable(defaultValue)
+                        .map(Object::toString)
+                        .or(option::getDefaultValueString)
+                        .orElseThrow(() -> new IllegalStateException("Cannot find default value"));
+                args.add(Configuration.toCliFormat(option.getKey()) + "=" + defaultValueString);
             }
         }
 

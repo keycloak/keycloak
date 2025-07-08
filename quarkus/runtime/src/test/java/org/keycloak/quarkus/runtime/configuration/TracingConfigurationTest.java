@@ -18,12 +18,15 @@
 package org.keycloak.quarkus.runtime.configuration;
 
 import io.quarkus.opentelemetry.runtime.config.build.SamplerType;
+import io.quarkus.opentelemetry.runtime.config.runtime.exporter.CompressionType;
 import org.junit.Test;
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.config.TracingOptions;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.keycloak.config.Option.normalizeEnumValues;
 
 public class TracingConfigurationTest extends AbstractConfigurationTest {
 
@@ -38,7 +41,7 @@ public class TracingConfigurationTest extends AbstractConfigurationTest {
                 "tracing-jdbc-enabled", "false",
                 "tracing-sampler-type", SamplerType.TRACE_ID_RATIO.getValue(),
                 "tracing-sampler-ratio", "1.0",
-                "tracing-compression", TracingOptions.TracingCompression.none.name(),
+                "tracing-compression", normalizeEnumValues(CompressionType.NONE.toString()),
                 "log-console-include-trace", "true",
                 "log-file-include-trace", "true",
                 "log-syslog-include-trace", "true"
@@ -53,7 +56,7 @@ public class TracingConfigurationTest extends AbstractConfigurationTest {
                 "quarkus.datasource.jdbc.telemetry", "false",
                 "quarkus.otel.traces.sampler", SamplerType.TRACE_ID_RATIO.getValue(),
                 "quarkus.otel.traces.sampler.arg", "1.0",
-                "quarkus.otel.exporter.otlp.traces.compression", TracingOptions.TracingCompression.none.name()
+                "quarkus.otel.exporter.otlp.traces.compression", normalizeEnumValues(CompressionType.NONE.toString())
         ));
     }
 
@@ -66,7 +69,7 @@ public class TracingConfigurationTest extends AbstractConfigurationTest {
                 "KC_TRACING_JDBC_ENABLED", "false",
                 "KC_TRACING_SAMPLER_TYPE", SamplerType.PARENT_BASED_ALWAYS_ON.getValue(),
                 "KC_TRACING_SAMPLER_RATIO", "0.5",
-                "KC_TRACING_COMPRESSION", TracingOptions.TracingCompression.gzip.name(),
+                "KC_TRACING_COMPRESSION", CompressionType.GZIP.name(),
                 "KC_LOG_CONSOLE_INCLUDE_TRACE", "false",
                 "KC_LOG_FILE_INCLUDE_TRACE", "false",
                 "KC_LOG_SYSLOG_INCLUDE_TRACE", "false"
@@ -85,7 +88,7 @@ public class TracingConfigurationTest extends AbstractConfigurationTest {
                 "tracing-jdbc-enabled", "false",
                 "tracing-sampler-type", SamplerType.PARENT_BASED_ALWAYS_ON.getValue(),
                 "tracing-sampler-ratio", "0.5",
-                "tracing-compression", TracingOptions.TracingCompression.gzip.name(),
+                "tracing-compression", CompressionType.GZIP.name(),
                 "tracing-service-name", "keycloak-42",
                 "tracing-resource-attributes", "host.name=unknown,service.version=30"
         ));
@@ -102,7 +105,7 @@ public class TracingConfigurationTest extends AbstractConfigurationTest {
                 "quarkus.datasource.jdbc.telemetry", "false",
                 "quarkus.otel.traces.sampler", SamplerType.PARENT_BASED_ALWAYS_ON.getValue(),
                 "quarkus.otel.traces.sampler.arg", "0.5",
-                "quarkus.otel.exporter.otlp.traces.compression", TracingOptions.TracingCompression.gzip.name(),
+                "quarkus.otel.exporter.otlp.traces.compression", CompressionType.GZIP.name(),
                 "quarkus.otel.service.name", "keycloak-42",
                 "quarkus.otel.resource.attributes", "host.name=unknown,service.version=30"
         ));

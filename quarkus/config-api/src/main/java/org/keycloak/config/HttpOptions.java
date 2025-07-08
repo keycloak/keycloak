@@ -1,9 +1,9 @@
 package org.keycloak.config;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.List;
 
+import io.vertx.core.http.ClientAuth;
 import org.keycloak.common.crypto.FipsMode;
 
 public class HttpOptions {
@@ -39,16 +39,10 @@ public class HttpOptions {
             .defaultValue(8443)
             .build();
 
-    public enum ClientAuth {
-        none,
-        request,
-        required
-    }
-
     public static final Option<ClientAuth> HTTPS_CLIENT_AUTH = new OptionBuilder<>("https-client-auth", ClientAuth.class)
             .category(OptionCategory.HTTP)
             .description("Configures the server to require/request client authentication.")
-            .defaultValue(ClientAuth.none)
+            .defaultValue(ClientAuth.NONE)
             .buildTime(true)
             .build();
 
@@ -60,7 +54,7 @@ public class HttpOptions {
     public static final Option<List<String>> HTTPS_PROTOCOLS = OptionBuilder.listOptionBuilder("https-protocols", String.class)
             .category(OptionCategory.HTTP)
             .description("The list of protocols to explicitly enable.")
-            .defaultValue(Arrays.asList("TLSv1.3,TLSv1.2"))
+            .defaultValue(List.of("TLSv1.3,TLSv1.2"))
             .build();
 
     public static final Option<String> HTTPS_CERTIFICATES_RELOAD_PERIOD = new OptionBuilder<>("https-certificates-reload-period", String.class)

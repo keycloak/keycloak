@@ -46,7 +46,7 @@ public class Options {
                         m.isBuildTime(),
                         null,
                         m.getDescription(),
-                        m.getDefaultValue().map(Object::toString).orElse(null),
+                        m.getDefaultValueString().orElse(null),
                         m.getExpectedValues(),
                         m.isStrictExpectedValues(),
                         m.getEnabledWhen().orElse(""),

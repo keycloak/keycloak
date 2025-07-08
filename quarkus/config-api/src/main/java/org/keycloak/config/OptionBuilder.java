@@ -93,7 +93,10 @@ public class OptionBuilder<T> {
     }
 
     public OptionBuilder<T> expectedValues(Class<? extends Enum> expected) {
-        return expectedValues(Stream.of(expected.getEnumConstants()).map(Object::toString).collect(Collectors.toList()));
+        return expectedValues(Stream.of(expected.getEnumConstants())
+                .map(Object::toString)
+                .map(Option::normalizeEnumValues)
+                .collect(Collectors.toList()));
     }
 
     public OptionBuilder<T> expectedValues(T ... expected) {
@@ -149,7 +152,7 @@ public class OptionBuilder<T> {
             defaultValue = Optional.of((T) Boolean.FALSE);
         }
 
-        return new Option<T>(type, key, category, hidden, build, description, defaultValue, expectedValues, strictExpectedValues, caseInsensitiveExpectedValues, deprecatedMetadata);
+        return new Option<T>(type, auxiliaryType, key, category, hidden, build, description, defaultValue, expectedValues, strictExpectedValues, caseInsensitiveExpectedValues, deprecatedMetadata);
     }
 
 }

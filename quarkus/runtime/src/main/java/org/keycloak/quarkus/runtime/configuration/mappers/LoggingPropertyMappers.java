@@ -32,7 +32,7 @@ public final class LoggingPropertyMappers {
     private static final String CONSOLE_ENABLED_MSG = "Console log handler is activated";
     private static final String FILE_ENABLED_MSG = "File log handler is activated";
     private static final String SYSLOG_ENABLED_MSG = "Syslog is activated";
-    private static final String DEFAULT_ROOT_LOG_LEVEL = toLevel(LoggingOptions.LOG_LEVEL.getDefaultValue().orElseThrow().get(0)).getName();
+    private static final String DEFAULT_ROOT_LOG_LEVEL = toLevel(LoggingOptions.LOG_LEVEL.getDefaultValueString().orElseThrow()).getName();
 
     private static List<CategoryLevel> rootLogLevels;
 
