@@ -56,7 +56,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientProvider;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientScopeProvider;
-import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.models.DeploymentStateProvider;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.GroupCreatedEvent;
@@ -1311,7 +1310,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
     @Override
     public void addClientScopes(RealmModel realm, ClientModel client, Set<ClientScopeModel> clientScopes, boolean defaultScope) {
-        List<String> acceptedClientProtocols = getAcceptedClientProtocols(client);
+        List<String> acceptedClientProtocols = KeycloakModelUtils.getAcceptedClientScopeProtocols(client);
 
         Map<String, ClientScopeModel> existingClientScopes = getClientScopes(realm, client, true);
         existingClientScopes.putAll(getClientScopes(realm, client, false));
@@ -1359,7 +1358,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
     @Override
     public Map<String, ClientScopeModel> getClientScopes(RealmModel realm, ClientModel client, boolean defaultScope) {
-        List<String> acceptedClientProtocols = getAcceptedClientProtocols(client);
+        List<String> acceptedClientProtocols = KeycloakModelUtils.getAcceptedClientScopeProtocols(client);
 
         TypedQuery<String> query = em.createNamedQuery("clientScopeClientMappingIdsByClient", String.class);
         query.setParameter("clientId", client.getId());

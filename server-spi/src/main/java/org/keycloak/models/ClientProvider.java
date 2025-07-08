@@ -16,11 +16,9 @@
  */
 package org.keycloak.models;
 
-import org.keycloak.constants.Oid4VciConstants;
 import org.keycloak.provider.Provider;
 import org.keycloak.storage.client.ClientLookupProvider;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -145,16 +143,4 @@ public interface ClientProvider extends ClientLookupProvider, Provider {
     @Deprecated
     Map<ClientModel, Set<String>> getAllRedirectUrisOfEnabledClients(RealmModel realm);
 
-    /**
-     * @return the list of protocols accepted for the given client.
-     */
-    default List<String> getAcceptedClientProtocols(ClientModel client) {
-        List<String> acceptedClientProtocols;
-        if (client.getProtocol() == null || "openid-connect".equals(client.getProtocol())) {
-            acceptedClientProtocols = List.of("openid-connect", Oid4VciConstants.OID4VC_PROTOCOL);
-        }else {
-            acceptedClientProtocols = List.of(client.getProtocol());
-        }
-        return acceptedClientProtocols;
-    }
 }

@@ -36,7 +36,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientProvider;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientScopeProvider;
-import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.GroupProvider;
@@ -1484,7 +1483,7 @@ public class RealmCacheSession implements CacheRealmProvider {
         }
         Map<String, ClientScopeModel> assignedScopes = new HashMap<>();
 
-        List<String> acceptedClientProtocols = getAcceptedClientProtocols(client);
+        List<String> acceptedClientProtocols = KeycloakModelUtils.getAcceptedClientScopeProtocols(client);
         for (String id : query.getClientScopes()) {
             ClientScopeModel clientScope = session.clientScopes().getClientScopeById(realm, id);
             if (clientScope == null) {
