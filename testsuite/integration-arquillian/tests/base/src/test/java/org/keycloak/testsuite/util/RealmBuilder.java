@@ -331,4 +331,28 @@ public class RealmBuilder {
         rep.setOrganizationsEnabled(enabled);
         return this;
     }
+
+    public RealmBuilder addLocalizationText(final String locale, final String key, final String value) {
+        final var localizationTexts = rep.getLocalizationTexts();
+        if (localizationTexts == null) {
+            rep.setLocalizationTexts(Map.of(locale, Map.of(key, value)));
+            return this;
+        }
+
+        final var enhancedMap = new HashMap<String, Map<String ,String>>();
+        localizationTexts.forEach((mapLocale, origLocaleMap) -> {
+            if (mapLocale.equals(locale)) {
+                final var enhancedLocaleMap = new HashMap<>(origLocaleMap);
+                enhancedLocaleMap.put(key, value);
+                enhancedMap.put(locale, enhancedLocaleMap);
+            } else {
+                enhancedMap.put(mapLocale, origLocaleMap);
+            }
+        });
+
+        enhancedMap.computeIfAbsent(locale, k -> Map.of(key, value));
+
+        rep.setLocalizationTexts(enhancedMap);
+        return this;
+    }
 }
