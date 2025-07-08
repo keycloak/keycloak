@@ -3,7 +3,7 @@ import {
   HelpItem,
   NumberControl,
   SelectControl,
-  SwitchControl,
+  TextControl,
   useAlerts,
 } from "@keycloak/keycloak-ui-shared";
 import {
@@ -27,6 +27,7 @@ import { useRealm } from "../../context/realm-context/RealmContext";
 import useLocaleSort from "../../utils/useLocaleSort";
 
 import "./otp-policy.css";
+import { DefaultSwitchControl } from "../../components/SwitchControl";
 
 const POLICY_TYPES = ["totp", "hotp"] as const;
 const OTP_HASH_ALGORITHMS = ["SHA1", "SHA256", "SHA512"] as const;
@@ -57,6 +58,8 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
       otpPolicyPeriod: realm.otpPolicyPeriod ?? 30,
       otpPolicyInitialCounter: realm.otpPolicyInitialCounter ?? 30,
       otpPolicyCodeReusable: realm.otpPolicyCodeReusable ?? false,
+      otpPolicyUseEmail: realm.otpPolicyUseEmail ?? false,
+      otpPolicyIssuerOverride: realm.otpPolicyIssuerOverride,
     },
   });
   const {
@@ -230,14 +233,22 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
           </FormGroup>
 
           {otpType === POLICY_TYPES[0] && (
-            <SwitchControl
+            <DefaultSwitchControl
               name="otpPolicyCodeReusable"
               label={t("otpPolicyCodeReusable")}
               labelIcon={t("otpPolicyCodeReusableHelp")}
-              labelOn={t("on")}
-              labelOff={t("off")}
             />
           )}
+          <DefaultSwitchControl
+            name={"otpPolicyUseEmail"}
+            label={t("otpPolicyUseEmail")}
+            labelIcon={t("otpPolicyUseEmailHelp")}
+          />
+          <TextControl
+            name={"otpPolicyIssuerOverride"}
+            label={t("otpPolicyIssuerOverride")}
+            labelIcon={t("otpPolicyIssuerOverrideHelp")}
+          />
 
           <ActionGroup>
             <Button
