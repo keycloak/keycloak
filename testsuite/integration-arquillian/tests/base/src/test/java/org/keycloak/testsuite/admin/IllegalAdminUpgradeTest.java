@@ -42,12 +42,15 @@ import java.util.List;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import org.keycloak.common.Profile;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@EnableFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)
 public class IllegalAdminUpgradeTest extends AbstractKeycloakTest {
 
     public static final String CLIENT_NAME = "application";

@@ -93,8 +93,7 @@ public final class HttpPropertyMappers {
                         .build(),
                 fromOption(HttpOptions.HTTPS_CERTIFICATES_RELOAD_PERIOD)
                         .to("quarkus.http.ssl.certificate.reload-period")
-                        // -1 means no reload
-                        .transformer((value, context) -> "-1".equals(value) ? null : value)
+                        .transformer(HttpPropertyMappers::transformNegativeReloadPeriod)
                         .paramLabel("reload period")
                         .build(),
                 fromOption(HttpOptions.HTTPS_CERTIFICATE_FILE)
@@ -176,6 +175,11 @@ public final class HttpPropertyMappers {
 
     private static String getHttpEnabledTransformer(String value, ConfigSourceInterceptorContext context) {
         return isHttpEnabled(value) ? "enabled" : "disabled";
+    }
+
+    static String transformNegativeReloadPeriod(String value, ConfigSourceInterceptorContext context) {
+        // -1 means no reload
+        return "-1".equals(value) ? null : value;
     }
 
     private static boolean isHttpEnabled(String value) {

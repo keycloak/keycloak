@@ -35,7 +35,10 @@ import jakarta.ws.rs.client.Client;
  *     .password("pass")
  *     .clientId("client")
  *     .clientSecret("secret")
- *     .resteasyClient(new ResteasyClientBuilder().connectionPoolSize(20).build())
+ *     .resteasyClient(new ResteasyClientBuilderImpl()
+ *                 .connectionPoolSize(20)
+ *                 .build()
+ *                 .register(org.keycloak.admin.client.JacksonProvider.class, 100))
  *     .build();
  * </pre>
  * <p>Example usage with grant_type=client_credentials</p>
@@ -105,6 +108,12 @@ public class KeycloakBuilder {
         return this;
     }
 
+    /**
+     * Custom instance of resteasy client. Please see <a href="https://www.keycloak.org/securing-apps/admin-client#_admin_client_compatibility">the documentation</a> for additional details regarding the compatibility
+     *
+     * @param resteasyClient Custom RestEasy client
+     * @return admin client builder
+     */
     public KeycloakBuilder resteasyClient(Client resteasyClient) {
         this.resteasyClient = resteasyClient;
         return this;
