@@ -43,7 +43,7 @@ import java.util.Optional;
  */
 @SetDefaultProvider(spi="userProfile", providerId="custom-user-profile", defaultProvider="declarative-user-profile", onlyUpdateDefault = true)
 public class CustomUserProfileTest extends AbstractUserProfileTest {
-    
+
     @Test
     public void testCustomUserProfileProviderIsActive() {
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) CustomUserProfileTest::testCustomUserProfileProviderIsActive);
