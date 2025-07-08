@@ -17,13 +17,13 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.keycloak.util.JsonSerialization;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Represents a CredentialResponse according to the OID4VCI Spec
@@ -78,14 +78,6 @@ public class CredentialResponse {
         return this;
     }
 
-    @Override
-    public String toString() {
-        try {
-            return JsonSerialization.mapper.writeValueAsString(this);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     /**
      * Inner class to represent a single credential object within the credentials array.
