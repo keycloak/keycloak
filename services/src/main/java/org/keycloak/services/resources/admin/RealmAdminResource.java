@@ -164,7 +164,10 @@ public class RealmAdminResource {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation(summary = "Base path for importing clients under this realm.")
+    @Operation(
+            summary = "Base path for importing clients under this realm.",
+            operationId = "convertClientDescription"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = ClientRepresentation.class))),
         @APIResponse(responseCode = "403", description = "Forbidden"),
@@ -244,7 +247,10 @@ public class RealmAdminResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("default-default-client-scopes")
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation(summary = "Get realm default client scopes. Only name and ids are returned.")
+    @Operation(
+            summary = "Get realm default client scopes. Only name and ids are returned.",
+            operationId = "getDefaultDefaultClientScopes"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = ClientScopeRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -269,7 +275,7 @@ public class RealmAdminResource {
     @NoCache
     @Path("default-default-client-scopes/{clientScopeId}")
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation()
+    @Operation(operationId = "addDefaultDefaultClientScope")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "403", description = "Forbidden"),
@@ -295,7 +301,7 @@ public class RealmAdminResource {
     @NoCache
     @Path("default-default-client-scopes/{clientScopeId}")
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation()
+    @Operation(operationId = "removeDefaultDefaultClientScope")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "403", description = "Forbidden"),
@@ -323,7 +329,10 @@ public class RealmAdminResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("default-optional-client-scopes")
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation(summary = "Get realm optional client scopes. Only name and ids are returned.")
+    @Operation(
+            summary = "Get realm optional client scopes. Only name and ids are returned.",
+            operationId = "getDefaultOptionalClientScopes"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = ClientScopeRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -336,7 +345,7 @@ public class RealmAdminResource {
     @NoCache
     @Path("default-optional-client-scopes/{clientScopeId}")
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation()
+    @Operation(operationId = "addDefaultOptionalClientScope")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "403", description = "Forbidden"),
@@ -350,7 +359,7 @@ public class RealmAdminResource {
     @NoCache
     @Path("default-optional-client-scopes/{clientScopeId}")
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation()
+    @Operation(operationId = "removeDefaultOptionalClientScope")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "403", description = "Forbidden"),
@@ -406,7 +415,10 @@ public class RealmAdminResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation(summary = "Get the top-level representation of the realm It will not include nested information like User and Client representations.")
+    @Operation(
+            summary = "Get the top-level representation of the realm It will not include nested information like User and Client representations.",
+            operationId = "getRealm"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = RealmRepresentation.class))),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -445,8 +457,11 @@ public class RealmAdminResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation(summary = "Update the top-level information of the realm Any user, roles or client information in the representation will be ignored.",
-            description = "This will only update top-level attributes of the realm.")
+    @Operation(
+            summary = "Update the top-level information of the realm Any user, roles or client information in the representation will be ignored.",
+            description = "This will only update top-level attributes of the realm.",
+            operationId = "updateRealm"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "400", description = "Bad Request"),
@@ -531,7 +546,7 @@ public class RealmAdminResource {
      */
     @DELETE
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation(summary = "Delete the realm")
+    @Operation(summary = "Delete the realm", operationId = "deleteRealm")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "400", description = "Bad Request"),
@@ -571,7 +586,7 @@ public class RealmAdminResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("users-management-permissions")
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation()
+    @Operation(operationId = "getUserMgmtPermissions")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = ManagementPermissionReference.class))),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -594,7 +609,7 @@ public class RealmAdminResource {
     @NoCache
     @Path("users-management-permissions")
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation()
+    @Operation(operationId = "setUsersManagementPermissionsEnabled")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = ManagementPermissionReference.class))),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -663,7 +678,10 @@ public class RealmAdminResource {
     @Produces(MediaType.APPLICATION_JSON)
     @POST
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation(summary = "Push the realm's revocation policy to any client that has an admin url associated with it.")
+    @Operation(
+            summary = "Push the realm's revocation policy to any client that has an admin url associated with it.",
+            operationId = "pushRevocation"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = GlobalRequestResult.class))),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -685,7 +703,11 @@ public class RealmAdminResource {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation(summary = "Removes all user sessions.", description = "Any client that has an admin url will also be told to invalidate any sessions they have.")
+    @Operation(
+            summary = "Removes all user sessions.",
+            description = "Any client that has an admin url will also be told to invalidate any sessions they have.",
+            operationId = "logoutAll"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = GlobalRequestResult.class))),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -708,7 +730,11 @@ public class RealmAdminResource {
     @Path("sessions/{session}")
     @DELETE
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation(summary = "Remove a specific user session.", description = "Any client that has an admin url will also be told to invalidate this particular session.")
+    @Operation(
+            summary = "Remove a specific user session.",
+            description = "Any client that has an admin url will also be told to invalidate this particular session.",
+            operationId = "deleteSession"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "403", description = "Forbidden"),
@@ -742,8 +768,11 @@ public class RealmAdminResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation(summary = "Get client session stats Returns a JSON map.",
-        description = "The key is the client id, the value is the number of sessions that currently are active with that client. Only clients that actually have a session associated with them will be in this map.")
+    @Operation(
+            summary = "Get client session stats Returns a JSON map.",
+            description = "The key is the client id, the value is the number of sessions that currently are active with that client. Only clients that actually have a session associated with them will be in this map.",
+            operationId = "getClientSessionStats"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK"),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -799,7 +828,10 @@ public class RealmAdminResource {
     @Path("events/config")
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation(summary = "Get the events provider configuration Returns JSON object with events provider configuration")
+    @Operation(
+            summary = "Get the events provider configuration Returns JSON object with events provider configuration",
+            operationId = "getRealmEventsConfig"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = RealmEventsConfigRepresentation.class))),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -829,7 +861,10 @@ public class RealmAdminResource {
     @Path("events/config")
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation( description = "Update the events provider Change the events provider and/or its configuration")
+    @Operation(
+            description = "Update the events provider Change the events provider and/or its configuration",
+            operationId = "updateRealmEventsConfig"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -867,7 +902,10 @@ public class RealmAdminResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation(summary = "Get events Returns all events, or filters them based on URL query parameters listed here")
+    @Operation(
+            summary = "Get events Returns all events, or filters them based on URL query parameters listed here",
+            operationId = "getEvents"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = EventRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "400", description = "Bad Request"),
@@ -969,7 +1007,10 @@ public class RealmAdminResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation(summary = "Get admin events Returns all admin events, or filters events based on URL query parameters listed here")
+    @Operation(
+            summary = "Get admin events Returns all admin events, or filters events based on URL query parameters listed here",
+            operationId = "getEvents"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = AdminEventRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "400", description = "Bad Request"),
@@ -1070,7 +1111,7 @@ public class RealmAdminResource {
     @Path("events")
     @DELETE
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation(summary = "Delete all events")
+    @Operation(summary = "Delete all events", operationId = "clearEvents")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -1089,7 +1130,7 @@ public class RealmAdminResource {
     @Path("admin-events")
     @DELETE
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation(summary = "Delete all admin events")
+    @Operation(summary = "Delete all admin events", operationId = "clearAdminEvents")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -1114,7 +1155,7 @@ public class RealmAdminResource {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Deprecated
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation(summary = "Test SMTP connection with current logged in user")
+    @Operation(summary = "Test SMTP connection with current logged in user", operationId = "testSMTPConnection")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "500", description = "Internal Server Error")
@@ -1130,7 +1171,7 @@ public class RealmAdminResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation()
+    @Operation(operationId = "testSMTPConnection")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "500", description = "Internal Server Error")
@@ -1184,7 +1225,7 @@ public class RealmAdminResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("default-groups")
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation(summary = "Get group hierarchy.  Only name and ids are returned.")
+    @Operation(summary = "Get group hierarchy.  Only name and ids are returned.", operationId = "getDefaultGroups")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = GroupRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -1199,7 +1240,7 @@ public class RealmAdminResource {
     @NoCache
     @Path("default-groups/{groupId}")
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation()
+    @Operation(operationId = "addDefaultGroup")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "403", description = "Forbidden"),
@@ -1222,7 +1263,7 @@ public class RealmAdminResource {
     @NoCache
     @Path("default-groups/{groupId}")
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation()
+    @Operation(operationId = "removeDefaultGroup")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "403", description = "Forbidden"),
@@ -1251,7 +1292,7 @@ public class RealmAdminResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation()
+    @Operation(operationId = "getGroupByPath")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = GroupRepresentation.class))),
         @APIResponse(responseCode = "403", description = "Forbidden"),
@@ -1277,7 +1318,10 @@ public class RealmAdminResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation(summary = "Partial import from a JSON file to an existing realm.")
+    @Operation(
+            summary = "Partial import from a JSON file to an existing realm.",
+            operationId = "partialImport"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = PartialImportResults.class))),
         @APIResponse(responseCode = "403", description = "Forbidden"),
@@ -1336,7 +1380,7 @@ public class RealmAdminResource {
     @Produces(MediaType.APPLICATION_JSON)
     @POST
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation(summary = "Partial export of existing realm into a JSON file.")
+    @Operation(summary = "Partial export of existing realm into a JSON file.", operationId = "partialExport")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = RealmRepresentation.class))),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -1387,7 +1431,7 @@ public class RealmAdminResource {
     @NoCache
     @Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation()
+    @Operation(operationId = "getCredentialRegistrators")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK"),
         @APIResponse(responseCode = "403", description = "Forbidden")
