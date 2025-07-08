@@ -19,12 +19,15 @@ package org.keycloak.storage.ldap;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.representations.idm.TestLdapConnectionRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 
 import javax.naming.directory.SearchControls;
 
+import java.net.URI;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 
@@ -263,6 +266,41 @@ public class LDAPConfig {
 
     public boolean isConnectionTrace() {
         return Boolean.parseBoolean(config.getFirstOrDefault(LDAPConstants.CONNECTION_TRACE, Boolean.FALSE.toString()));
+    }
+
+    public boolean matchLdapConnection(LDAPConfig otherConfig) {
+        return matchLdapConnectionUrl(otherConfig.getConnectionUrl())
+                && Objects.equals(otherConfig.getBindDN(), getBindDN());
+    }
+
+    public boolean matchLdapConnection(TestLdapConnectionRepresentation testConnectionRep) {
+        return matchLdapConnectionUrl(testConnectionRep.getConnectionUrl())
+                && Objects.equals(testConnectionRep.getBindDn(), getBindDN());
+    }
+
+    /**
+     * Compares the specified LDAP connection URL with the current connection URL to check for a match.
+     * The comparison accounts for multiple space-separated URLs by splitting and comparing each URL individually.
+     *
+     * @param connectionUrl the LDAP connection URL to be matched against the current connection URL; may contain multiple space-separated URLs
+     * @return {@code true} if the specified connection URL matches the current connection URL, {@code false} otherwise
+     */
+    private boolean matchLdapConnectionUrl(String connectionUrl) {
+        String currentConnectionUrl = getConnectionUrl();
+
+        if (currentConnectionUrl == null || connectionUrl == null)
+            return currentConnectionUrl == null && connectionUrl == null;
+
+        String[] configConnectionUrls = connectionUrl.trim().split(" ");
+        String[] ldapConfigConnectionUrls = currentConnectionUrl.trim().split(" ");
+        if (configConnectionUrls.length != ldapConfigConnectionUrls.length) {
+            return false;
+        }
+        boolean urlsMatch = true;
+        for (int i = 0; i < configConnectionUrls.length && urlsMatch; i++) {
+            urlsMatch = Objects.equals(URI.create(configConnectionUrls[i]), URI.create(ldapConfigConnectionUrls[i]));
+        }
+        return urlsMatch;
     }
 
     @Override
