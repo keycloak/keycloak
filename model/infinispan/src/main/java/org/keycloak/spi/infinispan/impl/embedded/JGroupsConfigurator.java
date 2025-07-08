@@ -17,13 +17,23 @@
 
 package org.keycloak.spi.infinispan.impl.embedded;
 
+import static org.infinispan.configuration.global.TransportConfiguration.STACK;
+import static org.keycloak.config.CachingOptions.CACHE_EMBEDDED_PREFIX;
+
 import java.lang.invoke.MethodHandles;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.TrustManager;
 
 import org.infinispan.commons.configuration.attributes.Attribute;
 import org.infinispan.configuration.global.TransportConfigurationBuilder;
@@ -31,6 +41,7 @@ import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.infinispan.remoting.transport.jgroups.EmbeddedJGroupsChannelConfigurator;
 import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.jboss.logging.Logger;
+import org.jgroups.Global;
 import org.jgroups.conf.ClassConfigurator;
 import org.jgroups.conf.ProtocolConfiguration;
 import org.jgroups.protocols.TCP;
@@ -40,6 +51,8 @@ import org.jgroups.stack.Protocol;
 import org.jgroups.util.DefaultSocketFactory;
 import org.jgroups.util.SocketFactory;
 import org.keycloak.Config;
+import org.keycloak.config.CachingOptions;
+import org.keycloak.config.Option;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.InfinispanConnectionSpi;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
@@ -48,15 +61,10 @@ import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.jgroups.protocol.KEYCLOAK_JDBC_PING2;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.spi.infinispan.JGroupsCertificateProvider;
-
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLParameters;
-import javax.net.ssl.SSLServerSocket;
-import javax.net.ssl.TrustManager;
-
-import static org.infinispan.configuration.global.TransportConfiguration.STACK;
+import org.keycloak.spi.infinispan.impl.Util;
 
 /**
  * Utility class to configure JGroups based on the Keycloak configuration.
@@ -88,6 +96,7 @@ public final class JGroupsConfigurator {
         if (stack != null) {
             transportOf(holder).stack(stack);
         }
+        configureTransport(config);
         configureDiscovery(holder, session);
         configureTls(holder, session);
         warnDeprecatedStack(holder);
@@ -124,6 +133,17 @@ public final class JGroupsConfigurator {
         if (siteName != null) {
             transport.siteId(siteName);
         }
+    }
+
+    static void createJGroupsProperties(ProviderConfigurationBuilder builder) {
+        Util.copyFromOption(builder, SystemProperties.BIND_ADDRESS.configKey, "address", ProviderConfigProperty.STRING_TYPE, CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_ADDRESS, false);
+        Util.copyFromOption(builder, SystemProperties.BIND_PORT.configKey, "port", ProviderConfigProperty.INTEGER_TYPE, CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_PORT, false);
+        Util.copyFromOption(builder, SystemProperties.EXTERNAL_ADDRESS.configKey, "address", ProviderConfigProperty.STRING_TYPE, CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_ADDRESS, false);
+        Util.copyFromOption(builder, SystemProperties.EXTERNAL_PORT.configKey, "port", ProviderConfigProperty.INTEGER_TYPE, CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_PORT, false);
+    }
+
+    private static void configureTransport(Config.Scope config) {
+        Arrays.stream(SystemProperties.values()).forEach(p -> p.set(config));
     }
 
     private static void configureTls(ConfigurationBuilderHolder holder, KeycloakSession session) {
@@ -267,6 +287,71 @@ public final class JGroupsConfigurator {
             if (protocol instanceof KEYCLOAK_JDBC_PING2 kcPing) {
                 kcPing.setJpaConnectionProviderFactory(factory);
             }
+        }
+    }
+
+    private enum SystemProperties {
+        BIND_ADDRESS(CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_ADDRESS, Global.BIND_ADDR, "jgroups.bind.address"),
+        BIND_PORT(CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_PORT, Global.BIND_PORT, "jgroups.bind.port"),
+        EXTERNAL_ADDRESS(CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_ADDRESS, Global.EXTERNAL_ADDR),
+        EXTERNAL_PORT(CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_PORT, Global.EXTERNAL_PORT);
+
+        final Option<?> option;
+        final String property;
+        final String altProperty;
+        final String configKey;
+
+        SystemProperties(Option<?> option, String property) {
+            this(option, property, null);
+        }
+
+        SystemProperties(Option<?> option, String property, String altProperty) {
+            this.option = option;
+            this.property = property;
+            this.altProperty = altProperty;
+            this.configKey = configKey();
+        }
+
+        void set(Config.Scope config) {
+            String userConfig = fromConfig(config);
+            if (userConfig == null) {
+                // User property is either already set or missing, so do nothing
+                return;
+            }
+            checkPropertyAlreadySet(userConfig, property);
+            if (altProperty != null)
+                checkPropertyAlreadySet(userConfig, altProperty);
+            System.setProperty(property, userConfig);
+        }
+
+        void checkPropertyAlreadySet(String userValue, String property) {
+            String userProp = System.getProperty(property);
+            if (userProp != null) {
+                logger.warnf("Conflicting system property '%s' and CLI arg '%s' set, utilising CLI value '%s'",
+                      property, option.getKey(), userValue);
+                System.clearProperty(property);
+            }
+        }
+
+        String fromConfig(Config.Scope config) {
+            if (option.getType() == Integer.class) {
+                Integer val = config.getInt(configKey);
+                return val == null ? null : val.toString();
+            }
+            return config.get(configKey);
+        }
+
+        String configKey() {
+            // Strip the scope from the key and convert to camelCase
+            String key = option.getKey().substring(CACHE_EMBEDDED_PREFIX.length() + 1);
+            StringBuilder sb = new StringBuilder(key);
+            for (int i = 0; i < sb.length(); i++) {
+                if (sb.charAt(i) == '-') {
+                    sb.deleteCharAt(i);
+                    sb.replace(i, i+1, String.valueOf(Character.toUpperCase(sb.charAt(i))));
+                }
+            }
+            return sb.toString();
         }
     }
 }
