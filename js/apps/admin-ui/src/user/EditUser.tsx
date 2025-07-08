@@ -230,8 +230,8 @@ export default function EditUser() {
     titleKey: "disableConfirmUserTitle",
     messageKey: "disableConfirmUser",
     continueButtonLabel: "disable",
-    onConfirm: () => {
-      save({
+    onConfirm: async () => {
+      await save({
         ...toUserFormFields(user!),
         enabled: false,
       });
@@ -326,11 +326,11 @@ export default function EditUser() {
             {t("delete")}
           </DropdownItem>,
         ]}
-        onToggle={(value) => {
+        onToggle={async (value) => {
           if (!value) {
             toggleDisableDialog();
           } else {
-            save({
+            await save({
               ...toUserFormFields(user),
               enabled: value,
             });

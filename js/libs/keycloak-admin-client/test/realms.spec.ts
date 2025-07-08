@@ -158,7 +158,7 @@ describe("Realms", () => {
     });
 
     after(async () => {
-      deleteRealm(kcAdminClient, currentRealmName);
+      await deleteRealm(kcAdminClient, currentRealmName);
     });
 
     it("list client initial access", async () => {
@@ -211,7 +211,7 @@ describe("Realms", () => {
     });
 
     after(async () => {
-      deleteRealm(kcAdminClient, currentRealmName);
+      await deleteRealm(kcAdminClient, currentRealmName);
     });
 
     it("add group to default groups", async () => {
@@ -321,7 +321,7 @@ describe("Realms", () => {
     });
 
     after(async () => {
-      deleteRealm(kcAdminClient, currentRealmName);
+      await deleteRealm(kcAdminClient, currentRealmName);
     });
   });
 
@@ -360,7 +360,7 @@ describe("Realms", () => {
     });
 
     after(async () => {
-      deleteRealm(kcAdminClient, currentRealmName);
+      await deleteRealm(kcAdminClient, currentRealmName);
     });
   });
 
@@ -396,7 +396,7 @@ describe("Realms", () => {
     });
 
     after(async () => {
-      deleteRealm(kcAdminClient, currentRealmName);
+      await deleteRealm(kcAdminClient, currentRealmName);
     });
   });
 

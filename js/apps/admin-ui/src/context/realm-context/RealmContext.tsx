@@ -34,7 +34,7 @@ export const RealmContextProvider = ({ children }: PropsWithChildren) => {
 
   // Configure admin client to use selected realm when it changes.
   useEffect(() => {
-    (async () => {
+    void (async () => {
       adminClient.setConfig({ realmName: realm });
       const namespace = encodeURIComponent(realm);
       await i18n.loadNamespaces(namespace);

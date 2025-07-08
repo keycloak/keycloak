@@ -154,7 +154,7 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
     const enabledEventTypes = events?.enabledEventTypes?.filter(
       (e) => !values.includes(e),
     );
-    addEvents(enabledEventTypes);
+    await addEvents(enabledEventTypes);
     setEvents({ ...events, enabledEventTypes });
   };
 

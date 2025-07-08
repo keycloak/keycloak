@@ -224,8 +224,8 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
     messageKey: "reGenerateSigningExplain",
     continueButtonLabel: "yes",
     cancelButtonLabel: "no",
-    onConfirm: () => {
-      generate(selectedType!);
+    onConfirm: async () => {
+      await generate(selectedType!);
     },
   });
 
