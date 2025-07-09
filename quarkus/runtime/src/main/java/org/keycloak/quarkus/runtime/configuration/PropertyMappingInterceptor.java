@@ -105,15 +105,9 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
             allMappers.remove(mapper);
 
             if (mapper.hasWildcard()) {
-                var wildcardMapper = (WildcardPropertyMapper<?>) mapper;
-                var wildcardValue = wildcardMapper.extractWildcardValue(name)
-                        .orElseThrow(() -> new IllegalArgumentException("Invalid wildcard value"));
-
-                // add also wildcards with the same <wildcardName> wildcard name - called connected wildcard mappers
-                var connectedPropertyMappers = getConnectedWildcardMappers(wildcardMapper.getWildcardName())
-                        .stream()
-                        .map(f -> f.getTo(wildcardValue));
-                return Stream.concat(toDistinctStream(name, wildcardMapper.getTo(wildcardValue)), connectedPropertyMappers);
+                // also return the connectedTo properties
+                var connectedTo = ((WildcardPropertyMapper<?>) mapper).getConnectedTo(name).stream();
+                return Stream.concat(Stream.of(name), connectedTo);
             } else {
                 // this is not a wildcard value, but may map to wildcards
                 // the current example is something like log-level=wildcardCat1:level,wildcardCat2:level

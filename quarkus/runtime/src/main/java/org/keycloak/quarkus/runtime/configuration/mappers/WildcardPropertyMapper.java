@@ -1,6 +1,7 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -84,6 +85,28 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
             return Stream.empty();
         }
         return wildcardKeysTransformer.apply(value, new HashSet<String>()).stream().map(this::getTo);
+    }
+
+    /**
+     * For more details, see the {@link PropertyMappers#getConnectedWildcardMappers(String)}
+     */
+    public List<WildcardPropertyMapper<?>> getConnectedMappers() {
+        return PropertyMappers.getConnectedWildcardMappers(getWildcardName());
+    }
+
+    /**
+     * Get list of properties that are connected to the provided {@param realProperty} property based on the wildcard name.
+     * Return list of properties that all connected mappers map to (specified via the {@link PropertyMapper.Builder#to(String)}).
+     */
+    public List<String> getConnectedTo(String realProperty) {
+        var wildcardValue = extractWildcardValue(realProperty)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid wildcard value"));
+
+        // add also wildcards with the same <wildcardName> wildcard name - called connected wildcard mappers
+        return getConnectedMappers()
+                .stream()
+                .map(f -> f.getTo(wildcardValue))
+                .toList();
     }
 
     @Override
