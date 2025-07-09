@@ -25,7 +25,7 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
 
     private final BiFunction<String, Set<String>, Set<String>> wildcardKeysTransformer;
     private final ValueMapper wildcardMapFrom;
-
+    private final String wildcardName;
     private final String fromPrefix;
     private String toPrefix;
     private String toSuffix;
@@ -41,6 +41,7 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
         if (!getFrom().endsWith(">")) {
             throw new IllegalArgumentException("Invalid wildcard from format. Wildcard must be at the end of the option.");
         }
+        this.wildcardName = getFrom().substring(fromPrefix.length());
 
         if (option == LoggingOptions.LOG_LEVEL_CATEGORY) {
             replacementChar = '.';
@@ -66,7 +67,11 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
         return true;
     }
 
-    String getTo(String wildcardKey) {
+    public String getWildcardName() {
+        return wildcardName;
+    }
+
+    public String getTo(String wildcardKey) {
         return toPrefix + wildcardKey + toSuffix;
     }
 
@@ -83,7 +88,7 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
 
     @Override
     public PropertyMapper<?> forKey(String key) {
-        String wildcardValue = extractWildcardValue(key).orElseThrow();
+        String wildcardValue = extractWildcardValue(key).orElseThrow(() -> new IllegalArgumentException("Invalid wildcard value"));
         String to = getTo(wildcardValue);
         String from = getFrom(wildcardValue);
         String mapFrom = getMapFrom();
@@ -96,7 +101,7 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
                 wildcardMapFrom == null ? null : (name, v, context) -> wildcardMapFrom.map(wildcardValue, v, context));
     }
 
-    private Optional<String> extractWildcardValue(String key) {
+    public Optional<String> extractWildcardValue(String key) {
         String result = null;
         if (key.startsWith(fromPrefix)) {
             result = key.substring(fromPrefix.length());

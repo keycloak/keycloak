@@ -3,11 +3,13 @@ package org.keycloak.quarkus.runtime.configuration;
 import io.smallrye.config.Expressions;
 import io.smallrye.config.SmallRyeConfig;
 import org.h2.jdbcx.JdbcDataSource;
+import org.hamcrest.CoreMatchers;
 import org.hibernate.dialect.H2Dialect;
 import org.hibernate.dialect.MariaDBDialect;
 import org.hibernate.dialect.PostgreSQLDialect;
 import org.junit.Test;
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.mariadb.jdbc.MariaDbDataSource;
 import org.postgresql.xa.PGXADataSource;
 
@@ -435,5 +437,25 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
                 "quarkus.datasource.\"user_store$something\".db-kind", "mariadb",
                 "quarkus.datasource.\"client.store_123\".password", "password"
         ));
+    }
+
+    @Test
+    public void propagatedPropertyNames() {
+        ConfigArgsConfigSource.setCliArgs("--db-kind-user-store=mysql");
+        
+        var config = createConfig();
+        var propertyNames = config.getPropertyNames();
+        assertThat(propertyNames, CoreMatchers.hasItems(
+                // check a few properties, the full list is checked below with the connected wildcard mappers
+                "kc.db-kind-user-store",
+                "quarkus.datasource.\"user-store\".db-kind",
+                "quarkus.datasource.\"user-store\".jdbc.url",
+                "quarkus.datasource.\"user-store\".jdbc.transactions",
+                "quarkus.datasource.\"user-store\".username",
+                "quarkus.datasource.\"user-store\".password"
+        ));
+
+        var connectMappers = PropertyMappers.getConnectedWildcardMappers("<datasource>");
+        connectMappers.forEach(mapper -> assertThat(propertyNames, hasItem(mapper.getTo("user-store"))));
     }
 }

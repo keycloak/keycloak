@@ -203,6 +203,14 @@ public final class PropertyMappers {
         return MAPPERS.wildcardMapFrom.get(from.getKey());
     }
 
+    /**
+     * Return list of wildcard mappers with the same {@code <wildcardName>} wildcard name - called connected wildcard mappers
+     * F.e. for {@link org.keycloak.config.DatabaseOptions#DB_ACTIVE_DATASOURCE}, return all mappers containing the {@code <datasource>} wildcard name in the option name
+     */
+    public static List<WildcardPropertyMapper<?>> getConnectedWildcardMappers(String wildcardName) {
+        return MAPPERS.wildcardMappers.stream().filter(f -> f.getWildcardName().equals(wildcardName)).toList();
+    }
+
     public static boolean isSupported(PropertyMapper<?> mapper) {
         ConfigSupportLevel supportLevel = mapper.getCategory().getSupportLevel();
         return supportLevel.equals(ConfigSupportLevel.SUPPORTED) || supportLevel.equals(ConfigSupportLevel.DEPRECATED);
