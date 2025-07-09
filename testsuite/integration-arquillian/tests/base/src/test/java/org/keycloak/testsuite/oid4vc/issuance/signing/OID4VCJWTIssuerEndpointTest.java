@@ -572,15 +572,15 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
 
     @Test
     public void testRequestCredentialWithNotificationId() {
-        String token = getBearerToken(oauth);
+        String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
+        final String scopeName = jwtTypeCredentialClientScope.getName();
+
         testingClient.server(TEST_REALM_NAME).run((session) -> {
             AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
             authenticator.setTokenString(token);
             OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
 
-            CredentialRequest credentialRequest = new CredentialRequest()
-                    .setFormat(Format.JWT_VC)
-                    .setCredentialIdentifier("test-credential");
+            CredentialRequest credentialRequest = new CredentialRequest().setCredentialIdentifier(scopeName);
 
             // First credential request
             Response response1 = issuerEndpoint.requestCredential(credentialRequest);
