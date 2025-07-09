@@ -32,7 +32,6 @@ import org.keycloak.models.sessions.infinispan.changes.UserSessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionStore;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
-import org.keycloak.protocol.oidc.TokenManager;
 
 import java.util.Collection;
 import java.util.Collections;
