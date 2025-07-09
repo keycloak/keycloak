@@ -39,6 +39,11 @@ class MSSQLServerTestDatabase extends AbstractContainerTestDatabase {
     }
 
     @Override
+    public String getJdbcUrl(boolean internal) {
+        return super.getJdbcUrl(internal) + ";integratedSecurity=false;encrypt=false;trustServerCertificate=true;sendStringParametersAsUnicode=false;";
+    }
+
+    @Override
     public List<String> getPostStartCommand() {
         return List.of("/opt/mssql-tools18/bin/sqlcmd", "-U", "sa", "-P", getPassword(), "-No", "-Q", "CREATE DATABASE " + getDatabase());
     }
