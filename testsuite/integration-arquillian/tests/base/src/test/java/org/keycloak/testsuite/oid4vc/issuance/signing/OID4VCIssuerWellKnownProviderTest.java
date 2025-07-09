@@ -77,6 +77,39 @@ public class OID4VCIssuerWellKnownProviderTest {
                     .testCredentialConfig(suiteContext, testingClient);
         }
 
+        @Test
+        public void testCredentialIssuerMetadataFields() {
+            String expectedIssuer = suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/" + TEST_REALM_NAME;
+            KeycloakTestingClient testingClient = this.testingClient;
+
+            testingClient
+                .server(TEST_REALM_NAME)
+                .run(session -> {
+                    OID4VCIssuerWellKnownProvider provider = new OID4VCIssuerWellKnownProvider(session);
+                    Object config = provider.getConfig();
+                    assertTrue("Should return CredentialIssuer", config instanceof CredentialIssuer);
+                    CredentialIssuer issuer = (CredentialIssuer) config;
+
+                    // Check credential_response_encryption
+                    CredentialIssuer.CredentialResponseEncryption encryption = issuer.getCredentialResponseEncryption();
+                    assertNotNull("credential_response_encryption should be present", encryption);
+                    assertEquals(List.of("RSA-OAEP"), encryption.getAlgValuesSupported());
+                    assertEquals(List.of("A256GCM"), encryption.getEncValuesSupported());
+                    assertTrue("encryption_required should be true", encryption.getEncryptionRequired());
+
+                    // Check batch_credential_issuance
+                    CredentialIssuer.BatchCredentialIssuance batch = issuer.getBatchCredentialIssuance();
+                    assertNotNull("batch_credential_issuance should be present", batch);
+                    assertEquals(Integer.valueOf(10), batch.getBatchSize());
+
+                    // Check signed_metadata
+                    assertEquals(
+                        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmb28iOiJiYXIifQ.XYZ123abc",
+                        issuer.getSignedMetadata()
+                    );
+                });
+        }
+
         @Override
         public void configureTestRealm(RealmRepresentation testRealm) {
             Map<String, String> clientAttributes = new HashMap<>(getTestCredentialDefinitionAttributes());
@@ -118,6 +151,11 @@ public class OID4VCIssuerWellKnownProviderTest {
             Map<String, String> clientAttributes,
             Map<String, String> realmAttributes
     ) {
+        realmAttributes.put("credential_response_encryption.alg_values_supported", "[\"RSA-OAEP\"]");
+        realmAttributes.put("credential_response_encryption.enc_values_supported", "[\"A256GCM\"]");
+        realmAttributes.put("credential_response_encryption.encryption_required", "true");
+        realmAttributes.put("batch_credential_issuance.batch_size", "10");
+        realmAttributes.put("signed_metadata", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmb28iOiJiYXIifQ.XYZ123abc"); // example JWT
         testClient.setAttributes(new HashMap<>(clientAttributes));
         testRealm.setAttributes(new HashMap<>(realmAttributes));
         extendConfigureTestRealm(testRealm, testClient);
@@ -126,6 +164,7 @@ public class OID4VCIssuerWellKnownProviderTest {
     public static void testCredentialConfig(SuiteContext suiteContext, KeycloakTestingClient testingClient) {
         String expectedIssuer = suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/" + TEST_REALM_NAME;
         String expectedCredentialsEndpoint = expectedIssuer + "/protocol/oid4vc/credential";
+        String expectedDeferredEndpoint = expectedIssuer + "/protocol/oid4vc/deferred_credential";
         final String expectedAuthorizationServer = expectedIssuer;
         testingClient
                 .server(TEST_REALM_NAME)
@@ -136,6 +175,7 @@ public class OID4VCIssuerWellKnownProviderTest {
                     CredentialIssuer credentialIssuer = (CredentialIssuer) issuerConfig;
                     assertEquals("The correct issuer should be included.", expectedIssuer, credentialIssuer.getCredentialIssuer());
                     assertEquals("The correct credentials endpoint should be included.", expectedCredentialsEndpoint, credentialIssuer.getCredentialEndpoint());
+                    assertEquals("The correct deferred_credential_endpoint should be included.", expectedDeferredEndpoint, credentialIssuer.getDeferredCredentialEndpoint());
                     assertEquals("Since the authorization server is equal to the issuer, just 1 should be returned.", 1, credentialIssuer.getAuthorizationServers().size());
                     assertEquals("The expected server should have been returned.", expectedAuthorizationServer, credentialIssuer.getAuthorizationServers().get(0));
                     assertTrue("The test-credential should be supported.", credentialIssuer.getCredentialsSupported().containsKey("test-credential"));

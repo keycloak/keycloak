@@ -21,12 +21,13 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
  * Represents a credentials issuer according to the OID4VCI Credentials Issuer Metadata
- * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-issuer-metadata}
+ * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-15.html#name-credential-issuer-metadata}
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
@@ -42,16 +43,29 @@ public class CredentialIssuer {
     @JsonProperty("nonce_endpoint")
     private String nonceEndpoint;
 
+    @JsonProperty("deferred_credential_endpoint")
+    private String deferredCredentialEndpoint;
+
     @JsonProperty("authorization_servers")
     private List<String> authorizationServers;
 
     @JsonProperty("notification_endpoint")
     private String notificationEndpoint;
 
+    @JsonProperty("credential_response_encryption")
+    private CredentialResponseEncryption credentialResponseEncryption;
+
+    @JsonProperty("batch_credential_issuance")
+    private BatchCredentialIssuance batchCredentialIssuance;
+
+    @JsonProperty("signed_metadata")
+    private String signedMetadata;
+
     @JsonProperty("credential_configurations_supported")
     private Map<String, SupportedCredentialConfiguration> credentialsSupported;
 
-    private DisplayObject display;
+    @JsonProperty("display")
+    private List<DisplayObject> display;
 
     public String getCredentialIssuer() {
         return credentialIssuer;
@@ -80,21 +94,12 @@ public class CredentialIssuer {
         return this;
     }
 
-    public Map<String, SupportedCredentialConfiguration> getCredentialsSupported() {
-        return credentialsSupported;
+    public String getDeferredCredentialEndpoint() {
+        return deferredCredentialEndpoint;
     }
 
-    public CredentialIssuer setCredentialsSupported(Map<String, SupportedCredentialConfiguration> credentialsSupported) {
-        this.credentialsSupported = Collections.unmodifiableMap(credentialsSupported);
-        return this;
-    }
-
-    public DisplayObject getDisplay() {
-        return display;
-    }
-
-    public CredentialIssuer setDisplay(DisplayObject display) {
-        this.display = display;
+    public CredentialIssuer setDeferredCredentialEndpoint(String deferredCredentialEndpoint) {
+        this.deferredCredentialEndpoint = deferredCredentialEndpoint;
         return this;
     }
 
@@ -115,5 +120,112 @@ public class CredentialIssuer {
         this.notificationEndpoint = notificationEndpoint;
         return this;
     }
-}
 
+    public CredentialResponseEncryption getCredentialResponseEncryption() {
+        return credentialResponseEncryption;
+    }
+
+    public CredentialIssuer setCredentialResponseEncryption(CredentialResponseEncryption credentialResponseEncryption) {
+        this.credentialResponseEncryption = credentialResponseEncryption;
+        return this;
+    }
+
+    public BatchCredentialIssuance getBatchCredentialIssuance() {
+        return batchCredentialIssuance;
+    }
+
+    public CredentialIssuer setBatchCredentialIssuance(BatchCredentialIssuance batchCredentialIssuance) {
+        this.batchCredentialIssuance = batchCredentialIssuance;
+        return this;
+    }
+
+    public String getSignedMetadata() {
+        return signedMetadata;
+    }
+
+    public CredentialIssuer setSignedMetadata(String signedMetadata) {
+        this.signedMetadata = signedMetadata;
+        return this;
+    }
+
+    public Map<String, SupportedCredentialConfiguration> getCredentialsSupported() {
+        return credentialsSupported;
+    }
+
+    public CredentialIssuer setCredentialsSupported(Map<String, SupportedCredentialConfiguration> credentialsSupported) {
+        if (credentialsSupported == null) {
+            throw new IllegalArgumentException("credentialsSupported cannot be null");
+        }
+        this.credentialsSupported = Collections.unmodifiableMap(new HashMap<>(credentialsSupported));
+        return this;
+    }
+
+    public List<DisplayObject> getDisplay() {
+        return display;
+    }
+
+    public CredentialIssuer setDisplay(List<DisplayObject> display) {
+        this.display = display;
+        return this;
+    }
+
+    /**
+     * Represents the credential_response_encryption metadata parameter.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class CredentialResponseEncryption {
+        @JsonProperty("alg_values_supported")
+        private List<String> algValuesSupported;
+
+        @JsonProperty("enc_values_supported")
+        private List<String> encValuesSupported;
+
+        @JsonProperty("encryption_required")
+        private Boolean encryptionRequired;
+
+        public List<String> getAlgValuesSupported() {
+            return algValuesSupported;
+        }
+
+        public CredentialResponseEncryption setAlgValuesSupported(List<String> algValuesSupported) {
+            this.algValuesSupported = algValuesSupported;
+            return this;
+        }
+
+        public List<String> getEncValuesSupported() {
+            return encValuesSupported;
+        }
+
+        public CredentialResponseEncryption setEncValuesSupported(List<String> encValuesSupported) {
+            this.encValuesSupported = encValuesSupported;
+            return this;
+        }
+
+        public Boolean getEncryptionRequired() {
+            return encryptionRequired;
+        }
+
+        public CredentialResponseEncryption setEncryptionRequired(Boolean encryptionRequired) {
+            this.encryptionRequired = encryptionRequired;
+            return this;
+        }
+    }
+
+    /**
+     * Represents the batch_credential_issuance metadata parameter.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class BatchCredentialIssuance {
+        @JsonProperty("batch_size")
+        private Integer batchSize;
+
+        public Integer getBatchSize() {
+            return batchSize;
+        }
+
+        public BatchCredentialIssuance setBatchSize(Integer batchSize) {
+            this.batchSize = batchSize;
+            return this;
+        }
+    }
+}
