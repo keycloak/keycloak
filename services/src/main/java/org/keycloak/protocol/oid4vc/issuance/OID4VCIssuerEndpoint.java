@@ -236,6 +236,15 @@ public class OID4VCIssuerEndpoint {
     }
 
     /**
+     * Generates a unique notification ID for use in CredentialResponse.
+     *
+     * @return a unique string identifier
+     */
+    private String generateNotificationId() {
+        return SecretGenerator.getInstance().randomString();
+    }
+    
+    /**
      * the OpenId4VCI nonce-endpoint
      *
      * @return a short-lived c_nonce value that must be presented in key-bound proofs at the credential endpoint.
@@ -452,7 +461,9 @@ public class OID4VCIssuerEndpoint {
 
         Object theCredential = getCredential(authResult, supportedCredentialConfiguration, credentialRequestVO);
         if (SUPPORTED_FORMATS.contains(requestedFormat)) {
-            responseVO.setCredential(theCredential);
+            responseVO
+                    .addCredential(theCredential)
+                    .setNotificationId(generateNotificationId());
         } else {
             throw new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_TYPE));
         }

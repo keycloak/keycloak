@@ -23,31 +23,22 @@ import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.DefaultRequiredActions;
-import org.keycloak.representations.idm.RealmRepresentation;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class MigrateTo26_3_0 implements Migration {
+public class MigrateTo26_3_0 extends RealmMigration {
 
     public static final ModelVersion VERSION = new ModelVersion("26.3.0");
-
-    @Override
-    public void migrate(KeycloakSession session) {
-        session.realms().getRealmsStream().forEach(realm -> migrateRealm(session, realm));
-    }
-
-    @Override
-    public void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
-        migrateRealm(session, realm);
-    }
 
     @Override
     public ModelVersion getVersion() {
         return VERSION;
     }
 
-    private void migrateRealm(KeycloakSession session, RealmModel realm) {
+
+    @Override
+    public void migrateRealm(KeycloakSession session, RealmModel realm) {
         DefaultRequiredActions.addIdpLink(realm);
     }
 }

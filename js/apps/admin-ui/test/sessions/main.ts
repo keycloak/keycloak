@@ -11,7 +11,7 @@ export async function assertRowHasSignOutKebab(page: Page, row: string) {
 }
 
 export async function clickNotBefore(page: Page) {
-  page.getByTestId("clear-not-before-button").click();
+  await page.getByTestId("clear-not-before-button").click();
 }
 
 export async function assertNotBeforeValue(page: Page, value: string) {

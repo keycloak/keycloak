@@ -5,7 +5,10 @@
 KC_TEST_SERVER_IMAGES   -> if empty, uses the built distribution archive from quarkus/dist directory in all containers
 -> if single value, uses that value in all the containers
 -> if comma separated value ("imageA,imageB"), each container will use the image specified from the list. The number of items must match the cluster size.
--> "-" special keyword to use the built distribution archive
+-> "-" special keyword to use the built distribution archive.
+> NOTE: If testing SNAPSHOT versions with "-", it's necessary for it to appear later in the CSV list than
+> non-SNAPSHOT releases in order to avoid "Incorrect state of migration" exceptions.
+
 KC_TEST_SERVER=cluster  -> enables cluster mode (configured by default in clustering module)
 KC_TEST_DATABASE_INTERNAL=true -> configure keycloak with the internal database container IP instead of localhost (configured by default in clustering module)
 

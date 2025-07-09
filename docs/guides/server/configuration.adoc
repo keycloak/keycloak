@@ -167,10 +167,13 @@ PowerShell handles quotes differently. It interprets the quoted string before pa
 
 === Formats for environment variable keys with special characters
 
-Some configuration keys, such as those for logging, may contain characters such as `_` or `$` - e.g. `kc.log-level-package.class_name`. Non-alphanumeric characters in your configuration key must be converted to `\_` in the corresponding environment variable key.
+Non-alphanumeric characters in your configuration key must be converted to `_` in the corresponding environment variable key.
 
-The automatic handling of the environment variable key may not preserve the intended key. For example `KC_LOG_LEVEL_PACKAGE_CLASS_NAME` will become `kc.log-level-package.class.name` because logging properties default to replacing `_` in the "wildcard"
-part of the key with `.` as that is what is most commonly needed in a class / package name. However this does not match the intent of `kc.log-level-package.class_name`.
+Environment variables are converted back to normal option keys by lower-casing the name and replacing `\_` with `-`. Logging wildcards are the exception as `_` in the category is replaced with `.` instead. Logging categories are commonly class / package names, which are more likely to use `.` rather than `-`.
+
+WARNING: Automatic mapping of the environment variable key to option key may not preserve the intended key 
+
+For example `kc.log-level-package.class_name` will become the environment variable key `KC_LOG_LEVEL_PACKAGE_CLASS_NAME`. That will automatically be mapped to `kc.log-level-package.class.name` because `_` in the logging category will be replaced by `.`. Unfortunately this does not match the intent of `kc.log-level-package.class_name`.
 
 You have a couple of options in this case:
 
