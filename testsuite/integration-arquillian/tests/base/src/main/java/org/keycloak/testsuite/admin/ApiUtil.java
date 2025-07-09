@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.admin;
 
 import org.jboss.logging.Logger;
+import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
@@ -25,6 +26,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -336,4 +338,12 @@ public class ApiUtil {
         log.infof("updated required actions order for realm '%s': %s", realmName, updatedRequiredActionsOrdered);
     }
 
+    public static void enableRequiredAction(RealmResource realm, RequiredAction action, boolean enable) {
+        AuthenticationManagementResource authMgt = realm.flows();
+        RequiredActionProviderRepresentation requiredAction = authMgt.getRequiredActions().stream()
+                .filter(a -> action.name().equals(a.getAlias()))
+                .findAny().orElseThrow(() -> new IllegalStateException("Required action not found: " + action.name()));
+        requiredAction.setEnabled(enable);
+        authMgt.updateRequiredAction(requiredAction.getAlias(), requiredAction);
+    }
 }

@@ -47,7 +47,9 @@ import org.keycloak.forms.login.freemarker.Templates;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -63,6 +65,16 @@ import org.keycloak.userprofile.ValidationException;
 public class UpdateEmail implements RequiredActionProvider, RequiredActionFactory, EnvironmentDependentProviderFactory {
 
     private static final Logger logger = Logger.getLogger(UpdateEmail.class);
+
+    public static boolean isEnabled(RealmModel realm) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL)) {
+            return false;
+        }
+
+        RequiredActionProviderModel model = realm.getRequiredActionProviderByAlias(RequiredAction.UPDATE_EMAIL.name());
+
+        return model != null && model.isEnabled();
+    }
 
     @Override
     public InitiatedActionSupport initiatedActionSupport() {
@@ -81,11 +93,16 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
 
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
-        context.challenge(context.form().createResponse(UserModel.RequiredAction.UPDATE_EMAIL));
+        if (isEnabled(context.getRealm())) {
+            context.challenge(context.form().createResponse(UserModel.RequiredAction.UPDATE_EMAIL));
+        }
     }
 
     @Override
     public void processAction(RequiredActionContext context) {
+        if (!isEnabled(context.getRealm())) {
+            return;
+        }
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         String newEmail = formData.getFirst(UserModel.EMAIL);
 
