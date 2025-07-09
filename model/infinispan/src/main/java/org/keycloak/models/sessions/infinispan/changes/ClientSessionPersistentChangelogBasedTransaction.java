@@ -133,9 +133,9 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
         return authenticatedClientSessionEntitySessionEntityWrapper;
     }
 
-    private static AuthenticatedClientSessionEntity createAuthenticatedClientSessionInstance(String userSessionId, AuthenticatedClientSessionModel clientSession,
-                                                                                             String realmId, String clientId, UUID clientSessionId) {
-        assert clientSessionId.equals(PersistentUserSessionProvider.createClientSessionUUID(userSessionId, clientId));
+    private AuthenticatedClientSessionEntity createAuthenticatedClientSessionInstance(String userSessionId, AuthenticatedClientSessionModel clientSession,
+                                                                                      String realmId, String clientId) {
+        UUID clientSessionId = PersistentUserSessionProvider.createClientSessionUUID(userSessionId, clientId);
 
         AuthenticatedClientSessionEntity entity = new AuthenticatedClientSessionEntity(clientSessionId);
         entity.setRealmId(realmId);
@@ -154,7 +154,7 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
 
     private SessionEntityWrapper<AuthenticatedClientSessionEntity> importClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession, AuthenticatedClientSessionModel persistentClientSession, UUID clientSessionId) {
         AuthenticatedClientSessionEntity entity = createAuthenticatedClientSessionInstance(userSession.getId(), persistentClientSession,
-                realm.getId(), client.getId(), clientSessionId);
+                realm.getId(), client.getId());
         boolean offline = userSession.isOffline();
 
         entity.setUserSessionId(userSession.getId());
