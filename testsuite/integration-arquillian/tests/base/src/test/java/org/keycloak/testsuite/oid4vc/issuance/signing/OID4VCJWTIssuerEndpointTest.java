@@ -36,12 +36,19 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.VerificationException;
+import org.keycloak.jose.jwe.JWEException;
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jwk.JWKParser;
+import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
+import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryption;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
+import org.keycloak.protocol.oid4vc.model.ErrorResponse;
+import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.OfferUriType;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
@@ -54,9 +61,12 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
+import org.testcontainers.shaded.org.apache.commons.lang3.tuple.Pair;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -285,19 +295,19 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
     public void testRequestCredentialNoMatchingCredentialBuilder() throws Throwable {
         String token = getBearerToken(oauth);
         withCausePropagation(() ->
-            testingClient
-                    .server(TEST_REALM_NAME)
-                    .run((session -> {
-                        AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
-                        authenticator.setTokenString(token);
+                testingClient
+                        .server(TEST_REALM_NAME)
+                        .run((session -> {
+                            AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+                            authenticator.setTokenString(token);
 
-                        // Prepare the issue endpoint with no credential builders.
-                        OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator, Map.of());
+                            // Prepare the issue endpoint with no credential builders.
+                            OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator, Map.of());
 
-                        issuerEndpoint.requestCredential(new CredentialRequest()
-                                .setFormat(Format.JWT_VC)
-                                .setCredentialIdentifier("test-credential"));
-                    }))
+                            issuerEndpoint.requestCredential(new CredentialRequest()
+                                    .setFormat(Format.JWT_VC)
+                                    .setCredentialIdentifier("test-credential"));
+                        }))
         );
     }
 
@@ -568,5 +578,317 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
             CredentialResponse credentialResponse2 = JsonSerialization.mapper.convertValue(response2.getEntity(), CredentialResponse.class);
             assertNotEquals("Notification IDs should be unique", credentialResponse1.getNotificationId(), credentialResponse2.getNotificationId());
         });
+    }
+
+    @Test
+    public void testRequestCredentialWithEncryption() {
+        String token = getBearerToken(oauth);
+        testingClient
+                .server(TEST_REALM_NAME)
+                .run((session -> {
+                    AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+                    authenticator.setTokenString(token);
+                    OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
+
+                    Pair<JWK, PrivateKey> jwkPair;
+                    try {
+                        jwkPair = generateRsaJwkWithPrivateKey();
+                    } catch (NoSuchAlgorithmException e) {
+                        throw new RuntimeException("Failed to generate JWK", e);
+                    }
+                    JWK jwk = jwkPair.getLeft();
+                    PrivateKey privateKey = jwkPair.getRight();
+
+                    CredentialRequest credentialRequest = new CredentialRequest()
+                            .setFormat(Format.JWT_VC)
+                            .setCredentialIdentifier("test-credential")
+                            .setCredentialResponseEncryption(
+                                    new CredentialResponseEncryption()
+                                            .setAlg("RSA-OAEP")
+                                            .setEnc("A256GCM")
+                                            .setJwk(jwk));
+
+                    Response credentialResponse = issuerEndpoint.requestCredential(credentialRequest);
+
+                    assertEquals("The credential request should be answered successfully.",
+                            HttpStatus.SC_OK, credentialResponse.getStatus());
+                    assertEquals("Response should be JWT type for encrypted responses",
+                            org.keycloak.utils.MediaType.APPLICATION_JWT, credentialResponse.getMediaType().toString());
+
+                    String encryptedResponse = (String) credentialResponse.getEntity();
+                    CredentialResponse decryptedResponse;
+                    try {
+                        decryptedResponse = decryptJweResponse(encryptedResponse, privateKey);
+                    } catch (IOException | JWEException e) {
+                        Assert.fail("Failed to decrypt JWE response: " + e.getMessage());
+                        return;
+                    }
+
+                    // Verify the decrypted payload
+                    assertNotNull("Decrypted response should contain a credential", decryptedResponse.getCredentials());
+                    JsonWebToken jsonWebToken;
+                    try {
+                        jsonWebToken = TokenVerifier.create((String) decryptedResponse.getCredentials().get(0).getCredential(), JsonWebToken.class).getToken();
+                    } catch (VerificationException e) {
+                        Assert.fail("Failed to verify JWT: " + e.getMessage());
+                        return;
+                    }
+                    assertNotNull("A valid credential string should have been responded", jsonWebToken);
+                    VerifiableCredential credential = JsonSerialization.mapper.convertValue(
+                            jsonWebToken.getOtherClaims().get("vc"), VerifiableCredential.class);
+                    assertTrue("The static claim should be set.", credential.getCredentialSubject().getClaims().containsKey("VerifiableCredential"));
+                }));
+    }
+
+    @Test
+    public void testRequestCredentialWithIncompleteEncryptionParams() throws Throwable {
+        String token = getBearerToken(oauth);
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+            authenticator.setTokenString(token);
+            OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
+
+            // Missing enc parameter
+            JWK jwk = JWKParser.create().parse("{\"kty\":\"RSA\",\"n\":\"test-n\",\"e\":\"AQAB\"}").getJwk();
+            CredentialRequest credentialRequest = new CredentialRequest()
+                    .setFormat(Format.JWT_VC)
+                    .setCredentialIdentifier("test-credential")
+                    .setCredentialResponseEncryption(
+                            new CredentialResponseEncryption()
+                                    .setAlg("RSA-OAEP")
+                                    .setJwk(jwk));
+
+            try {
+                issuerEndpoint.requestCredential(credentialRequest);
+                Assert.fail("Expected BadRequestException due to missing encryption parameter 'enc'");
+            } catch (BadRequestException e) {
+                ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
+                assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS, error.getError());
+                assertTrue("Error message should specify missing parameters",
+                        error.getErrorDescription().contains("Missing required encryption parameters: enc"));
+            }
+        });
+    }
+
+    @Test
+    public void testCredentialIssuanceWithEncryption() throws Exception {
+        // Integration test for the full credential issuance flow with encryption
+        testCredentialIssuanceWithAuthZCodeFlow(
+                (testClientId, testScope) -> getBearerToken(oauth.clientId(testClientId).openid(false).scope("VerifiableCredential")),
+                m -> {
+                    String accessToken = (String) m.get("accessToken");
+                    WebTarget credentialTarget = (WebTarget) m.get("credentialTarget");
+                    CredentialRequest credentialRequest = (CredentialRequest) m.get("credentialRequest");
+
+                    Pair<JWK, PrivateKey> jwkPair;
+                    try {
+                        jwkPair = generateRsaJwkWithPrivateKey();
+                    } catch (NoSuchAlgorithmException e) {
+                        throw new RuntimeException("Failed to generate JWK", e);
+                    }
+                    JWK jwk = jwkPair.getLeft();
+                    PrivateKey privateKey = jwkPair.getRight();
+
+                    credentialRequest.setCredentialResponseEncryption(
+                            new CredentialResponseEncryption()
+                                    .setAlg("RSA-OAEP")
+                                    .setEnc("A256GCM")
+                                    .setJwk(jwk));
+
+                    try (Response response = credentialTarget.request()
+                            .header(HttpHeaders.AUTHORIZATION, "bearer " + accessToken)
+                            .post(Entity.json(credentialRequest))) {
+
+                        assertEquals(200, response.getStatus());
+                        assertEquals("application/jwt", response.getMediaType().toString());
+
+                        String encryptedResponse = response.readEntity(String.class);
+                        CredentialResponse decryptedResponse;
+                        try {
+                            decryptedResponse = decryptJweResponse(encryptedResponse, privateKey);
+                        } catch (IOException | JWEException e) {
+                            Assert.fail("Failed to decrypt JWE response: " + e.getMessage());
+                            return;
+                        }
+
+                        // Verify the decrypted payload
+                        JsonWebToken jsonWebToken;
+                        try {
+                            jsonWebToken = TokenVerifier.create((String) decryptedResponse.getCredentials().get(0).getCredential(), JsonWebToken.class).getToken();
+                        } catch (VerificationException e) {
+                            Assert.fail("Failed to verify JWT: " + e.getMessage());
+                            return;
+                        }
+                        assertEquals("did:web:test.org", jsonWebToken.getIssuer());
+                        VerifiableCredential credential = JsonSerialization.mapper.convertValue(
+                                jsonWebToken.getOtherClaims().get("vc"), VerifiableCredential.class);
+                        assertEquals(TEST_TYPES, credential.getType());
+                        assertEquals(TEST_DID, credential.getIssuer());
+                        assertEquals("john@email.cz", credential.getCredentialSubject().getClaims().get("email"));
+                    }
+                });
+    }
+
+    @Test
+    public void testRequestCredentialWithUnsupportedAlgorithms() throws Throwable {
+        String token = getBearerToken(oauth);
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+            authenticator.setTokenString(token);
+            OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
+
+            JWK jwk;
+            try {
+                jwk = generateRsaJwk();
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException("Failed to generate JWK", e);
+            }
+
+            CredentialRequest credentialRequest = new CredentialRequest()
+                    .setFormat(Format.JWT_VC)
+                    .setCredentialIdentifier("test-credential")
+                    .setCredentialResponseEncryption(
+                            new CredentialResponseEncryption()
+                                    .setAlg("UNSUPPORTED-ALG")
+                                    .setEnc("A256GCM")
+                                    .setJwk(jwk));
+
+            try {
+                issuerEndpoint.requestCredential(credentialRequest);
+                Assert.fail("Expected BadRequestException due to unsupported algorithm");
+            } catch (BadRequestException e) {
+                ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
+                assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS, error.getError());
+                assertTrue(error.getErrorDescription().contains("UNSUPPORTED-ALG"));
+            }
+        });
+    }
+
+    @Test
+    public void testRequestCredentialWithInvalidJWK() throws Throwable {
+        String token = getBearerToken(oauth);
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+            authenticator.setTokenString(token);
+            OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
+
+            // Invalid JWK (missing modulus)
+            JWK jwk = JWKParser.create().parse("{\"kty\":\"RSA\",\"e\":\"AQAB\"}").getJwk();
+            CredentialRequest credentialRequest = new CredentialRequest()
+                    .setFormat(Format.JWT_VC)
+                    .setCredentialIdentifier("test-credential")
+                    .setCredentialResponseEncryption(
+                            new CredentialResponseEncryption()
+                                    .setAlg("RSA-OAEP")
+                                    .setEnc("A256GCM")
+                                    .setJwk(jwk));
+
+            try {
+                issuerEndpoint.requestCredential(credentialRequest);
+                Assert.fail("Expected BadRequestException due to invalid JWK missing modulus");
+            } catch (BadRequestException e) {
+                ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
+                assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS, error.getError());
+                assertTrue(error.getErrorDescription().contains("JWK"));
+            }
+        });
+    }
+
+    @Test
+    public void testRequestCredentialWithWrongKeyTypeJWK() throws Throwable {
+        String token = getBearerToken(oauth);
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+            authenticator.setTokenString(token);
+            OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
+
+            JWK jwk = JWKParser.create().parse("{\"kty\":\"EC\",\"crv\":\"P-256\",\"x\":\"test-x\",\"y\":\"test-y\"}").getJwk();
+            CredentialRequest credentialRequest = new CredentialRequest()
+                    .setFormat(Format.JWT_VC)
+                    .setCredentialIdentifier("test-credential")
+                    .setCredentialResponseEncryption(
+                            new CredentialResponseEncryption()
+                                    .setAlg("RSA-OAEP")
+                                    .setEnc("A256GCM")
+                                    .setJwk(jwk));
+
+            try {
+                issuerEndpoint.requestCredential(credentialRequest);
+                Assert.fail("Expected BadRequestException due to wrong JWK key type");
+            } catch (BadRequestException e) {
+                ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
+                assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS, error.getError());
+                assertTrue(error.getErrorDescription().contains("JWK"));
+            }
+        });
+    }
+
+    @Test
+    public void testRequestCredentialEncryptionRequiredButMissing() {
+        String token = getBearerToken(oauth);
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            realm.setAttribute("oid4vci.encryption.required", "true");
+            realm.setAttribute("oid4vci.encryption.algs", "RSA-OAEP");
+            realm.setAttribute("oid4vci.encryption.encs", "A256GCM");
+
+            try {
+                AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+                authenticator.setTokenString(token);
+                OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
+
+                CredentialRequest credentialRequest = new CredentialRequest()
+                        .setFormat(Format.JWT_VC)
+                        .setCredentialIdentifier("test-credential");
+
+                issuerEndpoint.requestCredential(credentialRequest);
+                Assert.fail("Expected BadRequestException due to missing encryption parameters when required");
+            } catch (BadRequestException e) {
+                ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
+                assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS, error.getError());
+                assertEquals("Encryption is required by the Credential Issuer, but no encryption parameters were provided.", error.getErrorDescription());
+            } finally {
+                // Clean up realm attributes
+                realm.removeAttribute("oid4vci.encryption.required");
+                realm.removeAttribute("oid4vci.encryption.algs");
+                realm.removeAttribute("oid4vci.encryption.encs");
+            }
+        });
+    }
+
+    @Test
+    public void testRequestCredentialWithUnsupportedEncryptionMethod() {
+        String token = getBearerToken(oauth);
+        testingClient.server(TEST_REALM_NAME).run((session -> {
+            AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+            authenticator.setTokenString(token);
+            OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
+
+            JWK jwk;
+            try {
+                jwk = generateRsaJwk();
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException("Failed to generate JWK", e);
+            }
+
+            CredentialRequest credentialRequest = new CredentialRequest()
+                    .setFormat(Format.JWT_VC)
+                    .setCredentialIdentifier("test-credential")
+                    .setCredentialResponseEncryption(
+                            new CredentialResponseEncryption()
+                                    .setAlg("RSA-OAEP")
+                                    .setEnc("A128CBC-HS256")
+                                    .setJwk(jwk));
+
+            try {
+                issuerEndpoint.requestCredential(credentialRequest);
+                Assert.fail("Expected BadRequestException due to unsupported encryption method");
+            } catch (BadRequestException e) {
+                ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
+                assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS, error.getError());
+                assertTrue("Error message should indicate unsupported encryption method",
+                        error.getErrorDescription().contains("Unsupported encryption parameters: alg=RSA-OAEP, enc=A128CBC-HS256"));
+            }
+        }));
     }
 }

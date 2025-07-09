@@ -37,9 +37,14 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
+import org.keycloak.jose.jwe.JWE;
+import org.keycloak.jose.jwe.JWEException;
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jwk.RSAPublicJWK;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
@@ -73,10 +78,16 @@ import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.JsonSerialization;
+import org.testcontainers.shaded.org.apache.commons.lang3.tuple.Pair;
 
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -183,6 +194,56 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
     private void logoutUser(String clientId, String username) {
         UserResource user = ApiUtil.findUserByUsernameId(adminClient.realm(TEST_REALM_NAME), username);
         user.logout();
+    }
+
+    public static JWK generateRsaJwk() throws NoSuchAlgorithmException {
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+        keyGen.initialize(2048);
+        KeyPair keyPair = keyGen.generateKeyPair();
+        RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
+
+        String modulus = Base64Url.encode(publicKey.getModulus().toByteArray());
+        String exponent = Base64Url.encode(publicKey.getPublicExponent().toByteArray());
+
+        RSAPublicJWK jwk = new RSAPublicJWK();
+        jwk.setKeyType("RSA");
+        jwk.setPublicKeyUse("enc");
+        jwk.setAlgorithm("RSA-OAEP");
+        jwk.setModulus(modulus);
+        jwk.setPublicExponent(exponent);
+
+        return jwk;
+    }
+
+    public static Pair<JWK, PrivateKey> generateRsaJwkWithPrivateKey() throws NoSuchAlgorithmException {
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+        keyGen.initialize(2048);
+        KeyPair keyPair = keyGen.generateKeyPair();
+        RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
+        PrivateKey privateKey = keyPair.getPrivate();
+
+        String modulus = Base64Url.encode(publicKey.getModulus().toByteArray());
+        String exponent = Base64Url.encode(publicKey.getPublicExponent().toByteArray());
+
+        RSAPublicJWK jwk = new RSAPublicJWK();
+        jwk.setKeyType("RSA");
+        jwk.setPublicKeyUse("enc");
+        jwk.setAlgorithm("RSA-OAEP");
+        jwk.setModulus(modulus);
+        jwk.setPublicExponent(exponent);
+
+        return Pair.of(jwk, privateKey);
+    }
+
+    protected static CredentialResponse decryptJweResponse(String encryptedResponse, PrivateKey privateKey) throws IOException, JWEException {
+        assertNotNull("Encrypted response should not be null", encryptedResponse);
+        assertEquals("Response should be a JWE", 5, encryptedResponse.split("\\.").length);
+
+        JWE jwe = new JWE(encryptedResponse);
+        jwe.getKeyStorage().setDecryptionKey(privateKey);
+        jwe.verifyAndDecodeJwe();
+        byte[] decryptedContent = jwe.getContent();
+        return JsonSerialization.readValue(decryptedContent, CredentialResponse.class);
     }
 
     private void testCredentialIssuanceWithAuthZCodeFlow(Consumer<Map<String, String>> c) throws Exception {

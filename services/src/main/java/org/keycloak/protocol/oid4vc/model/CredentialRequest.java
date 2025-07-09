@@ -23,7 +23,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 /**
- * Represents a  CredentialRequest according to OID4VCI
+ * Represents a CredentialRequest according to OID4VCI
  * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-request}
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
@@ -51,6 +51,9 @@ public class CredentialRequest {
     // See: https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-format-identifier-3
     @JsonProperty("credential_definition")
     private CredentialDefinition credentialDefinition;
+
+    @JsonProperty("credential_response_encryption")
+    private CredentialResponseEncryption credentialResponseEncryption;
 
     public String getFormat() {
         return format;
@@ -96,4 +99,14 @@ public class CredentialRequest {
         this.credentialDefinition = credentialDefinition;
         return this;
     }
+
+    public CredentialResponseEncryption getCredentialResponseEncryption() {
+        return credentialResponseEncryption;
+    }
+
+    public CredentialRequest setCredentialResponseEncryption(CredentialResponseEncryption credentialResponseEncryption) {
+        this.credentialResponseEncryption = credentialResponseEncryption;
+        return this;
+    }
+
 }

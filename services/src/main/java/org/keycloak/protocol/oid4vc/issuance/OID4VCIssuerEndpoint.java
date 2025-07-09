@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -40,6 +40,11 @@ import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.jose.jwe.JWE;
+import org.keycloak.jose.jwe.JWEException;
+import org.keycloak.jose.jwe.JWEHeader;
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -62,6 +67,8 @@ import org.keycloak.protocol.oid4vc.issuance.signing.CredentialSigner;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
+import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryption;
+import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.ErrorResponse;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
@@ -91,7 +98,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.security.PublicKey;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -352,13 +361,12 @@ public class OID4VCIssuerEndpoint {
         }
     }
 
-
     /**
      * Returns a verifiable credential
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_JWT})
     @Path(CREDENTIAL_PATH)
     public Response requestCredential(
             CredentialRequest credentialRequestVO) {
@@ -413,6 +421,33 @@ public class OID4VCIssuerEndpoint {
             }
         }
 
+        // Check encryption parameters
+        CredentialResponseEncryption encryptionParams = credentialRequestVO.getCredentialResponseEncryption();
+        CredentialResponseEncryptionMetadata encryptionMetadata = OID4VCIssuerWellKnownProvider.getCredentialResponseEncryption(session);
+        boolean isEncryptionRequired = Optional.ofNullable(encryptionMetadata)
+                .map(CredentialResponseEncryptionMetadata::getEncryptionRequired)
+                .orElse(false);
+
+        if (isEncryptionRequired && encryptionParams == null) {
+            String errorMessage = "Encryption is required by the Credential Issuer, but no encryption parameters were provided.";
+            LOGGER.debug(errorMessage);
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
+        }
+
+        if (encryptionParams != null) {
+            validateEncryptionParameters(encryptionParams);
+
+            String alg = encryptionParams.getAlg();
+            String enc = encryptionParams.getEnc();
+            if (!isSupportedEncryption(encryptionMetadata, alg, enc)) {
+                String errorMessage = String.format("Unsupported encryption parameters: alg=%s, enc=%s", alg, enc);
+                LOGGER.debug(errorMessage);
+                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
+            }
+        }
+
+
+        // Generate credential validation
         CredentialResponse responseVO = new CredentialResponse();
 
         Object theCredential = getCredential(authResult, supportedCredentialConfiguration, credentialRequestVO);
@@ -423,7 +458,135 @@ public class OID4VCIssuerEndpoint {
         } else {
             throw new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_TYPE));
         }
+
+        if (encryptionParams != null) {
+            String jwe = encryptCredentialResponse(responseVO, encryptionParams);
+            return Response.ok()
+                    .type(MediaType.APPLICATION_JWT)
+                    .entity(jwe)
+                    .build();
+        }
+
         return Response.ok().entity(responseVO).build();
+    }
+
+    /**
+     * Encrypts a CredentialResponse as a JWE using the provided encryption parameters.
+     *
+     * @param response The CredentialResponse to encrypt
+     * @param encryptionParams The encryption parameters (alg, enc, jwk)
+     * @return The compact JWE serialization
+     * @throws BadRequestException If encryption parameters are invalid
+     * @throws WebApplicationException If encryption fails due to server issues
+     */
+    private String encryptCredentialResponse(CredentialResponse response, CredentialResponseEncryption encryptionParams) {
+        // Validate input parameters
+        validateEncryptionParameters(encryptionParams);
+
+        String alg = encryptionParams.getAlg();
+        String enc = encryptionParams.getEnc();
+        JWK jwk = encryptionParams.getJwk();
+
+        // Parse public key
+        PublicKey publicKey;
+        try {
+            publicKey = JWKParser.create(jwk).toPublicKey();
+            if (publicKey == null) {
+                LOGGER.debug("Invalid JWK: Failed to parse public key");
+                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS,
+                        "Invalid JWK: Failed to parse public key."));
+            }
+        } catch (Exception e) {
+            LOGGER.debugf("Failed to parse JWK: %s", e.getMessage());
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS,
+                    "Invalid JWK: Failed to parse public key."));
+        }
+
+        // Perform encryption
+        try {
+            byte[] content = JsonSerialization.writeValueAsBytes(response);
+            JWEHeader header = new JWEHeader.JWEHeaderBuilder()
+                    .algorithm(alg)
+                    .encryptionAlgorithm(enc)
+                    .build();
+            JWE jwe = new JWE()
+                    .header(header)
+                    .content(content);
+            jwe.getKeyStorage().setEncryptionKey(publicKey);
+            return jwe.encodeJwe();
+        } catch (IOException e) {
+            LOGGER.errorf("Serialization failed: %s", e.getMessage());
+            throw new WebApplicationException(
+                    Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                            .entity(new ErrorResponse()
+                                    .setErrorDescription("Failed to serialize response"))
+                            .type(MediaType.APPLICATION_JSON)
+                            .build());
+        } catch (JWEException e) {
+            LOGGER.errorf("Encryption operation failed: %s", e.getMessage());
+            throw new WebApplicationException(
+                    Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                            .entity(new ErrorResponse()
+                                    .setErrorDescription("Encryption operation failed"))
+                            .type(MediaType.APPLICATION_JSON)
+                            .build());
+        }
+    }
+
+    /**
+     * validate the encryption parameters for a credential response.
+     *
+     * @param encryptionParams The encryption parameters to validate
+     * @throws BadRequestException If the encryption parameters are invalid
+     */
+    private void validateEncryptionParameters(CredentialResponseEncryption encryptionParams) {
+        if (encryptionParams == null) {
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS,
+                    "Missing required encryption parameters (alg, enc, and jwk)."));
+        }
+
+        List<String> missingParams = new ArrayList<>();
+        if (encryptionParams.getAlg() == null) missingParams.add("alg");
+        if (encryptionParams.getEnc() == null) missingParams.add("enc");
+        if (encryptionParams.getJwk() == null) missingParams.add("jwk");
+
+        if (!missingParams.isEmpty()) {
+            String errorMessage = String.format("Missing required encryption parameters: %s", String.join(", ", missingParams));
+            LOGGER.debug(errorMessage);
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
+        }
+
+        if (!isValidJwkForEncryption(encryptionParams.getJwk(), encryptionParams.getAlg())) {
+            String errorMessage = String.format("Invalid JWK: Not suitable for encryption with algorithm %s", encryptionParams.getAlg());
+            LOGGER.debug(errorMessage);
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
+        }
+    }
+
+
+    /**
+     * Validates if the provided JWK is suitable for encryption.
+     *
+     * @param jwk The JWK to validate
+     * @param expectedAlg The expected algorithm (e.g., "RSA-OAEP")
+     * @return true if the JWK is valid for encryption, false otherwise
+     */
+    private boolean isValidJwkForEncryption(JWK jwk, String expectedAlg) {
+        if (jwk == null) {
+            return false;
+        }
+        if (expectedAlg != null && !expectedAlg.equals(jwk.getAlgorithm())) {
+            return false;
+        }
+        return "enc".equals(jwk.getPublicKeyUse());
+    }
+
+    private boolean isSupportedEncryption(CredentialResponseEncryptionMetadata metadata, String alg, String enc) {
+        if (metadata == null) {
+            return false;
+        }
+        return (metadata.getAlgValuesSupported() == null || metadata.getAlgValuesSupported().contains(alg)) &&
+                (metadata.getEncValuesSupported() == null || metadata.getEncValuesSupported().contains(enc));
     }
 
     private SupportedCredentialConfiguration getSupportedCredentialConfiguration(CredentialRequest credentialRequestVO, Map<String, SupportedCredentialConfiguration> supportedCredentials, String requestedFormat) {
@@ -591,8 +754,12 @@ public class OID4VCIssuerEndpoint {
     }
 
     private Response getErrorResponse(ErrorType errorType) {
+        return getErrorResponse(errorType, null);
+    }
+
+    private Response getErrorResponse(ErrorType errorType, String errorDescription) {
         var errorResponse = new ErrorResponse();
-        errorResponse.setError(errorType);
+        errorResponse.setError(errorType).setErrorDescription(errorDescription);
         return Response
                 .status(Response.Status.BAD_REQUEST)
                 .entity(errorResponse)
