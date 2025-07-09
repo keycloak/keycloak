@@ -17,6 +17,9 @@ import { OpenIdConnectCompatibilityModes } from "./advanced/OpenIdConnectCompati
 import { OpenIdVerifiableCredentials } from "./advanced/OpenIdVerifiableCredentials";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 
+const PROTOCOL_OIDC = "openid-connect";
+const PROTOCOL_OID4VC = "oid4vc";
+
 export const parseResult = (
   result: GlobalRequestResult,
   prefixKey: string,
@@ -52,8 +55,6 @@ export type AdvancedProps = {
 
 export const AdvancedTab = ({ save, client }: AdvancedProps) => {
   const { t } = useTranslation();
-  const openIdConnect = "openid-connect";
-  const oid4vc = "oid4vc";
   const isFeatureEnabled = useIsFeatureEnabled();
 
   const { setValue } = useFormContext();
@@ -85,7 +86,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
           },
           {
             title: t("fineGrainOpenIdConnectConfiguration"),
-            isHidden: protocol !== openIdConnect,
+            isHidden: protocol !== PROTOCOL_OIDC,
             panel: (
               <>
                 <Text className="pf-v5-u-pb-lg">
@@ -122,7 +123,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
           },
           {
             title: t("openIdConnectCompatibilityModes"),
-            isHidden: protocol !== openIdConnect,
+            isHidden: protocol !== PROTOCOL_OIDC,
             panel: (
               <>
                 <Text className="pf-v5-u-pb-lg">
@@ -144,7 +145,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
           },
           {
             title: t("fineGrainSamlEndpointConfig"),
-            isHidden: protocol === openIdConnect,
+            isHidden: protocol === PROTOCOL_OIDC,
             panel: (
               <>
                 <Text className="pf-v5-u-pb-lg">
@@ -206,14 +207,19 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
           {
             title: t("openIdVerifiableCredentials"),
             isHidden:
-              (protocol !== openIdConnect && protocol !== oid4vc) ||
+              (protocol !== PROTOCOL_OIDC && protocol !== PROTOCOL_OID4VC) ||
               !isFeatureEnabled(Feature.OpenId4VCI),
             panel: (
-              <OpenIdVerifiableCredentials
-                client={client}
-                save={save}
-                reset={() => resetFields(["oid4vci.enabled"])}
-              />
+              <>
+                <Text className="pf-v5-u-pb-lg">
+                  {t("openIdVerifiableCredentialsHelp")}
+                </Text>
+                <OpenIdVerifiableCredentials
+                  client={client}
+                  save={save}
+                  reset={() => resetFields(["oid4vci.enabled"])}
+                />
+              </>
             ),
           },
           {
