@@ -72,9 +72,7 @@ public class ExternalToInternalTokenExchangeProvider extends StandardTokenExchan
             requestedTokenType = OAuth2Constants.ACCESS_TOKEN_TYPE;
             return requestedTokenType;
         }
-        if (requestedTokenType.equals(OAuth2Constants.ACCESS_TOKEN_TYPE)
-                || requestedTokenType.equals(OAuth2Constants.ID_TOKEN_TYPE)
-                || requestedTokenType.equals(OAuth2Constants.SAML2_TOKEN_TYPE)) {
+        if (getSupportedOAuthResponseTokenTypes().contains(requestedTokenType)) {
             return requestedTokenType;
         }
 
