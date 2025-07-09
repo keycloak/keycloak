@@ -107,7 +107,7 @@ public class AuthenticationSessionFailoverClusterTest extends AbstractFailoverCl
         updateProfilePage.assertCurrent();
 
         // Successfully update profile and assert user logged
-        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3").submit();
+        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3").email("john@doe3.com").submit();
         appPage.assertCurrent();
     }
 

@@ -261,7 +261,7 @@ public class DefaultRequiredActions {
 
         if (!isRequiredActionActive) {
             RequiredActionProviderModel updateEmail = new RequiredActionProviderModel();
-            updateEmail.setEnabled(true);
+            updateEmail.setEnabled(false);
             updateEmail.setAlias(PROVIDER_ID);
             updateEmail.setName("Update Email");
             updateEmail.setProviderId(PROVIDER_ID);
