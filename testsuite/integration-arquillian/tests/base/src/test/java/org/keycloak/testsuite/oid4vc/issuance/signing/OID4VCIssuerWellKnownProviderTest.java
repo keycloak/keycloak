@@ -23,6 +23,7 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.models.oid4vci.Oid4vcProtocolMapperModel;
@@ -40,18 +41,36 @@ import org.keycloak.protocol.oid4vc.model.DisplayObject;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.ProofTypesSupported;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.arquillian.SuiteContext;
+import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest {
+
+    @Override
+    public void configureTestRealm(RealmRepresentation testRealm) {
+        Map<String, String> attributes = Optional.ofNullable(testRealm.getAttributes()).orElseGet(HashMap::new);
+        attributes.put("credential_response_encryption.alg_values_supported", "[\"RSA-OAEP\"]");
+        attributes.put("credential_response_encryption.enc_values_supported", "[\"A256GCM\"]");
+        attributes.put("credential_response_encryption.encryption_required", "true");
+        attributes.put("batch_credential_issuance.batch_size", "10");
+        attributes.put("signed_metadata", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmb28iOiJiYXIifQ.XYZ123abc");
+        testRealm.setAttributes(attributes);
+        super.configureTestRealm(testRealm);
+    }
 
     /**
      * this test will use the configured scopes {@link #jwtTypeCredentialClientScope} and
@@ -71,6 +90,24 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
         Assert.assertEquals("Authorization Server should point to the realm-address.",
                             getRealmPath(TEST_REALM_NAME),
                             credentialIssuer.getAuthorizationServers().get(0));
+
+        // Check credential_response_encryption
+        CredentialIssuer.CredentialResponseEncryption encryption = credentialIssuer.getCredentialResponseEncryption();
+        Assert.assertNotNull("credential_response_encryption should be present", encryption);
+        Assert.assertEquals(List.of("RSA-OAEP"), encryption.getAlgValuesSupported());
+        Assert.assertEquals(List.of("A256GCM"), encryption.getEncValuesSupported());
+        Assert.assertTrue("encryption_required should be true", encryption.getEncryptionRequired());
+
+        // Check batch_credential_issuance
+        CredentialIssuer.BatchCredentialIssuance batch = credentialIssuer.getBatchCredentialIssuance();
+        Assert.assertNotNull("batch_credential_issuance should be present", batch);
+        Assert.assertEquals(Integer.valueOf(10), batch.getBatchSize());
+
+        // Check signed_metadata
+        Assert.assertEquals(
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmb28iOiJiYXIifQ.XYZ123abc",
+                credentialIssuer.getSignedMetadata()
+        );
 
         for (ClientScopeRepresentation clientScope : List.of(jwtTypeCredentialClientScope,
                                                              sdJwtTypeCredentialClientScope,
@@ -101,39 +138,6 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
 
         compareClaims(supportedConfig.getFormat(), supportedConfig.getClaims(), clientScope.getProtocolMappers());
     }
-
-        @Test
-        public void testCredentialIssuerMetadataFields() {
-            String expectedIssuer = suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/" + TEST_REALM_NAME;
-            KeycloakTestingClient testingClient = this.testingClient;
-
-            testingClient
-                .server(TEST_REALM_NAME)
-                .run(session -> {
-                    OID4VCIssuerWellKnownProvider provider = new OID4VCIssuerWellKnownProvider(session);
-                    Object config = provider.getConfig();
-                    assertTrue("Should return CredentialIssuer", config instanceof CredentialIssuer);
-                    CredentialIssuer issuer = (CredentialIssuer) config;
-
-                    // Check credential_response_encryption
-                    CredentialIssuer.CredentialResponseEncryption encryption = issuer.getCredentialResponseEncryption();
-                    assertNotNull("credential_response_encryption should be present", encryption);
-                    assertEquals(List.of("RSA-OAEP"), encryption.getAlgValuesSupported());
-                    assertEquals(List.of("A256GCM"), encryption.getEncValuesSupported());
-                    assertTrue("encryption_required should be true", encryption.getEncryptionRequired());
-
-                    // Check batch_credential_issuance
-                    CredentialIssuer.BatchCredentialIssuance batch = issuer.getBatchCredentialIssuance();
-                    assertNotNull("batch_credential_issuance should be present", batch);
-                    assertEquals(Integer.valueOf(10), batch.getBatchSize());
-
-                    // Check signed_metadata
-                    assertEquals(
-                        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmb28iOiJiYXIifQ.XYZ123abc",
-                        issuer.getSignedMetadata()
-                    );
-                });
-        }
 
     private void compareMetadataToClientScope(CredentialIssuer credentialIssuer, ClientScopeRepresentation clientScope) {
         String credentialConfigurationId = Optional.ofNullable(clientScope.getAttributes()
@@ -207,49 +211,6 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
         compareClaims(expectedFormat, supportedConfig.getClaims(), clientScope.getProtocolMappers());
     }
 
-    public static void configureTestRealm(
-            ClientRepresentation testClient,
-            RealmRepresentation testRealm,
-            Map<String, String> clientAttributes,
-            Map<String, String> realmAttributes
-    ) {
-        realmAttributes.put("credential_response_encryption.alg_values_supported", "[\"RSA-OAEP\"]");
-        realmAttributes.put("credential_response_encryption.enc_values_supported", "[\"A256GCM\"]");
-        realmAttributes.put("credential_response_encryption.encryption_required", "true");
-        realmAttributes.put("batch_credential_issuance.batch_size", "10");
-        realmAttributes.put("signed_metadata", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmb28iOiJiYXIifQ.XYZ123abc"); // example JWT
-        testClient.setAttributes(new HashMap<>(clientAttributes));
-        testRealm.setAttributes(new HashMap<>(realmAttributes));
-        extendConfigureTestRealm(testRealm, testClient);
-    }
-
-    public static void testCredentialConfig(SuiteContext suiteContext, KeycloakTestingClient testingClient) {
-        String expectedIssuer = suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/" + TEST_REALM_NAME;
-        String expectedCredentialsEndpoint = expectedIssuer + "/protocol/oid4vc/credential";
-        String expectedDeferredEndpoint = expectedIssuer + "/protocol/oid4vc/deferred_credential";
-        final String expectedAuthorizationServer = expectedIssuer;
-        testingClient
-                .server(TEST_REALM_NAME)
-                .run((session -> {
-                    OID4VCIssuerWellKnownProvider oid4VCIssuerWellKnownProvider = new OID4VCIssuerWellKnownProvider(session);
-                    Object issuerConfig = oid4VCIssuerWellKnownProvider.getConfig();
-                    assertTrue("Valid credential-issuer metadata should be returned.", issuerConfig instanceof CredentialIssuer);
-                    CredentialIssuer credentialIssuer = (CredentialIssuer) issuerConfig;
-                    assertEquals("The correct issuer should be included.", expectedIssuer, credentialIssuer.getCredentialIssuer());
-                    assertEquals("The correct credentials endpoint should be included.", expectedCredentialsEndpoint, credentialIssuer.getCredentialEndpoint());
-                    assertEquals("The correct deferred_credential_endpoint should be included.", expectedDeferredEndpoint, credentialIssuer.getDeferredCredentialEndpoint());
-                    assertEquals("Since the authorization server is equal to the issuer, just 1 should be returned.", 1, credentialIssuer.getAuthorizationServers().size());
-                    assertEquals("The expected server should have been returned.", expectedAuthorizationServer, credentialIssuer.getAuthorizationServers().get(0));
-                    assertTrue("The test-credential should be supported.", credentialIssuer.getCredentialsSupported().containsKey("test-credential"));
-                    assertEquals("The test-credential should offer type VerifiableCredential", "VerifiableCredential", credentialIssuer.getCredentialsSupported().get("test-credential").getScope());
-                    assertEquals("The test-credential should be offered in the jwt-vc format.", Format.JWT_VC, credentialIssuer.getCredentialsSupported().get("test-credential").getFormat());
-                    assertNotNull("The test-credential can optionally provide a claims claim.", credentialIssuer.getCredentialsSupported().get("test-credential").getClaims());
-                    assertNotNull("The test-credential claim firstName is present.", credentialIssuer.getCredentialsSupported().get("test-credential").getClaims().get("firstName"));
-                    assertFalse("The test-credential claim firstName is not mandatory.", credentialIssuer.getCredentialsSupported().get("test-credential").getClaims().get("firstName").getMandatory());
-                    assertEquals("The test-credential claim firstName shall be displayed as First Name", "First Name", credentialIssuer.getCredentialsSupported().get("test-credential").getClaims().get("firstName").getDisplay().get(0).getName());
-                    // moved sd-jwt specific config to org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCSdJwtIssuingEndpointTest.getConfig
-                }));
-    }
     private void compareDisplay(SupportedCredentialConfiguration supportedConfig, ClientScopeRepresentation clientScope) {
         String display = clientScope.getAttributes().get(CredentialScopeModel.VC_DISPLAY);
         if (StringUtil.isBlank(display)) {
@@ -343,5 +304,57 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
      */
     public static class SerializableClaimDisplayReference extends TypeReference<List<ClaimDisplay>>
             implements Serializable {
+    }
+
+    public static void testCredentialConfig(SuiteContext suiteContext, KeycloakTestingClient testingClient) {
+        String expectedIssuer = suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/" + TEST_REALM_NAME;
+        String expectedCredentialsEndpoint = expectedIssuer + "/protocol/oid4vc/credential";
+        String expectedDeferredEndpoint = expectedIssuer + "/protocol/oid4vc/deferred_credential";
+        final String expectedAuthorizationServer = expectedIssuer;
+        testingClient
+                .server(TEST_REALM_NAME)
+                .run((session -> {
+                    OID4VCIssuerWellKnownProvider oid4VCIssuerWellKnownProvider = new OID4VCIssuerWellKnownProvider(session);
+                    Object issuerConfig = oid4VCIssuerWellKnownProvider.getConfig();
+                    Assert.assertTrue("Valid credential-issuer metadata should be returned.", issuerConfig instanceof CredentialIssuer);
+                    CredentialIssuer credentialIssuer = (CredentialIssuer) issuerConfig;
+                    Assert.assertEquals("The correct issuer should be included.", expectedIssuer, credentialIssuer.getCredentialIssuer());
+                    Assert.assertEquals("The correct credentials endpoint should be included.", expectedCredentialsEndpoint, credentialIssuer.getCredentialEndpoint());
+                    Assert.assertEquals("The correct deferred_credential_endpoint should be included.", expectedDeferredEndpoint, credentialIssuer.getDeferredCredentialEndpoint());
+                    Assert.assertEquals("Since the authorization server is equal to the issuer, just 1 should be returned.", 1, credentialIssuer.getAuthorizationServers().size());
+                    Assert.assertEquals("The expected server should have been returned.", expectedAuthorizationServer, credentialIssuer.getAuthorizationServers().get(0));
+                    Assert.assertTrue("The test-credential should be supported.", credentialIssuer.getCredentialsSupported().containsKey("test-credential"));
+                    Assert.assertEquals("The test-credential should offer type VerifiableCredential", "VerifiableCredential", credentialIssuer.getCredentialsSupported().get("test-credential").getScope());
+                    Assert.assertEquals("The test-credential should be offered in the jwt-vc format.", Format.JWT_VC, credentialIssuer.getCredentialsSupported().get("test-credential").getFormat());
+                    Assert.assertNotNull("The test-credential can optionally provide a claims claim.", credentialIssuer.getCredentialsSupported().get("test-credential").getClaims());
+                }));
+    }
+
+    public static void extendConfigureTestRealm(RealmRepresentation testRealm, ClientRepresentation clientRepresentation) {
+        if (testRealm.getComponents() == null) {
+            testRealm.setComponents(new MultivaluedHashMap<>());
+        }
+
+        testRealm.getComponents().add("org.keycloak.keys.KeyProvider", getRsaKeyProvider(RSA_KEY));
+        testRealm.getComponents().add("org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder", getCredentialBuilderProvider(Format.JWT_VC));
+
+
+        if (testRealm.getClients() != null) {
+            testRealm.getClients().add(clientRepresentation);
+        } else {
+            testRealm.setClients(new ArrayList<>(List.of(clientRepresentation)));
+        }
+
+        if (testRealm.getUsers() != null) {
+            testRealm.getUsers().add(OID4VCTest.getUserRepresentation(Map.of(clientRepresentation.getClientId(), List.of("testRole"))));
+        } else {
+            testRealm.setUsers(new ArrayList<>(List.of(OID4VCTest.getUserRepresentation(Map.of(clientRepresentation.getClientId(), List.of("testRole"))))));
+        }
+
+        if (testRealm.getAttributes() != null) {
+            testRealm.getAttributes().put("issuerDid", TEST_DID.toString());
+        } else {
+            testRealm.setAttributes(new HashMap<>(Map.of("issuerDid", TEST_DID.toString())));
+        }
     }
 }
