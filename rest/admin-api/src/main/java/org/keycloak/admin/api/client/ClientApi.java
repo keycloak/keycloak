@@ -18,7 +18,7 @@ public interface ClientApi {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    ClientRepresentation getClient(@QueryParam("runtime") Boolean isRuntime);
+    ClientRepresentation getClient();
 
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)

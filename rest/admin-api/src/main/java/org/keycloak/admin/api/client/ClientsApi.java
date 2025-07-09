@@ -9,7 +9,6 @@ import org.keycloak.representations.admin.v2.ClientRepresentation;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -28,12 +27,6 @@ public interface ClientsApi extends Provider {
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get all clients", description = "Returns a list of all clients in the realm")
     Stream<ClientRepresentation> getClients();
-
-    @PUT
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Create or update a client", description = "Creates a new client or updates an existing client")
-    ClientRepresentation createOrUpdateClient(ClientRepresentation client);
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
