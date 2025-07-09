@@ -20,6 +20,8 @@ import org.keycloak.config.HealthOptions;
 import org.keycloak.config.HttpOptions;
 import org.keycloak.config.ManagementOptions;
 import org.keycloak.config.MetricsOptions;
+import org.keycloak.config.OpenApiOptions;
+import org.keycloak.config.SwaggerOptions;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
@@ -115,8 +117,11 @@ public class ManagementPropertyMappers {
         if (isTrue(LEGACY_OBSERVABILITY_INTERFACE)) {
             return false;
         }
-        var isManagementOccupied = isTrue(HealthOptions.HEALTH_ENABLED) || isTrue(MetricsOptions.METRICS_ENABLED);
-        return isManagementOccupied;
+
+        return isTrue(HealthOptions.HEALTH_ENABLED)
+            || isTrue(MetricsOptions.METRICS_ENABLED)
+            || isTrue(OpenApiOptions.OPENAPI_ENABLED)
+            || isTrue(SwaggerOptions.SWAGGER_ENABLED);
     }
 
     private static String managementEnabledTransformer() {
