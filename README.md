@@ -1,6 +1,6 @@
 ![Keycloak](https://github.com/keycloak/keycloak-misc/blob/main/logo/logo.svg)
 
-![GitHub Release](https://img.shields.io/github/v/release/keycloak/keycloak?label=latest%20release)
+![GitHub Release](https://img.shields.io/github/v/tag/tide-foundation/keycloak-IGA?label=latest%20release)
 [![OpenSSF Best Practices](https://bestpractices.coreinfrastructure.org/projects/6818/badge)](https://bestpractices.coreinfrastructure.org/projects/6818)
 [![CLOMonitor](https://img.shields.io/endpoint?url=https://clomonitor.io/api/projects/cncf/keycloak/badge)](https://clomonitor.io/projects/cncf/keycloak)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/keycloak/keycloak/badge)](https://securityscorecards.dev/viewer/?uri=github.com/keycloak/keycloak)
@@ -35,7 +35,7 @@ This is a fork of Keycloak enhanced with **Identity Governance and Administratio
 #### 1. Clone the repository
 
 ```bash
-git clone --branch 26.2.5-IGA --single-branch https://github.com/YOUR-ORG/keycloak-IGA.git
+git clone --branch 26.2.5-IGA --single-branch https://github.com/tide-foundation/keycloak-IGA.git
 cd keycloak-IGA
 ```
 
