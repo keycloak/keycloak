@@ -17,8 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 
 import io.fabric8.zjsonpatch.JsonPatch;
-import jakarta.json.Json;
-import jakarta.json.stream.JsonParser;
+import io.fabric8.zjsonpatch.JsonPatchException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.HttpHeaders;
@@ -88,8 +87,10 @@ public class DefaultClientApi implements ClientApi {
                 }
             }
             return clientService.createOrUpdate(realm, updated, true).representation();
-        } catch (JsonProcessingException e) {
+        } catch (JsonPatchException e) {
             // TODO: kubernetes uses 422 instead
+            throw new WebApplicationException(e.getMessage(), Response.Status.BAD_REQUEST);
+        } catch (JsonProcessingException e) {
             throw new WebApplicationException(e.getMessage(), Response.Status.BAD_REQUEST);
         } catch (IOException e) {
             throw ErrorResponse.error("Unknown Error Occurred", Response.Status.INTERNAL_SERVER_ERROR);
