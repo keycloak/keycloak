@@ -39,6 +39,7 @@ import org.keycloak.common.Version;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MimeTypeUtil;
 import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.common.util.SystemEnvProperties;
 import org.keycloak.cookie.CookieProvider;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.http.HttpRequest;
@@ -133,9 +134,11 @@ public class WelcomeResource {
                 return createWelcomePage(null, "Password and confirmation doesn't match");
             }
 
+
+            var isTemporaryUserUsed = isAdminUserTemporary();
             try {
                 ApplianceBootstrap applianceBootstrap = new ApplianceBootstrap(session);
-                applianceBootstrap.createMasterRealmUser(username, password);
+                applianceBootstrap.createMasterRealmUser(username, password, isTemporaryUserUsed);
             } catch (ModelException e) {
                 session.getTransactionManager().rollback();
                 logger.error("Error creating the administrative user", e);
@@ -145,7 +148,10 @@ public class WelcomeResource {
             expireCsrfCookie();
 
             shouldBootstrap.set(false);
-            ServicesLogger.LOGGER.createdTemporaryAdminUser(username);
+            if (isTemporaryUserUsed)
+                ServicesLogger.LOGGER.createdTemporaryAdminUser(username);
+            else
+                ServicesLogger.LOGGER.createdAdminUser(username);
             return createWelcomePage("User created", null);
         }
     }
@@ -190,7 +196,7 @@ public class WelcomeResource {
             boolean bootstrap = shouldBootstrap();
             boolean adminConsoleEnabled = isAdminConsoleEnabled();
             Properties themeProperties = theme.getProperties();
-            boolean redirectToAdmin = Boolean.parseBoolean(themeProperties.getProperty("redirectToAdmin", "false"));
+            boolean redirectToAdmin = Boolean.parseBoolean(getThemeProperty("redirectToAdmin", "false"));
             URI adminUrl = session.getContext().getUri(UrlType.ADMIN).getBaseUriBuilder().path("/admin/").build();
 
             // Redirect to the Administration Console if the administrative user already exists.
@@ -199,7 +205,7 @@ public class WelcomeResource {
             }
 
             Map<String, Object> map = new HashMap<>();
-            String commonPath = themeProperties.getProperty("common", "common/keycloak");
+            String commonPath = getThemeProperty("common", "common/keycloak");
 
             map.put("bootstrap", bootstrap);
             map.put("adminConsoleEnabled", adminConsoleEnabled);
@@ -302,4 +308,18 @@ public class WelcomeResource {
         }
     }
 
+    protected String getThemeProperty(String propertyName, String defaultValue) {
+        try {
+            return getTheme().getProperties().getProperty(propertyName, defaultValue);
+        } catch (IOException e) {
+            logger.warnf("Error reading theme properties for %s", propertyName, e);
+            return defaultValue;
+        }
+    }
+
+    protected boolean isAdminUserTemporary() {
+        String themeProperty = "kcBootstrapAdminIsTemporary";
+        String envVar = "env.KC_BOOTSTRAP_ADMIN_IS_TEMPORARY";
+        return Boolean.parseBoolean(getThemeProperty(themeProperty, SystemEnvProperties.UNFILTERED.getProperty(envVar, "true")));
+    }
 }
