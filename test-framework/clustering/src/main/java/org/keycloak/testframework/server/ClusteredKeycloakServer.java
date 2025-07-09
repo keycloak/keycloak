@@ -62,12 +62,15 @@ public class ClusteredKeycloakServer implements KeycloakServer {
         if (containers.length != imagePeServer.length) {
             throw new IllegalArgumentException("The number of containers and the number of images must match");
         }
+
         int[] exposedPorts = new int[]{REQUEST_PORT, MANAGEMENT_PORT};
         LazyFuture<String> snapshotImage = null;
         for (int i = 0; i < containers.length; ++i) {
             LazyFuture<String> resolvedImage;
             if (SNAPSHOT_IMAGE.equals(imagePeServer[i])) {
                 if (snapshotImage == null) {
+                    // Required otherwise we will receive an "Incorrect state of migration" error preventing startup
+                    configBuilder.option("spi-datastore--legacy--allow-migrate-existing-database-to-snapshot", "true");
                     snapshotImage = defaultImage();
                 }
                 resolvedImage = snapshotImage;
