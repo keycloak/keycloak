@@ -583,6 +583,8 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         user = session.users().getUserById(realm, entity.getUser());
 
         if (user == null) {
+            // mark the user session for removal when the user bound to the session can not be resolved
+            removeUserSession(realm, wrap(realm, entity, offline, null));
             return null;
         }
 
