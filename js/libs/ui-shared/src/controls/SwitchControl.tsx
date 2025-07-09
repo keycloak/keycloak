@@ -14,7 +14,7 @@ export type SwitchControlProps<
   T extends FieldValues,
   P extends FieldPath<T> = FieldPath<T>,
 > = Omit<SwitchProps, "name" | "defaultValue" | "ref"> &
-  UseControllerProps<T, P> & {
+  UseControllerProps<any, P> & {
     name: string;
     label?: string;
     labelIcon?: string;

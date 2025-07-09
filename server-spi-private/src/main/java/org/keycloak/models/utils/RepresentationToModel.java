@@ -38,7 +38,7 @@ import java.util.stream.Stream;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.authorization.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.AuthorizationProviderFactory;
 import org.keycloak.authorization.model.PermissionTicket;
@@ -140,8 +140,8 @@ public class RepresentationToModel {
     public static final String OIDC = "openid-connect";
 
 
-    public static void importRealm(KeycloakSession session, RealmRepresentation rep, RealmModel newRealm, boolean skipUserDependent) {
-        session.getProvider(DatastoreProvider.class).getExportImportManager().importRealm(rep, newRealm, skipUserDependent);
+    public static void importRealm(KeycloakSession session, RealmRepresentation rep, RealmModel newRealm, Runnable userImport) {
+        session.getProvider(DatastoreProvider.class).getExportImportManager().importRealm(rep, newRealm, userImport);
     }
 
     public static void importRoles(RolesRepresentation realmRoles, RealmModel realm) {
@@ -702,7 +702,7 @@ public class RepresentationToModel {
     // CLIENT SCOPES
 
 
-    public static ClientScopeModel createClientScope(KeycloakSession session, RealmModel realm, ClientScopeRepresentation resourceRep) {
+    public static ClientScopeModel createClientScope(RealmModel realm, ClientScopeRepresentation resourceRep) {
         logger.debugv("Create client scope: {0}", resourceRep.getName());
 
         ClientScopeModel clientScope = resourceRep.getId() != null ? realm.addClientScope(resourceRep.getId(), resourceRep.getName()) : realm.addClientScope(resourceRep.getName());
@@ -724,7 +724,6 @@ public class RepresentationToModel {
                 clientScope.setAttribute(entry.getKey(), entry.getValue());
             }
         }
-
 
         return clientScope;
     }
@@ -1180,7 +1179,7 @@ public class RepresentationToModel {
             if (applyPolicies != null && !applyPolicies.isEmpty()) {
                 PolicyStore policyStore = storeFactory.getPolicyStore();
                 try {
-                    List<String> policies = (List<String>) JsonSerialization.readValue(applyPolicies, List.class);
+                    List<String> policies = JsonSerialization.readValue(applyPolicies, List.class);
                     Set<String> policyIds = new HashSet<>();
 
                     for (String policyName : policies) {

@@ -18,7 +18,7 @@
 package org.keycloak.models.jpa;
 
 import jakarta.persistence.criteria.Path;
-import org.keycloak.authorization.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;

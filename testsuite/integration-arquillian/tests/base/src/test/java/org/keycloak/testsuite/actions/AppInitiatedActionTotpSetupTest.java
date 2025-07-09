@@ -66,14 +66,6 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
     @Before
     public void setOTPAuthRequired() {
-        adminClient.realm("test").flows().getExecutions("browser")
-                .stream()
-                .filter(execution -> execution.getDisplayName().equals("Browser - Conditional OTP"))
-                .forEach(execution -> {
-                        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED.name());
-                        adminClient.realm("test").flows().updateExecutions("browser", execution);
-                });
-
         ApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
         UserRepresentation user = UserBuilder.create().enabled(true)
                 .username("test-user@localhost")

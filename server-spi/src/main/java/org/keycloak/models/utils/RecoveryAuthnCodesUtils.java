@@ -29,16 +29,15 @@ public class RecoveryAuthnCodesUtils {
     private static final int CODE_LENGTH = 12;
     public static final char[] UPPERNUM = "ABCDEFGHIJKLMNPQRSTUVWXYZ123456789".toCharArray();
     private static final SecretGenerator SECRET_GENERATOR = SecretGenerator.getInstance();
-    public static final String NOM_ALGORITHM_TO_HASH = Algorithm.RS512;
-    public static final int NUM_HASH_ITERATIONS = 1;
+    public static final String NOM_ALGORITHM_TO_HASH = JavaAlgorithm.SHA512;
     public static final String RECOVERY_AUTHN_CODES_INPUT_DEFAULT_ERROR_MESSAGE = "recovery-codes-error-invalid";
     public static final String FIELD_RECOVERY_CODE_IN_BROWSER_FLOW = "recoveryCodeInput";
 
     public static byte[] hashRawCode(String rawGeneratedCode) {
         Objects.requireNonNull(rawGeneratedCode, "rawGeneratedCode cannot be null");
-
-        return HashUtils.hash(JavaAlgorithm.getJavaAlgorithmForHash(NOM_ALGORITHM_TO_HASH),
-                rawGeneratedCode.getBytes(StandardCharsets.UTF_8));
+        // If we allow the algorithm to be truly configurable, we should make sure that it works
+        // with both `SHA-512` as well as `RS512` (which was used in the versions prior to 26.2)
+        return HashUtils.hash(NOM_ALGORITHM_TO_HASH, rawGeneratedCode.getBytes(StandardCharsets.UTF_8));
     }
 
     public static boolean verifyRecoveryCodeInput(String rawInputRecoveryCode, String hashedSavedRecoveryCode) {

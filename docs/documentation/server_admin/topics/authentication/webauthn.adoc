@@ -191,6 +191,13 @@ If `WebAuthn Authenticator` is set up as required as shown in the first example,
 
 After successful registration, the user's browser asks the user to enter the text of their WebAuthn authenticator's label.
 
+[[_webauthn_aia]]
+==== Registering WebAuthn credentials using AIA
+
+WebAuthn credentials can also be registered for a user using <<con-aia_{context},Application Initiated Actions (AIA)>>. The actions *Webauthn Register* (`kc_action=webauthn-register`) and *Webauthn Register Passwordless* (`kc_action=webauthn-register-passwordless`) are available for the applications if enabled in the <<proc-setting-default-required-actions_{context}, Required actions tab>>.
+
+Both required actions allow a parameter *skip_if_exists* that allows to skip the AIA execution if the user already has a credential of that type. The `kc_action_status` will be *success* if skipped. For example, adding the option to the common WebAuthn register action is just using the following query parameter `kc_action=webauthn-register:skip_if_exists`.
+
 [[_webauthn_passwordless]]
 ==== Passwordless WebAuthn together with Two-Factor
 

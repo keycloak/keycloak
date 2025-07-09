@@ -117,6 +117,13 @@ public class ClusterConfigDistTest {
         result.assertMessage("ISPN000078: Starting JGroups channel `ISPN` with stack `encrypt-udp`");
     }
 
+    @Test
+    @BeforeStartDistribution(ConfigureCacheUsingAsyncEncryption.class)
+    @Launch({"start", "--cache-config-file=cache-ispn-asym-enc.xml", "--http-enabled=true", "--hostname-strict=false", "--cache-embedded-mtls-enabled=false"})
+    void testCustomCacheStackInConfigFileNotDev(CLIResult result) {
+        result.assertMessage("ISPN000078: Starting JGroups channel `ISPN` with stack `encrypt-udp`");
+    }
+
     public static class ConfigureCacheUsingAsyncEncryption implements Consumer<KeycloakDistribution> {
 
         @Override

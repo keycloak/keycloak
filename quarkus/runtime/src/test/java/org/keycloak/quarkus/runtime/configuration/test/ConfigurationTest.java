@@ -252,7 +252,8 @@ public class ConfigurationTest extends AbstractConfigurationTest {
 
         ConfigArgsConfigSource.setCliArgs("--db=dev-mem", "--db-username=other");
         config = createConfig();
-        assertEquals("sa", config.getConfigValue("quarkus.datasource.username").getValue());
+        // we allow changing username by default
+        assertEquals("other", config.getConfigValue("quarkus.datasource.username").getValue());
         // should be untransformed
         assertEquals("other", config.getConfigValue("kc.db-username").getValue());
 

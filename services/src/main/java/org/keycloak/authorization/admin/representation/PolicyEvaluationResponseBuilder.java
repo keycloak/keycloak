@@ -16,7 +16,7 @@
  */
 package org.keycloak.authorization.admin.representation;
 
-import org.keycloak.authorization.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.Decision;
 import org.keycloak.authorization.admin.PolicyEvaluationService.EvaluationDecisionCollector;

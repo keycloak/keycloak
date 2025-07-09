@@ -1,8 +1,7 @@
 package org.keycloak.authentication.requiredactions;
 
-import java.util.Arrays;
-import java.util.List;
-
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.CredentialRegistrator;
@@ -22,14 +21,15 @@ import org.keycloak.models.RequiredActionConfigModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
-
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.userprofile.ValidationException;
 import org.keycloak.validate.ValidationError;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Stream;
 
 import static org.keycloak.utils.CredentialHelper.createRecoveryCodesCredential;
 
@@ -160,11 +160,15 @@ public class RecoveryAuthnCodesAction implements RequiredActionProvider, Require
 
     @Override
     public List<ProviderConfigProperty> getConfigMetadata() {
-        return List.copyOf(CONFIG_PROPERTIES);
+        return Stream.concat(
+                List.copyOf(CONFIG_PROPERTIES).stream(),
+                RequiredActionFactory.super.getConfigMetadata().stream()
+        ).toList();
     }
 
     @Override
     public void validateConfig(KeycloakSession session, RealmModel realm, RequiredActionConfigModel model) {
+        RequiredActionFactory.super.validateConfig(session, realm, model);
 
         int parsedMaxAuthAge;
         try {

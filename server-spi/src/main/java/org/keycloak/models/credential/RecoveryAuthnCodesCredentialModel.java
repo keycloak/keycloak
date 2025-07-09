@@ -68,7 +68,7 @@ public class RecoveryAuthnCodesCredentialModel extends CredentialModel {
                             Base64.encodeBytes(RecoveryAuthnCodesUtils.hashRawCode(originalGeneratedCodes.get(i)))))
                     .collect(Collectors.toList());
             secretData = new RecoveryAuthnCodesSecretData(recoveryCodes);
-            credentialData = new RecoveryAuthnCodesCredentialData(RecoveryAuthnCodesUtils.NUM_HASH_ITERATIONS,
+            credentialData = new RecoveryAuthnCodesCredentialData(null,
                     RecoveryAuthnCodesUtils.NOM_ALGORITHM_TO_HASH, recoveryCodes.size(), recoveryCodes.size());
             model = new RecoveryAuthnCodesCredentialModel(credentialData, secretData);
             model.setCredentialData(JsonSerialization.writeValueAsString(credentialData));

@@ -248,7 +248,9 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         updatePasswordPage.assertCurrent();
 
         if(userAuthenticated) {
-            updatePasswordPage.uncheckLogoutSessions();
+            assertFalse("Logout other sessions was ticked", updatePasswordPage.isLogoutSessionsChecked());
+        } else {
+            updatePasswordPage.checkLogoutSessions();
         }
 
         updatePasswordPage.changePassword("resetPassword", "resetPassword");
@@ -1092,9 +1094,9 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
             resetPasswordPage.changePassword("login-test");
 
-            errorPage.assertCurrent();
+            loginPage.assertCurrent();
 
-            assertEquals("Failed to send email, please try again later.", errorPage.getError());
+            assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
 
             assertEquals(0, greenMail.getReceivedMessages().length);
 

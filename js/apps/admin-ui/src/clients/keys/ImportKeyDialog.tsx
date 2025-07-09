@@ -1,17 +1,14 @@
-import { SelectControl } from "@keycloak/keycloak-ui-shared";
+import { SelectControl, FileUploadControl } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   ButtonVariant,
-  FileUpload,
   Form,
-  FormGroup,
   Modal,
   ModalVariant,
   Text,
   TextContent,
 } from "@patternfly/react-core";
-import { useState } from "react";
-import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
+import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { StoreSettings } from "./StoreSettings";
@@ -25,7 +22,7 @@ export type ImportFile = {
   keystoreFormat: string;
   keyAlias: string;
   storePassword: string;
-  file: { value?: string; filename: string };
+  file: File | string;
 };
 
 export const ImportKeyDialog = ({
@@ -34,7 +31,6 @@ export const ImportKeyDialog = ({
 }: ImportKeyDialogProps) => {
   const { t } = useTranslation();
   const form = useForm<ImportFile>();
-  const [file, setFile] = useState<string>("");
   const { control, handleSubmit } = form;
 
   const baseFormats = useServerInfo().cryptoInfo?.supportedKeystoreTypes ?? [];
@@ -96,31 +92,15 @@ export const ImportKeyDialog = ({
             }}
             options={formats}
           />
+          <FileUploadControl
+            label={t("importFile")}
+            id="importFile"
+            name="file"
+            rules={{
+              required: t("required"),
+            }}
+          />
           {baseFormats.includes(format) && <StoreSettings hidePassword />}
-          <FormGroup label={t("importFile")} fieldId="importFile">
-            <Controller
-              name="file"
-              control={control}
-              defaultValue={{ value: "", filename: "" }}
-              render={({ field }) => (
-                <FileUpload
-                  id="importFile"
-                  value={field.value.value}
-                  filename={file}
-                  hideDefaultPreview
-                  type="text"
-                  onDataChange={(_, value) => {
-                    field.onChange({
-                      value,
-                    });
-                  }}
-                  onFileInputChange={(_, file) => {
-                    setFile(file.name);
-                  }}
-                />
-              )}
-            />
-          </FormGroup>
         </FormProvider>
       </Form>
     </Modal>

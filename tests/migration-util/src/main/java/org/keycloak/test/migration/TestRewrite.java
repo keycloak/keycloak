@@ -44,14 +44,19 @@ public abstract class TestRewrite {
         String add = "import " + clazzName + ";";
 
         int l = -1;
+        int lastImport = -1;
 
         for (int i = 0; i < content.size(); i++) {
             String c = content.get(i);
             if (c.matches("import [^ ]*;")) {
+                lastImport = i;
                 if (c.compareTo(add) > 1) {
                     l = i;
                     break;
                 }
+            } else if (c.matches("^\\b(?:public\\s+)?class\\b.*Test\\s+\\{$")) {
+                l = lastImport + 1;
+                break;
             }
         }
 

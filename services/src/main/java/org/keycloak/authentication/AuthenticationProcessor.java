@@ -1162,13 +1162,20 @@ public class AuthenticationProcessor {
             event.detail(Details.REMEMBER_ME, "true");
         }
 
-        final int clientSessions = userSession.getAuthenticatedClientSessions().size();
-        ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(session, userSession, authSession);
-        if (clientSessions == 0 && userSession.getStarted() == userSession.getLastSessionRefresh()
-                && TokenUtil.hasScope(clientSessionCtx.getScopeString(), OAuth2Constants.OFFLINE_ACCESS)) {
-            // user session is just created, empty and the first access was for offline token, set the note
-            clientSessionCtx.getClientSession().setNote(FIRST_OFFLINE_ACCESS, Boolean.TRUE.toString());
+        ClientSessionContext clientSessionCtx;
+        if (userSession.getStarted() == userSession.getLastSessionRefresh()) {
+            // calling getAuthenticatedClientSessions() will pull all client sessions and is therefore expensive.
+            // The nested ifs try to avoid the common case when the session already exists for some time and this is then called.
+            final int clientSessions = userSession.getAuthenticatedClientSessions().size();
+            clientSessionCtx = TokenManager.attachAuthenticationSession(session, userSession, authSession);
+            if (clientSessions == 0 && TokenUtil.hasScope(clientSessionCtx.getScopeString(), OAuth2Constants.OFFLINE_ACCESS)) {
+                // user session is just created, empty and the first access was for offline token, set the note
+                clientSessionCtx.getClientSession().setNote(FIRST_OFFLINE_ACCESS, Boolean.TRUE.toString());
+            } else {
+                clientSessionCtx.getClientSession().removeNote(FIRST_OFFLINE_ACCESS);
+            }
         } else {
+            clientSessionCtx = TokenManager.attachAuthenticationSession(session, userSession, authSession);
             clientSessionCtx.getClientSession().removeNote(FIRST_OFFLINE_ACCESS);
         }
 

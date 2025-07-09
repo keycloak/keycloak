@@ -125,7 +125,8 @@
 
     "cacheEmbedded": {
         "default": {
-            "nodeName": "${keycloak.cacheEmbedded.nodeName,jboss.node.name:}"
+            "nodeName": "${keycloak.cacheEmbedded.nodeName,jboss.node.name:}",
+            "configFile": "${keycloak.cacheEmbedded.configFile:local-test-ispn.xml}"
         }
     },
 

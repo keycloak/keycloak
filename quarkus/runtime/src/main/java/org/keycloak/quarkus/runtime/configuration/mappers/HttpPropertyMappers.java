@@ -159,11 +159,15 @@ public final class HttpPropertyMappers {
 
     public static void validateConfig() {
         boolean enabled = isHttpEnabled(getOptionalKcValue(HttpOptions.HTTP_ENABLED.getKey()).orElse(null));
-        Optional<String> certFile = getOptionalValue(QUARKUS_HTTPS_CERT_FILES);
-        Optional<String> keystoreFile = getOptionalValue(QUARKUS_HTTPS_KEY_STORE_FILE);
-        if (!enabled && certFile.isEmpty() && keystoreFile.isEmpty()) {
+        if (!enabled && !isHttpsEnabled()) {
             throw new PropertyException(Messages.httpsConfigurationNotSet());
         }
+    }
+
+    public static boolean isHttpsEnabled() {
+        Optional<String> certFile = getOptionalValue(QUARKUS_HTTPS_CERT_FILES);
+        Optional<String> keystoreFile = getOptionalValue(QUARKUS_HTTPS_KEY_STORE_FILE);
+        return certFile.isPresent() || keystoreFile.isPresent();
     }
 
     private static String transformPath(String value, ConfigSourceInterceptorContext context) {

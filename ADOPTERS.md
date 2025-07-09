@@ -51,6 +51,7 @@ List of organization names below is based on information collected using Keycloa
 * Quest Software
 * Research Industrial Software Engineering (RISE)
 * [SICK AG](https://www.sick.com)
+* [SMF](https://www.smf.de)
 * Sportsbet.com.au
 * [Stacklok](https://stacklok.com/)
 * Stack Labs

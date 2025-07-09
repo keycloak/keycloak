@@ -23,6 +23,7 @@ import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.connections.jpa.support.EntityManagers;
 import org.keycloak.deployment.DeployedConfigurationsManager;
 import org.keycloak.exportimport.ExportAdapter;
 import org.keycloak.exportimport.ExportOptions;
@@ -124,6 +125,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -145,6 +147,21 @@ import static org.keycloak.models.utils.StripSecretsUtils.stripSecrets;
 public class DefaultExportImportManager implements ExportImportManager {
     private final KeycloakSession session;
     private static final Logger logger = Logger.getLogger(DefaultExportImportManager.class);
+
+    public static class UserBatcher implements Consumer<KeycloakSession> {
+        private int count;
+
+        @Override
+        public void accept(KeycloakSession session) {
+            // TODO: determine what a good number is here
+            // There actually doesn't seem to be much difference with setting this
+            // higher - the important part is to clear the contexts - which could be even more optimal
+            // as detaching just users and their children
+            if (++count % 64 == 0) {
+                EntityManagers.flush(session, true);
+            }
+        };
+    }
 
     public DefaultExportImportManager(KeycloakSession session) {
         this.session = session;
@@ -174,7 +191,7 @@ public class DefaultExportImportManager implements ExportImportManager {
     }
 
     @Override
-    public void importRealm(RealmRepresentation rep, RealmModel newRealm, boolean skipUserDependent) {
+    public void importRealm(RealmRepresentation rep, RealmModel newRealm, Runnable userImport) {
         convertDeprecatedSocialProviders(rep);
         convertDeprecatedApplications(session, rep);
         convertDeprecatedClientTemplates(rep);
@@ -344,7 +361,7 @@ public class DefaultExportImportManager implements ExportImportManager {
 
         Map<String, ClientScopeModel> clientScopes = new HashMap<>();
         if (rep.getClientScopes() != null) {
-            clientScopes = createClientScopes(session, rep.getClientScopes(), newRealm);
+            clientScopes = createClientScopes(rep.getClientScopes(), newRealm);
         }
         if (rep.getDefaultDefaultClientScopes() != null) {
             for (String clientScopeName : rep.getDefaultDefaultClientScopes()) {
@@ -442,19 +459,30 @@ public class DefaultExportImportManager implements ExportImportManager {
 
         // create users and their role mappings and social mappings
 
-        if (rep.getUsers() != null) {
-            for (UserRepresentation userRep : rep.getUsers()) {
-                createUser(newRealm, userRep);
-            }
+        if (Optional.ofNullable(rep.getUsers()).filter(l -> !l.isEmpty()).isPresent() ||
+                Optional.ofNullable(rep.getFederatedUsers()).filter(l -> !l.isEmpty()).isPresent()) {
+            // run in a batch to mimic the behavior of directory based import
+            // this is using nested entity managers to keep the parent context clean
+            EntityManagers.runInBatch(session, () -> {
+                UserBatcher onUserAdded = new UserBatcher();
+                if (rep.getUsers() != null) {
+                    for (UserRepresentation userRep : rep.getUsers()) {
+                        createUser(newRealm, userRep);
+                        onUserAdded.accept(session);
+                    }
+                }
+
+                if (rep.getFederatedUsers() != null) {
+                    for (UserRepresentation userRep : rep.getFederatedUsers()) {
+                        importFederatedUser(session, newRealm, userRep);
+                        onUserAdded.accept(session);
+                    }
+                }
+            }, true);
         }
 
-        if (rep.getFederatedUsers() != null) {
-            for (UserRepresentation userRep : rep.getFederatedUsers()) {
-                importFederatedUser(session, newRealm, userRep);
-            }
-        }
-
-        if (!skipUserDependent) {
+        if (userImport != null) {
+            userImport.run();
             importRealmAuthorizationSettings(rep, newRealm, session);
         }
 
@@ -556,10 +584,10 @@ public class DefaultExportImportManager implements ExportImportManager {
         return appMap;
     }
 
-    private static Map<String, ClientScopeModel> createClientScopes(KeycloakSession session, List<ClientScopeRepresentation> clientScopes, RealmModel realm) {
+    private static Map<String, ClientScopeModel> createClientScopes(List<ClientScopeRepresentation> clientScopes, RealmModel realm) {
         Map<String, ClientScopeModel> appMap = new HashMap<>();
         for (ClientScopeRepresentation resourceRep : clientScopes) {
-            ClientScopeModel app = RepresentationToModel.createClientScope(session, realm, resourceRep);
+            ClientScopeModel app = RepresentationToModel.createClientScope(realm, resourceRep);
             appMap.put(app.getName(), app);
         }
         return appMap;
@@ -687,7 +715,7 @@ public class DefaultExportImportManager implements ExportImportManager {
         String oldName = realm.getName();
 
         ClientModel masterApp = realm.getMasterAdminClient();
-        masterApp.setClientId(KeycloakModelUtils.getMasterRealmAdminApplicationClientId(name));
+        masterApp.setClientId(KeycloakModelUtils.getMasterRealmAdminManagementClientId(name));
         realm.setName(name);
 
         ClientModel adminClient = realm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
@@ -863,8 +891,16 @@ public class DefaultExportImportManager implements ExportImportManager {
 
             Map<String, String> config = new HashMap<>(rep.getSmtpServer());
 
-            if(rep.getSmtpServer().containsKey("authType") && "basic".equals(rep.getSmtpServer().get("authType"))) {
-                if (rep.getSmtpServer().containsKey("password") && ComponentRepresentation.SECRET_VALUE.equals(rep.getSmtpServer().get("password"))) {
+            if (!Boolean.parseBoolean(config.get("auth"))) {
+                config.remove("authTokenUrl");
+                config.remove("authTokenScope");
+                config.remove("authTokenClientId");
+                config.remove("authTokenClientSecret");
+                config.remove("password");
+                config.remove("user");
+                config.remove("authType");
+            } else if (config.get("authType") == null || "basic".equals(config.get("authType"))) {
+                if (ComponentRepresentation.SECRET_VALUE.equals(config.get("password"))) {
                     String passwordValue = realm.getSmtpConfig() != null ? realm.getSmtpConfig().get("password") : null;
                     config.put("password", passwordValue);
                 }
@@ -872,10 +908,8 @@ public class DefaultExportImportManager implements ExportImportManager {
                 config.remove("authTokenScope");
                 config.remove("authTokenClientId");
                 config.remove("authTokenClientSecret");
-            }
-
-            if(rep.getSmtpServer().containsKey("authType") && "token".equals(rep.getSmtpServer().get("authType"))) {
-                if (rep.getSmtpServer().containsKey("authTokenClientSecret") && ComponentRepresentation.SECRET_VALUE.equals(rep.getSmtpServer().get("authTokenClientSecret"))) {
+            } else if ("token".equals(config.get("authType"))) {
+                if (ComponentRepresentation.SECRET_VALUE.equals(config.get("authTokenClientSecret"))) {
                     String authTokenClientSecretValue = realm.getSmtpConfig() != null ? realm.getSmtpConfig().get("authTokenClientSecret") : null;
                     config.put("authTokenClientSecret", authTokenClientSecretValue);
                 }
@@ -1328,6 +1362,9 @@ public class DefaultExportImportManager implements ExportImportManager {
 
         List<String> webAuthnPolicyExtraOrigins = rep.getWebAuthnPolicyPasswordlessExtraOrigins();
         if (webAuthnPolicyExtraOrigins != null) webAuthnPolicy.setExtraOrigins(webAuthnPolicyExtraOrigins);
+
+        Boolean webAuthnPolicyPasswordlessPasskeysEnabled = rep.getWebAuthnPolicyPasswordlessPasskeysEnabled();
+        if (webAuthnPolicyPasswordlessPasskeysEnabled != null) webAuthnPolicy.setPasskeysEnabled(webAuthnPolicyPasswordlessPasskeysEnabled);
 
         return webAuthnPolicy;
     }

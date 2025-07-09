@@ -539,6 +539,19 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         expectTemporarilyDisabled("user2", userId);
         clearAllUserFailures();
     }
+    
+    @Test
+    public void testUserDisabledTemporaryLockout() throws Exception {
+        String userId = adminClient.realm("test").users().search("test-user@localhost", null, null, null, 0, 1).get(0).getId();
+
+        loginInvalidPassword();
+        loginInvalidPassword();
+        expectTemporarilyDisabled();
+
+        assertTrue(testRealm().users().get(userId).toRepresentation().isEnabled());
+        assertTrue(testRealm().users().search("test-user@localhost", true).get(0).isEnabled());
+        assertEquals(Boolean.TRUE, testRealm().attackDetection().bruteForceUserStatus(userId).get("disabled"));
+    }
 
     @Test
     public void testBrowserMissingPassword() throws Exception {
@@ -819,7 +832,9 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         assertTrue(passwordUpdatePage.isCurrent());
 
         UserRepresentation userRepresentation = testRealm().users().get(userId).toRepresentation();
-        assertFalse(userRepresentation.isEnabled());
+        assertTrue(userRepresentation.isEnabled());
+        Map<String, Object> bruteForceStatus = testRealm().attackDetection().bruteForceUserStatus(userId);
+        assertEquals(Boolean.TRUE, bruteForceStatus.get("disabled"));
 
         updatePasswordPage.updatePasswords(getPassword("user2"), getPassword("user2"));
 
@@ -828,6 +843,8 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
         userRepresentation = testRealm().users().get(userId).toRepresentation();
         assertTrue(userRepresentation.isEnabled());
+        bruteForceStatus = testRealm().attackDetection().bruteForceUserStatus(userId);
+        assertEquals(Boolean.FALSE, bruteForceStatus.get("disabled"));
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 

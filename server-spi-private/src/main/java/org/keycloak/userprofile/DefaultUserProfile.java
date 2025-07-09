@@ -19,6 +19,8 @@
 
 package org.keycloak.userprofile;
 
+import static org.keycloak.models.UserModel.DISABLED_REASON;
+import static org.keycloak.models.UserModel.IS_TEMP_ADMIN_ATTR_NAME;
 import static org.keycloak.userprofile.UserProfileUtil.createUserProfileMetadata;
 import static org.keycloak.userprofile.UserProfileUtil.isRootAttribute;
 
@@ -245,6 +247,9 @@ public final class DefaultUserProfile implements UserProfile {
             }
         }
 
+        setAttributeIfExists(user, DISABLED_REASON, attributesRep);
+        setAttributeIfExists(user, IS_TEMP_ADMIN_ATTR_NAME, attributesRep);
+
         rep.setId(user.getId());
         rep.setAttributes(attributesRep.isEmpty() ? null : attributesRep);
         rep.setUserProfileMetadata(createUserProfileMetadata(session, this));
@@ -272,5 +277,15 @@ public final class DefaultUserProfile implements UserProfile {
         rep.setLastName(null);
 
         return rep;
+    }
+
+    private void setAttributeIfExists(UserModel user, String name, Map<String, List<String>> attributes) {
+        List<String> values = user.getAttributes().get(name);
+
+        if (values == null) {
+            return;
+        }
+
+        attributes.put(name, values);
     }
 }

@@ -32,6 +32,7 @@ import { useEffect, useRef, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
+import { ClientSelect } from "../../components/client/ClientSelect";
 import { UserSelect } from "../../components/users/UserSelect";
 import { useAccess } from "../../context/access/Access";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -40,7 +41,6 @@ import { prettyPrintJSON } from "../../util";
 import { GeneratedCodeTab } from "./GeneratedCodeTab";
 
 import "./evaluate.css";
-import { ClientSelect } from "../../components/client/ClientSelect";
 
 export type EvaluateScopesProps = {
   clientId: string;
@@ -203,7 +203,9 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
     async () => {
       const scope = selected.join(" ");
       const user = form.getValues("user");
-      if (!user) return [];
+      if (user.length === 0) {
+        return [];
+      }
       const audience = selectedAudience.join(" ");
 
       return await Promise.all([

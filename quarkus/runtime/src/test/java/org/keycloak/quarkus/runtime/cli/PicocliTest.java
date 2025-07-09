@@ -26,13 +26,18 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Stream;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.config.LoggingOptions;
@@ -223,7 +228,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString(Help.defaultColorScheme(Help.Ansi.AUTO)
                 .errorText("Unknown option: '--db-pasword'")
-                + "\nPossible solutions: --db-url, --db-url-host, --db-url-database, --db-url-port, --db-url-properties, --db-username, --db-password, --db-schema, --db-pool-initial-size, --db-pool-min-size, --db-pool-max-size, --db-driver, --db"));
+                + "\nPossible solutions: --db-url, --db-url-host, --db-url-database, --db-url-port, --db-url-properties, --db-username, --db-password, --db-schema, --db-pool-initial-size, --db-pool-min-size, --db-pool-max-size, --db-debug-jpql, --db-log-slow-queries-threshold, --db-driver, --db"));
     }
 
     @Test
@@ -232,7 +237,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString(Help.defaultColorScheme(Help.Ansi.AUTO)
                 .errorText("Unknown option: '--db-pasword'")
-                + "\nPossible solutions: --db-url, --db-url-host, --db-url-database, --db-url-port, --db-url-properties, --db-username, --db-password, --db-schema, --db-pool-initial-size, --db-pool-min-size, --db-pool-max-size, --db-driver, --db"));
+                + "\nPossible solutions: --db-url, --db-url-host, --db-url-database, --db-url-port, --db-url-properties, --db-username, --db-password, --db-schema, --db-pool-initial-size, --db-pool-min-size, --db-pool-max-size, --db-debug-jpql, --db-log-slow-queries-threshold, --db-driver, --db"));
     }
 
     @Test
@@ -242,7 +247,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString(Help.defaultColorScheme(Help.Ansi.AUTO)
                 .errorText("Unknown option: '--db-pasword'")
-                + "\nPossible solutions: --db-url, --db-url-host, --db-url-database, --db-url-port, --db-url-properties, --db-username, --db-password, --db-schema, --db-pool-initial-size, --db-pool-min-size, --db-pool-max-size, --db-driver, --db"));
+                + "\nPossible solutions: --db-url, --db-url-host, --db-url-database, --db-url-port, --db-url-properties, --db-username, --db-password, --db-schema, --db-pool-initial-size, --db-pool-min-size, --db-pool-max-size, --db-debug-jpql, --db-log-slow-queries-threshold, --db-driver, --db"));
     }
 
     @Test
@@ -500,7 +505,7 @@ public class PicocliTest extends AbstractConfigurationTest {
     public void buildOptionWithOptimized() {
         build("build", "--metrics-enabled=true", "--db=dev-file");
 
-        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--optimized", "--http-enabled=true", "--hostname=keycloak");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--optimized", "--http-enabled=true", "--hostname-strict=false");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
     }
 
@@ -578,8 +583,29 @@ public class PicocliTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void hostnameProxyValidation() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--hostname=foo", "--http-enabled=true");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), containsString("Likely misconfiguration detected"));
+    }
+
+    @Test
+    public void hostnameProxyValidationStrictFalse() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--hostname-strict=false", "--http-enabled=true");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), containsString("With HTTPS not enabled"));
+    }
+
+    @Test
+    public void hostnameValidationHttp() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--hostname=http://host", "--http-enabled=true");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), containsString("Likely misconfiguration detected"));
+    }
+
+    @Test
     public void derivedPropertyUsage() {
-        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--hostname=first-class", "--spi-hostname-v2-hostname=second-class", "--http-enabled=false");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--hostname=localhost", "--spi-hostname-v2-hostname=second-class");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getOutString(), containsString("Please use the first-class option `kc.hostname` instead of `kc.spi-hostname-v2-hostname`"));
     }
@@ -675,11 +701,51 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertLogAsyncHandlerInvalidValues(LoggingOptions.Handler.syslog);
     }
 
+    @Test
+    public void timestampChanged() {
+        assertTrue(Picocli.timestampChanged("12345", null));
+        assertTrue(Picocli.timestampChanged("12345", "12346"));
+        assertTrue(Picocli.timestampChanged("12000", "12346"));
+        // new is truncated - should not be a change
+        assertFalse(Picocli.timestampChanged("12345", "12000"));
+    }
+
+    @Test
+    public void quarkusRuntimeChangeNoError() throws IOException {
+        Path conf = Paths.get("src/test/resources/");
+        Path tmp = Paths.get("target/home-tmp");
+        FileUtils.copyDirectory(conf.toFile(), tmp.toFile());
+        Files.delete(tmp.resolve("conf/quarkus.properties"));
+        Environment.setHomeDir(tmp);
+        try {
+            build("build", "--db=dev-file");
+        } finally {
+            Environment.setHomeDir(conf);
+        }
+
+        var nonRunningPicocli = pseudoLaunch("start", "--optimized", "--http-enabled=true", "--hostname=foo");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+    }
+
     protected void assertLogAsyncHandlerInvalidValues(LoggingOptions.Handler handler) {
         var handlerName = handler.toString();
 
         var nonRunningPicocli = pseudoLaunch("start-dev", "--log=%s".formatted(handlerName), "--log-%s-async=true".formatted(handlerName), "--log-%s-async-queue-length=invalid".formatted(handlerName));
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString("Invalid value for option '--log-%s-async-queue-length': 'invalid' is not an int".formatted(handlerName)));
+    }
+
+    @Test
+    public void testUnaryBooleanFails() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--health-enabled");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Option '--health-enabled' (true|false) expects a single value. Expected values are: true, false"));
+    }
+
+    @Test
+    public void datasourcesNotAllowedChar(){
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev","--db-kind-<default>=postgres");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Unknown option: '--db-kind-<default>'"));
     }
 }

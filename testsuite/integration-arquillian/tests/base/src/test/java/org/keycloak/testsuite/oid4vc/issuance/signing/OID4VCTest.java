@@ -17,9 +17,17 @@
 
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.Invocation;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import org.apache.http.HttpStatus;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.jboss.logging.Logger;
+import org.junit.Assert;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.common.Profile;
@@ -36,11 +44,13 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.JwtProofValidator;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCIssuedAtTimeClaimMapper;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.Format;
+import org.keycloak.protocol.oid4vc.model.NonceResponse;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -48,10 +58,15 @@ import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.util.JsonSerialization;
 
+import java.io.IOException;
 import java.net.URI;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -469,5 +484,47 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
                 .type(JwtProofValidator.PROOF_JWT_TYP)
                 .jwk(jwk)
                 .jsonContent(token);
+    }
+
+    public static String getCNonce() {
+        UriBuilder builder = UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT);
+        URI oid4vcUri = RealmsResource.protocolUrl(builder).build(AbstractTestRealmKeycloakTest.TEST_REALM_NAME,
+                                                                  OID4VCLoginProtocolFactory.PROTOCOL_ID);
+        String nonceUrl = String.format("%s/%s", oid4vcUri.toString(), OID4VCIssuerEndpoint.NONCE_PATH);
+
+        String nonceResponseString;
+        // request cNonce
+        try (Client client = AdminClientUtil.createResteasyClient()) {
+            WebTarget nonceTarget = client.target(nonceUrl);
+            // the nonce endpoint must be unprotected, and therefore it must be accessible without any authentication
+            Invocation.Builder nonceInvocationBuilder = nonceTarget.request()
+                                                                   // just making sure that no authentication is added
+                                                                   // by interceptors or similar
+                                                                   .header(HttpHeaders.AUTHORIZATION, null)
+                                                                   .header(HttpHeaders.COOKIE, null);
+
+            try (Response response = nonceInvocationBuilder.post(null)) {
+                Assert.assertEquals(HttpStatus.SC_OK, response.getStatus());
+                Assert.assertTrue(response.getMediaType().toString().startsWith(MediaType.APPLICATION_JSON_TYPE.toString()));
+                nonceResponseString = parseResponse(response);
+                Assert.assertNotNull(nonceResponseString);
+                Assert.assertEquals("no-store", response.getHeaderString(HttpHeaders.CACHE_CONTROL));
+            }
+        }
+        NonceResponse nonceResponse;
+        try {
+            nonceResponse = JsonSerialization.readValue(nonceResponseString, NonceResponse.class);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return nonceResponse.getNonce();
+    }
+
+    public static String parseResponse(Response response) {
+        try {
+            return response.readEntity(String.class);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

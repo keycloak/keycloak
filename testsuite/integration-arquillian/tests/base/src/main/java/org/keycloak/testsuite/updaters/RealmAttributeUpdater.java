@@ -4,6 +4,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -148,6 +149,9 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
     }
 
     public RealmAttributeUpdater addSupportedLocale(String locale) {
+        if (origRep.getSupportedLocales() == null) {
+            origRep.setSupportedLocales(Collections.emptySet());
+        }
         rep.addSupportedLocales(locale);
         return this;
     }

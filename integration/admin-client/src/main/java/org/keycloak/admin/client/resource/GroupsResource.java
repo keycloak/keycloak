@@ -92,6 +92,29 @@ public interface GroupsResource {
      * @param briefRepresentation if {@code true}, each returned group representation will only contain basic information
      *                            (id, name, path, and parentId). If {@code false}, the complete representations of the groups
      *                            are returned (including role mappings and attributes).
+     * @param subGroupsCount if {@code true}, the count of subgroups is returned for each subgroup. Defaults to true.
+     * @return A list containing the slice of all groups.
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    List<GroupRepresentation> groups(@QueryParam("search") String search,
+                                     @QueryParam("exact") Boolean exact,
+                                     @QueryParam("first") Integer first,
+                                     @QueryParam("max") Integer max,
+                                     @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation,
+                                     @QueryParam("subGroupsCount") @DefaultValue("true") Boolean subGroupsCount);
+
+    /**
+     * Get groups by pagination params.
+     * @param search A {@code String} representing either an exact or partial group name.
+     * @param exact if {@code true}, the groups will be searched using exact match for the {@code search} param. If false,
+     *      *              the method returns all groups that partially match the specified name.
+     * @param first index of the first element (pagination offset).
+     * @param max the maximum number of results.
+     * @param briefRepresentation if {@code true}, each returned group representation will only contain basic information
+     *                            (id, name, path, and parentId). If {@code false}, the complete representations of the groups
+     *                            are returned (including role mappings and attributes).
      * @return A list containing the slice of all groups.
      */
     @GET

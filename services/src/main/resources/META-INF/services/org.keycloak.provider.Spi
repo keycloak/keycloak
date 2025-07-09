@@ -34,3 +34,4 @@ org.keycloak.theme.freemarker.FreeMarkerSPI
 org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilderSpi
 org.keycloak.protocol.oid4vc.issuance.keybinding.ProofValidatorSpi
 org.keycloak.protocol.oid4vc.issuance.signing.CredentialSignerSpi
+org.keycloak.protocol.oid4vc.issuance.keybinding.CNonceHandlerSpi

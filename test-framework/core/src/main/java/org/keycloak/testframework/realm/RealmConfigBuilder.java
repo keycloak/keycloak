@@ -1,6 +1,7 @@
 package org.keycloak.testframework.realm;
 
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -57,6 +58,15 @@ public class RealmConfigBuilder {
         UserRepresentation user = new UserRepresentation();
         rep.getUsers().add(user);
         return UserConfigBuilder.update(user).enabled(true).username(username);
+    }
+
+    public GroupConfigBuilder addGroup(String name) {
+        if (rep.getGroups() == null) {
+            rep.setGroups(new LinkedList<>());
+        }
+        GroupRepresentation group = new GroupRepresentation();
+        rep.getGroups().add(group);
+        return GroupConfigBuilder.update(group).name(name);
     }
 
     public RealmConfigBuilder registrationEmailAsUsername(boolean registrationEmailAsUsername) {
@@ -129,12 +139,32 @@ public class RealmConfigBuilder {
         if (rep.getRoles() == null) {
             rep.setRoles(new RolesRepresentation());
         }
-        rep.getRoles().setRealm(Collections.combine(rep.getRoles().getRealm(), Arrays.stream(roleNames).map(Representations::toRole)));
+        rep.getRoles().setRealm(Collections.combine(
+                rep.getRoles().getRealm(),
+                Arrays.stream(roleNames).map(r -> Representations.toRole(r, false))
+        ));
+        return this;
+    }
+
+    public RealmConfigBuilder clientRoles(String client, String... clientRoles) {
+        if (rep.getRoles() == null) {
+            rep.setRoles(new RolesRepresentation());
+        }
+        rep.getRoles().setClient(Collections.combine(
+                rep.getRoles().getClient(),
+                client,
+                Arrays.stream(clientRoles).map(r -> Representations.toRole(r, true))
+        ));
         return this;
     }
 
     public RealmConfigBuilder groups(String... groupsNames) {
         rep.setGroups(Collections.combine(rep.getGroups(), Arrays.stream(groupsNames).map(Representations::toGroup)));
+        return this;
+    }
+
+    public RealmConfigBuilder defaultGroups(String... groupsNames) {
+        rep.setDefaultGroups(Collections.combine(rep.getDefaultGroups(), groupsNames));
         return this;
     }
 

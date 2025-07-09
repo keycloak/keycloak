@@ -22,7 +22,8 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
 
         KeycloakServerConfigBuilder command = KeycloakServerConfigBuilder.startDev()
                 .cache("local")
-                .bootstrapAdminClient(Config.getAdminClientId(), Config.getAdminClientSecret());
+                .bootstrapAdminClient(Config.getAdminClientId(), Config.getAdminClientSecret())
+                .bootstrapAdminUser(Config.getAdminUsername(), Config.getAdminPassword());
 
         command.log().handlers(KeycloakServerConfigBuilder.LogHandlers.CONSOLE);
 

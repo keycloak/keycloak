@@ -37,8 +37,9 @@ spec:
     strategy: RecreateOnImageChange|Auto|Explicit # <1>
     revision: "abc" # <2>
 ----
-<.> Set the desired update strategy here.
-<.> Revision value for `Explicit` strategy.
+<1> Set the desired update strategy here.
+
+<2> Revision value for `Explicit` strategy.
 Ignored by the other strategies.
 
 [%autowidth]
@@ -55,7 +56,7 @@ When the image field changes, the Operator scales down the StatefulSet before ap
 |On incompatible changes
 |The {project_name} Operator detects if a rolling or recreate update is possible.
 
-In the current version, {project_name} performs rolling update if the {project_name} version is the same for the old and the new image.
+In the current version, {project_name} performs a rolling update if the {project_name} version is the same for the old and the new image.
 Future versions of {project_name} will change that behavior and use additional information from the configuration, the image and the version to determine if a rolling update is possible to reduce downtimes.
 
 |`Explicit`

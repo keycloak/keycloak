@@ -242,7 +242,7 @@ The following table shows transport stacks that are available using the `--cache
 |===
 |Stack name|Transport protocol|Discovery
 
-|`kubernetes`|TCP|DNS resolution using the JGroups `DNS_PING` protocol. It requires to set `jgroups.dns.query` to the headless service FQDN.
+|`kubernetes` (deprecated) |TCP|DNS resolution using the JGroups `DNS_PING` protocol. It requires to set `jgroups.dns.query` to the headless service FQDN.
 |`tcp` (deprecated)|TCP|IP multicast using the JGroups `MPING` protocol. See below on how to configure a unique `jgroups.mcast_addr` or `jgroups.mcast_port` for each cluster.
 |`udp` (deprecated)|UDP|IP multicast using the JGroups `PING` protocol. See below on how to configure a unique `jgroups.mcast_addr` or `jgroups.mcast_port` for each cluster.
 |===
@@ -279,6 +279,39 @@ With TLS enabled, {project_name} auto-generates a self-signed RSA 2048 bit certi
 The keys and the certificate are stored in the database so they are available to all nodes.
 By default, the certificate is valid for 60 days and is rotated at runtime every 30 days.
 Use the option `cache-embedded-mtls-rotation-interval-days` to change this.
+
+=== Running inside a service mesh
+
+When using a service mesh like Istio, you might need to allow a direct mTLS communication between the {project_name} Pods to allow for the mutual authentication to work.
+Otherwise, you might see error messages like `JGRP000006: failed accepting connection from peer SSLSocket` that indicate that a wrong certificate was presented, and the cluster will not form correctly.
+
+You then have the option to allow direct mTLS communication between the {project_name} Pods, or rely on the service mesh transport security to encrypt the communication and to authenticate peers.
+
+To allow direct mTLS communication for {project_name} when using Istio:
+
+* Apply the following configuration to allow direct communication.
++
+[source,yaml]
+----
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: infinispan-allow-nomtls
+spec:
+  selector:
+    matchLabels:
+      app: keycloak # <1>
+  portLevelMtls:
+    "7800": # <2>
+      mode: PERMISSIVE
+----
+<1> Update the labels to match your {project_name} deployment.
+<2> Port 7800 is the default. Adjust it if you change the data transmission port.
+
+As an alternative, to disable the mTLS communication, and rely on the service mesh to encrypt the traffic:
+
+* Set the option `cache-embedded-mtls-enabled` to `false`.
+* Configure your service mesh to authorize only traffic from other {project_name} Pods for the data transmission port (default: 7800).
 
 === Proving your own keys and certificates
 
@@ -319,12 +352,50 @@ To override the address, set the `jgroups.bind.address` property.
 
 NOTE: Use `-Djgroups.bind.address=<IP>` to modify the bind address in your `JAVA_OPTS_APPEND` environment variable or in your CLI command.
 
+The following special values are also recognized for `jgroups.bind.address`:
+
+|===
+|Value |Description
+
+m|GLOBAL
+|Picks a global IP address if available.
+If not available, it falls back to `SITE_LOCAL`.
+
+m|SITE_LOCAL
+|Picks a site-local (non-routable) IP address (for example, from the 192.168.0.0 or 10.0.0.0 address ranges).
+This is the default value.
+
+m|LINK_LOCAL
+|Picks a link-local IP address from 169.254.1.0 through 169.254.254.255.
+
+m|NON_LOOPBACK
+|Picks any non-loopback address.
+
+m|LOOPBACK
+|Picks a loopback address (for example, 127.0.0.1).
+
+m|match-interface:<regex>
+|Picks an address that matches a pattern against the interface name.
+For example, `match-interface:tun0` or `match-interface:eth.\*`.
+
+m|match-address:<regex>
+|Picks an address that matches a pattern against the host address.
+For example, `match-address:192.168.\*`.
+
+m|match-host:<regex>
+|Picks an address that matches a pattern against the host name.
+For example, `match-host:linux.\*`.
+
+|===
+
 To set up for IPv6 only and have {project_name} pick the bind address automatically, use the following settings:
 
 [source,bash]
 ----
 export JAVA_OPTS_APPEND="-Djava.net.preferIPv4Stack=false -Djava.net.preferIPv6Addresses=true"
 ----
+
+For more details about JGroups transport, check the http://jgroups.org/manual5/index.html#Transport[JGroups documentation page] or the {infinispan_embedding_docs}#cluster-transport[Infinispan documentation page].
 
 == Running instances on different networks
 

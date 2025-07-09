@@ -426,7 +426,7 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
                 rawQuery = rawQuery.substring(pos + 1);
             }
             Signature signature = signatureAlgorithm.createSignature();
-            byte[] sig = new byte[0];
+            byte[] sig = null;
             try {
                 signature.initSign(signingKeyPair.getPrivate());
                 signature.update(rawQuery.getBytes(GeneralConstants.SAML_CHARSET));

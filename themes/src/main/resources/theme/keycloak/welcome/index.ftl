@@ -132,7 +132,7 @@
                     </div>
                   </form>
                 <#else>
-                  <p>To create the temporary administrative user open <a href="${localAdminUrl}">${localAdminUrl}</a>, or use a <code>bootstrap-admin</code> command.</p>
+                  <p>To create the temporary administrative user, access the Administration Console over localhost, or use a <code>bootstrap-admin</code> command.</p>
                 </#if>
               </#if>
             </div>
