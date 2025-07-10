@@ -130,6 +130,7 @@ import java.util.stream.Stream;
 
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
+import static org.keycloak.authentication.authenticators.resetcred.ResetCredentialEmail.LATEST_RESET_PASSWORD_TOKEN;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
 import static org.keycloak.userprofile.UserProfileContext.USER_API;
@@ -144,7 +145,6 @@ import static org.keycloak.userprofile.UserProfileContext.USER_API;
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class UserResource {
     private static final Logger logger = Logger.getLogger(UserResource.class);
-    private static final String LATEST_UPDATE_PASSWORD_ACTION_TOKEN = "lastUpdatePasswordActionToken";
     private static final String LATEST_OTP_CONFIGURE_ACTION_TOKEN = "lastOtpConfigureActionToken";
 
     protected final RealmModel realm;
@@ -1162,9 +1162,8 @@ public class UserResource {
 
     private void handleActionToken(String action, ExecuteActionsActionToken token, UserModel user) {
         switch (action) {
-            // TODO:
             case "UPDATE_PASSWORD":
-                updateToLatestToken(LATEST_UPDATE_PASSWORD_ACTION_TOKEN, token, user);
+                updateToLatestToken(LATEST_RESET_PASSWORD_TOKEN, token, user);
                 break;
             case "CONFIGURE_TOTP":
                 updateToLatestToken(LATEST_OTP_CONFIGURE_ACTION_TOKEN, token, user);
