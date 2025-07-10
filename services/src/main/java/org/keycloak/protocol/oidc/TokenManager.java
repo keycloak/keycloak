@@ -548,7 +548,8 @@ public class TokenManager {
         String scopeParam = authSession.getClientNote(OAuth2Constants.SCOPE);
         Set<ClientScopeModel> clientScopes;
 
-        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+        // The additional check for the OIDC Login Protocol is necessary, as this logic is also executed for SAML Clients if the DYNAMIC_SCOPES feature is enabled.
+        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES) && OIDCLoginProtocol.LOGIN_PROTOCOL.equals(authSession.getProtocol())) {
             session.getContext().setClient(client);
             clientScopes = AuthorizationContextUtil.getClientScopesStreamFromAuthorizationRequestContextWithClient(session, scopeParam)
                     .collect(Collectors.toSet());
