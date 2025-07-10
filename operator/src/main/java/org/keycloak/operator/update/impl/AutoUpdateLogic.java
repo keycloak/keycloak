@@ -54,14 +54,14 @@ public class AutoUpdateLogic extends BaseUpdateLogic {
             return Optional.of(UpdateControl.noUpdate());
         }
 
-        if (isJobRunning(existingJob.get())) {
-            Log.debug("Update Job is running. Waiting until terminated.");
-            return Optional.of(UpdateControl.noUpdate());
-        }
-
         // Keycloak CR may be updated while the job is running; we need to delete and start over.
         if (!KeycloakUpdateJobDependentResource.isJobFromCurrentKeycloakCr(existingJob.get(), keycloak)) {
             context.getClient().resource(existingJob.get()).lockResourceVersion().delete();
+            return Optional.of(UpdateControl.noUpdate());
+        }
+
+        if (isJobRunning(existingJob.get())) {
+            Log.debug("Update Job is running. Waiting until terminated.");
             return Optional.of(UpdateControl.noUpdate());
         }
 
