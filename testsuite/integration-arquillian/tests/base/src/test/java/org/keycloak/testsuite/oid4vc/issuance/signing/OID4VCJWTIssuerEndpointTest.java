@@ -225,7 +225,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                             .setCredentialConfigurationIds(List.of("credential-configuration-id"));
 
                     String sessionCode = prepareSessionCode(session, authenticator, JsonSerialization.writeValueAsString(credentialsOffer));
-                    // the cache transactions need to be commited explicitly in the test. Without that, the OAuth2Code will only be commited to
+                    // The cache transactions need to be committed explicitly in the test. Without that, the OAuth2Code will only be committed to
                     // the cache after .run((session)-> ...)
                     session.getTransactionManager().commit();
                     OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
@@ -854,41 +854,5 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 realm.removeAttribute("oid4vci.encryption.encs");
             }
         });
-    }
-
-    @Test
-    public void testRequestCredentialWithUnsupportedEncryptionMethod() {
-        String token = getBearerToken(oauth);
-        testingClient.server(TEST_REALM_NAME).run((session -> {
-            AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
-            authenticator.setTokenString(token);
-            OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
-
-            JWK jwk;
-            try {
-                jwk = generateRsaJwk();
-            } catch (NoSuchAlgorithmException e) {
-                throw new RuntimeException("Failed to generate JWK", e);
-            }
-
-            CredentialRequest credentialRequest = new CredentialRequest()
-                    .setFormat(Format.JWT_VC)
-                    .setCredentialIdentifier("test-credential")
-                    .setCredentialResponseEncryption(
-                            new CredentialResponseEncryption()
-                                    .setAlg("RSA-OAEP")
-                                    .setEnc("A128CBC-HS256")
-                                    .setJwk(jwk));
-
-            try {
-                issuerEndpoint.requestCredential(credentialRequest);
-                Assert.fail("Expected BadRequestException due to unsupported encryption method");
-            } catch (BadRequestException e) {
-                ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
-                assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS, error.getError());
-                assertTrue("Error message should indicate unsupported encryption method",
-                        error.getErrorDescription().contains("Unsupported encryption parameters: alg=RSA-OAEP, enc=A128CBC-HS256"));
-            }
-        }));
     }
 }

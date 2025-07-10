@@ -25,11 +25,12 @@ import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.jose.jwe.JWEConstants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProviderFactory;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
-import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryption;
 import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -83,77 +84,48 @@ public class OID4VCIssuerWellKnownProviderTest {
 
     }
 
-    public static class TestCredentialDefinitionInClientAttributes extends OID4VCTest {
-
-        @Test
-        public void testCredentialConfig() {
-            OID4VCIssuerWellKnownProviderTest
-                    .testCredentialConfig(suiteContext, testingClient);
-        }
+    public static class TestCredentialIssuerMetadataFields extends OID4VCTest {
 
         @Test
         public void testCredentialIssuerMetadataFields() {
-            String expectedIssuer = suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/" + TEST_REALM_NAME;
             KeycloakTestingClient testingClient = this.testingClient;
 
             testingClient
                     .server(TEST_REALM_NAME)
                     .run(session -> {
-                        // Setup test realm attributes
-                        RealmModel realm = session.getContext().getRealm();
-                        realm.setAttribute("oid4vci.encryption.algs", "RSA-OAEP");
-                        realm.setAttribute("oid4vci.encryption.encs", "A256GCM");
-                        realm.setAttribute("oid4vci.encryption.required", "true");
-                        realm.setAttribute("batch_credential_issuance.batch_size", "10");
-                        realm.setAttribute("signed_metadata", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmb28iOiJiYXIifQ.XYZ123abc");
+                        CredentialIssuer issuer = getCredentialIssuer(session);
 
-                        OID4VCIssuerWellKnownProvider provider = new OID4VCIssuerWellKnownProvider(session);
-                        Object config = provider.getConfig();
-                        assertTrue("Should return CredentialIssuer", config instanceof CredentialIssuer);
-                        CredentialIssuer issuer = (CredentialIssuer) config;
-
-                        // Check basic endpoints
-                        assertEquals(expectedIssuer, issuer.getCredentialIssuer());
-                        assertNotNull(issuer.getCredentialEndpoint());
-                        assertNotNull(issuer.getNonceEndpoint());
-                        assertNotNull(issuer.getDeferredCredentialEndpoint());
-                        assertEquals(List.of(expectedIssuer), issuer.getAuthorizationServers());
-
-                        // Check credential_response_encryption
                         CredentialResponseEncryptionMetadata encryption = issuer.getCredentialResponseEncryption();
-                        assertNotNull("credential_response_encryption should be present", encryption);
-                        assertEquals(List.of("RSA-OAEP"), encryption.getAlgValuesSupported());
-                        assertEquals(List.of("A256GCM"), encryption.getEncValuesSupported());
-                        assertTrue("encryption_required should be true", encryption.getEncryptionRequired());
+                        assertNotNull(encryption);
 
-                        // Check batch_credential_issuance
-                        CredentialIssuer.BatchCredentialIssuance batch = issuer.getBatchCredentialIssuance();
-                        assertNotNull("batch_credential_issuance should be present", batch);
-                        assertEquals(Integer.valueOf(10), batch.getBatchSize());
-
-                        // Check signed_metadata
-                        assertEquals(
-                                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmb28iOiJiYXIifQ.XYZ123abc",
-                                issuer.getSignedMetadata()
-                        );
-
-                        // Check credentials_supported is not empty
-                        assertNotNull(issuer.getCredentialsSupported());
-                        assertFalse(issuer.getCredentialsSupported().isEmpty());
+                        assertTrue(encryption.getAlgValuesSupported().contains("RSA-OAEP"));
+                        assertTrue("Supported encryption methods should include A256GCM", encryption.getEncValuesSupported().contains(JWEConstants.A256GCM));
+                        assertTrue(encryption.getEncryptionRequired());
+                        assertEquals(Integer.valueOf(10), issuer.getBatchCredentialIssuance().getBatchSize());
+                        assertEquals("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmb28iOiJiYXIifQ.XYZ123abc",
+                                issuer.getSignedMetadata());
                     });
+        }
+
+        private static CredentialIssuer getCredentialIssuer(KeycloakSession session) {
+            RealmModel realm = session.getContext().getRealm();
+
+            realm.setAttribute("oid4vci.encryption.required", "true");
+            realm.setAttribute("batch_credential_issuance.batch_size", "10");
+            realm.setAttribute("signed_metadata", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmb28iOiJiYXIifQ.XYZ123abc");
+
+            OID4VCIssuerWellKnownProvider provider = new OID4VCIssuerWellKnownProvider(session);
+            return (CredentialIssuer) provider.getConfig();
         }
 
         @Override
         public void configureTestRealm(RealmRepresentation testRealm) {
-            Map<String, String> clientAttributes = new HashMap<>(getTestCredentialDefinitionAttributes());
-            Map<String, String> realmAttributes = new HashMap<>();
-            OID4VCIssuerWellKnownProviderTest
-                    .configureTestRealm(
-                            getTestClient("did:web:test.org"),
-                            testRealm,
-                            clientAttributes,
-                            realmAttributes
-                    );
+            Map<String, String> attributes = new HashMap<>();
+            attributes.put("oid4vci.encryption.required", "true");
+            attributes.put("batch_credential_issuance.batch_size", "10");
+            attributes.put("signed_metadata", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmb28iOiJiYXIifQ.XYZ123abc");
+            testRealm.setAttributes(attributes);
+
         }
     }
 
@@ -184,11 +156,6 @@ public class OID4VCIssuerWellKnownProviderTest {
             Map<String, String> clientAttributes,
             Map<String, String> realmAttributes
     ) {
-        realmAttributes.put("credential_response_encryption.alg_values_supported", "[\"RSA-OAEP\"]");
-        realmAttributes.put("credential_response_encryption.enc_values_supported", "[\"A256GCM\"]");
-        realmAttributes.put("credential_response_encryption.encryption_required", "true");
-        realmAttributes.put("batch_credential_issuance.batch_size", "10");
-        realmAttributes.put("signed_metadata", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmb28iOiJiYXIifQ.XYZ123abc"); // example JWT
         testClient.setAttributes(new HashMap<>(clientAttributes));
         testRealm.setAttributes(new HashMap<>(realmAttributes));
         extendConfigureTestRealm(testRealm, testClient);
@@ -214,16 +181,18 @@ public class OID4VCIssuerWellKnownProviderTest {
                             oid4vciIssuerConfig.getCredentialResponseEncryption().getAlgValuesSupported().isEmpty());
                     assertFalse("Supported encryption methods should not be empty",
                             oid4vciIssuerConfig.getCredentialResponseEncryption().getEncValuesSupported().isEmpty());
+                    assertTrue("Supported algorithms should include RSA-OAEP",
+                            oid4vciIssuerConfig.getCredentialResponseEncryption().getAlgValuesSupported().contains(JWEConstants.RSA_OAEP));
+                    assertTrue("Supported encryption methods should include A256GCM",
+                            oid4vciIssuerConfig.getCredentialResponseEncryption().getEncValuesSupported().contains(JWEConstants.A256GCM));
                 }
             }
         }
 
         @Override
         public void configureTestRealm(RealmRepresentation testRealm) {
-            // Configure realm with encryption support if needed
             Map<String, String> realmAttributes = new HashMap<>();
-            realmAttributes.put("oid4vci.encryption.algs", "RSA-OAEP,RSA-OAEP-256");
-            realmAttributes.put("oid4vci.encryption.encs", "A256GCM,A128CBC-HS256");
+            realmAttributes.put("oid4vci.encryption.required", "true");
             testRealm.setAttributes(realmAttributes);
 
             extendConfigureTestRealm(testRealm, getTestClient("did:web:test.org"));

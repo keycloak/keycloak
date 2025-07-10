@@ -65,8 +65,6 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
     private static final Logger LOGGER = Logger.getLogger(OID4VCIssuerWellKnownProvider.class);
     private final KeycloakSession keycloakSession;
 
-    private static final String ATTR_ENCRYPTION_ALGS = "oid4vci.encryption.algs";
-    private static final String ATTR_ENCRYPTION_ENCS = "oid4vci.encryption.encs";
     private static final String ATTR_ENCRYPTION_REQUIRED = "oid4vci.encryption.required";
 
     public OID4VCIssuerWellKnownProvider(KeycloakSession keycloakSession) {
@@ -119,6 +117,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
 
     /**
      * Returns the credential response encryption metadata for the issuer.
+     * Now determines supported algorithms from available realm keys.
      *
      * @param session The Keycloak session
      * @return The credential response encryption metadata
@@ -127,9 +126,9 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         RealmModel realm = session.getContext().getRealm();
         CredentialResponseEncryptionMetadata metadata = new CredentialResponseEncryptionMetadata();
 
-        // Set defaults if attributes not present
-        metadata.setAlgValuesSupported(getSupportedEncryptionAlgorithms(realm));
-        metadata.setEncValuesSupported(getSupportedEncryptionMethods(realm));
+        // Get supported algorithms from available encryption keys
+        metadata.setAlgValuesSupported(getSupportedEncryptionAlgorithms(session));
+        metadata.setEncValuesSupported(getSupportedEncryptionMethods());
         metadata.setEncryptionRequired(isEncryptionRequired(realm));
 
         return metadata;
@@ -138,23 +137,30 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
     /**
      * Returns the supported encryption algorithms from realm attributes.
      */
-    private static List<String> getSupportedEncryptionAlgorithms(RealmModel realm) {
-        String algs = realm.getAttribute(ATTR_ENCRYPTION_ALGS);
-        if (algs == null || algs.isEmpty()) {
-            return List.of(JWEConstants.RSA_OAEP);
+    private static List<String> getSupportedEncryptionAlgorithms(KeycloakSession session) {
+        RealmModel realm  = session.getContext().getRealm();
+        KeyManager keyManager = session.keys();
+
+        List<String> supportedEncryptionAlgorithms = keyManager.getKeysStream(realm)
+                .filter(key -> KeyUse.ENC.equals(key.getUse()))
+                .map(KeyWrapper::getAlgorithm)
+                .filter(algorithm -> algorithm != null && !algorithm.isEmpty())
+                .filter(algorithm -> Arrays.asList(JWEConstants.RSA_OAEP, JWEConstants.RSA_OAEP_256).contains(algorithm))
+                .distinct()
+                .collect(Collectors.toList());
+
+        if (supportedEncryptionAlgorithms.isEmpty()) {
+            supportedEncryptionAlgorithms.add(JWEConstants.RSA_OAEP);
         }
-        return Arrays.asList(algs.split(","));
+
+        return supportedEncryptionAlgorithms;
     }
 
     /**
      * Returns the supported encryption methods from realm attributes.
      */
-    private static List<String> getSupportedEncryptionMethods(RealmModel realm) {
-        String encs = realm.getAttribute(ATTR_ENCRYPTION_ENCS);
-        if (encs == null || encs.isEmpty()) {
-            return List.of(JWEConstants.A256GCM);
-        }
-        return Arrays.asList(encs.split(","));
+    private static List<String> getSupportedEncryptionMethods() {
+        return List.of(JWEConstants.A256GCM);
     }
 
     /**
