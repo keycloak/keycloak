@@ -17,6 +17,7 @@
 
 package org.keycloak.models.sessions.infinispan;
 
+import org.jboss.logging.Logger;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -46,6 +47,8 @@ import java.util.stream.Collectors;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class UserSessionAdapter<T extends SessionRefreshStore & UserSessionProvider> implements UserSessionModel {
+
+    private static final Logger logger = Logger.getLogger(UserSessionAdapter.class);
 
     private final KeycloakSession session;
 
@@ -117,6 +120,8 @@ public class UserSessionAdapter<T extends SessionRefreshStore & UserSessionProvi
         final UUID clientSessionId = clientSessionEntities.get(clientUUID);
 
         if (clientSessionId == null) {
+            logger.debugf("Client to client session mapping not found. userSessionId=%s, clientId=%s, offline=%s, mappings=%s",
+                    getId(), clientUUID, offline, clientSessionEntities);
             return null;
         }
 
@@ -125,9 +130,11 @@ public class UserSessionAdapter<T extends SessionRefreshStore & UserSessionProvi
         if (client != null) {
             // Might return null either the client session has expired, or it hasn't been added by a concurrently running login yet.
             // So it is unsafe to clear it, so we need to keep it for now. Otherwise, the test ConcurrentLoginTest.concurrentLoginSingleUser will fail.
-            return provider.getClientSession(this, client, clientSessionId, offline);
+            return provider.getClientSession(this, client, clientSessionId.toString(), offline);
         }
 
+        logger.debugf("Client not found. Removing from mappings. userSessionId=%s, clientId=%s, clientSessionId=%s, offline=%s",
+                getId(), clientUUID, clientSessionId, offline);
         removeAuthenticatedClientSessions(Collections.singleton(clientUUID));
         return null;
     }
@@ -137,13 +144,14 @@ public class UserSessionAdapter<T extends SessionRefreshStore & UserSessionProvi
         if (removedClientUUIDS == null || removedClientUUIDS.isEmpty()) {
             return;
         }
+        logger.debugf("Removing client sessions. clients=%s, offline=%s", removedClientUUIDS, offline);
 
         // do not iterate the removedClientUUIDS and remove the clientSession directly as the addTask can manipulate
         // the collection being iterated, and that can lead to unpredictable behaviour (e.g. NPE)
         List<UUID> clientSessionUuids = removedClientUUIDS.stream()
                 .map(entity.getAuthenticatedClientSessions()::get)
                 .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                .toList();
 
         // Update user session
         UserSessionUpdateTask task = new UserSessionUpdateTask() {
