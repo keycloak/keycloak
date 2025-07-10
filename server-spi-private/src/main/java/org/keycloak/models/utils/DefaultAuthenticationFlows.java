@@ -387,22 +387,26 @@ public class DefaultAuthenticationFlows {
         realm.addAuthenticatorExecution(execution);
 
         // webauthn as disabled
-        execution = new AuthenticationExecutionModel();
-        execution.setParentFlow(conditionalOTP.getId());
-        execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
-        execution.setAuthenticator("webauthn-authenticator");
-        execution.setPriority(30);
-        execution.setAuthenticatorFlow(false);
-        realm.addAuthenticatorExecution(execution);
+        if (Profile.isFeatureEnabled(Profile.Feature.WEB_AUTHN)) {
+            execution = new AuthenticationExecutionModel();
+            execution.setParentFlow(conditionalOTP.getId());
+            execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
+            execution.setAuthenticator("webauthn-authenticator");
+            execution.setPriority(30);
+            execution.setAuthenticatorFlow(false);
+            realm.addAuthenticatorExecution(execution);
+        }
 
         // recovery-codes as disabled
-        execution = new AuthenticationExecutionModel();
-        execution.setParentFlow(conditionalOTP.getId());
-        execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
-        execution.setAuthenticator("auth-recovery-authn-code-form");
-        execution.setPriority(40);
-        execution.setAuthenticatorFlow(false);
-        realm.addAuthenticatorExecution(execution);
+        if (Profile.isFeatureEnabled(Profile.Feature.RECOVERY_CODES)) {
+            execution = new AuthenticationExecutionModel();
+            execution.setParentFlow(conditionalOTP.getId());
+            execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
+            execution.setAuthenticator("auth-recovery-authn-code-form");
+            execution.setPriority(40);
+            execution.setAuthenticatorFlow(false);
+            realm.addAuthenticatorExecution(execution);
+        }
 
         addOrganizationBrowserFlowStep(realm, browser);
     }
@@ -669,22 +673,26 @@ public class DefaultAuthenticationFlows {
         realm.addAuthenticatorExecution(execution);
 
         // webauthn as disabled
-        execution = new AuthenticationExecutionModel();
-        execution.setParentFlow(conditionalOTP.getId());
-        execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
-        execution.setAuthenticator("webauthn-authenticator");
-        execution.setPriority(30);
-        execution.setAuthenticatorFlow(false);
-        realm.addAuthenticatorExecution(execution);
+        if (Profile.isFeatureEnabled(Profile.Feature.WEB_AUTHN)) {
+            execution = new AuthenticationExecutionModel();
+            execution.setParentFlow(conditionalOTP.getId());
+            execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
+            execution.setAuthenticator("webauthn-authenticator");
+            execution.setPriority(30);
+            execution.setAuthenticatorFlow(false);
+            realm.addAuthenticatorExecution(execution);
+        }
 
         // recovery-codes as disabled
-        execution = new AuthenticationExecutionModel();
-        execution.setParentFlow(conditionalOTP.getId());
-        execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
-        execution.setAuthenticator("auth-recovery-authn-code-form");
-        execution.setPriority(40);
-        execution.setAuthenticatorFlow(false);
-        realm.addAuthenticatorExecution(execution);
+        if (Profile.isFeatureEnabled(Profile.Feature.RECOVERY_CODES)) {
+            execution = new AuthenticationExecutionModel();
+            execution.setParentFlow(conditionalOTP.getId());
+            execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
+            execution.setAuthenticator("auth-recovery-authn-code-form");
+            execution.setPriority(40);
+            execution.setAuthenticatorFlow(false);
+            realm.addAuthenticatorExecution(execution);
+        }
 
         addOrganizationFirstBrokerFlowStep(realm, firstBrokerLogin);
     }

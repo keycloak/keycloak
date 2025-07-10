@@ -90,43 +90,43 @@ export const ResetCredentialDialog = ({
   };
 
   return (
-<ConfirmDialogModal
-  variant={ModalVariant.medium}
-  titleKey="credentialReset"
-  open
-  onCancel={onClose}
-  toggleDialog={onClose}
-  continueButtonLabel="credentialResetConfirm"
-  onConfirm={() => {
-    handleSubmit(sendCredentialsResetEmail)();
-  }}
-  confirmButtonDisabled={!resetIsNotDisabled}
->
-  <Form
-    id="userCredentialsReset-form"
-    isHorizontal
-    data-testid="credential-reset-modal"
-  >
-    <FormProvider {...form}>
-      <RequiredActionMultiSelect
-        name="actions"
-        label="resetAction"
-        help="resetActions"
-      />
-      <LifespanField />
-    </FormProvider>
-  </Form>
-
-  {/* TIDECLOAK IMPLEMENTATION */}
-  <button
-    type="button"
-    onClick={async () => {
-      await getLinkTideAccountBtn();
-    }}
-    style={{ marginTop: "1rem" }}
-  >
-    Copy Link
-  </button>
-</ConfirmDialogModal>
+    <ConfirmDialogModal
+      variant={ModalVariant.medium}
+      titleKey="credentialReset"
+      open
+      onCancel={onClose}
+      toggleDialog={onClose}
+      continueButtonLabel="credentialResetConfirm"
+      onConfirm={async () => {
+        await handleSubmit(sendCredentialsResetEmail)();
+      }}
+      confirmButtonDisabled={!resetIsNotDisabled}
+    >
+      <Form
+        id="userCredentialsReset-form"
+        isHorizontal
+        data-testid="credential-reset-modal"
+      >
+        <FormProvider {...form}>
+          <RequiredActionMultiSelect
+            name="actions"
+            label="resetAction"
+            help="resetActions"
+          />
+          <LifespanField />
+        </FormProvider>
+      </Form>
+      
+      {/* TIDECLOAK IMPLEMENTATION */}
+      <button
+        type="button"
+        onClick={async () => {
+          await getLinkTideAccountBtn();
+        }}
+        style={{ marginTop: "1rem" }}
+      >
+        Copy Link
+      </button>
+    </ConfirmDialogModal>
   );
 };

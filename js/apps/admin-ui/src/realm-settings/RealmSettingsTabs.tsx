@@ -221,7 +221,7 @@ export const RealmSettingsTabs = () => {
         return [];
       }
     };
-    fetchLocalizationTexts();
+    void fetchLocalizationTexts();
   }, [setValue, realm]);
 
   const save = async (r: UIRealmRepresentation) => {

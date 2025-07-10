@@ -96,7 +96,7 @@ public class Profile {
 
         RECOVERY_CODES("Recovery codes", Type.DEFAULT),
 
-        UPDATE_EMAIL("Update Email Action", Type.PREVIEW),
+        UPDATE_EMAIL("Update Email Action", Type.DEFAULT),
 
         FIPS("FIPS 140-2 mode", Type.DISABLED_BY_DEFAULT),
 
@@ -124,7 +124,7 @@ public class Profile {
 
         ORGANIZATION("Organization support within realms", Type.DEFAULT),
 
-        PASSKEYS("Passkeys", Type.PREVIEW),
+        PASSKEYS("Passkeys", Type.PREVIEW, Feature.WEB_AUTHN),
 
         USER_EVENT_METRICS("Collect metrics based on user events", Type.DEFAULT),
 

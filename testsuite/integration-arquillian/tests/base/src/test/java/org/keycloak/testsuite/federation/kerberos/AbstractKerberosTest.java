@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.federation.kerberos;
 
+import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
@@ -47,6 +48,7 @@ import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.hamcrest.Matchers;
 import org.ietf.jgss.GSSCredential;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
@@ -311,8 +313,8 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
             }
 
             if (updateProfileActionExpected) {
-                Assert.assertEquals(UserModel.RequiredAction.UPDATE_PROFILE.toString(),
-                        user.getRequiredActions().iterator().next());
+                assertThat(user.getRequiredActions(),
+                        Matchers.containsInAnyOrder(UserModel.RequiredAction.UPDATE_PROFILE.toString(), UserModel.RequiredAction.UPDATE_EMAIL.toString()));
             } else {
                 Assert.assertTrue(user.getRequiredActions().isEmpty());
             }

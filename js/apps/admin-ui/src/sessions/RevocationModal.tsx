@@ -114,8 +114,8 @@ export const RevocationModal = ({
           data-testid="set-to-now-button"
           key="set-to-now"
           variant="tertiary"
-          onClick={() => {
-            setToNow();
+          onClick={async () => {
+            await setToNow();
             handleModalToggle();
           }}
           form="revocation-modal-form"
@@ -126,8 +126,8 @@ export const RevocationModal = ({
           data-testid="clear-not-before-button"
           key="clear"
           variant="tertiary"
-          onClick={() => {
-            clearNotBefore();
+          onClick={async () => {
+            await clearNotBefore();
             handleModalToggle();
           }}
           form="revocation-modal-form"
@@ -138,8 +138,8 @@ export const RevocationModal = ({
           data-testid="modal-test-connection-button"
           key="push"
           variant="secondary"
-          onClick={() => {
-            push();
+          onClick={async () => {
+            await push();
             handleModalToggle();
           }}
           form="revocation-modal-form"

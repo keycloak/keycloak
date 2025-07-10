@@ -30,6 +30,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.models.Constants;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -40,7 +41,6 @@ import org.keycloak.testsuite.pages.SelectOrganizationPage;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions;
-import org.keycloak.testsuite.webauthn.utils.PropertyRequirement;
 import org.openqa.selenium.By;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
@@ -77,12 +77,12 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
         // set passwordless policy for discoverable keys
         try (Closeable c = getWebAuthnRealmUpdater()
                 .setWebAuthnPolicyRpEntityName("localhost")
-                .setWebAuthnPolicyRequireResidentKey(PropertyRequirement.YES.getValue())
-                .setWebAuthnPolicyUserVerificationRequirement(WebAuthnConstants.OPTION_REQUIRED)
+                .setWebAuthnPolicyRequireResidentKey(null)
+                .setWebAuthnPolicyUserVerificationRequirement(null)
                 .setWebAuthnPolicyPasskeysEnabled(Boolean.TRUE)
                 .update()) {
 
-            checkWebAuthnConfiguration(PropertyRequirement.YES.getValue(), WebAuthnConstants.OPTION_REQUIRED);
+            checkWebAuthnConfiguration(Constants.WEBAUTHN_POLICY_OPTION_YES, Constants.WEBAUTHN_POLICY_OPTION_REQUIRED);
 
             registerDefaultUser();
 
@@ -116,8 +116,8 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
         // set passwordless policy not specified, key will not be discoverable
         try (Closeable c = getWebAuthnRealmUpdater()
                 .setWebAuthnPolicyRpEntityName("localhost")
-                .setWebAuthnPolicyRequireResidentKey(PropertyRequirement.NOT_SPECIFIED.getValue())
-                .setWebAuthnPolicyUserVerificationRequirement(WebAuthnConstants.OPTION_NOT_SPECIFIED)
+                .setWebAuthnPolicyRequireResidentKey(Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED)
+                .setWebAuthnPolicyUserVerificationRequirement(Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED)
                 .setWebAuthnPolicyPasskeysEnabled(Boolean.TRUE)
                 .update()) {
             registerDefaultUser();
@@ -166,12 +166,12 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
         // set passwordless policy for discoverable keys
         try (Closeable c = getWebAuthnRealmUpdater()
                 .setWebAuthnPolicyRpEntityName("localhost")
-                .setWebAuthnPolicyRequireResidentKey(PropertyRequirement.YES.getValue())
-                .setWebAuthnPolicyUserVerificationRequirement(WebAuthnConstants.OPTION_REQUIRED)
+                .setWebAuthnPolicyRequireResidentKey(Constants.WEBAUTHN_POLICY_OPTION_YES)
+                .setWebAuthnPolicyUserVerificationRequirement(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED)
                 .setWebAuthnPolicyPasskeysEnabled(Boolean.TRUE)
                 .update()) {
 
-            checkWebAuthnConfiguration(PropertyRequirement.YES.getValue(), WebAuthnConstants.OPTION_REQUIRED);
+            checkWebAuthnConfiguration(Constants.WEBAUTHN_POLICY_OPTION_YES, Constants.WEBAUTHN_POLICY_OPTION_REQUIRED);
 
             registerDefaultUser();
 

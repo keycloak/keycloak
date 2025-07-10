@@ -144,8 +144,8 @@ export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
     <>
       {open && (
         <FileNameDialog
-          onSave={(name) => {
-            handleSubmit((data) => convert({ ...data, name }))();
+          onSave={async (name) => {
+            await handleSubmit((data) => convert({ ...data, name }))();
             setOpen(false);
           }}
           onClose={toggle}

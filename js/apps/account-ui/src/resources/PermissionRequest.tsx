@@ -105,15 +105,15 @@ export const PermissionRequest = ({
                 </Td>
                 <Td>
                   <Button
-                    onClick={() => {
-                      approveDeny(shareRequest, true);
+                    onClick={async () => {
+                      await approveDeny(shareRequest, true);
                     }}
                   >
                     {t("accept")}
                   </Button>
                   <Button
-                    onClick={() => {
-                      approveDeny(shareRequest);
+                    onClick={async () => {
+                      await approveDeny(shareRequest);
                     }}
                     className="pf-v5-u-ml-sm"
                     variant="danger"

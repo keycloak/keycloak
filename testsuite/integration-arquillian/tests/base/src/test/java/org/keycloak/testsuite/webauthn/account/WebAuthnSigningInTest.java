@@ -27,6 +27,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.page.AbstractPatternFlyAlert;
+import org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions;
 import org.keycloak.testsuite.webauthn.pages.SigningInPage;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnAuthenticatorsList;
 import org.keycloak.testsuite.webauthn.updaters.AbstractWebAuthnRealmUpdater;
@@ -87,12 +88,15 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
     @Test
     @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
     public void passwordlessWebAuthnTest() {
+        getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.DEFAULT_RESIDENT_KEY.getOptions());
         testWebAuthn(true);
     }
 
     @Test
     @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
     public void createWebAuthnSameUserLabel() {
+        getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.DEFAULT_RESIDENT_KEY.getOptions());
+
         final String SAME_LABEL = "key123";
 
         SigningInPage.UserCredential webAuthn = addWebAuthnCredential(SAME_LABEL, false);
@@ -118,6 +122,8 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
     @Test
     @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
     public void multipleSecurityKeys() {
+        getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.DEFAULT_RESIDENT_KEY.getOptions());
+
         final String LABEL = "SecurityKey#";
 
         List<SigningInPage.UserCredential> createdCredentials = new ArrayList<>();
@@ -175,6 +181,7 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
     @Test
     @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
     public void avoidSameAuthenticatorRegisterPasswordless() throws IOException {
+        getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.DEFAULT_RESIDENT_KEY.getOptions());
         avoidSameAuthenticatorRegister(new PasswordLessRealmAttributeUpdater(testRealmResource()), webAuthnPwdlessCredentialType);
     }
 
@@ -212,6 +219,8 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
     @Test
     @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
     public void notDisplayAvailableAuthenticatorsPasswordless() {
+        getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.DEFAULT_RESIDENT_KEY.getOptions());
+
         addWebAuthnCredential("authenticator#1", true);
         addWebAuthnCredential("authenticator#2", true);
 

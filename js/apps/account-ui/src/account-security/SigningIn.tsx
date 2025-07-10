@@ -266,8 +266,8 @@ export const SigningIn = () => {
                                 <Button
                                   variant="danger"
                                   data-testrole="remove"
-                                  onClick={() => {
-                                    login({
+                                  onClick={async () => {
+                                    await login({
                                       action:
                                         "delete_credential:" +
                                         meta.credential.id,
@@ -280,8 +280,10 @@ export const SigningIn = () => {
                               {container.updateAction && (
                                 <Button
                                   variant="secondary"
-                                  onClick={() => {
-                                    login({ action: container.updateAction });
+                                  onClick={async () => {
+                                    await login({
+                                      action: container.updateAction,
+                                    });
                                   }}
                                   data-testrole="update"
                                 >
