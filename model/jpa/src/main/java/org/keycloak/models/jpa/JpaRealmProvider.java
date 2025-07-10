@@ -38,9 +38,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import org.hibernate.Session;
 import org.jboss.logging.Logger;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
@@ -1230,16 +1233,97 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     }
 
     @Override
+    public Stream<ClientScopeModel> getClientScopesByProtocol(RealmModel realm, String protocol)
+    {
+        TypedQuery<ClientScopeEntity> query = em.createNamedQuery("getClientScopesByProtocol",
+                                                                  ClientScopeEntity.class)
+                                                .setParameter("realm", realm.getId())
+                                                .setParameter("protocol", protocol);
+        return query.getResultStream()
+                    .map(entity -> new ClientScopeAdapter(realm, em, session, entity));
+    }
+
+    /**
+     * This method filters clientScopes by specific attributes. To do this, it will generate the sql-statement
+     * dynamically based on the given search-parameters.<br />
+     * This method prevents SQL-Injections by adding dynamic parameters into the SQL-statement and resolves them
+     * later by using the JPA query function {@code query.setParameter(dynamicParamName, actualValue)}.<br/>
+     * Here is an example of a generated statement:
+     * <pre>
+     *     {@code
+     *     SELECT distinct C FROM ClientScopeEntity C
+     *     inner join ClientScopeAttributeEntity CA0 on C.id = CA0.clientScope.id
+     *                                              and CA0.name = :a3e8d01932c104f0ab79441d34884bada
+     *     WHERE C.realmId = :realmId
+     *     and CA0.value = :acedd0bedc7264a2fb524a37814f7aaa1
+     *     }
+     * </pre>
+     *
+     * @param realm     Realm.
+     * @param searchMap a key-value map that holds the attribute names and values to search for.
+     * @param useOr     If the search-params should be combined with or-expressions or and-expressions
+     * @return a stream of clientScopes matching the given criteria
+     */
+    @Override
+    public Stream<ClientScopeModel> getClientScopesByAttributes(RealmModel realm, Map<String, String> searchMap,
+                                                                boolean useOr) {
+        // we build this specific query dynamically, but we enter the parameters as keys to avoid SQL injections.
+        StringBuilder jpql = new StringBuilder("SELECT distinct C FROM ClientScopeEntity C");
+        List<String> keys = new ArrayList<>(searchMap.keySet());
+        Map<String, String> dynamicParameterNameMap = new HashMap<>();
+        Map<String, String> dynamicParameterValueMap = new HashMap<>();
+        StringBuilder whereClauseExtension = new StringBuilder();
+        // I am using an indexed for-loop because I need the index for dynamic jpql references
+        for (int i = 0; i < keys.size(); i++) {
+            String key = keys.get(i);
+            String value = searchMap.get(key);
+            Supplier<String> generateDynamicParameterName = () -> {
+                return "a" /* dynamic params must start with a letter */
+                        + UUID.randomUUID().toString().replaceAll("-","");
+            };
+            final String dynamicParameterName = generateDynamicParameterName.get();
+            final String dynamicParameterValue = generateDynamicParameterName.get();
+            dynamicParameterNameMap.put(dynamicParameterName, key);
+            dynamicParameterValueMap.put(dynamicParameterValue, value);
+            jpql.append('\n')
+                .append("""
+                                inner join ClientScopeAttributeEntity CA%1$s on C.id = CA%1$s.clientScope.id
+                                                                             and CA%1$s.name = :%2$s
+                                """.stripIndent().strip().formatted(i, dynamicParameterName));
+            whereClauseExtension.append('\n');
+            if (useOr) {
+                whereClauseExtension.append("or");
+            }else {
+                whereClauseExtension.append("and");
+            }
+            whereClauseExtension.append(" CA%1$s.value = :%2$s".formatted(i, dynamicParameterValue));
+        }
+
+        jpql.append('\n').append(" WHERE C.realmId = :realmId").append(whereClauseExtension);
+        logger.debugf("Filter for clientScopes with query:\n%s", jpql);
+        TypedQuery<ClientScopeEntity> query = em.createQuery(jpql.toString(), ClientScopeEntity.class);
+        dynamicParameterNameMap.forEach(query::setParameter);
+        dynamicParameterValueMap.forEach(query::setParameter);
+        return query.setParameter("realmId", realm.getId())
+                    .getResultStream().map(scope -> new ClientScopeAdapter(realm, em, session, scope));
+    }
+
+    @Override
     public void addClientScopes(RealmModel realm, ClientModel client, Set<ClientScopeModel> clientScopes, boolean defaultScope) {
-        // Defaults to openid-connect
-        String clientProtocol = client.getProtocol() == null ? OIDCLoginProtocol.LOGIN_PROTOCOL : client.getProtocol();
+        List<String> acceptedClientProtocols = KeycloakModelUtils.getAcceptedClientScopeProtocols(client);
 
         Map<String, ClientScopeModel> existingClientScopes = getClientScopes(realm, client, true);
         existingClientScopes.putAll(getClientScopes(realm, client, false));
 
         clientScopes.stream()
-            .filter(clientScope -> ! existingClientScopes.containsKey(clientScope.getName()))
-            .filter(clientScope -> Objects.equals(clientScope.getProtocol(), clientProtocol))
+            .filter(clientScope -> !existingClientScopes.containsKey(clientScope.getName()))
+            .filter(clientScope -> {
+                if (clientScope.getProtocol() == null) {
+                    // set default protocol if not set. Otherwise, we will get a NullPointer
+                    clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+                }
+                return acceptedClientProtocols.contains(clientScope.getProtocol());
+            })
             .forEach(clientScope -> {
                 ClientScopeClientMappingEntity entity = new ClientScopeClientMappingEntity();
                 entity.setClientScopeId(clientScope.getId());
@@ -1274,8 +1358,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
     @Override
     public Map<String, ClientScopeModel> getClientScopes(RealmModel realm, ClientModel client, boolean defaultScope) {
-        // Defaults to openid-connect
-        String clientProtocol = client.getProtocol() == null ? OIDCLoginProtocol.LOGIN_PROTOCOL : client.getProtocol();
+        List<String> acceptedClientProtocols = KeycloakModelUtils.getAcceptedClientScopeProtocols(client);
 
         TypedQuery<String> query = em.createNamedQuery("clientScopeClientMappingIdsByClient", String.class);
         query.setParameter("clientId", client.getId());
@@ -1284,7 +1367,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         return closing(query.getResultStream())
                 .map(clientScopeId -> session.clientScopes().getClientScopeById(realm, clientScopeId))
                 .filter(Objects::nonNull)
-                .filter(clientScope -> Objects.equals(clientScope.getProtocol(), clientProtocol))
+                .filter(clientScope -> acceptedClientProtocols.contains(clientScope.getProtocol()))
                 .collect(Collectors.toMap(ClientScopeModel::getName, Function.identity()));
     }
     @Override

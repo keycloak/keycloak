@@ -20,9 +20,16 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.StringUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Represents a DisplayObject, as used in the OID4VCI Credentials Issuer Metadata
@@ -37,6 +44,8 @@ import java.io.IOException;
         setterVisibility = JsonAutoDetect.Visibility.NONE
 )
 public class DisplayObject {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(DisplayObject.class);
 
     @JsonIgnore
     private static final String NAME_KEY = "name";
@@ -69,6 +78,23 @@ public class DisplayObject {
     @JsonProperty(DisplayObject.TEXT_COLOR_KEY)
     private String textColor;
 
+    public static List<DisplayObject> parse(CredentialScopeModel credentialScope) {
+        String display = credentialScope.getVcDisplay();
+        if (StringUtil.isBlank(display)) {
+            return null;
+        }
+        TypeReference<List<DisplayObject>> typeReference = new TypeReference<>() {};
+        try {
+            return JsonSerialization.mapper.readValue(display, typeReference);
+        } catch (JsonProcessingException e) {
+            // lets say we have an invalid value we should not kill the whole execution if just the display value is
+            // broken
+            LOGGER.debug(e.getMessage(), e);
+            LOGGER.info(String.format("Failed to parse display-metadata for credential: %s", credentialScope.getName()),
+                        e.getMessage());
+            return null;
+        }
+    }
 
     public String getName() {
         return name;
@@ -164,5 +190,14 @@ public class DisplayObject {
         result = 31 * result + (getBackgroundColor() != null ? getBackgroundColor().hashCode() : 0);
         result = 31 * result + (getTextColor() != null ? getTextColor().hashCode() : 0);
         return result;
+    }
+
+    @Override
+    public String toString() {
+        try {
+            return JsonSerialization.mapper.writeValueAsString(this);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

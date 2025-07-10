@@ -24,6 +24,8 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
+
 import java.util.Map;
 
 /**
@@ -59,4 +61,8 @@ public interface LoginProtocolFactory extends ProviderFactory<LoginProtocol> {
      */
     void setupClientDefaults(ClientRepresentation rep, ClientModel newClient);
 
+    /**
+     * Add default values to {@link ClientScopeRepresentation}s that refer to the specific login-protocol
+     */
+    void addClientScopeDefaults(ClientScopeRepresentation clientModel);
 }

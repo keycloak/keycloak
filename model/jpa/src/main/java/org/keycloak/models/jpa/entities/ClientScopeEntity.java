@@ -46,7 +46,10 @@ import org.hibernate.annotations.Nationalized;
 @Entity
 @Table(name="CLIENT_SCOPE", uniqueConstraints = {@UniqueConstraint(columnNames = {"REALM_ID", "NAME"})})
 @NamedQueries({
-        @NamedQuery(name="getClientScopeIds", query="select scope.id from ClientScopeEntity scope where scope.realmId = :realm")
+        @NamedQuery(name="getClientScopeIds", query="select scope.id from ClientScopeEntity scope where scope.realmId = :realm"),
+        @NamedQuery(name = "getClientScopesByProtocol",
+                    query = "select S from ClientScopeEntity S " +
+                            "where S.realmId = :realm and S.protocol = :protocol")
 })
 public class ClientScopeEntity {
 

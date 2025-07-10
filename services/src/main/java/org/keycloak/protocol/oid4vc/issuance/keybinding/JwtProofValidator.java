@@ -59,6 +59,11 @@ public class JwtProofValidator extends AbstractProofValidator {
         super(keycloakSession);
     }
 
+    @Override
+    public String getProofType() {
+        return ProofType.JWT;
+    }
+
     public JWK validateProof(VCIssuanceContext vcIssuanceContext) throws VCIssuerException {
         try {
             return validateJwtProof(vcIssuanceContext);
@@ -129,7 +134,7 @@ public class JwtProofValidator extends AbstractProofValidator {
         return Optional.ofNullable(vcIssuanceContext.getCredentialConfig())
                 .map(SupportedCredentialConfiguration::getProofTypesSupported)
                 .flatMap(proofTypesSupported -> {
-                    Optional.ofNullable(proofTypesSupported.getJwt())
+                    Optional.ofNullable(proofTypesSupported.getSupportedProofTypes().get("jwt"))
                             .orElseThrow(() -> new VCIssuerException("SD-JWT supports only jwt proof type."));
 
                     Proof proofObject = vcIssuanceContext.getCredentialRequest().getProof();
@@ -170,8 +175,9 @@ public class JwtProofValidator extends AbstractProofValidator {
         // The Algorithm enum class does not list the none value anyway.
         Optional.ofNullable(vcIssuanceContext.getCredentialConfig())
                 .map(SupportedCredentialConfiguration::getProofTypesSupported)
-                .map(ProofTypesSupported::getJwt)
-                .map(ProofTypeJWT::getProofSigningAlgValuesSupported)
+                .map(ProofTypesSupported::getSupportedProofTypes)
+                .map(proofTypeData -> proofTypeData.get("jwt"))
+                .map(ProofTypesSupported.SupportedProofTypeData::getSigningAlgorithmsSupported)
                 .filter(supportedAlgs -> supportedAlgs.contains(jwsHeader.getAlgorithm().name()))
                 .orElseThrow(() -> new VCIssuerException("Proof signature algorithm not supported: " + jwsHeader.getAlgorithm().name()));
 
