@@ -206,7 +206,7 @@ public class OID4VCIssuerEndpoint {
         CNonceHandler cNonceHandler = session.getProvider(CNonceHandler.class);
         NonceResponse nonceResponse = new NonceResponse();
         String sourceEndpoint = OID4VCIssuerWellKnownProvider.getNonceEndpoint(session.getContext());
-        String audience =OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(session.getContext());
+        String audience = OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(session.getContext());
         String nonce = cNonceHandler.buildCNonce(List.of(audience), Map.of(JwtCNonceHandler.SOURCE_ENDPOINT, sourceEndpoint));
         nonceResponse.setNonce(nonce);
         return Response.ok().header(HttpHeaders.CACHE_CONTROL, "no-store").entity(nonceResponse).build();
