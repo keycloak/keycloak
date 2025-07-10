@@ -22,6 +22,7 @@ import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
@@ -37,6 +38,9 @@ import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.VerificationException;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProviderFactory;
+import org.keycloak.protocol.oid4vc.model.AuthorizationDetail;
+import org.keycloak.protocol.oid4vc.model.AuthorizationDetailResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
@@ -46,21 +50,28 @@ import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.OfferUriType;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
+import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.AppAuthManager;
+import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -68,6 +79,8 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.keycloak.protocol.oid4vc.model.Format.JWT_VC;
+import static org.keycloak.protocol.oidc.grants.OAuth2GrantTypeBase.OPENID_CREDENTIAL_TYPE;
 
 /**
  * Test from org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCIssuerEndpointTest
@@ -241,7 +254,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                         authenticator.setTokenString(null);
                         OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
                         Response response = issuerEndpoint.requestCredential(new CredentialRequest()
-                                .setFormat(Format.JWT_VC)
+                                .setFormat(JWT_VC)
                                 .setCredentialIdentifier("test-credential"));
                         assertEquals(MediaType.APPLICATION_JSON_TYPE, response.getMediaType());
                     }));
@@ -258,7 +271,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                         authenticator.setTokenString("token");
                         OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
                         issuerEndpoint.requestCredential(new CredentialRequest()
-                                .setFormat(Format.JWT_VC)
+                                .setFormat(JWT_VC)
                                 .setCredentialIdentifier("test-credential"));
                     }));
         });
@@ -285,19 +298,19 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
     public void testRequestCredentialNoMatchingCredentialBuilder() throws Throwable {
         String token = getBearerToken(oauth);
         withCausePropagation(() ->
-            testingClient
-                    .server(TEST_REALM_NAME)
-                    .run((session -> {
-                        AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
-                        authenticator.setTokenString(token);
+                testingClient
+                        .server(TEST_REALM_NAME)
+                        .run((session -> {
+                            AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+                            authenticator.setTokenString(token);
 
-                        // Prepare the issue endpoint with no credential builders.
-                        OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator, Map.of());
+                            // Prepare the issue endpoint with no credential builders.
+                            OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator, Map.of());
 
-                        issuerEndpoint.requestCredential(new CredentialRequest()
-                                .setFormat(Format.JWT_VC)
-                                .setCredentialIdentifier("test-credential"));
-                    }))
+                            issuerEndpoint.requestCredential(new CredentialRequest()
+                                    .setFormat(JWT_VC)
+                                    .setCredentialIdentifier("test-credential"));
+                        }))
         );
     }
 
@@ -312,7 +325,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                         authenticator.setTokenString(token);
                         OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
                         issuerEndpoint.requestCredential(new CredentialRequest()
-                                .setFormat(Format.JWT_VC)
+                                .setFormat(JWT_VC)
                                 .setCredentialIdentifier("no-such-credential"));
                     }));
         });
@@ -328,7 +341,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                     authenticator.setTokenString(token);
                     OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
                     CredentialRequest credentialRequest = new CredentialRequest()
-                            .setFormat(Format.JWT_VC)
+                            .setFormat(JWT_VC)
                             .setCredentialIdentifier("test-credential");
                     Response credentialResponse = issuerEndpoint.requestCredential(credentialRequest);
                     assertEquals("The credential request should be answered successfully.", HttpStatus.SC_OK, credentialResponse.getStatus());

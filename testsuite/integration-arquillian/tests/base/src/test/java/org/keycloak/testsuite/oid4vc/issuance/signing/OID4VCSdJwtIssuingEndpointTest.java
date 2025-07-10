@@ -44,6 +44,8 @@ import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.SdJwtCredentialBu
 import org.keycloak.protocol.oid4vc.issuance.keybinding.CNonceHandler;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.JwtCNonceHandler;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCGeneratedIdMapper;
+import org.keycloak.protocol.oid4vc.model.AuthorizationDetail;
+import org.keycloak.protocol.oid4vc.model.AuthorizationDetailResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
@@ -64,6 +66,7 @@ import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -75,6 +78,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.keycloak.protocol.oid4vc.model.Format.SD_JWT_VC;
+import static org.keycloak.protocol.oidc.grants.OAuth2GrantTypeBase.OPENID_CREDENTIAL_TYPE;
 
 /**
  * Endpoint test with sd-jwt specific config.
@@ -223,7 +228,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
 
         CredentialRequest credentialRequest = new CredentialRequest()
-                .setFormat(Format.SD_JWT_VC)
+                .setFormat(SD_JWT_VC)
                 .setVct(vct)
                 .setProof(proof);
 
@@ -338,7 +343,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                     assertEquals("The expected server should have been returned.", expectedAuthorizationServer, credentialIssuer.getAuthorizationServers().get(0));
                     assertTrue("The test-credential should be supported.", credentialIssuer.getCredentialsSupported().containsKey("test-credential"));
                     assertEquals("The test-credential should offer type test-credential", "test-credential", credentialIssuer.getCredentialsSupported().get("test-credential").getScope());
-                    assertEquals("The test-credential should be offered in the sd-jwt format.", Format.SD_JWT_VC, credentialIssuer.getCredentialsSupported().get("test-credential").getFormat());
+                    assertEquals("The test-credential should be offered in the sd-jwt format.", SD_JWT_VC, credentialIssuer.getCredentialsSupported().get("test-credential").getFormat());
                     assertNotNull("The test-credential can optionally provide a claims claim.", credentialIssuer.getCredentialsSupported().get("test-credential").getClaims());
                     assertNotNull("The test-credential claim firstName is present.", credentialIssuer.getCredentialsSupported().get("test-credential").getClaims().get("firstName"));
                     assertFalse("The test-credential claim firstName is not mandatory.", credentialIssuer.getCredentialsSupported().get("test-credential").getClaims().get("firstName").getMandatory());
@@ -390,14 +395,14 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
 
     @Override
     protected List<ComponentExportRepresentation> getCredentialBuilderProviders() {
-        return List.of(getCredentialBuilderProvider(Format.SD_JWT_VC));
+        return List.of(getCredentialBuilderProvider(SD_JWT_VC));
     }
 
     @Override
     protected Map<String, String> getCredentialDefinitionAttributes() {
         Map<String, String> testCredentialAttributes = Map.ofEntries(
                 Map.entry("vc.test-credential.expiry_in_s", "1800"),
-                Map.entry("vc.test-credential.format", Format.SD_JWT_VC),
+                Map.entry("vc.test-credential.format", SD_JWT_VC),
                 Map.entry("vc.test-credential.scope", "test-credential"),
                 Map.entry("vc.test-credential.claims", "{ \"firstName\": {\"mandatory\": false, \"display\": [{\"name\": \"First Name\", \"locale\": \"en-US\"}, {\"name\": \"名前\", \"locale\": \"ja-JP\"}]}, \"lastName\": {\"mandatory\": false}, \"email\": {\"mandatory\": false} }"),
                 Map.entry("vc.test-credential.vct", "https://credentials.example.com/test-credential"),
@@ -414,7 +419,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
 
         Map<String, String> identityCredentialAttributes = Map.ofEntries(
                 Map.entry("vc.IdentityCredential.expiry_in_s", "31536000"),
-                Map.entry("vc.IdentityCredential.format", Format.SD_JWT_VC),
+                Map.entry("vc.IdentityCredential.format", SD_JWT_VC),
                 Map.entry("vc.IdentityCredential.scope", "identity_credential"),
                 Map.entry("vc.IdentityCredential.vct", "https://credentials.example.com/identity_credential"),
                 Map.entry("vc.IdentityCredential.cryptographic_binding_methods_supported", "jwk"),
