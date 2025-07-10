@@ -121,8 +121,7 @@ export const UserIdentityProviderLinks = ({
     if (search) {
       params.search = search;
     }
-    const providers = await adminClient.identityProviders.find(params);
-    return providers;
+    return await adminClient.identityProviders.find(params);
   };
 
   const [toggleUnlinkDialog, UnlinkConfirm] = useConfirmDialog({
