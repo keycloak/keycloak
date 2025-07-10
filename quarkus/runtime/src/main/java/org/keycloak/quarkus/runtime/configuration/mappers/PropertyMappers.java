@@ -199,6 +199,12 @@ public final class PropertyMappers {
         return MAPPERS.getWildcardMappers();
     }
 
+    public static Optional<WildcardPropertyMapper<?>> getWildcardMapper(Option<?> option) {
+        return MAPPERS.getWildcardMappers().stream()
+                .filter(f -> option.getKey().equals(f.getOption().getKey()))
+                .findAny();
+    }
+
     public static WildcardPropertyMapper<?> getWildcardMappedFrom(Option<?> from) {
         return MAPPERS.wildcardConfig.wildcardMapFrom.get(from.getKey());
     }

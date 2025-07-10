@@ -58,7 +58,11 @@ public final class Configuration {
     }
 
     public static boolean isSet(Option<?> option) {
-        return Optional.ofNullable(getKcConfigValue(option.getKey()))
+        return isSet(option.getKey());
+    }
+
+    public static boolean isSet(String kcProperty) {
+        return Optional.ofNullable(getKcConfigValue(kcProperty))
                 .filter(Configuration::isUserModifiable)
                 .isPresent();
     }

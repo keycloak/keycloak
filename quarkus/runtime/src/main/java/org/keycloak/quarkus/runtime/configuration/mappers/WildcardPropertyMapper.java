@@ -47,17 +47,16 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
         if (option == LoggingOptions.LOG_LEVEL_CATEGORY) {
             replacementChar = '.';
         }
-
-        if (to != null) {
-            if (!to.startsWith(NS_QUARKUS_PREFIX) && !to.startsWith(NS_KEYCLOAK_PREFIX)) {
+        if (getTo() != null) {
+            if (!getTo().startsWith(NS_QUARKUS_PREFIX) && !getTo().startsWith(NS_KEYCLOAK_PREFIX)) {
                 throw new IllegalArgumentException("Wildcards should map to Quarkus or Keycloak options (option '%s' mapped to '%s'). If not, PropertyMappers logic will need adjusted".formatted(option.getKey(), to));
             }
-            this.toPrefix = to.substring(0, to.indexOf(WILDCARD_FROM_START));
-            int lastIndexOf = to.lastIndexOf(">");
+            this.toPrefix = getTo().substring(0, getTo().indexOf(WILDCARD_FROM_START));
+            int lastIndexOf = getTo().lastIndexOf(">");
             if (lastIndexOf == -1) {
                 throw new IllegalArgumentException("Invalid wildcard map to.");
             }
-            this.toSuffix = to.substring(lastIndexOf + 1, to.length());
+            this.toSuffix = getTo().substring(lastIndexOf + 1);
         }
 
         this.wildcardKeysTransformer = wildcardKeysTransformer;

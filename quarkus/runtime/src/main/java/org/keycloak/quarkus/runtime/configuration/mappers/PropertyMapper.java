@@ -374,6 +374,11 @@ public class PropertyMapper<T> {
             return this;
         }
 
+        public Builder<T> removeMapFrom() {
+            this.mapFrom = null;
+            return this;
+        }
+
         public Builder<T> mapFrom(Option<?> mapFrom) {
             this.mapFrom = mapFrom.getKey();
             return this;

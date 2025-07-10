@@ -30,12 +30,21 @@ import io.quarkus.test.junit.main.Launch;
 @DistributionTest
 @RawDistOnly(reason = "Containers are immutable")
 @Tag(DistributionTest.SMOKE)
+@TestProvider(CustomJpaEntityProvider.class)
 public class CustomJpaEntityProviderDistTest {
 
     @Test
-    @TestProvider(CustomJpaEntityProvider.class)
-    @Launch({ "start-dev", "--log-level=org.hibernate.jpa.internal.util.LogHelper:debug" })
+    @Launch({"start-dev"})
+    void notSpecifiedDbKind(CLIResult cliResult) {
+        // it is printed at build time and the check done at runtime
+        cliResult.assertNoMessage("Multiple datasources are specified: <default>, user-store");
+        cliResult.assertError("Detected additional named datasources. You need to explicitly set the DB kind for the datasource(s) to properly work as: db-kind-user-store");
+    }
+
+    @Test
+    @Launch({"start-dev", "--log-level=org.hibernate.jpa.internal.util.LogHelper:debug", "--db-kind-user-store=dev-mem"})
     void testUserManagedEntityNotAddedToDefaultPU(CLIResult cliResult) {
+        cliResult.assertMessage("Multiple datasources are specified: <default>, user-store");
         cliResult.assertStringCount("name: user-store", 1);
         cliResult.assertStringCount("com.acme.provider.legacy.jpa.entity.Realm", 1);
         cliResult.assertStartedDevMode();
