@@ -40,8 +40,7 @@ public class OID4VCJWTIssuerEndpointDisabledTest extends OID4VCIssuerEndpointTes
 
             // Test requestCredential
             CredentialRequest credentialRequest = new CredentialRequest()
-                    .setFormat(Format.JWT_VC)
-                    .setCredentialIdentifier("test-credential");
+                    .setCredentialIdentifier(jwtTypeCredentialScopeName);
             CorsErrorResponseException requestException = Assert.assertThrows(CorsErrorResponseException.class, () ->
                     issuerEndpoint.requestCredential(credentialRequest)
             );
