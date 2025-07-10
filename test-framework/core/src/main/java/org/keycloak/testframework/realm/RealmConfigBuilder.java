@@ -210,6 +210,11 @@ public class RealmConfigBuilder {
         return this;
     }
 
+    public RealmConfigBuilder sslRequired(String sslRequired) {
+        rep.setSslRequired(sslRequired);
+        return this;
+    }
+
     public RealmRepresentation build() {
         return rep;
     }

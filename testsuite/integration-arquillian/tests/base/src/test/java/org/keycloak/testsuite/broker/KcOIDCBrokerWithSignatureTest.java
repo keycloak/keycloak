@@ -44,6 +44,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.client.resources.TestingCacheResource;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
+import org.keycloak.testsuite.util.broker.OIDCIdentityProviderConfigRep;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import static org.junit.Assert.assertEquals;
