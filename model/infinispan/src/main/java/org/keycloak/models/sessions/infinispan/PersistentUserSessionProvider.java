@@ -364,6 +364,8 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
     @Override
     public AuthenticatedClientSessionAdapter getClientSession(UserSessionModel userSession, ClientModel client, String clientSessionId, boolean offline) {
         if (clientSessionId == null) {
+            log.debugf("Client-session id is null. userSessionId=%s, clientId=%s, offline=%s",
+                    userSession.getId(), client.getId(), offline);
             return null;
         }
 
