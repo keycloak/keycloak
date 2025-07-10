@@ -13,10 +13,10 @@ import {
 } from "@patternfly/react-core";
 import { cellWidth } from "@patternfly/react-table";
 import { capitalize } from "lodash-es";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { FormPanel, useFetch } from "@keycloak/keycloak-ui-shared";
+import { FormPanel } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../admin-client";
 import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
@@ -51,19 +51,9 @@ export const UserIdentityProviderLinks = ({
     "view-identity-providers",
   );
 
-  useFetch(
-    async () => {
-      const linkedIdentities = await adminClient.users.listFederatedIdentities({
-        id: userId,
-      });
-      return linkedIdentities.map((x) => x.identityProvider!);
-    },
-    (names) => {
-      setLinkedNames(names);
-      setIsLoading(false);
-    },
-    [userId],
-  );
+  useEffect(() => {
+    refresh();
+  }, []);
 
   const refresh = () => {
     setKey(new Date().getTime());
