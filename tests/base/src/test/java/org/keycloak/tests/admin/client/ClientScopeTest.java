@@ -762,6 +762,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
             Assertions.assertNotNull(location);
             clientScopeId = location.substring(location.lastIndexOf("/") + 1);
         } finally {
+            Assertions.assertNotNull(clientScopeId);
             // cleanup
             clientScopes().get(clientScopeId).remove();
         }

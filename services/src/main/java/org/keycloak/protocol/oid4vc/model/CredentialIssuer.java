@@ -143,6 +143,15 @@ public class CredentialIssuer {
         return this;
     }
 
+    public CredentialResponseEncryptionMetadata getCredentialResponseEncryption() {
+        return credentialResponseEncryption;
+    }
+
+    public CredentialIssuer setCredentialResponseEncryption(CredentialResponseEncryptionMetadata credentialResponseEncryption) {
+        this.credentialResponseEncryption = credentialResponseEncryption;
+        return this;
+    }
+
     /**
      * Represents the batch_credential_issuance metadata parameter.
      */
@@ -159,13 +168,5 @@ public class CredentialIssuer {
             this.batchSize = batchSize;
             return this;
         }
-    }
-    public CredentialResponseEncryptionMetadata getCredentialResponseEncryption() {
-        return credentialResponseEncryption;
-    }
-
-    public CredentialIssuer setCredentialResponseEncryption(CredentialResponseEncryptionMetadata credentialResponseEncryption) {
-        this.credentialResponseEncryption = credentialResponseEncryption;
-        return this;
     }
 }

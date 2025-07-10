@@ -18,39 +18,29 @@
 package org.keycloak.protocol.oid4vc.issuance;
 
 import jakarta.ws.rs.core.UriInfo;
+import org.keycloak.constants.Oid4VciConstants;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.oid4vc.OID4VCClientRegistrationProvider;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
-import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilderFactory;
-import org.keycloak.protocol.oid4vc.issuance.signing.CredentialSigner;
-import org.keycloak.protocol.oid4vc.issuance.signing.CredentialSignerFactory;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
-import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryption;
+
 import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryptionMetadata;
-import org.keycloak.protocol.oid4vc.model.OID4VCClient;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.services.Urls;
 import org.keycloak.urls.UrlType;
 import org.keycloak.wellknown.WellKnownProvider;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -62,8 +52,11 @@ import java.util.stream.Collectors;
  */
 public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
 
+    public static final String VC_KEY = "vc";
+
     private static final Logger LOGGER = Logger.getLogger(OID4VCIssuerWellKnownProvider.class);
-    private final KeycloakSession keycloakSession;
+
+    protected final KeycloakSession keycloakSession;
 
     private static final String ATTR_ENCRYPTION_REQUIRED = "oid4vci.encryption.required";
 
@@ -116,7 +109,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
     }
 
     /**
-     * Returns the credential response encryption metadata for the issuer.
+     * Returns the credential response encryption высоко for the issuer.
      * Now determines supported algorithms from available realm keys.
      *
      * @param session The Keycloak session
@@ -138,7 +131,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
      * Returns the supported encryption algorithms from realm attributes.
      */
     private static List<String> getSupportedEncryptionAlgorithms(KeycloakSession session) {
-        RealmModel realm  = session.getContext().getRealm();
+        RealmModel realm = session.getContext().getRealm();
         KeyManager keyManager = session.keys();
 
         List<String> supportedEncryptionAlgorithms = keyManager.getKeysStream(realm)
@@ -151,6 +144,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
 
         if (supportedEncryptionAlgorithms.isEmpty()) {
             supportedEncryptionAlgorithms.add(JWEConstants.RSA_OAEP);
+            supportedEncryptionAlgorithms.add(JWEConstants.RSA_OAEP_256);
         }
 
         return supportedEncryptionAlgorithms;
@@ -173,44 +167,34 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
 
     /**
      * Return the supported credentials from the current session.
-     * It will take into account the configured {@link CredentialBuilder}'s and there supported format
+     * It will take into account the configured {@link CredentialBuilder}'s and their supported format
      * and the credentials supported by the clients available in the session.
      */
     public static Map<String, SupportedCredentialConfiguration> getSupportedCredentials(KeycloakSession keycloakSession) {
+        List<String> globalSupportedSigningAlgorithms = getSupportedSignatureAlgorithms(keycloakSession);
 
         RealmModel realm = keycloakSession.getContext().getRealm();
-        List<String> supportedFormats = getSupportedFormats(keycloakSession);
+        Map<String, SupportedCredentialConfiguration> supportedCredentialConfigurations =
+                keycloakSession.clientScopes()
+                        .getClientScopesByProtocol(realm, Oid4VciConstants.OID4VC_PROTOCOL)
+                        .map(CredentialScopeModel::new)
+                        .map(clientScope -> {
+                            return SupportedCredentialConfiguration.parse(keycloakSession,
+                                    clientScope,
+                                    globalSupportedSigningAlgorithms
+                            );
+                        })
+                        .collect(Collectors.toMap(SupportedCredentialConfiguration::getId, sc -> sc, (sc1, sc2) -> sc1));
 
-        // Retrieve signature algorithms
-        List<String> supportedAlgorithms = getSupportedSignatureAlgorithms(keycloakSession);
+        return supportedCredentialConfigurations;
+    }
 
-        // Retrieving attributes from client definition.
-        // This will be removed when token production is migrated.
-        Map<String, SupportedCredentialConfiguration> clientAttributes = keycloakSession.getContext()
-                .getRealm()
-                .getClientsStream()
-                .filter(cm -> cm.getProtocol() != null)
-                .filter(cm -> cm.getProtocol().equals(OID4VCLoginProtocolFactory.PROTOCOL_ID))
-                .map(cm -> OID4VCClientRegistrationProvider.fromClientAttributes(cm.getClientId(), cm.getAttributes()))
-                .map(OID4VCClient::getSupportedVCTypes)
-                .flatMap(List::stream)
-                .filter(sc -> supportedFormats.contains(sc.getFormat()))
-                .distinct()
-                .peek(sc -> sc.setCredentialSigningAlgValuesSupported(supportedAlgorithms))
-                .collect(Collectors.toMap(SupportedCredentialConfiguration::getId, sc -> sc, (sc1, sc2) -> sc1));
-
-        // Retrieving attributes from the realm
-        Map<String, SupportedCredentialConfiguration> realmAttr = fromRealmAttributes(realm.getAttributes())
-                .stream()
-                .filter(sc -> supportedFormats.contains(sc.getFormat()))
-                .distinct()
-                .peek(sc -> sc.setCredentialSigningAlgValuesSupported(supportedAlgorithms))
-                .collect(Collectors.toMap(SupportedCredentialConfiguration::getId, sc -> sc, (sc1, sc2) -> sc1));
-
-        // Aggregating attributes. Having realm attributes take preference.
-        Map<String, SupportedCredentialConfiguration> aggregatedAttr = new HashMap<>(clientAttributes);
-        aggregatedAttr.putAll(realmAttr);
-        return aggregatedAttr;
+    public static SupportedCredentialConfiguration toSupportedCredentialConfiguration(KeycloakSession keycloakSession,
+                                                                                      CredentialScopeModel credentialModel) {
+        List<String> globalSupportedSigningAlgorithms = getSupportedSignatureAlgorithms(keycloakSession);
+        return SupportedCredentialConfiguration.parse(keycloakSession,
+                credentialModel,
+                globalSupportedSigningAlgorithms);
     }
 
     /**
@@ -220,7 +204,6 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         UriInfo frontendUriInfo = context.getUri(UrlType.FRONTEND);
         return Urls.realmIssuer(frontendUriInfo.getBaseUri(),
                 context.getRealm().getName());
-
     }
 
     /**
@@ -238,60 +221,6 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         return getIssuer(context) + "/protocol/" + OID4VCLoginProtocolFactory.PROTOCOL_ID + "/" + OID4VCIssuerEndpoint.CREDENTIAL_PATH;
     }
 
-    public static final String VC_KEY = "vc";
-
-    public static List<SupportedCredentialConfiguration> fromRealmAttributes(Map<String, String> realmAttributes) {
-
-        Set<String> supportedCredentialIds = new HashSet<>();
-        Map<String, String> attributes = new HashMap<>();
-        realmAttributes.forEach((entryKey, value) -> {
-            if (!entryKey.startsWith(VC_KEY)) {
-                return;
-            }
-            String key = entryKey.substring((VC_KEY + ".").length());
-            supportedCredentialIds.add(key.split("\\.")[0]);
-            attributes.put(key, value);
-        });
-
-        return supportedCredentialIds
-                .stream()
-                .map(id -> SupportedCredentialConfiguration.fromDotNotation(id, attributes))
-                .toList();
-    }
-
-    /**
-     * Returns credential formats supported.
-     * <p></p>
-     * Supported credential formats are identified on the criterion of a joint availability
-     * of a credential builder (as a configured component) AND a credential signer.
-     */
-    public static List<String> getSupportedFormats(KeycloakSession keycloakSession) {
-        RealmModel realm = keycloakSession.getContext().getRealm();
-        KeycloakSessionFactory keycloakSessionFactory = keycloakSession.getKeycloakSessionFactory();
-
-        List<String> supportedFormatsByBuilders = realm
-                .getComponentsStream(realm.getId(), CredentialBuilder.class.getName())
-                .map(cm -> keycloakSessionFactory.getProviderFactory(CredentialBuilder.class, cm.getProviderId()))
-                .filter(CredentialBuilderFactory.class::isInstance)
-                .map(CredentialBuilderFactory.class::cast)
-                .map(CredentialBuilderFactory::getSupportedFormat)
-                .toList();
-
-        List<String> supportedFormatsBySigners = keycloakSession
-                .getKeycloakSessionFactory()
-                .getProviderFactoriesStream(CredentialSigner.class)
-                .filter(CredentialSignerFactory.class::isInstance)
-                .map(CredentialSignerFactory.class::cast)
-                .map(CredentialSignerFactory::getSupportedFormat)
-                .toList();
-
-        // Supported formats must have a builder AND a signer
-        List<String> supportedFormats = new ArrayList<>(supportedFormatsByBuilders);
-        supportedFormats.retainAll(supportedFormatsBySigners);
-
-        return supportedFormats;
-    }
-
     public static List<String> getSupportedSignatureAlgorithms(KeycloakSession session) {
         RealmModel realm = session.getContext().getRealm();
         KeyManager keyManager = session.keys();
@@ -303,4 +232,5 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                 .distinct()
                 .collect(Collectors.toList());
     }
+
 }

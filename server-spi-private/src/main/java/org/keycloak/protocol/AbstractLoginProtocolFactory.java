@@ -24,6 +24,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 
 import java.util.Objects;
 import java.util.Set;
@@ -96,7 +97,12 @@ public abstract class AbstractLoginProtocolFactory implements LoginProtocolFacto
             newClients.forEach(addNonDefault);
     }
 
-    protected abstract void addDefaults(ClientModel realm);
+    protected abstract void addDefaults(ClientModel clientModel);
+
+    @Override
+    public void addClientScopeDefaults(ClientScopeRepresentation clientModel) {
+        // do nothing
+    }
 
     @Override
     public void close() {
