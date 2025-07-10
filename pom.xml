@@ -1637,6 +1637,7 @@
                             <deploymentName>keycloak-${project.version}</deploymentName>
                             <publishingServerId>keycloak-publish</publishingServerId>
                             <waitUntil>published</waitUntil>
+                            <waitMaxTime>3600</waitMaxTime>
                         </configuration>
                     </plugin>
                 </plugins>
