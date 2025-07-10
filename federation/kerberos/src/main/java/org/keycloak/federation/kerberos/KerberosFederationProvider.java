@@ -18,7 +18,6 @@
 package org.keycloak.federation.kerberos;
 
 import org.jboss.logging.Logger;
-import org.keycloak.common.Profile;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.credential.CredentialAuthentication;
 import org.keycloak.credential.CredentialInput;
@@ -289,9 +288,7 @@ public class KerberosFederationProvider implements UserStorageProvider,
         user.setSingleAttribute(KERBEROS_PRINCIPAL, kerberosPrincipal.toString());
 
         if (kerberosConfig.isUpdateProfileFirstLogin()) {
-            if (Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL)) {
-                user.addRequiredAction(UserModel.RequiredAction.UPDATE_EMAIL);
-            }
+            user.addRequiredAction(UserModel.RequiredAction.UPDATE_EMAIL);
             user.addRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE);
         }
 
