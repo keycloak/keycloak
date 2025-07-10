@@ -200,6 +200,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     }
 
     private void onClientRemoved(String clientUUID) {
+        logger.debugf("Client sessions removed for client %s",  clientUUID);
         StorageId clientStorageId = new StorageId(clientUUID);
         if (clientStorageId.isLocal()) {
             em.createNamedQuery("deleteClientSessionsByClient").setParameter("clientId", clientUUID).executeUpdate();
@@ -559,7 +560,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         AuthenticatedClientSessionModel clientSessAdapter = toAdapter(userSession.getRealm(), null, userSession, clientSessionEntity);
 
         if (clientSessAdapter.getClient() == null) {
-            logger.tracef("Not adding client session %s / %s since client is null", userSession, clientSessAdapter);
+            logger.debugf("Not adding client session %s / %s since client is null", userSession, clientSessAdapter);
             return false;
         }
 
@@ -662,6 +663,10 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
             }
             // can be null if client is not found anymore
             client = realm.getClientById(clientId);
+            if (client == null) {
+                logger.debugf("Client not found for clientId %s clientStorageProvider %s externalClientId %s",
+                        entity.getClientId(), entity.getClientStorageProvider(), entity.getExternalClientId());
+            }
         }
 
         PersistentClientSessionModel model = new PersistentClientSessionModel() {

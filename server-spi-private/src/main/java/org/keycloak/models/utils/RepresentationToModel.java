@@ -730,13 +730,13 @@ public class RepresentationToModel {
             }
         }
 
+
         return clientScope;
     }
 
     public static void updateClientScope(ClientScopeRepresentation rep, ClientScopeModel resource) {
         if (rep.getName() != null) resource.setName(rep.getName());
         if (rep.getDescription() != null) resource.setDescription(rep.getDescription());
-
 
         if (rep.getProtocol() != null) resource.setProtocol(rep.getProtocol());
 
@@ -747,9 +747,6 @@ public class RepresentationToModel {
         }
 
     }
-
-    // Scope mappings
-
 
     // Users
 

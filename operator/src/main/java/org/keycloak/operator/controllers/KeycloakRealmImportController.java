@@ -58,7 +58,7 @@ public class KeycloakRealmImportController implements Reconciler<KeycloakRealmIm
 
         var statusBuilder = new KeycloakRealmImportStatusBuilder();
 
-        Job existingJob = context.getSecondaryResource(Job.class).orElse(null);
+        Job existingJob = context.getSecondaryResource(Job.class).filter(job -> job.hasOwnerReferenceFor(realm)).orElse(null);
         StatefulSet existingDeployment = context.getClient().resources(StatefulSet.class).inNamespace(realm.getMetadata().getNamespace())
                 .withName(realm.getSpec().getKeycloakCRName()).get();
 
