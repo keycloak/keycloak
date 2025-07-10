@@ -1,5 +1,6 @@
 #!/bin/bash -x
 
+rm -f /etc/system-fips
 dnf install -y java-21-openjdk-devel
 fips-mode-setup --enable --no-bootcfg
 fips-mode-setup --is-enabled
