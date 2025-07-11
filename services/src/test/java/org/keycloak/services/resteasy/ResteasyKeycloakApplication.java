@@ -24,6 +24,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.services.error.KcUnrecognizedPropertyExceptionHandler;
 import org.keycloak.services.error.KeycloakErrorHandler;
 import org.keycloak.services.error.KeycloakMismatchedInputExceptionHandler;
+import org.keycloak.services.filters.InvalidQueryParameterFilter;
 import org.keycloak.services.filters.KeycloakSecurityHeadersFilter;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.services.resources.LoadBalancerResource;
@@ -48,6 +49,7 @@ public class ResteasyKeycloakApplication extends KeycloakApplication {
             classes.add(AdminRoot.class);
         }
         classes.add(ThemeResource.class);
+        classes.add(InvalidQueryParameterFilter.class);
         classes.add(KeycloakSecurityHeadersFilter.class);
         classes.add(KeycloakErrorHandler.class);
         classes.add(KcUnrecognizedPropertyExceptionHandler.class);
