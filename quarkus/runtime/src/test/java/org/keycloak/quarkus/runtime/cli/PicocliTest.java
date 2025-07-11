@@ -471,6 +471,9 @@ public class PicocliTest extends AbstractConfigurationTest {
         var value = nonRunningPicocli.config.getConfigValue("quarkus.log.category.\"org.keycloak\".level");
         assertEquals("quarkus.log.category.\"org.keycloak\".level", value.getName());
         assertEquals("WARN", value.getValue());
+        value = nonRunningPicocli.config.getConfigValue("quarkus.log.category.\"org.keycloak1\".level");
+        assertEquals("quarkus.log.category.\"org.keycloak1\".level", value.getName());
+        assertNull(value.getValue());
     }
 
     @Test
@@ -480,6 +483,9 @@ public class PicocliTest extends AbstractConfigurationTest {
         var value = nonRunningPicocli.config.getConfigValue("quarkus.log.category.\"org.keycloak\".level");
         assertEquals("quarkus.log.category.\"org.keycloak\".level", value.getName());
         assertEquals("WARN", value.getValue());
+        value = nonRunningPicocli.config.getConfigValue("quarkus.log.category.\"org.keycloak1\".level");
+        assertEquals("quarkus.log.category.\"org.keycloak1\".level", value.getName());
+        assertNull(value.getValue());
     }
 
     @Test

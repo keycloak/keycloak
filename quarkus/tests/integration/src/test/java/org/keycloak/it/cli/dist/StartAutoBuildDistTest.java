@@ -149,4 +149,46 @@ public class StartAutoBuildDistTest {
         cliResult.assertStartedDevMode();
     }
 
+    @Test
+    @Order(11)
+    void testLogging(KeycloakDistribution dist) {
+        CLIResult cliResult = dist.run("start-dev", "--log-level=WARN,org.hibernate.SQL:debug");
+        cliResult.assertMessage("DEBUG [org.hibernate.SQL]");
+        cliResult.assertStartedDevMode();
+        dist.stop();
+
+        // logging runtime defaults should not be used
+        cliResult = dist.run("start-dev");
+        cliResult.assertNoMessage("DEBUG [org.hibernate.SQL]");
+        cliResult.assertStartedDevMode();
+    }
+
+    @Test
+    @Order(11)
+    void testLogLevelNotPeristed(KeycloakDistribution dist) {
+        CLIResult cliResult = dist.run("start", "--log-level=WARN,org.hibernate.SQL:debug", "--http-enabled=true", "--hostname-strict=false");
+        cliResult.assertMessage("DEBUG [org.hibernate.SQL]");
+        cliResult.assertStartedDevMode();
+        dist.stop();
+
+        // logging runtime defaults should not be used
+        cliResult = dist.run("start", "--http-enabled=true", "--hostname-strict=false");
+        cliResult.assertNoMessage("DEBUG [org.hibernate.SQL]");
+        cliResult.assertStartedDevMode();
+    }
+
+    @Test
+    @Order(12)
+    void testLogLevelWildcardNotPeristed(KeycloakDistribution dist) {
+        CLIResult cliResult = dist.run("start-dev", "--log-level-org.hibernate.SQL=debug");
+        cliResult.assertMessage("DEBUG [org.hibernate.SQL]");
+        cliResult.assertStartedDevMode();
+        dist.stop();
+
+        // logging runtime defaults should not be used
+        cliResult = dist.run("start-dev");
+        cliResult.assertNoMessage("DEBUG [org.hibernate.SQL]");
+        cliResult.assertStartedDevMode();
+    }
+
 }
