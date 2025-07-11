@@ -9,4 +9,5 @@ export default interface ClientPolicyRepresentation {
   enabled?: boolean;
   name?: string;
   profiles?: string[];
+  permissiveMode?: boolean;
 }
