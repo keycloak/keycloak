@@ -92,6 +92,7 @@
         <hibernate.c3p0.version>6.2.13.Final</hibernate.c3p0.version>
         <infinispan.version>15.0.15.Final</infinispan.version>
         <protostream.version>5.0.13.Final</protostream.version> <!-- For the annotation processor: keep in sync with the version shipped with Infinispan -->
+        <hibernate-validator.version>8.0.2.Final</hibernate-validator.version>
         <protostream.plugin.version>${protostream.version}</protostream.plugin.version>
 
         <!--JAKARTA-->
@@ -578,6 +579,11 @@
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
                 <version>${h2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.hibernate.validator</groupId>
+                <artifactId>hibernate-validator</artifactId>
+                <version>${hibernate-validator.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.hibernate.orm</groupId>

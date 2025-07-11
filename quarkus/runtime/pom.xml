@@ -136,6 +136,11 @@
             <artifactId>mapstruct</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.hibernate.validator</groupId>
+            <artifactId>hibernate-validator</artifactId>
+        </dependency>
+
         <!-- SmallRye -->
         <dependency>
             <groupId>io.smallrye.config</groupId>

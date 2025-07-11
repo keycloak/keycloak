@@ -1,5 +1,7 @@
 package org.keycloak.services.client;
 
+import jakarta.inject.Inject;
+import jakarta.validation.Validator;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.models.ClientModel;
@@ -8,6 +10,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.mapper.ClientModelMapper;
 import org.keycloak.models.mapper.ModelMapper;
 import org.keycloak.representations.admin.v2.ClientRepresentation;
+import org.keycloak.representations.admin.v2.validation.CreateClient;
 import org.keycloak.services.ServiceException;
 
 import java.util.Optional;
@@ -17,6 +20,9 @@ import java.util.stream.Stream;
 public class DefaultClientService implements ClientService {
     private final KeycloakSession session;
     private final ClientModelMapper mapper;
+
+    @Inject
+    Validator validator;
 
     public DefaultClientService(KeycloakSession session) {
         this.session = session;
@@ -45,6 +51,7 @@ public class DefaultClientService implements ClientService {
                 throw new ServiceException("Client already exists", Response.Status.CONFLICT);
             }
         } else {
+            validator.validate(client, CreateClient.class); // TODO improve it to avoid second validation when we know it is create and not update
             model = realm.addClient(client.getClientId());
             created = true;
         }
