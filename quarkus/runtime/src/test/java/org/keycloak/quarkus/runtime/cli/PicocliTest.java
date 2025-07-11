@@ -289,6 +289,13 @@ public class PicocliTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void testShowConfigDisplaysPrimaryValue() {
+        build("build", "--db=postgres");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("show-config");
+        assertThat(nonRunningPicocli.getOutString(), containsString("postgres (Persisted)"));
+    }
+
+    @Test
     public void failSingleParamWithSpace() {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--db postgres");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
