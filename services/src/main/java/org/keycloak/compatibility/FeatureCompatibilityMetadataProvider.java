@@ -3,6 +3,7 @@ package org.keycloak.compatibility;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.keycloak.common.Profile;
 import org.keycloak.util.JsonSerialization;
@@ -36,6 +37,7 @@ public class FeatureCompatibilityMetadataProvider implements CompatibilityMetada
     @Override
     public CompatibilityResult isCompatible(Map<String, String> other) {
         Map<String, String> currentMeta = metadata();
+        // Check all entries in the other metadata
         for (Map.Entry<String, String> entry : other.entrySet()) {
             String featureKey = entry.getKey();
             String otherJson = entry.getValue();
@@ -43,8 +45,8 @@ public class FeatureCompatibilityMetadataProvider implements CompatibilityMetada
 
             // Feature has been removed in current version
             if (!currentMeta.containsKey(featureKey)) {
-                // If the feature was previously enabled then we shutdown to ensure compatibility
-                if (otherFeature.enabled)
+                // Shutdown if the feature was previously enabled and it had the SHUTDOWN strategy
+                if (otherFeature.enabled && otherFeature.updatePolicy == Profile.FeatureUpdatePolicy.SHUTDOWN)
                     return CompatibilityResult.incompatibleAttribute(ID, featureKey, otherJson, null);
                 else
                     continue;
@@ -59,6 +61,18 @@ public class FeatureCompatibilityMetadataProvider implements CompatibilityMetada
             // Feature has been enabled/disabled
             if (feature.enabled != otherFeature.enabled && feature.updatePolicy == Profile.FeatureUpdatePolicy.SHUTDOWN)
                 return CompatibilityResult.incompatibleAttribute(ID, featureKey, otherJson, json);
+        }
+
+        // Check distinct entries in current metadata
+        Map<String, String> distinct = currentMeta.entrySet().stream()
+              .filter(e -> !other.containsKey(e.getKey()))
+              .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        for (Map.Entry<String, String> entry : distinct.entrySet()) {
+            String json = entry.getValue();
+            Feature feature = fromJson(json);
+            if (feature.enabled && feature.updatePolicy == Profile.FeatureUpdatePolicy.SHUTDOWN)
+                return CompatibilityResult.incompatibleAttribute(ID, entry.getKey(), null, json);
         }
         return CompatibilityResult.providerCompatible(ID);
     }

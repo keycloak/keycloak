@@ -32,25 +32,38 @@ public class FeatureCompatibilityMetadataProviderTest extends AbstractCompatibil
     @MethodSource("rollingFeatures")
     public void testRollingPolicy(Profile.Feature feature) {
         FeatureCompatibilityMetadataProvider provider = new FeatureCompatibilityMetadataProvider();
+
+        Map<String, String> featureEnabled = getMeta(feature, true);
+        Map<String, String> featureDisabled = getMeta(feature, false);
+
+        // Current and other container the same feature
         Profile.configure(new FeatureResolver(feature, true));
+        assertFeature(feature, true, feature.getVersion(), Profile.FeatureUpdatePolicy.ROLLING);
+        assertCompatibility(CompatibilityResult.ExitCode.ROLLING, provider.isCompatible(featureEnabled));
 
-        var f = FeatureCompatibilityMetadataProvider.Feature.from(feature);
-        assertFeature(f, true, feature.getVersion(), Profile.FeatureUpdatePolicy.ROLLING);
-        assertCompatibility(CompatibilityResult.ExitCode.ROLLING, provider.isCompatible(Map.of(feature.getUnversionedKey(), FeatureCompatibilityMetadataProvider.toJson(f))));
+        // Feature enabled in current, disabled in other
+        assertCompatibility(CompatibilityResult.ExitCode.ROLLING, provider.isCompatible(featureDisabled));
 
-        Profile.configure(new FeatureResolver(feature, false));
-        f = FeatureCompatibilityMetadataProvider.Feature.from(feature);
-        assertFeature(f, false, feature.getVersion(), Profile.FeatureUpdatePolicy.ROLLING);
-        var featureDisabledMap = Map.of(feature.getUnversionedKey(), FeatureCompatibilityMetadataProvider.toJson(f));
+        // Feature disabled in current and other
         Profile.reset();
-        Profile.configure();
-        assertCompatibility(CompatibilityResult.ExitCode.ROLLING, provider.isCompatible(featureDisabledMap));
+        Profile.configure(new FeatureResolver(feature, false));
+        assertFeature(feature, false, feature.getVersion(), Profile.FeatureUpdatePolicy.ROLLING);
+        assertCompatibility(CompatibilityResult.ExitCode.ROLLING, provider.isCompatible(featureDisabled));
+
+        // Feature disabled in current, enabled in other
+        assertCompatibility(CompatibilityResult.ExitCode.ROLLING, provider.isCompatible(featureEnabled));
     }
 
     private static Stream<Arguments> rollingFeatures() {
         return Arrays.stream(Profile.Feature.values())
+              // It's not possible to disable HOSTNAME_V2 so ignore it when testing
               .filter(f -> f != Profile.Feature.HOSTNAME_V2)
               .filter(f -> f.getUpdatePolicy() == Profile.FeatureUpdatePolicy.ROLLING)
+              .filter(f ->
+                    // Filter features that have a dependency that does not support Rolling update as these will cause a cluster recreate
+                    DEPENDENT_FEATURES.getOrDefault(f, Set.of())
+                          .stream()
+                          .noneMatch(dep -> dep.getUpdatePolicy() != Profile.FeatureUpdatePolicy.ROLLING))
               .map(Arguments::of);
     }
 
@@ -59,28 +72,23 @@ public class FeatureCompatibilityMetadataProviderTest extends AbstractCompatibil
     public void testFeatureShutdownPolicy(Profile.Feature feature) {
         FeatureCompatibilityMetadataProvider provider = new FeatureCompatibilityMetadataProvider();
 
+        Map<String, String> featureEnabled = getMeta(feature, true);
+        Map<String, String> featureDisabled = getMeta(feature, false);
+
         // Test both old and new have enabled feature resulting in Rolling result
         Profile.configure(new FeatureResolver(feature, true));
-        var f = FeatureCompatibilityMetadataProvider.Feature.from(feature);
-        assertFeature(f, true, feature.getVersion(), Profile.FeatureUpdatePolicy.SHUTDOWN);
-
-        var featureEnabledMap = Map.of(feature.getUnversionedKey(), FeatureCompatibilityMetadataProvider.toJson(f));
-        assertEquals(Profile.FeatureUpdatePolicy.SHUTDOWN, f.updatePolicy());
-        assertCompatibility(CompatibilityResult.ExitCode.ROLLING, provider.isCompatible(featureEnabledMap));
+        assertFeature(feature, true, feature.getVersion(), Profile.FeatureUpdatePolicy.SHUTDOWN);
+        assertCompatibility(CompatibilityResult.ExitCode.ROLLING, provider.isCompatible(featureEnabled));
 
         // Test new metadata has feature enabled and old metadata has feature disabled results in Shutdown
-        Profile.configure(new FeatureResolver(feature, false));
-        f = FeatureCompatibilityMetadataProvider.Feature.from(feature);
-        assertFeature(f, false, feature.getVersion(), Profile.FeatureUpdatePolicy.SHUTDOWN);
-        var featureDisabledMap = Map.of(feature.getUnversionedKey(), FeatureCompatibilityMetadataProvider.toJson(f));
-        Profile.reset();
-        Profile.configure(new FeatureResolver(feature, true));
-        assertCompatibility(CompatibilityResult.ExitCode.RECREATE, provider.isCompatible(featureDisabledMap));
+        assertFeature(feature, true, feature.getVersion(), Profile.FeatureUpdatePolicy.SHUTDOWN);
+        assertCompatibility(CompatibilityResult.ExitCode.RECREATE, provider.isCompatible(featureDisabled));
 
         // Test old metadata has feature enabled and new metadata has feature disabled results in Shutdown
         Profile.reset();
         Profile.configure(new FeatureResolver(feature, false));
-        assertCompatibility(CompatibilityResult.ExitCode.RECREATE, provider.isCompatible(featureEnabledMap));
+        assertFeature(feature, false, feature.getVersion(), Profile.FeatureUpdatePolicy.SHUTDOWN);
+        assertCompatibility(CompatibilityResult.ExitCode.RECREATE, provider.isCompatible(featureEnabled));
     }
 
     private static Stream<Arguments> shutdownFeatures() {
@@ -90,42 +98,62 @@ public class FeatureCompatibilityMetadataProviderTest extends AbstractCompatibil
               .map(Arguments::of);
     }
 
-    @ParameterizedTest
-    @MethodSource("noUpgradeFeatures")
-    public void testRollingNoUpgradePolicy(Profile.Feature v1, Profile.Feature v2) {
+    @Test
+    public void testRollingNoUpgradePolicy() {
+        Profile.Feature v1 = Profile.Feature.LOGIN_V1;
+        Profile.Feature v2 = Profile.Feature.LOGIN_V2;
+
         FeatureCompatibilityMetadataProvider provider = new FeatureCompatibilityMetadataProvider();
+
+        Map<String, String> v1Meta = getMeta(v1, true);
+        Map<String, String> v2Meta = getMeta(v2, true);
+
+        // Test v1 enabled switching to v2
         Profile.configure(new FeatureResolver(v1, true));
+        assertFeature(v1, true, v1.getVersion(), Profile.FeatureUpdatePolicy.ROLLING_NO_UPGRADE);
+        assertFeature(v2, false, v2.getVersion(), Profile.FeatureUpdatePolicy.ROLLING_NO_UPGRADE);
+        assertCompatibility(CompatibilityResult.ExitCode.RECREATE, provider.isCompatible(v2Meta));
 
-        var f = FeatureCompatibilityMetadataProvider.Feature.from(v1);
-        assertFeature(f, true, 1, Profile.FeatureUpdatePolicy.ROLLING_NO_UPGRADE);
-        var featureV1Map = Map.of(v1.getUnversionedKey(), FeatureCompatibilityMetadataProvider.toJson(f));
-
+        // Test v2 enabled switching to v1
         Profile.reset();
         Profile.configure(new FeatureResolver(v2, true));
-        f = FeatureCompatibilityMetadataProvider.Feature.from(v2);
-        assertFeature(f, true, 2, Profile.FeatureUpdatePolicy.ROLLING_NO_UPGRADE);
-        assertCompatibility(CompatibilityResult.ExitCode.RECREATE, provider.isCompatible(featureV1Map));
+        assertFeature(v1, false, v1.getVersion(), Profile.FeatureUpdatePolicy.ROLLING_NO_UPGRADE);
+        assertFeature(v2, true, v2.getVersion(), Profile.FeatureUpdatePolicy.ROLLING_NO_UPGRADE);
+        assertCompatibility(CompatibilityResult.ExitCode.RECREATE, provider.isCompatible(v1Meta));
     }
 
-    private static Stream<Arguments> noUpgradeFeatures() {
+    @ParameterizedTest
+    @MethodSource("removedFeatures")
+    public void testRemovedFeature(CompatibilityResult.ExitCode exitCode, Profile.FeatureUpdatePolicy updatePolicy) {
+        FeatureCompatibilityMetadataProvider provider = new FeatureCompatibilityMetadataProvider();
+        Profile.configure();
+        Map<String, String> other = provider.metadata();
+        other.put("deleted-feature", "{\"enabled\":true,\"version\":1,\"updatePolicy\":\"%s\"}".formatted(updatePolicy));
+        assertCompatibility(exitCode, provider.isCompatible(other));
+    }
+
+    private static Stream<Arguments> removedFeatures() {
         return Stream.of(
-              Arguments.of(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2),
-              Arguments.of(Profile.Feature.LOGIN_V1, Profile.Feature.LOGIN_V2)
+              Arguments.of(CompatibilityResult.ExitCode.ROLLING, Profile.FeatureUpdatePolicy.ROLLING),
+              Arguments.of(CompatibilityResult.ExitCode.ROLLING, Profile.FeatureUpdatePolicy.ROLLING_NO_UPGRADE),
+              Arguments.of(CompatibilityResult.ExitCode.RECREATE, Profile.FeatureUpdatePolicy.SHUTDOWN)
         );
     }
 
-    @Test
-    public void testRemovedFeatureCausesShutdown() {
-        FeatureCompatibilityMetadataProvider provider = new FeatureCompatibilityMetadataProvider();
-        Profile.configure();
-        var featureJson = "{\"enabled\":true,\"version\":1,\"updatePolicy\":\"SHUTDOWN\"}";
-        assertCompatibility(CompatibilityResult.ExitCode.RECREATE, provider.isCompatible(Map.of("deleted-feature", featureJson)));
+    // Returns the expected metadata taking into account dependent features
+    private Map<String, String> getMeta(Profile.Feature feature, boolean enabled) {
+        Profile.reset();
+        Profile.configure(new FeatureResolver(feature, enabled));
+        Map<String, String> meta = new FeatureCompatibilityMetadataProvider().metadata();
+        Profile.reset();
+        return meta;
     }
 
-    private void assertFeature(FeatureCompatibilityMetadataProvider.Feature feature, boolean enabled, int version, Profile.FeatureUpdatePolicy updatePolicy) {
-        assertEquals(enabled, feature.enabled());
-        assertEquals(version, feature.version());
-        assertEquals(updatePolicy, feature.updatePolicy());
+    private void assertFeature(Profile.Feature feature, boolean enabled, int version, Profile.FeatureUpdatePolicy updatePolicy) {
+        var f = FeatureCompatibilityMetadataProvider.Feature.from(feature);
+        assertEquals(enabled, f.enabled());
+        assertEquals(version, f.version());
+        assertEquals(updatePolicy, f.updatePolicy());
     }
 
     record FeatureResolver(Profile.Feature feature, boolean enabled) implements ProfileConfigResolver {
