@@ -32,8 +32,8 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel.Action;
 import jakarta.ws.rs.core.Response;
 
-import static org.keycloak.authentication.authenticators.resetcred.ResetCredentialEmail.LATEST_RESET_PASSWORD_TOKEN;
 import static org.keycloak.services.resources.LoginActionsService.RESET_CREDENTIALS_PATH;
+import static org.keycloak.services.resources.admin.UserResource.LATEST_RESET_PASSWORD_TOKEN;
 
 /**
  *
