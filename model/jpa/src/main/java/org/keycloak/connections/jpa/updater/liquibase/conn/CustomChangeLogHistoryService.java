@@ -40,7 +40,12 @@ import liquibase.database.core.MySQLDatabase;
 import liquibase.exception.DatabaseException;
 import liquibase.executor.jvm.ChangelogJdbcMdcListener;
 import liquibase.logging.LogFactory;
+import liquibase.snapshot.InvalidExampleException;
+import liquibase.snapshot.SnapshotGeneratorFactory;
 import liquibase.statement.core.AddPrimaryKeyStatement;
+import liquibase.structure.core.PrimaryKey;
+import liquibase.structure.core.Schema;
+import liquibase.structure.core.Table;
 
 /**
  *
@@ -62,12 +67,11 @@ public class CustomChangeLogHistoryService extends StandardChangeLogHistoryServi
 
         if (serviceInitialized) return;
 
-        AddPrimaryKeyStatement pkStatement = new AddPrimaryKeyStatement(getLiquibaseCatalogName(), getLiquibaseSchemaName(), getDatabaseChangeLogTableName(), 
-                ColumnConfig.arrayFromNames("ID, AUTHOR, FILENAME"), "PK_DATABASECHANGELOG");
-        ChangelogJdbcMdcListener.execute(getDatabase(), ex -> ex.execute(pkStatement));
-        getDatabase().commit();
-
         serviceInitialized = true;
+
+        if (!existsDatabaseChangelogPK()) {
+            createDatabaseChangelogPK();
+        }
     }
 
     @Override
@@ -135,5 +139,32 @@ public class CustomChangeLogHistoryService extends StandardChangeLogHistoryServi
     @Override
     public int getPriority() {
         return super.getPriority() + 1; // Ensure bigger priority than StandardChangeLogHistoryService
+    }
+
+    private boolean existsDatabaseChangelogPK() throws DatabaseException {
+        try {
+            PrimaryKey example = new PrimaryKey();
+            Table table = new Table();
+            table.setSchema(new Schema(getLiquibaseCatalogName(), getLiquibaseSchemaName()));
+            table.setName(getDatabaseChangeLogTableName());
+            example.setTable(table);
+            return SnapshotGeneratorFactory.getInstance().has(example, getDatabase());
+        } catch (InvalidExampleException e) {
+            throw new DatabaseException(e);
+        }
+    }
+
+    private void createDatabaseChangelogPK() throws DatabaseException {
+        AddPrimaryKeyStatement pkStatement = new AddPrimaryKeyStatement(getLiquibaseCatalogName(), getLiquibaseSchemaName(), getDatabaseChangeLogTableName(),
+                ColumnConfig.arrayFromNames("ID, AUTHOR, FILENAME"), "PK_DATABASECHANGELOG");
+        try {
+            ChangelogJdbcMdcListener.execute(getDatabase(), ex -> ex.execute(pkStatement));
+            getDatabase().commit();
+        } catch (DatabaseException e) {
+            // if PK already exists just ignore the exception
+            if (!existsDatabaseChangelogPK()) {
+                throw e;
+            }
+        }
     }
 }
