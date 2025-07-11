@@ -55,8 +55,8 @@
 # SRE (@keycloak/sre-maintainers)
 ###################################################################################################
 
-/model/infinispan                                           @keycloak/sre-maintainers @keycloak/maintainers
-/tests/clustering                                           @keycloak/sre-maintainers @keycloak/maintainers
-/test-framework/clustering                                  @keycloak/sre-maintainers @keycloak/maintainers
-/docs/guides/high-availability                              @keycloak/sre-maintainers @keycloak/maintainers
-/docs/guides/observability                                  @keycloak/sre-maintainers @keycloak/maintainers
+/model/infinispan/                                          @keycloak/sre-maintainers @keycloak/maintainers
+/tests/clustering/                                          @keycloak/sre-maintainers @keycloak/maintainers
+/test-framework/clustering/                                 @keycloak/sre-maintainers @keycloak/maintainers
+/docs/guides/high-availability/                             @keycloak/sre-maintainers @keycloak/maintainers
+/docs/guides/observability/                                 @keycloak/sre-maintainers @keycloak/maintainers
