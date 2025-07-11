@@ -17,7 +17,6 @@
 
 package org.keycloak.authentication.requiredactions;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -47,10 +46,14 @@ import org.keycloak.forms.login.freemarker.Templates;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionConfigModel;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.services.Urls;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -63,6 +66,34 @@ import org.keycloak.userprofile.ValidationException;
 public class UpdateEmail implements RequiredActionProvider, RequiredActionFactory, EnvironmentDependentProviderFactory {
 
     private static final Logger logger = Logger.getLogger(UpdateEmail.class);
+
+    public static final String CONFIG_VERIFY_EMAIL = "verifyEmail";
+    private static final String FORCE_EMAIL_VERIFICATION = "forceEmailVerification";
+
+    public static boolean isVerifyEmailEnabled(RealmModel realm) {
+        RequiredActionProviderModel model = realm.getRequiredActionProviderByAlias(RequiredAction.UPDATE_EMAIL.name());
+
+        if (model == null || !model.isEnabled()) {
+            return false;
+        }
+
+        RequiredActionConfigModel config = realm.getRequiredActionConfigByAlias(RequiredAction.UPDATE_EMAIL.name());
+
+        if (config == null) {
+            return false;
+        }
+
+        return isVerifyEmailEnabled(realm, config);
+    }
+
+    public static void forceEmailVerification(KeycloakSession session) {
+        session.setAttribute(FORCE_EMAIL_VERIFICATION, true);
+    }
+
+    private static boolean isVerifyEmailEnabled(RealmModel realm, RequiredActionConfigModel config) {
+        boolean forceVerifyEmail = Boolean.parseBoolean(config.getConfigValue(CONFIG_VERIFY_EMAIL, Boolean.FALSE.toString()));
+        return forceVerifyEmail || realm.isVerifyEmail();
+    }
 
     @Override
     public InitiatedActionSupport initiatedActionSupport() {
@@ -81,6 +112,13 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
 
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
+        KeycloakSession session = context.getSession();
+
+        if (session.getAttributeOrDefault(FORCE_EMAIL_VERIFICATION, Boolean.FALSE)) {
+            sendEmailUpdateConfirmation(context, false);
+            return;
+        }
+
         context.challenge(context.form().createResponse(UserModel.RequiredAction.UPDATE_EMAIL));
     }
 
@@ -102,7 +140,7 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
         }
 
         final boolean logoutSessions = "on".equals(formData.getFirst("logout-sessions"));
-        if (!realm.isVerifyEmail() || Validation.isBlank(newEmail)
+        if (!isVerifyEmailEnabled(realm, context.getConfig()) || Validation.isBlank(newEmail)
                 || Objects.equals(user.getEmail(), newEmail) && user.isEmailVerified()) {
             if (logoutSessions) {
                 AuthenticatorUtil.logoutOtherSessions(context);
@@ -209,7 +247,14 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
 
     @Override
     public List<ProviderConfigProperty> getConfigMetadata() {
-        return Collections.emptyList();
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name("verifyEmail")
+                .label("Force Email Verification")
+                .helpText("If enabled, the user will be forced to verify the email regardless if email verification is enabled at the realm level or not. Otherwise, verification will be based on the realm level setting.")
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .defaultValue(Boolean.FALSE)
+                .add().build();
     }
 
     @Override
