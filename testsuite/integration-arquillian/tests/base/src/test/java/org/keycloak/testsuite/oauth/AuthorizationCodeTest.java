@@ -162,6 +162,17 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testInvalidNULCharacterClientId() {
+        ClientManager.realm(adminClient.realm("test")).clientId("test-app").addRedirectUris(oauth.getRedirectUri());
+
+        oauth.client("%00");
+        oauth.openLoginForm();
+
+        assertTrue(errorPage.isCurrent());
+        assertEquals("An internal server error has occurred", errorPage.getError());
+    }
+
+    @Test
     public void authorizationRequestNoState() throws IOException {
         AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
