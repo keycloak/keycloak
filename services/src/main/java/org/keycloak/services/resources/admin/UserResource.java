@@ -130,7 +130,6 @@ import java.util.stream.Stream;
 
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
-import static org.keycloak.authentication.authenticators.resetcred.ResetCredentialEmail.LATEST_RESET_PASSWORD_TOKEN;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
 import static org.keycloak.userprofile.UserProfileContext.USER_API;
@@ -146,6 +145,7 @@ import static org.keycloak.userprofile.UserProfileContext.USER_API;
 public class UserResource {
     private static final Logger logger = Logger.getLogger(UserResource.class);
     private static final String LATEST_OTP_CONFIGURE_ACTION_TOKEN = "lastOtpConfigureActionToken";
+    public static final String LATEST_RESET_PASSWORD_TOKEN = "lastResetPasswordToken";
 
     protected final RealmModel realm;
 
