@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 import org.keycloak.admin.client.resource.PermissionsResource;
 import org.keycloak.admin.client.resource.PoliciesResource;
 import org.keycloak.admin.client.resource.ScopePermissionsResource;
-import org.keycloak.authorization.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.GroupRepresentation;
@@ -44,12 +44,13 @@ import org.keycloak.representations.idm.authorization.ScopePermissionRepresentat
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 
 public abstract class AbstractPermissionTest {
 
-    @InjectRealm(config = RealmAdminPermissionsConfig.class)
+    @InjectRealm(config = RealmAdminPermissionsConfig.class, lifecycle = LifeCycle.METHOD)
     ManagedRealm realm;
 
     @InjectClient(attachTo = Constants.ADMIN_PERMISSIONS_CLIENT_ID)

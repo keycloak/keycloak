@@ -1,7 +1,5 @@
 package org.keycloak.saml.processing.core.parsers.saml.mdattr;
 
-import java.io.Serializable;
-
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.events.StartElement;
 
@@ -13,7 +11,7 @@ import org.keycloak.saml.processing.core.parsers.saml.assertion.SAMLAttributePar
 import org.keycloak.saml.processing.core.parsers.saml.metadata.AbstractStaxSamlMetadataParser;
 import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLMetadataQNames;
 
-public class SAMLEntityAttributesParser extends AbstractStaxSamlMetadataParser<EntityAttributes> implements Serializable {
+public class SAMLEntityAttributesParser extends AbstractStaxSamlMetadataParser<EntityAttributes> {
     private static final SAMLEntityAttributesParser INSTANCE = new SAMLEntityAttributesParser();
 
     private SAMLEntityAttributesParser() {

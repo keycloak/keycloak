@@ -127,7 +127,7 @@ public class KeycloakController implements Reconciler<Keycloak> {
             return UpdateControl.patchResource(patchedKc);
         }
 
-        var existingDeployment = context.getSecondaryResource(StatefulSet.class).orElse(null);
+        var existingDeployment = context.getSecondaryResource(StatefulSet.class).filter(ss -> ss.hasOwnerReferenceFor(kc)).orElse(null);
         ContextUtils.storeOperatorConfig(context, config);
         ContextUtils.storeWatchedResources(context, watchedResources);
         ContextUtils.storeDistConfigurator(context, distConfigurator);

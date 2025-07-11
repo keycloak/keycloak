@@ -85,7 +85,7 @@ db-url-host=mykeycloakdb
 
 Alternatively, see <@links.server id="all-config"/> for all server options.
 
-=== Formats for environment variables
+=== Format for referencing environment variables
 You can use placeholders to resolve an environment specific value from environment variables inside the `keycloak.conf` file by using the `${r"++${ENV_VAR}++"}` syntax:
 
 [source]
@@ -164,6 +164,21 @@ When using PowerShell and your values contain special characters like commas, us
 ----
 
 PowerShell handles quotes differently. It interprets the quoted string before passing it to the `kc.bat` script, removing the outer quote characters. Therefore, an extra layer of quotes is needed to preserve the value structure. Otherwise, the comma would be interpreted as a delimiter. In Windows CMD, you can use double quotes directly.
+
+=== Formats for environment variable keys with special characters
+
+Non-alphanumeric characters in your configuration key must be converted to `_` in the corresponding environment variable key.
+
+Environment variables are converted back to normal option keys by lower-casing the name and replacing `\_` with `-`. Logging wildcards are the exception as `_` in the category is replaced with `.` instead. Logging categories are commonly class / package names, which are more likely to use `.` rather than `-`.
+
+WARNING: Automatic mapping of the environment variable key to option key may not preserve the intended key 
+
+For example `kc.log-level-package.class_name` will become the environment variable key `KC_LOG_LEVEL_PACKAGE_CLASS_NAME`. That will automatically be mapped to `kc.log-level-package.class.name` because `_` in the logging category will be replaced by `.`. Unfortunately this does not match the intent of `kc.log-level-package.class_name`.
+
+You have a couple of options in this case:
+
+- create an entry in your `keycloak.conf` file that references an environment variable of your choosing. e.g. `kc.log-level-package.class_name=${r"${CLASS_NAME_LEVEL}"}`. See more on referencing environment variables in <<Format for referencing environment variables>>.
+- or in situations where modifying the `keycloak.conf` may not be easy, you can use a pair of environment variables `KC_UNIQUEIFIER=value` and `KCKEY_UNIQUEIFIER=key`, e.g. `KC_MYKEY=debug` and `KCKEY_MYKEY=log-level-package.class_name`, or `KC_LOG_LEVEL_PACKAGE_CLASS_NAME=debug` and `KCKEY_LOG_LEVEL_PACKAGE_CLASS_NAME=log-level-package.class_name` 
 
 == Starting {project_name}
 You can start {project_name} in `development mode` or `production mode`. Each mode offers different defaults for the intended environment.
@@ -281,12 +296,12 @@ You can achieve most optimizations to startup and runtime behavior by using the 
 Some of the realm capabilities allow administrators to reference system variables such as environment variables and system properties when configuring
 the realm and its components.
 
-By default, {project_name} disallow using system variables but only those explicitly specified through the `spi-admin-allowed-system-variables` configuration
+By default, {project_name} disallow using system variables but only those explicitly specified through the `+spi-admin--allowed-system-variables+` configuration
 option. This option allows you to specify a comma-separated list of keys that will eventually resolve to values from system variables with the same key.
 
 . Start the server and expose a set of system variables to the server runtime
 +
-    <@kc.start parameters="--spi-admin-allowed-system-variables=FOO,BAR"/>
+    <@kc.start parameters="--spi-admin--allowed-system-variables=FOO,BAR"/>
 
 In future releases, this capability will be removed in favor of preventing any usage of system variables in the realm configuration.
 

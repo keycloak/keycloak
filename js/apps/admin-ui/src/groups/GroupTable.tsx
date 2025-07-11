@@ -159,7 +159,7 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
             ? []
             : [
                 {
-                  title: t("rename"),
+                  title: t("edit"),
                   onRowClick: async (group) => {
                     setRename(group);
                     return false;

@@ -45,6 +45,9 @@ by checking the claims like `acr` in the tokens.
 In case the user is already authenticated due to an active SSO session, that user usually does not need to actively re-authenticate. However, if that user actively authenticated longer than five minutes ago,
 the client can  still request re-authentication when some AIA is requested. Exceptions exist from this guideline as follows:
 
+* For every required action it is possible to configure the max age on the required action itself in the <<proc-setting-default-required-actions_{context}, Required actions tab>>.
+ If the policy is not configured, it defaults to five minutes.
+
 * The action `delete_account` will always require the user to actively re-authenticate
 
 * The action `UPDATE_PASSWORD` might require the user to actively re-authenticate according to the configured <<maximum-authentication-age,Maximum Authentication Age Password policy>>.
@@ -52,7 +55,7 @@ In case the policy is not configured, it is also possible to configure it on the
 when configuring the particular required action. If the policy is not configured in any of those places, it defaults to five minutes.
 
 * If you want to use a shorter re-authentication, you can still use a parameter query parameter such as  `max_age` with the specified shorter value or eventually `prompt=login`, which will always require user to
-actively re-authenticate as described in the OIDC specification. Note that using `max_age` for a longer value than the default five minutes (or the one prescribed by password policy) is not supported.
+actively re-authenticate as described in the OIDC specification. Note that using `max_age` for a longer value than the default five minutes (or the one specifically configured for the required action) is not supported.
 The `max_age` can be currently used only to make the value shorter than the default five minutes.
 
 * If <<_step-up-flow,Step-up authentication>> is enabled and the action is to add or delete a credential, authentication is required with the level corresponding

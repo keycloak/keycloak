@@ -224,8 +224,8 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
     messageKey: "reGenerateSigningExplain",
     continueButtonLabel: "yes",
     cancelButtonLabel: "no",
-    onConfirm: () => {
-      generate(selectedType!);
+    onConfirm: async () => {
+      await generate(selectedType!);
     },
   });
 
@@ -255,6 +255,7 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
               id={clientId}
               attr={attr}
               onClose={() => setImportOpen(undefined)}
+              onImported={() => setRefresh(refresh + 1)}
             />
           )}
           <KeySection

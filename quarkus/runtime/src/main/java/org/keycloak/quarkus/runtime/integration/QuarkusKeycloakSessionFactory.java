@@ -29,7 +29,7 @@ import org.keycloak.provider.ProviderManagerRegistry;
 import org.keycloak.provider.Spi;
 import org.keycloak.quarkus.runtime.themes.QuarkusJarThemeProviderFactory;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
-import org.keycloak.services.resources.admin.permissions.AdminPermissions;
+import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 import org.keycloak.theme.ClasspathThemeProviderFactory;
 
 public final class QuarkusKeycloakSessionFactory extends DefaultKeycloakSessionFactory {

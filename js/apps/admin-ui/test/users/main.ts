@@ -9,7 +9,7 @@ export async function clickSaveButton(page: Page) {
 }
 
 export async function clickAddUserButton(page: Page) {
-  page.getByTestId("no-users-found-empty-action").click();
+  await page.getByTestId("no-users-found-empty-action").click();
 }
 
 export async function fillUserForm(

@@ -62,6 +62,10 @@ public class BrokeredIdentityContext {
         this.idpConfig = idpConfig;
     }
 
+    public BrokeredIdentityContext(IdentityProviderModel idpConfig) {
+        this.idpConfig = idpConfig;
+    }
+
     public String getId() {
         return id;
     }

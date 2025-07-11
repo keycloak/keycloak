@@ -59,34 +59,9 @@
                                         <artifactId>integration-arquillian-tests-base</artifactId>
                                         <version>${project.version}</version>
                                         <classifier>tests</classifier>
-                                        <includes>arquillian.xml,wildfly-config.xml,keycloak-add-user.json,test-constants.properties,kerberos/*,keystore/*,password-blacklists/*,log4j.properties,vault/*</includes>
+                                        <includes>arquillian.xml,wildfly-config.xml,test-constants.properties,kerberos/*,keystore/*,password-blacklists/*,log4j.properties,vault/*</includes>
                                     </artifactItem>
                                 </artifactItems>
-                            </configuration>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-resources-plugin</artifactId>
-                    <executions>
-                        <execution>
-                            <id>copy-admin-user-json-file</id>
-                            <phase>process-test-resources</phase>
-                            <goals>
-                                <goal>copy-resources</goal>
-                            </goals>
-                            <configuration>
-                                <skip>${skip.add.user.json}</skip>
-                                <outputDirectory>${auth.server.config.dir}</outputDirectory>
-                                <resources>
-                                    <resource>
-                                        <directory>${project.build.directory}/dependency</directory>
-                                        <includes>
-                                            <include>keycloak-add-user.json</include>
-                                        </includes>
-                                        <filtering>true</filtering>
-                                    </resource>
-                                </resources>
                             </configuration>
                         </execution>
                     </executions>

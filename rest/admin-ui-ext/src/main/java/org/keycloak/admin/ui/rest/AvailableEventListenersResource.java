@@ -33,7 +33,7 @@ import org.keycloak.admin.ui.rest.model.ProviderMapper;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
 public class AvailableEventListenersResource {
 

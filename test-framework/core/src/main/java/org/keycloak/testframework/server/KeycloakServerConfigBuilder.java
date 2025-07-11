@@ -43,6 +43,11 @@ public class KeycloakServerConfigBuilder {
                 .option("bootstrap-admin-client-secret", clientSecret);
     }
 
+    public KeycloakServerConfigBuilder bootstrapAdminUser(String username, String password) {
+        return option("bootstrap-admin-username", username)
+                .option("bootstrap-admin-password", password);
+    }
+
     public KeycloakServerConfigBuilder cache(String cache) {
         return option("cache", cache);
     }

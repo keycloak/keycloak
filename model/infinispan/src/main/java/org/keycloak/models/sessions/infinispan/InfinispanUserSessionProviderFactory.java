@@ -148,7 +148,15 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     public void init(Config.Scope config) {
         this.config = config;
         offlineSessionCacheEntryLifespanOverride = config.getInt(CONFIG_OFFLINE_SESSION_CACHE_ENTRY_LIFESPAN_OVERRIDE, -1);
+        if (offlineSessionCacheEntryLifespanOverride != -1) {
+            // to be removed in KC 27
+            log.warn("The option spi-user-sessions--infinispan--offline-session-cache-entry-lifespan-override is deprecated and will be removed in a future release");
+        }
         offlineClientSessionCacheEntryLifespanOverride = config.getInt(CONFIG_OFFLINE_CLIENT_SESSION_CACHE_ENTRY_LIFESPAN_OVERRIDE, -1);
+        if (offlineClientSessionCacheEntryLifespanOverride != -1) {
+            // to be removed in KC 27
+            log.warn("The option spi-user-sessions--infinispan--offline-client-session-cache-entry-lifespan-override is deprecated and will be removed in a future release");
+        }
         maxBatchSize = config.getInt(CONFIG_MAX_BATCH_SIZE, DEFAULT_MAX_BATCH_SIZE);
         // Do not use caches for sessions if explicitly disabled or if embedded caches are not used
         useCaches = config.getBoolean(CONFIG_USE_CACHES, DEFAULT_USE_CACHES) && InfinispanUtils.isEmbeddedInfinispan();
@@ -340,13 +348,13 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         builder.property()
                 .name(CONFIG_OFFLINE_CLIENT_SESSION_CACHE_ENTRY_LIFESPAN_OVERRIDE)
                 .type("int")
-                .helpText("Override how long offline client sessions should be kept in memory")
+                .helpText("Override how long offline client sessions should be kept in memory in seconds (deprecated, to be removed in Keycloak 27)")
                 .add();
 
         builder.property()
                 .name(CONFIG_OFFLINE_SESSION_CACHE_ENTRY_LIFESPAN_OVERRIDE)
                 .type("int")
-                .helpText("Override how long offline user sessions should be kept in memory")
+                .helpText("Override how long offline user sessions should be kept in memory in seconds (deprecated, to be removed in Keycloak 27)")
                 .add();
 
         builder.property()

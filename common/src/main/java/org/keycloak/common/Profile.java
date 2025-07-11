@@ -75,6 +75,7 @@ public class Profile {
 
         TOKEN_EXCHANGE("Token Exchange Service", Type.PREVIEW, 1),
         TOKEN_EXCHANGE_STANDARD_V2("Standard Token Exchange version 2", Type.DEFAULT, 2),
+        TOKEN_EXCHANGE_EXTERNAL_INTERNAL_V2("External to Internal Token Exchange version 2", Type.EXPERIMENTAL, 2),
 
         WEB_AUTHN("W3C Web Authentication (WebAuthn)", Type.DEFAULT),
 
@@ -95,7 +96,7 @@ public class Profile {
 
         RECOVERY_CODES("Recovery codes", Type.DEFAULT),
 
-        UPDATE_EMAIL("Update Email Action", Type.PREVIEW),
+        UPDATE_EMAIL("Update Email Action", Type.DEFAULT),
 
         FIPS("FIPS 140-2 mode", Type.DISABLED_BY_DEFAULT),
 
@@ -123,13 +124,16 @@ public class Profile {
 
         ORGANIZATION("Organization support within realms", Type.DEFAULT),
 
-        PASSKEYS("Passkeys", Type.PREVIEW),
+        PASSKEYS("Passkeys", Type.PREVIEW, Feature.WEB_AUTHN),
 
         USER_EVENT_METRICS("Collect metrics based on user events", Type.DEFAULT),
 
         IPA_TUURA_FEDERATION("IPA-Tuura user federation provider", Type.EXPERIMENTAL),
 
+        LOGOUT_ALL_SESSIONS_V1("Logout all sessions logs out only regular sessions", Type.DEPRECATED, 1),
+
         ROLLING_UPDATES_V1("Rolling Updates", Type.DEFAULT, 1),
+        ROLLING_UPDATES_V2("Rolling Updates for patch releases", Type.PREVIEW, 2),
 
         /**
          * @see <a href="https://github.com/keycloak/keycloak/issues/37967">Deprecate for removal the Instagram social broker</a>.
@@ -410,6 +414,13 @@ public class Profile {
         return getInstance().features.get(feature);
     }
 
+    public static boolean isAnyVersionOfFeatureEnabled(Feature feature) {
+        return isFeatureEnabled(feature) ||
+                getInstance().getEnabledFeatures()
+                .stream()
+                .anyMatch(f -> Objects.equals(f.getUnversionedKey(), feature.getUnversionedKey()));
+    }
+
     public ProfileName getName() {
         return profileName;
     }
@@ -420,6 +431,10 @@ public class Profile {
 
     public Set<Feature> getDisabledFeatures() {
         return features.entrySet().stream().filter(e -> !e.getValue()).map(Map.Entry::getKey).collect(Collectors.toSet());
+    }
+
+    public Set<Feature> getEnabledFeatures() {
+        return features.entrySet().stream().filter(Map.Entry::getValue).map(Map.Entry::getKey).collect(Collectors.toSet());
     }
 
     /**

@@ -34,6 +34,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.ServicesLogger;
@@ -179,7 +180,7 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
             }
             else {
                 // Bypass the confirmation page and log the user in
-                context.success();
+                context.success(UserCredentialModel.CLIENT_CERT);
             }
         }
         catch(Exception e) {
@@ -269,7 +270,7 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
         }
         if (context.getUser() != null) {
             recordX509CertificateAuditDataViaContextEvent(context);
-            context.success();
+            context.success(UserCredentialModel.CLIENT_CERT);
             return;
         }
         context.attempted();

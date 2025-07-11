@@ -2,6 +2,7 @@ package org.keycloak.testframework.database;
 
 import org.jboss.logging.Logger;
 import org.keycloak.testframework.config.Config;
+import org.keycloak.testframework.logging.JBossLogConsumer;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 
 import java.io.IOException;
@@ -53,9 +54,13 @@ public abstract class AbstractContainerTestDatabase implements TestDatabase {
 
     @Override
     public Map<String, String> serverConfig() {
+        return serverConfig(false);
+    }
+
+    public Map<String, String> serverConfig(boolean internal) {
         return Map.of(
                 "db", getDatabaseVendor(),
-                "db-url", getJdbcUrl(),
+                "db-url", getJdbcUrl(internal),
                 "db-username", getUsername(),
                 "db-password", getPassword()
         );
@@ -79,8 +84,13 @@ public abstract class AbstractContainerTestDatabase implements TestDatabase {
         return "keycloak";
     }
 
-    public String getJdbcUrl() {
-        return container.getJdbcUrl();
+    public String getJdbcUrl(boolean internal) {
+        var url = container.getJdbcUrl();
+        if (internal) {
+            var ip = container.getContainerInfo().getNetworkSettings().getNetworks().values().iterator().next().getIpAddress();
+            return url.replace(container.getHost() + ":" + container.getFirstMappedPort(), ip + ":" + container.getExposedPorts().get(0));
+        }
+        return url;
     }
 
     public abstract String getDatabaseVendor();

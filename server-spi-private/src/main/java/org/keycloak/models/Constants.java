@@ -70,6 +70,11 @@ public final class Constants {
     public static final String DEFAULT_WEBAUTHN_POLICY_RP_ENTITY_NAME = "keycloak";
     // it stands for optional parameter not specified in WebAuthn
     public static final String DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED = "not specified";
+    public static final String WEBAUTHN_POLICY_OPTION_REQUIRED = "required";
+    public static final String WEBAUTHN_POLICY_OPTION_PREFERED = "preferred";
+    public static final String WEBAUTHN_POLICY_OPTION_DISCOURAGED = "discouraged";
+    public static final String WEBAUTHN_POLICY_OPTION_YES = "Yes";
+    public static final String WEBAUTHN_POLICY_OPTION_NO = "No";
 
     // Prefix used for the realm attributes and other places
     public static final String WEBAUTHN_PASSWORDLESS_PREFIX = "Passwordless";
@@ -87,6 +92,8 @@ public final class Constants {
     public static final String KC_ACTION = "kc_action";
 
     public static final String KC_ACTION_PARAMETER = "kc_action_parameter";
+    // parameter used by some actions to skip executing it if a credential for that type already exists for the user
+    public static final String KC_ACTION_PARAMETER_SKIP_IF_EXISTS = "skip_if_exists";
     public static final String KC_ACTION_STATUS = "kc_action_status";
     public static final String KC_ACTION_EXECUTING = "kc_action_executing";
     /**
@@ -95,6 +102,8 @@ public final class Constants {
      */
     public static final String KC_ACTION_ENFORCED = "kc_action_enforced";
     public static final int KC_ACTION_MAX_AGE = 300;
+    public static final String MAX_AUTH_AGE_KEY = "max_auth_age";
+
 
     public static final String IS_AIA_REQUEST = "IS_AIA_REQUEST";
     public static final String AIA_SILENT_CANCEL = "silent_cancel";
@@ -104,6 +113,7 @@ public final class Constants {
     public static final String SKIP_LINK = "skipLink";
     public static final String TEMPLATE_ATTR_ACTION_URI = "actionUri";
     public static final String TEMPLATE_ATTR_REQUIRED_ACTIONS = "requiredActions";
+    public static final String IGNORE_ACCEPT_LANGUAGE_HEADER = "IGNORE_ACCEPT_LANGUAGE_HEADER";
 
     // Prefix for user attributes used in various "context"data maps
     public static final String USER_ATTRIBUTES_PREFIX = "user.attributes.";
@@ -185,9 +195,6 @@ public final class Constants {
 
     //attribute name used to mark a client as realm client
     public static final String REALM_CLIENT = "realm_client";
-
-    //attribute name used to mark a temporary admin user/service account as temporary
-    public static final String IS_TEMP_ADMIN_ATTR_NAME = "is_temporary_admin";
 
     public static final String ADMIN_PERMISSIONS_CLIENT_ID = "admin-permissions";
 

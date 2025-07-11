@@ -17,7 +17,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jboss.logging.Logger;
 import org.keycloak.admin.ui.rest.model.BruteUser;
-import org.keycloak.authorization.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -26,8 +27,11 @@ import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
-import org.keycloak.services.resources.admin.permissions.UserPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.UserPermissionEvaluator;
+import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.utils.SearchQueryUtils;
 
 public class BruteForceUsersResource {
@@ -145,7 +149,7 @@ public class BruteForceUsersResource {
     private Stream<BruteUser> searchForUser(Map<String, String> attributes, RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, Integer firstResult, Integer maxResults, Boolean includeServiceAccounts) {
         attributes.put(UserModel.INCLUDE_SERVICE_ACCOUNT, includeServiceAccounts.toString());
 
-        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+        if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
             Set<String> groupIds = auth.groups().getGroupIdsWithViewPermission();
             if (!groupIds.isEmpty()) {
                 session.setAttribute(UserModel.GROUPS, groupIds);
@@ -165,11 +169,15 @@ public class BruteForceUsersResource {
             usersEvaluator.grantIfNoPermission(session.getAttribute(UserModel.GROUPS) != null);
         }
 
+        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
+
         return userModels.map(user -> {
+            UserProfile profile = provider.create(UserProfileContext.USER_API, user);
+            UserRepresentation rep = profile.toRepresentation();
             UserRepresentation userRep = briefRepresentationB ?
-                    ModelToRepresentation.toBriefRepresentation(user) :
-                    ModelToRepresentation.toRepresentation(session, realm, user);
-            userRep.setAccess(usersEvaluator.getAccess(user));
+                    ModelToRepresentation.toBriefRepresentation(user, rep, false) :
+                    ModelToRepresentation.toRepresentation(session, realm, user, rep, false);
+            userRep.setAccess(usersEvaluator.getAccessForListing(user));
             return userRep;
         }).map(this::getBruteForceStatus);
     }

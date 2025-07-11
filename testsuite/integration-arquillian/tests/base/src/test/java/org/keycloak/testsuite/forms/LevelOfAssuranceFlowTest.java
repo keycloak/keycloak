@@ -1088,15 +1088,21 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
     }
 
     public static ClaimsRepresentation claims(boolean essential, String... acrValues) {
+        //in order to test both values and value
+        //setValue only for essential false and only one value        
         ClaimsRepresentation.ClaimValue<String> acrClaim = new ClaimsRepresentation.ClaimValue<>();
         acrClaim.setEssential(essential);
-        acrClaim.setValues(Arrays.asList(acrValues));
+        if (essential || acrValues.length > 1) {
+            acrClaim.setValues(Arrays.asList(acrValues));
+        } else {
+            acrClaim.setValue(acrValues[0]);
+        }
 
         ClaimsRepresentation claims = new ClaimsRepresentation();
         claims.setIdTokenClaims(Collections.singletonMap(IDToken.ACR, acrClaim));
         return claims;
     }
-
+    
     private void authenticateWithUsernamePassword() {
         loginPage.assertCurrent();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));

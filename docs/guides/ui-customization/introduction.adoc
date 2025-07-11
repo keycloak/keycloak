@@ -1,0 +1,14 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Introduction"
+priority=10
+summary="Learn how to customize the user interfaces.">
+
+{project_name} includes user interfaces (UIs) for the login page, Admin Console, and Account Console.  It also has a "welcome" screen used for the first administrator of the Admin Console.
+
+You can customize, extend, and modify these UIs to accommodate many use cases on your production systems.  At a minimum, you will need to change the logos and colors to match your corporate identity.  Also, you may modify the UIs to implement new functionality.
+
+This guide provides all the information needed to customize the {project_name} UIs for your needs.
+</@tmpl.guide>

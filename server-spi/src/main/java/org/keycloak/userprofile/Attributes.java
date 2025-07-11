@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.keycloak.validate.ValidationError;
 
@@ -168,4 +169,24 @@ public interface Attributes {
      * @return a map with any unmanaged attribute
      */
     Map<String, List<String>> getUnmanagedAttributes();
+
+    /**
+     * <p>Returns the annotations for an attribute with the given {@code name}.
+     *
+     * <p>The annotations returned by this method might differ from those returned directly from
+     * the {@link AttributeMetadata#getAnnotations()} if the implementation supports annotations
+     * being resolved dynamically based on contextual data. See {@link AttributeMetadata#setAnnotationDecorator(Function)}.
+     *
+     * @param name the name of the attribute
+     * @return the annotations
+     */
+    default Map<String, Object> getAnnotations(String name) {
+        AttributeMetadata metadata = getMetadata(name);
+
+        if (metadata == null) {
+            return Collections.emptyMap();
+        }
+
+        return metadata.getAnnotations();
+    }
 }

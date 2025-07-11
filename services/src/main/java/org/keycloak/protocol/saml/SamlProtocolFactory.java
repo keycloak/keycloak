@@ -29,6 +29,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.AbstractLoginProtocolFactory;
 import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
 import org.keycloak.organization.protocol.mappers.saml.OrganizationMembershipMapper;
 import org.keycloak.protocol.saml.mappers.RoleListMapper;
@@ -193,4 +194,11 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
         client.setArtifactBindingIdentifierFrom(clientRep.getClientId());
     }
 
+    /**
+     * defines the option-order in the admin-ui
+     */
+    @Override
+    public int order() {
+        return OIDCLoginProtocolFactory.UI_ORDER - 10;
+    }
 }

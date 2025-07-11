@@ -21,6 +21,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.authentication.actiontoken.ActionTokenContext;
 import org.keycloak.authentication.actiontoken.DefaultActionToken;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -34,6 +35,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.utils.StringUtil;
@@ -197,14 +199,28 @@ public class AuthenticatorUtil {
                 .filter(s -> !Objects.equals(s.getId(), authSession.getParentSession().getId()))
                 .collect(Collectors.toList()) // collect to avoid concurrent modification as backchannelLogout removes the user sessions.
                 .forEach(s -> {
-                    AuthenticationManager.backchannelLogout(session, realm, s, session.getContext().getUri(),
-                            conn, req.getHttpHeaders(), true);
-
-                    event.event(EventType.LOGOUT)
-                            .session(s)
-                            .user(s.getUser())
-                            .success();
+                    backchannelLogout(session, realm, conn, req, event, s);
                 });
+
+        if (!Profile.isFeatureEnabled(Profile.Feature.LOGOUT_ALL_SESSIONS_V1)) {
+            session.sessions().getOfflineUserSessionsStream(realm, user)
+                    .filter(s -> !Objects.equals(s.getId(), authSession.getParentSession().getId()))
+                    .collect(Collectors.toList()) // collect to avoid concurrent modification as backchannelLogout removes the user sessions.
+                    .forEach(s -> {
+                        backchannelLogout(session, realm, conn, req, event, s);
+                    });
+        }
+
+    }
+
+    private static void backchannelLogout(KeycloakSession session, RealmModel realm, ClientConnection conn, HttpRequest req, EventBuilder event, UserSessionModel s) {
+        AuthenticationManager.backchannelLogout(session, realm, s, session.getContext().getUri(),
+                conn, req.getHttpHeaders(), true);
+
+        event.clone().event(EventType.LOGOUT)
+                .session(s)
+                .user(s.getUser())
+                .success();
     }
 
     /**

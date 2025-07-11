@@ -69,6 +69,8 @@ If you provided your own keystore and truststore to secure the TCP transport sta
 
 If you are using a custom transport stack, this default behavior can be disabled by setting the option `cache-embedded-mtls-enabled` to `false`.
 
+If you are using a service mesh, configure it to allow direct mTLS communication between the {project_name} Pods.
+
 For more information, check the link:https://www.keycloak.org/server/caching#_securing_transport_stacks[Securing Transport Stacks] in the distributed caches guide.
 
 === Operator creates NetworkPolicies to restrict traffic
@@ -179,3 +181,8 @@ We don't expect that this will impact any deployments due to the lack of support
 === JWT client authentication defines a new max expiration option for the token
 
 When a client is configured to authenticate using the *Signed JWT* or *Signed JWT with Client Secret* type, {project_name} now enforces a maximum expiration for the token. This means that, although the `exp` (expiration) claim in the token may be much later, {project_name} will not accept tokens issued before that max expiration time. The default value is 60 seconds. Note that JWT tokens should be issued right before being sent for authentication. This way, the client has one minute window to send the token for login. Nevertheless this expiration can be tuned using the *Max expiration* configuration option in the client *Credentials* tab (see link:{adminguide_link}#_client-credentials[Confidential client credentials in the {adminguide_name}] for more information).
+
+=== Updates to the `user-profile-commons.ftl` theme template
+The `user-profile-commons.ftl` changed to improve support for localization. See https://github.com/keycloak/keycloak/issues/38029.
+As a result, and if you are extending this template, pages might start displaying a `locale` field. To avoid that, update
+the theme template with the changes aforementioned.

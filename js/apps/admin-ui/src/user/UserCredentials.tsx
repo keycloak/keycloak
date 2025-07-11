@@ -124,7 +124,12 @@ export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
   });
 
   useFetch(
-    () => adminClient.users.getCredentials({ id: user.id! }),
+    () => {
+      if (user.enabled) {
+        return adminClient.users.getCredentials({ id: user.id! });
+      }
+      return Promise.resolve([]);
+    },
     (credentials) => {
       credentials = [
         ...credentials.filter((c: CredentialRepresentation) => {
@@ -258,9 +263,9 @@ export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
     );
   };
 
-  const onDrop = (evt: ReactDragEvent) => {
+  const onDrop = async (evt: ReactDragEvent) => {
     if (isValidDrop(evt)) {
-      onDragFinish(state.draggedItemId, state.tempItemOrder);
+      await onDragFinish(state.draggedItemId, state.tempItemOrder);
     } else {
       onDragCancel();
     }
@@ -361,7 +366,12 @@ export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
   >([]);
 
   useFetch(
-    () => adminClient.users.getCredentials({ id: user.id! }),
+    () => {
+      if (user.enabled) {
+        return adminClient.users.getCredentials({ id: user.id! });
+      }
+      return Promise.resolve([]);
+    },
     (credentials) => {
       credentials = [
         ...credentials.filter((c: CredentialRepresentation) => {

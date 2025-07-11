@@ -33,7 +33,7 @@ public class FeaturesDistTest {
     private static final String PREVIEW_FEATURES_EXPECTED_LOG = "Preview features enabled: " + Arrays.stream(Profile.Feature.values())
             .filter(feature -> feature.getType() == Profile.Feature.Type.PREVIEW)
             .filter(feature -> {
-                Set<Profile.Feature> versions = Profile.getFeatureVersions(feature.getKey());
+                Set<Profile.Feature> versions = Profile.getFeatureVersions(feature.getUnversionedKey());
                 if (versions.size() == 1) return true;
                 return versions.iterator().next().getVersion() == feature.getVersion();
             })

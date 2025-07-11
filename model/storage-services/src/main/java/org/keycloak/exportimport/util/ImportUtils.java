@@ -56,7 +56,7 @@ public class ImportUtils {
         // Import admin realm first
         for (RealmRepresentation realm : realms) {
             if (Config.getAdminRealm().equals(realm.getRealm())) {
-                if (importRealm(session, realm, strategy, false)) {
+                if (importRealm(session, realm, strategy, () -> {})) {
                     masterImported = true;
                 }
             }
@@ -64,7 +64,7 @@ public class ImportUtils {
 
         for (RealmRepresentation realm : realms) {
             if (!Config.getAdminRealm().equals(realm.getRealm())) {
-                importRealm(session, realm, strategy, false);
+                importRealm(session, realm, strategy, () -> {});
             }
         }
 
@@ -87,8 +87,23 @@ public class ImportUtils {
      * @param strategy specifies whether to overwrite or ignore existing realm or user entries
      * @param skipUserDependent If true, then import of any models, which needs users already imported in DB, will be skipped. For example authorization
      * @return newly imported realm (or existing realm if ignoreExisting is true and realm of this name already exists)
+     * @deprecated
      */
+    @Deprecated
     public static boolean importRealm(KeycloakSession session, RealmRepresentation rep, Strategy strategy, boolean skipUserDependent) {
+        return importRealm(session, rep, strategy, skipUserDependent ? null : () -> {});
+    }
+
+    /**
+     * Fully import realm from representation, save it to model and return model of newly created realm
+     *
+     * @param session
+     * @param rep
+     * @param strategy specifies whether to overwrite or ignore existing realm or user entries
+     * @param userImport use null to indicate additional users will not be imported
+     * @return newly imported realm (or existing realm if ignoreExisting is true and realm of this name already exists)
+     */
+    public static boolean importRealm(KeycloakSession session, RealmRepresentation rep, Strategy strategy, Runnable userImport) {
         String realmName = rep.getRealm();
         RealmProvider model = session.realms();
         RealmModel realm = model.getRealmByName(realmName);
@@ -111,7 +126,7 @@ public class ImportUtils {
         }
 
         RealmManager realmManager = new RealmManager(session);
-        realmManager.importRealm(rep, skipUserDependent);
+        realmManager.importRealm(rep, userImport);
 
         if (System.getProperty(ExportImportConfig.ACTION) != null) {
             logger.infof("Realm '%s' imported", realmName);

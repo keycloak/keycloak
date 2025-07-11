@@ -99,12 +99,12 @@ public class ComponentModel {
 
     public int get(String key, int defaultValue) {
         String s = get(key);
-        return s != null ? Integer.valueOf(s) : defaultValue;
+        return s != null ? Integer.parseInt(s) : defaultValue;
     }
 
     public long get(String key, long defaultValue) {
         String s = get(key);
-        return s != null ? Long.valueOf(s) : defaultValue;
+        return s != null ? Long.parseLong(s) : defaultValue;
     }
 
     public boolean get(String key, boolean defaultValue) {

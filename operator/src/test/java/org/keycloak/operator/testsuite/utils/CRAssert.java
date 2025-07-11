@@ -17,6 +17,11 @@
 
 package org.keycloak.operator.testsuite.utils;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -24,36 +29,39 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.ServicePort;
-import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
-import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
-import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
-import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPort;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.utils.Serialization;
-import io.netty.util.NetUtil;
-import io.quarkus.logging.Log;
 import org.assertj.core.api.ObjectAssert;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
+import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
 import org.keycloak.operator.controllers.KeycloakServiceDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.NetworkPolicySpec;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
+import org.keycloak.operator.update.impl.RecreateOnImageChangeUpdateLogic;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServicePort;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPort;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
+import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
+import io.fabric8.kubernetes.client.utils.Serialization;
+import io.netty.util.NetUtil;
+import io.quarkus.logging.Log;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -309,21 +317,45 @@ public final class CRAssert {
     }
 
     public static CompletableFuture<Void> eventuallyRecreateUpdateStatus(KubernetesClient client, Keycloak keycloak, String reason) {
-        var cf1 = client.resource(keycloak).informOnCondition(kcs -> {
+        var statefulSetResource = client.apps().statefulSets().withName(KeycloakDeploymentDependentResource.getName(keycloak));
+        String oldImage = RecreateOnImageChangeUpdateLogic.extractImage(statefulSetResource.get()); // assumes a keycloak has already been deployed
+        var cf1 = statefulSetResource.informOnCondition(statefulSets -> {
             try {
-                // could be not ready "Performing Keycloak update", or "Waiting for more replicas"
-                assertKeycloakStatusCondition(kcs.get(0), KeycloakStatusCondition.READY, false, null);
+                StatefulSet ss = statefulSets.get(0);
+                // should scale down using the old image
+                assertTrue(ss.getSpec().getReplicas() == 0 && Objects.equals(RecreateOnImageChangeUpdateLogic.extractImage(ss), oldImage));
                 return true;
-            } catch (AssertionError e) {
+            } catch (Error e) {
                 return false;
             }
         });
-        var cf2 = client.resource(keycloak).informOnCondition(kcs -> {
-            try {
-                assertKeycloakStatusCondition(kcs.get(0), KeycloakStatusCondition.UPDATE_TYPE, true, reason);
-                return true;
-            } catch (AssertionError e) {
-                return false;
+
+        List<Consumer<Keycloak>> tests = List.of(
+                kc -> CRAssert.assertKeycloakStatusCondition(kc, KeycloakStatusCondition.READY, false, null),
+                kc -> assertKeycloakStatusCondition(kc, KeycloakStatusCondition.UPDATE_TYPE, true, reason));
+        CompletableFuture<Void> cf2 = new CompletableFuture<Void>();
+        AtomicInteger index = new AtomicInteger();
+
+        client.resource(keycloak).inform(new ResourceEventHandler<Keycloak>() {
+            @Override
+            public void onUpdate(Keycloak oldObj, Keycloak newObj) {
+                while (index.get() < tests.size()) {
+                    try {
+                        tests.get(index.get()).accept(newObj);
+                        index.getAndIncrement();
+                    } catch (Exception e) {
+
+                    }
+                }
+                cf2.complete(null);
+            }
+
+            @Override
+            public void onAdd(Keycloak obj) {
+            }
+
+            @Override
+            public void onDelete(Keycloak obj, boolean deletedFinalStateUnknown) {
             }
         });
         return CompletableFuture.allOf(cf1, cf2);

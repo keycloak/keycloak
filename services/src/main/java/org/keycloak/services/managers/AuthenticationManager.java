@@ -787,7 +787,7 @@ public class AuthenticationManager {
 
     public static IdentityCookieToken createIdentityToken(KeycloakSession keycloakSession, RealmModel realm, UserModel user, UserSessionModel session, String issuer) {
         IdentityCookieToken token = new IdentityCookieToken();
-        token.id(KeycloakModelUtils.generateId());
+        token.id(SecretGenerator.getInstance().generateSecureID());
         token.issuedNow();
         token.subject(user.getId());
         token.issuer(issuer);

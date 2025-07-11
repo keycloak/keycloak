@@ -18,11 +18,14 @@
 package org.keycloak.operator.crds.v2alpha1.deployment.spec;
 
 import java.util.Optional;
+import java.util.Map;
+
+import org.keycloak.operator.Constants;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+
 import io.sundr.builder.annotations.Buildable;
-import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.CRDUtils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
@@ -44,6 +47,12 @@ public class HttpSpec {
 
     @JsonPropertyDescription("The used HTTPS port.")
     private Integer httpsPort = Constants.KEYCLOAK_HTTPS_PORT;
+
+    @JsonPropertyDescription("Annotations to be appended to the Service object")
+    Map<String, String> annotations;
+
+    @JsonPropertyDescription("Labels to be appended to the Service object")
+    Map<String, String> labels;
 
     public String getTlsSecret() {
         return tlsSecret;
@@ -95,4 +104,20 @@ public class HttpSpec {
                 .map(KeycloakSpec::getHttpSpec);
     }
 
+    public Map<String, String> getAnnotations() {
+        return annotations;
+    }
+
+    public void setAnnotations(Map<String, String> annotations) {
+        this.annotations = annotations;
+    }
+
+    public Map<String, String> getLabels() {
+        return labels;
+    }
+
+    public void setLabels(Map<String, String> labels) {
+        this.labels = labels;
+    }
+    
 }

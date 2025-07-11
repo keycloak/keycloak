@@ -34,6 +34,7 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.broker.provider.util.SimpleHttp;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.federation.kerberos.KerberosFederationProvider;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
@@ -90,6 +91,7 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
 
     @Override
     protected void afterImportTestRealm() {
+        boolean isEmbeddedServer = ldapRule.isEmbeddedServer();
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
@@ -97,10 +99,17 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
             // Delete all LDAP users and add some new for testing
             LDAPTestUtils.removeAllLDAPUsers(ctx.getLdapProvider(), appRealm);
 
-            LDAPObject john = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "johnkeycloak", "John", "Doe", "john@email.org", null, "1234");
-            LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), john, "Password1");
-            john.setSingleAttribute(LDAPConstants.PWD_CHANGED_TIME, "22000101000000Z");
-            ctx.getLdapProvider().getLdapIdentityStore().update(john);
+            if (isEmbeddedServer) {
+                MultivaluedHashMap<String, String> otherAttrs = new MultivaluedHashMap<>();
+
+                otherAttrs.putSingle(LDAPConstants.PWD_CHANGED_TIME, "22000101000000Z");
+
+                LDAPObject john = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "johnkeycloak", "John", "Doe", "john@email.org", otherAttrs);
+                LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), john, "Password1");
+            } else {
+                LDAPObject john = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "johnkeycloak", "John", "Doe", "john@email.org", null, "1234");
+                LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), john, "Password1");
+            }
         });
     }
 
@@ -257,18 +266,18 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
             appRealm.setEditUsernameAllowed(false);
         });
         UserRepresentation user = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
-        user.setEmail("john-alias@email.org");
+        user.setLastName("Brady");
         SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).json(user).auth(tokenUtil.getToken()).asStatus();
 
         UserRepresentation usernew = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
         assertEquals("johnkeycloak", usernew.getUsername());
         assertEquals("John", usernew.getFirstName());
-        assertEquals("Doe", usernew.getLastName());
-        assertEquals("john-alias@email.org", usernew.getEmail());
+        assertEquals("Brady", usernew.getLastName());
+        assertEquals("john@email.org", usernew.getEmail());
         assertFalse(usernew.isEmailVerified());
 
         //clean up
-        usernew.setEmail("john@email.org");
+        user.setLastName("Doe");
         SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).json(usernew).auth(tokenUtil.getToken()).asStatus();
 
     }
@@ -281,21 +290,21 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
             appRealm.setEditUsernameAllowed(false);
         });
         UserRepresentation user = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
-        user.setEmail("john-alias@email.org");
+        user.setFirstName("Tom");
         SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).json(user).auth(tokenUtil.getToken()).asStatus();
 
         UserRepresentation usernew = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
         assertEquals("johnkeycloak", usernew.getUsername());
-        assertEquals("John", usernew.getFirstName());
+        assertEquals("Tom", usernew.getFirstName());
         assertEquals("Doe", usernew.getLastName());
-        assertEquals("john-alias@email.org", usernew.getEmail());
+        assertEquals("john@email.org", usernew.getEmail());
         assertFalse(usernew.isEmailVerified());
 
         // No metadata attributes like LDAP_ID or LDAP_ENTRY_DN present in account REST API
         Assert.assertNull(usernew.getAttributes());
 
         //clean up
-        usernew.setEmail("john@email.org");
+        usernew.setFirstName("John");
         final int i = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).json(usernew).auth(tokenUtil.getToken()).asStatus();
 
         org.keycloak.representations.idm.UserRepresentation userRep = testRealm().users()

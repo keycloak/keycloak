@@ -341,6 +341,8 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
     @Override
     public AuthenticatedClientSessionAdapter getClientSession(UserSessionModel userSession, ClientModel client, String clientSessionId, boolean offline) {
         if (clientSessionId == null) {
+            log.debugf("Client-session id is null. userSessionId=%s, clientId=%s, offline=%s",
+                    userSession.getId(), client.getId(), offline);
             return null;
         }
 
@@ -583,6 +585,8 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         user = session.users().getUserById(realm, entity.getUser());
 
         if (user == null) {
+            // mark the user session for removal when the user bound to the session can not be resolved
+            removeUserSession(realm, wrap(realm, entity, offline, null));
             return null;
         }
 
@@ -726,7 +730,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         return sessionsById.entrySet().stream().findFirst().map(Map.Entry::getValue).orElse(null);
     }
 
-    private <T extends SessionEntity, K> Map<K, SessionEntityWrapper<T>> importSessionsWithExpiration(Map<K, SessionEntityWrapper<T>> sessionsById,
+    public <T extends SessionEntity, K> Map<K, SessionEntityWrapper<T>> importSessionsWithExpiration(Map<K, SessionEntityWrapper<T>> sessionsById,
                                                                               BasicCache<K, SessionEntityWrapper<T>> cache, SessionFunction<T> lifespanMsCalculator,
                                                                               SessionFunction<T> maxIdleTimeMsCalculator) {
         return sessionsById.entrySet().stream().map(entry -> {

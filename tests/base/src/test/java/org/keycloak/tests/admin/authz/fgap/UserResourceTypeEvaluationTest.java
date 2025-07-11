@@ -23,11 +23,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.keycloak.authorization.AdminPermissionsSchema.IMPERSONATE;
-import static org.keycloak.authorization.AdminPermissionsSchema.MANAGE;
-import static org.keycloak.authorization.AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP;
-import static org.keycloak.authorization.AdminPermissionsSchema.MAP_ROLES;
-import static org.keycloak.authorization.AdminPermissionsSchema.VIEW;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.IMPERSONATE;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLES;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
 
 import java.util.List;
 import java.util.Set;
@@ -35,13 +35,11 @@ import java.util.Set;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
-import org.keycloak.admin.client.resource.ScopePermissionsResource;
 import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.authorization.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -67,17 +65,6 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
     private final String usersType = AdminPermissionsSchema.USERS.getType();
 
     private final String newUserUsername = "new_user";
-
-    @AfterEach
-    public void onAfter() {
-        ScopePermissionsResource permissions = getScopePermissionsResource(client);
-
-        for (ScopePermissionRepresentation permission : permissions.findAll(null, null, null, -1, -1)) {
-            permissions.findById(permission.getId()).remove();
-        }
-
-        realm.admin().users().search(newUserUsername).forEach(user -> realm.admin().users().get(user.getId()).remove());
-    }
 
     @Test
     public void testSingleUserPermission() {

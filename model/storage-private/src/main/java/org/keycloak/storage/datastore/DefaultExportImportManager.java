@@ -59,12 +59,13 @@ import org.keycloak.models.ScopeContainerModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.WebAuthnPolicy;
+import org.keycloak.models.WebAuthnPolicyPasswordlessDefaults;
+import org.keycloak.models.WebAuthnPolicyTwoFactorDefaults;
 import org.keycloak.models.utils.ComponentUtil;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.DefaultKeyProviders;
 import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.validation.OrganizationsValidation;
@@ -191,7 +192,7 @@ public class DefaultExportImportManager implements ExportImportManager {
     }
 
     @Override
-    public void importRealm(RealmRepresentation rep, RealmModel newRealm, boolean skipUserDependent) {
+    public void importRealm(RealmRepresentation rep, RealmModel newRealm, Runnable userImport) {
         convertDeprecatedSocialProviders(rep);
         convertDeprecatedApplications(session, rep);
         convertDeprecatedClientTemplates(rep);
@@ -203,16 +204,14 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (rep.isUserManagedAccessAllowed() != null) newRealm.setUserManagedAccessAllowed(rep.isUserManagedAccessAllowed());
         if (rep.isBruteForceProtected() != null) newRealm.setBruteForceProtected(rep.isBruteForceProtected());
         if (rep.isPermanentLockout() != null) newRealm.setPermanentLockout(rep.isPermanentLockout());
-        if (rep.getMaxTemporaryLockouts() != null) newRealm.setMaxTemporaryLockouts(rep.getMaxTemporaryLockouts());
+        if (rep.getMaxTemporaryLockouts() != null) newRealm.setMaxTemporaryLockouts(checkNonNegativeNumber(rep.getMaxTemporaryLockouts(),"Maximum temporary lockouts"));
         if (rep.getBruteForceStrategy() != null) newRealm.setBruteForceStrategy(rep.getBruteForceStrategy());
-        if (rep.getMaxFailureWaitSeconds() != null) newRealm.setMaxFailureWaitSeconds(rep.getMaxFailureWaitSeconds());
-        if (rep.getMinimumQuickLoginWaitSeconds() != null)
-            newRealm.setMinimumQuickLoginWaitSeconds(rep.getMinimumQuickLoginWaitSeconds());
-        if (rep.getWaitIncrementSeconds() != null) newRealm.setWaitIncrementSeconds(rep.getWaitIncrementSeconds());
-        if (rep.getQuickLoginCheckMilliSeconds() != null)
-            newRealm.setQuickLoginCheckMilliSeconds(rep.getQuickLoginCheckMilliSeconds());
-        if (rep.getMaxDeltaTimeSeconds() != null) newRealm.setMaxDeltaTimeSeconds(rep.getMaxDeltaTimeSeconds());
-        if (rep.getFailureFactor() != null) newRealm.setFailureFactor(rep.getFailureFactor());
+        if (rep.getMaxFailureWaitSeconds() != null) newRealm.setMaxFailureWaitSeconds(checkNonNegativeNumber(rep.getMaxFailureWaitSeconds(),"Maximum failure wait seconds"));
+        if (rep.getMinimumQuickLoginWaitSeconds() != null) newRealm.setMinimumQuickLoginWaitSeconds(checkNonNegativeNumber(rep.getMinimumQuickLoginWaitSeconds(),"Minimum quick login wait seconds"));
+        if (rep.getWaitIncrementSeconds() != null) newRealm.setWaitIncrementSeconds(checkNonNegativeNumber(rep.getWaitIncrementSeconds(),"Wait increment seconds"));
+        if (rep.getQuickLoginCheckMilliSeconds() != null) newRealm.setQuickLoginCheckMilliSeconds(checkNonNegativeNumber(rep.getQuickLoginCheckMilliSeconds().intValue(), "Quick login check milliseconds"));
+        if (rep.getMaxDeltaTimeSeconds() != null) newRealm.setMaxDeltaTimeSeconds(checkNonNegativeNumber(rep.getMaxDeltaTimeSeconds(),"Maximum delta time seconds"));
+        if (rep.getFailureFactor() != null) newRealm.setFailureFactor(checkNonNegativeNumber(rep.getFailureFactor(),"Failure factor"));
         if (rep.isEventsEnabled() != null) newRealm.setEventsEnabled(rep.isEventsEnabled());
         if (rep.getEnabledEventTypes() != null)
             newRealm.setEnabledEventTypes(new HashSet<>(rep.getEnabledEventTypes()));
@@ -361,7 +360,7 @@ public class DefaultExportImportManager implements ExportImportManager {
 
         Map<String, ClientScopeModel> clientScopes = new HashMap<>();
         if (rep.getClientScopes() != null) {
-            clientScopes = createClientScopes(session, rep.getClientScopes(), newRealm);
+            clientScopes = createClientScopes(rep.getClientScopes(), newRealm);
         }
         if (rep.getDefaultDefaultClientScopes() != null) {
             for (String clientScopeName : rep.getDefaultDefaultClientScopes()) {
@@ -481,7 +480,8 @@ public class DefaultExportImportManager implements ExportImportManager {
             }, true);
         }
 
-        if (!skipUserDependent) {
+        if (userImport != null) {
+            userImport.run();
             importRealmAuthorizationSettings(rep, newRealm, session);
         }
 
@@ -583,10 +583,10 @@ public class DefaultExportImportManager implements ExportImportManager {
         return appMap;
     }
 
-    private static Map<String, ClientScopeModel> createClientScopes(KeycloakSession session, List<ClientScopeRepresentation> clientScopes, RealmModel realm) {
+    private static Map<String, ClientScopeModel> createClientScopes(List<ClientScopeRepresentation> clientScopes, RealmModel realm) {
         Map<String, ClientScopeModel> appMap = new HashMap<>();
         for (ClientScopeRepresentation resourceRep : clientScopes) {
-            ClientScopeModel app = RepresentationToModel.createClientScope(session, realm, resourceRep);
+            ClientScopeModel app = RepresentationToModel.createClientScope(realm, resourceRep);
             appMap.put(app.getName(), app);
         }
         return appMap;
@@ -714,7 +714,7 @@ public class DefaultExportImportManager implements ExportImportManager {
         String oldName = realm.getName();
 
         ClientModel masterApp = realm.getMasterAdminClient();
-        masterApp.setClientId(KeycloakModelUtils.getMasterRealmAdminApplicationClientId(name));
+        masterApp.setClientId(KeycloakModelUtils.getMasterRealmAdminManagementClientId(name));
         realm.setName(name);
 
         ClientModel adminClient = realm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
@@ -787,16 +787,14 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (rep.isUserManagedAccessAllowed() != null) realm.setUserManagedAccessAllowed(rep.isUserManagedAccessAllowed());
         if (rep.isBruteForceProtected() != null) realm.setBruteForceProtected(rep.isBruteForceProtected());
         if (rep.isPermanentLockout() != null) realm.setPermanentLockout(rep.isPermanentLockout());
-        if (rep.getMaxTemporaryLockouts() != null) realm.setMaxTemporaryLockouts(rep.getMaxTemporaryLockouts());
+        if (rep.getMaxTemporaryLockouts() != null) realm.setMaxTemporaryLockouts(checkNonNegativeNumber(rep.getMaxTemporaryLockouts(),"Maximum temporary lockouts"));
         if (rep.getBruteForceStrategy() != null) realm.setBruteForceStrategy(rep.getBruteForceStrategy());
-        if (rep.getMaxFailureWaitSeconds() != null) realm.setMaxFailureWaitSeconds(rep.getMaxFailureWaitSeconds());
-        if (rep.getMinimumQuickLoginWaitSeconds() != null)
-            realm.setMinimumQuickLoginWaitSeconds(rep.getMinimumQuickLoginWaitSeconds());
-        if (rep.getWaitIncrementSeconds() != null) realm.setWaitIncrementSeconds(rep.getWaitIncrementSeconds());
-        if (rep.getQuickLoginCheckMilliSeconds() != null)
-            realm.setQuickLoginCheckMilliSeconds(rep.getQuickLoginCheckMilliSeconds());
-        if (rep.getMaxDeltaTimeSeconds() != null) realm.setMaxDeltaTimeSeconds(rep.getMaxDeltaTimeSeconds());
-        if (rep.getFailureFactor() != null) realm.setFailureFactor(rep.getFailureFactor());
+        if (rep.getMaxFailureWaitSeconds() != null) realm.setMaxFailureWaitSeconds(checkNonNegativeNumber(rep.getMaxFailureWaitSeconds(),"Maximum failure wait seconds")); 
+        if (rep.getMinimumQuickLoginWaitSeconds() != null) realm.setMinimumQuickLoginWaitSeconds(checkNonNegativeNumber(rep.getMinimumQuickLoginWaitSeconds(),"Minimum quick login wait seconds"));
+        if (rep.getWaitIncrementSeconds() != null) realm.setWaitIncrementSeconds(checkNonNegativeNumber(rep.getWaitIncrementSeconds(),"Wait increment seconds")); 
+        if (rep.getQuickLoginCheckMilliSeconds() != null) realm.setQuickLoginCheckMilliSeconds(checkNonNegativeNumber(rep.getQuickLoginCheckMilliSeconds().intValue(), "Quick login check milliseconds")); 
+        if (rep.getMaxDeltaTimeSeconds() != null) realm.setMaxDeltaTimeSeconds(checkNonNegativeNumber(rep.getMaxDeltaTimeSeconds(),"Maximum delta time seconds"));
+        if (rep.getFailureFactor() != null) realm.setFailureFactor(checkNonNegativeNumber(rep.getFailureFactor(),"Failure factor"));
         if (rep.isRegistrationAllowed() != null) realm.setRegistrationAllowed(rep.isRegistrationAllowed());
         if (rep.isRegistrationEmailAsUsername() != null)
             realm.setRegistrationEmailAsUsername(rep.isRegistrationEmailAsUsername());
@@ -890,8 +888,16 @@ public class DefaultExportImportManager implements ExportImportManager {
 
             Map<String, String> config = new HashMap<>(rep.getSmtpServer());
 
-            if(rep.getSmtpServer().containsKey("authType") && "basic".equals(rep.getSmtpServer().get("authType"))) {
-                if (rep.getSmtpServer().containsKey("password") && ComponentRepresentation.SECRET_VALUE.equals(rep.getSmtpServer().get("password"))) {
+            if (!Boolean.parseBoolean(config.get("auth"))) {
+                config.remove("authTokenUrl");
+                config.remove("authTokenScope");
+                config.remove("authTokenClientId");
+                config.remove("authTokenClientSecret");
+                config.remove("password");
+                config.remove("user");
+                config.remove("authType");
+            } else if (config.get("authType") == null || "basic".equals(config.get("authType"))) {
+                if (ComponentRepresentation.SECRET_VALUE.equals(config.get("password"))) {
                     String passwordValue = realm.getSmtpConfig() != null ? realm.getSmtpConfig().get("password") : null;
                     config.put("password", passwordValue);
                 }
@@ -899,10 +905,8 @@ public class DefaultExportImportManager implements ExportImportManager {
                 config.remove("authTokenScope");
                 config.remove("authTokenClientId");
                 config.remove("authTokenClientSecret");
-            }
-
-            if(rep.getSmtpServer().containsKey("authType") && "token".equals(rep.getSmtpServer().get("authType"))) {
-                if (rep.getSmtpServer().containsKey("authTokenClientSecret") && ComponentRepresentation.SECRET_VALUE.equals(rep.getSmtpServer().get("authTokenClientSecret"))) {
+            } else if ("token".equals(config.get("authType"))) {
+                if (ComponentRepresentation.SECRET_VALUE.equals(config.get("authTokenClientSecret"))) {
                     String authTokenClientSecretValue = realm.getSmtpConfig() != null ? realm.getSmtpConfig().get("authTokenClientSecret") : null;
                     config.put("authTokenClientSecret", authTokenClientSecretValue);
                 }
@@ -1016,6 +1020,13 @@ public class DefaultExportImportManager implements ExportImportManager {
         }
 
         user.setSocialLinks(null);
+    }
+
+    public static int checkNonNegativeNumber(int value, String name) {
+        if(value < 0) {
+            throw new ModelException(name + " may not be a negative value");
+        }
+        return value;
     }
 
     private static void convertDeprecatedApplications(KeycloakSession session, RealmRepresentation realm) {
@@ -1252,54 +1263,66 @@ public class DefaultExportImportManager implements ExportImportManager {
 
     private static WebAuthnPolicy getWebAuthnPolicyTwoFactor(RealmRepresentation rep) {
         WebAuthnPolicy webAuthnPolicy = new WebAuthnPolicy();
+        WebAuthnPolicy defaultConfig = WebAuthnPolicyTwoFactorDefaults.get();
 
         String webAuthnPolicyRpEntityName = rep.getWebAuthnPolicyRpEntityName();
         if (webAuthnPolicyRpEntityName == null || webAuthnPolicyRpEntityName.isEmpty())
-            webAuthnPolicyRpEntityName = Constants.DEFAULT_WEBAUTHN_POLICY_RP_ENTITY_NAME;
+            webAuthnPolicyRpEntityName = defaultConfig.getRpEntityName();
         webAuthnPolicy.setRpEntityName(webAuthnPolicyRpEntityName);
 
         List<String> webAuthnPolicySignatureAlgorithms = rep.getWebAuthnPolicySignatureAlgorithms();
         if (webAuthnPolicySignatureAlgorithms == null || webAuthnPolicySignatureAlgorithms.isEmpty())
-            webAuthnPolicySignatureAlgorithms = Arrays.asList(Constants.DEFAULT_WEBAUTHN_POLICY_SIGNATURE_ALGORITHMS.split(","));
+            webAuthnPolicySignatureAlgorithms = defaultConfig.getSignatureAlgorithm();
         webAuthnPolicy.setSignatureAlgorithm(webAuthnPolicySignatureAlgorithms);
 
         String webAuthnPolicyRpId = rep.getWebAuthnPolicyRpId();
         if (webAuthnPolicyRpId == null || webAuthnPolicyRpId.isEmpty())
-            webAuthnPolicyRpId = "";
+            webAuthnPolicyRpId = defaultConfig.getRpId();
         webAuthnPolicy.setRpId(webAuthnPolicyRpId);
 
         String webAuthnPolicyAttestationConveyancePreference = rep.getWebAuthnPolicyAttestationConveyancePreference();
         if (webAuthnPolicyAttestationConveyancePreference == null || webAuthnPolicyAttestationConveyancePreference.isEmpty())
-            webAuthnPolicyAttestationConveyancePreference = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+            webAuthnPolicyAttestationConveyancePreference = defaultConfig.getAttestationConveyancePreference();
         webAuthnPolicy.setAttestationConveyancePreference(webAuthnPolicyAttestationConveyancePreference);
 
         String webAuthnPolicyAuthenticatorAttachment = rep.getWebAuthnPolicyAuthenticatorAttachment();
         if (webAuthnPolicyAuthenticatorAttachment == null || webAuthnPolicyAuthenticatorAttachment.isEmpty())
-            webAuthnPolicyAuthenticatorAttachment = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+            webAuthnPolicyAuthenticatorAttachment = defaultConfig.getAuthenticatorAttachment();
         webAuthnPolicy.setAuthenticatorAttachment(webAuthnPolicyAuthenticatorAttachment);
 
         String webAuthnPolicyRequireResidentKey = rep.getWebAuthnPolicyRequireResidentKey();
         if (webAuthnPolicyRequireResidentKey == null || webAuthnPolicyRequireResidentKey.isEmpty())
-            webAuthnPolicyRequireResidentKey = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+            webAuthnPolicyRequireResidentKey = defaultConfig.getRequireResidentKey();
         webAuthnPolicy.setRequireResidentKey(webAuthnPolicyRequireResidentKey);
 
         String webAuthnPolicyUserVerificationRequirement = rep.getWebAuthnPolicyUserVerificationRequirement();
         if (webAuthnPolicyUserVerificationRequirement == null || webAuthnPolicyUserVerificationRequirement.isEmpty())
-            webAuthnPolicyUserVerificationRequirement = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+            webAuthnPolicyUserVerificationRequirement = defaultConfig.getUserVerificationRequirement();
         webAuthnPolicy.setUserVerificationRequirement(webAuthnPolicyUserVerificationRequirement);
 
         Integer webAuthnPolicyCreateTimeout = rep.getWebAuthnPolicyCreateTimeout();
-        if (webAuthnPolicyCreateTimeout != null) webAuthnPolicy.setCreateTimeout(webAuthnPolicyCreateTimeout);
-        else webAuthnPolicy.setCreateTimeout(0);
+        if (webAuthnPolicyCreateTimeout == null) {
+            webAuthnPolicyCreateTimeout = defaultConfig.getCreateTimeout();
+        }
+        webAuthnPolicy.setCreateTimeout(webAuthnPolicyCreateTimeout);
 
         Boolean webAuthnPolicyAvoidSameAuthenticatorRegister = rep.isWebAuthnPolicyAvoidSameAuthenticatorRegister();
-        if (webAuthnPolicyAvoidSameAuthenticatorRegister != null) webAuthnPolicy.setAvoidSameAuthenticatorRegister(webAuthnPolicyAvoidSameAuthenticatorRegister);
+        if (webAuthnPolicyAvoidSameAuthenticatorRegister == null) {
+            webAuthnPolicyAvoidSameAuthenticatorRegister = defaultConfig.isAvoidSameAuthenticatorRegister();
+        }
+        webAuthnPolicy.setAvoidSameAuthenticatorRegister(webAuthnPolicyAvoidSameAuthenticatorRegister);
 
         List<String> webAuthnPolicyAcceptableAaguids = rep.getWebAuthnPolicyAcceptableAaguids();
-        if (webAuthnPolicyAcceptableAaguids != null) webAuthnPolicy.setAcceptableAaguids(webAuthnPolicyAcceptableAaguids);
+        if (webAuthnPolicyAcceptableAaguids == null) {
+            webAuthnPolicyAcceptableAaguids = defaultConfig.getAcceptableAaguids();
+        }
+        webAuthnPolicy.setAcceptableAaguids(webAuthnPolicyAcceptableAaguids);
 
         List<String> webAuthnPolicyExtraOrigins = rep.getWebAuthnPolicyExtraOrigins();
-        if (webAuthnPolicyExtraOrigins != null) webAuthnPolicy.setExtraOrigins(webAuthnPolicyExtraOrigins);
+        if (webAuthnPolicyExtraOrigins == null) {
+            webAuthnPolicyExtraOrigins = defaultConfig.getExtraOrigins();
+        }
+        webAuthnPolicy.setExtraOrigins(webAuthnPolicyExtraOrigins);
 
         return webAuthnPolicy;
     }
@@ -1307,54 +1330,72 @@ public class DefaultExportImportManager implements ExportImportManager {
 
     private static WebAuthnPolicy getWebAuthnPolicyPasswordless(RealmRepresentation rep) {
         WebAuthnPolicy webAuthnPolicy = new WebAuthnPolicy();
+        WebAuthnPolicy defaultConfig = WebAuthnPolicyPasswordlessDefaults.get();
 
         String webAuthnPolicyRpEntityName = rep.getWebAuthnPolicyPasswordlessRpEntityName();
         if (webAuthnPolicyRpEntityName == null || webAuthnPolicyRpEntityName.isEmpty())
-            webAuthnPolicyRpEntityName = Constants.DEFAULT_WEBAUTHN_POLICY_RP_ENTITY_NAME;
+            webAuthnPolicyRpEntityName = defaultConfig.getRpEntityName();
         webAuthnPolicy.setRpEntityName(webAuthnPolicyRpEntityName);
 
         List<String> webAuthnPolicySignatureAlgorithms = rep.getWebAuthnPolicyPasswordlessSignatureAlgorithms();
         if (webAuthnPolicySignatureAlgorithms == null || webAuthnPolicySignatureAlgorithms.isEmpty())
-            webAuthnPolicySignatureAlgorithms = Arrays.asList(Constants.DEFAULT_WEBAUTHN_POLICY_SIGNATURE_ALGORITHMS.split(","));
+            webAuthnPolicySignatureAlgorithms = defaultConfig.getSignatureAlgorithm();
         webAuthnPolicy.setSignatureAlgorithm(webAuthnPolicySignatureAlgorithms);
 
         String webAuthnPolicyRpId = rep.getWebAuthnPolicyPasswordlessRpId();
         if (webAuthnPolicyRpId == null || webAuthnPolicyRpId.isEmpty())
-            webAuthnPolicyRpId = "";
+            webAuthnPolicyRpId = defaultConfig.getRpId();
         webAuthnPolicy.setRpId(webAuthnPolicyRpId);
 
         String webAuthnPolicyAttestationConveyancePreference = rep.getWebAuthnPolicyPasswordlessAttestationConveyancePreference();
         if (webAuthnPolicyAttestationConveyancePreference == null || webAuthnPolicyAttestationConveyancePreference.isEmpty())
-            webAuthnPolicyAttestationConveyancePreference = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+            webAuthnPolicyAttestationConveyancePreference = defaultConfig.getAttestationConveyancePreference();
         webAuthnPolicy.setAttestationConveyancePreference(webAuthnPolicyAttestationConveyancePreference);
 
         String webAuthnPolicyAuthenticatorAttachment = rep.getWebAuthnPolicyPasswordlessAuthenticatorAttachment();
         if (webAuthnPolicyAuthenticatorAttachment == null || webAuthnPolicyAuthenticatorAttachment.isEmpty())
-            webAuthnPolicyAuthenticatorAttachment = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+            webAuthnPolicyAuthenticatorAttachment = defaultConfig.getAuthenticatorAttachment();
         webAuthnPolicy.setAuthenticatorAttachment(webAuthnPolicyAuthenticatorAttachment);
 
         String webAuthnPolicyRequireResidentKey = rep.getWebAuthnPolicyPasswordlessRequireResidentKey();
         if (webAuthnPolicyRequireResidentKey == null || webAuthnPolicyRequireResidentKey.isEmpty())
-            webAuthnPolicyRequireResidentKey = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+            webAuthnPolicyRequireResidentKey = defaultConfig.getRequireResidentKey();
         webAuthnPolicy.setRequireResidentKey(webAuthnPolicyRequireResidentKey);
 
         String webAuthnPolicyUserVerificationRequirement = rep.getWebAuthnPolicyPasswordlessUserVerificationRequirement();
         if (webAuthnPolicyUserVerificationRequirement == null || webAuthnPolicyUserVerificationRequirement.isEmpty())
-            webAuthnPolicyUserVerificationRequirement = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+            webAuthnPolicyUserVerificationRequirement = defaultConfig.getUserVerificationRequirement();
         webAuthnPolicy.setUserVerificationRequirement(webAuthnPolicyUserVerificationRequirement);
 
         Integer webAuthnPolicyCreateTimeout = rep.getWebAuthnPolicyPasswordlessCreateTimeout();
-        if (webAuthnPolicyCreateTimeout != null) webAuthnPolicy.setCreateTimeout(webAuthnPolicyCreateTimeout);
-        else webAuthnPolicy.setCreateTimeout(0);
+        if (webAuthnPolicyCreateTimeout == null) {
+            webAuthnPolicyCreateTimeout = defaultConfig.getCreateTimeout();
+        }
+        webAuthnPolicy.setCreateTimeout(webAuthnPolicyCreateTimeout);
 
         Boolean webAuthnPolicyAvoidSameAuthenticatorRegister = rep.isWebAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister();
-        if (webAuthnPolicyAvoidSameAuthenticatorRegister != null) webAuthnPolicy.setAvoidSameAuthenticatorRegister(webAuthnPolicyAvoidSameAuthenticatorRegister);
+        if (webAuthnPolicyAvoidSameAuthenticatorRegister == null) {
+            webAuthnPolicyAvoidSameAuthenticatorRegister = defaultConfig.isAvoidSameAuthenticatorRegister();
+        }
+        webAuthnPolicy.setAvoidSameAuthenticatorRegister(webAuthnPolicyAvoidSameAuthenticatorRegister);
 
         List<String> webAuthnPolicyAcceptableAaguids = rep.getWebAuthnPolicyPasswordlessAcceptableAaguids();
-        if (webAuthnPolicyAcceptableAaguids != null) webAuthnPolicy.setAcceptableAaguids(webAuthnPolicyAcceptableAaguids);
+        if (webAuthnPolicyAcceptableAaguids == null) {
+            webAuthnPolicyAcceptableAaguids = defaultConfig.getAcceptableAaguids();
+        }
+        webAuthnPolicy.setAcceptableAaguids(webAuthnPolicyAcceptableAaguids);
 
         List<String> webAuthnPolicyExtraOrigins = rep.getWebAuthnPolicyPasswordlessExtraOrigins();
-        if (webAuthnPolicyExtraOrigins != null) webAuthnPolicy.setExtraOrigins(webAuthnPolicyExtraOrigins);
+        if (webAuthnPolicyExtraOrigins == null) {
+            webAuthnPolicyExtraOrigins = defaultConfig.getExtraOrigins();
+        }
+        webAuthnPolicy.setExtraOrigins(webAuthnPolicyExtraOrigins);
+
+        Boolean webAuthnPolicyPasswordlessPasskeysEnabled = rep.getWebAuthnPolicyPasswordlessPasskeysEnabled();
+        if (webAuthnPolicyPasswordlessPasskeysEnabled == null) {
+            webAuthnPolicyPasswordlessPasskeysEnabled = defaultConfig.isPasskeysEnabled();
+        }
+        webAuthnPolicy.setPasskeysEnabled(webAuthnPolicyPasswordlessPasskeysEnabled);
 
         return webAuthnPolicy;
     }

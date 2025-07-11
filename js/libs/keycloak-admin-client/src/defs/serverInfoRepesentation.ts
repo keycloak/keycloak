@@ -11,6 +11,7 @@ import type SystemInfoRepresentation from "./systemInfoRepersantation.js";
  */
 export interface ServerInfoRepresentation {
   systemInfo?: SystemInfoRepresentation;
+  cpuInfo?: CpuInfoRepresentation;
   memoryInfo?: MemoryInfoRepresentation;
   profileInfo?: ProfileInfoRepresentation;
   features?: FeatureRepresentation[];
@@ -61,6 +62,10 @@ export interface MemoryInfoRepresentation {
   free: number;
   freePercentage: number;
   freeFormated: string;
+}
+
+export interface CpuInfoRepresentation {
+  processorCount: number;
 }
 
 export interface ProtocolMapperTypeRepresentation {

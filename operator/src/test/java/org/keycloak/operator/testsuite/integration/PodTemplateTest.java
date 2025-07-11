@@ -22,6 +22,8 @@ import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.PodTemplateSpecBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.quarkus.logging.Log;
@@ -29,16 +31,20 @@ import io.quarkus.test.junit.QuarkusTest;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
+import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
 import java.util.Collections;
+import java.util.concurrent.TimeUnit;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition.HAS_ERRORS;
+import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.getResourceFromFile;
 
 @QuarkusTest
@@ -227,6 +233,33 @@ public class PodTemplateTest extends BaseOperatorTest {
                     CRAssert.assertKeycloakStatusCondition(getCrSelector().get(), HAS_ERRORS, false, "imagePullSecrets");
                     CRAssert.assertKeycloakStatusCondition(getCrSelector().get(), HAS_ERRORS, false, "cannot be modified");
                 });
+    }
+
+    @Test
+    public void testDeploymentUpgrade() {
+        var kc = getTestKeycloakDeployment(true);
+        kc.getSpec().setInstances(2);
+        // all preconditions must be met, otherwise the operator sdk will remove the existing statefulset
+        KeycloakDeploymentTest.initCustomBootstrapAdminUser(kc);
+
+        // create a dummy StatefulSet representing the 26.0 state that we'll be forced to delete
+        StatefulSet statefulSet = new StatefulSetBuilder().withMetadata(kc.getMetadata()).editMetadata()
+                .addToLabels(Utils.allInstanceLabels(kc)).endMetadata().withNewSpec().withNewSelector()
+                .withMatchLabels(Utils.allInstanceLabels(kc)).endSelector().withReplicas(0)
+                .withNewTemplate().withNewMetadata().withLabels(Utils.allInstanceLabels(kc)).endMetadata()
+                .withNewSpec().addNewContainer().withName("pause").withImage("registry.k8s.io/pause:3.1")
+                .endContainer().endSpec().endTemplate().endSpec().build();
+        var ss = k8sclient.resource(statefulSet).create();
+
+        // start will not be successful because the statefulSet is in the way
+        deployKeycloak(k8sclient, kc, false);
+        // once the statefulset is owned by the keycloak it will be picked up by the informer
+        k8sclient.resource(statefulSet).accept(s -> s.addOwnerReference(k8sclient.resource(kc).get()));
+
+        Awaitility.await().atMost(1, TimeUnit.MINUTES).until(() -> k8sclient.resource(statefulSet).get().getSpec().getReplicas() == 2);
+
+        // we don't expect a recreate - that would indicate the operator sdk saw a precondition failing
+        assertEquals(ss.getMetadata().getUid(), k8sclient.resource(statefulSet).get().getMetadata().getUid());
     }
 
 }

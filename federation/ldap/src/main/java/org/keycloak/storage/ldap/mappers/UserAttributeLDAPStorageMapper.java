@@ -164,6 +164,12 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
             email = KeycloakModelUtils.toLowerCaseSafe(email);
 
             UserModel that = UserStoragePrivateUtil.userLocalStorage(session).getUserByEmail(realm, email);
+
+            if (that != null) {
+                // delete and invalidate the cache for any existing account no longer available from LDAP
+                that = session.users().getUserByEmail(realm, that.getEmail());
+            }
+
             if (that != null && !that.getId().equals(user.getId())) {
                 session.getTransactionManager().setRollbackOnly();
                 String exceptionMessage = String.format("Can't import user '%s' from LDAP because email '%s' already exists in Keycloak. Existing user with this email is '%s'", user.getUsername(), email, that.getUsername());
@@ -280,6 +286,22 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                 public void setEmailVerified(boolean verified) {
                     setLDAPAttribute(UserModel.EMAIL_VERIFIED, Boolean.toString(verified));
                     super.setEmailVerified(verified);
+                }
+
+                @Override
+                public String getUsername() {
+                    if (UserModel.USERNAME.equals(userModelAttrName)) {
+                        return ldapUser.getAttributeAsString(ldapAttrName);
+                    }
+                    return super.getUsername();
+                }
+
+                @Override
+                public String getEmail() {
+                    if (UserModel.EMAIL.equals(userModelAttrName)) {
+                        return ldapUser.getAttributeAsString(ldapAttrName);
+                    }
+                    return super.getEmail();
                 }
 
                 protected boolean setLDAPAttribute(String modelAttrName, Object value) {
@@ -500,11 +522,18 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
             userModelProperty.setValue(user, null);
         } else {
             Class<Object> clazz = userModelProperty.getJavaClass();
+            Object currentValue = userModelProperty.getValue(user);
 
             if (String.class.equals(clazz)) {
+                if (ldapAttrValue.equals(currentValue)) {
+                    return;
+                }
                 userModelProperty.setValue(user, ldapAttrValue);
             } else if (Boolean.class.equals(clazz) || boolean.class.equals(clazz)) {
                 Boolean boolVal = Boolean.valueOf(ldapAttrValue);
+                if (boolVal.equals(currentValue)) {
+                    return;
+                }
                 userModelProperty.setValue(user, boolVal);
             } else {
                 logger.warnf("Don't know how to set the property '%s' on user '%s' . Value of LDAP attribute is '%s' ", userModelProperty.getName(), user.getUsername(), ldapAttrValue.toString());

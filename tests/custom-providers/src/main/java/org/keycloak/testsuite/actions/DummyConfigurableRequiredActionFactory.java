@@ -29,6 +29,7 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 public class DummyConfigurableRequiredActionFactory implements RequiredActionFactory {
 
@@ -115,6 +116,9 @@ public class DummyConfigurableRequiredActionFactory implements RequiredActionFac
 
     @Override
     public List<ProviderConfigProperty> getConfigMetadata() {
-        return CONFIG_PROPERTIES;
+        return Stream.concat(
+                List.copyOf(CONFIG_PROPERTIES).stream(),
+                List.copyOf(RequiredActionFactory.super.getConfigMetadata()).stream()
+        ).toList();
     }
 }

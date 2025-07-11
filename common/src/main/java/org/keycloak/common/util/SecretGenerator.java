@@ -30,6 +30,15 @@ public class SecretGenerator {
     public static SecretGenerator getInstance() {
         return instance;
     }
+    
+    public String generateSecureID() {
+        StringBuilder builder = new StringBuilder(instance.randomBytesHex(16));
+        builder.insert(8, '-');
+        builder.insert(13, '-');
+        builder.insert(18, '-');
+        builder.insert(23, '-');
+        return builder.toString();
+    }
 
     public String randomString() {
         return randomString(SECRET_LENGTH_256_BITS, ALPHANUM);
@@ -56,6 +65,7 @@ public class SecretGenerator {
 
         return new String(buf);
     }
+
     public byte[] randomBytes() {
         return randomBytes(SECRET_LENGTH_256_BITS);
     }
@@ -70,4 +80,37 @@ public class SecretGenerator {
         return buf;
     }
 
+    public String randomBytesHex(int length) {
+        final StringBuilder sb = new StringBuilder();
+        for (byte b : randomBytes(length)) {
+            sb.append(Character.forDigit((b >> 4) & 0xF, 16));
+            sb.append(Character.forDigit((b & 0xF), 16));
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Returns the equivalent length for a destination alphabet to have the same
+     * entropy bits than a byte array random generated.
+     *
+     * @param byteLengthEntropy The desired entropy in bytes
+     * @param dstAlphabetLeng The length of the destination alphabet
+     * @return The equivalent length in destination alphabet to have the same entropy bits
+     */
+    public static int equivalentEntropySize(int byteLengthEntropy, int dstAlphabetLeng) {
+        return equivalentEntropySize(byteLengthEntropy, 256, dstAlphabetLeng);
+    }
+
+    /**
+     * Returns the equivalent length for a destination alphabet to have the same
+     * entropy bits than another source alphabet.
+     *
+     * @param length The length of the string encoded in source alphabet
+     * @param srcAlphabetLength The length of the source alphabet
+     * @param dstAlphabetLeng The length of the destination alphabet
+     * @return The equivalent length (same entropy) in destination alphabet for a string of length in source alphabet
+     */
+    public static int equivalentEntropySize(int length, int srcAlphabetLength, int dstAlphabetLeng) {
+        return (int) Math.ceil(length * ((Math.log(srcAlphabetLength)) / (Math.log(dstAlphabetLeng))));
+    }
 }

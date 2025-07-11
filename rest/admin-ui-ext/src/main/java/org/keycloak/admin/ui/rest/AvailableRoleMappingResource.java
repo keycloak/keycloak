@@ -22,7 +22,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.keycloak.admin.ui.rest.model.ClientRole;
 import org.keycloak.admin.ui.rest.model.RoleMapper;
-import org.keycloak.authorization.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
@@ -33,14 +33,14 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
-import static org.keycloak.authorization.AdminPermissionsSchema.MAP_ROLE;
-import static org.keycloak.authorization.AdminPermissionsSchema.MAP_ROLE_CLIENT_SCOPE;
-import static org.keycloak.authorization.AdminPermissionsSchema.MAP_ROLE_COMPOSITE;
-import static org.keycloak.authorization.AdminPermissionsSchema.MAP_ROLES;
-import static org.keycloak.authorization.AdminPermissionsSchema.MAP_ROLES_CLIENT_SCOPE;
-import static org.keycloak.authorization.AdminPermissionsSchema.MAP_ROLES_COMPOSITE;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLE;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLE_CLIENT_SCOPE;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLE_COMPOSITE;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLES;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLES_CLIENT_SCOPE;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLES_COMPOSITE;
 
 public class AvailableRoleMappingResource extends RoleMappingResource {
     public AvailableRoleMappingResource(KeycloakSession session, RealmModel realm, AdminPermissionEvaluator auth) {

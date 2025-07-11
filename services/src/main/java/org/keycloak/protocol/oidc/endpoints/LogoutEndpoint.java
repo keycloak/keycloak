@@ -39,6 +39,7 @@ import org.keycloak.locale.LocaleSelectorProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -411,8 +412,19 @@ public class LogoutEndpoint {
                 userSession = session.sessions().getUserSession(realm, userSessionIdFromIdToken);
 
                 if (userSession == null) {
+                    userSession = session.sessions().getOfflineUserSession(realm, userSessionIdFromIdToken);
+                }
+
+                if (userSession == null) {
                     event.event(EventType.LOGOUT);
                     event.error(Errors.SESSION_EXPIRED);
+                    KeycloakContext context = session.getContext();
+                    AuthenticationSessionModel authSession = context.getAuthenticationSession();
+
+                    if (authSession != null) {
+                        // no valid session, make sure the current root auth session is also deleted and restart cookies
+                        new AuthenticationSessionManager(session).removeAuthenticationSession(authSession.getRealm(), authSession, true);
+                    }
                 } else {
                     Integer idTokenIssuedAt = Integer.parseInt(idTokenIssuedAtStr);
                     checkTokenIssuedAt(idTokenIssuedAt, userSession);

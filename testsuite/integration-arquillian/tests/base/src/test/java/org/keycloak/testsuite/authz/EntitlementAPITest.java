@@ -16,7 +16,9 @@
  */
 package org.keycloak.testsuite.authz;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -411,6 +413,110 @@ public class EntitlementAPITest extends AbstractAuthzTest {
                 PAIRWISE_TEST_CLIENT,
                 PAIRWISE_RESOURCE_SERVER_TEST,
                 PAIRWISE_AUTHZ_CLIENT_CONFIG);
+    }
+
+    @Test
+    public void testResolveResourcesWithSameUri() throws Exception {
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+        AuthorizationResource authorization = client.authorization();
+        List<ResourceRepresentation> defaultResource = authorization.resources().findByName("Default Resource");
+        assertThat(defaultResource.isEmpty(), is(false));
+        authorization.resources().resource(defaultResource.get(0).getId()).remove();
+
+        JSPolicyRepresentation policy = new JSPolicyRepresentation();
+        policy.setName(KeycloakModelUtils.generateId());
+        policy.setType("script-scripts/default-policy.js");
+        authorization.policies().js().create(policy).close();
+
+        ResourceRepresentation resource = new ResourceRepresentation();
+        resource.setName("Resource A");
+        resource.addScope("read");
+        resource.setUris(Set.of("/resource"));
+        authorization.resources().create(resource).close();
+
+        resource = new ResourceRepresentation();
+        resource.setName("Resource B");
+        resource.addScope("write");
+        resource.setUris(Set.of("/resource"));
+        authorization.resources().create(resource).close();
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+
+        permission.setName("Can Access Resource A");
+        permission.setResources(Set.of("Resource A"));
+        permission.addPolicy(policy.getName());
+
+        authorization.permissions().resource().create(permission).close();
+
+        permission = new ResourcePermissionRepresentation();
+
+        permission.setName("Can Access Resource B");
+        permission.setResources(Set.of("Resource B"));
+
+        authorization.permissions().resource().create(permission).close();
+
+        String accessToken = oauth.newConfig().realm("authz-test").client(RESOURCE_SERVER_TEST, "secret").doPasswordGrantRequest("kolo", "password").getAccessToken();
+        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        request.addPermission("/resource", "read");
+        Metadata metadata = new Metadata();
+        metadata.setPermissionResourceMatchingUri(true);
+        metadata.setPermissionResourceFormat("uri");
+        request.setMetadata(metadata);
+        authzClient.authorization(accessToken).authorize(request);
+
+        request = new AuthorizationRequest();
+        request.addPermission("/resource", "write");
+        request.setMetadata(metadata);
+        try {
+            authzClient.authorization(accessToken).authorize(request);
+            fail("should fail");
+        } catch (AuthorizationDeniedException ignore) {
+
+        }
+
+        request = new AuthorizationRequest();
+        request.addPermission("/resource", "write");
+        request.addPermission("/unknown", "write");
+        request.setMetadata(metadata);
+        try {
+            authzClient.authorization(accessToken).authorize(request);
+            fail("should fail");
+        } catch (Exception e) {
+            HttpResponseException cause = (HttpResponseException) e.getCause();
+            assertThat(cause.getStatusCode(), is(Response.Status.BAD_REQUEST.getStatusCode()));
+            assertThat(new String(cause.getBytes()), containsString("Resource with uri [/unknown] does not exist."));
+        }
+
+        request = new AuthorizationRequest();
+        request.addPermission("/resource", "write");
+        request.addPermission("/resource", "read");
+        request.setMetadata(metadata);
+        authzClient.authorization(accessToken).authorize(request);
+
+        request = new AuthorizationRequest();
+        request.addPermission("/unknown", "write");
+        try {
+            authzClient.authorization(accessToken).authorize(request);
+            fail("should fail");
+        } catch (Exception hre) {
+            HttpResponseException cause = (HttpResponseException) hre.getCause();
+            assertThat(cause.getStatusCode(), is(Response.Status.BAD_REQUEST.getStatusCode()));
+            assertThat(new String(cause.getBytes()), containsString("Resource with id [/unknown] does not exist."));
+        }
+
+        request = new AuthorizationRequest();
+        request.addPermission("/unknown", "write");
+        request.setMetadata(metadata);
+        try {
+            authzClient.authorization(accessToken).authorize(request);
+            fail("should fail");
+        } catch (Exception hre) {
+            HttpResponseException cause = (HttpResponseException) hre.getCause();
+            assertThat(cause.getStatusCode(), is(Response.Status.BAD_REQUEST.getStatusCode()));
+            assertThat(new String(cause.getBytes()), containsString("Resource with uri [/unknown] does not exist."));
+        }
     }
 
     @Test
@@ -2019,6 +2125,74 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         token = toAccessToken(authorizationResponse.getToken());
         assertEquals(RESOURCE_SERVER_TEST, token.getOtherClaims().get("custom_claim"));
         assertEquals(PUBLIC_TEST_CLIENT, token.getIssuedFor());
+    }
+
+    @Test
+    public void testIntrospectRPTCreatedFromOfflineTokenDifferentClient() throws Exception {
+        ClientResource publicClient = getClient(getRealm(), PUBLIC_TEST_CLIENT);
+
+        ProtocolMapperRepresentation customClaimMapper = new ProtocolMapperRepresentation();
+
+        customClaimMapper.setName("custom_claim");
+        customClaimMapper.setProtocolMapper(HardcodedClaim.PROVIDER_ID);
+        customClaimMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        Map<String, String> config = new HashMap<>();
+        config.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "custom_claim");
+        config.put(HardcodedClaim.CLAIM_VALUE, PUBLIC_TEST_CLIENT);
+        config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+        customClaimMapper.setConfig(config);
+
+        publicClient.getProtocolMappers().createMapper(customClaimMapper);
+
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+
+        config.put(HardcodedClaim.CLAIM_VALUE, RESOURCE_SERVER_TEST);
+
+        client.getProtocolMappers().createMapper(customClaimMapper);
+
+        AuthorizationResource authorization = client.authorization();
+
+        JSPolicyRepresentation policy = new JSPolicyRepresentation();
+
+        policy.setName(KeycloakModelUtils.generateId());
+        policy.setType("script-scripts/default-policy.js");
+
+        authorization.policies().js().create(policy).close();
+
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName("Sensors");
+
+        try (Response response = authorization.resources().create(resource)) {
+            resource = response.readEntity(ResourceRepresentation.class);
+        }
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+
+        permission.setName("View Sensor");
+        permission.addResource(resource.getName());
+        permission.addPolicy(policy.getName());
+
+        authorization.permissions().resource().create(permission).close();
+
+        oauth.realm("authz-test");
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.clientId(PUBLIC_TEST_CLIENT);
+        oauth.doLogin("offlineuser", "password");
+
+        // Token request
+        String code = oauth.parseLoginResponse().getCode();
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doAccessTokenRequest(code);
+
+        AuthorizationRequest request = new AuthorizationRequest();
+        request.addPermission("Sensors");
+        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+        AuthorizationResponse authorizationResponse = authzClient.authorization(response.getAccessToken()).authorize(request);
+        AccessToken token = toAccessToken(authorizationResponse.getToken());
+        assertEquals(PUBLIC_TEST_CLIENT, token.getIssuedFor());
+
+        TokenIntrospectionResponse introspectionResponse = authzClient.protection().introspectRequestingPartyToken(authorizationResponse.getToken());
+        assertNotNull(introspectionResponse.getPermissions());
     }
 
     @Test

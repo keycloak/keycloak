@@ -147,7 +147,7 @@ export const RealmOverrides = ({
       }
     };
 
-    fetchLocalizationTexts().then((translations) => {
+    void fetchLocalizationTexts().then((translations) => {
       const updatedRows: IRow[] = translations.map(
         (translation): IRow => ({
           rowEditBtnAriaLabel: () =>
@@ -221,7 +221,7 @@ export const RealmOverrides = ({
       refreshTable();
       translationForm.setValue("key", "");
       translationForm.setValue("value", "");
-      i18n.reloadResources();
+      await i18n.reloadResources();
 
       addAlert(t("addTranslationSuccess"), AlertVariant.success);
     } catch (error) {
@@ -321,7 +321,7 @@ export const RealmOverrides = ({
         },
         value,
       );
-      i18n.reloadResources();
+      await i18n.reloadResources();
 
       addAlert(t("updateTranslationSuccess"), AlertVariant.success);
       setTableRows(newRows);
@@ -341,8 +341,8 @@ export const RealmOverrides = ({
       {addTranslationModalOpen && (
         <AddTranslationModal
           handleModalToggle={handleModalToggle}
-          save={(pair: any) => {
-            addKeyValue(pair);
+          save={async (pair: any) => {
+            await addKeyValue(pair);
             handleModalToggle();
           }}
           form={translationForm}
@@ -517,8 +517,8 @@ export const RealmOverrides = ({
                     <Form
                       isHorizontal
                       className="kc-form-translationValue"
-                      onSubmit={handleSubmit(() => {
-                        onSubmit(formValue, rowIndex);
+                      onSubmit={handleSubmit(async () => {
+                        await onSubmit(formValue, rowIndex);
                       })}
                     >
                       <FormGroup

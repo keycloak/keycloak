@@ -58,6 +58,7 @@ public class VerifyMessageProperties {
                 verifyNotMessageFormatQuotes();
                 verifyNotMessageFormatPlaceholders();
             }
+            verifyUnbalancedCurlyBraces();
         } catch (IOException e) {
             throw new MojoExecutionException("Can not read file " + file, e);
         }
@@ -129,6 +130,25 @@ public class VerifyMessageProperties {
                     || SINGLE_CURLY_BRACE_MIDDLE.matcher(value).find()
                     || SINGLE_CURLY_BRACE_END.matcher(value).find()) {
                 messages.add("Single curly quotes are not supported as placeholders for the frontend in '" + key + "' for file " + file + ": " + value);
+            }
+
+        });
+    }
+
+    private static final Pattern UNBALANCED_ONE = Pattern.compile("\\{\\{[^{}]*}[^}]");
+    private static final Pattern UNBALANCED_ONE_END = Pattern.compile("\\{\\{[^{}]*}$");
+    private static final Pattern UNBALANCED_TWO = Pattern.compile("[^{]\\{[^{}]*}}");
+    private static final Pattern UNBALANCED_TWO_START = Pattern.compile("^\\{[^{}]*}}");
+
+    private void verifyUnbalancedCurlyBraces() {
+        PropertyResourceBundle bundle = getPropertyResourceBundle();
+
+        bundle.getKeys().asIterator().forEachRemaining(key -> {
+            String value = bundle.getString(key);
+
+            if (UNBALANCED_ONE.matcher(value).find() || UNBALANCED_ONE_END.matcher(value).find()
+                || UNBALANCED_TWO.matcher(value).find() || UNBALANCED_TWO_START.matcher(value).find()) {
+                messages.add("Unbalanced curly braces in key '" + key + "' for file " + file + ": " + value);
             }
 
         });

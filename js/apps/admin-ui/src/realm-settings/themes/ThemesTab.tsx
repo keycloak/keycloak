@@ -60,7 +60,7 @@ export default function ThemesTab({ realm, save }: ThemesTabProps) {
 parent=keycloak.v2
 import=common/quick-theme
 
-logo=${logoName}
+${logo ? "logo=" + logoName : ""}
 styles=css/theme-styles.css
 `,
     );
@@ -71,7 +71,7 @@ styles=css/theme-styles.css
 parent=keycloak.v3
 import=common/quick-theme
 
-logo=${logoName}
+${logo ? "logo=" + logoName : ""}
 styles=css/theme-styles.css
 `,
     );
@@ -134,7 +134,7 @@ styles=css/login.css css/theme-styles.css
       }
       `,
     );
-    zip.generateAsync({ type: "blob" }).then((content) => {
+    await zip.generateAsync({ type: "blob" }).then((content) => {
       const url = URL.createObjectURL(content);
       const a = document.createElement("a");
       a.href = url;

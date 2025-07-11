@@ -45,9 +45,11 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.models.jpa.entities.CredentialEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.StripSecretsUtils;
@@ -71,6 +73,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
@@ -124,6 +127,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -136,6 +140,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -958,6 +963,33 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
+    public void searchByAttributesForAnyValue() {
+        createUser(UserBuilder.create().username("user-0").addAttribute("attr", "common").build());
+        createUser(UserBuilder.create().username("user-1").addAttribute("test", "common").build());
+        createUser(UserBuilder.create().username("user-2").addAttribute("test", "common").addAttribute("attr", "common").build());
+
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put("attr", "");
+        // exact needs to be set to false to match for any users with the attribute attr
+        List<UserRepresentation> users = realm.users().searchByAttributes(-1, -1, null, false, false, mapToSearchQuery(attributes));
+        assertEquals(2, users.size());
+        assertTrue(users.stream().allMatch(r -> Set.of("user-0", "user-2").contains(r.getUsername())));
+
+        attributes = new HashMap<>();
+        attributes.put("test", "");
+        users = realm.users().searchByAttributes(-1, -1, null, false, false, mapToSearchQuery(attributes));
+        assertEquals(2, users.size());
+        assertTrue(users.stream().allMatch(r -> Set.of("user-1", "user-2").contains(r.getUsername())));
+
+        attributes = new HashMap<>();
+        attributes.put("test", "");
+        attributes.put("attr", "");
+        users = realm.users().searchByAttributes(-1, -1, null, false, false, mapToSearchQuery(attributes));
+        assertEquals(1, users.size());
+        assertTrue(users.stream().allMatch(r -> "user-2".equals(r.getUsername())));
+    }
+
+    @Test
     public void storeAndReadUserWithLongAttributeValue() {
         String longValue = RandomStringUtils.random(Integer.parseInt(DefaultAttributes.DEFAULT_MAX_LENGTH_ATTRIBUTES), true, true);
 
@@ -1446,6 +1478,26 @@ public class UserTest extends AbstractAdminTest {
         users = realm.users().search("\"user1@localhost\"", null, null);
         assertThat(users, hasSize(1));
         assertThat(userIds.get(0), equalTo(users.get(0).getId()));
+    }
+
+    @Test
+    public void testSearchBasedOnUserProfileSettings() {
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("test_username");
+        user.setFirstName("test_first_name");
+        user.setLastName("test_last_name");
+        user.setEmail("test_email@test.com");
+        user.setEnabled(true);
+        user.setEmailVerified(true);
+        createUser(user);
+
+        UPConfig upConfig = realm.users().userProfile().getConfiguration();
+        upConfig.getAttribute(UserModel.FIRST_NAME).setPermissions(new UPAttributePermissions());
+        realm.users().userProfile().update(upConfig);
+        List<UserRepresentation> users = realm.users().list();
+        assertThat(users, hasSize(1));
+        user = users.get(0);
+        assertThat(user.getFirstName(), is(nullValue()));
     }
 
     @Test
@@ -3183,16 +3235,17 @@ public class UserTest extends AbstractAdminTest {
         UserProfileResource upResource = adminClient.realm("test").users().userProfile();
         UPConfig upConfig = upResource.getConfiguration();
         upConfig.addOrReplaceAttribute(createAttributeMetadata("aName"));
+        upConfig.getAttribute("aName").setPermissions(new UPAttributePermissions(Set.of("user", "admin"), Set.of("user", "admin")));
         upResource.update(upConfig);
 
         try {
             UsersResource users = adminClient.realms().realm("test").users();
 
             for (int i = 0; i < 110; i++) {
-                users.create(UserBuilder.create().username("test-" + i).addAttribute("aName", "aValue").build()).close();
+                users.create(UserBuilder.create().username("test2-" + i).addAttribute("aName", "aValue").build()).close();
             }
 
-            List<UserRepresentation> result = users.search("test", null, null);
+            List<UserRepresentation> result = users.search("test2", null, null);
             assertEquals(100, result.size());
             for (UserRepresentation user : result) {
                 assertThat(user.getAttributes(), Matchers.notNullValue());
@@ -3200,8 +3253,8 @@ public class UserTest extends AbstractAdminTest {
                 assertThat(user.getAttributes(), Matchers.hasEntry(is("aName"), Matchers.contains("aValue")));
             }
 
-            assertEquals(105, users.search("test", 0, 105).size());
-            assertEquals(111, users.search("test", 0, 1000).size());
+            assertEquals(105, users.search("test2", 0, 105).size());
+            assertEquals(110, users.search("test2", 0, 1000).size());
         } finally {
             upConfig.removeAttribute("aName");
             upResource.update(upConfig);
@@ -3213,6 +3266,7 @@ public class UserTest extends AbstractAdminTest {
         UserProfileResource upResource = adminClient.realm("test").users().userProfile();
         UPConfig upConfig = upResource.getConfiguration();
         upConfig.addOrReplaceAttribute(createAttributeMetadata("aName"));
+        upConfig.getAttribute("aName").setPermissions(new UPAttributePermissions());
         upResource.update(upConfig);
 
         try {
@@ -3378,6 +3432,49 @@ public class UserTest extends AbstractAdminTest {
         user.setCredentialUserLabel(otpCred.getId(), newLabel);
         Assert.assertEquals(newLabel, user.credentials().stream().filter(cr -> cr.getId().equals(otpCred.getId()))
                 .findFirst().orElseThrow().getUserLabel());
+    }
+
+    @Test
+    public void testShouldFailToSetCredentialUserLabelWhenLabelIsEmpty() {
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "user-with-one-configured-otp");
+        CredentialRepresentation otpCred = user.credentials().get(0);
+            BadRequestException ex = assertThrows(BadRequestException.class, () -> {
+                user.setCredentialUserLabel(otpCred.getId(), "   ");
+            });
+            Response response = ex.getResponse();
+            String body = response.readEntity(String.class);
+
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            assertTrue(body.contains("missingCredentialLabel"));
+            assertTrue(body.contains("Credential label must not be empty"));
+    }
+
+    @Test
+    public void testShouldFailToSetCredentialUserLabelWhenLabelAlreadyExists() {
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "user-with-two-configured-otp");
+
+        List<CredentialRepresentation> credentials = user.credentials().stream()
+                .filter(c -> c.getType().equals(OTPCredentialModel.TYPE))
+                .toList();
+        assertEquals(2, credentials.size());
+
+        String firstId = credentials.get(0).getId();
+        String secondId = credentials.get(1).getId();
+
+        user.setCredentialUserLabel(firstId, "Device");
+        user.setCredentialUserLabel(secondId, "Second Device");
+
+        // Attempt to update second credential to use the same label as the first
+        ClientErrorException ex = assertThrows(ClientErrorException.class, () -> {
+            user.setCredentialUserLabel(secondId, "Device");
+        });
+
+        Response response = ex.getResponse();
+        assertEquals(Response.Status.CONFLICT.getStatusCode(), response.getStatus());
+
+        String body = response.readEntity(String.class);
+        assertNotNull(body);
+        assertTrue(body.contains("Device already exists with the same name"));
     }
 
     @Test

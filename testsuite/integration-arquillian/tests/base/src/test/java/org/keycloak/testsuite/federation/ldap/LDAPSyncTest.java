@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
@@ -41,6 +40,8 @@ import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.SynchronizationResultRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.managers.UserStorageSyncManager;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageUtil;
@@ -63,6 +64,7 @@ import org.keycloak.testsuite.util.WaitUtils;
 import jakarta.ws.rs.BadRequestException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -252,6 +254,47 @@ public class LDAPSyncTest extends AbstractLDAPTest {
     }
 
     @Test
+    public void testSyncAfterDeletingUserInLDAPWithSameEmail() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(appRealm);
+            LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            LDAPTestUtils.addLDAPUser(ldapFedProvider, appRealm, "luser10", "User10", "User10", "luser10@email.org", null, "");
+            LDAPTestUtils.addLDAPUser(ldapFedProvider, appRealm, "luser11", "User11", "User11", "luser11@email.org", null, "");
+        });
+
+        List<UserRepresentation> users = testRealm().users().search("luser10");
+        assertThat(1, is(users.size()));
+
+        users = testRealm().users().search("luser11");
+        assertThat(1, is(users.size()));
+        UserRepresentation userToDelete = users.get(0);
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            LDAPStorageProvider ldapProvider = ctx.getLdapProvider();
+            LDAPConfig ldapConfig = ldapProvider.getLdapIdentityStore().getConfig();
+            LDAPTestUtils.removeLDAPUserByUsername(ldapProvider, ctx.getRealm(), ldapConfig, "luser11");
+        });
+
+        String email = userToDelete.getEmail();
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            LDAPObject user = ctx.getLdapProvider().loadLDAPUserByUsername(ctx.getRealm(), "luser10");
+            user.setSingleAttribute(LDAPConstants.EMAIL, email);
+            ctx.getLdapProvider().getLdapIdentityStore().update(user);
+        });
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            SynchronizationResult result = new UserStorageSyncManager().syncAllUsers(session.getKeycloakSessionFactory(), ctx.getRealm().getId(), ctx.getLdapModel());
+            Assert.assertEquals(0, result.getFailed());
+        });
+    }
+
+    @Test
     public void test03LDAPSyncWhenUsernameChanged() {
 
         testingClient.server().run(session -> {
@@ -386,7 +429,7 @@ public class LDAPSyncTest extends AbstractLDAPTest {
             LDAPObject streetUser = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), ctx.getRealm(), "user8", "User8FN", "User8LN", "user8@email.org", "user8street", "126");
 
             // Change name of username attribute name to street
-            String origUsernameAttrNamee = ctx.getLdapModel().get(LDAPConstants.USERNAME_LDAP_ATTRIBUTE);
+            String origUsernameAttrNamee = LDAPConstants.UID;
             ctx.getLdapModel().getConfig().putSingle(LDAPConstants.USERNAME_LDAP_ATTRIBUTE, "street");
 
             // Need to change this due to ApacheDS pagination bug (For other LDAP servers, pagination works fine) TODO: Remove once ApacheDS upgraded and pagination is fixed
@@ -405,6 +448,8 @@ public class LDAPSyncTest extends AbstractLDAPTest {
             SynchronizationResult syncResult = new UserStorageSyncManager().syncAllUsers(sessionFactory, ctx.getRealm().getId(), ctx.getLdapModel());
             Assert.assertEquals(1, syncResult.getAdded());
             Assert.assertTrue(syncResult.getFailed() > 0);
+            UserModel invalidUser = session.users().getUserByUsername(ctx.getRealm(), "user8street");
+            session.users().removeUser(ctx.getRealm(), invalidUser);
         });
 
         // Revert config changes
@@ -501,7 +546,7 @@ public class LDAPSyncTest extends AbstractLDAPTest {
 
             // sync to Keycloak should pass without an error
             SynchronizationResult syncResult = new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(appRealm);
-            assertThat(syncResult.getFailed(), Matchers.is(0));
+            assertThat(syncResult.getFailed(), is(0));
         });
 
         testingClient.server().run(session -> {

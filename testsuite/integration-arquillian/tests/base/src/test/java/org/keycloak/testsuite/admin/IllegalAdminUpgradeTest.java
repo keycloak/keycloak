@@ -22,7 +22,6 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
-import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -43,12 +42,15 @@ import java.util.List;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import org.keycloak.common.Profile;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@EnableFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)
 public class IllegalAdminUpgradeTest extends AbstractKeycloakTest {
 
     public static final String CLIENT_NAME = "application";
@@ -129,7 +131,7 @@ public class IllegalAdminUpgradeTest extends AbstractKeycloakTest {
         RoleRepresentation realmViewIdentityProviders = adminClient.realm(TEST).clients().get(realmAdminClient.getId()).roles().get(AdminRoles.VIEW_IDENTITY_PROVIDERS).toRepresentation();
         RoleRepresentation realmManageRealm = adminClient.realm(TEST).clients().get(realmAdminClient.getId()).roles().get(AdminRoles.MANAGE_REALM).toRepresentation();
         RoleRepresentation realmViewRealm = adminClient.realm(TEST).clients().get(realmAdminClient.getId()).roles().get(AdminRoles.VIEW_REALM).toRepresentation();
-        RoleRepresentation realmImpersonate = adminClient.realm(TEST).clients().get(realmAdminClient.getId()).roles().get(ImpersonationConstants.IMPERSONATION_ROLE).toRepresentation();
+        RoleRepresentation realmImpersonate = adminClient.realm(TEST).clients().get(realmAdminClient.getId()).roles().get(AdminRoles.IMPERSONATION).toRepresentation();
         RoleRepresentation realmManageUsers = adminClient.realm(TEST).clients().get(realmAdminClient.getId()).roles().get(AdminRoles.MANAGE_USERS).toRepresentation();
         RoleRepresentation realmViewUsers = adminClient.realm(TEST).clients().get(realmAdminClient.getId()).roles().get(AdminRoles.VIEW_USERS).toRepresentation();
         RoleRepresentation realmQueryUsers = adminClient.realm(TEST).clients().get(realmAdminClient.getId()).roles().get(AdminRoles.QUERY_USERS).toRepresentation();
@@ -148,7 +150,7 @@ public class IllegalAdminUpgradeTest extends AbstractKeycloakTest {
         RoleRepresentation masterViewIdentityProviders = adminClient.realm("master").clients().get(masterClient.getId()).roles().get(AdminRoles.VIEW_IDENTITY_PROVIDERS).toRepresentation();
         RoleRepresentation masterManageRealm = adminClient.realm("master").clients().get(masterClient.getId()).roles().get(AdminRoles.MANAGE_REALM).toRepresentation();
         RoleRepresentation masterViewRealm = adminClient.realm("master").clients().get(masterClient.getId()).roles().get(AdminRoles.VIEW_REALM).toRepresentation();
-        RoleRepresentation masterImpersonate = adminClient.realm("master").clients().get(masterClient.getId()).roles().get(ImpersonationConstants.IMPERSONATION_ROLE).toRepresentation();
+        RoleRepresentation masterImpersonate = adminClient.realm("master").clients().get(masterClient.getId()).roles().get(AdminRoles.IMPERSONATION).toRepresentation();
         RoleRepresentation masterManageUsers = adminClient.realm("master").clients().get(masterClient.getId()).roles().get(AdminRoles.MANAGE_USERS).toRepresentation();
         RoleRepresentation masterViewUsers = adminClient.realm("master").clients().get(masterClient.getId()).roles().get(AdminRoles.VIEW_USERS).toRepresentation();
         RoleRepresentation masterQueryUsers = adminClient.realm("master").clients().get(masterClient.getId()).roles().get(AdminRoles.QUERY_USERS).toRepresentation();

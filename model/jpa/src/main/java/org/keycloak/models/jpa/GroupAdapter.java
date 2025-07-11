@@ -21,8 +21,8 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
-import org.keycloak.authorization.AdminPermissionsSchema;
-import org.keycloak.authorization.policy.provider.PartialEvaluationStorageProvider;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationStorageProvider;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
@@ -86,6 +86,17 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
     @Override
     public void setName(String name) {
         group.setName(name);
+        fireGroupUpdatedEvent();
+    }
+
+    @Override
+    public String getDescription() {
+        return group.getDescription();
+    }
+
+    @Override
+    public void setDescription(String description) {
+        group.setDescription(description);
         fireGroupUpdatedEvent();
     }
 

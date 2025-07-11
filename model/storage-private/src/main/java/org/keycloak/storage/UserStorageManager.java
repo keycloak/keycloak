@@ -29,6 +29,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -113,7 +115,14 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
      * @param user
      * @return
      */
-    protected UserModel importValidation(RealmModel realm, UserModel user) {
+    protected UserModel validateUser(RealmModel realm, UserModel user) {
+        if (user == null) {
+            return null;
+        }
+
+        if (user.isFederated()) {
+            user = validateFederatedUser(realm, user);
+        }
 
         if (isReadOnlyOrganizationMember(user)) {
             if (user instanceof CachedUserModel cachedUserModel) {
@@ -122,14 +131,17 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
             return new ReadOnlyUserModelDelegate(user, false);
         }
 
-        if (user == null || !user.isFederated()) return user;
+        return user;
+    }
 
-        UserStorageProviderModel model = getStorageProviderModel(realm, user.getFederationLink());
+    private UserModel validateFederatedUser(RealmModel realm, UserModel user) {
+        if (!user.isFederated()) {
+            return user;
+        }
+
+        UserStorageProviderModel model = getUserStorageProviderModel(realm, user);
+
         if (model == null) {
-            // remove linked user with unknown storage provider.
-            logger.debugf("Removed user with federation link of unknown storage provider '%s'", user.getUsername());
-            deleteInvalidUserCache(realm, user);
-            deleteInvalidUser(realm, user);
             return null;
         }
 
@@ -145,21 +157,57 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
             return user;
         }
 
-        ImportedUserValidation importedUserValidation = getStorageProviderInstance(model, ImportedUserValidation.class, true);
-        if (importedUserValidation == null) return user;
+        ImportedUserValidation validator = getStorageProviderInstance(model, ImportedUserValidation.class, true);
 
-        UserModel validated = importedUserValidation.validate(realm, user);
+        if (validator == null) {
+            return user;
+        }
+
+        UserModel validated = validator.validate(realm, user);
+
         if (validated == null) {
-            deleteInvalidUserCache(realm, user);
-            if (model.isRemoveInvalidUsersEnabled()) {
-                deleteInvalidUser(realm, user);
-                return null;
-            }
-
-            return new ReadOnlyUserModelDelegate(user, false);
+            return deleteFederatedUser(realm, user);
         }
 
         return validated;
+    }
+
+    private ReadOnlyUserModelDelegate deleteFederatedUser(RealmModel realm, UserModel user) {
+        if (!user.isFederated()) {
+            return null;
+        }
+
+        UserStorageProviderModel model = getUserStorageProviderModel(realm, user);
+
+        if (model == null) {
+            return null;
+        }
+
+        deleteInvalidUserCache(realm, user);
+
+        if (model.isRemoveInvalidUsersEnabled()) {
+            deleteInvalidUser(realm, user);
+            return null;
+        }
+
+        return new ReadOnlyUserModelDelegate(user, false);
+    }
+
+    private UserStorageProviderModel getUserStorageProviderModel(RealmModel realm, UserModel user) {
+        if (user.isFederated()) {
+            UserStorageProviderModel model = getStorageProviderModel(realm, user.getFederationLink());
+
+            if (model == null) {
+                // remove linked user with unknown storage provider.
+                logger.debugf("Removed user with federation link of unknown storage provider '%s'", user.getUsername());
+                deleteInvalidUserCache(realm, user);
+                deleteInvalidUser(realm, user);
+            }
+
+            return model;
+        }
+
+        return null;
     }
 
     private static <T> Stream<T> getCredentialProviders(KeycloakSession session, Class<T> type) {
@@ -244,7 +292,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     protected Stream<UserModel> importValidation(RealmModel realm, Stream<UserModel> users) {
-        return users.map(user -> importValidation(realm, user)).filter(Objects::nonNull);
+        return users.map(user -> validateUser(realm, user)).filter(Objects::nonNull);
     }
 
     @FunctionalInterface
@@ -409,7 +457,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         StorageId storageId = new StorageId(id);
         if (storageId.getProviderId() == null) {
             UserModel user = localStorage().getUserById(realm, id);
-            return importValidation(realm, user);
+            return validateUser(realm, user);
         }
 
         UserLookupProvider provider = getStorageProviderInstance(realm, storageId.getProviderId(), UserLookupProvider.class);
@@ -420,28 +468,16 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
     @Override
     public UserModel getUserByUsername(RealmModel realm, String username) {
-        UserModel user = localStorage().getUserByUsername(realm, username);
-        if (user != null) {
-            return importValidation(realm, user);
-        }
-
-        return mapEnabledStorageProvidersWithTimeout(realm, UserLookupProvider.class,
-                provider -> provider.getUserByUsername(realm, username)).findFirst().orElse(null);
+        return getUserByAttribute(realm,
+                provider -> provider.getUserByUsername(realm, username),
+                u -> username.equalsIgnoreCase(u.getUsername()));
     }
 
     @Override
     public UserModel getUserByEmail(RealmModel realm, String email) {
-        UserModel user = localStorage().getUserByEmail(realm, email);
-        if (user != null) {
-            user = importValidation(realm, user);
-            // Case when email was changed directly in the userStorage and doesn't correspond anymore to the email from local DB
-            if (user != null && email.equalsIgnoreCase(user.getEmail())) {
-                return user;
-            }
-        }
-
-        return mapEnabledStorageProvidersWithTimeout(realm, UserLookupProvider.class,
-                provider -> provider.getUserByEmail(realm, email)).findFirst().orElse(null);
+        return getUserByAttribute(realm,
+                provider -> provider.getUserByEmail(realm, email),
+                u -> email.equalsIgnoreCase(u.getEmail()));
     }
 
     /** {@link UserLookupProvider} methods implementations end here
@@ -807,7 +843,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     public UserModel getUserByFederatedIdentity(RealmModel realm, FederatedIdentityModel socialLink) {
         UserModel user = localStorage().getUserByFederatedIdentity(realm, socialLink);
         if (user != null) {
-            return importValidation(realm, user);
+            return validateUser(realm, user);
         }
         if (getFederatedStorage() == null) return null;
         String id = getFederatedStorage().getUserByFederatedIdentity(socialLink, realm);
@@ -990,5 +1026,32 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
                 return session;
             }
         });
+    }
+
+    private UserModel getUserByAttribute(RealmModel realm, Function<UserLookupProvider, UserModel> loader, Predicate<UserModel> attributeValidator) {
+        // first try the local storage
+        UserModel user = loader.apply(localStorage());
+
+        if (user != null) {
+            // run global user validations
+            UserModel validated = validateUser(realm, user);
+
+            // make sure the attribute is valid
+            if (validated != null && attributeValidator.test(validated)) {
+                return validated;
+            }
+
+            // user or attribute not valid, invalidate cache
+            deleteInvalidUserCache(realm, user);
+        }
+
+        // try to resolve the user from the external storage
+        return tryResolveFederatedUser(realm, loader);
+    }
+
+    private UserModel tryResolveFederatedUser(RealmModel realm, Function<UserLookupProvider, UserModel> loader) {
+        return mapEnabledStorageProvidersWithTimeout(realm, UserLookupProvider.class, loader)
+                .findFirst()
+                .orElse(null);
     }
 }

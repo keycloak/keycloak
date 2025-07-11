@@ -21,8 +21,9 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
         KeycloakServerConfig serverConfig = SupplierHelpers.getInstance(annotation.config());
 
         KeycloakServerConfigBuilder command = KeycloakServerConfigBuilder.startDev()
-                .cache("local")
-                .bootstrapAdminClient(Config.getAdminClientId(), Config.getAdminClientSecret());
+                .cache(cache())
+                .bootstrapAdminClient(Config.getAdminClientId(), Config.getAdminClientSecret())
+                .bootstrapAdminUser(Config.getAdminUsername(), Config.getAdminPassword());
 
         command.log().handlers(KeycloakServerConfigBuilder.LogHandlers.CONSOLE);
 
@@ -72,6 +73,10 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
     public abstract boolean requiresDatabase();
 
     public abstract Logger getLogger();
+
+    protected String cache() {
+        return "local";
+    }
 
     @Override
     public int order() {

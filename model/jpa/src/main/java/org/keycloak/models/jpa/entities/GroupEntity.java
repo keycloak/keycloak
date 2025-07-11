@@ -51,6 +51,10 @@ public class GroupEntity {
     @Column(name = "NAME")
     protected String name;
 
+    @Nationalized
+    @Column(name = "DESCRIPTION")
+    protected String description;
+
     @Column(name = "PARENT_GROUP")
     private String parentId;
 
@@ -90,6 +94,14 @@ public class GroupEntity {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getRealm() {
