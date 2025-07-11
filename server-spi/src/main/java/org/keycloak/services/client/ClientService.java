@@ -10,22 +10,22 @@ import org.keycloak.services.ServiceException;
 
 public interface ClientService extends Service {
 
-    public static class ClientSearchOptions {
+    class ClientSearchOptions {
         // TODO
     }
 
-    public static class ClientProjectionOptions {
+    class ClientProjectionOptions {
         // TODO
     }
 
-    public static class ClientSortAndSliceOptions {
+    class ClientSortAndSliceOptions {
         // order by
         // offset
         // limit
         // NOTE: this is not always the most desirable way to do pagination
     }
 
-    public record CreateOrUpdateResult(ClientRepresentation representation, boolean created) {}
+    record CreateOrUpdateResult(ClientRepresentation representation, boolean created) {}
 
     Optional<ClientRepresentation> getClient(RealmModel realm, String clientId, ClientProjectionOptions projectionOptions);
 
