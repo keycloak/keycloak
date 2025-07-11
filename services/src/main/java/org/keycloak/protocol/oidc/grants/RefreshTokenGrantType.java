@@ -30,12 +30,15 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.endpoints.request.AuthzEndpointRequestParser;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.TokenRefreshContext;
 import org.keycloak.services.clientpolicy.context.TokenRefreshResponseContext;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
+
+import java.util.Set;
 
 /**
  * OAuth 2.0 Refresh Token Grant
@@ -116,4 +119,8 @@ public class RefreshTokenGrantType extends OAuth2GrantTypeBase {
         return EventType.REFRESH_TOKEN;
     }
 
+    @Override
+    public Set<String> getSupportedMultivaluedRequestParameters() {
+        return AuthzEndpointRequestParser.KNOWN_MULTI_PARAMS;
+    }
 }
