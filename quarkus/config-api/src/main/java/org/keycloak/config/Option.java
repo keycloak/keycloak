@@ -1,11 +1,15 @@
 package org.keycloak.config;
 
+import com.google.common.base.CaseFormat;
+
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class Option<T> {
     private final Class<T> type;
+    private final Class<?> auxiliaryType;
     private final String key;
     private final OptionCategory category;
     private final boolean hidden;
@@ -17,8 +21,9 @@ public class Option<T> {
     private final boolean caseInsensitiveExpectedValues;
     private final DeprecatedMetadata deprecatedMetadata;
 
-    public Option(Class<T> type, String key, OptionCategory category, boolean hidden, boolean buildTime, String description, Optional<T> defaultValue, List<String> expectedValues, boolean strictExpectedValues, boolean caseInsensitiveExpectedValues, DeprecatedMetadata deprecatedMetadata) {
+    public Option(Class<T> type, Class<?> auxiliaryType, String key, OptionCategory category, boolean hidden, boolean buildTime, String description, Optional<T> defaultValue, List<String> expectedValues, boolean strictExpectedValues, boolean caseInsensitiveExpectedValues, DeprecatedMetadata deprecatedMetadata) {
         this.type = type;
+        this.auxiliaryType = auxiliaryType;
         this.key = key;
         this.category = category;
         this.hidden = hidden;
@@ -53,6 +58,34 @@ public class Option<T> {
 
     public Optional<T> getDefaultValue() {
         return defaultValue;
+    }
+
+    /**
+     * Get default value as a String
+     *
+     * @return default value as a String
+     */
+    public Optional<String> getDefaultValueString() {
+        return defaultValue.map(this::mapDefaultValueString);
+    }
+
+    /**
+     * Map default value to a String
+     * <p>
+     * If the type is Enum, we normalize it as making it lowercase and replace underscores with hyphens
+     */
+    private String mapDefaultValueString(T defaultValue) {
+        if (Enum.class.isAssignableFrom(type)) {
+            return normalizeEnumValues(defaultValue.toString());
+        } else if (List.class.isAssignableFrom(type)) {
+            var isAuxiliaryEnum = Enum.class.isAssignableFrom(auxiliaryType);
+            return ((List<?>) defaultValue).stream()
+                    .map(String::valueOf)
+                    .map(val -> isAuxiliaryEnum ? Option.normalizeEnumValues(val) : val)
+                    .collect(Collectors.joining(","));
+        } else {
+            return defaultValue.toString();
+        }
     }
 
     /**
@@ -119,13 +152,10 @@ public class Option<T> {
         return description;
     }
 
-    public static String getDefaultValueString(Object value) {
-        if (value == null) {
+    public static String normalizeEnumValues(String enumValue) {
+        if (enumValue == null) {
             return null;
         }
-        if (value instanceof List) {
-            return ((List<?>) value).stream().map(String::valueOf).collect(Collectors.joining(","));
-        }
-        return String.valueOf(value);
+        return CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_HYPHEN, enumValue.toLowerCase(Locale.ROOT));
     }
 }

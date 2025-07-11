@@ -712,7 +712,7 @@ public class Picocli {
                 }
 
                 if (mapper.getDefaultValue().isPresent()) {
-                    optBuilder.defaultValue(Option.getDefaultValueString(mapper.getDefaultValue().get()));
+                    optBuilder.defaultValue(mapper.getDefaultValueString().orElse(null));
                 }
 
                 optBuilder.arity("1"); // everything requires a value to match configargs parsing
@@ -764,8 +764,8 @@ public class Picocli {
             );
         }
 
-        mapper.getDefaultValue()
-                .map(d -> Option.getDefaultValueString(d).replaceAll("%", "%%")) // escape formats
+        mapper.getDefaultValueString()
+                .map(d -> d.replaceAll("%", "%%")) // escape formats
                 .map(d -> " Default: " + d + ".")
                 .ifPresent(transformedDesc::append);
 

@@ -27,6 +27,7 @@ import static org.junit.Assert.fail;
 import static org.keycloak.config.LoggingOptions.DEFAULT_LOG_FORMAT;
 import static org.keycloak.config.LoggingOptions.DEFAULT_SYSLOG_OUTPUT;
 import static org.keycloak.config.LoggingOptions.SYSLOG_COUNTING_FRAMING_PROTOCOL_DEPENDENT;
+import static org.keycloak.config.Option.normalizeEnumValues;
 
 import java.util.Map;
 import java.util.Set;
@@ -86,7 +87,7 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
                 "log-syslog-app-name", "keycloak",
                 "log-syslog-protocol", "tcp",
                 "log-syslog-format", DEFAULT_LOG_FORMAT,
-                "log-syslog-output", DEFAULT_SYSLOG_OUTPUT.toString(),
+                "log-syslog-output", normalizeEnumValues(DEFAULT_SYSLOG_OUTPUT.toString()),
                 "log-syslog-counting-framing", SYSLOG_COUNTING_FRAMING_PROTOCOL_DEPENDENT
         ));
         assertThat(Configuration.getOptionalKcValue(LoggingOptions.LOG_SYSLOG_MAX_LENGTH).orElse(null), CoreMatchers.nullValue());

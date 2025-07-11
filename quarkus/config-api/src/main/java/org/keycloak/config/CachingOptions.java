@@ -57,11 +57,6 @@ public class CachingOptions {
         ec2,
         azure,
         google;
-
-        @Override
-        public String toString() {
-            return CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_HYPHEN, super.toString());
-        }
     }
 
     public static final Option<Stack> CACHE_STACK = new OptionBuilder<>("cache-stack", Stack.class)

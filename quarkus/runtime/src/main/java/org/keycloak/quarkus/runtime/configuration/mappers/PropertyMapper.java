@@ -119,7 +119,7 @@ public class PropertyMapper<T> {
         if (config != null && config.getValue() != null) {
             config = transformValue(name, config, context, parentValue);
         } else {
-            String defaultValue = this.option.getDefaultValue().map(Option::getDefaultValueString).orElse(null);
+            String defaultValue = this.option.getDefaultValueString().orElse(null);
             config = transformValue(name, new ConfigValueBuilder().withName(name)
                     .withValue(defaultValue).withRawValue(defaultValue).build(),
                     context, false);
@@ -192,6 +192,8 @@ public class PropertyMapper<T> {
     }
 
     public Optional<T> getDefaultValue() { return this.option.getDefaultValue(); }
+
+    public Optional<String> getDefaultValueString() { return this.option.getDefaultValueString(); }
 
     public OptionCategory getCategory() {
         return this.option.getCategory();

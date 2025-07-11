@@ -18,6 +18,8 @@
 package org.keycloak.config;
 
 import io.quarkus.opentelemetry.runtime.config.build.SamplerType;
+import io.quarkus.opentelemetry.runtime.config.runtime.exporter.CompressionType;
+import io.quarkus.opentelemetry.runtime.config.runtime.exporter.OtlpExporterConfig;
 
 import java.util.Arrays;
 import java.util.List;
@@ -57,8 +59,8 @@ public class TracingOptions {
     public static final Option<String> TRACING_PROTOCOL = new OptionBuilder<>("tracing-protocol", String.class)
             .category(OptionCategory.TRACING)
             .description("OpenTelemetry protocol used for the telemetry data.")
-            .defaultValue("grpc")
-            .expectedValues("grpc", "http/protobuf")
+            .defaultValue(OtlpExporterConfig.Protocol.GRPC)
+            .expectedValues(OtlpExporterConfig.Protocol.GRPC, OtlpExporterConfig.Protocol.HTTP_PROTOBUF)
             .build();
 
     public static final Option<String> TRACING_SAMPLER_TYPE = new OptionBuilder<>("tracing-sampler-type", String.class)
@@ -75,14 +77,9 @@ public class TracingOptions {
             .defaultValue(1.0d)
             .build();
 
-    public enum TracingCompression {
-        gzip,
-        none
-    }
-
-    public static final Option<TracingCompression> TRACING_COMPRESSION = new OptionBuilder<>("tracing-compression", TracingCompression.class)
+    public static final Option<CompressionType> TRACING_COMPRESSION = new OptionBuilder<>("tracing-compression", CompressionType.class)
             .category(OptionCategory.TRACING)
             .description("OpenTelemetry compression method used to compress payloads. If unset, compression is disabled.")
-            .defaultValue(TracingCompression.none)
+            .defaultValue(CompressionType.NONE)
             .build();
 }

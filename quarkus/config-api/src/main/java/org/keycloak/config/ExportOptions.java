@@ -44,12 +44,18 @@ public class ExportOptions {
             .buildTime(false)
             .build();
 
-    public static final Option<String> USERS = new OptionBuilder<>("users", String.class)
+    // see org.keycloak.exportimport.UsersExportStrategy
+    public enum UsersExportStrategy {
+        SKIP,
+        REALM_FILE,
+        SAME_FILE,
+        DIFFERENT_FILES
+    }
+
+    public static final Option<UsersExportStrategy> USERS = new OptionBuilder<>("users", UsersExportStrategy.class)
             .category(OptionCategory.EXPORT)
-            .defaultValue("different_files")
+            .defaultValue(UsersExportStrategy.DIFFERENT_FILES)
             .description("Set how users should be exported.")
-            // see UsersExportStrategy
-            .expectedValues("skip", "realm_file", "same_file", "different_files")
             .buildTime(false)
             .build();
 

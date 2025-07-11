@@ -106,8 +106,8 @@ Security:
                        non-approved mode. For full FIPS compliance, set 'strict' to run on approved
                        mode. This option defaults to 'disabled' when 'fips' feature is disabled,
                        which is by default. This option defaults to 'non-strict' when 'fips'
-                       feature is enabled. Possible values are: non-strict, strict. Default:
-                       disabled.
+                       feature is enabled. Possible values are: non-strict, strict, disabled.
+                       Default: disabled.
 
 Examples:
 

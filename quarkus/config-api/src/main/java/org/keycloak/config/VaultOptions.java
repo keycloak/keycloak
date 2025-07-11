@@ -5,19 +5,8 @@ import java.nio.file.Path;
 public class VaultOptions {
 
     public enum VaultType {
-
-        file("file"),
-        keystore("keystore");
-
-        private final String provider;
-
-        VaultType(String provider) {
-            this.provider = provider;
-        }
-
-        public String getProvider() {
-            return provider;
-        }
+        FILE,
+        KEYSTORE
     }
 
     public static final Option<VaultOptions.VaultType> VAULT = new OptionBuilder<>("vault", VaultType.class)

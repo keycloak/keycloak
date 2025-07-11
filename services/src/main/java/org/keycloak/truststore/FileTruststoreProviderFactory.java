@@ -118,7 +118,7 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
             verificationPolicy = HostnameVerificationPolicy.DEFAULT;
         } else {
             try {
-                verificationPolicy = HostnameVerificationPolicy.valueOf(policy);
+                verificationPolicy = HostnameVerificationPolicy.valueOf(policy.toUpperCase());
             } catch (Exception e) {
                 throw new RuntimeException("Invalid value for 'hostname-verification-policy': " + policy
                         + " (must be one of: " + Stream.of(HostnameVerificationPolicy.values())

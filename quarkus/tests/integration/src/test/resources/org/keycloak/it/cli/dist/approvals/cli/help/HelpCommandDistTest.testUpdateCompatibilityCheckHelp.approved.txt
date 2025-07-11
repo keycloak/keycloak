@@ -99,9 +99,9 @@ Cache:
 --cache-stack <stack>
                      Define the default stack to use for cluster communication and node discovery.
                        Defaults to 'jdbc-ping' if not set. Possible values are: jdbc-ping,
-                       kubernetes (deprecated), jdbc-ping-udp (deprecated), tcp (deprecated), udp
-                       (deprecated), ec2 (deprecated), azure (deprecated), google (deprecated), or
-                       a custom one. Available only when 'cache' type is set to 'ispn'.
+                       kubernetes (deprecated), jdbc-ping-udp, tcp (deprecated), udp (deprecated),
+                       ec2 (deprecated), azure (deprecated), google (deprecated), or a custom one.
+                       Available only when 'cache' type is set to 'ispn'.
 
 Config:
 
@@ -416,7 +416,7 @@ Logging:
 --log-level <category:level>
                      The log level of the root category or a comma-separated list of individual
                        categories and their levels. For the root category, you don't need to
-                       specify a category. Default: info.
+                       specify a category. Default: INFO.
 --log-level-<category> <level>
                      The log level of a category. Takes precedence over the 'log-level' option.
                        Possible values are (case insensitive): off, fatal, error, warn, info,
@@ -432,8 +432,8 @@ Truststore:
 
 --tls-hostname-verifier <tls-hostname-verifier>
                      The TLS hostname verification policy for out-going HTTPS and SMTP requests.
-                       ANY should not be used in production. Possible values are: ANY, WILDCARD
-                       (deprecated), STRICT (deprecated), DEFAULT. Default: DEFAULT.
+                       ANY should not be used in production. Possible values are: any, wildcard,
+                       strict, default. Default: default.
 --truststore-paths <truststore-paths>
                      List of pkcs12 (p12, pfx, or pkcs12 file extensions), PEM files, or
                        directories containing those files that will be used as a system truststore.
@@ -444,8 +444,8 @@ Security:
                        non-approved mode. For full FIPS compliance, set 'strict' to run on approved
                        mode. This option defaults to 'disabled' when 'fips' feature is disabled,
                        which is by default. This option defaults to 'non-strict' when 'fips'
-                       feature is enabled. Possible values are: non-strict, strict. Default:
-                       disabled.
+                       feature is enabled. Possible values are: non-strict, strict, disabled.
+                       Default: disabled.
 
 Bootstrap Admin:
 

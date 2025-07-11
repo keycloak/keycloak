@@ -5,7 +5,6 @@ import org.jboss.logmanager.handlers.SyslogHandler;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 import java.util.function.Function;
 
 import static java.lang.String.format;
@@ -46,11 +45,6 @@ public class LoggingOptions {
         DEBUG,
         TRACE,
         ALL;
-
-        @Override
-        public String toString() {
-            return super.toString().toLowerCase(Locale.ROOT);
-        }
     }
 
     public static final Option<List<String>> LOG_LEVEL = OptionBuilder.listOptionBuilder("log-level", String.class)
@@ -74,21 +68,11 @@ public class LoggingOptions {
     public enum Output {
         DEFAULT,
         JSON;
-
-        @Override
-        public String toString() {
-            return super.toString().toLowerCase(Locale.ROOT);
-        }
     }
 
     public enum JsonFormat {
         DEFAULT,
         ECS;
-
-        @Override
-        public String toString() {
-            return super.toString().toLowerCase(Locale.ROOT);
-        }
     }
 
     // Console
