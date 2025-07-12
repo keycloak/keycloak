@@ -125,6 +125,7 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
         Assert.assertEquals(200, spnegoResponse.getStatus());
         String responseText = spnegoResponse.readEntity(String.class);
         Assert.assertTrue(responseText.contains("You need to update your user profile to activate your account."));
+        Assert.assertTrue(responseText.contains("hnelson@" + kerberosRule.getConfig().get(KerberosConstants.KERBEROS_REALM).toLowerCase()));
         spnegoResponse.close();
 
         // Assert user was imported and has required action on him

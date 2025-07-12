@@ -22,6 +22,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -55,6 +56,7 @@ public abstract class AbstractAppInitiatedActionUpdateEmailTest extends Abstract
 				.lastName("Doh").build();
 		prepareUser(user);
 		ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+        ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
 	}
 
 	private void setRegistrationEmailAsUsername(RealmResource realmResource, boolean enabled) {

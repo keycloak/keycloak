@@ -11,6 +11,7 @@ import jakarta.ws.rs.core.UriBuilder;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.requiredactions.DeleteAccount;
+import org.keycloak.authentication.requiredactions.UpdateEmail;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Environment;
@@ -25,7 +26,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -203,8 +203,7 @@ public class AccountConsole implements AccountResourceProvider {
         map.put("isOid4VciEnabled", realm.isVerifiableCredentialsEnabled());
 
         map.put("updateEmailFeatureEnabled", Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL));
-        RequiredActionProviderModel updateEmailActionProvider = realm.getRequiredActionProviderByAlias(UserModel.RequiredAction.UPDATE_EMAIL.name());
-        map.put("updateEmailActionEnabled", updateEmailActionProvider != null && updateEmailActionProvider.isEnabled());
+        map.put("updateEmailActionEnabled", UpdateEmail.isEnabled(realm));
 
         final var devServerUrl = Environment.isDevMode() ? System.getenv(ViteManifest.ACCOUNT_VITE_URL) : null;
 

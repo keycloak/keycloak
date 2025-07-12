@@ -43,10 +43,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.broker.provider.util.SimpleHttp;
-import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.idm.UserProfileAttributeMetadata;
 import org.keycloak.representations.idm.UserProfileMetadata;
 import org.keycloak.representations.account.UserRepresentation;
@@ -54,7 +54,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.keycloak.userprofile.UserProfileContext;
@@ -115,7 +115,7 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
         assertNotNull(user.getUserProfileMetadata());
         
         assertUserProfileAttributeMetadata(user, "username", "${username}", true, false);
-        assertUserProfileAttributeMetadata(user, "email", "${email}", true, true);
+        assertUserProfileAttributeMetadata(user, "email", "${email}", true, false);
         
         UserProfileAttributeMetadata uam = assertUserProfileAttributeMetadata(user, "firstName", "${profile.firstName}", true, false);
         assertNull(uam.getAnnotations());
@@ -155,7 +155,7 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             assertNotNull(user.getUserProfileMetadata());
 
             assertUserProfileAttributeMetadata(user, "username", "${username}", true, true);
-            assertUserProfileAttributeMetadata(user, "email", "${email}", true, true);
+            assertUserProfileAttributeMetadata(user, "email", "${email}", true, false);
 
             assertNull(getUserProfileAttributeMetadata(user, "firstName"));
             assertNull(getUserProfileAttributeMetadata(user, "lastName"));
@@ -170,11 +170,11 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
         }
     }
 
-    @EnableFeature(value = Profile.Feature.UPDATE_EMAIL, skipRestart = true)
     @Test
     public void testUpdateEmailLink() throws Exception {
         RealmResource realm = adminClient.realm("test");
         RealmRepresentation realmRep = realm.toRepresentation();
+        ApiUtil.enableRequiredAction(realm, RequiredAction.UPDATE_EMAIL, true);
 
         try {
             realmRep.setEditUsernameAllowed(false);
@@ -192,6 +192,7 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             assertNotNull(user.getUserProfileMetadata());
             assertThat(user.getUserProfileMetadata().getAttributeMetadata(UserModel.EMAIL).getAnnotations().get("kc.required.action.supported"), is(nullValue()));
         } finally {
+            ApiUtil.enableRequiredAction(realm, RequiredAction.UPDATE_EMAIL, false);
             realmRep.setEditUsernameAllowed(true);
             realm.update(realmRep);
         }
@@ -211,7 +212,7 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             assertNotNull(user.getUserProfileMetadata());
 
             assertUserProfileAttributeMetadata(user, "username", "${username}", true, true);
-            assertUserProfileAttributeMetadata(user, "email", "${email}", true, true);
+            assertUserProfileAttributeMetadata(user, "email", "${email}", true, false);
 
             assertUserProfileAttributeMetadata(user, "firstName", "${profile.firstName}", true, true);
             assertUserProfileAttributeMetadata(user, "lastName", "Last name", true, true);
@@ -266,7 +267,7 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             assertNotNull(user.getUserProfileMetadata());
             
             assertUserProfileAttributeMetadata(user, "username", "${username}", true, true);
-            assertUserProfileAttributeMetadata(user, "email", "${email}", true, true);
+            assertUserProfileAttributeMetadata(user, "email", "${email}", true, false);
             
             UserProfileAttributeMetadata uam = assertUserProfileAttributeMetadata(user, "firstName", "${profile.firstName}", true, false);
             assertNull(uam.getAnnotations());
@@ -323,6 +324,7 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
         String originalUsername = user.getUsername();
         String originalFirstName = user.getFirstName();
         String originalLastName = user.getLastName();
+        String originalEmail = user.getEmail();
         user.setAttributes(Optional.ofNullable(user.getAttributes()).orElse(new HashMap<>()));
         Map<String, List<String>> originalAttributes = new HashMap<>(user.getAttributes());
 
@@ -332,6 +334,7 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             realmRep.setRegistrationEmailAsUsername(false);
             adminClient.realm("test").update(realmRep);
 
+            user.setEmail("bobby@localhost");
             user.setFirstName("Homer");
             user.setLastName("Simpsons");
             user.getAttributes().put("attr1", Collections.singletonList("val11"));
@@ -343,6 +346,8 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             //skip login to the REST API event
             events.expectAccount(EventType.UPDATE_PROFILE).user(user.getId())
                 .detail(Details.CONTEXT, UserProfileContext.ACCOUNT.name())
+                .detail(Details.PREVIOUS_EMAIL, originalEmail)
+                .detail(Details.UPDATED_EMAIL, "bobby@localhost")
                 .detail(Details.PREVIOUS_FIRST_NAME, originalFirstName)
                 .detail(Details.PREVIOUS_LAST_NAME, originalLastName)
                 .detail(Details.UPDATED_FIRST_NAME, "Homer")
@@ -359,6 +364,7 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             user.setUsername(originalUsername);
             user.setFirstName(originalFirstName);
             user.setLastName(originalLastName);
+            user.setEmail(originalEmail);
             user.setAttributes(originalAttributes);
             SimpleHttp.Response response = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
             System.out.println(response.asString());

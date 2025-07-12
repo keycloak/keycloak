@@ -266,18 +266,18 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
             appRealm.setEditUsernameAllowed(false);
         });
         UserRepresentation user = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
-        user.setLastName("Brady");
+        user.setEmail("john-alias@email.org");
         SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).json(user).auth(tokenUtil.getToken()).asStatus();
 
         UserRepresentation usernew = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
         assertEquals("johnkeycloak", usernew.getUsername());
         assertEquals("John", usernew.getFirstName());
-        assertEquals("Brady", usernew.getLastName());
-        assertEquals("john@email.org", usernew.getEmail());
+        assertEquals("Doe", usernew.getLastName());
+        assertEquals("john-alias@email.org", usernew.getEmail());
         assertFalse(usernew.isEmailVerified());
 
         //clean up
-        user.setLastName("Doe");
+        usernew.setEmail("john@email.org");
         SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).json(usernew).auth(tokenUtil.getToken()).asStatus();
 
     }
@@ -290,21 +290,21 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
             appRealm.setEditUsernameAllowed(false);
         });
         UserRepresentation user = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
-        user.setFirstName("Tom");
+        user.setEmail("john-alias@email.org");
         SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).json(user).auth(tokenUtil.getToken()).asStatus();
 
         UserRepresentation usernew = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
         assertEquals("johnkeycloak", usernew.getUsername());
-        assertEquals("Tom", usernew.getFirstName());
+        assertEquals("John", usernew.getFirstName());
         assertEquals("Doe", usernew.getLastName());
-        assertEquals("john@email.org", usernew.getEmail());
+        assertEquals("john-alias@email.org", usernew.getEmail());
         assertFalse(usernew.isEmailVerified());
 
         // No metadata attributes like LDAP_ID or LDAP_ENTRY_DN present in account REST API
         Assert.assertNull(usernew.getAttributes());
 
         //clean up
-        usernew.setFirstName("John");
+        usernew.setEmail("john@email.org");
         final int i = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).json(usernew).auth(tokenUtil.getToken()).asStatus();
 
         org.keycloak.representations.idm.UserRepresentation userRep = testRealm().users()
