@@ -256,7 +256,11 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
     }
 
     protected UserRepresentation getUserRepresentation(String userEmail) {
-        UsersResource users = adminClient.realm(bc.consumerRealmName()).users();
+        return getUserRepresentation(bc.consumerRealmName(), userEmail);
+    }
+
+    protected UserRepresentation getUserRepresentation(String realm, String userEmail) {
+        UsersResource users = adminClient.realm(realm).users();
         List<UserRepresentation> reps = users.searchByEmail(userEmail, true);
         Assert.assertFalse(reps.isEmpty());
         Assert.assertEquals(1, reps.size());

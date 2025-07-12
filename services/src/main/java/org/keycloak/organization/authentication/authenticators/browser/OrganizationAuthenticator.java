@@ -215,19 +215,18 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
     }
 
     private boolean shouldUserSelectOrganization(AuthenticationFlowContext context, UserModel user) {
-        OrganizationProvider provider = getOrganizationProvider();
-        AuthenticationSessionModel authSession = context.getAuthenticationSession();
-        OrganizationScope scope = OrganizationScope.valueOfScope(session);
-
-        if (!OrganizationScope.ANY.equals(scope) || user == null) {
+        if (user == null || !OrganizationScope.ANY.equals(OrganizationScope.valueOfScope(session))) {
             return false;
         }
+
+        AuthenticationSessionModel authSession = context.getAuthenticationSession();
 
         if (authSession.getClientNote(OrganizationModel.ORGANIZATION_ATTRIBUTE) != null) {
             // organization already selected
             return false;
         }
 
+        OrganizationProvider provider = getOrganizationProvider();
         Stream<OrganizationModel> organizations = provider.getByMember(user);
 
         if (organizations.count() > 1) {

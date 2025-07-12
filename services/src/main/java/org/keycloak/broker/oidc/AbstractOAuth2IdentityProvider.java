@@ -895,5 +895,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
     }
 
-
+    @Override
+    public boolean supportsLongStateParameter() {
+        return !getConfig().isRequiresShortStateParameter();
+    }
 }

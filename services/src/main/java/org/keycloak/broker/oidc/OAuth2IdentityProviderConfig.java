@@ -39,6 +39,8 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
 
     public static final String JWT_X509_HEADERS_ENABLED = "jwtX509HeadersEnabled";
 
+    public static final String REQUIRES_SHORT_STATE_PARAMETER = "requiresShortStateParameter";
+
     public OAuth2IdentityProviderConfig(IdentityProviderModel model) {
         super(model);
     }
@@ -133,6 +135,14 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
 
     public String getPrompt() {
         return getConfig().get("prompt");
+    }
+
+    public boolean isRequiresShortStateParameter() {
+        return Boolean.parseBoolean(getConfig().get(REQUIRES_SHORT_STATE_PARAMETER));
+    }
+
+    public void setRequiresShortStateParameter(boolean requiresShortStateParameter) {
+        getConfig().put(REQUIRES_SHORT_STATE_PARAMETER, String.valueOf(requiresShortStateParameter));
     }
 
     public String getForwardParameters() {
