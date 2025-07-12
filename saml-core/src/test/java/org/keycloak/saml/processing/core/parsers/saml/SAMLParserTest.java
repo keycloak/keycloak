@@ -559,11 +559,11 @@ public class SAMLParserTest {
         assertThat(servName.getValue(), is("Academic Journals R US"));
         assertThat(attributeConsumingService.getServiceDescription(), is(emptyCollectionOf(LocalizedNameType.class)));
 
-        List<RequestedAttributeType> requestedAttributes = attributeConsumingService.getRequestedAttribute();
+        List<AttributeType> requestedAttributes = attributeConsumingService.getRequestedAttribute();
         assertThat(requestedAttributes, hasSize(1));
 
         // Requested attribute
-        RequestedAttributeType requestedAttribute = requestedAttributes.get(0);
+        RequestedAttributeType requestedAttribute = (RequestedAttributeType) requestedAttributes.get(0);
         assertThat(requestedAttribute.getNameFormat(), is("urn:oasis:names:tc:SAML:2.0:attrname-format:uri"));
         assertThat(requestedAttribute.getName(), is("urn:oid:1.3.6.1.4.1.5923.1.1.1.7"));
         assertThat(requestedAttribute.getFriendlyName(), is("eduPersonEntitlement"));

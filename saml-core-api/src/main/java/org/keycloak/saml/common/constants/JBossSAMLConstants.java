@@ -50,6 +50,7 @@ public enum JBossSAMLConstants {
     NAMEID_POLICY(PROTOCOL_NSURI, "NameIDPolicy"),
     NEW_ENCRYPTEDID(PROTOCOL_NSURI, "NewEncryptedID"),
     NEWID(PROTOCOL_NSURI, "NewID"),
+    PROVIDER_ID(PROTOCOL_NSURI, "ProviderID"),
     REQUESTED_AUTHN_CONTEXT(PROTOCOL_NSURI, "RequestedAuthnContext"),
     REQUESTERID(PROTOCOL_NSURI, "RequesterID"),
     RESPONSE__PROTOCOL(PROTOCOL_NSURI, "Response"),
@@ -85,6 +86,7 @@ public enum JBossSAMLConstants {
     CONDITIONS(ASSERTION_NSURI, "Conditions"),
     ENCRYPTED_ASSERTION(ASSERTION_NSURI, "EncryptedAssertion"),
     ENCRYPTED_ATTRIBUTE(ASSERTION_NSURI, "EncryptedAttribute"),
+    ENCRYPTED_DATA(ASSERTION_NSURI, "EncryptedData"),
     ENCRYPTED_ID(ASSERTION_NSURI, "EncryptedID"),
     EVIDENCE(ASSERTION_NSURI, "Evidence"),
     ISSUER(ASSERTION_NSURI, "Issuer"),
@@ -152,6 +154,10 @@ public enum JBossSAMLConstants {
     RSA_KEY_VALUE(XMLDSIG_NSURI, "RSAKeyValue"),
     X509_CERT(XMLDSIG_NSURI, "X509Certificate"),
     X509_DATA(XMLDSIG_NSURI, "X509Data"),
+    CIPHER_DATA(XMLDSIG_NSURI, "CipherData"),
+    CIPHER_VALUE(XMLDSIG_NSURI, "CipherValue"),
+    REFERENCE_LIST(XMLDSIG_NSURI, "ReferenceList"),
+    DATA_REFERENCE(XMLDSIG_NSURI, "DataReference"),
 
     // Attribute names and other constants
     ADDRESS("Address"),

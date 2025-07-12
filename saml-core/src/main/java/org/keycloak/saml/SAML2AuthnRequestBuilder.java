@@ -21,6 +21,7 @@ import org.keycloak.dom.saml.v2.assertion.SubjectType;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
 import org.keycloak.dom.saml.v2.protocol.RequestedAuthnContextType;
+import org.keycloak.dom.saml.v2.protocol.ScopingType;
 import org.keycloak.saml.SAML2NameIDBuilder;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.core.saml.v2.common.IDGenerator;
@@ -40,6 +41,7 @@ public class SAML2AuthnRequestBuilder implements SamlProtocolExtensionsAwareBuil
     protected String destination;
     protected NameIDType issuer;
     protected final List<NodeGenerator> extensions = new LinkedList<>();
+    protected ScopingType scoping;
 
     public SAML2AuthnRequestBuilder destination(String destination) {
         this.destination = destination;
@@ -74,6 +76,7 @@ public class SAML2AuthnRequestBuilder implements SamlProtocolExtensionsAwareBuil
         this.authnRequestType.setAssertionConsumerServiceURL(assertionConsumerUrl);
         return this;
     }
+
 
     public SAML2AuthnRequestBuilder attributeConsumingServiceIndex(Integer attributeConsumingServiceIndex) {
         this.authnRequestType.setAttributeConsumingServiceIndex(attributeConsumingServiceIndex);
@@ -130,6 +133,11 @@ public class SAML2AuthnRequestBuilder implements SamlProtocolExtensionsAwareBuil
         return this;
     }
 
+    public SAML2AuthnRequestBuilder scoping(ScopingType scoping) {
+        this.scoping = scoping;
+        return this;
+    }
+
     public Document toDocument() {
         try {
             AuthnRequestType authnRequestType = createAuthnRequest();
@@ -145,6 +153,7 @@ public class SAML2AuthnRequestBuilder implements SamlProtocolExtensionsAwareBuil
 
         res.setIssuer(issuer);
         res.setDestination(URI.create(this.destination));
+        res.setScoping(scoping);
 
         if (! this.extensions.isEmpty()) {
             ExtensionsType extensionsType = new ExtensionsType();

@@ -170,9 +170,13 @@ public class SAML2Signature {
      * @throws ProcessingException
      */
     public boolean validate(Document signedDocument, KeyLocator keyLocator) throws ProcessingException {
+        return validate(signedDocument, keyLocator, false);
+    }
+
+    public boolean validate(Document signedDocument, KeyLocator keyLocator, boolean ignoreSamlAdviceNodes) throws ProcessingException {
         try {
             configureIdAttribute(signedDocument);
-            return XMLSignatureUtil.validate(signedDocument, keyLocator);
+            return XMLSignatureUtil.validate(signedDocument, keyLocator, ignoreSamlAdviceNodes);
         } catch (MarshalException | XMLSignatureException me) {
             throw new ProcessingException(logger.signatureError(me));
         }

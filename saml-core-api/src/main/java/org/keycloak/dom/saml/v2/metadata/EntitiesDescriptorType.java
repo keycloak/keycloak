@@ -68,6 +68,9 @@ public class EntitiesDescriptorType {
 
     protected String name;
 
+    public EntitiesDescriptorType() {
+    }
+
     /**
      * Gets the value of the signature property.
      *

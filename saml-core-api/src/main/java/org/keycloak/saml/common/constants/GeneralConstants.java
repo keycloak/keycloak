@@ -100,6 +100,8 @@ public interface GeneralConstants {
 
     String SAML_ARTIFACT_KEY = "SAMLart";
 
+    String SAML_ARTIFACT_RESPONSE_KEY = "ArtifactResponse";
+
     String SAML_SIG_ALG_REQUEST_KEY = "SigAlg";
 
     String SAML_SIGNATURE_REQUEST_KEY = "Signature";

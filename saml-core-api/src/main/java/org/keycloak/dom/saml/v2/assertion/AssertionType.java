@@ -54,7 +54,9 @@ public class AssertionType extends CommonAssertionType {
 
     private ConditionsType conditions;
 
-    private final Set<StatementAbstractType> statements = new LinkedHashSet<StatementAbstractType>();
+    private final Set<StatementAbstractType> statements = new LinkedHashSet<>();
+
+    private final Set<XacmlResourceType> xacmlResources = new LinkedHashSet<>();
 
     /**
      * Create an assertion
@@ -200,6 +202,49 @@ public class AssertionType extends CommonAssertionType {
         checkSTSPermission();
 
         return Collections.unmodifiableSet(statements);
+    }
+
+    /**
+     * Add a xacmlResource
+     *
+     * @param xacmlResource {@link StatementAbstractType}
+     */
+    public void addXacmlResource(XacmlResourceType xacmlResource) {
+        checkSTSPermission();
+
+        this.xacmlResources.add(xacmlResource);
+    }
+
+    /**
+     * Add a collection of xacmlResources
+     *
+     * @param xacmlResources {@link Collection}
+     */
+    public void addXacmlResources(Collection<XacmlResourceType> xacmlResources) {
+        checkSTSPermission();
+
+        this.xacmlResources.addAll(xacmlResources);
+    }
+
+    /**
+     * Add a set of xacmlResources
+     *
+     * @param xacmlResources {@link Collection}
+     */
+    public void addXacmlResources(Set<XacmlResourceType> xacmlResources) {
+
+        this.xacmlResources.addAll(xacmlResources);
+    }
+
+    /**
+     * Get a read only set of xacmlResources
+     *
+     * @return {@link Set}
+     */
+    public Set<XacmlResourceType> getXacmlResources() {
+        checkSTSPermission();
+
+        return Collections.unmodifiableSet(xacmlResources);
     }
 
     /**

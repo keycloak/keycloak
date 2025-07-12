@@ -18,6 +18,9 @@ import { addTrailingSlash } from "../../util";
 import { getAuthorizationHeaders } from "../../utils/getAuthorizationHeaders";
 import { DiscoveryEndpointField } from "../component/DiscoveryEndpointField";
 import { DescriptorSettings } from "./DescriptorSettings";
+import {SamlExtendedSettings} from "./SamlExtendedSettings";
+import {AdvancedSettings} from "./AdvancedSettings";
+import {ReqAuthnConstraints} from "./ReqAuthnConstraintsSettings";
 
 type FormFields = IdentityProviderRepresentation & {
   discoveryError: string;
@@ -126,8 +129,23 @@ export const SamlConnectSettings = () => {
           </FormGroup>
         }
       >
-        {(readonly) => <DescriptorSettings readOnly={readonly} />}
+          {(readonly) => <DescriptorSettings readOnly={readonly} />}
       </DiscoveryEndpointField>
+
+
+
+        <Title headingLevel="h2" size="xl" className="kc-form-panel__title">
+            {t("requestedAuthnContextConstraints")}
+        </Title>
+        < ReqAuthnConstraints />
+
+        <Title headingLevel="h2" size="xl" className="kc-form-panel__title">
+            {t("advancedSettings")}
+        </Title>
+        <AdvancedSettings isOAuth2={false} isOIDC={false} isSAML={true} />
+
+        <SamlExtendedSettings/>
+
     </>
   );
 };

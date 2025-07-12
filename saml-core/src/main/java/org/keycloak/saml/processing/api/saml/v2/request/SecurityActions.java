@@ -19,6 +19,7 @@ package org.keycloak.saml.processing.api.saml.v2.request;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.PropertyPermission;
 
 /**
  * Privileged Blocks
@@ -27,6 +28,14 @@ import java.security.PrivilegedAction;
  * @since Dec 9, 2008
  */
 class SecurityActions {
+
+    private static String extractPackageNameFromClassName(final String fullyQualifiedName) {
+        final int lastDot = fullyQualifiedName.lastIndexOf('.');
+        if (lastDot == -1) {
+            return "";
+        }
+        return fullyQualifiedName.substring(0, lastDot);
+    }
 
     /**
      * <p>
@@ -40,11 +49,17 @@ class SecurityActions {
      *
      * @return
      */
-    static Class<?> loadClass(final Class<?> theClass, final String fullQualifiedName) {
+    public static Class<?> loadClass(final Class<?> theClass, final String fullQualifiedName) {
         SecurityManager sm = System.getSecurityManager();
 
+        if (fullQualifiedName == null) {
+            return null;
+        }
+
         if (sm != null) {
+            sm.checkPackageDefinition(extractPackageNameFromClassName(fullQualifiedName));
             return AccessController.doPrivileged(new PrivilegedAction<Class<?>>() {
+                @Override
                 public Class<?> run() {
                     ClassLoader classLoader = theClass.getClassLoader();
 
@@ -78,11 +93,17 @@ class SecurityActions {
      *
      * @return
      */
-    static Class<?> loadClass(final ClassLoader classLoader, final String fullQualifiedName) {
+    public static Class<?> loadClass(final ClassLoader classLoader, final String fullQualifiedName) {
         SecurityManager sm = System.getSecurityManager();
 
+        if (fullQualifiedName == null) {
+            return null;
+        }
+
         if (sm != null) {
+            sm.checkPackageDefinition(extractPackageNameFromClassName(fullQualifiedName));
             return AccessController.doPrivileged(new PrivilegedAction<Class<?>>() {
+                @Override
                 public Class<?> run() {
                     try {
                         return classLoader.loadClass(fullQualifiedName);
@@ -101,6 +122,71 @@ class SecurityActions {
     }
 
     /**
+     * Load a resource based on the passed {@link Class} classloader. Failing which try with the Thread Context CL
+     *
+     * @param clazz
+     * @param resourceName
+     *
+     * @return
+     */
+    public static URL loadResource(final Class<?> clazz, final String resourceName) {
+        SecurityManager sm = System.getSecurityManager();
+
+        if (sm != null) {
+            return AccessController.doPrivileged(new PrivilegedAction<URL>() {
+                public URL run() {
+                    URL url;
+                    ClassLoader clazzLoader = clazz.getClassLoader();
+                    url = clazzLoader.getResource(resourceName);
+
+                    if (url == null) {
+                        clazzLoader = Thread.currentThread().getContextClassLoader();
+                        url = clazzLoader.getResource(resourceName);
+                    }
+
+                    return url;
+                }
+            });
+        } else {
+            URL url;
+            ClassLoader clazzLoader = clazz.getClassLoader();
+            url = clazzLoader.getResource(resourceName);
+
+            if (url == null) {
+                clazzLoader = Thread.currentThread().getContextClassLoader();
+                url = clazzLoader.getResource(resourceName);
+            }
+
+            return url;
+        }
+    }
+
+    /**
+     * Set the system property
+     *
+     * @param key
+     * @param defaultValue
+     *
+     * @return
+     */
+    public static void setSystemProperty(final String key, final String defaultValue) {
+        SecurityManager sm = System.getSecurityManager();
+
+        if (sm != null) {
+            sm.checkPermission(new PropertyPermission(key, "write"));
+            AccessController.doPrivileged(new PrivilegedAction<Object>() {
+                @Override
+                public Object run() {
+                    System.setProperty(key, defaultValue);
+                    return null;
+                }
+            });
+        } else {
+            System.setProperty(key, defaultValue);
+        }
+    }
+
+    /**
      * <p>Returns a system property value using the specified <code>key</code>. If not found the
      * <code>defaultValue</code> will be returned.</p>
      *
@@ -109,7 +195,7 @@ class SecurityActions {
      *
      * @return
      */
-    static String getSystemProperty(final String key, final String defaultValue) {
+    public static String getSystemProperty(final String key, final String defaultValue) {
         SecurityManager sm = System.getSecurityManager();
 
         if (sm != null) {
@@ -124,42 +210,43 @@ class SecurityActions {
     }
 
     /**
-     * Load a resource based on the passed {@link Class} classloader. Failing which try with the Thread Context CL
-     *
-     * @param clazz
-     * @param resourceName
+     * Get the Thread Context ClassLoader
      *
      * @return
      */
-    static URL loadResource(final Class<?> clazz, final String resourceName) {
-        SecurityManager sm = System.getSecurityManager();
-
-        if (sm != null) {
-            return AccessController.doPrivileged(new PrivilegedAction<URL>() {
-                public URL run() {
-                    URL url = null;
-                    ClassLoader clazzLoader = clazz.getClassLoader();
-                    url = clazzLoader.getResource(resourceName);
-
-                    if (url == null) {
-                        clazzLoader = Thread.currentThread().getContextClassLoader();
-                        url = clazzLoader.getResource(resourceName);
-                    }
-
-                    return url;
+    public static ClassLoader getTCCL() {
+        if (System.getSecurityManager() != null) {
+            System.getSecurityManager().checkPermission(new RuntimePermission("getClassLoader"));
+            return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+                @Override
+                public ClassLoader run() {
+                    return Thread.currentThread().getContextClassLoader();
                 }
             });
         } else {
-            URL url = null;
-            ClassLoader clazzLoader = clazz.getClassLoader();
-            url = clazzLoader.getResource(resourceName);
-
-            if (url == null) {
-                clazzLoader = Thread.currentThread().getContextClassLoader();
-                url = clazzLoader.getResource(resourceName);
-            }
-
-            return url;
+            return Thread.currentThread().getContextClassLoader();
         }
     }
+
+    /**
+     * Set the Thread Context ClassLoader
+     *
+     * @param paramCl
+     */
+    public static void setTCCL(final ClassLoader paramCl) {
+        if (System.getSecurityManager() != null) {
+            System.getSecurityManager().checkPermission(new RuntimePermission("setContextClassLoader"));
+            AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                @Override
+                public Void run() {
+                    Thread.currentThread().setContextClassLoader(paramCl);
+                    return null;
+                }
+            });
+        } else {
+
+            Thread.currentThread().setContextClassLoader(paramCl);
+        }
+    }
+
 }

@@ -33,6 +33,7 @@ import org.keycloak.saml.processing.core.saml.v2.writers.SAMLResponseWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -95,6 +96,13 @@ public class SAMLDataMarshaller extends DefaultDataMarshaller {
             }
 
         } else {
+            if (List.class.isAssignableFrom(clazz) && clazz.getName().startsWith("java.util.ImmutableCollections")) {
+                try {
+                    return (T) super.deserialize(serialized, List.class);
+                } catch (ClassCastException e) {
+                    throw new RuntimeException("Error deserializing Immutable List", e);
+                }
+            }
             return super.deserialize(serialized, clazz);
         }
     }
