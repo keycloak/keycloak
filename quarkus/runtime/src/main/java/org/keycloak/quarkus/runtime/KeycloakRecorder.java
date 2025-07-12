@@ -35,25 +35,32 @@ import io.vertx.ext.web.RoutingContext;
 import liquibase.Scope;
 import liquibase.servicelocator.ServiceLocator;
 import org.hibernate.cfg.AvailableSettings;
+import org.hibernate.jpa.boot.spi.PersistenceUnitDescriptor;
 import org.infinispan.protostream.SerializationContextInitializer;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.FipsMode;
+import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.TruststoreOptions;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
+import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.storage.database.liquibase.FastServiceLocator;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.theme.ClasspathThemeProviderFactory;
 import org.keycloak.truststore.TruststoreBuilder;
 import org.keycloak.userprofile.DeclarativeUserProfileProviderFactory;
+
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
+import static org.keycloak.quarkus.runtime.storage.database.jpa.QuarkusJpaConnectionProviderFactory.DEFAULT_PERSISTENCE_UNIT;
 
 @Recorder
 public class KeycloakRecorder {
@@ -74,6 +81,22 @@ public class KeycloakRecorder {
     // default handler for the management interface
     public Handler<RoutingContext> getManagementHandler() {
         return routingContext -> routingContext.response().end("Keycloak Management Interface");
+    }
+
+    public void validatePersistenceUnits(List<String> descriptors) {
+        var mapper = DatabaseOptions.getDatasourceOption(DatabaseOptions.DB)
+                .flatMap(PropertyMappers::getWildcardMapper).orElseThrow();
+
+        List<String> notSetPersistenceUnitsDBKinds = descriptors.stream()
+                .filter(descriptorName -> !descriptorName.equals(DEFAULT_PERSISTENCE_UNIT)) // not default persistence unit
+                // map PU name to DB kind option like: user-store -> kc.db-kind-user-store
+                .map(descriptorName -> mapper.getFrom(descriptorName).substring(NS_KEYCLOAK_PREFIX.length()))
+                .filter(dbKind -> !Configuration.isSet(dbKind)) // not set by user
+                .toList();
+
+        if (!notSetPersistenceUnitsDBKinds.isEmpty()) {
+            throw new PropertyException("Detected additional named datasources. You need to explicitly set the DB kind for the datasource(s) to properly work as: %s".formatted(String.join(",", notSetPersistenceUnitsDBKinds)));
+        }
     }
 
     public void configureTruststore() {

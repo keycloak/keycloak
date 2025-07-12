@@ -17,6 +17,7 @@
 package org.keycloak.quarkus.runtime.configuration;
 
 import static org.keycloak.quarkus.runtime.Environment.isRebuild;
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.getConnectedWildcardMappers;
 
 import java.util.Iterator;
 import java.util.Objects;
@@ -35,6 +36,7 @@ import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.Priorities;
 import jakarta.annotation.Priority;
+import org.keycloak.quarkus.runtime.configuration.mappers.WildcardPropertyMapper;
 
 /**
  * <p>This interceptor is responsible for mapping Keycloak properties to their corresponding properties in Quarkus.
@@ -81,7 +83,7 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
      */
     @Override
     public Iterator<String> iterateNames(ConfigSourceInterceptorContext context) {
-        Iterable<String> iterable = () -> context.iterateNames();
+        Iterable<String> iterable = context::iterateNames;
 
         final Set<PropertyMapper<?>> allMappers = PropertyMappers.getMappers();
 
@@ -102,7 +104,11 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
             }
             allMappers.remove(mapper);
 
-            if (!mapper.hasWildcard()) {
+            if (mapper.hasWildcard()) {
+                // also return the connectedTo properties
+                var connectedTo = ((WildcardPropertyMapper<?>) mapper).getConnectedTo(name).stream();
+                return Stream.concat(Stream.of(name), connectedTo);
+            } else {
                 // this is not a wildcard value, but may map to wildcards
                 // the current example is something like log-level=wildcardCat1:level,wildcardCat2:level
                 var wildCard = PropertyMappers.getWildcardMappedFrom(mapper.getOption());
@@ -123,11 +129,11 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
 
         // include anything remaining that has a default value
         var defaultStream = allMappers.stream()
-                .filter(m -> !m.getDefaultValue().isEmpty() && !m.hasWildcard()
+                .filter(m -> m.getDefaultValue().isPresent() && !m.hasWildcard()
                         && m.getCategory() != OptionCategory.CONFIG) // advertising the keystore type causes the keystore to be used early
                 .flatMap(m -> toDistinctStream(m.getTo()));
 
-        return IteratorUtils.chainedIterator(baseStream.iterator(), defaultStream.iterator());
+        return IteratorUtils.chainedIterator(baseStream.distinct().iterator(), defaultStream.iterator());
     }
 
     private static Stream<String> toDistinctStream(String... values) {
