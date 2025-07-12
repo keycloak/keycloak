@@ -193,9 +193,9 @@ public final class JGroupsConfigurator {
         var em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
         var stackName = transportStackOf(holder).get();
         var isUdp = stackName.endsWith("udp");
-        var tableName = JpaUtils.getTableNameForNativeQuery("JGROUPS_PING", em);
-        var stack = getProtocolConfigurations(tableName, isUdp);
         var connectionFactory = (JpaConnectionProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(JpaConnectionProvider.class);
+        var tableName = JpaUtils.getTableNameForNativeQuery(connectionFactory.getSchema(), "JGROUPS_PING", em);
+        var stack = getProtocolConfigurations(tableName, isUdp);
         holder.addJGroupsStack(new JpaFactoryAwareJGroupsChannelConfigurator(stackName, stack, connectionFactory, isUdp), null);
 
         transportOf(holder).stack(stackName);

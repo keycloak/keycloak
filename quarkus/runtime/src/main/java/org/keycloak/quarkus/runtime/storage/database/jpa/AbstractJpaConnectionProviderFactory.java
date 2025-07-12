@@ -45,6 +45,7 @@ public abstract class AbstractJpaConnectionProviderFactory implements JpaConnect
 
     protected Config.Scope config;
     protected EntityManagerFactory entityManagerFactory;
+    protected String schema;
 
     @Override
     public Connection getConnection() {
@@ -59,11 +60,6 @@ public abstract class AbstractJpaConnectionProviderFactory implements JpaConnect
 
     @Override
     public String getSchema() {
-        String schema = Configuration.getRawValue("kc.db-schema");
-        if (schema != null && schema.contains("-") && ! Boolean.parseBoolean(System.getProperty(GlobalConfiguration.PRESERVE_SCHEMA_CASE.getKey()))) {
-            System.setProperty(GlobalConfiguration.PRESERVE_SCHEMA_CASE.getKey(), "true");
-            logger.warnf("The passed schema '%s' contains a dash. Setting liquibase config option PRESERVE_SCHEMA_CASE to true. See https://github.com/keycloak/keycloak/issues/20870 for more information.", schema);
-        }
         return schema;
     }
 
@@ -75,6 +71,7 @@ public abstract class AbstractJpaConnectionProviderFactory implements JpaConnect
     @Override
     public void postInit(KeycloakSessionFactory factory) {
         entityManagerFactory = getEntityManagerFactory();
+        this.schema = initSchema();
     }
 
     @Override
@@ -113,5 +110,14 @@ public abstract class AbstractJpaConnectionProviderFactory implements JpaConnect
         entityManager.setFlushMode(FlushModeType.AUTO);
 
         return entityManager;
+    }
+
+    protected String initSchema() {
+        String schema = Configuration.getRawValue("kc.db-schema");
+        if (schema != null && schema.contains("-") && ! Boolean.parseBoolean(System.getProperty(GlobalConfiguration.PRESERVE_SCHEMA_CASE.getKey()))) {
+            System.setProperty(GlobalConfiguration.PRESERVE_SCHEMA_CASE.getKey(), "true");
+            logger.warnf("The passed schema '%s' contains a dash. Setting liquibase config option PRESERVE_SCHEMA_CASE to true. See https://github.com/keycloak/keycloak/issues/20870 for more information.", schema);
+        }
+        return schema;
     }
 }

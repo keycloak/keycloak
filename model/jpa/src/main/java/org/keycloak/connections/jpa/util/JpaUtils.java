@@ -31,6 +31,8 @@ import org.keycloak.models.KeycloakSession;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.spi.PersistenceUnitTransactionType;
+import liquibase.GlobalConfiguration;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -50,10 +52,15 @@ public class JpaUtils {
     public static final String QUERY_JPQL_SUFFIX = "[jpql]";
     private static final Logger logger = Logger.getLogger(JpaUtils.class);
 
-    public static String getTableNameForNativeQuery(String tableName, EntityManager em) {
-        String schema = (String) em.getEntityManagerFactory().getProperties().get(HIBERNATE_DEFAULT_SCHEMA);
-        final Dialect dialect = em.getEntityManagerFactory().unwrap(SessionFactoryImpl.class).getJdbcServices().getDialect();
-        return (schema==null) ? tableName : dialect.openQuote() + schema + dialect.closeQuote() + "." + tableName;
+    public static String getTableNameForNativeQuery(String schema, String tableName, EntityManager em) {
+        if (schema == null)
+            return tableName;
+
+        if ("true".equals(System.getProperty(GlobalConfiguration.PRESERVE_SCHEMA_CASE.getKey()))) {
+            final Dialect dialect = em.getEntityManagerFactory().unwrap(SessionFactoryImpl.class).getJdbcServices().getDialect();
+            return dialect.openQuote() + schema + dialect.closeQuote() + "." + tableName;
+        }
+        return schema + "." + tableName;
     }
 
     public static EntityManagerFactory createEntityManagerFactory(KeycloakSession session, String unitName, Map<String, Object> properties, boolean jta) {
