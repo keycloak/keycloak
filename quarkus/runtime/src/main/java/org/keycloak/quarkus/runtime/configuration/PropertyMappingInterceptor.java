@@ -102,7 +102,10 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
             }
             allMappers.remove(mapper);
 
-            if (!mapper.hasWildcard()) {
+            // include additional mappings if we're on the from side of the mapping
+            // as the mapping may not be bi-directional
+
+            if (!mapper.hasWildcard() && name.equals(mapper.getFrom())) {
                 // this is not a wildcard value, but may map to wildcards
                 // the current example is something like log-level=wildcardCat1:level,wildcardCat2:level
                 var wildCard = PropertyMappers.getWildcardMappedFrom(mapper.getOption());
@@ -116,9 +119,12 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
 
             mapper = mapper.forKey(name);
 
-            // there is a corner case here: -1 for the reload period has no 'to' value.
-            // if that becomes an issue we could use more metadata to perform a full mapping
-            return toDistinctStream(name, mapper.getTo());
+            if (name.equals(mapper.getFrom())) {
+                // there is a corner case here: -1 for the reload period has no 'to' value.
+                // if that becomes an issue we could use more metadata to perform a full mapping
+                return toDistinctStream(name, mapper.getTo());
+            }
+            return Stream.of(name);
         });
 
         // include anything remaining that has a default value
