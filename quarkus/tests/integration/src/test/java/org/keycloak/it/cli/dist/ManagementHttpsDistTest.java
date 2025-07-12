@@ -62,4 +62,25 @@ public class ManagementHttpsDistTest {
         when().get(url + "/metrics").then()
                 .statusCode(200);
     }
+
+    @Test
+    @Launch({"start-dev", "--http-management-scheme=http"})
+    public void simpleHttpStartDev(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        var url = "http://localhost:9000";
+        cliResult.assertMessage("Management interface listening on http://0.0.0.0:9000");
+
+        when().get(url).then()
+                .statusCode(200)
+                .and()
+                .body(is("Keycloak Management Interface"));
+        when().get(url + "/health").then()
+                .statusCode(200);
+        when().get(url + "/health/live").then()
+                .statusCode(200);
+        when().get(url + "/health/ready").then()
+                .statusCode(200);
+        when().get(url + "/metrics").then()
+                .statusCode(200);
+    }
 }
