@@ -1,6 +1,7 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -25,7 +26,7 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
 
     private final BiFunction<String, Set<String>, Set<String>> wildcardKeysTransformer;
     private final ValueMapper wildcardMapFrom;
-
+    private final String wildcardName;
     private final String fromPrefix;
     private String toPrefix;
     private String toSuffix;
@@ -41,6 +42,7 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
         if (!getFrom().endsWith(">")) {
             throw new IllegalArgumentException("Invalid wildcard from format. Wildcard must be at the end of the option.");
         }
+        this.wildcardName = getFrom().substring(fromPrefix.length());
 
         if (option == LoggingOptions.LOG_LEVEL_CATEGORY) {
             replacementChar = '.';
@@ -66,7 +68,11 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
         return true;
     }
 
-    String getTo(String wildcardKey) {
+    public String getWildcardName() {
+        return wildcardName;
+    }
+
+    public String getTo(String wildcardKey) {
         return toPrefix + wildcardKey + toSuffix;
     }
 
@@ -81,9 +87,31 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
         return wildcardKeysTransformer.apply(value, new HashSet<String>()).stream().map(this::getTo);
     }
 
+    /**
+     * For more details, see the {@link PropertyMappers#getConnectedWildcardMappers(String)}
+     */
+    public List<WildcardPropertyMapper<?>> getConnectedMappers() {
+        return PropertyMappers.getConnectedWildcardMappers(getWildcardName());
+    }
+
+    /**
+     * Get list of properties that are connected to the provided {@param realProperty} property based on the wildcard name.
+     * Return list of properties that all connected mappers map to (specified via the {@link PropertyMapper.Builder#to(String)}).
+     */
+    public List<String> getConnectedTo(String realProperty) {
+        var wildcardValue = extractWildcardValue(realProperty)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid wildcard value"));
+
+        // add also wildcards with the same <wildcardName> wildcard name - called connected wildcard mappers
+        return getConnectedMappers()
+                .stream()
+                .map(f -> f.getTo(wildcardValue))
+                .toList();
+    }
+
     @Override
     public PropertyMapper<?> forKey(String key) {
-        String wildcardValue = extractWildcardValue(key).orElseThrow();
+        String wildcardValue = extractWildcardValue(key).orElseThrow(() -> new IllegalArgumentException("Invalid wildcard value"));
         String to = getTo(wildcardValue);
         String from = getFrom(wildcardValue);
         String mapFrom = getMapFrom();
@@ -96,7 +124,7 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
                 wildcardMapFrom == null ? null : (name, v, context) -> wildcardMapFrom.map(wildcardValue, v, context));
     }
 
-    private Optional<String> extractWildcardValue(String key) {
+    public Optional<String> extractWildcardValue(String key) {
         String result = null;
         if (key.startsWith(fromPrefix)) {
             result = key.substring(fromPrefix.length());
