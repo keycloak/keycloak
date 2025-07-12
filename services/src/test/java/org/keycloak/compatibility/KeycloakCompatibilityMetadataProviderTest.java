@@ -1,15 +1,14 @@
 package org.keycloak.compatibility;
 
+import static org.keycloak.compatibility.KeycloakCompatibilityMetadataProvider.VERSION_KEY;
+
+import java.util.Map;
+
 import org.junit.Test;
 import org.keycloak.common.Profile;
 import org.keycloak.common.profile.ProfileConfigResolver;
 
-import java.util.Map;
-
-import static org.junit.Assert.assertEquals;
-import static org.keycloak.compatibility.KeycloakCompatibilityMetadataProvider.VERSION_KEY;
-
-public class KeycloakCompatibilityMetadataProviderTest {
+public class KeycloakCompatibilityMetadataProviderTest extends AbstractCompatibilityMetadataProviderTest {
 
     @Test
     public void testMicroVersionUpgradeWorksWithRollingUpdateV2() {
@@ -96,9 +95,5 @@ public class KeycloakCompatibilityMetadataProviderTest {
         // Test incompatible
         assertCompatibility(CompatibilityResult.ExitCode.RECREATE, compatibilityProvider.isCompatible(Map.of(VERSION_KEY, "999.999.998-Final", "key2", "different-value")));
         assertCompatibility(CompatibilityResult.ExitCode.RECREATE, compatibilityProvider.isCompatible(Map.of(VERSION_KEY, "999.999.998-Final")));
-    }
-
-    private void assertCompatibility(CompatibilityResult.ExitCode expected, CompatibilityResult actual) {
-        assertEquals("Expected compatibility result was " + expected, expected.exitCode, actual.exitCode());
     }
 }

@@ -23,8 +23,10 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.compatibility.CompatibilityResult;
+import org.keycloak.compatibility.FeatureCompatibilityMetadataProvider;
 import org.keycloak.compatibility.KeycloakCompatibilityMetadataProvider;
 import org.keycloak.infinispan.compatibility.CachingCompatibilityMetadataProvider;
 import org.keycloak.it.junit5.extension.CLIResult;
@@ -100,6 +102,8 @@ public class UpdateCommandDistTest {
                 "mode", "embedded",
                 "jgroupsVersion", org.jgroups.Version.printVersion()
         ));
+        Profile.configure();
+        info.put(FeatureCompatibilityMetadataProvider.ID, new FeatureCompatibilityMetadataProvider().metadata());
         JsonSerialization.mapper.writeValue(jsonFile, info);
 
         var result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath());
