@@ -2,6 +2,7 @@ package org.keycloak.admin.api.client;
 
 import java.util.stream.Stream;
 
+import jakarta.ws.rs.QueryParam;
 import org.keycloak.admin.api.FieldValidation;
 import org.keycloak.provider.Provider;
 import org.keycloak.representations.admin.v2.ClientRepresentation;
@@ -13,6 +14,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import org.keycloak.services.util.Projections;
 
 public interface ClientsApi extends Provider {
 
@@ -27,6 +29,6 @@ public interface ClientsApi extends Provider {
     ClientRepresentation createClient(ClientRepresentation client, @PathParam("fieldValidation") FieldValidation fieldValidation);
 
     @Path("{id}")
-    ClientApi client(@PathParam("id") String id);
+    ClientApi client(@PathParam("id") String id, @QueryParam(Projections.PARAM) Projections projections);
 }
 
