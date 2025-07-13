@@ -3,7 +3,6 @@ package org.keycloak.admin.api.client;
 import java.util.stream.Stream;
 
 import jakarta.validation.Valid;
-import jakarta.validation.groups.ConvertGroup;
 import jakarta.ws.rs.QueryParam;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
@@ -19,8 +18,8 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
-import org.keycloak.representations.admin.v2.validation.CreateClient;
 import org.keycloak.services.resources.KeycloakOpenAPI;
+import org.keycloak.services.util.Projections;
 
 @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS_V2)
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
@@ -40,6 +39,6 @@ public interface ClientsApi extends Provider {
                                       @QueryParam("fieldValidation") FieldValidation fieldValidation);
 
     @Path("{id}")
-    ClientApi client(@PathParam("id") String id);
+    ClientApi client(@PathParam("id") String id, @QueryParam(Projections.PARAM) Projections projections);
 }
 

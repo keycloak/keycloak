@@ -22,11 +22,16 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.ser.FilterProvider;
+import com.fasterxml.jackson.databind.ser.PropertyWriter;
+import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
+import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.datatype.jdk8.StreamSerializer;
 
 import jakarta.ws.rs.ext.ContextResolver;
 import jakarta.ws.rs.ext.Provider;
+
 import java.util.stream.Stream;
 
 /**
@@ -62,6 +67,12 @@ public class ObjectMapperResolver implements ContextResolver<ObjectMapper> {
             mapper.findAndRegisterModules();
         }
 
+        if (Boolean.parseBoolean(System.getProperty("keycloak.jsonEnableProjections", "true"))) {
+            // used via @JsonFilter in BaseRepresentation
+            FilterProvider filters = new SimpleFilterProvider().addFilter("projection", new FieldProjectionFilter());
+            mapper.setFilterProvider(filters);
+        }
+
         return mapper;
     }
 
@@ -73,5 +84,18 @@ public class ObjectMapperResolver implements ContextResolver<ObjectMapper> {
     private static class ObjectMapperInitializer {
 
         private static final ObjectMapper OBJECT_MAPPER = createStreamSerializer();
+    }
+
+    private static class FieldProjectionFilter extends SimpleBeanPropertyFilter {
+
+        protected boolean include(PropertyWriter writer) {
+
+            Projections projections = Projections.getCurrent();
+            if (projections == null) {
+                return super.include(writer);
+            }
+
+            return projections.contains(writer.getName());
+        }
     }
 }
