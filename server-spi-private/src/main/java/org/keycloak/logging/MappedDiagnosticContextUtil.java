@@ -5,12 +5,13 @@ import org.jboss.logging.MDC;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 
-import java.util.ArrayList;
+import java.util.List;
 
 public final class MappedDiagnosticContextUtil {
 
     private static final Logger log = Logger.getLogger(MappedDiagnosticContextUtil.class);
     private static final MappedDiagnosticContextProvider NOOP_PROVIDER = new NoopMappedDiagnosticContextProvider();
+    private static volatile List<String> keysToClear = List.of();
 
     public static MappedDiagnosticContextProvider getMappedDiagnosticContextProvider(KeycloakSession session) {
         if (!Profile.isFeatureEnabled(Profile.Feature.LOG_MDC)) {
@@ -27,16 +28,18 @@ public final class MappedDiagnosticContextUtil {
         return provider;
     }
 
+    public static void setKeysToClear(List<String> keys) {
+        // As the MDC.getMap() clones the context and is possibly expensive, we instead iterate over the list of all known keys
+        keysToClear = keys;
+    }
+
     /**
      * Clears the Mapped Diagnostic Context (MDC), but only clears the key/value pairs that were set by this provider.
      */
     public static void clearMdc() {
-        if (Profile.isFeatureEnabled(Profile.Feature.LOG_MDC)) {
-            // getMap() is relatively expensive as it actually copies the context, but just calling MDC.clear() is not an option because it might affect otel tracing.
-            for (String key : new ArrayList<>(MDC.getMap().keySet())) {
-                if (key.startsWith(MappedDiagnosticContextProvider.MDC_PREFIX)) {
-                    MDC.remove(key);
-                }
+        for (String key : keysToClear) {
+            if (key.startsWith(MappedDiagnosticContextProvider.MDC_PREFIX)) {
+                MDC.remove(key);
             }
         }
     }

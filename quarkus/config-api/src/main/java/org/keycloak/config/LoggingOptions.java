@@ -322,6 +322,7 @@ public class LoggingOptions {
     public static final Option<Boolean> LOG_MDC_ENABLED = new OptionBuilder<>("log-mdc-enabled", Boolean.class)
             .category(OptionCategory.LOGGING)
             .defaultValue(false)
+            .buildTime(true)
             .description("Indicates whether to add information about the realm and other information to the mapped diagnostic context. All elements will be prefixed with 'kc.'")
             .build();
 

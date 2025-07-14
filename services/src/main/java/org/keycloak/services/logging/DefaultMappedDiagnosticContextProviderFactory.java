@@ -5,6 +5,7 @@ import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.logging.MappedDiagnosticContextProvider;
 import org.keycloak.logging.MappedDiagnosticContextProviderFactory;
+import org.keycloak.logging.MappedDiagnosticContextUtil;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -51,6 +52,7 @@ public class DefaultMappedDiagnosticContextProviderFactory implements MappedDiag
     @Override
     public void init(Config.Scope config) {
         this.mdcKeys = Arrays.stream(Objects.requireNonNullElse(config.getArray(MDC_KEYS), new String[] {})).map(s -> MDC_PREFIX + s).collect(Collectors.toSet());
+        MappedDiagnosticContextUtil.setKeysToClear(mdcKeys.stream().toList());
     }
 
     @Override
