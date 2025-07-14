@@ -144,15 +144,23 @@ Management:
                        The path must start with a '/'. If not given, the value is inherited from
                        HTTP options. Relevant only when something is exposed on the management
                        interface - see the guide for details. Default: /.
+--http-management-scheme <scheme>
+                     Configures the management interface scheme. If 'inherited', the management
+                       interface will inherit the HTTPS settings of the main interface. If 'http',
+                       the management interface will be accessible via HTTP - it will not inherit
+                       HTTPS settings and cannot be configured for HTTPS. Possible values are:
+                       http, inherited. Default: inherited.
 --https-management-certificate-file <file>
                      The file path to a server certificate or certificate chain in PEM format for
                        the management server. If not given, the value is inherited from HTTP
                        options. Relevant only when something is exposed on the management interface
-                       - see the guide for details.
+                       - see the guide for details. Available only when http-management-scheme is
+                       inherited.
 --https-management-certificate-key-file <file>
                      The file path to a private key in PEM format for the management server. If not
                        given, the value is inherited from HTTP options. Relevant only when
-                       something is exposed on the management interface - see the guide for details.
+                       something is exposed on the management interface - see the guide for
+                       details. Available only when http-management-scheme is inherited.
 --https-management-certificates-reload-period <reload period>
                      Interval on which to reload key store, trust store, and certificate files
                        referenced by https-management-* options for the management server. May be a
@@ -160,7 +168,8 @@ Management:
                        followed by one of [ms, h, m, s, d]. Must be greater than 30 seconds. Use -1
                        to disable. If not given, the value is inherited from HTTP options. Relevant
                        only when something is exposed on the management interface - see the guide
-                       for details. Default: 1h.
+                       for details. Default: 1h. Available only when http-management-scheme is
+                       inherited.
 --https-management-client-auth <auth>
                      Configures the management interface to require/request client authentication.
                        If not given, the value is inherited from HTTP options. Relevant only when
@@ -170,12 +179,13 @@ Management:
                      The key store which holds the certificate information instead of specifying
                        separate files for the management server. If not given, the value is
                        inherited from HTTP options. Relevant only when something is exposed on the
-                       management interface - see the guide for details.
+                       management interface - see the guide for details. Available only when
+                       http-management-scheme is inherited.
 --https-management-key-store-password <password>
                      The password of the key store file for the management server. If not given,
                        the value is inherited from HTTP options. Relevant only when something is
                        exposed on the management interface - see the guide for details. Default:
-                       password.
+                       password. Available only when http-management-scheme is inherited.
 --legacy-observability-interface <true|false>
                      DEPRECATED. If metrics/health endpoints should be exposed on the main HTTP
                        server (not recommended). If set to true, the management interface is
