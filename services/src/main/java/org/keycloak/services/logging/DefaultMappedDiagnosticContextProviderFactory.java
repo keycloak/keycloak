@@ -52,7 +52,7 @@ public class DefaultMappedDiagnosticContextProviderFactory implements MappedDiag
     @Override
     public void init(Config.Scope config) {
         this.mdcKeys = Arrays.stream(Objects.requireNonNullElse(config.getArray(MDC_KEYS), new String[] {})).map(s -> MDC_PREFIX + s).collect(Collectors.toSet());
-        MappedDiagnosticContextUtil.setKeysToClear(mdcKeys.stream().toList());
+        MappedDiagnosticContextUtil.setKeysToClear(mdcKeys);
     }
 
     @Override

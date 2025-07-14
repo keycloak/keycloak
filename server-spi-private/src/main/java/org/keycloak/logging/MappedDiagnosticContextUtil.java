@@ -5,13 +5,14 @@ import org.jboss.logging.MDC;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 
-import java.util.List;
+import java.util.Collection;
+import java.util.Collections;
 
 public final class MappedDiagnosticContextUtil {
 
     private static final Logger log = Logger.getLogger(MappedDiagnosticContextUtil.class);
     private static final MappedDiagnosticContextProvider NOOP_PROVIDER = new NoopMappedDiagnosticContextProvider();
-    private static volatile List<String> keysToClear = List.of();
+    private static volatile Collection<String> keysToClear = Collections.emptySet();
 
     public static MappedDiagnosticContextProvider getMappedDiagnosticContextProvider(KeycloakSession session) {
         if (!Profile.isFeatureEnabled(Profile.Feature.LOG_MDC)) {
@@ -28,7 +29,7 @@ public final class MappedDiagnosticContextUtil {
         return provider;
     }
 
-    public static void setKeysToClear(List<String> keys) {
+    public static void setKeysToClear(Collection<String> keys) {
         // As the MDC.getMap() clones the context and is possibly expensive, we instead iterate over the list of all known keys
         keysToClear = keys;
     }
@@ -38,9 +39,7 @@ public final class MappedDiagnosticContextUtil {
      */
     public static void clearMdc() {
         for (String key : keysToClear) {
-            if (key.startsWith(MappedDiagnosticContextProvider.MDC_PREFIX)) {
-                MDC.remove(key);
-            }
+            MDC.remove(key);
         }
     }
 }
