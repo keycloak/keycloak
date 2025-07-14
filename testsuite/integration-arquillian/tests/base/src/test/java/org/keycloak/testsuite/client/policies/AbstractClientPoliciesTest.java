@@ -107,8 +107,10 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
@@ -483,6 +485,11 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
    // Signed JWT for client authentication utility
 
+    protected void allowMultipleAudiencesForClientJWTOnServer(boolean allowMultipleAudiences) {
+        getTestingClient().testing().setSystemPropertyOnServer("oidc." + OIDCLoginProtocolFactory.CONFIG_OIDC_ALLOW_MULTIPLE_AUDIENCES_FOR_JWT_CLIENT_AUTHENTICATION, String.valueOf(allowMultipleAudiences));
+        getTestingClient().testing().reinitializeProviderFactoryWithSystemPropertiesScope(LoginProtocol.class.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL, "oidc.");
+    }
+
     protected String createSignedRequestToken(String clientId, PrivateKey privateKey, PublicKey publicKey, String algorithm) {
         JsonWebToken jwt = createRequestToken(clientId, getRealmInfoUrl());
         String kid = KeyUtils.createKeyId(publicKey);
@@ -495,12 +502,26 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         return KeycloakUriBuilder.fromUri(authServerBaseUrl).path(ServiceUrlConstants.REALM_INFO_PATH).build(REALM_NAME).toString();
     }
 
-    private JsonWebToken createRequestToken(String clientId, String realmInfoUrl) {
+    protected JsonWebToken createRequestToken(String clientId, String realmInfoUrl) {
         JsonWebToken reqToken = new JsonWebToken();
+        if (realmInfoUrl != null && !realmInfoUrl.isEmpty()) {
+            reqToken.audience(realmInfoUrl);
+        }
+        return createRequestToken(reqToken, clientId);
+    }
+
+    protected JsonWebToken createRequestToken(String clientId, String[] audienceUrls) {
+        JsonWebToken reqToken = new JsonWebToken();
+        if (audienceUrls != null && audienceUrls.length > 0) {
+            reqToken.audience(audienceUrls);
+        }
+        return createRequestToken(reqToken, clientId);
+    }
+
+    private JsonWebToken createRequestToken(JsonWebToken reqToken, String clientId) {
         reqToken.id(KeycloakModelUtils.generateId());
         reqToken.issuer(clientId);
         reqToken.subject(clientId);
-        reqToken.audience(realmInfoUrl);
 
         int now = Time.currentTime();
         reqToken.iat((long) now);
