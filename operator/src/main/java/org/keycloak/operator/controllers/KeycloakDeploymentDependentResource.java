@@ -327,12 +327,8 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         if (!specBuilder.hasDnsPolicy()) {
             specBuilder.withDnsPolicy("ClusterFirst");
         }
-        if (Boolean.TRUE.equals(keycloakCR.getSpec().getAutomountServiceAccountToken()) || keycloakCR.getSpec().getAutomountServiceAccountToken() == null) {
-            specBuilder.withAutomountServiceAccountToken(true);
-
-        } else if (Boolean.FALSE.equals(keycloakCR.getSpec().getAutomountServiceAccountToken())) {
-            specBuilder.withAutomountServiceAccountToken(false);
-        }
+        boolean automount = !Boolean.FALSE.equals(keycloakCR.getSpec().getAutomountServiceAccountToken());
+        specBuilder.withAutomountServiceAccountToken(automount);
         handleScheduling(keycloakCR, schedulingLabels, specBuilder);
 
         // there isn't currently an editOrNewFirstContainer, so we need to do this manually
