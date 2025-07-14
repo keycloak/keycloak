@@ -465,14 +465,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         LinkedHashMap<String, EnvVar> varMap = Stream.concat(Stream.concat(unsupportedEnv.stream(), firstClasssEnvVars.stream()), Stream.concat(additionalEnvVars.stream(), env))
                 .collect(Collectors.toMap(EnvVar::getName, Function.identity(), (e1, e2) -> e1, LinkedHashMap::new));
 
-        String truststores = SERVICE_ACCOUNT_DIR;
-        if (baseDeployment.getSpec().getTemplate().getSpec().getAutomountServiceAccountToken()) {
-            truststores += "ca.crt";
-        }
 
-        if (useServiceCaCrt) {
-            truststores += "," + SERVICE_CA_CRT;
-        }
         if (!Boolean.FALSE.equals(keycloakCR.getSpec().getAutomountServiceAccountToken())) {
             String truststores = SERVICE_ACCOUNT_DIR + "ca.crt";
 
