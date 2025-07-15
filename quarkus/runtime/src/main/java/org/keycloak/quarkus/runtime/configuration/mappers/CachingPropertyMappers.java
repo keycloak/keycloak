@@ -202,7 +202,7 @@ final class CachingPropertyMappers {
 
         return homeDir == null ?
                 value :
-                homeDir + File.separator + "conf" + File.separator + value;
+                homeDir + (homeDir.endsWith(File.separator) ? "" : File.separator) + "conf" + File.separator + value;
     }
 
     private static String getDefaultKeystorePathValue() {

@@ -45,7 +45,7 @@ import org.keycloak.storage.configuration.ServerConfigStorageProvider;
 public class DefaultJGroupsCertificateProviderFactory implements JGroupsCertificateProviderFactory {
 
     // config
-    private static final String ENABLED = "enabled";
+    public static final String ENABLED = "enabled";
     private static final String ROTATION = "rotation";
     private static final String KEYSTORE_PATH = "keystoreFile";
     private static final String KEYSTORE_PASSWORD = "keystorePassword";

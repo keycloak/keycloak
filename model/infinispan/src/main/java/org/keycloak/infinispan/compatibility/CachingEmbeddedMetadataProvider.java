@@ -1,0 +1,32 @@
+package org.keycloak.infinispan.compatibility;
+
+import java.util.Map;
+import java.util.stream.Stream;
+
+import org.infinispan.commons.util.Version;
+import org.keycloak.common.util.MultiSiteUtils;
+import org.keycloak.compatibility.AbstractCompatibilityMetadataProvider;
+import org.keycloak.infinispan.util.InfinispanUtils;
+import org.keycloak.spi.infinispan.CacheEmbeddedConfigProviderSpi;
+import org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory;
+
+public class CachingEmbeddedMetadataProvider extends AbstractCompatibilityMetadataProvider {
+
+    public CachingEmbeddedMetadataProvider() {
+        super(CacheEmbeddedConfigProviderSpi.SPI_NAME, InfinispanUtils.isEmbeddedInfinispan());
+    }
+
+    @Override
+    public Map<String, String> meta() {
+        return Map.of(
+              "persistence", Boolean.toString(MultiSiteUtils.isPersistentSessionsEnabled()),
+              "version", Version.getVersion(),
+              "jgroupsVersion", org.jgroups.Version.printVersion()
+        );
+    }
+
+    @Override
+    public Stream<String> configKeys() {
+        return Stream.of(DefaultCacheEmbeddedConfigProviderFactory.CONFIG, DefaultCacheEmbeddedConfigProviderFactory.STACK);
+    }
+}
