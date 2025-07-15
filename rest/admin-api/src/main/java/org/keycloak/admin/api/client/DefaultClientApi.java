@@ -16,8 +16,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 
+import io.fabric8.zjsonpatch.JsonPatch;
+import io.fabric8.zjsonpatch.JsonPatchException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 public class DefaultClientApi implements ClientApi {
@@ -59,9 +63,19 @@ public class DefaultClientApi implements ClientApi {
         // patches don't yet allow for creating
         ClientRepresentation client = getClient();
         try {
+            String contentType = session.getContext().getHttpRequest().getHttpHeaders().getHeaderString(HttpHeaders.CONTENT_TYPE);
+
+            ClientRepresentation updated = null;
+
             // TODO: there should be a more centralized objectmapper
-            final ObjectReader objectReader = new ObjectMapper().readerForUpdating(client);
-            ClientRepresentation updated = objectReader.readValue(patch);
+            ObjectMapper objectMapper = new ObjectMapper();
+            if (MediaType.valueOf(contentType).getSubtype().equals(MediaType.APPLICATION_JSON_PATCH_JSON_TYPE.getSubtype())) {
+                JsonNode patchedNode = JsonPatch.apply(patch, objectMapper.convertValue(client, JsonNode.class));
+                updated = objectMapper.convertValue(patchedNode, ClientRepresentation.class);
+            } else { // must be merge patch
+                final ObjectReader objectReader = objectMapper.readerForUpdating(client);
+                updated = objectReader.readValue(patch);
+            }
 
             // TODO: reuse in the other methods
             if (!updated.getAdditionalFields().isEmpty()) {
@@ -73,8 +87,10 @@ public class DefaultClientApi implements ClientApi {
                 }
             }
             return clientService.createOrUpdate(realm, updated, true).representation();
-        } catch (JsonProcessingException e) {
+        } catch (JsonPatchException e) {
             // TODO: kubernetes uses 422 instead
+            throw new WebApplicationException(e.getMessage(), Response.Status.BAD_REQUEST);
+        } catch (JsonProcessingException e) {
             throw new WebApplicationException(e.getMessage(), Response.Status.BAD_REQUEST);
         } catch (IOException e) {
             throw ErrorResponse.error("Unknown Error Occurred", Response.Status.INTERNAL_SERVER_ERROR);
