@@ -34,6 +34,9 @@ public class StringPropertyReplacerTest {
     public void testSystemProperties() throws NoSuchAlgorithmException {
         System.setProperty("prop1", "val1");
         Assert.assertEquals("foo-val1", replaceProperties("foo-${prop1}"));
+        // non-matching scenarios
+        Assert.assertEquals("foo-${prop1", replaceProperties("foo-${prop1"));
+        Assert.assertEquals("foo-$prop1${", replaceProperties("foo-$prop1${"));
 
         Assert.assertEquals("foo-def", replaceProperties("foo-${prop2:def}"));
         System.setProperty("prop2", "val2");
