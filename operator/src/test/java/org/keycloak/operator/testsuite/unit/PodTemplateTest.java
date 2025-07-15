@@ -389,6 +389,19 @@ public class PodTemplateTest {
     }
 
     @Test
+    public void testHttpManagment() {
+        var result = getDeployment(null, new StatefulSet(),
+                spec -> spec.withAdditionalOptions(new ValueOrSecret("http-management-scheme", "http")))
+                .getSpec()
+                .getTemplate()
+                .getSpec()
+                .getContainers()
+                .get(0);
+
+        assertEquals("HTTP", result.getReadinessProbe().getHttpGet().getScheme());
+    }
+
+    @Test
     public void testRelativePathHealthProbes() {
         final Function<String, Container> setUpRelativePath = (path) -> getDeployment(null, new StatefulSet(),
                 spec -> spec.withAdditionalOptions(new ValueOrSecret("http-management-relative-path", path)))
