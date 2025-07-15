@@ -15,5 +15,4 @@
 # limitations under the License.
 #
 
-org.keycloak.testsuite.domainextension.spi.ExampleSpi
-org.keycloak.testsuite.components.amphibian.TestAmphibianSpi
+org.keycloak.testsuite.components.TestComponentImplProviderFactory
