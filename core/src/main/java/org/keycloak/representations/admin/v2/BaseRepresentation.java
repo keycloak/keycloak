@@ -5,9 +5,11 @@ import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+@JsonFilter("projection")
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 public class BaseRepresentation {
 

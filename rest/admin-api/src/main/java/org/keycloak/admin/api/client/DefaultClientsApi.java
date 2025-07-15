@@ -2,6 +2,7 @@ package org.keycloak.admin.api.client;
 
 import java.util.stream.Stream;
 
+import jakarta.ws.rs.QueryParam;
 import org.keycloak.admin.api.FieldValidation;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.models.KeycloakSession;
@@ -14,6 +15,7 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
+import org.keycloak.services.util.Projections;
 
 public class DefaultClientsApi implements ClientsApi {
     private final KeycloakSession session;
@@ -45,7 +47,7 @@ public class DefaultClientsApi implements ClientsApi {
     }
 
     @Override
-    public ClientApi client(@PathParam("id") String clientId) {
+    public ClientApi client(@PathParam("id") String clientId, @QueryParam("fields") Projections projections) {
         return new DefaultClientApi(session, clientId);
     }
 
