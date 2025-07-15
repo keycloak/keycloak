@@ -86,7 +86,17 @@ public final class ShowConfig extends AbstractCommand {
             }
 
             if (mapper != null) {
-                property = mapper.forKey(property).getFrom();
+                String from = mapper.forKey(property).getFrom();
+
+                // only report from when it exists
+                if (!property.equals(from)) {
+                    ConfigValue value = getConfigValue(from);
+                    if (value.getValue() != null) {
+                        return;
+                    }
+                    configValue = value;
+                    property = from;
+                }
             }
 
             if (!uniqueNames.add(property)) {
@@ -115,11 +125,7 @@ public final class ShowConfig extends AbstractCommand {
 
     private void printProperty(String property, PropertyMapper<?> mapper, ConfigValue configValue) {
         String sourceName = configValue.getConfigSourceName();
-        String value = configValue.getRawValue();
-
-        if (value == null) {
-            value = configValue.getValue();
-        }
+        String value = configValue.getValue();
 
         value = maskValue(value, sourceName, mapper);
 

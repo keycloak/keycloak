@@ -35,6 +35,7 @@ import java.util.stream.Stream;
 import org.keycloak.config.DeprecatedMetadata;
 import org.keycloak.config.Option;
 import org.keycloak.config.OptionCategory;
+import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.ShortErrorMessageHandler;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
@@ -278,6 +279,10 @@ public class PropertyMapper<T> {
 
         if (!mapped && name.equals(configValue.getName())) {
             return configValue;
+        }
+
+        if (!isBuildTime() && Environment.isRebuild()) {
+            value = null; // prevent quarkus from recording these raw values as runtime defaults
         }
 
         // by unsetting the ordinal this will not be seen as directly modified by the user
