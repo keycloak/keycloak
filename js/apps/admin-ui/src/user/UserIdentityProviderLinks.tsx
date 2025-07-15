@@ -13,12 +13,12 @@ import {
 } from "@patternfly/react-core";
 import { cellWidth } from "@patternfly/react-table";
 import { capitalize } from "lodash-es";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { FormPanel } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../admin-client";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
+import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../context/realm-context/RealmContext";
@@ -51,24 +51,20 @@ export const UserIdentityProviderLinks = ({
     "view-identity-providers",
   );
 
-  useEffect(() => {
-    refresh();
-  }, []);
+  useFetch(
+    () => adminClient.users.listFederatedIdentities({ id: userId }),
+    (linkedIdentities) => {
+      setLinkedNames(
+        linkedIdentities.map((identity) => identity.identityProvider!),
+      );
+      setIsLoading(false);
+    },
+    [userId, key],
+  );
 
   const refresh = () => {
     setKey(new Date().getTime());
     setIsLoading(true);
-    // Re-fetch linked names
-    adminClient.users
-      .listFederatedIdentities({ id: userId })
-      .then((linkedIdentities) => {
-        setLinkedNames(linkedIdentities.map((x) => x.identityProvider!));
-        setIsLoading(false);
-      })
-      .catch((error) => {
-        addError("Failed to load linked identities", error);
-        setIsLoading(false);
-      });
   };
 
   type WithProviderId = FederatedIdentityRepresentation & {
