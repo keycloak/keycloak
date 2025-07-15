@@ -36,5 +36,9 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-services</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>zjsonpatch</artifactId>
+        </dependency>
     </dependencies>
 </project>
