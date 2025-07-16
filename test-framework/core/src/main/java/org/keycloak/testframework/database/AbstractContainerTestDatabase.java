@@ -15,12 +15,14 @@ public abstract class AbstractContainerTestDatabase implements TestDatabase {
     protected boolean reuse;
 
     protected JdbcDatabaseContainer<?> container;
+    protected DatabaseConfig config;
 
     public AbstractContainerTestDatabase() {
         reuse = Config.getValueTypeConfig(TestDatabase.class, "reuse", false, Boolean.class);
     }
 
     public void start(DatabaseConfig config) {
+        this.config = config;
         container = createContainer();
         container = container.withStartupTimeout(Duration.ofMinutes(10))
                 .withLogConsumer(new JBossLogConsumer(Logger.getLogger("managed.db." + getDatabaseVendor())))
@@ -74,7 +76,7 @@ public abstract class AbstractContainerTestDatabase implements TestDatabase {
     }
 
     public String getDatabase() {
-        return "keycloak";
+;        return config.database() == null ? "keycloak" : config.database();
     }
 
     public String getUsername() {

@@ -1,4 +1,4 @@
 package org.keycloak.testframework.database;
 
-public record DatabaseConfig(String initScript) {
+public record DatabaseConfig(String initScript, String database) {
 }

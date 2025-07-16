@@ -6,13 +6,11 @@ import org.testcontainers.containers.MSSQLServerContainer;
 
 import java.util.List;
 
-public class MSSQLServerTestDatabase extends AbstractContainerTestDatabase {
+class MSSQLServerTestDatabase extends AbstractContainerTestDatabase {
 
     private static final Logger LOGGER = Logger.getLogger(MSSQLServerTestDatabase.class);
 
     public static final String NAME = "mssql";
-
-    MSSQLServerTestDatabase() {}
 
     @SuppressWarnings("resource")
     @Override

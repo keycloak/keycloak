@@ -2,6 +2,7 @@ package org.keycloak.testframework.database;
 
 public class DatabaseConfigBuilder {
     private String initScript;
+    private String database;
 
     private DatabaseConfigBuilder() {}
 
@@ -14,7 +15,12 @@ public class DatabaseConfigBuilder {
         return this;
     }
 
+    public DatabaseConfigBuilder withDatabase(String database) {
+        this.database = database;
+        return this;
+    }
+
     public DatabaseConfig build() {
-        return new DatabaseConfig(initScript);
+        return new DatabaseConfig(initScript, database);
     }
 }
