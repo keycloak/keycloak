@@ -4,6 +4,6 @@ import org.junit.platform.suite.api.SelectPackages;
 import org.junit.platform.suite.api.Suite;
 
 @Suite
-@SelectPackages({"org.keycloak.tests.admin", "org.keycloak.tests.db"})
+@SelectPackages({"org.keycloak.tests.db", "org.keycloak.tests.admin"})
 public class DatabaseTestSuite {
 }
