@@ -25,8 +25,7 @@
         <properties>
             <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect" />
             <!-- Sets the name of the datasource to be the same as the datasource name in quarkus.properties-->
-            <property name="hibernate.connection.datasource" value="user-store" />
-            <property name="jakarta.persistence.transactionType" value="JTA" />
+            <property name="jakarta.persistence.jtaDataSource" value="user-store" />
             <property name="hibernate.hbm2ddl.auto" value="update" />
             <property name="hibernate.show_sql" value="false" />
         </properties>
