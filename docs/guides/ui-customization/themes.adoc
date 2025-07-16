@@ -36,7 +36,7 @@ NOTE: To set the theme for the `master` Admin Console you need to set the Admin 
 +
 . To see the changes to the Admin Console refresh the page.
 
-. Change the welcome theme by using the `spi-theme--welcome-theme` option.
+. Change the welcome theme by using the `+spi-theme--welcome-theme+` option.
 
 . For example:
 +

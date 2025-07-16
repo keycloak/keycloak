@@ -129,7 +129,7 @@ To resolve this ambiguity, and any potential ambiguity involving SPI and provide
 
 An SPI property ending in `-enabled`, `-provider-default`, or `-provider` should use the new format or else a warning will be emitted. For example `spi-<spi-name>--<provider-name>--enabled` will be recognized as a build-time option without a warning.
 
-For instance, the correct way to reference your custom email template is: `--spi-email-template--mycustomprovider--enabled` (not `--spi-email-template-mycustomprovider-enabled`).
+For instance, the correct way to reference your custom email template is: `+--spi-email-template--mycustomprovider--enabled+` (not `+--spi-email-template-mycustomprovider-enabled+`).
 
 Options using the legacy format and ending in `-enabled`, `-provider-default`, or `-provider` will still be treated as a build-time option, but may not be in future releases.
 
