@@ -15,14 +15,17 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.admin.concurrency;
+package org.keycloak.tests.admin.concurrency;
 
+import org.jboss.logging.Logger;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.utils.tls.TLSUtils;
+import org.keycloak.testframework.admin.AdminClientFactory;
+import org.keycloak.testframework.annotations.InjectAdminClientFactory;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.config.Config;
+import org.keycloak.testframework.realm.ManagedRealm;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -37,35 +40,32 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@Deprecated(forRemoval = true)
-public abstract class AbstractConcurrencyTest extends AbstractTestRealmKeycloakTest {
+public abstract class AbstractConcurrencyTest {
+
+    @InjectRealm
+    ManagedRealm managedRealm;
+
+    @InjectAdminClientFactory
+    static AdminClientFactory clientFactory;
+
+    private static final Logger LOGGER = Logger.getLogger(AbstractConcurrencyTest.class);
 
     private static final int DEFAULT_THREADS = 4;
-    private static final int DEFAULT_NUMBER_OF_EXECUTIONS = 20 * DEFAULT_THREADS;
 
-    public static final String REALM_NAME = "test";
+    public static final String REALM_NAME = "default";
+    public static final String MASTER_REALM_NAME = "master";
 
     // If enabled only one request is allowed at the time. Useful for checking that test is working.
     private static final boolean SYNCHRONIZED = false;
 
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-    }
-
     protected void run(final KeycloakRunnable... runnables) {
-        run(DEFAULT_THREADS, DEFAULT_NUMBER_OF_EXECUTIONS, runnables);
+        run(DEFAULT_THREADS, runnables);
     }
 
-    protected void run(final int numThreads, final int totalNumberOfExecutions, final KeycloakRunnable... runnables) {
-        run(numThreads, totalNumberOfExecutions, this, runnables);
-    }
-
-
-    public static void run(final int numThreads, final int totalNumberOfExecutions, AbstractKeycloakTest testImpl, final KeycloakRunnable... runnables) {
+    public static void run(final int numThreads, final KeycloakRunnable... runnables) {
         final ExecutorService service = SYNCHRONIZED
                 ? Executors.newSingleThreadExecutor()
                 : Executors.newFixedThreadPool(numThreads);
@@ -73,7 +73,11 @@ public abstract class AbstractConcurrencyTest extends AbstractTestRealmKeycloakT
         ThreadLocal<Keycloak> keycloaks = new ThreadLocal<Keycloak>() {
             @Override
             protected Keycloak initialValue() {
-                return Keycloak.getInstance(testImpl.getAuthServerRoot().toString(), "master", "admin", "admin", org.keycloak.models.Constants.ADMIN_CLI_CLIENT_ID, TLSUtils.initializeTLS());
+                return clientFactory.create().realm(MASTER_REALM_NAME)
+                        .clientId(Config.getAdminClientId())
+                        .clientSecret(Config.getAdminClientSecret())
+                        .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
+                        .build();
             }
         };
 
@@ -99,9 +103,8 @@ public abstract class AbstractConcurrencyTest extends AbstractTestRealmKeycloakT
                 return null;
             });
         }
-        for (int i = 0; i < totalNumberOfExecutions; i ++) {
-            runnablesToTasks.forEach(tasks::add);
-        }
+
+        tasks.addAll(runnablesToTasks);
 
         try {
             service.invokeAll(tasks);
@@ -122,7 +125,7 @@ public abstract class AbstractConcurrencyTest extends AbstractTestRealmKeycloakT
         if (! failures.isEmpty()) {
             RuntimeException ex = new RuntimeException("There were failures in threads. Failures count: " + failures.size());
             failures.forEach(ex::addSuppressed);
-            failures.forEach(e -> testImpl.getLogger().error(e.getMessage(), e));
+            failures.forEach(e -> LOGGER.error(e.getMessage(), e));
             throw ex;
         }
     }

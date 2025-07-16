@@ -129,6 +129,10 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
     protected CloseableHttpClient httpClient;
     protected ClientRepresentation client;
 
+    protected boolean shouldEnableOid4vci() {
+        return true;
+    }
+
     protected static String prepareSessionCode(KeycloakSession session, AppAuthManager.BearerTokenAuthenticator authenticator, String note) {
         AuthenticationManager.AuthResult authResult = authenticator.authenticate();
         UserSessionModel userSessionModel = authResult.getSession();
@@ -212,6 +216,9 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         assignOptionalClientScopeToClient(sdJwtTypeCredentialClientScope.getId(), client.getClientId());
         assignOptionalClientScopeToClient(jwtTypeCredentialClientScope.getId(), client.getClientId());
         assignOptionalClientScopeToClient(minimalJwtTypeCredentialClientScope.getId(), client.getClientId());
+
+        // Enable OID4VCI for the client by default, but allow tests to override
+        setClientOid4vciEnabled(clientId, shouldEnableOid4vci());
     }
 
     protected String getBearerToken(OAuthClient oAuthClient) {
@@ -301,8 +308,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         if (protocolMapperReferenceFile == null) {
             protocolMappers = getProtocolMappers(scopeName);
             addProtocolMappersToClientScope(clientScope, protocolMappers);
-        }
-        else {
+        } else {
             protocolMappers = resolveProtocolMappers(protocolMapperReferenceFile);
             protocolMappers.add(getStaticClaimMapper(scopeName));
             addProtocolMappersToClientScope(clientScope, protocolMappers);
@@ -381,6 +387,17 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         jwe.verifyAndDecodeJwe();
         byte[] decryptedContent = jwe.getContent();
         return JsonSerialization.readValue(decryptedContent, CredentialResponse.class);
+    }
+
+    void setClientOid4vciEnabled(String clientId, boolean enabled) {
+        ClientRepresentation clientRepresentation = adminClient.realm(TEST_REALM_NAME).clients().findByClientId(clientId).get(0);
+        ClientResource clientResource = adminClient.realm(TEST_REALM_NAME).clients().get(clientRepresentation.getId());
+
+        Map<String, String> attributes = new HashMap<>(clientRepresentation.getAttributes() != null ? clientRepresentation.getAttributes() : Map.of());
+        attributes.put("oid4vci.enabled", String.valueOf(enabled));
+        clientRepresentation.setAttributes(attributes);
+
+        clientResource.update(clientRepresentation);
     }
 
     // Tests the AuthZCode complete flow without scope from
@@ -524,8 +541,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                         return mergedRoles;
                     }
             );
-        }
-        else {
+        } else {
             testRealm.getRoles()
                     .setClient(Map.of(existingClient.getClientId(),
                             List.of(getRoleRepresentation("testRole", existingClient.getClientId()))));
