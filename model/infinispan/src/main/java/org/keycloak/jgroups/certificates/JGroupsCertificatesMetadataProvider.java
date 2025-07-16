@@ -9,7 +9,7 @@ import org.keycloak.spi.infinispan.JGroupsCertificateProviderSpi;
 public class JGroupsCertificatesMetadataProvider extends AbstractCompatibilityMetadataProvider {
 
     public JGroupsCertificatesMetadataProvider() {
-        super(JGroupsCertificateProviderSpi.SPI_NAME, InfinispanUtils.isEmbeddedInfinispan());
+        super(JGroupsCertificateProviderSpi.SPI_NAME, DefaultJGroupsCertificateProviderFactory.PROVIDER_ID, InfinispanUtils.isEmbeddedInfinispan());
     }
 
     @Override

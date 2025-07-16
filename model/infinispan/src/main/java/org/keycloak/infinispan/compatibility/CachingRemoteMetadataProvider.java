@@ -12,7 +12,7 @@ import org.keycloak.spi.infinispan.impl.remote.DefaultCacheRemoteConfigProviderF
 public class CachingRemoteMetadataProvider extends AbstractCompatibilityMetadataProvider {
 
     public CachingRemoteMetadataProvider() {
-        super(CacheRemoteConfigProviderSpi.SPI_NAME, InfinispanUtils.isRemoteInfinispan());
+        super(CacheRemoteConfigProviderSpi.SPI_NAME, DefaultCacheRemoteConfigProviderFactory.PROVIDER_ID, InfinispanUtils.isRemoteInfinispan());
     }
 
     @Override

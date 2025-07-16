@@ -13,10 +13,10 @@ public abstract class AbstractCompatibilityMetadataProvider implements Compatibi
     final boolean enabled;
     final Config.Scope config;
 
-    public AbstractCompatibilityMetadataProvider(String spi, boolean enabled) {
+    public AbstractCompatibilityMetadataProvider(String spi, String providerId, boolean enabled) {
         this.spi = spi;
         this.enabled = enabled;
-        this.config = enabled ? Config.scope(spi, "default") : null;
+        this.config = enabled ? Config.scope(spi, providerId) : null;
     }
 
     @Override

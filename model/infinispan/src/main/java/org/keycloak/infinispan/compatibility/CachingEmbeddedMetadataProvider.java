@@ -7,13 +7,14 @@ import org.infinispan.commons.util.Version;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.compatibility.AbstractCompatibilityMetadataProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
+import org.keycloak.spi.infinispan.CacheEmbeddedConfigProviderFactory;
 import org.keycloak.spi.infinispan.CacheEmbeddedConfigProviderSpi;
 import org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory;
 
 public class CachingEmbeddedMetadataProvider extends AbstractCompatibilityMetadataProvider {
 
     public CachingEmbeddedMetadataProvider() {
-        super(CacheEmbeddedConfigProviderSpi.SPI_NAME, InfinispanUtils.isEmbeddedInfinispan());
+        super(CacheEmbeddedConfigProviderSpi.SPI_NAME, DefaultCacheEmbeddedConfigProviderFactory.PROVIDER_ID, InfinispanUtils.isEmbeddedInfinispan());
     }
 
     @Override
