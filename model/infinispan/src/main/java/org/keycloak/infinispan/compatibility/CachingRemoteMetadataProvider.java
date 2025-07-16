@@ -3,6 +3,7 @@ package org.keycloak.infinispan.compatibility;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import org.keycloak.Config;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.compatibility.AbstractCompatibilityMetadataProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
@@ -12,7 +13,12 @@ import org.keycloak.spi.infinispan.impl.remote.DefaultCacheRemoteConfigProviderF
 public class CachingRemoteMetadataProvider extends AbstractCompatibilityMetadataProvider {
 
     public CachingRemoteMetadataProvider() {
-        super(CacheRemoteConfigProviderSpi.SPI_NAME, DefaultCacheRemoteConfigProviderFactory.PROVIDER_ID, InfinispanUtils.isRemoteInfinispan());
+        super(CacheRemoteConfigProviderSpi.SPI_NAME, DefaultCacheRemoteConfigProviderFactory.PROVIDER_ID);
+    }
+
+    @Override
+    protected boolean isEnabled(Config.Scope scope) {
+        return InfinispanUtils.isRemoteInfinispan();
     }
 
     @Override

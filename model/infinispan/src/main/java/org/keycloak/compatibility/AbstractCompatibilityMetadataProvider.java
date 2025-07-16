@@ -10,18 +10,18 @@ import org.keycloak.Config;
 public abstract class AbstractCompatibilityMetadataProvider implements CompatibilityMetadataProvider {
 
     final String spi;
-    final boolean enabled;
     final Config.Scope config;
 
-    public AbstractCompatibilityMetadataProvider(String spi, String providerId, boolean enabled) {
+    public AbstractCompatibilityMetadataProvider(String spi, String providerId) {
         this.spi = spi;
-        this.enabled = enabled;
-        this.config = enabled ? Config.scope(spi, providerId) : null;
+        this.config = Config.scope(spi, providerId);
     }
+
+    abstract protected boolean isEnabled(Config.Scope scope);
 
     @Override
     public Map<String, String> metadata() {
-        if (!enabled)
+        if (!isEnabled(config))
             return Map.of();
 
         Map<String, String> metadata = new HashMap<>(meta());
