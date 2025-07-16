@@ -38,10 +38,11 @@ import org.keycloak.urls.UrlType;
 import org.keycloak.wellknown.WellKnownProvider;
 import org.jboss.logging.Logger;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static org.keycloak.crypto.KeyType.RSA;
 
 /**
  * {@link WellKnownProvider} implementation to provide the .well-known/openid-credential-issuer endpoint, offering
@@ -58,7 +59,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
 
     protected final KeycloakSession keycloakSession;
 
-    private static final String ATTR_ENCRYPTION_REQUIRED = "oid4vci.encryption.required";
+    public static final String ATTR_ENCRYPTION_REQUIRED = "oid4vci.encryption.required";
 
     public OID4VCIssuerWellKnownProvider(KeycloakSession keycloakSession) {
         this.keycloakSession = keycloakSession;
@@ -130,7 +131,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
     /**
      * Returns the supported encryption algorithms from realm attributes.
      */
-    private static List<String> getSupportedEncryptionAlgorithms(KeycloakSession session) {
+    public static List<String> getSupportedEncryptionAlgorithms(KeycloakSession session) {
         RealmModel realm = session.getContext().getRealm();
         KeyManager keyManager = session.keys();
 
@@ -138,13 +139,18 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                 .filter(key -> KeyUse.ENC.equals(key.getUse()))
                 .map(KeyWrapper::getAlgorithm)
                 .filter(algorithm -> algorithm != null && !algorithm.isEmpty())
-                .filter(algorithm -> Arrays.asList(JWEConstants.RSA_OAEP, JWEConstants.RSA_OAEP_256).contains(algorithm))
                 .distinct()
                 .collect(Collectors.toList());
 
         if (supportedEncryptionAlgorithms.isEmpty()) {
-            supportedEncryptionAlgorithms.add(JWEConstants.RSA_OAEP);
-            supportedEncryptionAlgorithms.add(JWEConstants.RSA_OAEP_256);
+            boolean hasRsaKeys = keyManager.getKeysStream(realm)
+                    .filter(key -> KeyUse.ENC.equals(key.getUse()))
+                    .anyMatch(key -> RSA.equals(key.getType()));
+
+            if (hasRsaKeys) {
+                supportedEncryptionAlgorithms.add(JWEConstants.RSA_OAEP);
+                supportedEncryptionAlgorithms.add(JWEConstants.RSA_OAEP_256);
+            }
         }
 
         return supportedEncryptionAlgorithms;

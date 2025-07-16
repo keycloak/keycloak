@@ -109,6 +109,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP;
+import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP_256;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIAL_OFFER_URI_CODE_SCOPE;
 import static org.keycloak.testsuite.forms.PassThroughClientAuthenticator.clientId;
 
@@ -498,6 +500,11 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         }
 
         testRealm.getComponents().add("org.keycloak.keys.KeyProvider", getKeyProvider());
+
+        testRealm.getComponents().add("org.keycloak.keys.KeyProvider",
+                getRsaEncKeyProvider(RSA_OAEP_256, "enc-key-oaep256"));
+        testRealm.getComponents().add("org.keycloak.keys.KeyProvider",
+                getRsaEncKeyProvider(RSA_OAEP, "enc-key-oaep"));
 
         // Find existing client representation
         ClientRepresentation existingClient = testRealm.getClients().stream()

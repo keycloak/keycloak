@@ -29,7 +29,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.crypto.Algorithm;
-import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
@@ -72,6 +71,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.keycloak.jose.jwe.JWEConstants.A256GCM;
+import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP;
+import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP_256;
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ATTR_ENCRYPTION_REQUIRED;
+
 
 public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest {
 
@@ -81,10 +85,21 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
         attributes.put("credential_response_encryption.encryption_required", "true");
         attributes.put("batch_credential_issuance.batch_size", "10");
         attributes.put("signed_metadata", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmb28iOiJiYXIifQ.XYZ123abc");
-        attributes.put("oid4vci.encryption.required", "true");
+        attributes.put(ATTR_ENCRYPTION_REQUIRED, "true");
         testRealm.setAttributes(attributes);
+
+        if (testRealm.getComponents() == null) {
+            testRealm.setComponents(new MultivaluedHashMap<>());
+        }
+
+        testRealm.getComponents().add("org.keycloak.keys.KeyProvider",
+                getRsaEncKeyProvider(RSA_OAEP_256, "enc-key-oaep256"));
+        testRealm.getComponents().add("org.keycloak.keys.KeyProvider",
+                getRsaEncKeyProvider(RSA_OAEP, "enc-key-oaep"));
+
         super.configureTestRealm(testRealm);
     }
+
 
     /**
      * This test uses the configured scopes {@link #jwtTypeCredentialClientScope} and
@@ -108,16 +123,13 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
         // Check credential_response_encryption
         CredentialResponseEncryptionMetadata encryption = credentialIssuer.getCredentialResponseEncryption();
         Assert.assertNotNull("credential_response_encryption should be present", encryption);
-        Assert.assertEquals(List.of("RSA-OAEP", "RSA-OAEP-256"), encryption.getAlgValuesSupported());
-        Assert.assertEquals(List.of("A256GCM"), encryption.getEncValuesSupported());
+        Assert.assertEquals(List.of(RSA_OAEP_256, RSA_OAEP), encryption.getAlgValuesSupported());
+        Assert.assertEquals(List.of(A256GCM), encryption.getEncValuesSupported());
         Assert.assertTrue("encryption_required should be true", encryption.getEncryptionRequired());
 
-        // Check batch_credential_issuance
         CredentialIssuer.BatchCredentialIssuance batch = credentialIssuer.getBatchCredentialIssuance();
         Assert.assertNotNull("batch_credential_issuance should be present", batch);
         Assert.assertEquals(Integer.valueOf(10), batch.getBatchSize());
-
-        // Check signed_metadata
         Assert.assertEquals(
                 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmb28iOiJiYXIifQ.XYZ123abc",
                 credentialIssuer.getSignedMetadata()
@@ -165,8 +177,8 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                     CredentialResponseEncryptionMetadata encryption = issuer.getCredentialResponseEncryption();
                     Assert.assertNotNull(encryption);
 
-                    Assert.assertTrue(encryption.getAlgValuesSupported().contains("RSA-OAEP"));
-                    Assert.assertTrue("Supported encryption methods should include A256GCM", encryption.getEncValuesSupported().contains(JWEConstants.A256GCM));
+                    Assert.assertTrue(encryption.getAlgValuesSupported().contains(RSA_OAEP));
+                    Assert.assertTrue("Supported encryption methods should include A256GCM", encryption.getEncValuesSupported().contains(A256GCM));
                     Assert.assertTrue(encryption.getEncryptionRequired());
                     Assert.assertEquals(Integer.valueOf(10), issuer.getBatchCredentialIssuance().getBatchSize());
                     Assert.assertEquals("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmb28iOiJiYXIifQ.XYZ123abc",
@@ -177,7 +189,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
     private static CredentialIssuer getCredentialIssuer(KeycloakSession session) {
         RealmModel realm = session.getContext().getRealm();
 
-        realm.setAttribute("oid4vci.encryption.required", "true");
+        realm.setAttribute(ATTR_ENCRYPTION_REQUIRED, "true");
         realm.setAttribute("batch_credential_issuance.batch_size", "10");
         realm.setAttribute("signed_metadata", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmb28iOiJiYXIifQ.XYZ123abc");
 
