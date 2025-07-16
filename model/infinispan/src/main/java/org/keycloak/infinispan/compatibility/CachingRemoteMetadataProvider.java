@@ -22,7 +22,7 @@ public class CachingRemoteMetadataProvider extends AbstractCompatibilityMetadata
     }
 
     @Override
-    public Map<String, String> meta() {
+    public Map<String, String> customMeta() {
         return Map.of("persistence", Boolean.toString(MultiSiteUtils.isPersistentSessionsEnabled()));
     }
 

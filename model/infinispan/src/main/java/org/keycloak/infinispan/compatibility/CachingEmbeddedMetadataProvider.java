@@ -24,7 +24,7 @@ public class CachingEmbeddedMetadataProvider extends AbstractCompatibilityMetada
     }
 
     @Override
-    public Map<String, String> meta() {
+    public Map<String, String> customMeta() {
         return Map.of(
               "persistence", Boolean.toString(MultiSiteUtils.isPersistentSessionsEnabled()),
               "version", Version.getVersion(),

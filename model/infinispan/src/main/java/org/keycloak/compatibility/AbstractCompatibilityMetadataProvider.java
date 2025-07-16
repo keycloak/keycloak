@@ -24,7 +24,7 @@ public abstract class AbstractCompatibilityMetadataProvider implements Compatibi
         if (!isEnabled(config))
             return Map.of();
 
-        Map<String, String> metadata = new HashMap<>(meta());
+        Map<String, String> metadata = new HashMap<>(customMeta());
         configKeys().forEach(key -> {
             String value = config.get(key);
             if (value != null)
@@ -38,7 +38,7 @@ public abstract class AbstractCompatibilityMetadataProvider implements Compatibi
         return spi;
     }
 
-    protected Map<String, String> meta() {
+    protected Map<String, String> customMeta() {
         return Map.of();
     }
 
