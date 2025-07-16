@@ -61,7 +61,7 @@ The Typescript code `ConsentScopeRepresentation` for the Account Console already
 
 === Lifetime of offline session caches
 
-The options `--spi-user-sessions--infinispan--offline-session-cache-entry-lifespan-override` and `spi-user-sessions--infinispan--offline-client-session-cache-entry-lifespan-override` are now deprecated for removal.
+The options `+--spi-user-sessions--infinispan--offline-session-cache-entry-lifespan-override+` and `+--spi-user-sessions--infinispan--offline-client-session-cache-entry-lifespan-override+` are now deprecated for removal.
 
 Instead use the options `cache-embedded-offline-sessions-max-count` and `cache-embedded-offline-client-sessions-max-count` to limit the memory usage if the default of 10000 cache offline user and client sessions does not work in your scenario.
 

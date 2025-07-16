@@ -28,6 +28,7 @@ import jakarta.persistence.FlushModeType;
 import jakarta.persistence.SynchronizationType;
 import org.hibernate.internal.SessionFactoryImpl;
 import org.keycloak.Config;
+import org.keycloak.config.DatabaseOptions;
 import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
 import org.keycloak.connections.jpa.support.EntityManagerProxy;
 import org.keycloak.models.KeycloakSession;
@@ -59,7 +60,7 @@ public abstract class AbstractJpaConnectionProviderFactory implements JpaConnect
 
     @Override
     public String getSchema() {
-        String schema = Configuration.getRawValue("kc.db-schema");
+        String schema = Configuration.getConfigValue(DatabaseOptions.DB_SCHEMA).getValue();
         if (schema != null && schema.contains("-") && ! Boolean.parseBoolean(System.getProperty(GlobalConfiguration.PRESERVE_SCHEMA_CASE.getKey()))) {
             System.setProperty(GlobalConfiguration.PRESERVE_SCHEMA_CASE.getKey(), "true");
             logger.warnf("The passed schema '%s' contains a dash. Setting liquibase config option PRESERVE_SCHEMA_CASE to true. See https://github.com/keycloak/keycloak/issues/20870 for more information.", schema);

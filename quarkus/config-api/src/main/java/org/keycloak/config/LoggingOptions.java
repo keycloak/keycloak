@@ -20,10 +20,9 @@ public class LoggingOptions {
     public static final String DEFAULT_LOG_PATH = "data" + File.separator + "log" + File.separator + DEFAULT_LOG_FILENAME;
 
     // Log format + tracing
-    private static final Function<String, String> DEFAULT_LOG_FORMAT_FUNC = (additionalFields) ->
+    public static final Function<String, String> DEFAULT_LOG_FORMAT_FUNC = (additionalFields) ->
             "%d{yyyy-MM-dd HH:mm:ss,SSS} " + additionalFields + "%-5p [%c] (%t) %s%e%n";
     public static final String DEFAULT_LOG_FORMAT = DEFAULT_LOG_FORMAT_FUNC.apply("");
-    public static final String DEFAULT_LOG_TRACING_FORMAT = DEFAULT_LOG_FORMAT_FUNC.apply("traceId=%X{traceId}, parentId=%X{parentId}, spanId=%X{spanId}, sampled=%X{sampled} ");
 
     public enum Handler {
         console,
@@ -125,6 +124,12 @@ public class LoggingOptions {
             .defaultValue(true)
             .build();
 
+    public static final Option<Boolean> LOG_CONSOLE_INCLUDE_MDC = new OptionBuilder<>("log-console-include-mdc", Boolean.class)
+            .category(OptionCategory.LOGGING)
+            .description(format("Include mdc information in the console log. If the '%s' option is specified, this option has no effect.", LOG_CONSOLE_FORMAT.getKey()))
+            .defaultValue(true)
+            .build();
+
     public static final Option<Boolean> LOG_CONSOLE_COLOR = new OptionBuilder<>("log-console-color", Boolean.class)
             .category(OptionCategory.LOGGING)
             .description("Enable or disable colors when logging to console.")
@@ -185,6 +190,12 @@ public class LoggingOptions {
     public static final Option<Boolean> LOG_FILE_INCLUDE_TRACE = new OptionBuilder<>("log-file-include-trace", Boolean.class)
             .category(OptionCategory.LOGGING)
             .description(format("Include tracing information in the file log. If the '%s' option is specified, this option has no effect.", LOG_FILE_FORMAT.getKey()))
+            .defaultValue(true)
+            .build();
+
+    public static final Option<Boolean> LOG_FILE_INCLUDE_MDC = new OptionBuilder<>("log-file-include-mdc", Boolean.class)
+            .category(OptionCategory.LOGGING)
+            .description(format("Include MDC information in the file log. If the '%s' option is specified, this option has no effect.", LOG_FILE_FORMAT.getKey()))
             .defaultValue(true)
             .build();
 
@@ -273,6 +284,12 @@ public class LoggingOptions {
             .defaultValue(true)
             .build();
 
+    public static final Option<Boolean> LOG_SYSLOG_INCLUDE_MDC = new OptionBuilder<>("log-syslog-include-mdc", Boolean.class)
+            .category(OptionCategory.LOGGING)
+            .description(format("Include MDC information in the Syslog. If the '%s' option is specified, this option has no effect.", LOG_SYSLOG_FORMAT.getKey()))
+            .defaultValue(true)
+            .build();
+
     public static final Option<Output> LOG_SYSLOG_OUTPUT = new OptionBuilder<>("log-syslog-output", Output.class)
             .category(OptionCategory.LOGGING)
             .defaultValue(DEFAULT_SYSLOG_OUTPUT)
@@ -301,4 +318,19 @@ public class LoggingOptions {
             .defaultValue(512)
             .description("The queue length to use before flushing writing when logging to Syslog.")
             .build();
+
+    public static final Option<Boolean> LOG_MDC_ENABLED = new OptionBuilder<>("log-mdc-enabled", Boolean.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(false)
+            .buildTime(true)
+            .description("Indicates whether to add information about the realm and other information to the mapped diagnostic context. All elements will be prefixed with 'kc.'")
+            .build();
+
+    public static final Option<List<String>> LOG_MDC_KEYS = OptionBuilder.listOptionBuilder("log-mdc-keys", String.class)
+            .category(OptionCategory.LOGGING)
+            .expectedValues(List.of("realm", "clientId", "userId", "ipAddress", "org"))
+            .defaultValue(List.of("realm", "org", "clientId"))
+            .description("Defines which information should be added to the mapped diagnostic context as a comma-separated list.")
+            .build();
+
 }

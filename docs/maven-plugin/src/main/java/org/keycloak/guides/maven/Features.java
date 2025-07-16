@@ -51,6 +51,10 @@ public class Features {
             return profileFeature.getLabel();
         }
 
+        public String getVersionedKey() {
+            return profileFeature.getVersionedKey();
+        }
+
         private Profile.Feature.Type getType() {
             return profileFeature.getType();
         }

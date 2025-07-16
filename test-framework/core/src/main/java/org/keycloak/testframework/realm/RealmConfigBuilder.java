@@ -210,6 +210,16 @@ public class RealmConfigBuilder {
         return this;
     }
 
+    public RealmConfigBuilder duplicateEmailsAllowed(boolean duplicateEmailsAllowed) {
+        rep.setDuplicateEmailsAllowed(duplicateEmailsAllowed);
+        return this;
+    }
+
+    public RealmConfigBuilder sslRequired(String sslRequired) {
+        rep.setSslRequired(sslRequired);
+        return this;
+    }
+
     /**
      * Best practice is to use other convenience methods when configuring a realm, but while the framework is under
      * active development there may not be a way to perform all updates required. In these cases this method allows

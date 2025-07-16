@@ -1,0 +1,15 @@
+// Release notes should contain only headline-worthy new features,
+// assuming that people who migrate will read the upgrading guide anyway.
+
+Read on to learn more about each new feature, and https://www.keycloak.org/docs/latest/upgrading/index.html[find additional details in the upgrading guide] if you are upgrading from a previous release of {project_name}.
+
+= Option to force management interface to use HTTP.
+
+There's a new option `http-management-scheme` that may be set to `http` to force the management interface to use HTTP rather than inheriting the HTTPS settings of the main interface.
+
+= Additional context information for log messages (preview)
+
+You can now add context information to each log message like the realm or the client that initiated the request.
+This helps you to track down a warning or error message in the log to a specific caller or environment
+
+For more details on this opt-in feature, see the https://www.keycloak.org/server/logging[Logging guide].
