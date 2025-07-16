@@ -81,6 +81,7 @@ import org.keycloak.common.util.StreamUtil;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.HealthOptions;
 import org.keycloak.config.HttpOptions;
+import org.keycloak.config.LoggingOptions;
 import org.keycloak.config.ManagementOptions;
 import org.keycloak.config.MetricsOptions;
 import org.keycloak.config.SecurityOptions;
@@ -111,6 +112,7 @@ import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.quarkus.runtime.integration.resteasy.KeycloakHandlerChainCustomizer;
 import org.keycloak.quarkus.runtime.integration.resteasy.KeycloakTracingCustomizer;
+import org.keycloak.quarkus.runtime.logging.ClearMappedDiagnosticContextFilter;
 import org.keycloak.quarkus.runtime.services.health.KeycloakReadyHealthCheck;
 import org.keycloak.quarkus.runtime.storage.database.jpa.NamedJpaConnectionProviderFactory;
 import org.keycloak.quarkus.runtime.themes.FlatClasspathThemeResourceProviderFactory;
@@ -643,6 +645,16 @@ class KeycloakProcessor {
             // disables the single check we provide which depends on metrics enabled
             ClassInfo disabledBean = index.getIndex()
                     .getClassByName(DotName.createSimple(KeycloakReadyHealthCheck.class.getName()));
+            removeBeans.produce(new BuildTimeConditionBuildItem(disabledBean.asClass(), false));
+        }
+    }
+
+    @BuildStep
+    void disableMdcContextFilter(BuildProducer<BuildTimeConditionBuildItem> removeBeans, CombinedIndexBuildItem index) {
+        if (!Configuration.isTrue(LoggingOptions.LOG_MDC_ENABLED)) {
+            // disables the filter
+            ClassInfo disabledBean = index.getIndex()
+                    .getClassByName(DotName.createSimple(ClearMappedDiagnosticContextFilter.class.getName()));
             removeBeans.produce(new BuildTimeConditionBuildItem(disabledBean.asClass(), false));
         }
     }
