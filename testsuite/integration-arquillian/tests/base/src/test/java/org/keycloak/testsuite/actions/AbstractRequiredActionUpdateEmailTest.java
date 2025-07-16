@@ -40,6 +40,8 @@ import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.auth.page.login.UpdateEmailPage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
+import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.WebDriver;
@@ -56,7 +58,10 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 	@Page
 	protected UpdateEmailPage updateEmailPage;
 
-	@Page
+    @Page
+    protected LoginUpdateProfilePage updateProfilePage;
+
+    @Page
 	protected AppPage appPage;
 
         @Drone
