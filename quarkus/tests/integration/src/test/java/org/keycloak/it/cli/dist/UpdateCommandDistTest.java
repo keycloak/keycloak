@@ -173,14 +173,12 @@ public class UpdateCommandDistTest {
         assertNull(info.get(JGroupsCertificateProviderSpi.SPI_NAME));
 
         var cacheMeta = info.get(CacheRemoteConfigProviderSpi.SPI_NAME);
-        assertEquals("true", cacheMeta.get("persistence"));
         assertEquals("127.0.0.1", cacheMeta.get(DefaultCacheRemoteConfigProviderFactory.HOSTNAME));
         assertEquals("11222", cacheMeta.get(DefaultCacheRemoteConfigProviderFactory.PORT));
 
         result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath());
         result.assertExitCode(CompatibilityResult.ExitCode.RECREATE.value());
         result.assertError("[%1$s] Rolling Update is not available. '%1$s.configFile' is incompatible: null".formatted(CacheEmbeddedConfigProviderSpi.SPI_NAME));
-        result.assertError("[%1$s] Rolling Update is not available. '%1$s.persistence' is incompatible: null".formatted(CacheEmbeddedConfigProviderSpi.SPI_NAME));
         result.assertError("[%1$s] Rolling Update is not available. '%1$s.jgroupsVersion' is incompatible: null".formatted(CacheEmbeddedConfigProviderSpi.SPI_NAME));
         result.assertError("[%1$s] Rolling Update is not available. '%1$s.version' is incompatible: null".formatted(CacheEmbeddedConfigProviderSpi.SPI_NAME));
     }
@@ -200,7 +198,6 @@ public class UpdateCommandDistTest {
         result.assertExitCode(CompatibilityResult.ExitCode.RECREATE.value());
         result.assertError("[%1$s] Rolling Update is not available. '%1$s.configFile' is incompatible:".formatted(CacheEmbeddedConfigProviderSpi.SPI_NAME));
         result.assertError("[%1$s] Rolling Update is not available. '%1$s.jgroupsVersion' is incompatible:".formatted(CacheEmbeddedConfigProviderSpi.SPI_NAME));
-        result.assertError("[%1$s] Rolling Update is not available. '%1$s.persistence' is incompatible:".formatted(CacheEmbeddedConfigProviderSpi.SPI_NAME));
         result.assertError("[%1$s] Rolling Update is not available. '%1$s.version' is incompatible:".formatted(CacheEmbeddedConfigProviderSpi.SPI_NAME));
     }
 
@@ -236,7 +233,6 @@ public class UpdateCommandDistTest {
     private Map<String, String> embeddedCachingMeta(KeycloakDistribution distribution) {
         Map<String, String> m = new HashMap<>();
         m.put("version", org.infinispan.commons.util.Version.getVersion());
-        m.put("persistence", "true");
         m.put("jgroupsVersion", org.jgroups.Version.printVersion());
         m.put("configFile", resolveConfigFile(distribution, "conf", "cache-ispn.xml"));
         return m;

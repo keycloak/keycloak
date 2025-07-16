@@ -1,10 +1,8 @@
 package org.keycloak.infinispan.compatibility;
 
-import java.util.Map;
 import java.util.stream.Stream;
 
 import org.keycloak.Config;
-import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.compatibility.AbstractCompatibilityMetadataProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.spi.infinispan.CacheRemoteConfigProviderSpi;
@@ -19,11 +17,6 @@ public class CachingRemoteMetadataProvider extends AbstractCompatibilityMetadata
     @Override
     protected boolean isEnabled(Config.Scope scope) {
         return InfinispanUtils.isRemoteInfinispan();
-    }
-
-    @Override
-    public Map<String, String> customMeta() {
-        return Map.of("persistence", Boolean.toString(MultiSiteUtils.isPersistentSessionsEnabled()));
     }
 
     @Override
