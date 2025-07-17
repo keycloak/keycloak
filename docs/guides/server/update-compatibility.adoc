@@ -5,6 +5,7 @@
 <@tmpl.guide
 title="Checking if rolling updates are possible"
 summary="Execute the update compatibility command to check if {project_name} supports a rolling update for a change in your deployment."
+includedOptions="features features-*"
 >
 
 Use the update compatibility command to determine if you can update your deployment with a rolling update strategy when enabling or disabling features or changing the {project_name} version, configurations or providers and themes.
@@ -46,15 +47,7 @@ NOTE: If you do not use `--optimized` keep in mind that an `update` command may 
 
 [WARNING]
 ====
-The `check` command currently offers only a limited functionality. At the moment, it takes into consideration only the version of {project_name} and the embedded Infinispan to determine if a rolling update is possible.
-If those are unchanged, it reports that a rolling update is possible.
-
-The current version does not yet verify configuration changes and assumes all configuration changes are eligible for a rolling update.
-The same applies to changes to custom extensions and themes.
-
-A good use case when to use this is, for example, when you want to do a rolling update when you change the {project_name} theme or your custom extensions, and only want run recreate update when the version of {project_name} changes which does not yet allow a rolling update.
-
-While consumers of these commands should know the limitations that exist today, they should not rely on the internal behavior or the structure of the metadata file.
+Consumers of these commands should not rely on the internal behavior or the structure of the metadata file.
 Instead, they should rely only on the exit code of the `check` command to benefit from future enhancements on the internal logic to determine when a rolling update is possible.
 ====
 
@@ -143,6 +136,39 @@ m|4
 The feature `rolling-updates` is disabled.
 |===
 
+== Rolling incompatible changes
+
+The following is a summary of known configuration changes which are not compatible with the rolling upgrade strategy.
+
+=== Features
+
+==== Recreate always
+
+The enabling or disabling of the following features requires a recreate update:
+
+<@showFeaturesRolling ctx.features.upgradePolicyShutdown />
+
+
+==== Recreate on upgrade
+
+Upgrading or downgrading to one of the following features requires a recreate update:
+
+<@showFeaturesRolling ctx.features.upgradePolicyRollingNoUpgrade />
+
+=== Configuration options
+
+Changing the value of one of the following CLI options requires a recreate update:
+
+[cols="30%,70%"]
+|===
+| Option                          | Rationale
+| `--cache`                       | The `ispn` and `local` configurations are mutually exclusive, changing from one to another will lead to data loss.
+| `--cache-config-file`           | Changing the configuration file could result in incompatible cache or transport configurations, resulting in clusters not forming as expected.
+| `--cache-stack`                 | Changing stack will result in the cluster not forming during rolling update and will lead to data loss.
+| `--cache-embedded-mtls-enabled` | Enabling/Disabling TLS will result in the cluster not forming during rolling update and will lead to data loss.
+| `--cache-remote-host`           | Connecting to a new remote cache will cause previously cached data to be lost.
+| `--cache-remote-port`           | Connecting to a new remote cache will cause previously cached data to be lost.
+|===
 
 [[rolling-updates-for-patch-releases]]
 == Rolling updates for patch releases
@@ -177,3 +203,14 @@ Known limitations:
 The {project_name} Operator uses the functionality described above to determine if a rolling update is possible. See the <@links.operator id="rolling-updates" /> {section} and the `Auto` strategy for more information.
 
 </@tmpl.guide>
+
+<#macro showFeaturesRolling features>
+[cols="30%,70%"]
+|===
+| Feature | Description
+
+<#list features as feature>
+| [.features-name]#${feature.versionedKey}# | [.features-description]#${feature.description}#
+</#list>
+|===
+</#macro>
