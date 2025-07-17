@@ -82,10 +82,10 @@ and is not fully supported. This feature is disabled by default.
 
 You can enable additional context information for each log line like the current realm and client that is executing the request.
 
-Use the option `log-mdc-enable` to enable it.
+Use the option `log-mdc-enabled` to enable it.
 
 .Example configuration
-<@kc.start parameters="--features=log-mdc --log-mdc-enable=true"/>
+<@kc.start parameters="--features=log-mdc --log-mdc-enabled=true"/>
 
 .Example output
 ----

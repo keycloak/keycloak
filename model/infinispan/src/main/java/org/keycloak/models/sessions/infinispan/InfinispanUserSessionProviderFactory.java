@@ -339,9 +339,16 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         ProviderConfigurationBuilder builder = ProviderConfigurationBuilder.create();
 
         builder.property()
+              .name(CONFIG_USE_BATCHES)
+              .type("boolean")
+              .helpText("Enable or disable batch writes to the database. Enabled by default with the persistent-user-sessions Feature")
+              .defaultValue(DEFAULT_USE_BATCHES)
+              .add();
+
+        builder.property()
                 .name(CONFIG_MAX_BATCH_SIZE)
                 .type("int")
-                .helpText("Maximum size of a batch size (only applicable to persistent sessions")
+                .helpText("Maximum size of a batch (only applicable to persistent sessions")
                 .defaultValue(DEFAULT_MAX_BATCH_SIZE)
                 .add();
 

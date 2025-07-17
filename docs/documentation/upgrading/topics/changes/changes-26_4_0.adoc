@@ -48,6 +48,13 @@ Starting with this release, {project_name} will cache by default only 10000 entr
 
 Use the options `cache-embedded-offline-sessions-max-count` and `cache-embedded-offline-client-sessions-max-count` to change size of the offline session caches.
 
+=== Supported Update Email Feature
+
+The `Update Email` is now a supported feature so it is no longer needed to enable the feature during the server startup.
+The feature is enabled for a realm, if `Update Email` required action is enabled in the realm's required actions setting.
+The feature slightly changes behaviour from previous versions when updating the profile during the authentication flow (e.g. when running the `UPDATE_PROFILE` required action).
+If an existing user does have an email set when updating the profile during the authentication flow, the email attribute will not be available.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 

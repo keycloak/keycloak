@@ -126,7 +126,7 @@ export function UserDataTable() {
   const [searchType, setSearchType] = useState<SearchType>("default");
   const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<UserFilter>({
-    exact: true,
+    exact: false,
     userAttribute: [],
   });
   const [profile, setProfile] = useState<UserProfileConfig>({});
@@ -170,7 +170,7 @@ export function UserDataTable() {
       params.search = searchParam;
     }
 
-    params.exact = activeFilters.exact;
+    if (activeFilters.exact) params.exact = true;
 
     if (!listUsers && !(params.search || params.q)) {
       return [];
@@ -238,7 +238,7 @@ export function UserDataTable() {
   const listUsers = !uiRealmInfo.userProfileProvidersEnabled;
 
   const clearAllFilters = () => {
-    setActiveFilters({ exact: true, userAttribute: [] });
+    setActiveFilters({ exact: false, userAttribute: [] });
     setSearchUser("");
     setQuery("");
     refresh();

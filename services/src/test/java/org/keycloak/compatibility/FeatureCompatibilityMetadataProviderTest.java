@@ -2,6 +2,7 @@ package org.keycloak.compatibility;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -9,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import org.infinispan.commons.util.ReflectionUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -120,6 +122,32 @@ public class FeatureCompatibilityMetadataProviderTest extends AbstractCompatibil
         assertFeature(v1, false, v1.getVersion(), Profile.FeatureUpdatePolicy.ROLLING_NO_UPGRADE);
         assertFeature(v2, true, v2.getVersion(), Profile.FeatureUpdatePolicy.ROLLING_NO_UPGRADE);
         assertCompatibility(CompatibilityResult.ExitCode.RECREATE, provider.isCompatible(v1Meta));
+    }
+
+    @ParameterizedTest
+    @MethodSource("addedFeatures")
+    public void testAddedFeature(CompatibilityResult.ExitCode exitCode, Profile.Feature featureToAdd) {
+        Profile.configure();
+        FeatureCompatibilityMetadataProvider provider = new FeatureCompatibilityMetadataProvider();
+        Map<String, String> other = provider.metadata();
+
+        // Remove an existing Feature from the profile to emulate a new Profile.Feature being added in a subsequent KC version
+        Profile instance = Profile.getInstance();
+        Map<Profile.Feature, Boolean> features = new HashMap<>(instance.getFeatures());
+        features.remove(featureToAdd);
+        Field featuresField = ReflectionUtil.getField("features", Profile.class);
+        featuresField.setAccessible(true);
+        ReflectionUtil.setField(instance, featuresField, features);
+        assertCompatibility(exitCode, provider.isCompatible(other));
+    }
+
+    private static Stream<Arguments> addedFeatures() {
+        return Stream.of(
+              Arguments.of(CompatibilityResult.ExitCode.ROLLING, Profile.Feature.IMPERSONATION),
+              Arguments.of(CompatibilityResult.ExitCode.RECREATE, Profile.Feature.PERSISTENT_USER_SESSIONS),
+              // Expect a RECREATE as the Feature has the ROLLING_NO_UPGRADE policy
+              Arguments.of(CompatibilityResult.ExitCode.RECREATE, Profile.Feature.LOGIN_V2)
+        );
     }
 
     @ParameterizedTest

@@ -34,8 +34,10 @@ public class CustomJpaEntityProviderDistTest {
 
     @Test
     @TestProvider(CustomJpaEntityProvider.class)
-    @Launch({ "start-dev", "--log-level=org.hibernate.jpa.internal.util.LogHelper:debug" })
+    @Launch({ "start-dev", "--log-level=org.hibernate.jpa.internal.util.LogHelper:debug,org.keycloak.quarkus.deployment.KeycloakProcessor:debug" })
     void testUserManagedEntityNotAddedToDefaultPU(CLIResult cliResult) {
+        cliResult.assertMessage("Multiple datasources are specified: <default>, user-store");
+        cliResult.assertMessage("Datasource name 'user-store' is obtained from the 'jakarta.persistence.jtaDataSource' configuration property in persistence.xml file. Use 'user-store' name for datasource options like 'db-kind-user-store'.");
         cliResult.assertStringCount("name: user-store", 1);
         cliResult.assertStringCount("com.acme.provider.legacy.jpa.entity.Realm", 1);
         cliResult.assertStartedDevMode();

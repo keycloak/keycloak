@@ -708,6 +708,11 @@ jobs:
 
       - name: Database container port
         run: |
+          # The Ryuk container process exists temporarily after the JVM terminates, wait for only the database container to remain
+          while [ "$(docker ps -q | wc -l)" -ne 1 ]; do
+            docker ps
+            sleep 10
+          done
           DATABASE_PORT=$(docker ps -l --format '{{ .ID }}' | xargs docker port | cut -d ':' -f 2)
           echo "DATABASE_PORT=$DATABASE_PORT" >> $GITHUB_ENV 
 
