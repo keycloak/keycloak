@@ -490,11 +490,11 @@ class KeycloakProcessor {
         unitProperties.setProperty(JdbcSettings.JAKARTA_JTA_DATASOURCE,datasourceName);
         unitProperties.setProperty(AvailableSettings.DATASOURCE, datasourceName); // for backward compatibility
 
-        DatabaseOptions.getResultNamedKey(DatabaseOptions.DB_SQL_JPA_DEBUG, datasourceName)
+        DatabaseOptions.getNamedKey(DatabaseOptions.DB_SQL_JPA_DEBUG, datasourceName)
                 .filter(Configuration::isKcPropertyTrue)
                 .ifPresent(f -> unitProperties.put(AvailableSettings.USE_SQL_COMMENTS, "true"));
 
-        DatabaseOptions.getResultNamedKey(DatabaseOptions.DB_SQL_LOG_SLOW_QUERIES, datasourceName)
+        DatabaseOptions.getNamedKey(DatabaseOptions.DB_SQL_LOG_SLOW_QUERIES, datasourceName)
                 .flatMap(Configuration::getOptionalKcValue)
                 .ifPresent(threshold -> unitProperties.put(AvailableSettings.LOG_SLOW_QUERY, threshold));
     }

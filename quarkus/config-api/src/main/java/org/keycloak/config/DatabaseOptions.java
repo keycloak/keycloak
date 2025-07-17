@@ -210,7 +210,7 @@ public class DatabaseOptions {
      * <p>
      * Result: {@code db-driver-my-store}
      */
-    public static Optional<String> getResultNamedKey(Option<?> option, String namedProperty) {
+    public static Optional<String> getNamedKey(Option<?> option, String namedProperty) {
         return getKeyForDatasource(option)
                 .map(key -> key.substring(0, key.indexOf("<")))
                 .map(key -> key.concat(namedProperty));
