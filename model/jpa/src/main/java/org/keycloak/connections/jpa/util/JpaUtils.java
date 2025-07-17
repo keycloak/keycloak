@@ -19,6 +19,7 @@ package org.keycloak.connections.jpa.util;
 
 import jakarta.persistence.ValidationMode;
 import org.hibernate.dialect.Dialect;
+import org.hibernate.engine.jdbc.env.spi.IdentifierHelper;
 import org.hibernate.internal.SessionFactoryImpl;
 import org.jboss.logging.Logger;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
@@ -51,9 +52,10 @@ public class JpaUtils {
     private static final Logger logger = Logger.getLogger(JpaUtils.class);
 
     public static String getTableNameForNativeQuery(String tableName, EntityManager em) {
-        String schema = (String) em.getEntityManagerFactory().getProperties().get(HIBERNATE_DEFAULT_SCHEMA);
         final Dialect dialect = em.getEntityManagerFactory().unwrap(SessionFactoryImpl.class).getJdbcServices().getDialect();
-        return (schema==null) ? tableName : dialect.openQuote() + schema + dialect.closeQuote() + "." + tableName;
+        IdentifierHelper identifierHelper = em.getEntityManagerFactory().unwrap(SessionFactoryImpl.class).getJdbcServices().getJdbcEnvironment().getIdentifierHelper();
+        String schema = em.getEntityManagerFactory().unwrap(SessionFactoryImpl.class).getSessionFactoryOptions().getDefaultSchema();
+        return (schema==null) ? tableName : identifierHelper.toIdentifier(schema).render(dialect) + "." + tableName;
     }
 
     public static EntityManagerFactory createEntityManagerFactory(KeycloakSession session, String unitName, Map<String, Object> properties, boolean jta) {
