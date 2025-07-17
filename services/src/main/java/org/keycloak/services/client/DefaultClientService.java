@@ -9,6 +9,7 @@ import org.keycloak.models.mapper.ClientModelMapper;
 import org.keycloak.models.mapper.ModelMapper;
 import org.keycloak.representations.admin.v2.ClientRepresentation;
 import org.keycloak.services.ServiceException;
+import org.keycloak.services.util.ResourceQueryFilter;
 
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -31,8 +32,10 @@ public class DefaultClientService implements ClientService {
 
     @Override
     public Stream<ClientRepresentation> getClients(RealmModel realm, ClientProjectionOptions projectionOptions,
-            ClientSearchOptions searchOptions, ClientSortAndSliceOptions sortAndSliceOptions) {
-        return realm.getClientsStream().map(mapper::fromModel);
+            String searchQuery, ClientSortAndSliceOptions sortAndSliceOptions) {
+        ResourceQueryFilter<ClientRepresentation> filter = new ResourceQueryFilter<>(searchQuery);
+        // here might call filter.getParsedQuery() to check some known/expected conditions to call optimized model fetches
+        return filter.filterByQuery(realm.getClientsStream().map(mapper::fromModel));
     }
 
     @Override
@@ -65,7 +68,7 @@ public class DefaultClientService implements ClientService {
     }
 
     @Override
-    public Stream<ClientRepresentation> deleteClients(RealmModel realm, ClientSearchOptions searchOptions) {
+    public Stream<ClientRepresentation> deleteClients(RealmModel realm, String searchQuery) {
         // TODO Auto-generated method stub
         return null;
     }

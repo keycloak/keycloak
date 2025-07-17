@@ -19,7 +19,7 @@ public interface ClientsApi extends Provider {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    Stream<ClientRepresentation> getClients();
+    Stream<ClientRepresentation> getClients(@PathParam("q") String query);
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
