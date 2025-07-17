@@ -34,6 +34,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -251,6 +252,70 @@ public class PasskeysUsernameFormTest extends AbstractWebAuthnVirtualTest {
                     .detail(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
                     .detail(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true")
                     .assertEvent();
+            logout();
+        }
+    }
+
+    // Test that user is able to authenticate with passkeys even during re-authentication (For example when OIDC parameter prompt=login is used)
+    @Test
+    public void webauthnLoginWithDiscoverableKey_reauthentication() throws IOException {
+        getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.PASSKEYS.getOptions());
+
+        // set passwordless policy for discoverable keys
+        try (Closeable c = getWebAuthnRealmUpdater()
+                .setWebAuthnPolicyRpEntityName("localhost")
+                .setWebAuthnPolicyRequireResidentKey(Constants.WEBAUTHN_POLICY_OPTION_YES)
+                .setWebAuthnPolicyUserVerificationRequirement(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED)
+                .setWebAuthnPolicyPasskeysEnabled(Boolean.TRUE)
+                .update()) {
+
+            checkWebAuthnConfiguration(Constants.WEBAUTHN_POLICY_OPTION_YES, Constants.WEBAUTHN_POLICY_OPTION_REQUIRED);
+
+            registerDefaultUser();
+
+            UserRepresentation user = userResource().toRepresentation();
+            MatcherAssert.assertThat(user, Matchers.notNullValue());
+
+            logout();
+
+            // remove the password, so passkeys are the only credential in the user
+            final CredentialRepresentation passwordCredRep = userResource().credentials().stream()
+                    .filter(cred -> PasswordCredentialModel.TYPE.equals(cred.getType()))
+                    .findAny()
+                    .orElse(null);
+            Assert.assertNotNull("User has no password credential", passwordCredRep);
+            userResource().removeCredential(passwordCredRep.getId());
+
+            events.clear();
+
+            // the user should be automatically logged in using the discoverable key
+            oauth.openLoginForm();
+            WaitUtils.waitForPageToLoad();
+
+            appPage.assertCurrent();
+
+            events.expectLogin()
+                    .user(user.getId())
+                    .detail(Details.USERNAME, user.getUsername())
+                    .detail(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
+                    .detail(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true")
+                    .assertEvent();
+
+            // Re-authentication now with prompt=login. Passkeys login should be possible.
+            oauth.loginForm()
+                    .prompt(OIDCLoginProtocol.PROMPT_VALUE_LOGIN)
+                    .open();
+            WaitUtils.waitForPageToLoad();
+
+            appPage.assertCurrent();
+
+            events.expectLogin()
+                    .user(user.getId())
+                    .detail(Details.USERNAME, user.getUsername())
+                    .detail(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
+                    .detail(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true")
+                    .assertEvent();
+
             logout();
         }
     }
