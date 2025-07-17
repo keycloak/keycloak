@@ -342,15 +342,15 @@ Option: `kc.test.database` / `KC_TEST_DATABASE`
 
 Valid values:
 
-| Value    | Description                          |
-|----------|--------------------------------------|
+| Value    | Description                             |
+|----------|-----------------------------------------|
 | dev-file | H2 database with a file for persistence |
-| dev-mem  | In-memory H2 database                |
-| mariadb  | MariaDB test container               |
-| mssql    | Microsoft SQL Server test container  |
-| mysql    | MySQL test container                 |
-| oracle   | Oracle test container                |
-| postgres | PostgreSQL test container            |
+| dev-mem  | In-memory H2 database                   |
+| mariadb  | MariaDB test container                  |
+| mssql    | Microsoft SQL Server test container     |
+| mysql    | MySQL test container                    |
+| oracle   | Oracle test container                   |
+| postgres | PostgreSQL test container               |
 
 Configuration:
 
