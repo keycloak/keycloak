@@ -67,7 +67,6 @@ import org.keycloak.sdjwt.vp.SdJwtVP;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
-import org.testcontainers.shaded.org.apache.commons.lang3.tuple.Pair;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -406,14 +405,14 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                     authenticator.setTokenString(token);
                     OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
 
-                    Pair<JWK, PrivateKey> jwkPair;
+                    Map<String, Object> jwkPair;
                     try {
                         jwkPair = generateRsaJwkWithPrivateKey();
                     } catch (NoSuchAlgorithmException e) {
                         throw new RuntimeException("Failed to generate JWK", e);
                     }
-                    JWK jwk = jwkPair.getLeft();
-                    PrivateKey privateKey = jwkPair.getRight();
+                    JWK jwk = (JWK) jwkPair.get("jwk");
+                    PrivateKey privateKey = (PrivateKey) jwkPair.get("privateKey");
 
                     CredentialRequest credentialRequest = new CredentialRequest()
                             .setFormat(Format.JWT_VC)
@@ -499,14 +498,14 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                     WebTarget credentialTarget = (WebTarget) m.get("credentialTarget");
                     CredentialRequest credentialRequest = (CredentialRequest) m.get("credentialRequest");
 
-                    Pair<JWK, PrivateKey> jwkPair;
+                    Map<String, Object> jwkPair;
                     try {
                         jwkPair = generateRsaJwkWithPrivateKey();
                     } catch (NoSuchAlgorithmException e) {
                         throw new RuntimeException("Failed to generate JWK", e);
                     }
-                    JWK jwk = jwkPair.getLeft();
-                    PrivateKey privateKey = jwkPair.getRight();
+                    JWK jwk = (JWK) jwkPair.get("jwk");
+                    PrivateKey privateKey = (PrivateKey) jwkPair.get("privateKey");
 
                     credentialRequest.setCredentialResponseEncryption(
                             new CredentialResponseEncryption()

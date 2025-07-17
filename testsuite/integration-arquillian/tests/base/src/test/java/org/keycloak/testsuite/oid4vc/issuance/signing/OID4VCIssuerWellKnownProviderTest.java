@@ -123,7 +123,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
         // Check credential_response_encryption
         CredentialResponseEncryptionMetadata encryption = credentialIssuer.getCredentialResponseEncryption();
         Assert.assertNotNull("credential_response_encryption should be present", encryption);
-        Assert.assertEquals(List.of(RSA_OAEP_256, RSA_OAEP), encryption.getAlgValuesSupported());
+        Assert.assertEquals(List.of(RSA_OAEP, RSA_OAEP_256), encryption.getAlgValuesSupported());
         Assert.assertEquals(List.of(A256GCM), encryption.getEncValuesSupported());
         Assert.assertTrue("encryption_required should be true", encryption.getEncryptionRequired());
 

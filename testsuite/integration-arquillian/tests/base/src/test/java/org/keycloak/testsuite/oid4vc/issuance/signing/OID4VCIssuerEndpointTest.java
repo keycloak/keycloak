@@ -85,7 +85,6 @@ import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.JsonSerialization;
-import org.testcontainers.shaded.org.apache.commons.lang3.tuple.Pair;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -358,7 +357,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         return jwk;
     }
 
-    public static Pair<JWK, PrivateKey> generateRsaJwkWithPrivateKey() throws NoSuchAlgorithmException {
+    public static Map<String, Object> generateRsaJwkWithPrivateKey() throws NoSuchAlgorithmException {
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
         keyGen.initialize(2048);
         KeyPair keyPair = keyGen.generateKeyPair();
@@ -375,7 +374,10 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         jwk.setModulus(modulus);
         jwk.setPublicExponent(exponent);
 
-        return Pair.of(jwk, privateKey);
+        Map<String, Object> result = new HashMap<>();
+        result.put("jwk", jwk);
+        result.put("privateKey", privateKey);
+        return result;
     }
 
     protected static CredentialResponse decryptJweResponse(String encryptedResponse, PrivateKey privateKey) throws IOException, JWEException {
