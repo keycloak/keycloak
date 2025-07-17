@@ -31,7 +31,7 @@ public class Config {
     }
 
     public static <T> T getValueTypeConfig(Class<?> valueType, String name, String defaultValue, Class<T> type) {
-        name = "kc.test." + valueTypeAlias.getAlias(valueType) + "." + name;
+        name = getValueTypeFQN(valueType, name);
         Optional<T> optionalValue = config.getOptionalValue(name, type);
         if (optionalValue.isPresent()) {
             return optionalValue.get();
@@ -42,9 +42,13 @@ public class Config {
         }
     }
     public static <T> T getValueTypeConfig(Class<?> valueType, String name, T defaultValue, Class<T> type) {
-        name = "kc.test." + valueTypeAlias.getAlias(valueType) + "." + name;
+        name = getValueTypeFQN(valueType, name);
         Optional<T> optionalValue = config.getOptionalValue(name, type);
         return optionalValue.orElse(defaultValue);
+    }
+
+    public static String getValueTypeFQN(Class<?> valueType, String name) {
+        return "kc.test." + valueTypeAlias.getAlias(valueType) + "." + name;
     }
 
     public static <T> T get(String name, T defaultValue, Class<T> clazz) {
