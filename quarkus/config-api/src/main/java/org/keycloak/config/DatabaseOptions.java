@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 public class DatabaseOptions {
 
@@ -143,6 +144,13 @@ public class DatabaseOptions {
             DatabaseOptions.DB_URL.getKey(), "-full"  // db-url-full
     );
 
+    /**
+     * You can override some {@link OptionBuilder} methods for additional datasources in this map
+     */
+    private static final Map<Option<?>, Consumer<OptionBuilder<?>>> DATASOURCES_OVERRIDES_OPTIONS = Map.of(
+            DatabaseOptions.DB, builder -> builder.defaultValue(Optional.empty()) // no default value for DB kind for datasources
+    );
+
     private static final Map<String, Option<?>> cachedDatasourceOptions = new HashMap<>();
 
 
@@ -177,6 +185,12 @@ public class DatabaseOptions {
 
             if (!parentOption.isHidden()) {
                 builder.description("Used for named <datasource>. " + parentOption.getDescription());
+            }
+
+            // override some settings for options
+            var override = DATASOURCES_OVERRIDES_OPTIONS.get(parentOption);
+            if (override != null) {
+                override.accept(builder);
             }
 
             option = builder.build();

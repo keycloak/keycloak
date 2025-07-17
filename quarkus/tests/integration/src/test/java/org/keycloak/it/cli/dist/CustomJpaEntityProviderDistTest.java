@@ -26,15 +26,37 @@ import org.keycloak.it.junit5.extension.TestProvider;
 import com.acme.provider.legacy.jpa.entity.CustomJpaEntityProvider;
 
 import io.quarkus.test.junit.main.Launch;
+import org.keycloak.it.utils.KeycloakDistribution;
 
 @DistributionTest
 @RawDistOnly(reason = "Containers are immutable")
 @Tag(DistributionTest.SMOKE)
+@TestProvider(CustomJpaEntityProvider.class)
 public class CustomJpaEntityProviderDistTest {
 
     @Test
-    @TestProvider(CustomJpaEntityProvider.class)
-    @Launch({ "start-dev", "--log-level=org.hibernate.jpa.internal.util.LogHelper:debug,org.keycloak.quarkus.deployment.KeycloakProcessor:debug" })
+    void dbKindSpecifiedInBuildTime(KeycloakDistribution dist) {
+        var result = dist.run("build", "--db-kind-user-store=dev-mem");
+        result.assertMessage("Multiple datasources are specified: <default>, user-store");
+        result.assertBuild();
+
+        result = dist.run("start", "--optimized", "--http-enabled=true", "--hostname-strict=false");
+        result.assertNoError("Detected additional named datasources. You need to explicitly set the DB kind for the datasource(s) to properly work as: db-kind-user-store");
+
+        // Remove once https://github.com/keycloak/keycloak/pull/41026 is solved
+        result.assertError("Datasource 'user-store' was deactivated automatically because its URL is not set");
+    }
+
+    @Test
+    @Launch({"start-dev"})
+    void notSpecifiedDbKind(CLIResult cliResult) {
+        // it is printed at build time and the check done at runtime
+        cliResult.assertNoMessage("Multiple datasources are specified: <default>, user-store");
+        cliResult.assertError("Detected additional named datasources. You need to explicitly set the DB kind for the datasource(s) to properly work as: db-kind-user-store");
+    }
+
+    @Test
+    @Launch({"start-dev", "--log-level=org.hibernate.jpa.internal.util.LogHelper:debug,org.keycloak.quarkus.deployment.KeycloakProcessor:debug", "--db-kind-user-store=dev-mem"})
     void testUserManagedEntityNotAddedToDefaultPU(CLIResult cliResult) {
         cliResult.assertMessage("Multiple datasources are specified: <default>, user-store");
         cliResult.assertMessage("Datasource name 'user-store' is obtained from the 'jakarta.persistence.jtaDataSource' configuration property in persistence.xml file. Use 'user-store' name for datasource options like 'db-kind-user-store'.");
