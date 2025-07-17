@@ -3,6 +3,13 @@
 
 Read on to learn more about each new feature, and https://www.keycloak.org/docs/latest/upgrading/index.html[find additional details in the upgrading guide] if you are upgrading from a previous release of {project_name}.
 
+= Supported Update Email Workflow
+
+The Update Email Workflow is now a supported feature. The feature provides a more secure and consistent flow to update user emails
+because they will be forced to re-authenticate as well as verify their emails before any update to their account.
+
+For more information, see the link:{adminguide_link}#_update-email-workflow[Update Email Workflow] chapter in the {adminguide_name}.
+
 = Option to force management interface to use HTTP.
 
 There's a new option `http-management-scheme` that may be set to `http` to force the management interface to use HTTP rather than inheriting the HTTPS settings of the main interface.
