@@ -143,7 +143,7 @@ When using volatile user sessions, the cache is the source of truth for user and
 [WARNING]
 ====
 It is not recommended to use volatile user sessions when using offline sessions extensively due to potentially high memory usage.
-For volatile sessions, the time offline sessions are cached in memory can be limited with the SPI options `spi-user-sessions--infinispan--offline-client-session-cache-entry-lifespan-override` and `spi-user-sessions--infinispan--offline-session-cache-entry-lifespan-override`.
+For volatile sessions, the time offline sessions are cached in memory can be limited with the SPI options `+spi-user-sessions--infinispan--offline-client-session-cache-entry-lifespan-override+` and `+spi-user-sessions--infinispan--offline-session-cache-entry-lifespan-override+`.
 ====
 
 Follow these steps to enable this setup:
