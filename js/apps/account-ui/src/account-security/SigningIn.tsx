@@ -33,6 +33,7 @@ import { Page } from "../components/page/Page";
 import { TFuncKey } from "../i18n";
 import { formatDate } from "../utils/formatDate";
 import { usePromise } from "../utils/usePromise";
+import { getTransports } from "../utils/getTransports";
 
 type MobileLinkProps = {
   title: string;
@@ -122,6 +123,22 @@ export const SigningIn = () => {
         </DataListCell>,
       );
     }
+
+const transports = getTransports(credential.credentialData);
+    if (transports?.length) {
+      items.push(
+        <DataListCell
+          key={"transports" + credential.id}
+          data-testrole="transports"
+        >
+          <Trans i18nKey="credentialTransports">
+            <strong className="pf-v5-u-mr-md"></strong>
+            {{ transports: transports.join(", ") }}
+          </Trans>
+        </DataListCell>
+      );
+    }
+
     if (
       credMetadata.infoMessage ||
       (credMetadata.warningMessageTitle &&
