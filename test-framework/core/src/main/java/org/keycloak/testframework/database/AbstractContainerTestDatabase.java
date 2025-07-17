@@ -17,12 +17,18 @@ public abstract class AbstractContainerTestDatabase implements TestDatabase {
     protected JdbcDatabaseContainer<?> container;
     protected DatabaseConfig config;
 
-    public AbstractContainerTestDatabase() {
-        reuse = Config.getValueTypeConfig(TestDatabase.class, "reuse", false, Boolean.class);
-    }
-
     public void start(DatabaseConfig config) {
         this.config = config;
+
+        String reuseProp = Config.getValueTypeFQN(TestDatabase.class, "reuse");
+        boolean reuseConfigured = Config.get(reuseProp, false, Boolean.class);
+        if (config.preventReuse() && reuseConfigured) {
+            getLogger().warnf("Ignoring '%s' as test explicitly prevents it", reuseProp);
+            this.reuse = false;
+        } else {
+            this.reuse = reuseConfigured;
+        }
+
         container = createContainer();
         container = container.withStartupTimeout(Duration.ofMinutes(10))
                 .withLogConsumer(new JBossLogConsumer(Logger.getLogger("managed.db." + getDatabaseVendor())))

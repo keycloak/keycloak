@@ -16,10 +16,14 @@ public abstract class AbstractDatabaseSupplier implements Supplier<TestDatabase,
 
     @Override
     public TestDatabase getValue(InstanceContext<TestDatabase, InjectTestDatabase> instanceContext) {
-        TestDatabase testDatabase = getTestDatabase();
-        DatabaseConfigBuilder builder = DatabaseConfigBuilder.create();
+        DatabaseConfigBuilder builder = DatabaseConfigBuilder
+              .create()
+              .withPreventReuse(instanceContext.getLifeCycle() != LifeCycle.GLOBAL);
+
         DatabaseConfigurator configurator = SupplierHelpers.getInstance(instanceContext.getAnnotation().config());
         configurator.configure(builder);
+
+        TestDatabase testDatabase = getTestDatabase();
         testDatabase.start(builder.build());
         return testDatabase;
     }
