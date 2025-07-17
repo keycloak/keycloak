@@ -19,7 +19,7 @@ The `import` and `export` commands are essentially server launches that exit bef
 
 It is recommended that all {project_name} nodes are stopped prior to using the `kc.[sh|bat] export` command. This ensures that the results will have no consistency issues with user or realm modifications during the export.
 
-It is required that all {project_name} nodes are stopped prior to performing an `kc.[sh|bat] import` command with the overwrite option. 
+It is required that all {project_name} nodes are stopped prior to performing an `kc.[sh|bat] import` command with the override option. 
 The command does not attach to the cache cluster, so realm deletion will not be handled correctly. You may also consider using the Admin API to delete realms that need to be overwritten prior to running the import.
 ====
 
