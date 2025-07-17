@@ -44,7 +44,7 @@ public final class UsernameForm extends UsernamePasswordForm {
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
-        if (context.getUser() != null) {
+        if (context.getUser() != null && !isConditionalPasskeysEnabled()) {
             // We can skip the form when user is re-authenticating. Unless current user has some IDP set, so he can re-authenticate with that IDP
             if (!this.hasLinkedBrokers(context)) {
                 context.success();

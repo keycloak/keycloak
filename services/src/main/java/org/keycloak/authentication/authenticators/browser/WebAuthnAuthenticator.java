@@ -97,7 +97,8 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
 
         UserModel user = context.getUser();
         boolean isUserIdentified = false;
-        if (user != null) {
+
+        if (shouldShowWebAuthnAuthenticators(context)) {
             // in 2 Factor Scenario where the user has already been identified
             WebAuthnAuthenticatorsBean authenticators = new WebAuthnAuthenticatorsBean(context.getSession(), context.getRealm(), user, getCredentialType());
             if (authenticators.getAuthenticators().isEmpty()) {
@@ -118,6 +119,14 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         form.setAttribute(WebAuthnConstants.SHOULD_DISPLAY_AUTHENTICATORS, shouldDisplayAuthenticators(context));
 
         return form;
+    }
+
+    /**
+     * @param context authentication context
+     * @return true if the available webauthn authenticators should be shown on the screen. Typically during 2-factor authentication for example
+     */
+    protected boolean shouldShowWebAuthnAuthenticators(AuthenticationFlowContext context) {
+        return context.getUser() != null;
     }
 
     protected WebAuthnPolicy getWebAuthnPolicy(AuthenticationFlowContext context) {
