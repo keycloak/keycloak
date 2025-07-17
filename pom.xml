@@ -45,8 +45,8 @@
 
         <asciidoctor.plugin.version>1.5.8</asciidoctor.plugin.version>
 
-        <quarkus.version>3.24.3</quarkus.version>
-        <quarkus.build.version>3.24.2</quarkus.build.version>
+        <quarkus.version>999-SNAPSHOT</quarkus.version>
+        <quarkus.build.version>999-SNAPSHOT</quarkus.build.version>
         <jboss-logging-annotations.version>3.0.4.Final</jboss-logging-annotations.version> <!-- keep in sync with the version used by quarkus -->
 
         <project.build-time>${timestamp}</project.build-time>
@@ -106,7 +106,7 @@
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>2.0.1.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>
         <jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>2.0.0.Final</jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>
         <log4j.version>1.2.17</log4j.version>
-        <log4j2-api.version>2.24.3</log4j2-api.version> <!-- Odd name needs to align with Quarkus -->
+        <log4j2-api.version>2.25.1</log4j2-api.version> <!-- Odd name needs to align with Quarkus -->
         <resteasy.version>6.2.12.Final</resteasy.version>
         <resteasy.undertow.version>${resteasy.version}</resteasy.undertow.version>
         <owasp.html.sanitizer.version>20240325.1</owasp.html.sanitizer.version>
@@ -145,7 +145,7 @@
         <com.apicatalog.titanium-json-ld.version>1.3.3</com.apicatalog.titanium-json-ld.version>
         <io.setl.rdf-urdna.version>1.1</io.setl.rdf-urdna.version>
 
-        <liquibase.version>4.29.1</liquibase.version>
+        <liquibase.version>4.33.0</liquibase.version>
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
         <servlet.api.40.version>2.0.0.Final</servlet.api.40.version>
         <twitter4j.version>4.1.2</twitter4j.version>
@@ -1718,4 +1718,5 @@
             </properties>
         </profile>
     </profiles>
+<repositories>             <repository>             <id>sonatype-snapshots</id>             <name>Sonatype Snapshots</name>             <url>https://central.sonatype.com/repository/maven-snapshots/</url>             <snapshots>                 <enabled>true</enabled>                 <updatePolicy>daily</updatePolicy>             </snapshots>             <releases>                 <enabled>false</enabled>             </releases>             </repository>             </repositories>
 </project>
