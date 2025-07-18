@@ -13,7 +13,7 @@ This is a fork of Open Source Identity and Access Management Keycloak, enhanced 
 
 ## Rational
 
-Please see [Instert Epic post on KeyCloak]
+Please see [Community Edpic Proposal](https://gist.github.com/ondamike/191ae64890b0e9b9ba4699f464108c05))
 
 
 ### Getting Started (Keycloak IGA)
