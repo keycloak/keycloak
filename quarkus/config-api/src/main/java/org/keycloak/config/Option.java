@@ -1,5 +1,7 @@
 package org.keycloak.config;
 
+import com.google.common.base.CaseFormat;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -127,5 +129,13 @@ public class Option<T> {
             return ((List<?>) value).stream().map(String::valueOf).collect(Collectors.joining(","));
         }
         return String.valueOf(value);
+    }
+
+    /**
+     * Transform enum values from upper underscore to lower hyphen
+     * Transform enum type HAS_SOMETHING -> has-something
+     */
+    public static String transformEnumValue(String value) {
+        return CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.LOWER_HYPHEN, value);
     }
 }

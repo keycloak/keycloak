@@ -549,7 +549,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         onAfter();
         nonRunningPicocli = pseudoLaunch("start-dev", "--log=syslog", "--log-syslog-protocol=ssl-tcp", "--log-syslog-counting-framing=protocol-dependent");
         assertThat(nonRunningPicocli.exitCode, is(CommandLine.ExitCode.OK));
-        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.log.syslog.use-counting-framing").getValue(), is("true"));
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.log.syslog.use-counting-framing").getValue(), is("protocol-dependent"));
 
         onAfter();
         nonRunningPicocli = pseudoLaunch("start-dev", "--log=syslog", "--log-syslog-counting-framing=wrong");
