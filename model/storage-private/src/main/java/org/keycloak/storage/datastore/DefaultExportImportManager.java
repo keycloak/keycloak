@@ -150,7 +150,7 @@ public class DefaultExportImportManager implements ExportImportManager {
     private final KeycloakSession session;
     private static final Logger logger = Logger.getLogger(DefaultExportImportManager.class);
 
-    public static class UserBatcher implements Consumer<KeycloakSession> {
+    public static class Batcher implements Consumer<KeycloakSession> {
         private int count;
 
         @Override
@@ -466,7 +466,7 @@ public class DefaultExportImportManager implements ExportImportManager {
             // run in a batch to mimic the behavior of directory based import
             // this is using nested entity managers to keep the parent context clean
             EntityManagers.runInBatch(session, () -> {
-                UserBatcher onUserAdded = new UserBatcher();
+                Batcher onUserAdded = new Batcher();
                 if (rep.getUsers() != null) {
                     for (UserRepresentation userRep : rep.getUsers()) {
                         createUser(newRealm, userRep);
@@ -804,10 +804,10 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (rep.isPermanentLockout() != null) realm.setPermanentLockout(rep.isPermanentLockout());
         if (rep.getMaxTemporaryLockouts() != null) realm.setMaxTemporaryLockouts(checkNonNegativeNumber(rep.getMaxTemporaryLockouts(),"Maximum temporary lockouts"));
         if (rep.getBruteForceStrategy() != null) realm.setBruteForceStrategy(rep.getBruteForceStrategy());
-        if (rep.getMaxFailureWaitSeconds() != null) realm.setMaxFailureWaitSeconds(checkNonNegativeNumber(rep.getMaxFailureWaitSeconds(),"Maximum failure wait seconds")); 
+        if (rep.getMaxFailureWaitSeconds() != null) realm.setMaxFailureWaitSeconds(checkNonNegativeNumber(rep.getMaxFailureWaitSeconds(),"Maximum failure wait seconds"));
         if (rep.getMinimumQuickLoginWaitSeconds() != null) realm.setMinimumQuickLoginWaitSeconds(checkNonNegativeNumber(rep.getMinimumQuickLoginWaitSeconds(),"Minimum quick login wait seconds"));
-        if (rep.getWaitIncrementSeconds() != null) realm.setWaitIncrementSeconds(checkNonNegativeNumber(rep.getWaitIncrementSeconds(),"Wait increment seconds")); 
-        if (rep.getQuickLoginCheckMilliSeconds() != null) realm.setQuickLoginCheckMilliSeconds(checkNonNegativeNumber(rep.getQuickLoginCheckMilliSeconds().intValue(), "Quick login check milliseconds")); 
+        if (rep.getWaitIncrementSeconds() != null) realm.setWaitIncrementSeconds(checkNonNegativeNumber(rep.getWaitIncrementSeconds(),"Wait increment seconds"));
+        if (rep.getQuickLoginCheckMilliSeconds() != null) realm.setQuickLoginCheckMilliSeconds(checkNonNegativeNumber(rep.getQuickLoginCheckMilliSeconds().intValue(), "Quick login check milliseconds"));
         if (rep.getMaxDeltaTimeSeconds() != null) realm.setMaxDeltaTimeSeconds(checkNonNegativeNumber(rep.getMaxDeltaTimeSeconds(),"Maximum delta time seconds"));
         if (rep.getFailureFactor() != null) realm.setFailureFactor(checkNonNegativeNumber(rep.getFailureFactor(),"Failure factor"));
         if (rep.isRegistrationAllowed() != null) realm.setRegistrationAllowed(rep.isRegistrationAllowed());
@@ -1266,14 +1266,20 @@ public class DefaultExportImportManager implements ExportImportManager {
         }
     }
 
-    public static void importGroups(RealmModel realm, RealmRepresentation rep) {
+    public void importGroups(RealmModel realm, RealmRepresentation rep) {
         List<GroupRepresentation> groups = rep.getGroups();
         if (groups == null) return;
 
-        GroupModel parent = null;
-        for (GroupRepresentation group : groups) {
-            importGroup(realm, parent, group);
-        }
+
+        EntityManagers.runInBatch(session, () -> {
+            Batcher batcher = new Batcher();
+            GroupModel parent = null;
+            for (GroupRepresentation group : groups) {
+                importGroup(realm, parent, group);
+                batcher.accept(session);
+            }
+        }, true);
+
     }
 
     private static WebAuthnPolicy getWebAuthnPolicyTwoFactor(RealmRepresentation rep) {
