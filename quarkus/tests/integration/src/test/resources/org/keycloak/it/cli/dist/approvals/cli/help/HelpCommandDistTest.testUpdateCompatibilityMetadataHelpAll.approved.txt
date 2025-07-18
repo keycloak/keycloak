@@ -597,6 +597,9 @@ Tracing:
 --tracing-endpoint <url>
                      OpenTelemetry endpoint to connect to. Default: http://localhost:4317.
                        Available only when Tracing is enabled.
+--tracing-infinispan-enabled <true|false>
+                     Enables the OpenTelemetry tracing for embedded Infinispan. Default: true.
+                       Available only when tracing and embedded Infinispan is enabled.
 --tracing-jdbc-enabled <true|false>
                      Enables the OpenTelemetry JDBC tracing. Default: true. Available only when
                        Tracing is enabled.
