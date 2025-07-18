@@ -71,6 +71,12 @@ public class LoggingOptions {
             .description("Indicates whether to log asynchronously to all handlers.")
             .build();
 
+    public static final Option<Boolean> LOG_OTEL_ENABLED = new OptionBuilder<>("log-opentelemetry-enabled", Boolean.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(false)
+            .buildTime(true)
+            .build();
+
     public enum Output {
         DEFAULT,
         JSON;

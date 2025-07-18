@@ -15,6 +15,7 @@ public enum OptionCategory {
     METRICS("Metrics", 80, ConfigSupportLevel.SUPPORTED),
     PROXY("Proxy", 90, ConfigSupportLevel.SUPPORTED),
     VAULT("Vault", 100, ConfigSupportLevel.SUPPORTED),
+    OPENTELEMETRY("OpenTelemetry", 109, ConfigSupportLevel.PREVIEW),
     LOGGING("Logging", 110, ConfigSupportLevel.SUPPORTED),
     TRACING("Tracing", 111, ConfigSupportLevel.SUPPORTED),
     EVENTS("Events", 112, ConfigSupportLevel.SUPPORTED),

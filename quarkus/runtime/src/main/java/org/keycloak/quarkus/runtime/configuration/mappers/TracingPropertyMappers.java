@@ -18,6 +18,7 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import org.keycloak.common.Profile;
+import org.keycloak.config.OpenTelemetryOptions;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.utils.StringUtil;
@@ -48,17 +49,19 @@ public class TracingPropertyMappers {
         return new PropertyMapper[]{
                 fromOption(TRACING_ENABLED)
                         .isEnabled(TracingPropertyMappers::isFeatureEnabled, OTEL_FEATURE_ENABLED_MSG)
-                        .to("quarkus.otel.enabled") // enable/disable whole OTel, tracing is enabled by default
+                        .to("quarkus.otel.traces.enabled") // enable/disable whole OTel, tracing is enabled by default
                         .build(),
                 fromOption(TRACING_ENDPOINT)
                         .isEnabled(TracingPropertyMappers::isTracingEnabled, TRACING_ENABLED_MSG)
                         .to("quarkus.otel.exporter.otlp.traces.endpoint")
+                        .mapFrom(OpenTelemetryOptions.OTEL_ENDPOINT)
                         .paramLabel("url")
-                        .validator(TracingPropertyMappers::validateEndpoint)
+                        .validator(OpenTelemetryPropertyMappers::validateEndpoint)
                         .build(),
                 fromOption(TRACING_SERVICE_NAME)
                         .isEnabled(TracingPropertyMappers::isTracingEnabled, TRACING_ENABLED_MSG)
                         .to("quarkus.otel.service.name")
+                        .mapFrom(OpenTelemetryOptions.OTEL_SERVICE_NAME)
                         .paramLabel("name")
                         .build(),
                 fromOption(TRACING_RESOURCE_ATTRIBUTES)
@@ -69,6 +72,7 @@ public class TracingPropertyMappers {
                 fromOption(TRACING_PROTOCOL)
                         .isEnabled(TracingPropertyMappers::isTracingEnabled, TRACING_ENABLED_MSG)
                         .to("quarkus.otel.exporter.otlp.traces.protocol")
+                        .mapFrom(OpenTelemetryOptions.OTEL_PROTOCOL)
                         .paramLabel("protocol")
                         .build(),
                 fromOption(TRACING_SAMPLER_TYPE)
@@ -95,15 +99,7 @@ public class TracingPropertyMappers {
         };
     }
 
-    private static void validateEndpoint(String value) {
-        if (StringUtil.isBlank(value)) {
-            throw new PropertyException("URL specified in 'tracing-endpoint' option must not be empty.");
-        }
 
-        if (!isValidUrl(value)) {
-            throw new PropertyException("URL specified in 'tracing-endpoint' option is invalid.");
-        }
-    }
 
     private static void validateRatio(String value) {
         if (StringUtil.isBlank(value)) {
@@ -131,14 +127,5 @@ public class TracingPropertyMappers {
 
     public static boolean isTracingJdbcEnabled() {
         return Configuration.isTrue(TRACING_JDBC_ENABLED);
-    }
-
-    private static boolean isValidUrl(String url) {
-        try {
-            new URL(url).toURI();
-            return true;
-        } catch (MalformedURLException | URISyntaxException e) {
-            return false;
-        }
     }
 }

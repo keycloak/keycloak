@@ -200,6 +200,18 @@ Vault:
 --vault-pass <pass>  Password for the vault keystore.
 --vault-type <type>  Specifies the type of the keystore file. Default: PKCS12.
 
+OpenTelemetry (Preview):
+
+--opentelemetry-protocol <protocol>
+                     Preview: OpenTelemetry protocol used for the telemetry data. Possible values
+                       are: grpc, http/protobuf. Default: grpc. Available only when something is
+                       using OTel collector (Logs, Metrics, Traces).
+--opentelemetry-service-name <name>
+                     Preview: OpenTelemetry service name. Takes precedence over 'service.name'
+                       defined in the 'tracing-resource-attributes' property. Default: keycloak.
+                       Available only when something is using OTel collector (Logs, Metrics,
+                       Traces).
+
 Logging:
 
 --log <handler>      Enable one or more log handlers in a comma-separated list. Possible values
