@@ -100,6 +100,23 @@ public class PropertyMapper<T> {
         this.namedProperty = namedProperty;
     }
 
+    /**
+     * This is the heart of the property mapping logic. In preference order we are looking for:
+     * <ul>
+     *   <li>the "from" value (the property is directly specified)
+     *   <li>the mapFrom (the property is inferred from another value)
+     *   <li>the default
+     * </ul>
+     *
+     * <p>
+     * If we did not find a value, we simply move on in the interceptor chain.
+     * <p>
+     * If we found a value, it needs to be transformed via {@link #transformValue(String, ConfigValue, ConfigSourceInterceptorContext, boolean)}. If the mapFrom value is being used or the name matches "to", the
+     * either the parentMapper (from {@link PropertyMapper.Builder} mapFrom methods), or the mapper (from {@link PropertyMapper.Builder} transformer methods) is applied.
+     * <p>
+     * Finally the returned {@link ConfigValue} is made to match what was requested - with the name, value, rawValue, and ordinal set appropriately.
+     * <p>
+     */
     ConfigValue getConfigValue(String name, ConfigSourceInterceptorContext context) {
         String from = getFrom();
 
@@ -359,8 +376,7 @@ public class PropertyMapper<T> {
         }
 
         /**
-         * NOTE: This transformer will not apply to the mapFrom value. When using
-         * {@link #mapFrom} you generally need a transformer specifically for the parent
+         * When using {@link #mapFrom} you generally need a transformer specifically for the parent
          * value, see {@link #mapFrom(Option, BiFunction)}
          * <p>
          * The value passed into the transformer may be null if the property has no value set, and no default
@@ -369,6 +385,12 @@ public class PropertyMapper<T> {
             return transformer((name, value, context) -> mapper.apply(value, context));
         }
 
+        /**
+         * When using {@link #mapFrom} you generally need a transformer specifically for the parent
+         * value, see {@link #mapFrom(Option, BiFunction)}
+         * <p>
+         * The value passed into the transformer may be null if the property has no value set, and no default
+         */
         public Builder<T> transformer(ValueMapper mapper) {
             this.mapper = mapper;
             return this;
