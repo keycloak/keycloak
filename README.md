@@ -13,7 +13,7 @@ This is a fork of Open Source Identity and Access Management Keycloak, enhanced 
 
 ## Rational
 
-Please see [Community Epic Proposal at Keycloak Github](https://gist.github.com/ondamike/191ae64890b0e9b9ba4699f464108c05)
+Please see [Community Epic: Introduce foundational Identity Governance & Administration (IGA) capabilities into Keycloak](https://gist.github.com/ondamike/191ae64890b0e9b9ba4699f464108c05)
 
 
 ### Getting Started (Keycloak IGA)
