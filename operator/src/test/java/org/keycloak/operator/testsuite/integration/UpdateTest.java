@@ -87,6 +87,7 @@ public class UpdateTest extends BaseOperatorTest {
         }
     }
 
+    @DisabledIfApiServerTest // ignore for now as it is very unstable - see https://github.com/keycloak/keycloak/pull/41252 for more details
     @ParameterizedTest(name = "testCacheMaxCount-{0}")
     @EnumSource(UpdateStrategy.class)
     public void testCacheMaxCount(UpdateStrategy updateStrategy) throws InterruptedException {
