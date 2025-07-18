@@ -47,6 +47,7 @@ import org.keycloak.marshalling.Marshalling;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
+import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
@@ -55,6 +56,8 @@ import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.theme.ClasspathThemeProviderFactory;
 import org.keycloak.truststore.TruststoreBuilder;
 import org.keycloak.userprofile.DeclarativeUserProfileProviderFactory;
+
+import static org.keycloak.quarkus.runtime.storage.database.jpa.QuarkusJpaConnectionProviderFactory.DEFAULT_PERSISTENCE_UNIT;
 
 @Recorder
 public class KeycloakRecorder {
@@ -75,6 +78,19 @@ public class KeycloakRecorder {
     // default handler for the management interface
     public Handler<RoutingContext> getManagementHandler() {
         return routingContext -> routingContext.response().end("Keycloak Management Interface");
+    }
+
+    public void validatePersistenceUnits(List<String> descriptors) {
+        List<String> notSetPersistenceUnitsDBKinds = descriptors.stream()
+                .filter(descriptorName -> !descriptorName.equals(DEFAULT_PERSISTENCE_UNIT)) // not default persistence unit
+                // map PU name to DB kind option like: user-store -> db-kind-user-store
+                .map(descriptorName -> DatabaseOptions.getNamedKey(DatabaseOptions.DB, descriptorName).orElseThrow())
+                .filter(dbKind -> Configuration.getKcConfigValue(dbKind).getValue() == null) // not provided
+                .toList();
+
+        if (!notSetPersistenceUnitsDBKinds.isEmpty()) {
+            throw new PropertyException("Detected additional named datasources. You need to explicitly set the DB kind for the datasource(s) to properly work as: %s".formatted(String.join(",", notSetPersistenceUnitsDBKinds)));
+        }
     }
 
     public void configureTruststore() {
