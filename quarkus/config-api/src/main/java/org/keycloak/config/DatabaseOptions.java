@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 public class DatabaseOptions {
 
@@ -145,6 +146,22 @@ public class DatabaseOptions {
 
     private static final Map<String, Option<?>> cachedDatasourceOptions = new HashMap<>();
 
+    public static <T> boolean isDatasourceOption(String name, Option<T> option) {
+        return getDatasourceOptionName(option).map(name::startsWith).orElse(false);
+    }
+
+    /**
+     * Get datasource option name based on the parent DB option {@param dbOption}
+     */
+    public static <T> Optional<String> getDatasourceOptionName(Option<T> dbOption) {
+        return getDatasourceOptionName(dbOption.getKey());
+    }
+
+    private static <T> Optional<String> getDatasourceOptionName(String dbOptionKey) {
+        return Optional.of(dbOptionKey)
+                .filter(o -> OPTIONS_DATASOURCES.stream().map(Option::getKey).anyMatch(o::equals))
+                .map(key -> key.concat(DATASOURCES_OVERRIDES_SUFFIX.getOrDefault(key, "")));
+    }
 
     /**
      * Get datasource option containing named datasource mapped to parent DB options.
@@ -196,9 +213,7 @@ public class DatabaseOptions {
      * Get mapped datasource key based on DB option {@param option}
      */
     public static Optional<String> getKeyForDatasource(String option) {
-        return Optional.of(option)
-                .filter(o -> OPTIONS_DATASOURCES.stream().map(Option::getKey).anyMatch(o::equals))
-                .map(key -> key.concat(DATASOURCES_OVERRIDES_SUFFIX.getOrDefault(key, "")))
+        return getDatasourceOptionName(option)
                 .map(key -> key.concat("-<datasource>"));
     }
 
