@@ -60,9 +60,4 @@ public class WebAuthnConditionalUIAuthenticator extends WebAuthnPasswordlessAuth
         return Profile.isFeatureEnabled(Profile.Feature.PASSKEYS) &&
                 Boolean.TRUE.equals(session.getContext().getRealm().getWebAuthnPolicyPasswordless().isPasskeysEnabled());
     }
-
-    // Do not show authenticators during login with conditional passkeys (For example during username/password)
-    protected boolean shouldShowWebAuthnAuthenticators(AuthenticationFlowContext context) {
-        return false;
-    }
 }

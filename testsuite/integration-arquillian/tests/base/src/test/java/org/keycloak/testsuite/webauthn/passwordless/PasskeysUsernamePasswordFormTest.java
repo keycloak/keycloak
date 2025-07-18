@@ -46,6 +46,7 @@ import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions;
 import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
 import static org.hamcrest.Matchers.nullValue;
@@ -288,12 +289,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
 
             // WebAuthn elements not available
             loginPage.assertCurrent();
-            try {
-                MatcherAssert.assertThat(driver.findElement(By.xpath("//form[@id='webauth']")), nullValue());
-                fail("Not expected to have webauthn button");
-            } catch (Exception nsee) {
-                // expected
-            }
+            Assert.assertThrows(NoSuchElementException.class, () -> driver.findElement(By.xpath("//form[@id='webauth']")));
 
             // Login with password
             loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
@@ -309,12 +305,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
 
             loginPage.assertCurrent();
             assertEquals("Please re-authenticate to continue", loginPage.getInfoMessage());
-            try {
-                MatcherAssert.assertThat(driver.findElement(By.xpath("//form[@id='webauth']")), nullValue());
-                fail("Not expected to have webauthn button");
-            } catch (Exception nsee) {
-                // expected
-            }
+            Assert.assertThrows(NoSuchElementException.class, () -> driver.findElement(By.xpath("//form[@id='webauth']")));
 
             // Login with password
             loginPage.login(getPassword("test-user@localhost"));
