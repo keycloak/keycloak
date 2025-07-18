@@ -96,10 +96,8 @@ final class DatabasePropertyMappers {
                         .paramLabel("size")
                         .build(),
                 fromOption(DatabaseOptions.DB_SQL_JPA_DEBUG)
-                        .to("kc." + DatabaseOptions.DB_SQL_JPA_DEBUG.getKey())
                         .build(),
                 fromOption(DatabaseOptions.DB_SQL_LOG_SLOW_QUERIES)
-                        .to("kc." + DatabaseOptions.DB_SQL_LOG_SLOW_QUERIES.getKey())
                         .paramLabel("milliseconds")
                         .build(),
                 fromOption(DatabaseOptions.DB_ACTIVE_DATASOURCE)

@@ -436,4 +436,26 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
                 "quarkus.datasource.\"client.store_123\".password", "password"
         ));
     }
+
+    @Test
+    public void sqlParameters() {
+        ConfigArgsConfigSource.setCliArgs("--db-kind-my-store=dev-mem");
+        initConfig();
+
+        assertConfig(Map.of(
+                "db-kind-my-store", "dev-mem",
+                "db-debug-jpql-my-store", "false",
+                "db-log-slow-queries-threshold-my-store", "10000"
+        ));
+        onAfter();
+
+        ConfigArgsConfigSource.setCliArgs("--db-kind-my-store=dev-mem", "--db-debug-jpql-my-store=true", "--db-log-slow-queries-threshold-my-store=5000");
+        initConfig();
+
+        assertConfig(Map.of(
+                "db-kind-my-store", "dev-mem",
+                "db-debug-jpql-my-store", "true",
+                "db-log-slow-queries-threshold-my-store","5000"
+        ));
+    }
 }

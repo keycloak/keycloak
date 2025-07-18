@@ -489,6 +489,14 @@ class KeycloakProcessor {
         // set datasource name
         unitProperties.setProperty(JdbcSettings.JAKARTA_JTA_DATASOURCE,datasourceName);
         unitProperties.setProperty(AvailableSettings.DATASOURCE, datasourceName); // for backward compatibility
+
+        DatabaseOptions.getNamedKey(DatabaseOptions.DB_SQL_JPA_DEBUG, datasourceName)
+                .filter(Configuration::isKcPropertyTrue)
+                .ifPresent(f -> unitProperties.put(AvailableSettings.USE_SQL_COMMENTS, "true"));
+
+        DatabaseOptions.getNamedKey(DatabaseOptions.DB_SQL_LOG_SLOW_QUERIES, datasourceName)
+                .flatMap(Configuration::getOptionalKcValue)
+                .ifPresent(threshold -> unitProperties.put(AvailableSettings.LOG_SLOW_QUERY, threshold));
     }
 
     private void configureDefaultPersistenceUnitProperties(ParsedPersistenceXmlDescriptor descriptor, HibernateOrmConfig config,
@@ -517,11 +525,11 @@ class KeycloakProcessor {
         }
 
         if (getOptionalBooleanKcValue(DatabaseOptions.DB_SQL_JPA_DEBUG.getKey()).orElse(false)) {
-            unitProperties.put("hibernate.use_sql_comments", "true");
+            unitProperties.put(AvailableSettings.USE_SQL_COMMENTS, "true");
         }
 
         getOptionalKcValue(DatabaseOptions.DB_SQL_LOG_SLOW_QUERIES.getKey())
-                .ifPresent(v -> unitProperties.put("hibernate.log_slow_query", v));
+                .ifPresent(v -> unitProperties.put(AvailableSettings.LOG_SLOW_QUERY, v));
     }
 
     private void configureDefaultPersistenceUnitEntities(ParsedPersistenceXmlDescriptor descriptor, CombinedIndexBuildItem indexBuildItem,
