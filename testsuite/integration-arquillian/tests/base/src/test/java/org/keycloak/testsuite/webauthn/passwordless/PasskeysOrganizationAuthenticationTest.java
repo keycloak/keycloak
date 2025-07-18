@@ -307,6 +307,10 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
                     .open();
             WaitUtils.waitForPageToLoad();
 
+            loginPage.assertCurrent();
+            MatcherAssert.assertThat(loginPage.isPasswordInputPresent(), Matchers.is(true));
+            MatcherAssert.assertThat(driver.findElement(By.xpath("//form[@id='webauth']")), Matchers.notNullValue());
+            webAuthnLoginPage.clickAuthenticate();
             appPage.assertCurrent();
 
             events.expectLogin()
