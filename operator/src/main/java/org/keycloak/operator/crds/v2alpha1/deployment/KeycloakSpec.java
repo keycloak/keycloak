@@ -150,7 +150,7 @@ public class KeycloakSpec {
     private ProbeSpec startupProbeSpec;
 
     @JsonProperty("automountServiceAccountToken")
-    @JsonPropertyDescription("Set this to automount the default ServiceAccount Token and Service CA")
+    @JsonPropertyDescription("Set this to to false to disable automounting the default ServiceAccount Token and Service CA. This is enabled by default.")
     private Boolean automountServiceAccountToken;
 
 
