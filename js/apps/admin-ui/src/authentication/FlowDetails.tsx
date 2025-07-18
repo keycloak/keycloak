@@ -329,10 +329,10 @@ export default function FlowDetails() {
           }}
         />
       )}
-      {open && (
+      {open && flow && (
         <DuplicateFlowModal
-          name={flow?.alias!}
-          description={flow?.description!}
+          name={flow.alias!}
+          description={flow.description!}
           toggleDialog={toggleOpen}
           onComplete={() => {
             refresh();
