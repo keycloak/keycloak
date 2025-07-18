@@ -27,6 +27,7 @@ import org.keycloak.authentication.authenticators.browser.UsernamePasswordForm;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -49,6 +50,10 @@ import jakarta.ws.rs.core.Response;
 public class IdpUsernamePasswordForm extends UsernamePasswordForm {
 
     private final static Logger log = Logger.getLogger(IdpUsernamePasswordForm.class);
+
+    public IdpUsernamePasswordForm(KeycloakSession session) {
+        super(session);
+    }
 
     @Override
     protected Response challenge(AuthenticationFlowContext context, MultivaluedMap<String, String> formData) {
@@ -93,6 +98,10 @@ public class IdpUsernamePasswordForm extends UsernamePasswordForm {
         IdentityProviderModel idpModel = context.getSession().identityProviders().getByAlias(serializedCtx.getIdentityProviderId());
 
         existingUser.ifPresent(u -> formData.putSingle(AuthenticationManager.FORM_USERNAME, u.getUsername()));
+
+        if (isConditionalPasskeysEnabled(existingUser.orElse(null))) {
+            webauthnAuth.fillContextForm(context);
+        }
 
         LoginFormsProvider form = context.form()
                 .setFormData(formData)
