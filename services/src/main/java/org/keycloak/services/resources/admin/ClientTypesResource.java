@@ -62,8 +62,10 @@ public class ClientTypesResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation(summary = "List all client types available in the current realm",
-            description = "This endpoint returns a list of both global and realm level client types and the attributes they set"
+    @Operation(
+            summary = "List all client types available in the current realm",
+            description = "This endpoint returns a list of both global and realm level client types and the attributes they set",
+            operationId = "getClientTypes"
     )
     public ClientTypesRepresentation getClientTypes() {
         auth.realm().requireViewRealm();
@@ -79,8 +81,10 @@ public class ClientTypesResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation(summary = "Update a client type",
-            description = "This endpoint allows you to update a realm level client type"
+    @Operation(
+            summary = "Update a client type",
+            description = "This endpoint allows you to update a realm level client type",
+            operationId = "updateClientTypes"
     )
     @APIResponse(responseCode = "204", description = "No Content")
     public Response updateClientTypes(final ClientTypesRepresentation clientTypes) {
