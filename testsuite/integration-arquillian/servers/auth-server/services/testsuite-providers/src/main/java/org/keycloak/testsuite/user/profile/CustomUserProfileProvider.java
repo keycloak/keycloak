@@ -2,16 +2,27 @@ package org.keycloak.testsuite.user.profile;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.userprofile.config.UPAttributeRequired;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.userprofile.DeclarativeUserProfileProvider;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.config.UPConfigUtils;
 
 import java.util.Map;
+import java.util.Set;
 
 public class CustomUserProfileProvider extends DeclarativeUserProfileProvider {
 
     public CustomUserProfileProvider(KeycloakSession session, CustomUserProfileProviderFactory factory) {
         super(session, factory);
+        UPConfig upConfig = getConfiguration();
+
+        upConfig.getAttribute(UserModel.FIRST_NAME).setRequired(null);
+        upConfig.getAttribute(UserModel.LAST_NAME).setRequired(null);
+        upConfig.getAttribute(UserModel.EMAIL).setRequired(null);
+
+        setConfiguration(upConfig);
     }
 
     @Override
