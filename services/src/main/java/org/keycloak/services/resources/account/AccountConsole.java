@@ -117,7 +117,7 @@ public class AccountConsole implements AccountResourceProvider {
         return renderAccountConsole();
     }
 
-    private Response renderAccountConsole() throws IOException, FreeMarkerException {
+    protected Response renderAccountConsole() throws IOException, FreeMarkerException {
         final var serverUriInfo = session.getContext().getUri(UrlType.FRONTEND);
         final var serverBaseUri = serverUriInfo.getBaseUri();
         // Strip any trailing slashes from the URL.
@@ -226,12 +226,16 @@ public class AccountConsole implements AccountResourceProvider {
         }
 
         FreeMarkerProvider freeMarkerUtil = session.getProvider(FreeMarkerProvider.class);
-        String result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);
+        String result = renderAccountConsole(freeMarkerUtil, map);
         Response.ResponseBuilder builder = Response.status(Response.Status.OK).type(MediaType.TEXT_HTML_UTF_8).language(Locale.ENGLISH).entity(result);
         return builder.build();
     }
 
-    private Response redirectToLogin(String path) {
+    protected String renderAccountConsole(FreeMarkerProvider freeMarkerUtil, Map<String, Object> map) throws FreeMarkerException {
+        return freeMarkerUtil.processTemplate(map, "index.ftl", theme);
+    }
+
+    protected Response redirectToLogin(String path) {
         UriBuilder consoleUriBuilder = Urls.accountBase(session.getContext().getUri().getBaseUri());
         if (!StringUtil.isNullOrEmpty(path)) {
             consoleUriBuilder.path(path);
@@ -302,12 +306,12 @@ public class AccountConsole implements AccountResourceProvider {
         return Response.status(302).location(url).build();
     }
 
-    private Map<String, String> supportedLocales(Properties messages) {
+    protected Map<String, String> supportedLocales(Properties messages) {
         return realm.getSupportedLocalesStream()
                 .collect(Collectors.toMap(Function.identity(), l -> messages.getProperty("locale_" + l, l)));
     }
 
-    private String messagesToJsonString(Properties props) {
+    protected String messagesToJsonString(Properties props) {
         if (props == null) return "";
         Properties newProps = new Properties();
         for (String prop : props.stringPropertyNames()) {
@@ -384,7 +388,7 @@ public class AccountConsole implements AccountResourceProvider {
         return new String[]{referrer, referrerName, referrerUri};
     }
 
-    private boolean isLinkedAccountsEnabled(UserModel user) {
+    protected boolean isLinkedAccountsEnabled(UserModel user) {
         if (user == null) {
             return false;
         }
