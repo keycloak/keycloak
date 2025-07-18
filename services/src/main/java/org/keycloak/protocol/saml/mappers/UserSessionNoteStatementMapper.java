@@ -22,10 +22,16 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UserSessionNoteDescriptor;
+import org.keycloak.protocol.ProtocolMapperUtils;
+import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Maps a user session note to a SAML attribute
@@ -81,4 +87,23 @@ public class UserSessionNoteStatementMapper extends AbstractSAMLProtocolMapper i
         AttributeStatementHelper.addAttribute(attributeStatement, mappingModel, value);
 
     }
+
+    /**
+     * For session notes defined using a {@link UserSessionNoteDescriptor} enum
+     *
+     * @param userSessionNoteDescriptor User session note descriptor for which to create a protocol mapper model.
+     */
+    public static ProtocolMapperModel createUserSessionNoteMapper(UserSessionNoteDescriptor userSessionNoteDescriptor) {
+        ProtocolMapperModel mapper = new ProtocolMapperModel();
+        mapper.setName(userSessionNoteDescriptor.getDisplayName());
+        mapper.setProtocolMapper(PROVIDER_ID);
+        mapper.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
+        Map<String, String> config = new HashMap<>();
+        config.put(ProtocolMapperUtils.USER_SESSION_NOTE, userSessionNoteDescriptor.toString());
+        config.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAME, userSessionNoteDescriptor.getTokenClaim());
+        config.put(AttributeStatementHelper.FRIENDLY_NAME, userSessionNoteDescriptor.getDisplayName());
+        mapper.setConfig(config);
+        return mapper;
+    }
+
 }
