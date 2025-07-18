@@ -1,11 +1,18 @@
 package org.keycloak.quarkus.deployment;
 
+import io.smallrye.config.SmallRyeConfig;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.cfg.JdbcSettings;
 import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
 import org.hibernate.jpa.boot.spi.PersistenceXmlParser;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.keycloak.Config;
+import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
+import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -160,6 +167,39 @@ public class PersistenceXmlDatasourcesTest {
             configurePersistenceUnitProperties("user-store", descriptor);
             assertThat(descriptor.getProperties().getProperty(AvailableSettings.JAKARTA_TRANSACTION_TYPE), is("JTA"));
         });
+    }
+
+    @Test
+    public void sqlProperties() throws IOException {
+        ConfigArgsConfigSource.setCliArgs("--db-kind-user-store=dev-mem", "--db-debug-jpql-user-store=true", "--db-log-slow-queries-threshold-user-store=7500");
+        initConfig();
+
+        var content = """
+                <persistence-unit name="user-store-pu" transaction-type="JTA">
+                    <properties>
+                        <property name="jakarta.persistence.jtaDataSource" value="user-store" />
+                    </properties>
+                </persistence-unit>
+                """;
+        assertPersistenceXmlSingleDS(content, descriptor -> {
+            configurePersistenceUnitProperties("user-store", descriptor);
+            var properties = descriptor.getProperties();
+
+            assertThat(properties.getProperty(AvailableSettings.USE_SQL_COMMENTS), is("true"));
+            assertThat(properties.getProperty(AvailableSettings.LOG_SLOW_QUERY), is("7500"));
+        });
+    }
+
+    private static void initConfig(){
+        Config.init(new MicroProfileConfigProvider(createConfig()));
+    }
+
+    // inspired in AbstractConfigurationTest in quarkus/runtime
+    private static SmallRyeConfig createConfig() {
+        Configuration.resetConfig();
+        KeycloakConfigSourceProvider.reload();
+        Environment.getCurrentOrCreateFeatureProfile();
+        return Configuration.getConfig();
     }
 
     private void assertUsedName(String content, String expectedName) throws IOException {
