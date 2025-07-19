@@ -1010,7 +1010,7 @@ public class ParTest extends AbstractClientPoliciesTest {
         oauth.redirectUri(CLIENT_REDIRECT_URI);
         ParResponse pResp = oauth.doPushedAuthorizationRequest();
         assertEquals(400, pResp.getStatusCode());
-        assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, pResp.getError());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, pResp.getError());
     }
 
     // PAR including invalid redirect_uri
