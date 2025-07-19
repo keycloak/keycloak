@@ -120,6 +120,19 @@ public class FolderTheme implements Theme {
                 PropertiesUtil.readCharsetAware(m, stream);
             }
         }
+
+        // Chinese locales mapping
+        if (locale.getLanguage().equals("zh")) {
+            filename = locale.getCountry().equals("TW") ? "zh_Hant" : "zh_Hans";
+            file = new File(themeDir, "messages" + File.separator + filename + ".properties");
+
+            if (file.isFile()) {
+                try (InputStream stream = Files.newInputStream(file.toPath())) {
+                    PropertiesUtil.readCharsetAware(m, stream);
+                }
+            }
+        }
+
         return m;
     }
 

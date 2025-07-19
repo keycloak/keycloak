@@ -128,6 +128,19 @@ public class ClassLoaderTheme implements Theme {
                 PropertiesUtil.readCharsetAware(m, stream);
             }
         }
+
+        // Chinese locales mapping
+        if (locale.getLanguage().equals("zh")) {
+            String filename = locale.getCountry().equals("TW") ? "zh_Hant" : "zh_Hans";
+            url = classLoader.getResource(this.messageRoot + baseBundlename + "_" + filename + ".properties");
+
+            if (url != null) {
+                try (InputStream stream = url.openStream()) {
+                    PropertiesUtil.readCharsetAware(m, stream);
+                }
+            }
+        }
+
         return m;
     }
 
