@@ -1,14 +1,18 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import com.google.common.base.Suppliers;
+import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.config.Option;
 
@@ -23,9 +27,10 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
 
     private static final Pattern valueValidator = Pattern.compile("[\\[\\]\\$\\-._a-zA-Z0-9]+");
 
+    private final Supplier<List<WildcardPropertyMapper<?>>> connectedMappers;
     private final BiFunction<String, Set<String>, Set<String>> wildcardKeysTransformer;
     private final ValueMapper wildcardMapFrom;
-
+    private final String wildcardName;
     private final String fromPrefix;
     private String toPrefix;
     private String toSuffix;
@@ -41,6 +46,8 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
         if (!getFrom().endsWith(">")) {
             throw new IllegalArgumentException("Invalid wildcard from format. Wildcard must be at the end of the option.");
         }
+        this.wildcardName = getFrom().substring(fromPrefix.length());
+        this.connectedMappers = Suppliers.memoize(() -> PropertyMappers.getConnectedWildcardMappers(getWildcardName()));
 
         if (option == LoggingOptions.LOG_LEVEL_CATEGORY) {
             replacementChar = '.';
@@ -66,7 +73,11 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
         return true;
     }
 
-    String getTo(String wildcardKey) {
+    public String getWildcardName() {
+        return wildcardName;
+    }
+
+    public String getTo(String wildcardKey) {
         return toPrefix + wildcardKey + toSuffix;
     }
 
@@ -81,9 +92,29 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
         return wildcardKeysTransformer.apply(value, new HashSet<String>()).stream().map(this::getTo);
     }
 
+    public Optional<String> getAdditionalTo(String key) {
+        var isDbKindOption = DatabaseOptions.isDatasourceOption(option.getKey(), DatabaseOptions.DB);
+        if (isDbKindOption) {
+            var dbFullUrlOption = DatabaseOptions.getKeyForDatasource(DatabaseOptions.DB_URL).orElseThrow();
+            return getConnectedMappers()
+                    .stream()
+                    .filter(f -> f.getOption().getKey().equals(dbFullUrlOption))
+                    .findAny()
+                    .map(mapper -> mapper.getTo(extractWildcardValue(key).orElseThrow()));
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * For more details, see the {@link PropertyMappers#getConnectedWildcardMappers(String)}
+     */
+    public List<WildcardPropertyMapper<?>> getConnectedMappers() {
+        return connectedMappers.get();
+    }
+
     @Override
     public PropertyMapper<?> forKey(String key) {
-        String wildcardValue = extractWildcardValue(key).orElseThrow();
+        String wildcardValue = extractWildcardValue(key).orElseThrow(() -> new IllegalArgumentException("Invalid wildcard value"));
         String to = getTo(wildcardValue);
         String from = getFrom(wildcardValue);
         String mapFrom = getMapFrom();
@@ -96,7 +127,7 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
                 wildcardMapFrom == null ? null : (name, v, context) -> wildcardMapFrom.map(wildcardValue, v, context));
     }
 
-    private Optional<String> extractWildcardValue(String key) {
+    public Optional<String> extractWildcardValue(String key) {
         String result = null;
         if (key.startsWith(fromPrefix)) {
             result = key.substring(fromPrefix.length());
