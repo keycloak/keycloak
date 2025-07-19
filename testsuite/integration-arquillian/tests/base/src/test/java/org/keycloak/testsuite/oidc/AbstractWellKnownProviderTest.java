@@ -173,7 +173,7 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
                     Algorithm.ES384, Algorithm.ES512, Algorithm.HS256, Algorithm.HS384, Algorithm.HS512, Algorithm.EdDSA);
 
             // Claims
-            assertContains(oidcConfig.getClaimsSupported(), IDToken.NAME, IDToken.EMAIL, IDToken.PREFERRED_USERNAME, IDToken.FAMILY_NAME, IDToken.ACR);
+            assertContains(oidcConfig.getClaimsSupported(), "iss", IDToken.SUBJECT, IDToken.AUD, "exp", "iat", IDToken.AUTH_TIME, IDToken.NAME, IDToken.GIVEN_NAME, IDToken.FAMILY_NAME, IDToken.PREFERRED_USERNAME, IDToken.EMAIL, IDToken.ACR, IDToken.AZP, "nonce");
             Assert.assertNames(oidcConfig.getClaimTypesSupported(), "normal");
             Assert.assertTrue(oidcConfig.getClaimsParameterSupported());
 
