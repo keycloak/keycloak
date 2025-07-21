@@ -170,6 +170,9 @@ Changing the value of one of the following CLI options triggers a recreate updat
 | `--cache-remote-port`           | Connecting to a new remote cache will cause previously cached data to be lost.
 |===
 
+WARNING: Updates to the content of the cache configuration file provided via `--cache-config-file` is not verified for compatibility.
+Users should ensure changes to this file are compatible with previous versions before rolling out an update, otherwise the cluster may not form as expected.
+
 [[rolling-updates-for-patch-releases]]
 == Rolling updates for patch releases
 
