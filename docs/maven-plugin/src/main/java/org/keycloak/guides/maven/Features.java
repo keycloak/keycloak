@@ -35,11 +35,11 @@ public class Features {
         return features.stream().filter(f -> f.getType().equals(Profile.Feature.Type.PREVIEW)).collect(Collectors.toList());
     }
 
-    public List<Feature> getUpgradePolicyShutdown() {
+    public List<Feature> getUpdatePolicyShutdown() {
         return features.stream().filter(f -> f.profileFeature.getUpdatePolicy() == Profile.FeatureUpdatePolicy.SHUTDOWN).collect(Collectors.toList());
     }
 
-    public List<Feature> getUpgradePolicyRollingNoUpgrade() {
+    public List<Feature> getUpdatePolicyRollingNoUpgrade() {
         return features.stream().filter(f -> f.profileFeature.getUpdatePolicy() == Profile.FeatureUpdatePolicy.ROLLING_NO_UPGRADE).collect(Collectors.toList());
     }
 

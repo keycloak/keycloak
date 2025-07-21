@@ -146,14 +146,14 @@ The following configuration changes return a "Rolling Update is not possible" re
 
 The enabling or disabling of the following features requires a recreate update:
 
-<@showFeaturesRolling ctx.features.upgradePolicyShutdown />
+<@showFeaturesRolling ctx.features.updatePolicyShutdown />
 
 
 ==== Recreate on feature version change
 
 Changing the following features versions triggers a recreate update:
 
-<@showFeaturesRolling ctx.features.upgradePolicyRollingNoUpgrade />
+<@showFeaturesRolling ctx.features.updatePolicyRollingNoUpgrade />
 
 === Configuration options
 
