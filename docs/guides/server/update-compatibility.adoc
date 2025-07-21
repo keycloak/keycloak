@@ -138,7 +138,7 @@ The feature `rolling-updates` is disabled.
 
 == Rolling incompatible changes
 
-The following is a summary of known configuration changes which are not compatible with the rolling upgrade strategy.
+The following configuration changes return a "Rolling Update is not possible" result code.
 
 === Features
 
@@ -149,15 +149,15 @@ The enabling or disabling of the following features requires a recreate update:
 <@showFeaturesRolling ctx.features.upgradePolicyShutdown />
 
 
-==== Recreate on upgrade
+==== Recreate on feature version change
 
-Upgrading or downgrading to one of the following features requires a recreate update:
+Changing the following features versions triggers a recreate update:
 
 <@showFeaturesRolling ctx.features.upgradePolicyRollingNoUpgrade />
 
 === Configuration options
 
-Changing the value of one of the following CLI options requires a recreate update:
+Changing the value of one of the following CLI options triggers a recreate update:
 
 [cols="30%,70%"]
 |===
