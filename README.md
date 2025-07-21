@@ -80,6 +80,12 @@ The build script ensures these JARs are installed into `providers/` of the distr
 
 ---
 
+## Walkthrough / demo  
+
+[![Native Keycloak IGA Walkthrough](http://img.youtube.com/vi/BrTBgFM7Lq0/0.jpg)](https://www.youtube.com/watch?v=BrTBgFM7Lq0 "Native Keycloak IGA Walkthrough")
+
+---
+
 ## IGA Role & Access Governance Model
 
 This fork introduces a custom JPA provider to manage identity lifecycle and governance for:
