@@ -81,12 +81,7 @@ public class IdpUsernamePasswordForm extends UsernamePasswordForm {
         Optional<UserModel> existingUser = getExistingUser(context);
         existingUser.ifPresent(context::setUser);
 
-        boolean result = validateUserAndPassword(context, formData);
-
-        // Restore formData for the case of error
-        setupForm(context, formData, existingUser);
-
-        return result;
+        return validateUserAndPassword(context, formData);
     }
 
     protected LoginFormsProvider setupForm(AuthenticationFlowContext context, MultivaluedMap<String, String> formData, Optional<UserModel> existingUser) {

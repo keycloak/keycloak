@@ -53,7 +53,7 @@ public class IdpConfirmLinkPage extends LanguageComboboxAwarePage {
     }
 
     public void clickLinkAccount() {
-        linkAccountButton.click();
+        UIUtils.clickLink(linkAccountButton);
     }
 
 }
