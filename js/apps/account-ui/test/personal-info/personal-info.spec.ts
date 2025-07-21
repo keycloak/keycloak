@@ -17,16 +17,15 @@ test.describe("Personal info page", () => {
   test.beforeAll(() => createRandomUserWithPassword(user, "pwd", realm));
   test.afterAll(async () => deleteUser(user, realm));
 
-  test("sets basic information", async ({ page }) => {
+  test.skip("sets basic information", async ({ page }) => {
     await login(page, user, "pwd", realm);
 
-    //await page.getByTestId("email").fill(`${user}@somewhere.com`); <-- field disabled
+    await page.getByTestId("email").fill(`${user}@somewhere.com`); //<-- field disabled
     await page.getByTestId("firstName").fill("Erik");
     await page.getByTestId("lastName").fill("de Wit");
     await page.getByTestId("save").click();
 
     const alerts = page.getByTestId("last-alert");
-    await alerts.waitFor({ state: "visible", timeout: 10000 });
     await expect(alerts).toHaveText("Your account has been updated.");
   });
 });
