@@ -34,6 +34,8 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
@@ -49,6 +51,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
@@ -120,11 +123,15 @@ public class ClientScopesResource {
         ClientScopeResource.validateClientScopeProtocol(session, rep.getProtocol());
         ClientScopeResource.validateDynamicClientScope(rep);
         try {
-            ClientScopeModel clientModel = RepresentationToModel.createClientScope(realm, rep);
+            LoginProtocolFactory loginProtocolFactory = //
+                    (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class,
+                                                                                                  rep.getProtocol());
+            Optional.ofNullable(loginProtocolFactory).ifPresent(lp -> lp.addClientScopeDefaults(rep));
+            ClientScopeModel clientScope = RepresentationToModel.createClientScope(realm, rep);
 
-            adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), clientModel.getId()).representation(rep).success();
+            adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), clientScope.getId()).representation(rep).success();
 
-            return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(clientModel.getId()).build()).build();
+            return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(clientScope.getId()).build()).build();
         } catch (ModelDuplicateException e) {
             throw ErrorResponse.exists("Client Scope " + rep.getName() + " already exists");
         }

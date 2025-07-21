@@ -18,6 +18,7 @@
 package org.keycloak.models.sessions.infinispan.changes;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -153,13 +154,19 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
         for (Map.Entry<K, SessionUpdatesList<V>> entry : updates.entrySet()) {
             SessionUpdatesList<V> sessionUpdates = entry.getValue();
             SessionEntityWrapper<V> sessionWrapper = sessionUpdates.getEntityWrapper();
+            List<SessionUpdateTask<V>> updateTasks = sessionUpdates.getUpdateTasks();
+
+            if (updateTasks.isEmpty()) {
+                // no changes tracked, moving on.
+                continue;
+            }
 
             // Don't save transient entities to infinispan. They are valid just for current transaction
             if (sessionUpdates.getPersistenceState() == UserSessionModel.SessionPersistenceState.TRANSIENT) continue;
 
             // Don't save entities in infinispan that are both added and removed within the same transaction.
-            if (!sessionUpdates.getUpdateTasks().isEmpty() && sessionUpdates.getUpdateTasks().get(0).getOperation().equals(SessionUpdateTask.CacheOperation.ADD_IF_ABSENT)
-                    && sessionUpdates.getUpdateTasks().get(sessionUpdates.getUpdateTasks().size() - 1).getOperation().equals(SessionUpdateTask.CacheOperation.REMOVE)) {
+            if (updateTasks.get(0).getOperation().equals(SessionUpdateTask.CacheOperation.ADD_IF_ABSENT)
+                    && updateTasks.get(updateTasks.size() - 1).getOperation().equals(SessionUpdateTask.CacheOperation.REMOVE)) {
                 continue;
             }
 
@@ -168,7 +175,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
             long lifespanMs = lifespanMsLoader.apply(realm, sessionUpdates.getClient(), sessionWrapper.getEntity());
             long maxIdleTimeMs = maxIdleTimeMsLoader.apply(realm, sessionUpdates.getClient(), sessionWrapper.getEntity());
 
-            MergedUpdate<V> merged = MergedUpdate.computeUpdate(sessionUpdates.getUpdateTasks(), sessionWrapper, lifespanMs, maxIdleTimeMs);
+            MergedUpdate<V> merged = MergedUpdate.computeUpdate(updateTasks, sessionWrapper, lifespanMs, maxIdleTimeMs);
 
             if (merged != null) {
                 // Now run the operation in our cluster

@@ -17,6 +17,8 @@
 
 package org.keycloak.protocol.oid4vc.issuance.mappers;
 
+import org.apache.commons.collections4.ListUtils;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapper;
@@ -37,14 +39,13 @@ import java.util.UUID;
 public class OID4VCGeneratedIdMapper extends OID4VCMapper {
 
     public static final String MAPPER_ID = "oid4vc-generated-id-mapper";
-    public static final String SUBJECT_PROPERTY_CONFIG_KEY = "subjectProperty";
     private static final String SUBJECT_PROPERTY_CONFIG_KEY_DEFAULT = "id";
 
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = new ArrayList<>();
 
     static {
         ProviderConfigProperty idPropertyNameConfig = new ProviderConfigProperty();
-        idPropertyNameConfig.setName(SUBJECT_PROPERTY_CONFIG_KEY);
+        idPropertyNameConfig.setName(CLAIM_NAME);
         idPropertyNameConfig.setLabel("ID Property Name");
         idPropertyNameConfig.setHelpText("Name of the property to contain the generated id.");
         idPropertyNameConfig.setDefaultValue(SUBJECT_PROPERTY_CONFIG_KEY_DEFAULT);
@@ -57,6 +58,24 @@ public class OID4VCGeneratedIdMapper extends OID4VCMapper {
         return CONFIG_PROPERTIES;
     }
 
+    /**
+     * this claim is not added by default to the metadata
+     */
+    @Override
+    public boolean includeInMetadata() {
+        return Optional.ofNullable(mapperModel.getConfig().get(CredentialScopeModel.INCLUDE_IN_METADATA))
+                       .map(Boolean::parseBoolean)
+                       .orElse(false);
+    }
+
+    @Override
+    public List<String> getMetadataAttributePath() {
+        String property = Optional.ofNullable(mapperModel.getConfig())
+                                  .map(config -> config.get(CLAIM_NAME))
+                                  .orElse(SUBJECT_PROPERTY_CONFIG_KEY_DEFAULT);
+        return ListUtils.union(getAttributePrefix(), List.of(property));
+    }
+
     public void setClaimsForCredential(VerifiableCredential verifiableCredential,
                                        UserSessionModel userSessionModel) {
         // nothing to do for the mapper.
@@ -64,12 +83,10 @@ public class OID4VCGeneratedIdMapper extends OID4VCMapper {
 
     @Override
     public void setClaimsForSubject(Map<String, Object> claims, UserSessionModel userSessionModel) {
-        String property = Optional.ofNullable(mapperModel.getConfig())
-                .map(config -> config.get(SUBJECT_PROPERTY_CONFIG_KEY))
-                .orElse(SUBJECT_PROPERTY_CONFIG_KEY_DEFAULT);
-
         // Assign a generated ID
-        claims.put(property, String.format("urn:uuid:%s", UUID.randomUUID()));
+        List<String> attributePath = getMetadataAttributePath();
+        String propertyName = attributePath.get(attributePath.size() - 1);
+        claims.put(propertyName, String.format("urn:uuid:%s", UUID.randomUUID()));
     }
 
     @Override

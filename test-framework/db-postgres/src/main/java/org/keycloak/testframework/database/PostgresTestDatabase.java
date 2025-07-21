@@ -5,11 +5,13 @@ import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
-class PostgresTestDatabase extends AbstractContainerTestDatabase {
+public class PostgresTestDatabase extends AbstractContainerTestDatabase {
 
     private static final Logger LOGGER = Logger.getLogger(PostgresTestDatabase.class);
 
     public static final String NAME = "postgres";
+
+    PostgresTestDatabase() {}
 
     @Override
     public JdbcDatabaseContainer<?> createContainer() {

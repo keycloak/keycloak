@@ -30,7 +30,6 @@ This chapter covers the following technical configurations:
 - Defining realm attributes to specify VC metadata.
 - Establishing client scopes and mappers to include user attributes in VCs.
 - Registering a client to handle VC requests.
-- Configuring a credential builder for VC formatting.
 - Verifying the configuration using the issuer metadata endpoint.
 
 === Prerequisites
@@ -49,6 +48,14 @@ To enable the feature, add the following flag to the startup command:
 ----
 
 Verify activation by checking the server logs for the `OID4VC_VCI` initialization message.
+
+=== Configuring Credential Issuance in Keycloak
+
+In {project_name}, Verifiable Credentials are managed through *ClientScopes*, with each ClientScope representing a single Verifiable Credential type. To enable the issuance of a credential, the corresponding ClientScope must be assigned to an OpenID Connect client - ideally as *optional*.
+
+During the OAuth2 authorization process, the credential-specific scope can be requested by including the ClientScope's name in the `scope` parameter of the authorization request. Once the user has successfully authenticated, the resulting Access Token *MUST* include the requested ClientScope in its `scope` claim. To ensure this, make sure the ClientScope option *Include in token scope* is enabled.
+
+With this Access Token, the Verifiable Credential can be issued at the Credential Endpoint.
 
 === Authentication
 
@@ -131,39 +138,15 @@ Create a JSON file (e.g., `realm-attributes.json`) with the following content:
   "realm": "oid4vc-vci",
   "enabled": true,
   "attributes": {
-    "preAuthorizedCodeLifespanS": 120,
-    "issuerDid": "https://localhost:8443/realms/oid4vc-vci",
-    "vc.IdentityCredential.expiry_in_s": "31536000",
-    "vc.IdentityCredential.format": "vc+sd-jwt",
-    "vc.IdentityCredential.scope": "identity_credential",
-    "vc.IdentityCredential.vct": "https://credentials.example.com/identity_credential",
-    "vc.SteuerberaterCredential.expiry_in_s": "31536000",
-    "vc.SteuerberaterCredential.format": "vc+sd-jwt",
-    "vc.SteuerberaterCredential.scope": "stbk_westfalen_lippe",
-    "vc.SteuerberaterCredential.vct": "stbk_westfalen_lippe",
-    "vc.SteuerberaterCredential.cryptographic_binding_methods_supported": "jwk"
+    "preAuthorizedCodeLifespanS": 120
   }
 }
 ----
 
-[NOTE]
-====
-This is a **sample configuration**. You can define **additional attributes** depending on your specific requirements, such as:
-- Different VC types and scopes.
-- Alternative credential formats.
-- Custom cryptographic settings.
-====
-
 ==== Attribute Breakdown
 
-The attributes section contains issuer-specific and credential-specific metadata:
+The attributes section contains issuer-specific metadata:
 - **preAuthorizedCodeLifespanS** – Defines how long pre-authorized codes remain valid (in seconds).
-- **issuerDid** – The Decentralized Identifier (DID) of the issuer.
-- **expiry_in_s** – Credential expiration time (in seconds).
-- **format** – Defines the VC format (e.g., `vc+sd-jwt`).
-- **scope** – Identifies the credential’s scope.
-- **vct** – The **Verifiable Credential Type (VCT)**.
-- **cryptographic_binding_methods_supported** – Specifies supported cryptographic methods (if applicable).
 
 ==== Import Realm Attributes
 
@@ -185,9 +168,9 @@ curl -X PUT "https://localhost:8443/admin/realms/oid4vc-vci" \
 
 === Create Client Scopes with Mappers
 
-Client scopes define **which user attributes** are included in Verifiable Credentials (VCs). These scopes use **protocol mappers** to map specific claims into VCs.
+Client scopes define **which user attributes** are included in Verifiable Credentials (VCs). Therefore, they are considered the Verifiable Credential configuration itself. These scopes use **protocol mappers** to map specific claims into VCs and the protocol mappers will also contain the corresponding metadata for claims that is displayed at the Credential Issuer Metadata Endpoint.
 
-Since the **{project_name} Admin Console does not support direct client scope creation with mappers**, use the **{project_name} Admin REST API**.
+You can create the ClientScopes using the {project_name} web Administration Console, but the web Administration Console does not yet support adding metadata configuration. For metadata configuration, you will need to use the Admin REST API.
 
 ==== Define a Client Scope with a Mapper
 
@@ -197,10 +180,26 @@ Create a JSON file (e.g., `client-scopes.json`) with the following content:
 ----
 {
   "name": "vc-scope-mapping",
-  "protocol": "openid-connect",
+  "protocol": "oid4vc",
   "attributes": {
-    "include.in.token.scope": "false",
-    "display.on.consent.screen": "false"
+    "include.in.token.scope": "true",
+    "vc.issuer_did": "did:web:vc.example.com",
+    "vc.credential_configuration_id": "my-credential-configuration-id",
+    "vc.credential_identifier": "my-credential-identifier",
+    "vc.format": "jwt_vc",
+    "vc.expiry_in_seconds": 31536000,
+    "vc.verifiable_credential_type": "my-vct",
+    "vc.supported_credential_types": "credential-type-1,credential-type-2",
+    "vc.credential_contexts": "context-1,context-2",
+    "vc.proof_signing_alg_values_supported": "ES256",
+    "vc.cryptographic_binding_methods_supported": "jwk",
+    "vc.signing_key_id": "key-id-123456",
+    "vc.display": "[{\"name\": \"IdentityCredential\", \"logo\": {\"uri\": \"https://university.example.edu/public/logo.png\", \"alt_text\": \"a square logo of a university\"}, \"locale\": \"en-US\", \"background_color\": \"#12107c\", \"text_color\": \"#FFFFFF\"}]",
+    "vc.sd_jwt.number_of_decoys": "2",
+    "vc.credential_build_config.sd_jwt.visible_claims": "iat,jti,nbf,exp,given_name",
+    "vc.credential_build_config.hash_algorithm": "SHA-256",
+    "vc.credential_build_config.token_jws_type": "JWS",
+    "vc.include_in_metadata": "true"
   },
   "protocolMappers": [
     {
@@ -208,9 +207,19 @@ Create a JSON file (e.g., `client-scopes.json`) with the following content:
       "protocol": "oid4vc",
       "protocolMapper": "oid4vc-static-claim-mapper",
       "config": {
-        "subjectProperty": "academic_title",
-        "staticValue": "N/A",
-        "supportedCredentialTypes": "stbk_westfalen_lippe"
+        "claim.name": "academic_title",
+        "staticValue": "N/A"
+      }
+    },
+    {
+      "name": "givenName",
+      "protocol": "oid4vc",
+      "protocolMapper": "oid4vc-user-attribute-mapper",
+      "config": {
+        "claim.name": "given_name",
+        "userAttribute": "firstName",
+        "vc.mandatory": "false",
+        "vc.display": "[{\"name\": \"الاسم الشخصي\", \"locale\": \"ar-SA\"}, {\"name\": \"Vorname\", \"locale\": \"de-DE\"}, {\"name\": \"Given Name\", \"locale\": \"en-US\"}, {\"name\": \"Nombre\", \"locale\": \"es-ES\"}, {\"name\": \"نام\", \"locale\": \"fa-IR\"}, {\"name\": \"Etunimi\", \"locale\": \"fi-FI\"}, {\"name\": \"Prénom\", \"locale\": \"fr-FR\"}, {\"name\": \"पहचानी गई नाम\", \"locale\": \"hi-IN\"}, {\"name\": \"Nome\", \"locale\": \"it-IT\"}, {\"name\": \"名\", \"locale\": \"ja-JP\"}, {\"name\": \"Овог нэр\", \"locale\": \"mn-MN\"}, {\"name\": \"Voornaam\", \"locale\": \"nl-NL\"}, {\"name\": \"Nome Próprio\", \"locale\": \"pt-PT\"}, {\"name\": \"Förnamn\", \"locale\": \"sv-SE\"}, {\"name\": \"مسلمان نام\", \"locale\": \"ur-PK\"}]"
       }
     }
   ]
@@ -221,26 +230,163 @@ Create a JSON file (e.g., `client-scopes.json`) with the following content:
 ====
 This is a **sample configuration**.
 You can define **additional protocol mappers** to support different claim mappings, such as:
+
 - Dynamic attribute values instead of static ones.
 - Mapping multiple attributes per credential type.
 - Alternative supported credential types.
 ====
 
-==== Attribute Breakdown
+From the example above:
 
-- **name** – Name of the client scope.
-- **protocol** – Uses `openid-connect` for standard OAuth2 workflows.
-- **attributes** – Defines scope visibility and consent behavior:
-- `include.in.token.scope`: Whether this scope should be included in access tokens.
-- `display.on.consent.screen`: Whether to display this scope in user consent screens.
-- **protocolMappers** – Defines **how claims are mapped**:
+- It is important to set `include.in.token.scope=true`, see <<include.in.token.scope, Attribute table: include.in.token.scope>>.
+- Most of the named attributes above are optional. See below: <<client-scope-attribute-breakdown,Attribute Breakdown>>.
+- You can determine the appropriate `protocolMapper` names by first creating them through the Web Administration Console and then retrieving their definitions via the Admin REST API.
+
+==== Attribute Breakdown - ClientScope [[client-scope-attribute-breakdown]]
+
+[cols="1,1,2", options="header"]
+|===
+| Property
+| Required
+| Description / Default
+
+| `name`
+| required
+| Name of the client scope.
+
+| `protocol`
+| required
+| Protocol used by the client scope. Use `oid4vc` for OpenID for Verifiable Credential Issuance, which is an OAuth2 extension (like `openid-connect`).
+
+| `include.in.token.scope`
+| required
+| [[include.in.token.scope]] This value MUST be `true`. It ensures that the scope’s name is included in the `scope` claim of the issued Access Token.
+
+| `protocolMappers`
+| optional
+| Defines how claims are mapped into the credential and how metadata is exposed via the issuer’s metadata endpoint.
+
+| `vc.issuer_did`
+| optional
+| The Decentralized Identifier (DID) of the issuer. +
+_Default_: `$\{name}`
+
+| `vc.credential_configuration_id`
+| optional
+| The credentials configuration ID. +
+_Default_: `$\{name}+`
+
+| `vc.credential_identifier`
+| optional
+| The credentials identifier. +
+_Default_: `$\{name}+`
+
+| `vc.format`
+| optional
+| Defines the VC format (e.g., `jwt_vc`). +
+_Default_: `vc+sd-jwt`
+
+| `vc.verifiable_credential_type`
+| optional
+| The Verifiable Credential Type (VCT). +
+_Default_: `$\{name}+`
+
+| `vc.supported_credential_types`
+| optional
+| The type values of the Verifiable Credential Type. +
+_Default_: `$\{name}+`
+
+| `vc.credential_contexts`
+| optional
+| The context values of the Verifiable Credential Type. +
+_Default_: `$\{name}+`
+
+| `vc.proof_signing_alg_values_supported`
+| optional
+| Supported signature algorithms for this credential. +
+_Default_: All present keys supporting JWS algorithms in the realm.
+
+| `vc.cryptographic_binding_methods_supported`
+| optional
+| Supported cryptographic methods (if applicable). +
+_Default_: `jwk`
+
+| `vc.signing_key_id`
+| optional
+| The ID of the key to sign this credential. +
+_Default_: _none_
+
+| `vc.display`
+| optional
+| Display information shown in the user's wallet about the issued credential. +
+_Default_: _none_
+
+| `vc.sd_jwt.number_of_decoys`
+| optional
+| Used only with format `vc+sd-jwt`. Number of decoy hashes in the SD-JWT. +
+_Default_: `10`
+
+| `vc.credential_build_config.sd_jwt.visible_claims`
+| optional
+| Used only with format `vc+sd-jwt`. Claims always disclosed in the SD-JWT body. +
+_Default_: `id,iat,nbf,exp,jti`
+
+| `vc.credential_build_config.hash_algorithm`
+| optional
+| Hash algorithm used before signing the credential. +
+_Default_: `SHA-256`
+
+| `vc.credential_build_config.token_jws_type`
+| optional
+| JWT type written into the `typ` header of the token. +
+_Default_: `JWS`
+
+| `vc.expiry_in_s`
+| optional
+| Credential expiration time in seconds. +
+_Default_: `31536000` (one year)
+
+| `vc.include_in_metadata`
+| optional
+| If this claim should be listed in the credentials metadata. +
+_Default_: `true` but depends on the mapper-type. Claims like `jti`, `nbf`, `exp`, etc. are set to `false` by default.
+|===
+
+==== Attribute Breakdown - ProtocolMappers
+
 - **name** – Mapper identifier.
-- **protocol** – Uses `oid4vc` for Verifiable Credentials.
+- **protocol** – Must be `oid4vc` for Verifiable Credentials.
 - **protocolMapper** – Specifies the claim mapping strategy (e.g., `oid4vc-static-claim-mapper`).
-- **config**:
-- `subjectProperty` – The user attribute to map.
-- `staticValue` – Static value assigned when the attribute is missing.
-- `supportedCredentialTypes` – Credential types that support this claim.
+- **config**: contains the protocol-mappers specific attributes.
+
+Most claims are dependent on the `protocolMapper`-value, but there are also commonly used claims available for all ProtocolMappers:
+
+[cols="1,1,2", options="header"]
+|===
+| Property
+| Required
+| Description / Default
+
+| `claim.name`
+| required
+| The name of the attribute that will be added into the Verifiable Credential. +
+_Default_: _none_
+
+| `userAttribute`
+| required
+| The name of the users-attribute that will be used to map the value into the `claim.name` of the Verifiable Credential. +
+_Default_: _none_
+
+| `vc.mandatory`
+| optional
+| If the credential must be issued with this claim. +
+_Default_: `false`
+
+| `vc.display`
+| optional
+| Metadata information that is displayed at the credential-issuer metadata-endpoint. +
+_Default_: _none_
+|===
 
 ==== Import the Client Scope
 
@@ -261,9 +407,10 @@ curl -X POST "https://localhost:8443/admin/realms/oid4vc-vci/client-scopes" \
 - If updating an existing scope, use `PUT` instead of `POST`.
 ====
 
-=== Create the OID4VC Client
+=== Create the Client
 
-Set up a client to handle VC requests and assign it the necessary scopes.
+Set up a client to handle Verifiable Credential (VC) requests and assign the necessary scopes.
+The client does not differ from regular OpenID Connect clients — with one exception: it must have the appropriate **optional ClientScopes** assigned that define the Verifiable Credentials it is allowed to issue.
 
 . Create a JSON file (e.g., `oid4vc-rest-api-client.json`) with the following content:
 +
@@ -301,45 +448,6 @@ curl -k -X POST "https://localhost:8443/admin/realms/oid4vc-vci/clients" \
   -H "Content-Type: application/json" \
   -d @oid4vc-rest-api-client.json
 ----
-
-=== Create a Credential Builder Component
-
-A **Credential Builder** is responsible for formatting Verifiable Credentials (VCs), such as **SD-JWT**.
-This component must be **registered in {project_name}** using the **Admin REST API**.
-
-==== Register the Credential Builder
-
-Use the following `curl` command to **create the credential builder**:
-
-[source,bash]
-----
-curl -X POST "https://localhost:8443/admin/realms/oid4vc-vci/components" \
-  -H "Authorization: Bearer $ACCESS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "sd-jwt-credentialbuilder",
-    "providerId": "vc+sd-jwt",
-    "providerType": "org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder"
-  }'
-----
-
-[NOTE]
-====
-- Replace `$ACCESS_TOKEN` with a valid **{project_name} Admin API access token**.
-- **Avoid using `-k` in production**; instead, configure a **trusted TLS certificate**.
-====
-
-==== Configuration Details
-
-- **name** – The identifier for the credential builder.
-- **providerId** – Specifies the **VC format** (e.g., `vc+sd-jwt`).
-- **providerType** – Points to the {project_name} **Credential Builder class** used for VC issuance.
-
-[IMPORTANT]
-====
-This is a **sample configuration**.
-You can **register multiple credential builders** for different VC formats **(e.g., JWT, JSON-LD, etc.)**.
-====
 
 === Verify the Configuration
 

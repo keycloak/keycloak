@@ -226,7 +226,7 @@ To enable the Email Listener:
 .Event listeners
 image:images/event-listeners.png[Event listeners]
 
-You can exclude events by using the `--spi-events-listener--email--exclude-events` argument. For example:
+You can exclude events by using the `+--spi-events-listener--email--exclude-events+` argument. For example:
 
 [source,bash]
 ----

@@ -329,7 +329,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         containerBuilder.addToArgs(0, "-Djgroups.bind.address=$(%s)".formatted(POD_IP));
 
         // probes
-        var protocol = isTlsConfigured(keycloakCR) ? "HTTPS" : "HTTP";
+        var protocol = isManagementHttps(keycloakCR) ? "HTTPS" : "HTTP";
         var port = HttpManagementSpec.managementPort(keycloakCR);
         var readinessOptionalSpec = Optional.ofNullable(keycloakCR.getSpec().getReadinessProbeSpec());
         var livenessOptionalSpec = Optional.ofNullable(keycloakCR.getSpec().getLivenessProbeSpec());
@@ -391,6 +391,11 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                 .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL)
             .endPort()
             .endContainer().endSpec().endTemplate().endSpec().build();
+    }
+
+    private boolean isManagementHttps(Keycloak keycloakCR) {
+        return isTlsConfigured(keycloakCR) && keycloakCR.getSpec().getAdditionalOptions().stream()
+                .noneMatch(v -> "http-management-scheme".equals(v.getName()) && "http".equals(v.getValue()));
     }
 
     private void handleScheduling(Keycloak keycloakCR, Map<String, String> labels, PodSpecFluent<?> specBuilder) {

@@ -169,6 +169,7 @@ public class LDCredentialSignerTest extends OID4VCTest {
             KeycloakSession session, String signingKeyId, Map<String, Object> claims,
             String overrideKeyId, String ldpProofType) {
         CredentialBuildConfig credentialBuildConfig = new CredentialBuildConfig()
+                .setCredentialIssuer(TEST_DID.toString())
                 .setTokenJwsType("JWT")
                 .setSigningKeyId(signingKeyId)
                 .setSigningAlgorithm("EdDSA")
@@ -179,7 +180,7 @@ public class LDCredentialSignerTest extends OID4VCTest {
                 session, new StaticTimeProvider(1000));
 
         VerifiableCredential testCredential = getTestCredential(claims);
-        LDCredentialBody ldCredentialBody = new LDCredentialBuilder(TEST_DID.toString())
+        LDCredentialBody ldCredentialBody = new LDCredentialBuilder()
                 .buildCredentialBody(testCredential, credentialBuildConfig);
 
         VerifiableCredential verifiableCredential = ldCredentialSigner

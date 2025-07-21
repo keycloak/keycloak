@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 import org.keycloak.Config;
 import org.keycloak.Config.Scope;
 import org.keycloak.authentication.requiredactions.TermsAndConditions;
+import org.keycloak.authentication.requiredactions.UpdateEmail;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.component.AmphibianProviderFactory;
@@ -151,7 +152,7 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
             return true;
         }
 
-        if (Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL)) {
+        if (UpdateEmail.isEnabled(realm)) {
             if (UPDATE_PROFILE.equals(c.getContext())) {
                 if (!isNewUser(c)) {
                     if (c.getUser().getEmail() == null || c.getUser().getEmail().isEmpty()) {
@@ -179,7 +180,9 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
             return true;
         }
 
-        if (Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL)) {
+        KeycloakSession session = c.getSession();
+
+        if (UpdateEmail.isEnabled(session.getContext().getRealm())) {
             if (UPDATE_PROFILE.equals(c.getContext())) {
                 if (!isNewUser(c)) {
                     if (c.getUser().getEmail() == null || c.getUser().getEmail().isEmpty()) {
@@ -194,7 +197,7 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         }
 
         if (UPDATE_PROFILE.equals(context)) {
-            RealmModel realm = c.getSession().getContext().getRealm();
+            RealmModel realm = session.getContext().getRealm();
 
             if (realm.isRegistrationEmailAsUsername()) {
                 return realm.isEditUsernameAllowed();
@@ -253,7 +256,9 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         addContextualProfileMetadata(configureUserProfile(createBrokeringProfile(readOnlyValidator)));
         addContextualProfileMetadata(configureUserProfile(createAccountProfile(ACCOUNT, readOnlyValidator)));
         addContextualProfileMetadata(configureUserProfile(createDefaultProfile(UPDATE_PROFILE, readOnlyValidator)));
-        addContextualProfileMetadata(configureUserProfile(createDefaultProfile(UPDATE_EMAIL, readOnlyValidator)));
+        if (Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL)) {
+            addContextualProfileMetadata(configureUserProfile(createDefaultProfile(UPDATE_EMAIL, readOnlyValidator)));
+        }
         addContextualProfileMetadata(configureUserProfile(createRegistrationUserCreationProfile(readOnlyValidator)));
         addContextualProfileMetadata(configureUserProfile(createUserResourceValidation(config)));
     }
@@ -524,8 +529,11 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         AttributeMetadata m = c.getMetadata();
         Map<String, Object> rawAnnotations = Optional.ofNullable(m.getAnnotations()).orElse(Map.of());
 
-        if (Profile.isFeatureEnabled(Feature.UPDATE_EMAIL)) {
-            UserProfileProvider provider = c.getSession().getProvider(UserProfileProvider.class);
+        KeycloakSession session = c.getSession();
+        KeycloakContext context = session.getContext();
+
+        if (UpdateEmail.isEnabled(context.getRealm())) {
+            UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
             UPConfig upConfig = provider.getConfiguration();
             UPAttribute attribute = upConfig.getAttribute(UserModel.EMAIL);
             UPAttributePermissions permissions = attribute.getPermissions();
@@ -536,7 +544,7 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
 
             Set<String> writePermissions = permissions.getEdit();
             boolean isWritable = writePermissions.contains(UPConfigUtils.ROLE_USER);
-            RealmModel realm = c.getSession().getContext().getRealm();
+            RealmModel realm = context.getRealm();
 
             if ((realm.isRegistrationEmailAsUsername() && !realm.isEditUsernameAllowed()) || !isWritable) {
                 return rawAnnotations;

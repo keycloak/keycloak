@@ -17,7 +17,6 @@
 package org.keycloak.operator.controllers;
 
 import java.util.Optional;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 

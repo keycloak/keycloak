@@ -159,7 +159,7 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
 
 
         // Successfully update profile and assert user logged
-        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3").submit();
+        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3").email("john@doe3.com").submit();
         appPage.assertCurrent();
     }
 
@@ -204,7 +204,7 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
         updateProfilePage.assertCurrent();
 
         // Successfully update profile and assert user logged
-        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3").submit();
+        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3").email("john@doe3.com").submit();
         appPage.assertCurrent();
     }
 
@@ -218,7 +218,7 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
         loginPage.open();
         loginPage.login("login-test", getPassword("login-test"));
         updatePasswordPage.changePassword(getPassword("login-test"), getPassword("login-test"));
-        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3").submit();
+        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3").email("john@doe3.com").submit();
 
         // Assert on consent screen
         grantPage.assertCurrent();

@@ -43,17 +43,16 @@ import java.util.Optional;
 public class OID4VCUserAttributeMapper extends OID4VCMapper {
 
     public static final String MAPPER_ID = "oid4vc-user-attribute-mapper";
-    public static final String SUBJECT_PROPERTY_CONFIG_KEY = "subjectProperty";
-    public static final String USER_ATTRIBUTE_KEY = "userAttribute";
     public static final String AGGREGATE_ATTRIBUTES_KEY = "aggregateAttributes";
 
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = new ArrayList<>();
 
     static {
         ProviderConfigProperty subjectPropertyNameConfig = new ProviderConfigProperty();
-        subjectPropertyNameConfig.setName(SUBJECT_PROPERTY_CONFIG_KEY);
-        subjectPropertyNameConfig.setLabel("Attribute Property Name");
-        subjectPropertyNameConfig.setHelpText("Property to add the user attribute to in the credential subject.");
+        subjectPropertyNameConfig.setName(CLAIM_NAME);
+        subjectPropertyNameConfig.setLabel("Claim Name");
+        subjectPropertyNameConfig.setHelpText("The name of the claim added to the credential subject that is extracted " +
+                                                      "from the user attributes.");
         subjectPropertyNameConfig.setType(ProviderConfigProperty.STRING_TYPE);
         CONFIG_PROPERTIES.add(subjectPropertyNameConfig);
 
@@ -87,7 +86,8 @@ public class OID4VCUserAttributeMapper extends OID4VCMapper {
 
     @Override
     public void setClaimsForSubject(Map<String, Object> claims, UserSessionModel userSessionModel) {
-        String propertyName = mapperModel.getConfig().get(SUBJECT_PROPERTY_CONFIG_KEY);
+        List<String> attributePath = getMetadataAttributePath();
+        String propertyName = attributePath.get(attributePath.size() - 1);
         String userAttribute = mapperModel.getConfig().get(USER_ATTRIBUTE_KEY);
         boolean aggregateAttributes = Optional.ofNullable(mapperModel.getConfig().get(AGGREGATE_ATTRIBUTES_KEY))
                 .map(Boolean::parseBoolean).orElse(false);
@@ -105,7 +105,7 @@ public class OID4VCUserAttributeMapper extends OID4VCMapper {
         var mapperModel = new ProtocolMapperModel();
         mapperModel.setName(mapperName);
         Map<String, String> configMap = new HashMap<>();
-        configMap.put(SUBJECT_PROPERTY_CONFIG_KEY, propertyName);
+        configMap.put(CLAIM_NAME, propertyName);
         configMap.put(USER_ATTRIBUTE_KEY, userAttribute);
         configMap.put(AGGREGATE_ATTRIBUTES_KEY, Boolean.toString(aggregateAttributes));
         mapperModel.setConfig(configMap);

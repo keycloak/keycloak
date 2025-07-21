@@ -3,6 +3,7 @@ package org.keycloak.testframework.realm;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -142,8 +143,28 @@ public class ClientConfigBuilder {
         return this;
     }
 
+    /**
+     * Best practice is to use other convenience methods when configuring a client, but while the framework is under
+     * active development there may not be a way to perform all updates required. In these cases this method allows
+     * applying any changes to the underlying representation.
+     *
+     * @param update
+     * @return this
+     * @deprecated
+     */
+    public ClientConfigBuilder update(ClientUpdate... update) {
+        Arrays.stream(update).forEach(u -> u.update(rep));
+        return this;
+    }
+
     public ClientRepresentation build() {
         return rep;
+    }
+
+    public interface ClientUpdate {
+
+        void update(ClientRepresentation client);
+
     }
 
 }

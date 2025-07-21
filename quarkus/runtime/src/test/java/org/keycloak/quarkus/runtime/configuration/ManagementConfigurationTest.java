@@ -17,7 +17,9 @@
 package org.keycloak.quarkus.runtime.configuration;
 
 import org.junit.Test;
+import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.configuration.mappers.ManagementPropertyMappers;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import java.util.Map;
 
@@ -186,6 +188,27 @@ public class ManagementConfigurationTest extends AbstractConfigurationTest {
         ));
         assertManagementEnabled(true);
         assertManagementHttpsEnabled(true);
+    }
+
+    @Test
+    public void managementSchemeHttp() {
+        makeInterfaceOccupied();
+        putEnvVars(Map.of(
+                "KC_HTTPS_CERTIFICATE_FILE", "/some/path/srv.crt.pem",
+                "KC_HTTPS_CERTIFICATE_KEY_FILE", "/some/path/srv.key.pem",
+                "KC_HTTP_MANAGEMENT_SCHEME", "http"
+        ));
+
+        initConfig();
+        PropertyMappers.sanitizeDisabledMappers(new Build());
+
+        assertConfig(Map.of(
+                "https-certificate-file", "/some/path/srv.crt.pem",
+                "https-certificate-key-file", "/some/path/srv.key.pem"
+        ));
+        assertConfigNull("https-management-certificate-file");
+        assertManagementEnabled(true);
+        assertManagementHttpsEnabled(false);
     }
 
     @Test

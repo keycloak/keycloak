@@ -41,6 +41,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.FipsMode;
+import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.TruststoreOptions;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.provider.Provider;
@@ -130,7 +131,7 @@ public class KeycloakRecorder {
     }
 
     public HibernateOrmIntegrationRuntimeInitListener createDefaultUnitListener() {
-        return propertyCollector -> propertyCollector.accept(AvailableSettings.DEFAULT_SCHEMA, Configuration.getRawValue("kc.db-schema"));
+        return propertyCollector -> propertyCollector.accept(AvailableSettings.DEFAULT_SCHEMA, Configuration.getConfigValue(DatabaseOptions.DB_SCHEMA).getValue());
     }
 
     public void setCryptoProvider(FipsMode fipsMode) {

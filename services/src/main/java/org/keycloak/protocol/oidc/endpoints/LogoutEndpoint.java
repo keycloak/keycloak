@@ -412,6 +412,10 @@ public class LogoutEndpoint {
                 userSession = session.sessions().getUserSession(realm, userSessionIdFromIdToken);
 
                 if (userSession == null) {
+                    userSession = session.sessions().getOfflineUserSession(realm, userSessionIdFromIdToken);
+                }
+
+                if (userSession == null) {
                     event.event(EventType.LOGOUT);
                     event.error(Errors.SESSION_EXPIRED);
                     KeycloakContext context = session.getContext();
