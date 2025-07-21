@@ -26,6 +26,7 @@ test.describe("Personal info page", () => {
     await page.getByTestId("save").click();
 
     const alerts = page.getByTestId("last-alert");
+    await alerts.waitFor({ state: "visible", timeout: 10000 });
     await expect(alerts).toHaveText("Your account has been updated.");
   });
 });
