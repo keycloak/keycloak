@@ -262,6 +262,19 @@ class KeycloakProcessor {
     }
 
     @Record(ExecutionTime.STATIC_INIT)
+    @BuildStep(onlyIf = AddHealthToMainInterface.class)
+    @Consume(ConfigBuildItem.class)
+    void configureLocalHealthCheck(BuildProducer<RouteBuildItem> routes,
+                                      HttpRootPathBuildItem httpRootPathBuildItem,
+                                      KeycloakRecorder recorder) {
+        routes.produce(httpRootPathBuildItem.routeBuilder()
+                .nestedRoute("health", "ready")
+                .handler(recorder.getLocalReadinessHandler())
+                .displayOnNotFoundPage("Health Readiness Check")
+                .build());
+    }
+
+    @Record(ExecutionTime.STATIC_INIT)
     @BuildStep(onlyIf = IsManagementEnabled.class)
     @Consume(ConfigBuildItem.class)
     void configureManagementInterface(BuildProducer<RouteBuildItem> routes,

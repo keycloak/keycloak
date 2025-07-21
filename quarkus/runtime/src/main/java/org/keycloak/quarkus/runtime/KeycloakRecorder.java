@@ -50,6 +50,8 @@ import org.keycloak.provider.Spi;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
+import org.keycloak.quarkus.runtime.services.health.KeycloakLocalReadinessHandler;
+import org.keycloak.quarkus.runtime.services.health.KeycloakReadyHealthCheck;
 import org.keycloak.quarkus.runtime.storage.database.liquibase.FastServiceLocator;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.theme.ClasspathThemeProviderFactory;
@@ -65,6 +67,10 @@ public class KeycloakRecorder {
 
     public void configureProfile(Profile.ProfileName profileName, Map<Profile.Feature, Boolean> features) {
         Profile.init(profileName, features);
+    }
+
+    public Handler<RoutingContext> getLocalReadinessHandler() {
+        return new KeycloakLocalReadinessHandler();
     }
 
     // default handler for redirecting to specific path
