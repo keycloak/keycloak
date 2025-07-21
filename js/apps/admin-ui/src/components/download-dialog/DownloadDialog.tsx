@@ -50,6 +50,9 @@ export const DownloadDialog = ({
   const [snippet, setSnippet] = useState<string | ArrayBuffer>();
   const [openType, setOpenType] = useState(false);
 
+  // TIDECLOAK IMPLEMENTATION
+  const [isTideKeyEnabled, setIsTideKeyEnabled] = useState(false);
+
   const selectedConfig = useMemo(
     () => configFormats.find((config) => config.id === selected) ?? null,
     [selected],
@@ -60,6 +63,15 @@ export const DownloadDialog = ({
       /<PrivateKeyPem>.*<\/PrivateKeyPem>/gs,
       `<PrivateKeyPem>${t("privateKeyMask")}</PrivateKeyPem>`,
     );
+
+    // TIDECLOAK IMPLEMENTATION
+    useEffect(() => {
+      const check = async () => {
+        const isEnabled = await findTideComponent(adminClient, realm) === undefined ? false : true
+        setIsTideKeyEnabled(isEnabled)
+      }
+      check();
+    },[realm, adminClient])
 
   useFetch(
     async () => {
@@ -79,7 +91,6 @@ export const DownloadDialog = ({
         return response.arrayBuffer();
       } else {
         // TIDECLOAK IMPLEMENTATION
-        const isTideKeyEnabled = await findTideComponent(adminClient, realm) === undefined ? false : true
         const snippet = isTideKeyEnabled
           ? await adminClient.tideAdmin.getInstallationProviders({
             clientId: id,
@@ -111,7 +122,7 @@ export const DownloadDialog = ({
       onConfirm={() => {
         saveAs(
           new Blob([snippet!], { type: selectedConfig?.mediaType }),
-          selectedConfig?.filename,
+          isTideKeyEnabled ? "tidecloak" : selectedConfig?.filename,
         );
       }}
       open={open}
