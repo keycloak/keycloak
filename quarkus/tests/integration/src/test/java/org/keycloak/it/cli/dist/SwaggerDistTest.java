@@ -48,11 +48,10 @@ public class SwaggerDistTest {
   }
 
   @Test
-  @Launch({"start-dev", "--swagger-enabled=true"})
+  @Launch({"start-dev", "--swagger-enabled=true", "--openapi-enabled=true"})
   void testSwaggerEndpointEnabled(KeycloakDistribution distribution) {
     when().get(SWAGGER_UI_ENDPOINT)
         .then()
         .statusCode(200);
-
   }
 }

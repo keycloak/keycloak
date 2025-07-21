@@ -24,6 +24,18 @@ final class SwaggerPropertyMappers {
         fromOption(SwaggerOptions.SWAGGER_ALWAYS_INCLUDE)
             .to("quarkus.swagger-ui.always-include")
             .build(),
+        fromOption(SwaggerOptions.SWAGGER_FILTER)
+            .to("quarkus.swagger-ui.filter")
+            .build(),
+        fromOption(SwaggerOptions.SWAGGER_SORTER_OPERATIONS)
+            .to("quarkus.swagger-ui.operations-sorter")
+            .build(),
+        fromOption(SwaggerOptions.SWAGGER_SORTER_TAGS)
+            .to("quarkus.swagger-ui.tags-sorter")
+            .build(),
+        fromOption(SwaggerOptions.SWAGGER_CUSTOM_FILTER)
+            .to("mp.openapi.filter")
+            .build(),
     };
   }
 

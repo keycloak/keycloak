@@ -141,6 +141,14 @@
             <groupId>io.smallrye.config</groupId>
             <artifactId>smallrye-config-source-keystore</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-smallrye-openapi</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-swagger-ui</artifactId>
+        </dependency>
 
         <!-- CLI -->
         <dependency>
