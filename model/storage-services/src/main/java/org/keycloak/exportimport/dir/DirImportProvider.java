@@ -167,7 +167,7 @@ public class DirImportProvider extends AbstractFileBasedImportProvider {
                     @Override
                     protected void runExportImportTask(KeycloakSession session) throws IOException {
                         session.getContext().setRealm(session.realms().getRealmByName(realmName));
-                        ImportUtils.importUsersFromStream(session, realmName, JsonSerialization.mapper, fis, federated, new DefaultExportImportManager.UserBatcher());
+                        ImportUtils.importUsersFromStream(session, realmName, JsonSerialization.mapper, fis, federated, new DefaultExportImportManager.Batcher());
                         logger.infof("Imported %susers from %s", federated?"federated ":"", userFile.getAbsolutePath());
                     }
                 }.runTask(factory, Mode.BATCHED);
