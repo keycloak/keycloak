@@ -101,14 +101,16 @@ public class TokenIntrospectionEndpoint {
 
         try {
             session.clientPolicy().triggerOnEvent(new TokenIntrospectContext(formParams));
-            token = formParams.getFirst(PARAM_TOKEN);
         } catch (ClientPolicyException cpe) {
             event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
             event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
             event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
             event.error(cpe.getError());
-            throw throwErrorResponseException(Errors.INVALID_REQUEST, cpe.getErrorDetail(), Status.BAD_REQUEST);
+            if (!cpe.isPermissiveMode()) {
+                throw throwErrorResponseException(Errors.INVALID_REQUEST, cpe.getErrorDetail(), Status.BAD_REQUEST);
+            }
         }
+        token = formParams.getFirst(PARAM_TOKEN);
 
         try {
             return provider.introspect(token, event);
