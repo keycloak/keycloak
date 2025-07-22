@@ -172,8 +172,9 @@ Changing the value of one of the following CLI options triggers a recreate updat
 
 [WARNING]
 ====
-{project_name} does not verify changes to the content of the cache configuration file provided via `--cache-config-file` if they support a rolling update, and if nodes using the new configuration can join a cluster of nodes running the old configuration.
-If you change this file, you need to review and test your changes if they support a rolling update. If they do not, you should shut down {project_name} running the old configuration first before starting the new configuration.
+{project_name} does not verify changes to the content of the cache configuration file provided via `--cache-config-file`.
+If you change this file, you need to review and test your changes to ensure that nodes using the new configuration can form a cluster with the nodes running the old configuration.
+If a cluster cannot be formed, you should shut down {project_name} running the old configuration first before migrating to the new configuration.
 ====
 
 [[rolling-updates-for-patch-releases]]
