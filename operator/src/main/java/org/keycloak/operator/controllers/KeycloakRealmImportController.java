@@ -129,6 +129,7 @@ public class KeycloakRealmImportController implements Reconciler<KeycloakRealmIm
                 status.addStartedMessage("Import Job started");
             } else if (oldStatus.getSucceeded() != null && oldStatus.getSucceeded() > 0) {
                 if (!lastReportedStatus.isDone()) {
+                    // no need to restart Keycloak as we're only importing new realms and are not overwriting existing realms
                     Log.info("Job finished");
                 }
                 status.addDone();
