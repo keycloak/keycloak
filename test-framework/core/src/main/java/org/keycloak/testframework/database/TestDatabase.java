@@ -4,7 +4,7 @@ import java.util.Map;
 
 public interface TestDatabase {
 
-    void start(DatabaseConfig databaseConfig);
+    void start(DatabaseConfigRepresentation databaseConfigRepresentation);
 
     void stop();
 

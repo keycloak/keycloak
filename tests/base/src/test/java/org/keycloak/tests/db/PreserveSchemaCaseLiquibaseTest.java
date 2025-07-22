@@ -1,7 +1,10 @@
 package org.keycloak.tests.db;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.keycloak.testframework.annotations.InjectTestDatabase;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.database.DatabaseConfig;
 import org.keycloak.testframework.conditions.DisabledForDatabases;
 import org.keycloak.testframework.database.DatabaseConfigBuilder;
 import org.keycloak.testframework.database.PostgresTestDatabase;
@@ -10,17 +13,22 @@ import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
-@KeycloakIntegrationTest(config = PreserveSchemaCaseLiquibaseTest.KeycloakConfig.class)
+@KeycloakIntegrationTest(config = PreserveSchemaCaseLiquibaseTest.PreserveSchemaCaseServerConfig.class)
 // MSSQL does not support setting the default schema per session.
 // TiDb does not support setting the default schema per session.
 // Oracle image does not support configuring user/databases with '-'
 @DisabledForDatabases({ "mssql", "oracle", "tidb" })
-public class PreserveSchemaCaseLiquibaseTest extends CaseSensitiveSchemaTest {
+public class PreserveSchemaCaseLiquibaseTest extends AbstractDBSchemaTest {
 
-    @InjectTestDatabase(lifecycle = LifeCycle.CLASS, config = DatabaseConfigurator.class)
+    @InjectTestDatabase(lifecycle = LifeCycle.CLASS, config = PreserveSchemaCaseDatabaseConfig.class)
     TestDatabase db;
 
-    public static class KeycloakConfig implements KeycloakServerConfig {
+    @Test
+    public void testCaseSensitiveSchema() {
+        Assertions.assertDoesNotThrow(this::createDeleteRole);
+    }
+
+    public static class PreserveSchemaCaseServerConfig implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
             switch (dbType()) {
@@ -32,13 +40,13 @@ public class PreserveSchemaCaseLiquibaseTest extends CaseSensitiveSchemaTest {
         }
     }
 
-    public static class DatabaseConfigurator implements org.keycloak.testframework.database.DatabaseConfigurator {
+    private static class PreserveSchemaCaseDatabaseConfig implements DatabaseConfig {
         @Override
-        public DatabaseConfigBuilder configure(DatabaseConfigBuilder builder) {
+        public DatabaseConfigBuilder configure(DatabaseConfigBuilder database) {
             if (dbType().equals(PostgresTestDatabase.NAME)) {
-                return builder.withInitScript("org/keycloak/tests/db/preserve-schema-case-liquibase-postgres.sql");
+                return database.initScript("org/keycloak/tests/db/preserve-schema-case-liquibase-postgres.sql");
             }
-            return builder.withDatabase("keycloak-t");
+            return database.database("keycloak-t");
         }
     }
 }
