@@ -745,7 +745,7 @@ public class TokenManager {
     }
 
     public static boolean isValidScope(KeycloakSession session, String scopes, ClientModel client, UserModel user) {
-        return isValidScope(session, scopes, null, client, user);
+        return session.getProvider(RequestedScopeValidationProvider.class).isValid(session, scopes, client, user);
     }
 
     public static Stream<String> parseScopeParameter(String scopeParam) {
