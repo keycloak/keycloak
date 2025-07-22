@@ -419,8 +419,8 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
 
         builder.append("<p>Redirecting, please wait.</p>");
 
-        for (String key: inputTypes.keySet()) {
-            builder.append("<INPUT TYPE=\"HIDDEN\" NAME=\"").append(key).append("\"").append(" VALUE=\"").append(escapeAttribute(inputTypes.get(key))).append("\"/>");
+        for (var entry : inputTypes.entrySet()) {
+            builder.append("<INPUT TYPE=\"HIDDEN\" NAME=\"").append(entry.getKey()).append("\"").append(" VALUE=\"").append(escapeAttribute(entry.getValue())).append("\"/>");
         }
 
         builder.append("<NOSCRIPT>")
