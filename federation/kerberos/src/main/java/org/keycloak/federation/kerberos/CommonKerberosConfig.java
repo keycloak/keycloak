@@ -51,15 +51,18 @@ public abstract class CommonKerberosConfig {
     }
 
     public String getKerberosRealm() {
-        return getConfig().getFirst(KerberosConstants.KERBEROS_REALM);
+        String kerberosRealm = getConfig().getFirst(KerberosConstants.KERBEROS_REALM);
+        return kerberosRealm != null ? kerberosRealm.trim() : null;
     }
 
     public String getServerPrincipal() {
-        return getConfig().getFirst(KerberosConstants.SERVER_PRINCIPAL);
+        String serverPrincipal = getConfig().getFirst(KerberosConstants.SERVER_PRINCIPAL);
+        return serverPrincipal != null ? serverPrincipal.trim() : null;
     }
 
     public String getKeyTab() {
-        return getConfig().getFirst(KerberosConstants.KEYTAB);
+        String keyTab = getConfig().getFirst(KerberosConstants.KEYTAB);
+        return keyTab != null ? keyTab.trim() : null;
     }
 
     public boolean isDebug() {
