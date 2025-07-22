@@ -48,7 +48,48 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
         // If we are not the coordinator, it is good to learn the new entries added by the coordinator.
         // This avoids a "JGRP000032: %s: no physical address for %s, dropping message" that leads to split clusters at concurrent startup.
         learnExistingAddresses();
-        super.handleView(new_view, old_view, coord_changed);
+
+        // This is an updated logic where we do not call removeAll but instead remove those obsolete entries.
+        // This avoids the short moment where the table is empty and a new node might not see any other node.
+        if (is_coord) {
+            if (remove_old_coords_on_view_change) {
+                Address old_coord = old_view != null ? old_view.getCreator() : null;
+                if (old_coord != null)
+                    remove(cluster_name, old_coord);
+            }
+            Address[] left = View.diff(old_view, new_view)[1];
+            if (coord_changed || update_store_on_view_change || left.length > 0) {
+                writeAll(left);
+                if (remove_all_data_on_view_change) {
+                    removeAllNotInCurrentView();
+                }
+                if (remove_all_data_on_view_change || remove_old_coords_on_view_change) {
+                    startInfoWriter();
+                }
+            }
+        } else if (coord_changed) { // I'm no longer the coordinator
+            remove(cluster_name, local_addr);
+        }
+    }
+
+    @Override
+    protected void removeAll(String clustername) {
+        // This is unsafe as even if we would fill the table a moment later, a new node might see an empty table and become a coordinator
+        throw new RuntimeException("Not implemented as it is unsafe");
+    }
+
+    private void removeAllNotInCurrentView() {
+        try {
+            List<PingData> list = readFromDB(getClusterName());
+            for (PingData data : list) {
+                Address addr = data.getAddress();
+                if (view != null && !view.containsMember(addr)) {
+                    remove(cluster_name, addr);
+                }
+            }
+        } catch (Exception e) {
+            log.error(String.format("%s: failed reading from the DB", local_addr), e);
+        }
     }
 
     protected void learnExistingAddresses() {
@@ -69,7 +110,7 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
     public void findMembers(List<Address> members, boolean initial_discovery, Responses responses) {
         // Insert ourselves before reading, to ensure that concurrently starting nodes see each other.
         // Also re-add ourselves in case the coordinator removed us.
-         PhysicalAddress physical_addr = (PhysicalAddress) down(new Event(Event.GET_PHYSICAL_ADDRESS, local_addr));
+        PhysicalAddress physical_addr = (PhysicalAddress) down(new Event(Event.GET_PHYSICAL_ADDRESS, local_addr));
         PingData coord_data = new PingData(local_addr, true, NameCache.get(local_addr), physical_addr).coord(is_coord);
         write(Collections.singletonList(coord_data), cluster_name);
         super.findMembers(members, initial_discovery, responses);
