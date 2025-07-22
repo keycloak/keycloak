@@ -1,121 +1,162 @@
-console = {
-  log: print,
-  warn: print,
-  error: print,
+var logger = org.jboss.logging.Logger.getLogger("vunet.policy.evaluate-privileges");
+var Collectors = java.util.stream.Collectors;
+var HashMap = java.util.HashMap;
+var HashSet = java.util.HashSet;
+
+// Implicit privilege mappings: granting privilege -> array of privileges it grants
+var implicitPrivilegeMappings = {
+  'alerts:read': ['dataModel:read', 'definitions:read', 'preferences:read'],
+  'alerts:write': ['dataModel:read', 'definitions:read', 'preferences:read'],
+  'dashboards:admin': ['dashboards:write', 'dataModel:read', 'insights:read', 'utm:read', 'dataSource:manage'],
+  'dashboards:write': ['dataModel:read', 'insights:read', 'utm:read'],
+  'dataExtraction:read': ['dataModel:read'],
+  'dataExtraction:write': ['dataModel:read'],
+  'dataModel:manageDataStore': ['dataModel:read', 'dataModel:write'],
+  'dataModel:write': ['dataModel:read'],
+  'dataSource:manage': ['dashboards:admin', 'dataModel:read', 'insights:read', 'utm:read'],
+  'events:read': ['preferences:read'],
+  'events:write': ['preferences:read', 'users:read'],
+  'insights:modifySystemResources': ['insights:read', 'insights:write'],
+  'insights:read': ['dataModel:read'],
+  'insights:write': ['dataModel:read'],
+  'mobileDashboards:read': ['dataModel:read', 'insights:read'],
+  'mobileDashboards:write': ['dataModel:read', 'insights:read'],
+  'reports:read': ['dataModel:read', 'definitions:read', 'preferences:read'],
+  'reports:write': ['dataModel:read', 'definitions:read', 'preferences:read'],
+  'resources:manage': ['alerts:read', 'dataModel:read', 'insights:read', 'utm:read'],
+  'utm:read': ['dataModel:read'],
+  'utm:write': ['dataModel:read'],
+  'vumodule:modifySources': ['alerts:read', 'definitions:read', 'vumodule:read', 'dataModel:read'],
+  'vumodule:read': ['definitions:read'],
+  'vumodule:write': ['alerts:read', 'dataModel:read', 'definitions:read', 'vumodule:modify_sources']
 };
 
-var forEach = Array.prototype.forEach;
-var implicitReverseMap = [
-  { key: 'alerts:read', value: 'resources:manage' },
-  { key: 'alerts:read', value: 'vumodule:modifySources' },
-  { key: 'alerts:read', value: 'vumodule:write' },
-  { key: 'dashboards:admin', value: 'dataSource:manage' },
-  { key: 'dashboards:write', value: 'dashboards:admin' },
-  { key: 'dataModel:read', value: 'alerts:read' },
-  { key: 'dataModel:read', value: 'alerts:write' },
-  { key: 'dataModel:read', value: 'dashboards:admin' },
-  { key: 'dataModel:read', value: 'dashboards:write' },
-  { key: 'dataModel:read', value: 'dataExtraction:read' },
-  { key: 'dataModel:read', value: 'dataExtraction:write' },
-  { key: 'dataModel:read', value: 'dataModel:manageDataStore' },
-  { key: 'dataModel:read', value: 'dataSource:manage' },
-  { key: 'dataModel:read', value: 'insights:read' },
-  { key: 'dataModel:read', value: 'insights:write' },
-  { key: 'dataModel:read', value: 'mobileDashboards:read' },
-  { key: 'dataModel:read', value: 'mobileDashboards:write' },
-  { key: 'dataModel:read', value: 'reports:read' },
-  { key: 'dataModel:read', value: 'reports:write' },
-  { key: 'dataModel:read', value: 'resources:manage' },
-  { key: 'dataModel:read', value: 'utm:read' },
-  { key: 'dataModel:read', value: 'utm:write' },
-  { key: 'dataModel:read', value: 'vumodule:write' },
-  { key: 'dataModel:write', value: 'dataModel:manageDataStore' },
-  { key: 'dataSource:manage', value: 'dashboards:admin' },
-  { key: 'definitions:read', value: 'alerts:read' },
-  { key: 'definitions:read', value: 'alerts:write' },
-  { key: 'definitions:read', value: 'reports:read' },
-  { key: 'definitions:read', value: 'reports:write' },
-  { key: 'definitions:read', value: 'vumodule:modifySources' },
-  { key: 'definitions:read', value: 'vumodule:read' },
-  { key: 'definitions:read', value: 'vumodule:write' },
-  { key: 'insights:read', value: 'dashboards:admin' },
-  { key: 'insights:read', value: 'dashboards:write' },
-  { key: 'insights:read', value: 'dataSource:manage' },
-  { key: 'insights:read', value: 'mobileDashboards:read' },
-  { key: 'insights:read', value: 'mobileDashboards:write' },
-  { key: 'insights:read', value: 'resources:manage' },
-  { key: 'insights:read', value: 'insights:modifySystemResources' },
-  { key: 'insights:write', value: 'insights:modifySystemResources' },
-  { key: 'preferences:read', value: 'alerts:read' },
-  { key: 'preferences:read', value: 'alerts:write' },
-  { key: 'preferences:read', value: 'events:read' },
-  { key: 'preferences:read', value: 'events:write' },
-  { key: 'preferences:read', value: 'reports:read' },
-  { key: 'preferences:read', value: 'reports:write' },
-  { key: 'users:read', value: 'events:write' },
-  { key: 'utm:read', value: 'dashboards:admin' },
-  { key: 'utm:read', value: 'dashboards:write' },
-  { key: 'utm:read', value: 'dataSource:manage' },
-  { key: 'utm:read', value: 'resources:manage' },
-  { key: 'vumodule:modify_sources', value: 'vumodule:write' },
-  { key: 'vumodule:read', value: 'vumodule:modifySources' },
-  { key: 'dataModel:read:read', value: 'vumodule:modifySources' },
-];
-
-function buildPrivilege(resource, scopeName) {
-  var resourceName = resource.getName();
-  var builtPrivilege = resourceName + ':' + scopeName;
-  return builtPrivilege;
+// Convert to Java HashMap for better performance
+var implicitPrivilegeMap = new HashMap();
+for (var grantingPrivilege in implicitPrivilegeMappings) {
+  var grantedPrivileges = new HashSet();
+  for (var i = 0; i < implicitPrivilegeMappings[grantingPrivilege].length; i++) {
+    grantedPrivileges.add(implicitPrivilegeMappings[grantingPrivilege][i]);
+  }
+  implicitPrivilegeMap.put(grantingPrivilege, grantedPrivileges);
 }
 
-// by default, grants any permission associated with this policy
-var context = $evaluation.getContext();
-var permission = $evaluation.getPermission();
-
-var identity = context.getIdentity();
-var attributes = identity.getAttributes();
-
-if (identity.hasRealmRole('admin')) {
-  console.log('granting all permissions for admin user ' + identity.getId());
-  $evaluation.grant();
-}
-
-if (attributes.exists('privilege') === false) {
-  console.log('No privileges found for user ' + identity.getId());
-  $evaluation.denyIfNoEffect();
-}
-
-var resource = permission.getResource();
-var scopes = permission.getScopes().toArray();
-
-scope = scopes[0];
-
-var requiredPrivilege = buildPrivilege(resource, scope.getName());
+var URN_PREFIX = 'vrn:vusmartmaps:resources:';
 
 function toUrn(rs) {
-  return 'vrn:vusmartmaps:resources:' + rs;
+  return URN_PREFIX + rs;
 }
 
-if (attributes.containsValue('privilege', requiredPrivilege)) {
-  $evaluation.grant();
-} else {
-  var scopeName = scope.getName();
-  var hasWritePermission = attributes.containsValue(
-    'privilege',
-    buildPrivilege(resource, 'write')
-  );
-  if (scopeName === 'read' && hasWritePermission) {
-    $evaluation.grant();
+function fromUrn(urn) {
+  if (urn.startsWith(URN_PREFIX)) {
+    return urn.substring(URN_PREFIX.length);
   }
-  forEach.call(implicitReverseMap, function (v) {
-    if (
-      toUrn(v.key) === requiredPrivilege &&
-      attributes.containsValue('privilege', toUrn(v.value))
-    ) {
-      $evaluation.grant();
-      console.log('Granted ' + v.key + ' from ' + v.value);
-    }
-  });
+  return urn; // return as-is if not a URN
+}
+// Get explicit privileges from user groups
+function _getExplicitPrivileges(user) {
+  return user.getGroupsStream()
+    .flatMap(function (group) {
+      return group.getAttributeStream("privilege");
+    })
+    .collect(Collectors.toSet());
 }
 
-$evaluation.denyIfNoEffect();
+// Extend explicit privileges with implicit privileges
+function _extendExplicitPrivileges(explicitPrivileges) {
+  var extendedPrivileges = new HashSet(explicitPrivileges);
+  var iterator = explicitPrivileges.iterator();
+
+  while (iterator.hasNext()) {
+    var privilegeUrn = iterator.next();
+    var privilege = fromUrn(privilegeUrn); // Strip URN prefix for lookup
+    var splitPrivilege = privilege.split(':');
+    var resource = splitPrivilege[0];
+    var scope = splitPrivilege[1];
+
+    // automatically assign read scope if write scope is present
+    if (scope === "write") {
+      extendedPrivileges.add(toUrn(resource + ":read"));
+    }
+
+    // Check if this privilege grants any other privileges
+    var grantedPrivileges = implicitPrivilegeMap.get(privilege);
+    if (grantedPrivileges !== null) {
+      var grantedIterator = grantedPrivileges.iterator();
+      while (grantedIterator.hasNext()) {
+        var grantedPrivilege = grantedIterator.next();
+        extendedPrivileges.add(toUrn(grantedPrivilege)); // Add URN prefix back
+      }
+    }
+  }
+
+  return extendedPrivileges;
+}
+
+function getUserPrivileges(user) {
+  var explicitPrivileges = _getExplicitPrivileges(user)
+  var extendedPrivileges = _extendExplicitPrivileges(explicitPrivileges);
+  var printablePrivileges = extendedPrivileges.stream().map(fromUrn).collect(Collectors.joining(", "));
+
+  logger.debugv("User {0} has privileges: {1}", user.getUsername(), printablePrivileges);
+  return extendedPrivileges;
+}
+
+function _evaluateForAdmin(identity) {
+  if (identity.hasRealmRole('admin')) {
+    logger.info("Granting all permissions to admin");
+    return true;
+  } else {
+    logger.debugv("User {0} is not an admin, proceeding with privilege evaluation for normal user", identity.getId());
+    return false;
+  }
+}
+
+function _evaluateForUser(user, userId, privilege) {
+  if (user === null || user === undefined) {
+    logger.warnv("No user found for identity id: {0}", userId);
+    return false;
+  } else {
+    var privileges = getUserPrivileges(user);
+    var result = privileges.contains(privilege);
+    var resultString = result ? "granted" : "denied";
+    logger.infov("checking is user `{0}` has privilege `{1}`: {2}", user.getUsername(), fromUrn(privilege), resultString);
+
+    return result;
+  }
+}
+
+function evaluate(identity, user, privilege) {
+  if (_evaluateForAdmin(identity)) {
+    $evaluation.grant();
+  } else if (_evaluateForUser(user, identity.getId(), privilege)) {
+    $evaluation.grant();
+  } else {
+    $evaluation.denyIfNoEffect();
+  }
+}
+
+// Authorization evaluation logic
+var _context = $evaluation.getContext();
+
+// Resource and scope information
+var _permission = $evaluation.getPermission();
+var _resource = _permission.getResource().getName();
+var _scope = _permission.getScopes().toArray()[0].getName(); // cairo APIs request only one scope at max for any API endpoint
+var privilege = _resource + ':' + _scope;
+
+// Realm, Identity, and User information
+var _authProvider = $evaluation.getAuthorizationProvider();
+var _realm = _authProvider.getRealm();
+var identity = _context.getIdentity();
+var user = _authProvider.getKeycloakSession().users().getUserById(
+  _realm,
+  identity.getId()
+);
+
+logger.debug("---Starting evaluation---")
+logger.debugv("Evaluating privilege: {0}", fromUrn(privilege));
+
+evaluate(identity, user, privilege);
+
+logger.debug("---Ending evaluation---");
