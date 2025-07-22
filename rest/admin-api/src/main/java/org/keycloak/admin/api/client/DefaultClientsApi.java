@@ -2,11 +2,14 @@ package org.keycloak.admin.api.client;
 
 import java.util.stream.Stream;
 
+import jakarta.validation.Valid;
+import jakarta.validation.groups.ConvertGroup;
 import org.keycloak.admin.api.FieldValidation;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.admin.v2.ClientRepresentation;
+import org.keycloak.representations.admin.v2.validation.CreateClient;
 import org.keycloak.services.ServiceException;
 import org.keycloak.services.client.ClientService;
 
@@ -35,7 +38,8 @@ public class DefaultClientsApi implements ClientsApi {
     }
 
     @Override
-    public ClientRepresentation createClient(ClientRepresentation client, FieldValidation fieldValidation) {
+    public ClientRepresentation createClient(@Valid @ConvertGroup(to = CreateClient.class) ClientRepresentation client,
+                                             FieldValidation fieldValidation) {
         try {
             response.setStatus(Response.Status.CREATED.getStatusCode());
             return clientService.createOrUpdate(realm, client, false).representation();

@@ -4,6 +4,7 @@ import static org.keycloak.services.resources.KeycloakApplication.getSessionFact
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import jakarta.validation.ValidationException;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.OAuthErrorException;
@@ -100,6 +101,8 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
                 error.setErrorDescription("Cannot parse the JSON");
             } else if (isServerError) {
                 error.setErrorDescription("For more on this error consult the server log.");
+            } else if (throwable instanceof ValidationException) {
+                error.setErrorDescription(throwable.getMessage());
             }
 
             return Response.status(responseStatus)

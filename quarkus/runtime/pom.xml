@@ -136,6 +136,12 @@
             <artifactId>mapstruct</artifactId>
         </dependency>
 
+        <!-- Hibernate validator -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-hibernate-validator</artifactId>
+        </dependency>
+
         <!-- SmallRye -->
         <dependency>
             <groupId>io.smallrye.config</groupId>
