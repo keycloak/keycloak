@@ -237,6 +237,33 @@ public void testClientCredentials() throws Exception {
 }
 ```
 
+
+# Test Suites
+
+A `@Suite` can supply configuration to be used when running tests from the suite. For example:
+
+```java
+@Suite
+@SelectClasses(MyTest.class)
+public class MyTestSuite {
+
+    @BeforeSuite
+    public static void beforeSuite() {
+        SuiteSupport.startSuite()
+                .registerServerConfig(MyTestSuiteServerConfig.class)
+                .includedSuppliers("server", "remote");
+    }
+
+    @AfterSuite
+    public static void afterSuite() {
+        SuiteSupport.stopSuite();
+    }
+}
+```
+
+The above example adds some additional Keycloak server configuration, as well as limiting what server suppliers can be used for the suite.
+
+
 # Running tests
 
 Tests can be run from your favourite IDE, or from the command-line using Maven. Simply run the tests and the framework
@@ -336,6 +363,13 @@ Valid values:
 | embedded     | Runs a Keycloak server embedded in the same JVM process                                                |
 | remote       | Connects to a remote Keycloak server. Requires manually configuring the server as needed for the test. |
 
+Configuration:
+
+| Value                                             | Description                                                            |
+|---------------------------------------------------|------------------------------------------------------------------------|
+| `kc.test.server.config` / `KC_TEST_SERVER_CONFIG` | The name of a KeycloakServerConfig class to use when running the tests |
+
+
 ### Database
 
 Option: `kc.test.database` / `KC_TEST_DATABASE`
@@ -370,3 +404,17 @@ Valid values:
 | chrome-headless  | Chrome WebDriver without UI  |
 | firefox          | Firefox WebDriver            |
 | firefox-headless | Firefox WebDriver without UI |
+
+### Supplier configuration
+
+#### Set the supplier
+
+Option: `kc.test.<value type alias>` / `KC_TEST_<value type alias>`
+
+#### Setting included suppliers
+
+Option: `kc.test.<value type alias>.suppliers.included` / `KC_TEST_<value type alias>_SUPPLIERS_INCLUDED`
+
+#### Setting excluded suppliers
+
+Option: `kc.test.<value type alias>.suppliers.excluded` / `KC_TEST_<value type alias>_SUPPLIERS_EXCLUDED`
