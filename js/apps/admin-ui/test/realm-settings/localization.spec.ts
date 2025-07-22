@@ -51,7 +51,7 @@ test.describe("Go to localization tab", () => {
     test("Realm Overrides - Add and delete bundle", async ({ page }) => {
       await addBundle(page, "key", "123");
       await clickCreateButton(page);
-      await addBundle(page, "value", "abc");
+      await addBundle(page, "foo", "abc");
       await clickCreateButton(page);
 
       await assertNotificationMessage(
@@ -87,7 +87,7 @@ test.describe("Go to localization tab", () => {
       const key = "edit";
       await addBundle(page, key, "123");
       await clickCreateButton(page);
-      await addBundle(page, "value", "abc");
+      await addBundle(page, "foo", "abc");
       await clickCreateButton(page);
 
       await assertNotificationMessage(
