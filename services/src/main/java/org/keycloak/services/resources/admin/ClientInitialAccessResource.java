@@ -82,7 +82,7 @@ public class ClientInitialAccessResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_INITIAL_ACCESS)
-    @Operation( summary = "Create a new initial access token.")
+    @Operation(summary = "Create a new initial access token.", operationId = "createClientInitialAccess")
     @APIResponse(responseCode = "201", description = "Created", content = @Content(schema = @Schema(implementation = ClientInitialAccessCreatePresentation.class)))
     public Object create(ClientInitialAccessCreatePresentation config) {
         auth.clients().requireManage();
@@ -118,7 +118,7 @@ public class ClientInitialAccessResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_INITIAL_ACCESS)
-    @Operation()
+    @Operation(operationId = "list")
     public Stream<ClientInitialAccessPresentation> list() {
         auth.clients().requireView();
 
@@ -128,7 +128,7 @@ public class ClientInitialAccessResource {
     @DELETE
     @Path("{id}")
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_INITIAL_ACCESS)
-    @Operation()
+    @Operation(operationId = "deleteClientInitialAccess")
     public void delete(final @PathParam("id") String id) {
         auth.clients().requireManage();
 

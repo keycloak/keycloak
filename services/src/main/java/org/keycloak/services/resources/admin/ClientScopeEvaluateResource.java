@@ -134,8 +134,11 @@ public class ClientScopeEvaluateResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
-    @Operation(summary = "Return list of all protocol mappers, which will be used when generating tokens issued for particular client.",
-            description = "This means protocol mappers assigned to this client directly and protocol mappers assigned to all client scopes of this client.")
+    @Operation(
+            summary = "Return list of all protocol mappers, which will be used when generating tokens issued for particular client.",
+            description = "This means protocol mappers assigned to this client directly and protocol mappers assigned to all client scopes of this client.",
+            operationId = "getGrantedProtocolMappers"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = ProtocolMapperEvaluationRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -180,7 +183,7 @@ public class ClientScopeEvaluateResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
-    @Operation(summary = "Create JSON with payload of example user info")
+    @Operation(summary = "Create JSON with payload of example user info", operationId = "generateExampleUserinfo")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = Map.class))),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -211,7 +214,7 @@ public class ClientScopeEvaluateResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
-    @Operation(summary = "Create JSON with payload of example id token")
+    @Operation(summary = "Create JSON with payload of example id token", operationId = "generateExampleIdToken")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = IDToken.class))),
         @APIResponse(responseCode = "403", description = "Forbidden"),
@@ -249,7 +252,7 @@ public class ClientScopeEvaluateResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
-    @Operation(summary = "Create JSON with payload of example access token")
+    @Operation(summary = "Create JSON with payload of example access token", operationId = "generateExampleAccessToken")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = AccessToken.class))),
         @APIResponse(responseCode = "403", description = "Forbidden"),
