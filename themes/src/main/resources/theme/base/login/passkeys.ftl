@@ -33,7 +33,7 @@
                authButton.addEventListener("click", (event) => {
                    event.preventDefault();
                    authenticateByWebAuthn({errmsg : "${msg("webauthn-unsupported-browser-text")?no_esc}", ...args});
-               });
+               }, { once: true });
            }
         </script>
         <a id="authenticateWebAuthnButton" href="#" class="${properties.kcButtonSecondaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcMarginTopClass!}">
