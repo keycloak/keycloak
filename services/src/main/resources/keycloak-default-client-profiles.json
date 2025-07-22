@@ -139,7 +139,7 @@
     },
     {
       "name": "fapi-2-security-profile",
-      "description": "Client profile, which enforce clients to conform 'FAPI 2.0 Security Profile' specification.",
+      "description": "Client profile, which enforce clients to conform 'FAPI 2.0 Security Profile Final' specification.",
       "executors": [
         {
           "executor": "confidential-client",
@@ -200,6 +200,10 @@
           "configuration": {
             "auto-configure": "true"
           }
+        },
+        {
+          "executor": "secure-client-authentication-assertion",
+          "configuration": {}
         },
         {
           "executor" : "secure-par-content",
@@ -379,7 +383,7 @@
     },
     {
       "name": "fapi-2-dpop-security-profile",
-      "description": "Client profile, which enforce clients to conform 'FAPI 2.0 Security Profile' with DPoP specification.",
+      "description": "Client profile, which enforce clients to conform 'FAPI 2.0 Security Profile Final' using DPoP specification.",
       "executors": [
         {
           "executor": "confidential-client",
@@ -434,6 +438,10 @@
           "configuration": {
             "auto-configure": "true"
           }
+        },
+        {
+          "executor": "secure-client-authentication-assertion",
+          "configuration": {}
         },
         {
           "executor": "secure-par-content",

@@ -57,6 +57,7 @@ import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createEcJwk;
@@ -67,7 +68,6 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.generateSignedDPoPP
 @EnableFeature(value = Profile.Feature.DPOP, skipRestart = true)
 public class FAPI2DPoPTest extends AbstractFAPI2Test {
 
-    private static final String REALM_NAME = "test";
     private static final String DPOP_JWT_HEADER_TYPE = "dpop+jwt";
     private static final String nonce = "123456"; // need to be 123456.
 
@@ -102,23 +102,23 @@ public class FAPI2DPoPTest extends AbstractFAPI2Test {
 
     @Test
     public void testFAPI2DPoPSecurityProfileClientRegistration() throws Exception {
-        testFAPI2ClientRegistration(FAPI2_DPOP_SECURITY_PROFILE_NAME);
+        testFAPI2ClientRegistration(getSecurityProfileName());
     }
 
     @Test
     public void testFAPI2DPoPSecurityProfileOIDCClientRegistration() throws Exception {
-        testFAPI2OIDCClientRegistration(FAPI2_DPOP_SECURITY_PROFILE_NAME);
+        testFAPI2OIDCClientRegistration(getSecurityProfileName());
     }
 
     @Test
     public void testFAPI2DPoPSecurityProfileSignatureAlgorithms() throws Exception {
-        testFAPI2SignatureAlgorithms(FAPI2_DPOP_SECURITY_PROFILE_NAME);
+        testFAPI2SignatureAlgorithms(getSecurityProfileName());
     }
 
     @Test
     public void testFAPI2DPoPSecurityProfileLoginWithPrivateKeyJWT() throws Exception {
         // setup client policy
-        setupPolicyFAPI2ForAllClient(FAPI2_DPOP_SECURITY_PROFILE_NAME);
+        setupPolicyFAPI2ForAllClient(getSecurityProfileName());
 
         // Register client with private-key-jwt
         String clientUUID = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
@@ -196,7 +196,7 @@ public class FAPI2DPoPTest extends AbstractFAPI2Test {
     @Test
     public void testFAPI2DPoPSecurityProfileLoginWithMTLS() throws Exception {
         // setup client policy
-        setupPolicyFAPI2ForAllClient(FAPI2_DPOP_SECURITY_PROFILE_NAME);
+        setupPolicyFAPI2ForAllClient(getSecurityProfileName());
 
         // create client with MTLS authentication
         // Register client with X509
@@ -300,23 +300,23 @@ public class FAPI2DPoPTest extends AbstractFAPI2Test {
 
     @Test
     public void testFAPI2DPoPMessageSigningClientRegistration() throws Exception {
-        testFAPI2ClientRegistration(FAPI2_DPOP_MESSAGE_SIGNING_PROFILE_NAME);
+        testFAPI2ClientRegistration(getMessageSigningName());
     }
 
     @Test
     public void testFAPI2DPoPMessageSigningOIDCClientRegistration() throws Exception {
-        testFAPI2OIDCClientRegistration(FAPI2_DPOP_MESSAGE_SIGNING_PROFILE_NAME);
+        testFAPI2OIDCClientRegistration(getMessageSigningName());
     }
 
     @Test
     public void testFAPI2DPoPMessageSigningSignatureAlgorithms() throws Exception {
-        testFAPI2SignatureAlgorithms(FAPI2_DPOP_MESSAGE_SIGNING_PROFILE_NAME);
+        testFAPI2SignatureAlgorithms(getMessageSigningName());
     }
 
     @Test
     public void testFAPI2DPoPMessageSigningLoginWithMTLS() throws Exception {
         // setup client policy
-        setupPolicyFAPI2ForAllClient(FAPI2_DPOP_MESSAGE_SIGNING_PROFILE_NAME);
+        setupPolicyFAPI2ForAllClient(getMessageSigningName());
 
         // create client with MTLS authentication
         // Register client with X509
@@ -401,7 +401,7 @@ public class FAPI2DPoPTest extends AbstractFAPI2Test {
     @Test
     public void testFAPI2DPoPMessageSigningLoginWithPrivateKeyJWT() throws Exception {
         // setup client policy
-        setupPolicyFAPI2ForAllClient(FAPI2_DPOP_MESSAGE_SIGNING_PROFILE_NAME);
+        setupPolicyFAPI2ForAllClient(getMessageSigningName());
 
         // create client with MTLS authentication
         // Register client with X509
@@ -499,5 +499,61 @@ public class FAPI2DPoPTest extends AbstractFAPI2Test {
 
         // Logout and remove consent of the user for next logins
         logoutUserAndRevokeConsent(clientId, TEST_USERNAME);
+    }
+
+
+    @Test
+    public void testSecureClientAuthenticationAssertion() throws Exception {
+        // setup client policy
+        setupPolicyFAPI2ForAllClient(getSecurityProfileName());
+
+        // Register client with private-key-jwt
+        createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+            clientRep.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID);
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestUris(Collections.singletonList(TestApplicationResourceUrls.clientRequestUri()));
+        });
+
+        oauth.client(clientId);
+
+        PkceGenerator pkceGenerator = PkceGenerator.s256();
+
+        TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
+        requestObject.setNonce("123456");
+        requestObject.setCodeChallenge(pkceGenerator.getCodeChallenge());
+        requestObject.setCodeChallengeMethod(pkceGenerator.getCodeChallengeMethod());
+        registerRequestObject(requestObject, clientId, Algorithm.PS256, false);
+
+        // Send a push authorization request with invalid 'aud' . Should fail
+        String signedJwt = createSignedRequestToken(clientId, Algorithm.PS256, getRealmInfoUrl() + "/protocol/openid-connect/ext/par/request");
+        ParResponse pResp = oauth.pushedAuthorizationRequest().request(request).signedJwt(signedJwt).send();
+        assertEquals(400, pResp.getStatusCode());
+
+        // Send a push authorization request with valid 'aud' . Should succeed
+        signedJwt = createSignedRequestToken(clientId, Algorithm.PS256, getRealmInfoUrl());
+        pResp = oauth.pushedAuthorizationRequest().request(request).signedJwt(signedJwt).send();
+        assertEquals(201, pResp.getStatusCode());
+        requestUri = pResp.getRequestUri();
+        request = null;
+
+        // Send an authorization request . Should succeed
+        String code = loginUserAndGetCode(clientId, null, false);
+        assertNotNull(code);
+
+        // Send a token request with invalid 'aud' . Should fail
+        signedJwt = createSignedRequestToken(clientId, Algorithm.PS256, getRealmInfoUrl() + "/protocol/openid-connect/token");
+        this.pkceGenerator = pkceGenerator;
+        AccessTokenResponse tokenResponse = doAccessTokenRequestWithClientSignedJWT(code, signedJwt, MutualTLSUtils::newCloseableHttpClientWithDefaultKeyStoreAndTrustStore);
+        assertEquals(400, tokenResponse.getStatusCode());
+
+        // Logout and remove consent of the user for next logins
+        logoutUserAndRevokeConsent(clientId, TEST_USERNAME);
+    }
+
+    protected String getSecurityProfileName() {
+        return FAPI2_DPOP_SECURITY_PROFILE_NAME;
+    }
+
+    protected String getMessageSigningName() {
+        return FAPI2_DPOP_MESSAGE_SIGNING_PROFILE_NAME;
     }
 }

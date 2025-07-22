@@ -647,8 +647,4 @@ public class FAPI1Test extends AbstractFAPITest {
         return jwtProvider.createSignedRequestToken(oauth.getClientId(), getRealmInfoUrl(), algorithm);
     }
 
-    private String getRealmInfoUrl() {
-        String authServerBaseUrl = UriUtils.getOrigin(oauth.getRedirectUri()) + "/auth";
-        return KeycloakUriBuilder.fromUri(authServerBaseUrl).path(ServiceUrlConstants.REALM_INFO_PATH).build("test").toString();
-    }
 }
