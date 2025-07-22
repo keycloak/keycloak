@@ -30,7 +30,7 @@ public class DefaultClientsApi implements ClientsApi {
 
     @Override
     @GET
-    public Stream<ClientRepresentation> getClients() {
+    public Stream<ClientRepresentation> getClients(String query) {
         return clientService.getClients(realm, null, null, null);
     }
 

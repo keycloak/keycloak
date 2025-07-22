@@ -10,10 +10,6 @@ import org.keycloak.services.ServiceException;
 
 public interface ClientService extends Service {
 
-    public static class ClientSearchOptions {
-        // TODO
-    }
-
     public static class ClientProjectionOptions {
         // TODO
     }
@@ -29,11 +25,11 @@ public interface ClientService extends Service {
 
     Optional<ClientRepresentation> getClient(RealmModel realm, String clientId, ClientProjectionOptions projectionOptions);
 
-    Stream<ClientRepresentation> getClients(RealmModel realm, ClientProjectionOptions projectionOptions, ClientSearchOptions searchOptions, ClientSortAndSliceOptions sortAndSliceOptions);
+    Stream<ClientRepresentation> getClients(RealmModel realm, ClientProjectionOptions projectionOptions, String searchQuery, ClientSortAndSliceOptions sortAndSliceOptions);
 
     ClientRepresentation deleteClient(RealmModel realm, String clientId);
 
-    Stream<ClientRepresentation> deleteClients(RealmModel realm, ClientSearchOptions searchOptions);
+    Stream<ClientRepresentation> deleteClients(RealmModel realm, String searchQuery);
 
     CreateOrUpdateResult createOrUpdate(RealmModel realm, ClientRepresentation client, boolean allowUpdate) throws ServiceException;
 
