@@ -1026,6 +1026,8 @@ public class RepresentationToModel {
                         String v = itr.next();
                         if (v == null || v.trim().isEmpty()) {
                             itr.remove();
+                        } else if ("serverPrincipal".equals(k)) {
+                            itr.set(v.trim());
                         }
                     }
 
