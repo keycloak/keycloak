@@ -266,8 +266,8 @@ importers:
         specifier: ^1.30.1
         version: 1.30.1
       properties-file:
-        specifier: ^3.5.12
-        version: 3.5.12
+        specifier: ^3.5.13
+        version: 3.5.13
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@swc/core@1.13.1)(@types/node@24.0.15)(typescript@5.8.3)
@@ -3611,8 +3611,8 @@ packages:
   proper-lockfile@4.1.2:
     resolution: {integrity: sha512-TjNPblN4BwAWMXU8s9AEz4JmQxnD1NNL7bNOY/AKUzyamc379FWASUhc/K1pL2noVb+XmZKLL68cjzLsiOAMaA==}
 
-  properties-file@3.5.12:
-    resolution: {integrity: sha512-7dvf+jph2BoEWv0NskL0RIuBocAzf7R62qvG1K8q5ea8BddjepuwFiLLH1bgQGzSYYNvJHDXonnssd9dZ07RGA==}
+  properties-file@3.5.13:
+    resolution: {integrity: sha512-Zm0MkGfj4Mefz4J2GO1U5ux8iNd5/w/Pk7KnurarzN9dJBhHtL1/SVTm8PGdEKDFagD9qWeDlEkRMKpYhpGwfQ==}
 
   property-information@6.5.0:
     resolution: {integrity: sha512-PgTgs/BlvHxOu8QuEN7wi5A0OmXaBcHpmCSTehcs6Uuu9IkDIEo13Hy7n898RHfrQ49vKCoGeWZSaAK01nwVig==}
@@ -7873,7 +7873,7 @@ snapshots:
       retry: 0.12.0
       signal-exit: 3.0.7
 
-  properties-file@3.5.12: {}
+  properties-file@3.5.13: {}
 
   property-information@6.5.0: {}
 
