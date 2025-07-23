@@ -171,10 +171,10 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
 
   function loader(first?: number, max?: number) {
     return adminClient.realms.findEvents({
-      // The admin client wants 'dateFrom' and 'dateTo' to be Date objects, however it cannot actually handle them so we need to cast to any.
-      ...(activeFilters as any),
       client,
       user,
+      // The admin client wants 'dateFrom' and 'dateTo' to be Date objects, however it cannot actually handle them so we need to cast to any.
+      ...(activeFilters as any),
       realm,
       first,
       max,
