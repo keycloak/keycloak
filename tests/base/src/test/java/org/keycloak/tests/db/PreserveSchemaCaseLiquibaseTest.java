@@ -1,7 +1,5 @@
 package org.keycloak.tests.db;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 import org.keycloak.testframework.annotations.InjectTestDatabase;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.database.DatabaseConfig;
@@ -22,11 +20,6 @@ public class PreserveSchemaCaseLiquibaseTest extends AbstractDBSchemaTest {
 
     @InjectTestDatabase(lifecycle = LifeCycle.CLASS, config = PreserveSchemaCaseDatabaseConfig.class)
     TestDatabase db;
-
-    @Test
-    public void testCaseSensitiveSchema() {
-        Assertions.assertDoesNotThrow(this::createDeleteRole);
-    }
 
     public static class PreserveSchemaCaseServerConfig implements KeycloakServerConfig {
         @Override

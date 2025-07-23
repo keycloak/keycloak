@@ -1,5 +1,7 @@
 package org.keycloak.tests.db;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testframework.annotations.InjectClient;
@@ -10,7 +12,7 @@ import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.RoleConfigBuilder;
 
 @KeycloakIntegrationTest
-public class AbstractDBSchemaTest {
+public abstract class AbstractDBSchemaTest {
 
     @InjectClient
     ManagedClient managedClient;
@@ -20,14 +22,17 @@ public class AbstractDBSchemaTest {
         return database == null ? "dev-mem" : database;
     }
 
-    protected void createDeleteRole() {
+    @Test
+    public void testCaseSensitiveSchema() {
         RoleRepresentation role1 = RoleConfigBuilder.create()
                 .name("role1")
                 .description("role1-description")
                 .singleAttribute("role1-attr-key", "role1-attr-val")
                 .build();
         RolesResource roles = managedClient.admin().roles();
-        roles.create(role1);
-        roles.deleteRole(role1.getName());
+        Assertions.assertDoesNotThrow(() -> {
+            roles.create(role1);
+            roles.deleteRole(role1.getName());
+        });
     }
 }
