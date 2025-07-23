@@ -3,6 +3,7 @@ package org.keycloak.tests.db;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 import org.keycloak.testframework.annotations.InjectTestDatabase;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.database.DatabaseConfig;
 import org.keycloak.testframework.database.DatabaseConfigBuilder;
 import org.keycloak.testframework.database.PostgresTestDatabase;
 import org.keycloak.testframework.database.TestDatabase;
@@ -12,13 +13,13 @@ import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
 @DisabledIfEnvironmentVariable(named = "KC_TEST_DATABASE", matches = "mssql", disabledReason = "MSSQL does not support setting the default schema per session")
 @DisabledIfEnvironmentVariable(named = "KC_TEST_DATABASE", matches = "oracle", disabledReason = "Oracle image does not support configuring user/databases with '-'")
-@KeycloakIntegrationTest(config = PreserveSchemaCaseLiquibaseTest.KeycloakConfig.class)
-public class PreserveSchemaCaseLiquibaseTest extends CaseSensitiveSchemaTest {
+@KeycloakIntegrationTest(config = PreserveSchemaCaseLiquibaseTest.PreserveSchemaCaseServerConfig.class)
+public class PreserveSchemaCaseLiquibaseTest extends AbstractDBSchemaTest {
 
-    @InjectTestDatabase(lifecycle = LifeCycle.CLASS, config = DatabaseConfigurator.class)
+    @InjectTestDatabase(lifecycle = LifeCycle.CLASS, config = PreserveSchemaCaseDatabaseConfig.class)
     TestDatabase db;
 
-    public static class KeycloakConfig implements KeycloakServerConfig {
+    public static class PreserveSchemaCaseServerConfig implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
             switch (dbType()) {
@@ -30,13 +31,13 @@ public class PreserveSchemaCaseLiquibaseTest extends CaseSensitiveSchemaTest {
         }
     }
 
-    public static class DatabaseConfigurator implements org.keycloak.testframework.database.DatabaseConfigurator {
+    private static class PreserveSchemaCaseDatabaseConfig implements DatabaseConfig {
         @Override
-        public DatabaseConfigBuilder configure(DatabaseConfigBuilder builder) {
+        public DatabaseConfigBuilder configure(DatabaseConfigBuilder database) {
             if (dbType().equals(PostgresTestDatabase.NAME)) {
-                return builder.withInitScript("org/keycloak/tests/db/preserve-schema-case-liquibase-postgres.sql");
+                return database.initScript("org/keycloak/tests/db/preserve-schema-case-liquibase-postgres.sql");
             }
-            return builder.withDatabase("keycloak-t");
+            return database.database("keycloak-t");
         }
     }
 }

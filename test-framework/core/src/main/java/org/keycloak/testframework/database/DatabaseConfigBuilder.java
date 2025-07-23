@@ -1,32 +1,34 @@
 package org.keycloak.testframework.database;
 
 public class DatabaseConfigBuilder {
-    private String initScript;
-    private String database;
-    private boolean preventReuse;
 
-    private DatabaseConfigBuilder() {}
+    DatabaseConfigRepresentation rep;
+
+    private DatabaseConfigBuilder(DatabaseConfigRepresentation rep) {
+        this.rep = rep;
+    }
 
     public static DatabaseConfigBuilder create() {
-        return new DatabaseConfigBuilder();
+        DatabaseConfigRepresentation rep = new DatabaseConfigRepresentation();
+        return new DatabaseConfigBuilder(rep);
     }
 
-    public DatabaseConfigBuilder withInitScript(String initScript) {
-        this.initScript = initScript;
+    public DatabaseConfigBuilder initScript(String initScript) {
+        rep.setInitScript(initScript);
         return this;
     }
 
-    public DatabaseConfigBuilder withDatabase(String database) {
-        this.database = database;
+    public DatabaseConfigBuilder database(String database) {
+        rep.setDatabase(database);
         return this;
     }
 
-    public DatabaseConfigBuilder withPreventReuse(boolean preventReuse) {
-        this.preventReuse = preventReuse;
+    public DatabaseConfigBuilder preventReuse(boolean preventReuse) {
+        rep.setPreventReuse(preventReuse);
         return this;
     }
 
-    public DatabaseConfig build() {
-        return new DatabaseConfig(initScript, database, preventReuse);
+    public DatabaseConfigRepresentation build() {
+        return rep;
     }
 }
