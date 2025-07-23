@@ -1,7 +1,5 @@
 package org.keycloak.tests.db;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 import org.keycloak.testframework.annotations.InjectTestDatabase;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.conditions.DisabledForDatabases;
@@ -20,11 +18,6 @@ public class CaseSensitiveSchemaTest extends AbstractDBSchemaTest {
 
     @InjectTestDatabase(lifecycle = LifeCycle.CLASS, config = CaseSensitiveDatabaseConfig.class)
     TestDatabase db;
-
-    @Test
-    public void testCaseSensitiveSchema() {
-        Assertions.assertDoesNotThrow(this::createDeleteRole);
-    }
 
     public static class CaseSensitiveServerConfig implements KeycloakServerConfig {
         @Override
