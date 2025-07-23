@@ -26,7 +26,7 @@ jobs:
       - name: Build Keycloak
         uses: ./.github/actions/build-keycloak
 
-      - uses: snyk/actions/setup@master
+      - uses: snyk/actions/setup@28606799782bc8e809f4076e9f8293bc4212d05e # master
 
       - name: Check for vulnerabilities in Quarkus
         run: snyk test --policy-path=${GITHUB_WORKSPACE}/.github/snyk/.snyk --all-projects --prune-repeated-subdependencies --exclude=tests --sarif-file-output=quarkus-report.sarif quarkus/deployment
@@ -35,7 +35,7 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
       - name: Upload Quarkus scanner results to GitHub
-        uses: github/codeql-action/upload-sarif@ff0a06e83cb2de871e5a09832bc6a81e7276941f # v3.28.18
+        uses: github/codeql-action/upload-sarif@181d5eefc20863364f96762470ba6f862bdef56b # v3.29.2
         continue-on-error: true
         with:
           sarif_file: quarkus-report.sarif
@@ -50,7 +50,7 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
       - name: Upload Operator scanner results to GitHub
-        uses: github/codeql-action/upload-sarif@ff0a06e83cb2de871e5a09832bc6a81e7276941f # v3.28.18
+        uses: github/codeql-action/upload-sarif@181d5eefc20863364f96762470ba6f862bdef56b # v3.29.2
         with:
           sarif_file: operator-report.sarif
           category: snyk-operator-report

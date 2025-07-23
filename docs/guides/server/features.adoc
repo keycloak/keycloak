@@ -81,7 +81,7 @@ There are no deprecated features in this {project_name} release.
 
 <#macro showFeatures features>
 <#list features as feature>
-[.features-name]#${feature.name}#::
+[.features-name]#${feature.versionedKey}#::
 [.features-description]#${feature.description}#
 </#list>
 </#macro>

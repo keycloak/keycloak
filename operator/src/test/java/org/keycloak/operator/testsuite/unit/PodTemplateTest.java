@@ -70,6 +70,7 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.operator.ContextUtils.DIST_CONFIGURATOR_KEY;
 import static org.keycloak.operator.ContextUtils.NEW_DEPLOYMENT_KEY;
@@ -388,6 +389,19 @@ public class PodTemplateTest {
     }
 
     @Test
+    public void testHttpManagment() {
+        var result = getDeployment(null, new StatefulSet(),
+                spec -> spec.withAdditionalOptions(new ValueOrSecret("http-management-scheme", "http")))
+                .getSpec()
+                .getTemplate()
+                .getSpec()
+                .getContainers()
+                .get(0);
+
+        assertEquals("HTTP", result.getReadinessProbe().getHttpGet().getScheme());
+    }
+
+    @Test
     public void testRelativePathHealthProbes() {
         final Function<String, Container> setUpRelativePath = (path) -> getDeployment(null, new StatefulSet(),
                 spec -> spec.withAdditionalOptions(new ValueOrSecret("http-management-relative-path", path)))
@@ -512,6 +526,22 @@ public class PodTemplateTest {
         assertThat(podTemplate.getSpec().getContainers().get(0).getEnv().stream())
                 .anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TRUSTSTORE_PATHS)
                         && envVar.getValue().equals("/something"));
+    }
+
+    @Test
+    public void testAdditionalOptionEnvKey() {
+        // Arrange
+        PodTemplateSpec additionalPodTemplate = null;
+
+        // Act
+        var podTemplate = getDeployment(additionalPodTemplate, null,
+                s -> s.addToAdditionalOptions(new ValueOrSecret("log-level-org.package.some_class", "debug")))
+                .getSpec().getTemplate();
+
+        // Assert
+        assertThat(podTemplate.getSpec().getContainers().get(0).getEnv().stream())
+                .anyMatch(envVar -> envVar.getName().equals("KCKEY_LOG_LEVEL_ORG_PACKAGE_SOME_CLASS")
+                        && envVar.getValue().equals("log-level-org.package.some_class"));
     }
 
     @Test
@@ -660,6 +690,37 @@ public class PodTemplateTest {
         assertThat(podTemplate.getSpec().getAffinity()).isNotEqualTo(affinity);
     }
 
+    @Test
+    public void testProbe(){
+        PodTemplateSpec additionalPodTemplate = null;
+        var readinessProbe = new ProbeBuilder().withFailureThreshold(1).withPeriodSeconds(2).build();
+        var livenessProbe = new ProbeBuilder().withFailureThreshold(3).withPeriodSeconds(4).build();
+        var startupProbe = new ProbeBuilder().withFailureThreshold(5).withPeriodSeconds(6).build();
+        var readinessPodTemplate = getDeployment(additionalPodTemplate, null,
+                s-> s.withNewReadinessProbeSpec()
+                        .withProbeFailureThreshold(1)
+                        .withProbePeriodSeconds(2)
+                        .endReadinessProbeSpec()).getSpec().getTemplate();
+        assertThat(readinessPodTemplate.getSpec().getContainers().get(0).getReadinessProbe().getPeriodSeconds()).isEqualTo(readinessProbe.getPeriodSeconds());
+        assertThat(readinessPodTemplate.getSpec().getContainers().get(0).getReadinessProbe().getFailureThreshold()).isEqualTo(readinessProbe.getFailureThreshold());
+
+        var livenessPodTemplate = getDeployment(additionalPodTemplate, null,
+                s-> s.withNewLivenessProbeSpec()
+                        .withProbeFailureThreshold(3)
+                        .withProbePeriodSeconds(4)
+                        .endLivenessProbeSpec()).getSpec().getTemplate();
+        assertThat(livenessPodTemplate.getSpec().getContainers().get(0).getLivenessProbe().getPeriodSeconds()).isEqualTo(livenessProbe.getPeriodSeconds());
+        assertThat(livenessPodTemplate.getSpec().getContainers().get(0).getLivenessProbe().getFailureThreshold()).isEqualTo(livenessProbe.getFailureThreshold());
+
+        var startupPodTemplate = getDeployment(additionalPodTemplate, null,
+                s-> s.withNewStartupProbeSpec()
+                        .withProbeFailureThreshold(5)
+                        .withProbePeriodSeconds(6)
+                        .endStartupProbeSpec()).getSpec().getTemplate();
+        assertThat(startupPodTemplate.getSpec().getContainers().get(0).getStartupProbe().getPeriodSeconds()).isEqualTo(startupProbe.getPeriodSeconds());
+        assertThat(startupPodTemplate.getSpec().getContainers().get(0).getStartupProbe().getFailureThreshold()).isEqualTo(startupProbe.getFailureThreshold());
+    }
+
     private Job getUpdateJob(Consumer<KeycloakSpecBuilder> newSpec, Consumer<KeycloakSpecBuilder> oldSpec, Consumer<StatefulSetBuilder> existingModifier) {
         // create an existing from the old spec and modifier
         StatefulSetBuilder existingBuilder = getDeployment(null, null, oldSpec).toBuilder();
@@ -690,6 +751,18 @@ public class PodTemplateTest {
 
         job = getUpdateJob(builder -> builder.addToImagePullSecrets(new LocalObjectReference("new-secret")), builder -> {}, addSecret);
         assertEquals(List.of(new LocalObjectReference("new-secret"), new LocalObjectReference("secret")), job.getSpec().getTemplate().getSpec().getImagePullSecrets());
+    }
+
+    @Test
+    public void testFieldRemovalForInitContainer() {
+        Job job = getUpdateJob(builder -> {
+        }, builder -> builder.withNewUnsupported().withNewPodTemplate().withNewSpec().addNewContainer()
+                .withRestartPolicy("OnFailure")
+                .withNewLifecycle().withNewPostStart().withNewExec().withCommand("hello").endExec().endPostStart()
+                .endLifecycle().endContainer().endSpec().endPodTemplate().endUnsupported(), builder -> {
+                });
+        assertNull(job.getSpec().getTemplate().getSpec().getInitContainers().get(0).getLifecycle());
+        assertNull(job.getSpec().getTemplate().getSpec().getInitContainers().get(0).getRestartPolicy());
     }
 
 }

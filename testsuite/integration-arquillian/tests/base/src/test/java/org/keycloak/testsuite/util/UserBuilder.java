@@ -185,19 +185,6 @@ public class UserBuilder {
         return this;
     }
 
-    public UserBuilder federatedLink(String identityProvider, String federatedUserId) {
-        if (rep.getFederatedIdentities() == null) {
-            rep.setFederatedIdentities(new LinkedList<>());
-        }
-        FederatedIdentityRepresentation federatedIdentity = new FederatedIdentityRepresentation();
-        federatedIdentity.setUserId(federatedUserId);
-        federatedIdentity.setUserName(rep.getUsername());
-        federatedIdentity.setIdentityProvider(identityProvider);
-
-        rep.getFederatedIdentities().add(federatedIdentity);
-        return this;
-    }
-
     public UserRepresentation build() {
         return rep;
     }

@@ -19,17 +19,17 @@ public class CustomConfigTest {
     Keycloak adminClient;
 
     @Test
-    public void testUpdateEmailFeatureEnabled() {
-        Optional<FeatureRepresentation> updateEmailFeature = adminClient.serverInfo().getInfo().getFeatures().stream().filter(f -> f.getName().equals(Profile.Feature.UPDATE_EMAIL.name())).findFirst();
-        Assertions.assertTrue(updateEmailFeature.isPresent());
-        Assertions.assertTrue(updateEmailFeature.get().isEnabled());
+    public void testPasskeyFeatureEnabled() {
+        Optional<FeatureRepresentation> passKeysFeature = adminClient.serverInfo().getInfo().getFeatures().stream().filter(f -> f.getName().equals(Profile.Feature.PASSKEYS.name())).findFirst();
+        Assertions.assertTrue(passKeysFeature.isPresent());
+        Assertions.assertTrue(passKeysFeature.get().isEnabled());
     }
 
     public static class CustomServerConfig implements KeycloakServerConfig {
 
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.UPDATE_EMAIL);
+            return config.features(Profile.Feature.PASSKEYS);
         }
 
     }

@@ -35,7 +35,6 @@ import org.keycloak.authentication.requiredactions.DeleteCredentialAction;
 import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.broker.provider.util.SimpleHttp;
-import org.keycloak.common.Profile;
 import org.keycloak.common.enums.AccountRestApiVersion;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.credential.CredentialTypeMetadata;
@@ -44,6 +43,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
@@ -73,7 +73,6 @@ import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.admin.authentication.AbstractAuthenticationTest;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.TokenUtil;
@@ -912,7 +911,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
         // Disable parent subflow - that should treat OTP execution as disabled too
         AuthenticationExecutionModel.Requirement currentBrowserReq = setExecutionRequirement(DefaultAuthenticationFlows.BROWSER_FLOW,
-                "Browser - Conditional OTP", AuthenticationExecutionModel.Requirement.DISABLED);
+                "Browser - Conditional 2FA", AuthenticationExecutionModel.Requirement.DISABLED);
 
         // Disable OTP directly in first-broker-login and direct-grant
         AuthenticationExecutionModel.Requirement currentFBLReq = setExecutionRequirement(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW,
@@ -928,14 +927,14 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
             // Enable browser subflow. OTP should be available then
             setExecutionRequirement(DefaultAuthenticationFlows.BROWSER_FLOW,
-                    "Browser - Conditional OTP", currentBrowserReq);
+                    "Browser - Conditional 2FA", currentBrowserReq);
             credentials = getCredentials();
             Assert.assertEquals(2, credentials.size());
             Assert.assertEquals(OTPCredentialModel.TYPE, credentials.get(1).getType());
 
             // Disable browser subflow and enable FirstBrokerLogin. OTP should be available then
             setExecutionRequirement(DefaultAuthenticationFlows.BROWSER_FLOW,
-                    "Browser - Conditional OTP", AuthenticationExecutionModel.Requirement.DISABLED);
+                    "Browser - Conditional 2FA", AuthenticationExecutionModel.Requirement.DISABLED);
             setExecutionRequirement(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW,
                     "OTP Form", currentFBLReq);
             credentials = getCredentials();
@@ -944,7 +943,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         } finally {
             // Revert flows
             setExecutionRequirement(DefaultAuthenticationFlows.BROWSER_FLOW,
-                    "Browser - Conditional OTP", currentBrowserReq);
+                    "Browser - Conditional 2FA", currentBrowserReq);
             setExecutionRequirement(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW,
                     "Direct Grant - Conditional OTP", currentDirectGrantReq);
         }
@@ -1836,12 +1835,13 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
        assertThat(error.getError(), containsString("Invalid json representation for UserRepresentation. Unrecognized field \"invalid\" at line"));
     }
 
-    @EnableFeature(Profile.Feature.UPDATE_EMAIL)
+    @Test
     public void testEmailWhenUpdateEmailEnabled() throws Exception {
         reconnectAdminClient();
         RealmRepresentation realm = testRealm().toRepresentation();
         Boolean registrationEmailAsUsername = realm.isRegistrationEmailAsUsername();
         Boolean editUsernameAllowed = realm.isEditUsernameAllowed();
+        ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
 
         try {
             realm.setRegistrationEmailAsUsername(true);
@@ -1858,6 +1858,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             assertNotNull(user.getEmail());
             assertUserProfileAttributeMetadata(user, "email", "${email}", true, true);
         } finally {
+            ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, false);
             realm.setRegistrationEmailAsUsername(registrationEmailAsUsername);
             realm.setEditUsernameAllowed(editUsernameAllowed);
             testRealm().update(realm);

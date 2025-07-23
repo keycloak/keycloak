@@ -14,7 +14,7 @@ export async function goToRealms(page: Page) {
 }
 
 export async function goToOrganizations(page: Page) {
-  page.getByTestId("nav-item-organizations").click();
+  await page.getByTestId("nav-item-organizations").click();
 }
 
 export async function goToClients(page: Page) {

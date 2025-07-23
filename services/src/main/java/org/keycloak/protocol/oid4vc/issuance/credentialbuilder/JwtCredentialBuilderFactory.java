@@ -50,9 +50,6 @@ public class JwtCredentialBuilderFactory implements CredentialBuilderFactory {
 
     @Override
     public CredentialBuilder create(KeycloakSession session, ComponentModel model) {
-        String credentialIssuer = CredentialBuilderUtils.getIssuerDid(session)
-                .orElseThrow(() -> new CredentialBuilderException("No issuerDid configured."));
-
-        return new JwtCredentialBuilder(credentialIssuer, new OffsetTimeProvider());
+        return new JwtCredentialBuilder(new OffsetTimeProvider());
     }
 }

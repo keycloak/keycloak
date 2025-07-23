@@ -17,6 +17,8 @@
 package org.keycloak.operator.controllers;
 
 import java.util.Optional;
+import java.util.HashMap;
+import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Service;
@@ -76,11 +78,19 @@ public class KeycloakServiceDependentResource extends CRUDKubernetesDependentRes
 
     @Override
     protected Service desired(Keycloak primary, Context<Keycloak> context) {
+
+        Map<String,String> labels = Utils.allInstanceLabels(primary);
+        var optionalSpec = Optional.ofNullable(primary.getSpec().getHttpSpec());
+        optionalSpec.map(HttpSpec::getLabels).ifPresent(labels::putAll);
+
+        Map<String,String> annotations = optionalSpec.map(HttpSpec::getAnnotations).orElse(new HashMap<>());
+
         Service service = new ServiceBuilder()
                 .withNewMetadata()
                 .withName(getServiceName(primary))
                 .withNamespace(primary.getMetadata().getNamespace())
-                .addToLabels(Utils.allInstanceLabels(primary))
+                .addToLabels(labels)
+                .addToAnnotations(annotations)
                 .endMetadata()
                 .withSpec(getServiceSpec(primary))
                 .build();

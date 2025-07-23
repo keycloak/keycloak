@@ -4,7 +4,7 @@ public enum OptionCategory {
     CACHE("Cache", 10, ConfigSupportLevel.SUPPORTED),
     CONFIG("Config", 15, ConfigSupportLevel.SUPPORTED),
     DATABASE("Database", 20, ConfigSupportLevel.SUPPORTED),
-    DATABASE_DATASOURCES("Database - additional datasources", 21, ConfigSupportLevel.SUPPORTED),
+    DATABASE_DATASOURCES("Database - additional datasources", 21, ConfigSupportLevel.PREVIEW),
     TRANSACTION("Transaction",30, ConfigSupportLevel.SUPPORTED),
     FEATURE("Feature", 40, ConfigSupportLevel.SUPPORTED),
     HOSTNAME_V2("Hostname v2", 50, ConfigSupportLevel.SUPPORTED),

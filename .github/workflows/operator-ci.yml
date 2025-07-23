@@ -90,7 +90,7 @@ jobs:
         uses: ./.github/actions/java-setup
 
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@5d9440a1b535e8b4f541eaac559681a9022df29d # v2.13.1
+        uses: manusa/actions-setup-minikube@b589f2d61bf96695c546929c72b38563e856059d # v2.14.0
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
@@ -137,13 +137,13 @@ jobs:
         uses: ./.github/actions/java-setup
 
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@5d9440a1b535e8b4f541eaac559681a9022df29d # v2.13.1
+        uses: manusa/actions-setup-minikube@b589f2d61bf96695c546929c72b38563e856059d # v2.14.0
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
           github token: ${{ secrets.GITHUB_TOKEN }}
           driver: docker
-          start args: --memory=${{ env.MINIKUBE_MEMORY }}
+          start args: --memory=${{ env.MINIKUBE_MEMORY }} --addons=registry --insecure-registry=192.168.49.0/24
 
       - name: Install OPM
         uses: redhat-actions/openshift-tools-installer@144527c7d98999f2652264c048c7a9bd103f8a82 # v1.13.1
@@ -168,8 +168,9 @@ jobs:
       - name: Arrange OLM test installation
         working-directory: operator
         run: |
+          echo "Minikube IP $(minikube ip)"
           eval $(minikube -p minikube docker-env)
-          ./scripts/olm-testing.sh ${GITHUB_SHA::6}
+          REGISTRY=$(minikube ip):5000 ./scripts/olm-testing.sh ${GITHUB_SHA::6}
 
       - name: Deploy an example Keycloak and wait for it to be ready
         working-directory: operator

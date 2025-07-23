@@ -34,11 +34,21 @@
                     <groupId>org.eclipse.sisu</groupId>
                     <artifactId>org.eclipse.sisu.inject</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-devtools-utilities</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-arc-deployment</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-arc-dev</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -47,6 +57,10 @@
                 <exclusion>
                     <groupId>io.quarkus</groupId>
                     <artifactId>quarkus-vertx-http-dev-ui-resources</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-assistant-dev</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>io.mvnpm</groupId>
@@ -76,11 +90,47 @@
                     <groupId>io.quarkus</groupId>
                     <artifactId>quarkus-devtools-codestarts</artifactId>
                 </exclusion>
+                <!-- Exclude transitive dependencies for 'io.quarkus:quarkus-devtools-common' BEGIN -->
+                <exclusion>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-devtools-registry-client</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-devtools-utilities</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-devtools-base-codestarts</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.codejive</groupId>
+                    <artifactId>java-properties</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.commons</groupId>
+                    <artifactId>commons-compress</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.smallrye.common</groupId>
+                    <artifactId>smallrye-common-version</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.dataformat</groupId>
+                    <artifactId>jackson-dataformat-yaml</artifactId>
+                </exclusion>
+                <!-- Exclude transitive dependencies for 'io.quarkus:quarkus-devtools-common' END -->
             </exclusions>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-rest-deployment</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-rest-dev</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -97,6 +147,14 @@
                 <exclusion>
                     <groupId>io.quarkus</groupId>
                     <artifactId>quarkus-devservices-deployment</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-datasource-dev</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-agroal-dev</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -208,6 +266,12 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-junit5-internal</artifactId>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-devtools-utilities</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>

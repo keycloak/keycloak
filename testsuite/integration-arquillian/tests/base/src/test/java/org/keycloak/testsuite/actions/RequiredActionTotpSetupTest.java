@@ -94,12 +94,12 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
     private void setOTPAuthRequirement(AuthenticationExecutionModel.Requirement conditionalReq, AuthenticationExecutionModel.Requirement otpReq) {
         AuthenticationManagementResource authMgtRes = testRealm().flows();
         AuthenticationExecutionInfoRepresentation browserConditionalExecution = authMgtRes.getExecutions("browser").stream()
-                .filter(execution -> execution.getDisplayName().equals("Browser - Conditional OTP"))
+                .filter(execution -> execution.getDisplayName().equals("Browser - Conditional 2FA"))
                 .findAny()
                 .get();
         browserConditionalExecution.setRequirement(conditionalReq.name());
         authMgtRes.updateExecutions("browser", browserConditionalExecution);
-        AuthenticationExecutionInfoRepresentation otpExecution = authMgtRes.getExecutions("Browser - Conditional OTP").stream()
+        AuthenticationExecutionInfoRepresentation otpExecution = authMgtRes.getExecutions("Browser - Conditional 2FA").stream()
                 .filter(execution -> OTPFormAuthenticatorFactory.PROVIDER_ID.equals(execution.getProviderId()))
                 .findAny()
                 .get();

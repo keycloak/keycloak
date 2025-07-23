@@ -20,7 +20,6 @@ package org.keycloak.quarkus.runtime.configuration;
 import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_PREFIX;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -29,7 +28,6 @@ import io.smallrye.config.ConfigValue;
 import io.smallrye.config.SmallRyeConfig;
 
 import org.keycloak.config.Option;
-import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
@@ -91,6 +89,10 @@ public final class Configuration {
                 .isPresent();
     }
 
+    public static boolean isInitialized() {
+        return config != null;
+    }
+
     public static synchronized SmallRyeConfig getConfig() {
         if (config == null) {
             config = ConfigUtils.emptyConfigBuilder().addDiscoveredSources().build();
@@ -111,10 +113,6 @@ public final class Configuration {
 
     public static Map<String, String> getRawPersistedProperties() {
         return PersistedConfigSource.getInstance().getProperties();
-    }
-
-    public static String getRawValue(String propertyName) {
-        return getConfig().getRawValue(propertyName);
     }
 
     public static Iterable<String> getPropertyNames() {
@@ -178,11 +176,17 @@ public final class Configuration {
     }
 
     public static String toDashCase(String key) {
+        if (key == null) {
+            return null;
+        }
         StringBuilder sb = new StringBuilder(key.length());
         boolean l = false;
 
         for (int i = 0; i < key.length(); i++) {
             char c = key.charAt(i);
+            if (c == ',') {
+                c = '-'; // should not happen, but was allowed by the previous logic
+            }
             if (l && Character.isUpperCase(c)) {
                 sb.append('-');
                 c = Character.toLowerCase(c);

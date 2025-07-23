@@ -16,6 +16,7 @@
  */
 package org.keycloak.models;
 
+import java.util.Map;
 import java.util.stream.Stream;
 import org.keycloak.provider.Provider;
 import org.keycloak.storage.clientscope.ClientScopeLookupProvider;
@@ -34,7 +35,7 @@ public interface ClientScopeProvider extends Provider, ClientScopeLookupProvider
 
     /**
      * Creates new client scope with given {@code name} to the given realm.
-     * Spaces in {@code name} will be replaced by underscore so that scope name 
+     * Spaces in {@code name} will be replaced by underscore so that scope name
      * can be used as value of scope parameter. The internal ID will be created automatically.
      * @param realm Realm owning this client scope.
      * @param name String name of the client scope.
@@ -47,7 +48,7 @@ public interface ClientScopeProvider extends Provider, ClientScopeLookupProvider
 
     /**
      * Creates new client scope with given internal ID and {@code name} to the given realm.
-     * Spaces in {@code name} will be replaced by underscore so that scope name 
+     * Spaces in {@code name} will be replaced by underscore so that scope name
      * can be used as value of scope parameter.
      * @param realm Realm owning this client scope.
      * @param id Internal ID of the client scope or {@code null} if one is to be created by the underlying store
@@ -73,4 +74,21 @@ public interface ClientScopeProvider extends Provider, ClientScopeLookupProvider
      * @param realm Realm.
      */
     void removeClientScopes(RealmModel realm);
+
+    /**
+     * Must retrieve all client scopes of the given realm that are use the given protocol.
+     *
+     * @param realm    the realm to retrieve the client scopes from.
+     * @param protocol the protocol expected from the clientScope
+     */
+    Stream<ClientScopeModel> getClientScopesByProtocol(RealmModel realm, String protocol);
+
+    /**
+     * Allows us to filter for scopes by specific attributes
+     *
+     * @param realm     Realm.
+     * @param searchMap a key-value map that holds the attribute names and values to search for.
+     * @param useOr     If the search-params should be combined with or-expressions or and-expressions
+     */
+    Stream<ClientScopeModel> getClientScopesByAttributes(RealmModel realm, Map<String, String> searchMap, boolean useOr);
 }

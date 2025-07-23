@@ -19,6 +19,10 @@ package org.keycloak.social.facebook;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -27,7 +31,11 @@ import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.saml.common.util.StringUtil;
+import org.keycloak.services.ErrorResponseException;
+
+import java.io.IOException;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -37,6 +45,7 @@ public class FacebookIdentityProvider extends AbstractOAuth2IdentityProvider<Fac
 	public static final String AUTH_URL = "https://graph.facebook.com/oauth/authorize";
 	public static final String TOKEN_URL = "https://graph.facebook.com/oauth/access_token";
 	public static final String PROFILE_URL = "https://graph.facebook.com/me?fields=id,name,email,first_name,last_name";
+    public static final String DEBUG_TOKEN_URL = "https://graph.facebook.com/debug_token";
 	public static final String DEFAULT_SCOPE = "email";
 	protected static final String PROFILE_URL_FIELDS_SEPARATOR = ",";
 
@@ -59,6 +68,29 @@ public class FacebookIdentityProvider extends AbstractOAuth2IdentityProvider<Fac
 			throw new IdentityBrokerException("Could not obtain user profile from facebook.", e);
 		}
 	}
+
+    private void verifyToken(String accessToken) throws IOException {
+        JsonNode response = SimpleHttp.doGet(DEBUG_TOKEN_URL, session)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + getConfig().getClientId() + "|" + getConfig().getClientSecret())
+                .param("input_token", accessToken)
+                .asJson();
+
+        JsonNode errorNode = response.get("error");
+        if (errorNode != null) {
+            String errorMessage = getJsonProperty(errorNode, "message");
+            throw new RuntimeException("Error message:  " + errorMessage);
+        }
+
+        JsonNode dataNode = response.get("data");
+        if (dataNode == null || dataNode.isNull()) {
+            throw new RuntimeException("Invalid token debug response: 'data' field is missing.");
+        }
+
+        String appId = getJsonProperty(dataNode, "app_id");
+        if (!getConfig().getClientId().equals(appId)) {
+            throw new RuntimeException("Client ID does not match the app_id in the access token debug response.");
+        }
+    }
 
 	@Override
 	protected boolean supportsExternalExchange() {
@@ -108,7 +140,22 @@ public class FacebookIdentityProvider extends AbstractOAuth2IdentityProvider<Fac
 		return user;
 	}
 
-	@Override
+    @Override
+    protected BrokeredIdentityContext exchangeExternalTokenV2Impl(TokenExchangeContext tokenExchangeContext) {
+        String subjectToken = tokenExchangeContext.getFormParams().getFirst(OAuth2Constants.SUBJECT_TOKEN);
+        if (subjectToken == null) {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "token not set", Response.Status.BAD_REQUEST);
+        }
+        try {
+            verifyToken(subjectToken);
+            return doGetFederatedIdentity(subjectToken);
+        }
+        catch (Exception e) {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, e.getMessage(), Response.Status.BAD_REQUEST);
+        }
+    }
+
+    @Override
 	protected String getDefaultScopes() {
 		return DEFAULT_SCOPE;
 	}

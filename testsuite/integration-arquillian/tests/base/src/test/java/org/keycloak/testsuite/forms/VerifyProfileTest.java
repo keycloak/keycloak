@@ -23,12 +23,12 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -36,7 +36,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -430,13 +430,14 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     @Test
-    @EnableFeature(Profile.Feature.UPDATE_EMAIL)
     public void testUsernameOnlyIfEmailAsUsernameIsDisabledWithUpdateEmailFeature() throws Exception {
         reconnectAdminClient();
         RealmRepresentation realm = testRealm().toRepresentation();
 
         setUserProfileConfiguration(CONFIGURATION_FOR_USER_EDIT);
         updateUser(user5Id, null, "ExistingLast", null);
+
+        ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
 
         try {
             setUserProfileConfiguration(null);
@@ -470,6 +471,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
             assertTrue(verifyProfilePage.isUsernamePresent());
             assertFalse(verifyProfilePage.isEmailPresent());
         } finally {
+            ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, false);
             realm.setEditUsernameAllowed(false);
             realm.setRegistrationEmailAsUsername(false);
             testRealm().update(realm);

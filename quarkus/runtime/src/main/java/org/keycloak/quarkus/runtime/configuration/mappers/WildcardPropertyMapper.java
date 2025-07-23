@@ -9,10 +9,9 @@ import java.util.function.BooleanSupplier;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import org.keycloak.config.LoggingOptions;
 import org.keycloak.config.Option;
-import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
-import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
@@ -30,6 +29,7 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
     private final String fromPrefix;
     private String toPrefix;
     private String toSuffix;
+    private Character replacementChar = null;
 
     public WildcardPropertyMapper(Option<T> option, String to, BooleanSupplier enabled, String enabledWhen, ValueMapper mapper, String mapFrom, ValueMapper parentMapper,
             String paramLabel, boolean mask, BiConsumer<PropertyMapper<T>, ConfigValue> validator,
@@ -42,16 +42,20 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
             throw new IllegalArgumentException("Invalid wildcard from format. Wildcard must be at the end of the option.");
         }
 
-        if (to != null) {
-            if (!to.startsWith(NS_QUARKUS_PREFIX) && !to.startsWith(NS_KEYCLOAK_PREFIX)) {
-                throw new IllegalArgumentException("Wildcards should map to Quarkus or Keycloak options (option '%s' mapped to '%s'). If not, PropertyMappers logic will need adjusted".formatted(option.getKey(), to));
+        if (option == LoggingOptions.LOG_LEVEL_CATEGORY) {
+            replacementChar = '.';
+        }
+
+        if (getTo() != null) {
+            if (!getTo().startsWith(NS_QUARKUS_PREFIX) && !getTo().startsWith(NS_KEYCLOAK_PREFIX)) {
+                throw new IllegalArgumentException("Wildcards should map to Quarkus or Keycloak options (option '%s' mapped to '%s'). If not, PropertyMappers logic will need adjusted".formatted(option.getKey(), getTo()));
             }
-            this.toPrefix = to.substring(0, to.indexOf(WILDCARD_FROM_START));
-            int lastIndexOf = to.lastIndexOf(">");
+            this.toPrefix = getTo().substring(0, getTo().indexOf(WILDCARD_FROM_START));
+            int lastIndexOf = getTo().lastIndexOf(">");
             if (lastIndexOf == -1) {
                 throw new IllegalArgumentException("Invalid wildcard map to.");
             }
-            this.toSuffix = to.substring(lastIndexOf + 1, to.length());
+            this.toSuffix = getTo().substring(lastIndexOf + 1);
         }
 
         this.wildcardKeysTransformer = wildcardKeysTransformer;
@@ -66,7 +70,7 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
         return toPrefix + wildcardKey + toSuffix;
     }
 
-    String getFrom(String wildcardKey) {
+    public String getFrom(String wildcardKey) {
         return fromPrefix + wildcardKey;
     }
 
@@ -119,7 +123,10 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
 
     public Optional<String> getKcKeyForEnvKey(String envKey, String transformedKey) {
         if (transformedKey.startsWith(fromPrefix)) {
-            return Optional.ofNullable(getFrom(envKey.substring(fromPrefix.length()).toLowerCase().replace("_", ".")));
+            if (replacementChar != null) {
+                return Optional.ofNullable(getFrom(envKey.substring(fromPrefix.length()).toLowerCase().replace('_', replacementChar)));
+            }
+            return Optional.of(transformedKey);
         }
         return Optional.empty();
     }

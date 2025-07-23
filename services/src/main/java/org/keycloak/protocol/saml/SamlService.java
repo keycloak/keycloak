@@ -1305,14 +1305,12 @@ public class SamlService extends AuthorizationEndpointBase {
 
             // Encrypt assertion if client requires it
             if (samlClient.requiresEncryption()) {
-                PublicKey publicKey = null;
                 try {
-                    publicKey = SamlProtocolUtils.getEncryptionKey(clientModel);
+                    SamlProtocolUtils.setupEncryption(samlClient, bindingBuilder);
                 } catch (Exception e) {
                     logger.error("Failed to obtain encryption key for client", e);
                     return emptyArtifactResponseMessage(artifactResolveMessage, null);
                 }
-                bindingBuilder.encrypt(publicKey);
             }
         }
 

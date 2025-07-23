@@ -106,26 +106,33 @@ public class DatabaseOptions {
             .description("Deactivate specific named datasource <datasource>.")
             .build();
 
+    public static final Option<String> DB_POSTGRESQL_TARGET_SERVER_TYPE = new OptionBuilder<>("db-postgres-target-server-type", String.class)
+            .category(OptionCategory.DATABASE)
+            .hidden()
+            .build();
+
     /**
      * Options that have their sibling for a named datasource
      * Example: for `db-dialect`, `db-dialect-<datasource>` is created
      */
     public static final List<Option<?>> OPTIONS_DATASOURCES = List.of(
-            DatabaseOptions.DB_DIALECT,
-            DatabaseOptions.DB_DRIVER,
-            DatabaseOptions.DB,
-            DatabaseOptions.DB_URL,
-            DatabaseOptions.DB_URL_HOST,
-            DatabaseOptions.DB_URL_DATABASE,
-            DatabaseOptions.DB_URL_PORT,
-            DatabaseOptions.DB_URL_PROPERTIES,
-            DatabaseOptions.DB_USERNAME,
-            DatabaseOptions.DB_PASSWORD,
-            DatabaseOptions.DB_SCHEMA,
-            DatabaseOptions.DB_POOL_INITIAL_SIZE,
-            DatabaseOptions.DB_POOL_MIN_SIZE,
-            DatabaseOptions.DB_POOL_MAX_SIZE
-    );
+            DB_DIALECT,
+            DB_DRIVER,
+            DB,
+            DB_URL,
+            DB_URL_HOST,
+            DB_URL_DATABASE,
+            DB_URL_PORT,
+            DB_URL_PROPERTIES,
+            DB_USERNAME,
+            DB_PASSWORD,
+            DB_SCHEMA,
+            DB_POOL_INITIAL_SIZE,
+            DB_POOL_MIN_SIZE,
+            DB_POOL_MAX_SIZE,
+            DB_SQL_JPA_DEBUG,
+            DB_SQL_LOG_SLOW_QUERIES
+            );
 
     /**
      * In order to avoid ambiguity, we need to have unique option names for wildcard options.
@@ -203,7 +210,7 @@ public class DatabaseOptions {
      * <p>
      * Result: {@code db-driver-my-store}
      */
-    public static Optional<String> getResultNamedKey(Option<?> option, String namedProperty) {
+    public static Optional<String> getNamedKey(Option<?> option, String namedProperty) {
         return getKeyForDatasource(option)
                 .map(key -> key.substring(0, key.indexOf("<")))
                 .map(key -> key.concat(namedProperty));

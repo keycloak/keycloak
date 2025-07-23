@@ -199,11 +199,12 @@ public class SdJwtCredentialSignerTest extends OID4VCTest {
     public static void testSignSDJwtCredential(KeycloakSession session, String signingKeyId, String overrideKeyId, String
             algorithm, Map<String, Object> claims, int decoys, List<String> visibleClaims) {
         CredentialBuildConfig credentialBuildConfig = new CredentialBuildConfig()
+                .setCredentialIssuer(TEST_DID.toString())
                 .setCredentialType("https://credentials.example.com/test-credential")
                 .setTokenJwsType("example+sd-jwt")
                 .setHashAlgorithm("sha-256")
                 .setNumberOfDecoys(decoys)
-                .setVisibleClaims(visibleClaims)
+                .setSdJwtVisibleClaims(visibleClaims)
                 .setSigningKeyId(signingKeyId)
                 .setSigningAlgorithm(algorithm)
                 .setOverrideKeyId(overrideKeyId);
@@ -211,7 +212,7 @@ public class SdJwtCredentialSignerTest extends OID4VCTest {
         SdJwtCredentialSigner sdJwtCredentialSigner = new SdJwtCredentialSigner(session);
 
         VerifiableCredential testCredential = getTestCredential(claims);
-        SdJwtCredentialBody sdJwtCredentialBody = new SdJwtCredentialBuilder("did:web:test.org")
+        SdJwtCredentialBody sdJwtCredentialBody = new SdJwtCredentialBuilder()
                 .buildCredentialBody(testCredential, credentialBuildConfig);
 
         String sdJwt = sdJwtCredentialSigner.signCredential(sdJwtCredentialBody, credentialBuildConfig);

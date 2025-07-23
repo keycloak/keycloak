@@ -36,8 +36,10 @@ if you set the CLI option `--http-relative-path=/auth`, these endpoints are acce
 
 === TLS support
 
-When the TLS is set for the default {project_name} server, the management interface will be accessible through HTTPS as well.
+When the TLS is set for the default {project_name} server, by default the management interface will be accessible through HTTPS as well.
 The management interface can run only either on HTTP or HTTPS, not both as for the main server.
+
+NOTE: If you do not want the management interface to use HTTPS, you may set the `http-management-scheme` option to `http`.
 
 Specific {project_name} management interface options with the prefix `https-management-*` were provided for setting different TLS parameters for the management HTTP server. Their function is similar to their counterparts for the main HTTP server, for details see <@links.server id="enabletls" />.
 When these options are not explicitly set, the TLS parameters are inherited from the default HTTP server.

@@ -51,7 +51,7 @@ public class GroupAdapter implements GroupModel {
         this.cacheSession = cacheSession;
         this.keycloakSession = keycloakSession;
         this.realm = realm;
-        modelSupplier = this::getGroupModel;
+        modelSupplier = new LazyModel<>(this::getGroupModel);
     }
 
     protected void getDelegateForUpdate() {
@@ -271,7 +271,8 @@ public class GroupAdapter implements GroupModel {
     @Override
     public Long getSubGroupsCount() {
         if (isUpdated()) return updated.getSubGroupsCount();
-        return getGroupModel().getSubGroupsCount();
+        GroupModel model = modelSupplier.get();
+        return model == null ? null : model.getSubGroupsCount();
     }
 
     @Override

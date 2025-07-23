@@ -24,12 +24,15 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.admin.client.resource.IdentityProviderResource;
+import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.BrowserTabUtil;
@@ -41,6 +44,8 @@ import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assume.assumeTrue;
 import static org.keycloak.testsuite.AssertEvents.DEFAULT_REDIRECT_URI;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_CONS_NAME;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 /**
@@ -169,6 +174,87 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
         }
     }
 
+    // Same like testAuthenticationExpiredWithMoreBrowserTabs_loginExpiredInBothConsumerAndProvider, but OIDC IDP supports only short "state" parameter. Hence client_data cannot be encoded into it
+    // So this is similar behaviour like KcSamlMultipleTabsBrokerTest.testAuthenticationExpiredWithMoreBrowserTabs_loginExpiredInBothConsumerAndProvider
+    @Test
+    public void testAuthenticationExpiredWithMoreBrowserTabs_loginExpiredInBothConsumerAndProvider_requiresShortStateParameter() {
+        assumeTrue("Since the JS engine in real browser does check the expiration regularly in all tabs, this test only works with HtmlUnit", driver instanceof HtmlUnitDriver);
+
+        // Update IDP and set invalid credentials there
+        IdentityProviderResource idpResource = adminClient.realm(REALM_CONS_NAME).identityProviders().get(IDP_OIDC_ALIAS);
+        IdentityProviderRepresentation idpRep = idpResource.toRepresentation();
+        idpRep.getConfig().put(OAuth2IdentityProviderConfig.REQUIRES_SHORT_STATE_PARAMETER, "true");
+        idpResource.update(idpRep);
+
+
+        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
+            // Open login page in tab1 and click "login with IDP"
+            oauth.clientId("broker-app");
+            loginPage.open(bc.consumerRealmName());
+            loginPage.clickSocial(bc.getIDPAlias());
+
+            // Open login page in tab 2
+            tabUtil.newTab(oauth.loginForm().build());
+            assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
+            Assert.assertTrue(loginPage.isCurrent("consumer"));
+            getLogger().infof("URL in tab2: %s", driver.getCurrentUrl());
+
+            setTimeOffset(7200000);
+
+            // Finish login in tab2
+            loginPage.clickSocial(bc.getIDPAlias());
+            Assert.assertEquals(loginPage.getError(), "Your login attempt timed out. Login will start from the beginning.");
+            logInWithBroker(bc);
+
+            waitForPage(driver, "update account information", false);
+            updateAccountInformationPage.assertCurrent();
+            Assert.assertTrue("We must be on consumer realm right now",
+                    driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+            updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
+            appPage.assertCurrent();
+            events.clear();
+
+            // Login in provider realm will redirect back to consumer with "authentication_expired" error.
+            // The consumer has also expired authentication session, but it cannot redirect to client due the "clientData" missing from IdentityBrokerState.
+            // That is the difference from testAuthenticationExpiredWithMoreBrowserTabs_loginExpiredInBothConsumerAndProvider, which is able to redirect back to client
+            tabUtil.closeTab(1);
+            assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(1));
+            loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+
+            // Event for "already logged-in" in the provider realm
+            events.expectLogin().error(Errors.ALREADY_LOGGED_IN)
+                    .realm(getProviderRealmId())
+                    .client("brokerapp")
+                    .user((String) null)
+                    .session((String) null)
+                    .removeDetail(Details.CONSENT)
+                    .removeDetail(Details.CODE_ID)
+                    .detail(Details.REDIRECT_URI, Matchers.equalTo(OAuthClient.AUTH_SERVER_ROOT + "/realms/" + bc.consumerRealmName() + "/broker/" + bc.getIDPAlias() + "/endpoint"))
+                    .detail(Details.REDIRECTED_TO_CLIENT, "true")
+                    .detail(Details.RESPONSE_TYPE, OIDCResponseType.CODE)
+                    .detail(Details.RESPONSE_MODE, OIDCResponseMode.QUERY.value())
+                    .assertEvent();
+
+            // Event for "already logged-in" in the consumer realm
+            events.expect(EventType.IDENTITY_PROVIDER_LOGIN).error(Errors.ALREADY_LOGGED_IN)
+                    .realm(getConsumerRealmId())
+                    .client("broker-app")
+                    .user((String) null)
+                    .session((String) null)
+                    .removeDetail(Details.REDIRECT_URI)
+                    .detail(Details.REDIRECTED_TO_CLIENT, "false")
+                    .assertEvent();
+
+            // Being on "You are already logged-in" now. No way to redirect to client due "clientData" are null in "state" of OIDC IDP as OIDC IDP requires short state parameter
+            loginPage.assertCurrent("consumer");
+            Assert.assertEquals("You are already logged in.", loginPage.getInstruction());
+        } finally {
+            // Revert config
+            idpRep.getConfig().put(OAuth2IdentityProviderConfig.REQUIRES_SHORT_STATE_PARAMETER, "false");
+            idpResource.update(idpRep);
+        }
+    }
+
     @Test
     public void testAuthenticationExpiredWithMoreBrowserTabs_loginExpiredInProvider() throws Exception {
         assumeTrue("Since the JS engine in real browser does check the expiration regularly in all tabs, this test only works with HtmlUnit", driver instanceof HtmlUnitDriver);
@@ -222,7 +308,7 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
                     .detail(Details.RESPONSE_MODE, OIDCResponseMode.QUERY.value())
                     .assertEvent();
 
-            // SAML IDP on "consumer" will retry IDP login on the "provider"
+            // OIDC IDP on "consumer" will retry IDP login on the "provider"
             events.expect(EventType.IDENTITY_PROVIDER_LOGIN)
                     .realm(getConsumerRealmId())
                     .client("broker-app")

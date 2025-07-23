@@ -15,6 +15,8 @@ import org.keycloak.representations.admin.v2.ClientRepresentation;
 import com.fasterxml.jackson.databind.JsonNode;
 
 public interface ClientApi {
+    // TODO move these
+    public static final String CONENT_TYPE_MERGE_PATCH = "application/merge-patch+json";
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -26,9 +28,7 @@ public interface ClientApi {
     ClientRepresentation createOrUpdateClient(ClientRepresentation client, @PathParam("fieldValidation") FieldValidation fieldValidation);
 
     @PATCH
-    @Consumes("application/merge-patch+json")
+    @Consumes({MediaType.APPLICATION_JSON_PATCH_JSON, CONENT_TYPE_MERGE_PATCH})
     @Produces(MediaType.APPLICATION_JSON)
     ClientRepresentation patchClient(JsonNode patch, @PathParam("fieldValidation") FieldValidation fieldValidation);
-
-
 }

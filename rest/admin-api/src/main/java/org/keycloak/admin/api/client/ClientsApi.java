@@ -34,6 +34,7 @@ public interface ClientsApi extends Provider {
     @Operation(summary = "Create a new client", description = "Creates a new client in the realm")
     ClientRepresentation createClient(ClientRepresentation client, @PathParam("fieldValidation") FieldValidation fieldValidation);
 
+    @GET
     @Path("{id}")
     @Operation(summary = "Get client by ID", description = "Returns a client resource for the specified client ID")
     ClientApi client(@PathParam("id") String id);

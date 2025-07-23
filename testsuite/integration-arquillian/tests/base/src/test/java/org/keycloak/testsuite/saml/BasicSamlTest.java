@@ -1,9 +1,14 @@
 package org.keycloak.testsuite.saml;
 
 import org.junit.Test;
+import org.keycloak.adapters.saml.SamlDeployment;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
+import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.protocol.saml.SamlProtocolUtils;
+import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
@@ -13,6 +18,7 @@ import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
+import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
 import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
@@ -23,6 +29,8 @@ import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClient.RedirectStrategyWithSwitchableFollowRedirect;
 import org.keycloak.testsuite.util.SamlClient.Step;
 import org.keycloak.testsuite.util.SamlClientBuilder;
+import org.keycloak.testsuite.util.SamlUtils;
+import org.keycloak.utils.StringUtil;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -40,11 +48,15 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
+import org.apache.xml.security.encryption.EncryptedData;
+import org.apache.xml.security.encryption.XMLCipher;
+import org.apache.xml.security.utils.EncryptionConstants;
 import org.hamcrest.Matcher;
 import org.jboss.resteasy.util.Encode;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.containsString;
@@ -54,6 +66,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.matchesRegex;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_NSURI;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
@@ -370,5 +383,107 @@ public class BasicSamlTest extends AbstractSamlTest {
             // if not encoded properly jsoup returns ":" instead of "&colon;"
             assertThat(action, endsWith("javascript&colon;alert('xss');"));
         }
+    }
+
+    private void testEncryption(String algorithm, String keyAlgorithm, String digestMethod, String maskGenerationFunction) throws Exception {
+        testEncryption(algorithm, keyAlgorithm, digestMethod, maskGenerationFunction,
+                algorithm, keyAlgorithm, digestMethod, maskGenerationFunction);
+    }
+
+    private void testEncryption(String algorithm, String keyAlgorithm, String digestMethod, String maskGenerationFunction,
+            String expectedAlgorithm, String expectedKeyAlgorithm, String expectedDigestMethod, String expectedMaxskGenerationFuntion) throws Exception {
+        try (var c = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_SALES_POST_ENC)
+                .setAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE, Boolean.TRUE.toString())
+                .setAttribute(SamlConfigAttributes.SAML_ENCRYPT, Boolean.TRUE.toString())
+                .setAttribute(SamlConfigAttributes.SAML_ENCRYPTION_ALGORITHM, algorithm)
+                .setAttribute(SamlConfigAttributes.SAML_ENCRYPTION_KEY_ALGORITHM, keyAlgorithm)
+                .setAttribute(SamlConfigAttributes.SAML_ENCRYPTION_DIGEST_METHOD, digestMethod)
+                .setAttribute(SamlConfigAttributes.SAML_ENCRYPTION_MASK_GENERATION_FUNTION, maskGenerationFunction)
+                .update()) {
+            SAMLDocumentHolder holder = new SamlClientBuilder()
+                    .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST_ENC, SAML_ASSERTION_CONSUMER_URL_SALES_POST_ENC, Binding.POST)
+                    .signWith(SAML_CLIENT_SALES_POST_ENC_PRIVATE_KEY, SAML_CLIENT_SALES_POST_ENC_PUBLIC_KEY)
+                    .build()
+                    .login().user(bburkeUser).build()
+                    .getSamlResponse(Binding.POST);
+
+            // check it is signed
+            SamlProtocolUtils.verifyDocumentSignature(holder.getSamlDocument(), new HardcodedKeyLocator(PemUtils.decodePublicKey(REALM_PUBLIC_KEY)));
+
+            // check document is encrypted
+            ResponseType responseType = (ResponseType) holder.getSamlObject();
+            assertTrue("Assertion is not encrypted", AssertionUtil.isAssertionEncrypted(responseType));
+
+            SamlDeployment deployment = SamlUtils.getSamlDeploymentForClient("sales-post-enc");
+            AssertionUtil.decryptAssertion(responseType, (EncryptedData encryptedData) -> Collections.singletonList(deployment.getDecryptionKey()));
+
+            // check algorithm is the expected one
+            NodeList list = holder.getSamlDocument().getElementsByTagNameNS(JBossSAMLURIConstants.XMLENC_NSURI.get(), "EncryptedData");
+            assertThat("EncryptedData missing", list.getLength(), is(1));
+            Element encryptedData = (Element) list.item(0);
+            list = encryptedData.getElementsByTagNameNS(JBossSAMLURIConstants.XMLENC_NSURI.get(), "EncryptionMethod");
+            assertThat("EncryptionMethod missing", list.getLength(), is(2));
+            Element encryptionMethod = (Element) list.item(0);
+            assertThat("Unexpected encryption method", encryptionMethod.getAttribute("Algorithm"), is(expectedAlgorithm));
+
+            // check keyAlgorithm is the expected one
+            list = encryptedData.getElementsByTagNameNS(JBossSAMLURIConstants.XMLENC_NSURI.get(), "EncryptedKey");
+            assertThat("EncryptedKey missing", list.getLength(), is(1));
+            Element encryptedKey = (Element) list.item(0);
+            list = encryptedKey.getElementsByTagNameNS(JBossSAMLURIConstants.XMLENC_NSURI.get(), "EncryptionMethod");
+            assertThat("EncryptionMethod missing", list.getLength(), is(1));
+            encryptionMethod = (Element) list.item(0);
+            assertThat("Unexpected key encryption method", encryptionMethod.getAttribute("Algorithm"), is(expectedKeyAlgorithm));
+
+            // check digestMethod is the expected one or missing
+            if (StringUtil.isNotBlank(expectedDigestMethod)) {
+                list = encryptionMethod.getElementsByTagNameNS(JBossSAMLURIConstants.XMLDSIG_NSURI.get(), "DigestMethod");
+                assertThat("EncryptionMethod missing", list.getLength(), is(1));
+                Element ds = (Element) list.item(0);
+                assertThat("Unexpected digest method", ds.getAttribute("Algorithm"), is(expectedDigestMethod));
+            } else {
+                assertThat(encryptionMethod.getElementsByTagNameNS(JBossSAMLURIConstants.XMLDSIG_NSURI.get(), "DigestMethod").getLength(), is(0));
+            }
+
+            // check mgf is the expected one or missing
+            if (StringUtil.isNotBlank(expectedMaxskGenerationFuntion)) {
+                list = encryptionMethod.getElementsByTagNameNS(JBossSAMLURIConstants.XMLENC11_NSURI.get(), "MGF");
+                assertThat("EncryptionMethod missing", list.getLength(), is(1));
+                Element mgf = (Element) list.item(0);
+                assertThat("Unexpected mgf method", mgf.getAttribute("Algorithm"), is(expectedMaxskGenerationFuntion));
+            } else {
+                assertThat(encryptionMethod.getElementsByTagNameNS(JBossSAMLURIConstants.XMLENC11_NSURI.get(), "MGF").getLength(), is(0));
+            }
+        }
+    }
+
+    @Test
+    public void testEncryptionDefault() throws Exception {
+        testEncryption("", "", "", "", XMLCipher.AES_256_GCM, XMLCipher.RSA_OAEP_11, XMLCipher.SHA256, EncryptionConstants.MGF1_SHA256);
+    }
+
+    @Test
+    public void testEncryptionRsaOaep11() throws Exception {
+        testEncryption(XMLCipher.AES_256_GCM, XMLCipher.RSA_OAEP_11, XMLCipher.SHA512, EncryptionConstants.MGF1_SHA512);
+    }
+
+    @Test
+    public void testEncryptionRsaOaep11Default() throws Exception {
+        testEncryption(XMLCipher.AES_256_GCM, XMLCipher.RSA_OAEP_11, XMLCipher.SHA1, EncryptionConstants.MGF1_SHA1, XMLCipher.AES_256_GCM, XMLCipher.RSA_OAEP_11, "", "");
+    }
+
+    @Test
+    public void testEncryptionRsaOaep() throws Exception {
+        testEncryption(XMLCipher.AES_256_GCM, XMLCipher.RSA_OAEP, XMLCipher.SHA256, "");
+    }
+
+    @Test
+    public void testEncryptionRsaOaepLegacy() throws Exception {
+        testEncryption(XMLCipher.AES_128, XMLCipher.RSA_OAEP, XMLCipher.SHA1, "", XMLCipher.AES_128, XMLCipher.RSA_OAEP, "", "");
+    }
+
+    @Test
+    public void testEncryptionRsa15() throws Exception {
+        testEncryption(XMLCipher.AES_256_GCM, XMLCipher.RSA_v1dot5, "", "");
     }
 }

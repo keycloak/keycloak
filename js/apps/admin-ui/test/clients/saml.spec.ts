@@ -10,15 +10,29 @@ import { clickTableRowItem } from "../utils/table";
 import { goToAdvancedTab, revertFineGrain, saveFineGrain } from "./advanced";
 import {
   assertCertificate,
+  assertEncryptionAlgorithm,
+  assertEncryptionKeyAlgorithm,
+  assertEncryptionDigestMethod,
+  assertEncryptionMaskGenerationFunction,
+  assertEncryptionAlgorithmInputVisible,
+  assertEncryptionKeyAlgorithmInputVisible,
+  assertEncryptionDigestMethodInputVisible,
+  assertEncryptionMaskGenerationFunctionInputVisible,
   assertNameIdFormatDropdown,
   assertSamlClientDetails,
   assertTermsOfServiceUrl,
   clickClientSignature,
   clickEncryptionAssertions,
+  clickOffEncryptionAssertions,
   clickGenerate,
   clickPostBinding,
+  goToClientSettingsTab,
   goToKeysTab,
   saveSamlSettings,
+  selectEncryptionAlgorithmInput,
+  selectEncryptionKeyAlgorithmInput,
+  selectEncryptionDigestMethodInput,
+  selectEncryptionMaskGenerationFunctionInput,
   setTermsOfServiceUrl,
 } from "./saml";
 
@@ -120,6 +134,7 @@ test.describe("Clients SAML tests", () => {
   });
 
   test("should enable Encryption keys config", async ({ page }) => {
+    // enable encryption on keys tab
     await goToKeysTab(page);
     await clickEncryptionAssertions(page);
     await clickGenerate(page);
@@ -129,12 +144,50 @@ test.describe("Clients SAML tests", () => {
     );
     await confirmModal(page);
     await assertCertificate(page, false);
+
+    // assert encryption algorithms can be modified
+    await goToClientSettingsTab(page);
+    await assertEncryptionAlgorithm(page, "Choose...");
+    await assertEncryptionKeyAlgorithm(page, "Choose...");
+    await assertEncryptionDigestMethodInputVisible(page, false);
+    await assertEncryptionMaskGenerationFunctionInputVisible(page, false);
+    await selectEncryptionAlgorithmInput(page, "AES_256_GCM");
+    await selectEncryptionKeyAlgorithmInput(page, "RSA-OAEP-11");
+    await assertEncryptionDigestMethod(page, "Choose...");
+    await assertEncryptionMaskGenerationFunction(page, "Choose...");
+    await selectEncryptionDigestMethodInput(page, "SHA-256");
+    await selectEncryptionMaskGenerationFunctionInput(page, "mgf1sha256");
+    await selectEncryptionKeyAlgorithmInput(page, "RSA1_5");
+    await assertEncryptionDigestMethodInputVisible(page, false);
+    await assertEncryptionMaskGenerationFunctionInputVisible(page, false);
+    await selectEncryptionKeyAlgorithmInput(page, "RSA-OAEP-11");
+    await assertEncryptionDigestMethod(page, "Choose...");
+    await assertEncryptionMaskGenerationFunction(page, "Choose...");
+    await selectEncryptionDigestMethodInput(page, "SHA-256");
+    await selectEncryptionMaskGenerationFunctionInput(page, "mgf1sha256");
+
+    // disable encryption and check encryption algorithms are hidden
+    await goToKeysTab(page);
+    await clickOffEncryptionAssertions(page);
+    await confirmModal(page);
+    await goToClientSettingsTab(page);
+    await assertEncryptionAlgorithmInputVisible(page, false);
+    await assertEncryptionKeyAlgorithmInputVisible(page, false);
+    await assertEncryptionDigestMethodInputVisible(page, false);
+    await assertEncryptionMaskGenerationFunctionInputVisible(page, false);
+
+    // enable encryption again and check algorithms are empty/default
+    await goToKeysTab(page);
+    await clickEncryptionAssertions(page);
+    await confirmModal(page);
+    await goToClientSettingsTab(page);
+    await assertEncryptionAlgorithm(page, "Choose...");
+    await assertEncryptionKeyAlgorithm(page, "Choose...");
+    await assertEncryptionDigestMethodInputVisible(page, false);
+    await assertEncryptionMaskGenerationFunctionInputVisible(page, false);
   });
 
   test("should check SAML capabilities", async ({ page }) => {
-    // Assert Name ID Format dropdown exists
-    await assertNameIdFormatDropdown(page);
-
     // Assert SAML Capabilities switches exist
     const switches = [
       ['[data-testid="attributes.saml_force_name_id_format"]', "on"],
@@ -151,6 +204,9 @@ test.describe("Clients SAML tests", () => {
         await switchOn(page, name);
       }
     }
+
+    // Assert Name ID Format dropdown exists
+    await assertNameIdFormatDropdown(page);
   });
 
   test("should check access settings", async ({ page }) => {

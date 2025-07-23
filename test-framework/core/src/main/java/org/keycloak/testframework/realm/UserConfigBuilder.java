@@ -1,8 +1,13 @@
 package org.keycloak.testframework.realm;
 
+import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.models.utils.HmacOTP;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -87,8 +92,45 @@ public class UserConfigBuilder {
         return this;
     }
 
+    public UserConfigBuilder federatedLink(String identityProvider, String federatedUserId, String federatedUsername) {
+        FederatedIdentityRepresentation federatedIdentity = new FederatedIdentityRepresentation();
+        federatedIdentity.setUserId(federatedUserId);
+        federatedIdentity.setUserName(federatedUsername);
+        federatedIdentity.setIdentityProvider(identityProvider);
+
+        rep.setFederatedIdentities(Collections.combine(rep.getFederatedIdentities(), federatedIdentity));
+        return this;
+    }
+
+    public UserConfigBuilder totpSecret(String totpSecret) {
+        rep.setCredentials(Collections.combine(rep.getCredentials(), ModelToRepresentation.toRepresentation(
+                OTPCredentialModel.createTOTP(totpSecret, 6, 30, HmacOTP.HMAC_SHA1))));
+        rep.setTotp(true);
+        return this;
+    }
+
+    /**
+     * Best practice is to use other convenience methods when configuring a user, but while the framework is under
+     * active development there may not be a way to perform all updates required. In these cases this method allows
+     * applying any changes to the underlying representation.
+     *
+     * @param update
+     * @return this
+     * @deprecated
+     */
+    public UserConfigBuilder update(UserUpdate... update) {
+        Arrays.stream(update).forEach(u -> u.update(rep));
+        return this;
+    }
+
     public UserRepresentation build() {
         return rep;
+    }
+
+    public interface UserUpdate {
+
+        void update(UserRepresentation client);
+
     }
 
 }

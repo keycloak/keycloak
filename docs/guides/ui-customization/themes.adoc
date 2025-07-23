@@ -36,13 +36,13 @@ NOTE: To set the theme for the `master` Admin Console you need to set the Admin 
 +
 . To see the changes to the Admin Console refresh the page.
 
-. Change the welcome theme by using the `spi-theme-welcome-theme` option.
+. Change the welcome theme by using the `spi-theme--welcome-theme` option.
 
 . For example:
 +
 [source,bash]
 ----
-bin/kc.[sh|bat] start --spi-theme-welcome-theme=custom-theme
+bin/kc.[sh|bat] start --spi-theme--welcome-theme=custom-theme
 ----
 
 [[_default-themes]]
@@ -79,7 +79,7 @@ restarting {project_name}.
 +
 [source,bash]
 ----
-bin/kc.[sh|bat] start --spi-theme-static-max-age=-1 --spi-theme-cache-themes=false --spi-theme-cache-templates=false
+bin/kc.[sh|bat] start --spi-theme--static-max-age=-1 --spi-theme--cache-themes=false --spi-theme--cache-templates=false
 ----
 
 . Create a directory in the `themes` directory.
@@ -252,7 +252,10 @@ Or to use directly in HTML templates add the following to a custom HTML template
 In order to use a custom footer, create a `footer.ftl` file in your custom login theme with the desired content.
 
 An example for a custom `footer.ftl` may look like this:
-```
+
+[source]
+----
+<#noparse>
 <#macro content>
 <#-- footer at the end of the login box -->
 <div>
@@ -263,7 +266,8 @@ An example for a custom `footer.ftl` may look like this:
     </ul>
 </div>
 </#macro>
-```
+</#noparse>
+----
 
 === Adding an image to an email theme
 
@@ -322,13 +326,15 @@ For a list of templates in other theme types look at the `theme/base/<THEME_TYPE
 +
 For example, to create a custom login form for the `mytheme` theme, copy `themes/base/login/login.ftl` to `themes/mytheme/login` and open it in an editor.
 +
-${r"After the first line (<#import ...>), add `<h1>HELLO WORLD!</h1>` as shown here:"}
+After the first line (`+<#noparse><#import ...></#noparse>+`), add `<h1>HELLO WORLD!</h1>` as shown here:
 +
 [source,html]
 ----
-${r"<#import"} "template.ftl" as layout>
+<#noparse>
+<#import "template.ftl" as layout>
 <h1>HELLO WORLD!</h1>
 ...
+</#noparse>
 ----
 
 . Back up the modified template. When upgrading to a new version of {project_name} you may need to update your custom templates to apply changes to the original template if applicable.

@@ -54,6 +54,7 @@ import org.keycloak.spi.infinispan.impl.Util;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ALL_CACHES_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_MAX_COUNT_CACHES;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOCAL_CACHE_NAMES;
+import static org.keycloak.spi.infinispan.impl.embedded.JGroupsConfigurator.createJGroupsProperties;
 
 /**
  * The default implementation of {@link CacheEmbeddedConfigProviderFactory}.
@@ -73,6 +74,7 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
     // Configuration
     public static final String CONFIG = "configFile";
     private static final String METRICS = "metricsEnabled";
+    public static final String TRACING = "tracingEnabled";
     private static final String HISTOGRAMS = "metricsHistogramsEnabled";
     public static final String STACK = "stack";
     public static final String NODE_NAME = "nodeName";
@@ -121,6 +123,7 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
         Stream.concat(Arrays.stream(LOCAL_CACHE_NAMES), Arrays.stream(CLUSTERED_MAX_COUNT_CACHES))
                 .forEach(name -> Util.copyFromOption(builder, CacheConfigurator.maxCountConfigKey(name), "max-count", ProviderConfigProperty.INTEGER_TYPE, CachingOptions.maxCountOption(name), false));
         createTopologyProperties(builder);
+        createJGroupsProperties(builder);
         return builder.build();
     }
 

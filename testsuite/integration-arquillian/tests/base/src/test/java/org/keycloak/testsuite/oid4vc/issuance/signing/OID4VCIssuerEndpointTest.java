@@ -25,6 +25,7 @@ import jakarta.ws.rs.core.UriBuilder;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
@@ -40,7 +41,10 @@ import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
+import org.keycloak.constants.Oid4VciConstants;
 import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
@@ -48,9 +52,11 @@ import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProviderFactor
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.JwtCredentialBuilder;
+import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.SdJwtCredentialBuilder;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
+import org.keycloak.protocol.oid4vc.model.DisplayObject;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
@@ -61,8 +67,10 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resources.RealmsResource;
@@ -75,12 +83,15 @@ import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
@@ -97,186 +108,34 @@ import static org.keycloak.testsuite.forms.PassThroughClientAuthenticator.client
 public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
 
     protected static final TimeProvider TIME_PROVIDER = new OID4VCTest.StaticTimeProvider(1000);
+    protected static final String sdJwtCredentialVct = "https://credentials.example.com/SD-JWT-Credential";
+
+    protected static ClientScopeRepresentation sdJwtTypeCredentialClientScope;
+    protected static ClientScopeRepresentation jwtTypeCredentialClientScope;
+    protected static ClientScopeRepresentation minimalJwtTypeCredentialClientScope;
+
     protected CloseableHttpClient httpClient;
-    public static String verifiableCredentialScopeName = "VerifiableCredential";
-    public static String testCredentialScopeName = "test-credential";
+    protected ClientRepresentation client;
 
-
-    @Before
-    public void setup() {
-        CryptoIntegration.init(this.getClass().getClassLoader());
-        httpClient = HttpClientBuilder.create().build();
-        ClientRepresentation client = testRealm().clients().findByClientId(clientId).get(0);
-
-        // Register the optional client scopes
-        String verifiableCredentialScopeId = registerOptionalClientScope(verifiableCredentialScopeName, client.getClientId());
-        String testCredentialScopeId = registerOptionalClientScope(testCredentialScopeName, client.getClientId());
-
-        // Assign the registered optional client scopes to the client
-        assignOptionalClientScopeToClient(verifiableCredentialScopeId, client.getClientId());
-        assignOptionalClientScopeToClient(testCredentialScopeId, client.getClientId());
-    }
-
-
-    protected String getBearerToken(OAuthClient oAuthClient) {
-        AuthorizationEndpointResponse authorizationEndpointResponse = oAuthClient.doLogin("john", "password");
-        return oAuthClient.doAccessTokenRequest(authorizationEndpointResponse.getCode()).getAccessToken();
-    }
-
-    private ClientResource findClientByClientId(RealmResource realm, String clientId) {
-        for (ClientRepresentation c : realm.clients().findAll()) {
-            if (clientId.equals(c.getClientId())) {
-                return realm.clients().get(c.getId());
-            }
-        }
-        return null;
-    }
-
-    private String registerOptionalClientScope(String scopeName, String clientId) {
-        // Check if the client scope already exists
-        List<ClientScopeRepresentation> existingScopes = testRealm().clientScopes().findAll();
-        for (ClientScopeRepresentation existingScope : existingScopes) {
-            if (existingScope.getName().equals(scopeName)) {
-                return existingScope.getId(); // Reuse existing scope
-            }
-        }
-
-        // Create a new ClientScope if not found
-        ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
-        clientScope.setName(scopeName);
-        clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-
-        Response res = testRealm().clientScopes().create(clientScope);
-        String scopeId = ApiUtil.getCreatedId(res);
-        getCleanup().addClientScopeId(scopeId); // Automatically removed when a test method is finished.
-        res.close();
-
-        // Add protocol mappers to the ClientScope
-        addProtocolMappersToClientScope(scopeId, scopeName, clientId);
-
-        return scopeId;
-    }
-
-    private void assignOptionalClientScopeToClient(String scopeId, String clientId) {
-        ClientResource clientResource = findClientByClientId(testRealm(), clientId);
-        clientResource.addOptionalClientScope(scopeId);
-    }
-
-    private void addCredentialConfigurationIdToClient(String clientId, String credentialConfigurationId, String format, String scope) {
-        ClientRepresentation clientRepresentation = adminClient.realm(TEST_REALM_NAME).clients().findByClientId(clientId).get(0);
-        ClientResource clientResource = adminClient.realm(TEST_REALM_NAME).clients().get(clientRepresentation.getId());
-
-        clientRepresentation.setAttributes(Map.of(
-                "vc." + credentialConfigurationId + ".format", format,
-                "vc." + credentialConfigurationId + ".scope", scope));
-
-        clientResource.update(clientRepresentation);
-    }
-
-    private void removeCredentialConfigurationIdToClient(String clientId) {
-        ClientRepresentation clientRepresentation = adminClient.realm(TEST_REALM_NAME).clients().findByClientId(clientId).get(0);
-        ClientResource clientResource = adminClient.realm(TEST_REALM_NAME).clients().get(clientRepresentation.getId());
-        clientRepresentation.setAttributes(Map.of());
-        clientResource.update(clientRepresentation);
-    }
-
-    private void logoutUser(String clientId, String username) {
-        UserResource user = ApiUtil.findUserByUsernameId(adminClient.realm(TEST_REALM_NAME), username);
-        user.logout();
-    }
-
-    private void testCredentialIssuanceWithAuthZCodeFlow(Consumer<Map<String, String>> c) throws Exception {
-        // use pre-registered client for this test class whose clientId is "test-app" defined in testrealm.json
-        String testClientId = clientId;
-
-        // use supported values by Credential Issuer Metadata
-        String testCredentialConfigurationId = "test-credential";
-        String testScope = "VerifiableCredential";
-        String testFormat = Format.JWT_VC;
-
-        // register optional client scope
-        String scopeId = registerOptionalClientScope(testScope, testClientId);
-
-        // assign registered optional client scope
-        assignOptionalClientScopeToClient(scopeId, testClientId); // pre-registered client for this test class
-
-        // add credential configuration id to a client as client attributes
-        addCredentialConfigurationIdToClient(testClientId, testCredentialConfigurationId, testFormat, testScope);
-
-        c.accept(Map.of(
-                "clientId", testClientId,
-                "credentialConfigurationId", testCredentialConfigurationId,
-                "scope", testScope,
-                "format", testFormat)
-        );
-        // clean-up
-        logoutUser(testClientId, "john");
-        removeCredentialConfigurationIdToClient(testClientId);
-        oauth.clientId(null);
-    }
-
-    // Tests the AuthZCode complete flow without scope from
-    // 1. Get authorization code without scope specified by wallet
-    // 2. Using the code to get access token
-    // 3. Get the credential configuration id from issuer metadata at .wellKnown
-    // 4. With the access token, get the credential
-    protected void testCredentialIssuanceWithAuthZCodeFlow(BiFunction<String, String, String> f, Consumer<Map<String, Object>> c) throws Exception {
-        testCredentialIssuanceWithAuthZCodeFlow(m -> {
-            String testClientId = m.get("clientId");
-            String testScope = m.get("scope");
-            String testFormat = m.get("format");
-            String testCredentialConfigurationId = m.get("credentialConfigurationId");
-
-            try (Client client = AdminClientUtil.createResteasyClient()) {
-                UriBuilder builder = UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT);
-                URI oid4vciDiscoveryUri = RealmsResource.wellKnownProviderUrl(builder).build(TEST_REALM_NAME, OID4VCIssuerWellKnownProviderFactory.PROVIDER_ID);
-                WebTarget oid4vciDiscoveryTarget = client.target(oid4vciDiscoveryUri);
-
-                // 1. Get authoriZation code without scope specified by wallet
-                // 2. Using the code to get accesstoken
-                String token = f.apply(testClientId, testScope);
-
-                // 3. Get the credential configuration id from issuer metadata at .wellKnown
-                try (Response discoveryResponse = oid4vciDiscoveryTarget.request().get()) {
-                    CredentialIssuer oid4vciIssuerConfig = JsonSerialization.readValue(discoveryResponse.readEntity(String.class), CredentialIssuer.class);
-                    assertEquals(200, discoveryResponse.getStatus());
-                    assertEquals(getRealmPath(TEST_REALM_NAME), oid4vciIssuerConfig.getCredentialIssuer());
-                    assertEquals(getBasePath(TEST_REALM_NAME) + "credential", oid4vciIssuerConfig.getCredentialEndpoint());
-
-                    // 4. With the access token, get the credential
-                    try (Client clientForCredentialRequest = AdminClientUtil.createResteasyClient()) {
-                        UriBuilder credentialUriBuilder = UriBuilder.fromUri(oid4vciIssuerConfig.getCredentialEndpoint());
-                        URI credentialUri = credentialUriBuilder.build();
-                        WebTarget credentialTarget = clientForCredentialRequest.target(credentialUri);
-
-                        CredentialRequest request = new CredentialRequest();
-                        request.setFormat(oid4vciIssuerConfig.getCredentialsSupported().get(testCredentialConfigurationId).getFormat());
-                        request.setCredentialIdentifier(oid4vciIssuerConfig.getCredentialsSupported().get(testCredentialConfigurationId).getId());
-
-                        assertEquals(testFormat, oid4vciIssuerConfig.getCredentialsSupported().get(testCredentialConfigurationId).getFormat().toString());
-                        assertEquals(testCredentialConfigurationId, oid4vciIssuerConfig.getCredentialsSupported().get(testCredentialConfigurationId).getId());
-
-                        c.accept(Map.of(
-                                "accessToken", token,
-                                "credentialTarget", credentialTarget,
-                                "credentialRequest", request
-                        ));
-                    }
-                }
-            } catch (IOException e) {
-                Assert.fail();
-            }
-
-        });
+    protected boolean shouldEnableOid4vci() {
+        return true;
     }
 
     protected static String prepareSessionCode(KeycloakSession session, AppAuthManager.BearerTokenAuthenticator authenticator, String note) {
         AuthenticationManager.AuthResult authResult = authenticator.authenticate();
         UserSessionModel userSessionModel = authResult.getSession();
-        AuthenticatedClientSessionModel authenticatedClientSessionModel = userSessionModel.getAuthenticatedClientSessionByClient(authResult.getClient().getId());
+        AuthenticatedClientSessionModel authenticatedClientSessionModel = userSessionModel.getAuthenticatedClientSessionByClient(
+                authResult.getClient().getId());
         String codeId = SecretGenerator.getInstance().randomString();
         String nonce = SecretGenerator.getInstance().randomString();
-        OAuth2Code oAuth2Code = new OAuth2Code(codeId, Time.currentTime() + 6000, nonce, CREDENTIAL_OFFER_URI_CODE_SCOPE, null, null, null, null,
+        OAuth2Code oAuth2Code = new OAuth2Code(codeId,
+                Time.currentTime() + 6000,
+                nonce,
+                CREDENTIAL_OFFER_URI_CODE_SCOPE,
+                null,
+                null,
+                null,
+                null,
                 authenticatedClientSessionModel.getUserSession().getId());
 
         String oauthCode = OAuth2CodeParser.persistCode(session, authenticatedClientSessionModel, oAuth2Code);
@@ -285,15 +144,17 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         return oauthCode;
     }
 
-    protected static OID4VCIssuerEndpoint prepareIssuerEndpoint(KeycloakSession session, AppAuthManager.BearerTokenAuthenticator authenticator) {
+    protected static OID4VCIssuerEndpoint prepareIssuerEndpoint(KeycloakSession session,
+                                                                AppAuthManager.BearerTokenAuthenticator authenticator) {
         JwtCredentialBuilder jwtCredentialBuilder = new JwtCredentialBuilder(
-            TEST_DID.toString(), 
-            new StaticTimeProvider(1000));
+                new StaticTimeProvider(1000));
+        SdJwtCredentialBuilder sdJwtCredentialBuilder = new SdJwtCredentialBuilder();
 
         return prepareIssuerEndpoint(
                 session,
                 authenticator,
-                Map.of(jwtCredentialBuilder.getSupportedFormat(), jwtCredentialBuilder)
+                Map.of(jwtCredentialBuilder.getSupportedFormat(), jwtCredentialBuilder,
+                        sdJwtCredentialBuilder.getSupportedFormat(), sdJwtCredentialBuilder)
         );
     }
 
@@ -307,35 +168,284 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                 credentialBuilders,
                 authenticator,
                 TIME_PROVIDER,
-                30,
-                true);
+                30);
+    }
+
+    @Before
+    public void setup() {
+        CryptoIntegration.init(this.getClass().getClassLoader());
+        httpClient = HttpClientBuilder.create().build();
+        client = testRealm().clients().findByClientId(clientId).get(0);
+
+        // Register the optional client scopes
+        sdJwtTypeCredentialClientScope = registerOptionalClientScope(sdJwtTypeCredentialScopeName,
+                null,
+                sdJwtTypeCredentialConfigurationIdName,
+                sdJwtTypeCredentialScopeName,
+                sdJwtCredentialVct,
+                Format.SD_JWT_VC,
+                null);
+        jwtTypeCredentialClientScope = registerOptionalClientScope(jwtTypeCredentialScopeName,
+                TEST_DID.toString(),
+                jwtTypeCredentialConfigurationIdName,
+                jwtTypeCredentialScopeName,
+                null,
+                Format.JWT_VC,
+                TEST_CREDENTIAL_MAPPERS_FILE);
+        minimalJwtTypeCredentialClientScope = registerOptionalClientScope("vc-with-minimal-config",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null);
+
+        // Assign the registered optional client scopes to the client
+        assignOptionalClientScopeToClient(sdJwtTypeCredentialClientScope.getId(), client.getClientId());
+        assignOptionalClientScopeToClient(jwtTypeCredentialClientScope.getId(), client.getClientId());
+        assignOptionalClientScopeToClient(minimalJwtTypeCredentialClientScope.getId(), client.getClientId());
+
+        // Enable OID4VCI for the client by default, but allow tests to override
+        setClientOid4vciEnabled(clientId, shouldEnableOid4vci());
+    }
+
+    protected String getBearerToken(OAuthClient oAuthClient) {
+        return getBearerToken(oAuthClient, null);
+    }
+
+    protected String getBearerToken(OAuthClient oAuthClient, ClientRepresentation client) {
+        return getBearerToken(oAuthClient, client, null);
+    }
+
+    protected String getBearerToken(OAuthClient oAuthClient, ClientRepresentation client, String credentialScopeName) {
+        if (client != null) {
+            oAuthClient.client(client.getClientId(), client.getSecret());
+        }
+        if (credentialScopeName != null) {
+            oAuthClient.scope(credentialScopeName);
+        }
+        AuthorizationEndpointResponse authorizationEndpointResponse = oAuthClient.doLogin("john",
+                "password");
+        return oAuthClient.doAccessTokenRequest(authorizationEndpointResponse.getCode()).getAccessToken();
+    }
+
+    private ClientResource findClientByClientId(RealmResource realm, String clientId) {
+        for (ClientRepresentation c : realm.clients().findAll()) {
+            if (clientId.equals(c.getClientId())) {
+                return realm.clients().get(c.getId());
+            }
+        }
+        return null;
+    }
+
+    private ClientScopeRepresentation registerOptionalClientScope(String scopeName,
+                                                                  String issuerDid,
+                                                                  String credentialConfigurationId,
+                                                                  String credentialIdentifier,
+                                                                  String vct,
+                                                                  String format,
+                                                                  String protocolMapperReferenceFile) {
+        // Check if the client scope already exists
+        List<ClientScopeRepresentation> existingScopes = testRealm().clientScopes().findAll();
+        for (ClientScopeRepresentation existingScope : existingScopes) {
+            if (existingScope.getName().equals(scopeName)) {
+                return existingScope; // Reuse existing scope
+            }
+        }
+
+        // Create a new ClientScope if not found
+        ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
+        clientScope.setName(scopeName);
+        clientScope.setProtocol(Oid4VciConstants.OID4VC_PROTOCOL);
+        Map<String, String> attributes =
+                new HashMap<>(Map.of(ClientScopeModel.INCLUDE_IN_TOKEN_SCOPE, "true",
+                        CredentialScopeModel.EXPIRY_IN_SECONDS, "15"));
+        BiConsumer<String, String> addAttribute = (attributeName, value) -> {
+            if (value != null) {
+                attributes.put(attributeName, value);
+            }
+        };
+        addAttribute.accept(CredentialScopeModel.ISSUER_DID, issuerDid);
+        addAttribute.accept(CredentialScopeModel.CONFIGURATION_ID, credentialConfigurationId);
+        addAttribute.accept(CredentialScopeModel.CREDENTIAL_IDENTIFIER, credentialIdentifier);
+        addAttribute.accept(CredentialScopeModel.FORMAT, format);
+        addAttribute.accept(CredentialScopeModel.VCT, Optional.ofNullable(vct).orElse(credentialIdentifier));
+        if (credentialConfigurationId != null) {
+            String vcDisplay;
+            try {
+                vcDisplay = JsonSerialization.writeValueAsString(List.of(new DisplayObject().setName(credentialConfigurationId)
+                                .setLocale("en-EN"),
+                        new DisplayObject().setName(credentialConfigurationId)
+                                .setLocale("de-DE")));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            addAttribute.accept(CredentialScopeModel.VC_DISPLAY, vcDisplay);
+        }
+        clientScope.setAttributes(attributes);
+
+        Response res = testRealm().clientScopes().create(clientScope);
+        String scopeId = ApiUtil.getCreatedId(res);
+        getCleanup().addClientScopeId(scopeId); // Automatically removed when a test method is finished.
+        res.close();
+
+        clientScope.setId(scopeId);
+
+        // Add protocol mappers to the ClientScope
+        List<ProtocolMapperRepresentation> protocolMappers;
+        if (protocolMapperReferenceFile == null) {
+            protocolMappers = getProtocolMappers(scopeName);
+            addProtocolMappersToClientScope(clientScope, protocolMappers);
+        } else {
+            protocolMappers = resolveProtocolMappers(protocolMapperReferenceFile);
+            protocolMappers.add(getStaticClaimMapper(scopeName));
+            addProtocolMappersToClientScope(clientScope, protocolMappers);
+        }
+        clientScope.setProtocolMappers(protocolMappers);
+        return clientScope;
+    }
+
+    private List<ProtocolMapperRepresentation> resolveProtocolMappers(String protocolMapperReferenceFile) {
+        if (protocolMapperReferenceFile == null) {
+            return null;
+        }
+        try (InputStream inputStream = getClass().getResourceAsStream(protocolMapperReferenceFile)) {
+            return JsonSerialization.mapper.readValue(inputStream,
+                    ClientScopeRepresentation.class).getProtocolMappers();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void assignOptionalClientScopeToClient(String scopeId, String clientId) {
+        ClientResource clientResource = findClientByClientId(testRealm(), clientId);
+        clientResource.addOptionalClientScope(scopeId);
+    }
+
+    private void logoutUser(String clientId, String username) {
+        UserResource user = ApiUtil.findUserByUsernameId(adminClient.realm(TEST_REALM_NAME), username);
+        user.logout();
+    }
+
+    void setClientOid4vciEnabled(String clientId, boolean enabled) {
+        ClientRepresentation clientRepresentation = adminClient.realm(TEST_REALM_NAME).clients().findByClientId(clientId).get(0);
+        ClientResource clientResource = adminClient.realm(TEST_REALM_NAME).clients().get(clientRepresentation.getId());
+
+        Map<String, String> attributes = new HashMap<>(clientRepresentation.getAttributes() != null ? clientRepresentation.getAttributes() : Map.of());
+        attributes.put("oid4vci.enabled", String.valueOf(enabled));
+        clientRepresentation.setAttributes(attributes);
+
+        clientResource.update(clientRepresentation);
+    }
+
+    // Tests the AuthZCode complete flow without scope from
+    // 1. Get authorization code without scope specified by wallet
+    // 2. Using the code to get access token
+    // 3. Get the credential configuration id from issuer metadata at .wellKnown
+    // 4. With the access token, get the credential
+    protected void testCredentialIssuanceWithAuthZCodeFlow(ClientScopeRepresentation clientScope,
+                                                           BiFunction<String, String, String> f,
+                                                           Consumer<Map<String, Object>> c) {
+        String testClientId = client.getClientId();
+        String testScope = clientScope.getName();
+        String testFormat = clientScope.getAttributes().get(CredentialScopeModel.FORMAT);
+        String testCredentialConfigurationId = clientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+
+        try (Client client = AdminClientUtil.createResteasyClient()) {
+            UriBuilder builder = UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT);
+            URI oid4vciDiscoveryUri = RealmsResource.wellKnownProviderUrl(builder)
+                    .build(TEST_REALM_NAME,
+                            OID4VCIssuerWellKnownProviderFactory.PROVIDER_ID);
+            WebTarget oid4vciDiscoveryTarget = client.target(oid4vciDiscoveryUri);
+
+            // 1. Get authoriZation code without scope specified by wallet
+            // 2. Using the code to get accesstoken
+            String token = f.apply(testClientId, testScope);
+
+            // 3. Get the credential configuration id from issuer metadata at .wellKnown
+            try (Response discoveryResponse = oid4vciDiscoveryTarget.request().get()) {
+                CredentialIssuer oid4vciIssuerConfig = JsonSerialization.readValue(discoveryResponse.readEntity(String.class),
+                        CredentialIssuer.class);
+                assertEquals(200, discoveryResponse.getStatus());
+                assertEquals(getRealmPath(TEST_REALM_NAME), oid4vciIssuerConfig.getCredentialIssuer());
+                assertEquals(getBasePath(TEST_REALM_NAME) + "credential", oid4vciIssuerConfig.getCredentialEndpoint());
+
+                // 4. With the access token, get the credential
+                try (Client clientForCredentialRequest = AdminClientUtil.createResteasyClient()) {
+                    UriBuilder credentialUriBuilder = UriBuilder.fromUri(oid4vciIssuerConfig.getCredentialEndpoint());
+                    URI credentialUri = credentialUriBuilder.build();
+                    WebTarget credentialTarget = clientForCredentialRequest.target(credentialUri);
+
+                    CredentialRequest request = new CredentialRequest();
+                    request.setCredentialConfigurationId(oid4vciIssuerConfig.getCredentialsSupported()
+                            .get(testCredentialConfigurationId)
+                            .getId());
+
+                    assertEquals(testFormat,
+                            oid4vciIssuerConfig.getCredentialsSupported()
+                                    .get(testCredentialConfigurationId)
+                                    .getFormat());
+                    assertEquals(testCredentialConfigurationId,
+                            oid4vciIssuerConfig.getCredentialsSupported()
+                                    .get(testCredentialConfigurationId)
+                                    .getId());
+
+                    c.accept(Map.of(
+                            "accessToken", token,
+                            "credentialTarget", credentialTarget,
+                            "credentialRequest", request
+                    ));
+                }
+            }
+        } catch (IOException e) {
+            Assert.fail();
+        }
     }
 
     protected String getBasePath(String realm) {
         return getRealmPath(realm) + "/protocol/oid4vc/";
     }
 
-    private String getRealmPath(String realm) {
+    protected String getRealmPath(String realm) {
         return suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/" + realm;
     }
 
-    protected void requestOffer(String token, String credentialEndpoint, SupportedCredentialConfiguration offeredCredential, CredentialResponseHandler responseHandler) throws IOException, VerificationException {
+    protected void requestCredential(String token,
+                                     String credentialEndpoint,
+                                     SupportedCredentialConfiguration offeredCredential,
+                                     CredentialResponseHandler responseHandler,
+                                     ClientScopeRepresentation expectedClientScope) throws IOException, VerificationException {
         CredentialRequest request = new CredentialRequest();
-        request.setFormat(offeredCredential.getFormat());
-        request.setCredentialIdentifier(offeredCredential.getId());
+        request.setCredentialConfigurationId(offeredCredential.getId());
 
-        StringEntity stringEntity = new StringEntity(JsonSerialization.writeValueAsString(request), ContentType.APPLICATION_JSON);
+        StringEntity stringEntity = new StringEntity(JsonSerialization.writeValueAsString(request),
+                ContentType.APPLICATION_JSON);
 
         HttpPost postCredential = new HttpPost(credentialEndpoint);
         postCredential.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
         postCredential.setEntity(stringEntity);
-        CloseableHttpResponse credentialRequestResponse = httpClient.execute(postCredential);
-        assertEquals(HttpStatus.SC_OK, credentialRequestResponse.getStatusLine().getStatusCode());
-        String s = IOUtils.toString(credentialRequestResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-        CredentialResponse credentialResponse = JsonSerialization.readValue(s, CredentialResponse.class);
+
+        CredentialResponse credentialResponse;
+        try (CloseableHttpResponse credentialRequestResponse = httpClient.execute(postCredential)) {
+            assertEquals(HttpStatus.SC_OK, credentialRequestResponse.getStatusLine().getStatusCode());
+            String s = IOUtils.toString(credentialRequestResponse.getEntity().getContent(), StandardCharsets.UTF_8);
+            credentialResponse = JsonSerialization.readValue(s, CredentialResponse.class);
+        }
 
         // Use response handler to customize checks based on formats.
-        responseHandler.handleCredentialResponse(credentialResponse);
+        responseHandler.handleCredentialResponse(credentialResponse, expectedClientScope);
+    }
+
+    public CredentialIssuer getCredentialIssuerMetadata() {
+        final String endpoint = getRealmPath(TEST_REALM_NAME) + "/.well-known/openid-credential-issuer";
+        HttpGet getMetadataRequest = new HttpGet(endpoint);
+        try (CloseableHttpResponse metadataResponse = httpClient.execute(getMetadataRequest)) {
+            assertEquals(HttpStatus.SC_OK, metadataResponse.getStatusLine().getStatusCode());
+            String s = IOUtils.toString(metadataResponse.getEntity().getContent(), StandardCharsets.UTF_8);
+            return JsonSerialization.readValue(s, CredentialIssuer.class);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     @Override
@@ -345,7 +455,6 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         }
 
         testRealm.getComponents().add("org.keycloak.keys.KeyProvider", getKeyProvider());
-        testRealm.getComponents().addAll("org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder", getCredentialBuilderProviders());
 
         // Find existing client representation
         ClientRepresentation existingClient = testRealm.getClients().stream()
@@ -367,20 +476,14 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
             );
         } else {
             testRealm.getRoles()
-                    .setClient(Map.of(existingClient.getClientId(), List.of(getRoleRepresentation("testRole", existingClient.getClientId()))));
-        }
-        if (testRealm.getUsers() != null) {
-            testRealm.getUsers().add(getUserRepresentation(Map.of(existingClient.getClientId(), List.of("testRole"))));
-        } else {
-            testRealm.setUsers(List.of(getUserRepresentation(Map.of(existingClient.getClientId(), List.of("testRole")))));
+                    .setClient(Map.of(existingClient.getClientId(),
+                            List.of(getRoleRepresentation("testRole", existingClient.getClientId()))));
         }
 
-        if (testRealm.getAttributes() == null) {
-            testRealm.setAttributes(new HashMap<>());
-        }
-
-        testRealm.getAttributes().put("issuerDid", TEST_DID.toString());
-        testRealm.getAttributes().putAll(getCredentialDefinitionAttributes());
+        List<UserRepresentation> realmUsers = Optional.ofNullable(testRealm.getUsers()).map(ArrayList::new)
+                .orElse(new ArrayList<>());
+        realmUsers.add(getUserRepresentation(Map.of(existingClient.getClientId(), List.of("testRole"))));
+        testRealm.setUsers(realmUsers);
     }
 
     protected void withCausePropagation(Runnable r) throws Throwable {
@@ -398,25 +501,31 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         return getRsaKeyProvider(RSA_KEY);
     }
 
-    protected List<ComponentExportRepresentation> getCredentialBuilderProviders() {
-        return List.of(getCredentialBuilderProvider(Format.JWT_VC));
-    }
-
-    protected Map<String, String> getCredentialDefinitionAttributes() {
-        return getTestCredentialDefinitionAttributes();
-    }
-
     protected static class CredentialResponseHandler {
-        protected void handleCredentialResponse(CredentialResponse credentialResponse) throws VerificationException {
-            assertNotNull("The credential should have been responded.", credentialResponse.getCredential());
-            JsonWebToken jsonWebToken = TokenVerifier.create((String) credentialResponse.getCredential(), JsonWebToken.class).getToken();
+        protected void handleCredentialResponse(CredentialResponse credentialResponse,
+                                                ClientScopeRepresentation clientScope) throws VerificationException {
+            assertNotNull("The credentials array should be present in the response.", credentialResponse.getCredentials());
+            assertFalse("The credentials array should not be empty.", credentialResponse.getCredentials().isEmpty());
+
+            // Get the first credential from the array (maintaining compatibility with single credential tests)
+            CredentialResponse.Credential credentialObj = credentialResponse.getCredentials().get(0);
+            assertNotNull("The first credential in the array should not be null.", credentialObj);
+
+            JsonWebToken jsonWebToken = TokenVerifier.create((String) credentialObj.getCredential(),
+                    JsonWebToken.class).getToken();
             assertEquals("did:web:test.org", jsonWebToken.getIssuer());
-            VerifiableCredential credential = JsonSerialization.mapper.convertValue(jsonWebToken.getOtherClaims().get("vc"), VerifiableCredential.class);
-            assertEquals(List.of("VerifiableCredential"), credential.getType());
+            VerifiableCredential credential = JsonSerialization.mapper.convertValue(jsonWebToken.getOtherClaims().get(
+                    "vc"), VerifiableCredential.class);
+            assertEquals(List.of(clientScope.getName()), credential.getType());
             assertEquals(URI.create("did:web:test.org"), credential.getIssuer());
             assertEquals("john@email.cz", credential.getCredentialSubject().getClaims().get("email"));
-            assertTrue("The static claim should be set.", credential.getCredentialSubject().getClaims().containsKey("VerifiableCredential"));
-            assertFalse("Only mappers supported for the requested type should have been evaluated.", credential.getCredentialSubject().getClaims().containsKey("AnotherCredentialType"));
+            assertTrue("The static claim should be set.",
+                    credential.getCredentialSubject().getClaims().containsKey("scope-name"));
+            assertEquals("The static claim should be set.",
+                    clientScope.getName(),
+                    credential.getCredentialSubject().getClaims().get("scope-name"));
+            assertFalse("Only mappers supported for the requested type should have been evaluated.",
+                    credential.getCredentialSubject().getClaims().containsKey("AnotherCredentialType"));
         }
     }
 }

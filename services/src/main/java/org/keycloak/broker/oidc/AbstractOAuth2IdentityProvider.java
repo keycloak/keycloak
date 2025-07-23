@@ -19,6 +19,7 @@ package org.keycloak.broker.oidc;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.http.HttpRequest;
@@ -55,20 +56,25 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.AccessTokenIntrospectionProviderFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.protocol.oidc.TokenExchangeProvider;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
+import org.keycloak.protocol.oidc.endpoints.TokenIntrospectionEndpoint;
 import org.keycloak.protocol.oidc.utils.PkceUtils;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.urls.UrlType;
 import org.keycloak.utils.StringUtil;
 import org.keycloak.vault.VaultStringSecret;
 
@@ -451,7 +457,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
     protected JsonWebToken generateToken() {
         JsonWebToken jwt = new JsonWebToken();
-        jwt.id(KeycloakModelUtils.generateId());
+        jwt.id(SecretGenerator.getInstance().generateSecureID());
         jwt.type(OAuth2Constants.JWT);
         jwt.issuer(getConfig().getClientId());
         jwt.subject(getConfig().getClientId());
@@ -657,6 +663,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
     protected BrokeredIdentityContext validateExternalTokenThroughUserInfo(EventBuilder event, String subjectToken, String subjectTokenType) {
         event.detail("validation_method", "user info");
+
         SimpleHttp.Response response = null;
         int status = 0;
         try {
@@ -754,6 +761,111 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         throw new UnsupportedOperationException("Not yet supported to verify the external token of the identity provider " + getConfig().getAlias());
     }
 
+    /**
+     * Called usually during external-internal token exchange for validation of external token, which is the token issued by the IDP.
+     * The validation of external token is done by calling OAuth2 introspection endpoint on the IDP side and validate if the response contains all the necessary claims
+     * and token is authorized for the token exchange (including validating of claims like aud from introspection response)
+     *
+     * @param tokenExchangeContext token exchange context with the external token (subject token) and other details related to token exchange
+     * @throws ErrorResponseException in case that validation failed for any reason
+     */
+    protected void validateExternalTokenWithIntrospectionEndpoint(TokenExchangeContext tokenExchangeContext) {
+        EventBuilder event = tokenExchangeContext.getEvent();
+
+        TokenMetadataRepresentation tokenMetadata = sendTokenIntrospectionRequest(tokenExchangeContext.getParams().getSubjectToken(), event);
+
+        boolean clientValid = false;
+        String tokenClientId = tokenMetadata.getClientId();
+        List<String> tokenAudiences = null;
+        if (tokenClientId != null && tokenClientId.equals(getConfig().getClientId())) {
+            // Consider external token valid if issued to same client, which was configured as the client on IDP side
+            clientValid = true;
+        } else if (tokenMetadata.getAudience() != null && tokenMetadata.getAudience().length > 0) {
+            tokenAudiences = Arrays.stream(tokenMetadata.getAudience()).toList();
+            if (tokenAudiences.contains(getConfig().getClientId())) {
+                // Consider external token valid if client configured as the IDP client included in token audience
+                clientValid = true;
+            } else {
+                // Consider valid introspection also if token contains audience where URL is Keycloak server (either as issuer or as token-endpoint URL).
+                // Aligned with https://datatracker.ietf.org/doc/html/rfc7523#section-3 - point 3
+                UriInfo frontendUriInfo = session.getContext().getUri(UrlType.FRONTEND);
+                UriInfo backendUriInfo = session.getContext().getUri(UrlType.BACKEND);
+                RealmModel realm = session.getContext().getRealm();
+                String realmIssuer = Urls.realmIssuer(frontendUriInfo.getBaseUri(), realm.getName());
+                String realmTokenUrl = RealmsResource.protocolUrl(backendUriInfo).clone()
+                        .path(OIDCLoginProtocolService.class, "token")
+                        .build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString();
+                if (tokenAudiences.contains(realmIssuer) || tokenAudiences.contains(realmTokenUrl)) {
+                    clientValid = true;
+                }
+            }
+        }
+        if (!clientValid) {
+            logger.debugf("Token not authorized for token exchange. Token client Id: %s, Token audiences: %s", tokenClientId, tokenAudiences);
+            throwErrorResponse(event, Errors.INVALID_TOKEN, OAuthErrorException.INVALID_TOKEN, "Token not authorized for token exchange");
+        }
+    }
+
+    /**
+     * Send introspection request as specified in the OAuth2 token introspection specification. It requires
+     *
+     * @param idpAccessToken access token issued by the IDP
+     * @param event event builder
+     * @return token metadata in case that token introspection was successful and token is valid and active
+     * @throws ErrorResponseException in case that introspection response was not correct for any reason (other status than 200) or the token was not active
+     */
+    protected TokenMetadataRepresentation sendTokenIntrospectionRequest(String idpAccessToken, EventBuilder event) {
+        String introspectionEndointUrl = getConfig().getTokenIntrospectionUrl();
+        if (introspectionEndointUrl == null) {
+            throwErrorResponse(event, Errors.INVALID_CONFIG, OAuthErrorException.INVALID_REQUEST, "Introspection endpoint not configured for IDP");
+        }
+
+        try {
+
+            // Supporting only access-tokens for now
+            SimpleHttp introspectionRequest = SimpleHttp.doPost(introspectionEndointUrl, session)
+                    .param(TokenIntrospectionEndpoint.PARAM_TOKEN, idpAccessToken)
+                    .param(TokenIntrospectionEndpoint.PARAM_TOKEN_TYPE_HINT, AccessTokenIntrospectionProviderFactory.ACCESS_TOKEN_TYPE);
+            introspectionRequest = authenticateTokenRequest(introspectionRequest);
+
+            try (SimpleHttp.Response introspectionResponse = introspectionRequest.asResponse()) {
+                int status = introspectionResponse.getStatus();
+
+                if (status != 200) {
+                    try {
+                        logger.warnf("Failed to invoke introspection endpoint. Status: %d, Introspection response details: %s", status, introspectionResponse.asString());
+                    } catch (Exception ioe) {
+                        logger.warnf("Failed to invoke introspection endpoint. Status: %d", status);
+                    }
+                    throwErrorResponse(event, Errors.INVALID_REQUEST, OAuthErrorException.INVALID_REQUEST, "Introspection endpoint call failure. Introspection response status: " + status);
+                }
+
+                TokenMetadataRepresentation tokenMetadata = null;
+                try {
+                    tokenMetadata = introspectionResponse.asJson(TokenMetadataRepresentation.class);
+                } catch (IOException e) {
+                    throwErrorResponse(event, Errors.INVALID_TOKEN, OAuthErrorException.INVALID_TOKEN, "Invalid format of the introspection response");
+                }
+
+                if (!tokenMetadata.isActive()) {
+                    throwErrorResponse(event, Errors.INVALID_TOKEN, OAuthErrorException.INVALID_TOKEN, "Token not active");
+                }
+
+                return tokenMetadata;
+            }
+        } catch (IOException e) {
+            logger.debug("Failed to invoke introspection endpoint", e);
+            throwErrorResponse(event, Errors.INVALID_TOKEN, OAuthErrorException.INVALID_TOKEN, "Failed to invoke introspection endpoint");
+            return null; // Unreachable
+        }
+    }
+
+    private void throwErrorResponse(EventBuilder event, String eventError, String oauthError, String errorDetails) {
+        event.detail(Details.REASON, errorDetails);
+        event.error(eventError);
+        throw new ErrorResponseException(oauthError, errorDetails, Response.Status.BAD_REQUEST);
+    }
+
     protected BrokeredIdentityContext exchangeExternalUserInfoValidationOnly(EventBuilder event, MultivaluedMap<String, String> params) {
         String subjectToken = params.getFirst(OAuth2Constants.SUBJECT_TOKEN);
         if (subjectToken == null) {
@@ -783,5 +895,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
     }
 
-
+    @Override
+    public boolean supportsLongStateParameter() {
+        return !getConfig().isRequiresShortStateParameter();
+    }
 }

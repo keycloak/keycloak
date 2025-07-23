@@ -81,7 +81,7 @@ It allows for notifications when the original string changes, and keeps track of
 The following translations are available in Weblate. If you have any questions or need assistance, feel free to reach out to the language maintainers listed below:
 
 * German: [Robin Meese](https://github.com/robson90) && [Alexander Schwartz](https://github.com/ahus1)
-* Dutch: [Jon Koops](https://github.com/jonkoops) && [janher](https://github.com/janher)
+* Dutch: [janher](https://github.com/janher) && [Erik Jan de wit](https://github.com/edewit)
 * Japanese: [y-tabata](https://github.com/y-tabata) && [wadahiro](https://github.com/wadahiro) && [tnorimat](https://github.com/tnorimat) && [k-tamura](https://github.com/k-tamura)
 * Catalan: [jmallach](https://github.com/jmallach) && [Ecron](https://github.com/Ecron)
 * Spanish: [herver1971](https://github.com/herver1971) && [anthieni](https://github.com/anthieni)

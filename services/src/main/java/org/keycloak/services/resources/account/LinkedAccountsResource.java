@@ -17,10 +17,9 @@
 package org.keycloak.services.resources.account;
 
 import java.io.IOException;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
+import java.text.MessageFormat;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -329,9 +328,11 @@ public class LinkedAccountsResource {
         return null;
     }
 
-    private String translateErrorMessage(String errorCode) {
+    private String translateErrorMessage(String errorCode, Object... params) {
         try {
-            return session.theme().getTheme(Theme.Type.ACCOUNT).getMessages(session.getContext().resolveLocale(user)).getProperty(errorCode);
+            Locale locale = session.getContext().resolveLocale(user);
+            String pattern = session.theme().getTheme(Theme.Type.ACCOUNT).getMessages(locale).getProperty(errorCode);
+            return new MessageFormat(pattern, locale).format(params, new StringBuffer(), null).toString();
         } catch (IOException e) {
             return errorCode;
         }

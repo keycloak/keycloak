@@ -37,7 +37,9 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.CacheableStorageProviderModel.CachePolicy;
+import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.StorageId;
+import org.keycloak.storage.StoreManagers;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageUtil;
@@ -170,6 +172,7 @@ public class UserStorageTest extends AbstractAuthTest {
 
         UserProfileResource userProfileRes = testRealmResource().users().userProfile();
         UserProfileUtil.enableUnmanagedAttributes(userProfileRes);
+        testingClient.testing().setTestingInfinispanTimeService();
     }
 
     @After
@@ -191,6 +194,8 @@ public class UserStorageTest extends AbstractAuthTest {
             Assert.assertNotNull(userMapStorageFactory);
             userMapStorageFactory.clear();
         });
+        resetTimeOffset();
+        testingClient.testing().revertTestingInfinispanTimeService();
     }
 
     protected ComponentRepresentation newPropProviderRW() {
@@ -595,125 +600,64 @@ public class UserStorageTest extends AbstractAuthTest {
         // and they didn't use any time offset clock so they may have timestamps in the 'future'
 
         // let's clear cache
-        testingClient.server().run(session -> {
-            UserStorageUtil.userCache(session).clear();
-        });
+        clearUserCache();
+        setFirstname("thor", "Thor0");
 
-
-        testingClient.server().run(session -> {
-            RealmModel realm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername(realm, "thor");
-            Assert.assertTrue(user instanceof CachedUserModel); // should be newly cached
-        });
-
+        // should be newly cached
+        validateFirstname("thor", "Thor0");
+        setFirstname("thor", "Thor1");
 
         setTimeOfDay(23, 40, 0);
 
         // lookup user again - make sure it's returned from cache
-        testingClient.server().run(session -> {
-            RealmModel realm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername(realm, "thor");
-            Assert.assertTrue(user instanceof CachedUserModel); // should be returned from cache
-        });
-
+        // should be returned from cache
+        validateFirstname("thor", "Thor0");
 
         setTimeOfDay(23, 50, 0);
 
-        testingClient.server().run(session -> {
-            RealmModel realm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername(realm, "thor");
-            Assert.assertFalse(user instanceof CachedUserModel); // should have been invalidated
-        });
+        // should have been invalidated
+        validateFirstname("thor", "Thor1");
+        setFirstname("thor", "Thor2");
 
-
-        testingClient.server().run(session -> {
-            RealmModel realm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername(realm, "thor");
-            Assert.assertTrue(user instanceof CachedUserModel); // should have been newly cached
-        });
-
-
-        testingClient.server().run(session -> {
-            RealmModel realm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername(realm, "thor");
-            Assert.assertTrue(user instanceof CachedUserModel); // should be returned from cache
-        });
-
+        validateFirstname("thor", "Thor1"); // should be returned from cache
 
         setTimeOfDay(23, 55, 0);
 
-        testingClient.server().run(session -> {
-            RealmModel realm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername(realm, "thor");
-            Assert.assertTrue(user instanceof CachedUserModel); // should be returned from cache
-        });
-
+        validateFirstname("thor", "Thor1"); // should be returned from cache
 
         // at 00:30
         // it's next day now. the daily eviction time is now in the future
         setTimeOfDay(0, 30, 0, 24 * 60 * 60);
 
-        testingClient.server().run(session -> {
-            RealmModel realm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername(realm, "thor");
-            Assert.assertTrue(user instanceof CachedUserModel); // should be returned from cache - it's still good for almost the whole day
-        });
-
+        validateFirstname("thor", "Thor1");  // should be returned from cache - it's still good for almost the whole day
 
         // at 23:30 next day
         setTimeOfDay(23, 30, 0, 24 * 60 * 60);
 
-        testingClient.server().run(session -> {
-            RealmModel realm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername(realm, "thor");
-            Assert.assertTrue(user instanceof CachedUserModel); // should be returned from cache - it's still good until 23:45
-        });
+        validateFirstname("thor", "Thor1"); // should be returned from cache - it's still good until 23:45
 
         // at 23:50
         setTimeOfDay(23, 50, 0, 24 * 60 * 60);
 
-        testingClient.server().run(session -> {
-            RealmModel realm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername(realm, "thor");
-            Assert.assertFalse(user instanceof CachedUserModel); // should be invalidated
-        });
+        validateFirstname("thor", "Thor2");  // should be invalidated
+        setFirstname("thor", "Thor3");
 
         setTimeOfDay(23, 55, 0, 24 * 60 * 60);
 
-        testingClient.server().run(session -> {
-            RealmModel realm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername(realm, "thor");
-            Assert.assertTrue(user instanceof CachedUserModel); // should be newly cached
-        });
-
+        validateFirstname("thor", "Thor2"); // should be newly cached
 
         setTimeOfDay(23, 40, 0, 2 * 24 * 60 * 60);
 
-        testingClient.server().run(session -> {
-            RealmModel realm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername(realm, "thor");
-            Assert.assertTrue(user instanceof CachedUserModel); // should be returned from cache
-        });
+        validateFirstname("thor", "Thor2"); // should be returned from cache
 
         setTimeOfDay(23, 50, 0, 2 * 24 * 60 * 60);
 
-        testingClient.server().run(session -> {
-            RealmModel realm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername(realm, "thor");
-            Assert.assertFalse(user instanceof CachedUserModel); // should be invalidated
-        });
+        validateFirstname("thor", "Thor3"); // should be invalidated
+        setFirstname("thor", "Thor4");
 
-        testingClient.server().run(session -> {
-            RealmModel realm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername(realm, "thor");
-            Assert.assertTrue(user instanceof CachedUserModel); // should be newly cached
-        });
+        validateFirstname("thor", "Thor3"); // should be newly cached
 
-        testingClient.server().run(session -> {
-            RealmModel realm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername(realm, "thor");
-            Assert.assertTrue(user instanceof CachedUserModel); // should be returned from cache
-        });
+        validateFirstname("thor", "Thor3"); // should be returned from cache
     }
 
     @Test
@@ -730,32 +674,21 @@ public class UserStorageTest extends AbstractAuthTest {
         propProviderRW.getConfig().putSingle(EVICTION_MINUTE, Integer.toString(eviction.get(MINUTE)));
         testRealmResource().components().component(propProviderRWId).update(propProviderRW);
 
+        clearUserCache();
+        setFirstname("thor", "Thor0");
+
         // now
-        testingClient.server().run(session -> {
-            RealmModel realm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername(realm, "thor");
-            System.out.println("User class: " + user.getClass());
-            Assert.assertTrue(user instanceof CachedUserModel); // should still be cached
-        });
+        validateFirstname("thor", "Thor0"); // should still be cached
+
+        setFirstname("thor", "Thor1");
 
         setTimeOffset(2 * 24 * 60 * 60); // 2 days in future
 
-        // now
-        testingClient.server().run(session -> {
-            RealmModel realm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername(realm, "thor");
-            System.out.println("User class: " + user.getClass());
-            Assert.assertTrue(user instanceof CachedUserModel); // should still be cached
-        });
+        validateFirstname("thor", "Thor0"); // should still be cached
 
         setTimeOffset(5 * 24 * 60 * 60); // 5 days in future
 
-        testingClient.server().run(session -> {
-            RealmModel realm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername(realm, "thor");
-            System.out.println("User class: " + user.getClass());
-            Assert.assertFalse(user instanceof CachedUserModel); // should be evicted
-        });
+        validateFirstname("thor", "Thor1"); // should be evicted
 
     }
 
@@ -769,31 +702,23 @@ public class UserStorageTest extends AbstractAuthTest {
         propProviderRW.getConfig().putSingle(MAX_LIFESPAN, Long.toString(1 * 60 * 60 * 1000)); // 1 hour in milliseconds
         testRealmResource().components().component(propProviderRWId).update(propProviderRW);
 
+        clearUserCache();
+        setFirstname("thor", "Thor0");
+
         // now
-        testingClient.server().run(session -> {
-            RealmModel realm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername(realm, "thor");
-            System.out.println("User class: " + user.getClass());
-            Assert.assertTrue(user instanceof CachedUserModel); // should still be cached
-        });
+        validateFirstname("thor", "Thor0"); // Initial caching
 
-        setTimeOffset(1/2 * 60 * 60); // 1/2 hour in future
+        setFirstname("thor", "Thor1");
 
-        testingClient.server().run(session -> {
-            RealmModel realm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername(realm, "thor");
-            System.out.println("User class: " + user.getClass());
-            Assert.assertTrue(user instanceof CachedUserModel); // should still be cached
-        });
+        validateFirstname("thor", "Thor0"); // should still be cached
+
+        setTimeOffset(30 * 60); // 1/2 hour in future
+
+        validateFirstname("thor", "Thor0"); // should still be cached
 
         setTimeOffset(2 * 60 * 60); // 2 hours in future
 
-        testingClient.server().run(session -> {
-            RealmModel realm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername(realm, "thor");
-            System.out.println("User class: " + user.getClass());
-            Assert.assertFalse(user instanceof CachedUserModel); // should be evicted
-        });
+        validateFirstname("thor", "Thor1"); // should be evicted
 
     }
 
@@ -829,8 +754,8 @@ public class UserStorageTest extends AbstractAuthTest {
 
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
-            UserModel thor = session.users().getUserByUsername(realm, "thor");
-            System.out.println("Foo");
+            UserModel user = session.users().getUserByUsername(realm, "thor");
+            Assert.assertTrue(user instanceof CachedUserModel);
         });
     }
 
@@ -979,7 +904,7 @@ public class UserStorageTest extends AbstractAuthTest {
 
     @Test
     @ModelTest
-    public void testCredentialCRUD(KeycloakSession session) throws Exception {
+    public void testCredentialCRUD(KeycloakSession session) {
         AtomicReference<String> passwordId = new AtomicReference<>();
         AtomicReference<String> otp1Id = new AtomicReference<>();
         AtomicReference<String> otp2Id = new AtomicReference<>();
@@ -1000,8 +925,8 @@ public class UserStorageTest extends AbstractAuthTest {
             passwordId.set(passwordCred.getId());
 
             // Create Password and 2 OTP credentials (password was already created)
-            CredentialModel otp1 = OTPCredentialModel.createFromPolicy(realm, "secret1");
-            CredentialModel otp2 = OTPCredentialModel.createFromPolicy(realm, "secret2");
+            CredentialModel otp1 = OTPCredentialModel.createFromPolicy(realm, "secret1", "label1");
+            CredentialModel otp2 = OTPCredentialModel.createFromPolicy(realm, "secret2", "label2");
             otp1 = user.credentialManager().createStoredCredential(otp1);
             otp2 = user.credentialManager().createStoredCredential(otp2);
             otp1Id.set(otp1.getId());
@@ -1180,6 +1105,29 @@ public class UserStorageTest extends AbstractAuthTest {
         for (int i=0 ; i<expectedIds.length ; i++) {
             org.keycloak.testsuite.Assert.assertEquals(creds.get(i).getId(), expectedIds[i]);
         }
+    }
+
+
+    private void validateFirstname(String username, String firstname) {
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel user = session.users().getUserByUsername(realm, username);
+            MatcherAssert.assertThat(user.getFirstName(), Matchers.equalTo(firstname));
+        });
+    }
+
+    private void setFirstname(String username, String firstname) {
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel user = ((StoreManagers) session.getProvider(DatastoreProvider.class)).userStorageManager().getUserByUsername(realm, username);
+            user.setFirstName(firstname);
+        });
+    }
+
+    private void clearUserCache() {
+        testingClient.server().run(session -> {
+            UserStorageUtil.userCache(session).clear();
+        });
     }
 
 }

@@ -210,7 +210,7 @@ public final class Database {
                         getProperty(DatabaseOptions.DB_URL_PORT, namedProperty, "5432"),
                         getProperty(DatabaseOptions.DB_URL_DATABASE, namedProperty, "keycloak"),
                         getProperty(DatabaseOptions.DB_URL_PROPERTIES, namedProperty)),
-                asList("liquibase.database.core.PostgresDatabase", "org.keycloak.connections.jpa.updater.liquibase.PostgresPlusDatabase"),
+                asList("org.keycloak.connections.jpa.updater.liquibase.UpdatedPostgresDatabase", "org.keycloak.connections.jpa.updater.liquibase.PostgresPlusDatabase"),
                 "postgres"
         ),
         MSSQL("mssql",
@@ -278,7 +278,7 @@ public final class Database {
 
         private static String getProperty(Option<?> option, String namedProperty, String defaultValue) {
             return "${kc.%s:%s}".formatted(StringUtil.isNullOrEmpty(namedProperty) ? option.getKey() :
-                            DatabaseOptions.getResultNamedKey(option, namedProperty).orElseThrow(() -> new IllegalArgumentException("Cannot find the named property")),
+                            DatabaseOptions.getNamedKey(option, namedProperty).orElseThrow(() -> new IllegalArgumentException("Cannot find the named property")),
                     defaultValue);
         }
 

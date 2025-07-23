@@ -68,6 +68,32 @@ This example sets the following log levels:
 * The hibernate log level in general is set to debug.
 * To keep SQL abstract syntax trees from creating verbose log output, the specific subcategory `org.hibernate.hql.internal.ast` is set to info. As a result, the SQL abstract syntax trees are omitted instead of appearing at the `debug` level.
 
+=== Adding context for log messages
+
+:tech_feature_name: Log messages with Mapped Diagnostic Context (MDC)
+:tech_feature_id: log-mdc
+
+[NOTE]
+====
+{tech_feature_name} is
+*Preview*
+and is not fully supported. This feature is disabled by default.
+====
+
+You can enable additional context information for each log line like the current realm and client that is executing the request.
+
+Use the option `log-mdc-enabled` to enable it.
+
+.Example configuration
+<@kc.start parameters="--features=log-mdc --log-mdc-enabled=true"/>
+
+.Example output
+----
+2025-06-20 14:13:01,772 {kc.clientId=security-admin-console, kc.realm=master} INFO ...
+----
+
+Specify which keys to be added by setting the configuration option `log-mdc-keys`.
+
 ==== Configuring levels as individual options
 When configuring category-specific log levels, you can also set the log levels as individual `log-level-<category>` options instead of using the `log-level` option for that.
 This is useful when you want to set the log levels for selected categories without overwriting the previously set `log-level` option.
@@ -388,6 +414,23 @@ To use UDP instead of TCP, add the `--log-syslog-protocol` option as follows:
 <@kc.start parameters="--log=\"console,syslog\" --log-syslog-protocol=udp"/>
 
 The available protocols are: `tpc`, `udp`, and `ssl-tcp`.
+
+=== Configuring the Syslog counting framing
+
+By default, Syslog messages sent over TCP or SSL-TCP are prefixed with the message size, as required by certain Syslog receivers.
+This behavior is controlled by the `--log-syslog-counting-framing` option.
+
+To explicitly enable or disable this feature, use the following command:
+
+<@kc.start parameters="--log-syslog-counting-framing=true"/>
+
+You can set the value to one of the following:
+
+* `protocol-dependent` (default) – Enable counting framing only when the `log-syslog-protocol` is `tcp` or `ssl-tcp`.
+* `true` – Always enable counting framing by prefixing messages with their size.
+* `false` – Never use counting framing.
+
+Note that using `protocol-dependent` ensures compatibility with most Syslog servers by enabling the prefix only when required by the protocol.
 
 === Configuring the Syslog log format
 To set the logging format for a logged line, perform these steps:

@@ -19,71 +19,45 @@ WebAuthn's specification uses a `user.id` to map a public key credential to a sp
 The setup procedure of WebAuthn support for 2FA is the following:
 
 [[_webauthn-register]]
-===== Enable WebAuthn authenticator registration
+===== Check WebAuthn authenticator registration is enabled
 
 . Click *Authentication* in the menu.
 . Click the *Required Actions* tab.
-. Toggle the *Webauthn Register* switch to *ON*.
+. Check action *Webauthn Register* switch is set to *ON*.
 
 Toggle the *Default Action* switch to *ON* if you want all new users to be required to register their WebAuthn credentials.
 
 [[_webauthn-authenticator-setup]]
-==== Adding WebAuthn authentication to a browser flow
+==== Enable WebAuthn authentication in the default browser flow
 
 . Click *Authentication* in the menu.
 . Click the *Browser* flow.
-. Select *Duplicate* from the "Action list" to make a copy of the built-in *Browser* flow.
-. Enter "WebAuthn Browser" as the name of the copy.
-. Click *Duplicate*.
-. Click the name to go to the details
-. Click the trash can icon 🗑️ of the "WebAuthn Browser Browser - Conditional OTP" and click *Delete*.
-
-If you require WebAuthn for all users:
-
-. Click *+* menu of the *WebAuthn Browser Forms*.
-. Click *Add step*.
-. Click *WebAuthn Authenticator*.
-. Click *Add*.
-. Select *Required* for the *WebAuthn Authenticator* authentication type to set its requirement to required.
+. Locate the execution *WebAuthn Authenticator* inside the *Browser - Conditional 2FA* sub-flow.
+. Change the _requirement_ from _Disabled_ to _Alternative_ for that execution.
 +
-image:images/webauthn-browser-flow-required.png[Webauthn browser flow required]
+.WebAuthn browser flow conditional with OTP
+image:images/webauthn-browser-flow-conditional-with-OTP.png[WebAuthn browser flow conditional with OTP]
+
+With this configuration, the users can choose between using WebAuthn and OTP for the second factor. As the sub-flow is _conditional_, they are only asked to present a 2FA credential (OTP or WebAuthn) if they have already registered one of the respective credential types. If a user has configured both credential types, the credential with the highest priority will be displayed by default. However, the *Try Another Way* option will appear so that the user has the alternative methods to log in.
+
+If you want to substitute OTP for WebAuthn and maintain it as conditional:
+
+. Change _requirement_ in *OTP Form* to _Disabled_.
+. Change _requirement_ in *WebAuthn Authenticator* to _Alternative_.
 +
-. Click the *Action* menu at the top of the screen.
-. Select *Bind flow* from the drop-down list.
-. Select *Browser* from the drop-down list.
-. Click *Save*.
-
-[NOTE]
-====
-If a user does not have WebAuthn credentials, the user must register WebAuthn credentials.
-====
-
-Users can log in with WebAuthn if they have a WebAuthn credential registered only. So instead of adding the *WebAuthn Authenticator* execution, you can:
-
-.Procedure
-. Click *+* menu of the *WebAuthn Browser Forms* row.
-. Click *Add sub-flow*.
-. Enter "Conditional 2FA" for the _name_ field.
-. Select *Conditional* for the *Conditional 2FA* to set its requirement to conditional.
-. On the *Conditional 2FA* row, click the plus sign + and select *Add condition*.
-. Click *Add condition*.
-. Select *Condition - User Configured*.
-. Click *Add*.
-. Select *Required* for the *Condition - User Configured* to set its requirement to required.
-. Drag and drop *WebAuthn Authenticator* into the *Conditional 2FA* flow
-. Select *Alternative* for the *WebAuthn Authenticator* to set its requirement to alternative.
-+
+.Webauthn browser flow conditional
 image:images/webauthn-browser-flow-conditional.png[Webauthn browser flow conditional]
 
-The user can choose between using WebAuthn and OTP for the second factor:
+If you require WebAuthn for all users and enforce them to configure the credential if not configured:
 
-.Procedure
-. On the *Conditional 2FA* row, click the plus sign + and select *Add step*.
-. Select *OTP Form* from the list.
-. Click *Add*.
-. Select *Alternative* for the *OTP Form* to set its requirement to alternative.
+. Change _requirement_ in *Browser - Conditional 2FA* to _Required_.
+. Change _requirement_ in *OTP Form* to _Disabled_.
+. Change _requirement_ in *WebAuthn Authenticator* to _Required_.
 +
-image:images/webauthn-browser-flow-conditional-with-OTP.png[WebAuthn browser flow conditional with OTP]
+.Webauthn browser flow required
+image:images/webauthn-browser-flow-required.png[Webauthn browser flow required]
+
+You can see more examples of 2FA configurations in <<twofa-conditional-workflow-examples>>.
 
 ==== Authenticate with WebAuthn authenticator
 
@@ -246,9 +220,9 @@ An administrator typically requires that Passkeys registered by users for the We
 
 Set up WebAuthn Loginless support as follows:
 
-. (if not already present) Register a new required action for WebAuthn passwordless support. Use the steps described in <<_webauthn-register, Enable WebAuthn Authenticator Registration>>. Register the `Webauthn Register Passwordless` action.
+. (If not already done) Check the required action for *WebAuthn Register Passwordless* is enabled. Use the steps described in <<_webauthn-register, Enable WebAuthn Authenticator Registration>>, but using *WebAuthn Register Passwordless* instead of *WebAuthn Register*.
 
-. Configure the `WebAuthn Passwordless Policy`. Perform the configuration in the Admin Console, `Authentication` section,  in the tab `Policies` ->  `WebAuthn Passwordless Policy`. You have to set *User Verification Requirement* to *required* and *Require Discoverable Credential* to *Yes* when you configure the policy for loginless scenario. Note that since there isn't a dedicated Loginless policy it won't be possible to mix authentication scenarios with user verification=no/discoverable credential=no and loginless scenarios (user verification=yes/discoverable credential=yes). Storage capacity is usually very limited on Passkeys meaning that you won't be able to store many discoverable credentials on your Passkey.
+. Configure the `WebAuthn Passwordless Policy`. Perform the configuration in the Admin Console, `Authentication` section,  in the tab `Policies` ->  `WebAuthn Passwordless Policy`. You have to set *User Verification Requirement* to *required* and *Require Discoverable Credential* to *Yes* when you configure the policy for loginless scenario. Storage capacity is usually very limited on Passkeys meaning that you won't be able to store many discoverable credentials on your Passkey.
 
 . Configure the authentication flow. Create a new authentication flow, add the "WebAuthn Passwordless" execution and set the Requirement setting of the execution to *Required*
 

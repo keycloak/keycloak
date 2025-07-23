@@ -48,6 +48,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.CacheSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProbeSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.SchedulingSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.Truststore;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TruststoreSource;
@@ -150,13 +151,17 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         var existingDeployment = ContextUtils.getCurrentStatefulSet(context).orElse(null);
 
+        String serviceName = KeycloakDiscoveryServiceDependentResource.getName(primary);
         if (existingDeployment != null) {
             // copy the existing annotations to keep the status consistent
             CRDUtils.findUpdateReason(existingDeployment).ifPresent(r -> baseDeployment.getMetadata().getAnnotations()
                     .put(Constants.KEYCLOAK_UPDATE_REASON_ANNOTATION, r));
             CRDUtils.fetchIsRecreateUpdate(existingDeployment).ifPresent(b -> baseDeployment.getMetadata()
                     .getAnnotations().put(Constants.KEYCLOAK_RECREATE_UPDATE_ANNOTATION, b.toString()));
+            serviceName = existingDeployment.getSpec().getServiceName();
         }
+
+        baseDeployment.getSpec().setServiceName(serviceName);
 
         var updateType = ContextUtils.getUpdateType(context);
 
@@ -286,7 +291,6 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                         .editOrNewSpec().withImagePullSecrets(keycloakCR.getSpec().getImagePullSecrets()).endSpec()
                     .endTemplate()
                     .withReplicas(keycloakCR.getSpec().getInstances())
-                    .withServiceName(KeycloakDiscoveryServiceDependentResource.getName(keycloakCR))
                 .endSpec();
 
         var specBuilder = baseDeploymentBuilder.editSpec().editTemplate().editOrNewSpec();
@@ -325,8 +329,11 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         containerBuilder.addToArgs(0, "-Djgroups.bind.address=$(%s)".formatted(POD_IP));
 
         // probes
-        var protocol = isTlsConfigured(keycloakCR) ? "HTTPS" : "HTTP";
+        var protocol = isManagementHttps(keycloakCR) ? "HTTPS" : "HTTP";
         var port = HttpManagementSpec.managementPort(keycloakCR);
+        var readinessOptionalSpec = Optional.ofNullable(keycloakCR.getSpec().getReadinessProbeSpec());
+        var livenessOptionalSpec = Optional.ofNullable(keycloakCR.getSpec().getLivenessProbeSpec());
+        var startupOptionalSpec = Optional.ofNullable(keycloakCR.getSpec().getStartupProbeSpec());
         var relativePath = readConfigurationValue(Constants.KEYCLOAK_HTTP_MANAGEMENT_RELATIVE_PATH_KEY, keycloakCR, context)
                 .or(() -> readConfigurationValue(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY, keycloakCR, context))
                 .map(path -> !path.endsWith("/") ? path + "/" : path)
@@ -334,8 +341,8 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         if (!containerBuilder.hasReadinessProbe()) {
             containerBuilder.withNewReadinessProbe()
-                .withPeriodSeconds(10)
-                .withFailureThreshold(3)
+                .withPeriodSeconds(readinessOptionalSpec.map(ProbeSpec::getProbePeriodSeconds).orElse(10))
+                .withFailureThreshold(readinessOptionalSpec.map(ProbeSpec::getProbeFailureThreshold).orElse(3))
                 .withNewHttpGet()
                 .withScheme(protocol)
                 .withNewPort(port)
@@ -345,8 +352,8 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         }
         if (!containerBuilder.hasLivenessProbe()) {
             containerBuilder.withNewLivenessProbe()
-                .withPeriodSeconds(10)
-                .withFailureThreshold(3)
+                .withPeriodSeconds(livenessOptionalSpec.map(ProbeSpec::getProbePeriodSeconds).orElse(10))
+                .withFailureThreshold(livenessOptionalSpec.map(ProbeSpec::getProbeFailureThreshold).orElse(3))
                 .withNewHttpGet()
                 .withScheme(protocol)
                 .withNewPort(port)
@@ -356,8 +363,8 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         }
         if (!containerBuilder.hasStartupProbe()) {
             containerBuilder.withNewStartupProbe()
-                .withPeriodSeconds(1)
-                .withFailureThreshold(600)
+                .withPeriodSeconds(startupOptionalSpec.map(ProbeSpec::getProbePeriodSeconds).orElse(1))
+                .withFailureThreshold(startupOptionalSpec.map(ProbeSpec::getProbeFailureThreshold).orElse(600))
                 .withNewHttpGet()
                 .withScheme(protocol)
                 .withNewPort(port)
@@ -384,6 +391,11 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                 .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL)
             .endPort()
             .endContainer().endSpec().endTemplate().endSpec().build();
+    }
+
+    private boolean isManagementHttps(Keycloak keycloakCR) {
+        return isTlsConfigured(keycloakCR) && keycloakCR.getSpec().getAdditionalOptions().stream()
+                .noneMatch(v -> "http-management-scheme".equals(v.getName()) && "http".equals(v.getValue()));
     }
 
     private void handleScheduling(Keycloak keycloakCR, Map<String, String> labels, PodSpecFluent<?> specBuilder) {
@@ -492,6 +504,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
     private List<EnvVar> getDefaultAndAdditionalEnvVars(Keycloak keycloakCR) {
         // default config values
         List<ValueOrSecret> serverConfigsList = new ArrayList<>(Constants.DEFAULT_DIST_CONFIG_LIST);
+        Set<String> defaultKeys = serverConfigsList.stream().map(ValueOrSecret::getName).collect(Collectors.toSet());
 
         // merge with the CR; the values in CR take precedence
         if (keycloakCR.getSpec().getAdditionalOptions() != null) {
@@ -502,7 +515,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         // set env vars
         List<EnvVar> envVars = serverConfigsList.stream()
-                .map(v -> {
+                .flatMap(v -> {
                     var envBuilder = new EnvVarBuilder().withName(getKeycloakOptionEnvVarName(v.getName()));
                     var secret = v.getSecret();
                     if (secret != null) {
@@ -511,7 +524,14 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                     } else {
                         envBuilder.withValue(v.getValue());
                     }
-                    return envBuilder.build();
+                    EnvVar mainVar = envBuilder.build();
+                    if (!defaultKeys.contains(v.getName())) {
+                        EnvVar keyVar = new EnvVarBuilder()
+                                .withName("KCKEY_" + mainVar.getName().substring(KeycloakDistConfigurator.KC_PREFIX.length()))
+                                .withValue(v.getName()).build();
+                        return Stream.of(mainVar, keyVar);
+                    }
+                    return Stream.of(mainVar);
                 })
                 .collect(Collectors.toCollection(ArrayList::new));
 

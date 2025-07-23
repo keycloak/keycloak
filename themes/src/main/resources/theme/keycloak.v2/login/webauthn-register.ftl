@@ -37,7 +37,7 @@
                     authenticatorAttachment : '${authenticatorAttachment}',
                     requireResidentKey : '${requireResidentKey}',
                     userVerificationRequirement : '${userVerificationRequirement}',
-                    createTimeout : ${createTimeout},
+                    createTimeout : ${createTimeout?c},
                     excludeCredentialIds : '${excludeCredentialIds}',
                     initLabel : "${msg("webauthn-registration-init-label")?no_esc}",
                     initLabelPrompt : "${msg("webauthn-registration-init-label-prompt")?no_esc}",

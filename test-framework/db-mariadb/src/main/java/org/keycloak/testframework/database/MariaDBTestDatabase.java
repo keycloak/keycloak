@@ -13,7 +13,7 @@ class MariaDBTestDatabase extends AbstractContainerTestDatabase {
 
     @Override
     public JdbcDatabaseContainer<?> createContainer() {
-        return new MariaDBContainer<>(DockerImageName.parse(DatabaseProperties.getContainerImageName(NAME)).asCompatibleSubstituteFor(NAME));
+        return new MariaDBContainer<>(DockerImageName.parse(DatabaseProperties.getContainerImageName(NAME)).asCompatibleSubstituteFor(NAME)).withCommand("--character-set-server=utf8 --collation-server=utf8_unicode_ci");
     }
 
     @Override

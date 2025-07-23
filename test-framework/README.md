@@ -349,6 +349,7 @@ Valid values:
 | mariadb  | MariaDB test container                  |
 | mssql    | Microsoft SQL Server test container     |
 | mysql    | MySQL test container                    |
+| oracle   | Oracle test container                   |
 | postgres | PostgreSQL test container               |
 
 Configuration:

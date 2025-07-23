@@ -271,6 +271,18 @@ show server_encoding;
 create database keycloak with encoding 'UTF8';
 ----
 
+== Preparing for PostgreSQL
+
+When running PostgreSQL reader and writer instances, {project_name} needs to always connect to the writer instance to do its work.
+When using the original PostgreSQL driver, {project_name} sets the `targetServerType` property of the PostgreSQL JDBC driver to `primary` to ensure that it always connects to a writable primary instance and never connects to a secondary reader instance in failover or switchover scenarios.
+
+You can override this behavior by setting your own value for `targetServerType` in the DB URL or additional properties.
+
+[NOTE]
+====
+The `targetServerType` is only applied automatically to the primary datasource, as requirements might be different for additional datasources.
+====
+
 [[preparing-keycloak-for-amazon-aurora-postgresql]]
 == Preparing for Amazon Aurora PostgreSQL
 
@@ -296,6 +308,8 @@ See the <@links.server id="containers" /> {section} for details on how to build 
 `db-url`:: Insert `aws-wrapper` to the regular PostgreSQL JDBC URL resulting in a URL like `+jdbc:aws-wrapper:postgresql://...+`.
 `db-driver`:: Set to `software.amazon.jdbc.Driver` to use the AWS JDBC wrapper.
 
+NOTE: When overriding the `wrapperPlugins` option of the AWS JDBC Driver, always include the `failover` or `failover2` plugin to ensure that {project_name} always connects to the writer instance even in failover or switchover scenarios.
+
 == Preparing for MySQL server
 
 Beginning with MySQL 8.0.30, MySQL supports generated invisible primary keys for any InnoDB table that is created without an explicit primary key (more information https://dev.mysql.com/doc/refman/8.0/en/create-table-gipks.html[here]).
@@ -308,7 +322,7 @@ Because cluster nodes can boot concurrently, they take extra time for database a
 
 The maximum timeout for this lock is 900 seconds. If a node waits on this lock for more than the timeout, the boot fails. The need to change the default value is unlikely, but you can change it by entering this command:
 
-<@kc.start parameters="--spi-dblock-jpa-lock-wait-timeout 900"/>
+<@kc.start parameters="--spi-dblock--jpa--lock-wait-timeout 900"/>
 
 == Using Database Vendors with XA transaction support
 {project_name} uses non-XA transactions and the appropriate database drivers by default.
@@ -330,17 +344,17 @@ NOTE: Enabling XA transactions in a containerized environment does not fully sup
 To setup the JPA migrationStrategy (manual/update/validate) you should setup JPA provider as follows:
 
 .Setting the `migration-strategy` for the `quarkus` provider of the `connections-jpa` SPI
-<@kc.start parameters="--spi-connections-jpa-quarkus-migration-strategy=manual"/>
+<@kc.start parameters="--spi-connections--jpa--quarkus-migration-strategy=manual"/>
 
 If you want to get a SQL file for DB initialization, too, you have to add this additional SPI initializeEmpty (true/false):
 
 .Setting the `initialize-empty` for the `quarkus` provider of the `connections-jpa` SPI
-<@kc.start parameters="--spi-connections-jpa-quarkus-initialize-empty=false"/>
+<@kc.start parameters="--spi-connections--jpa--quarkus-initialize-empty=false"/>
 
 In the same way the migrationExport to point to a specific file and location:
 
 .Setting the `migration-export` for the `quarkus` provider of the `connections-jpa` SPI
-<@kc.start parameters="--spi-connections-jpa-quarkus-migration-export=<path>/<file.sql>"/>
+<@kc.start parameters="--spi-connections--jpa--quarkus-migration-export=<path>/<file.sql>"/>
 
 For more information, check the link:{upgrading_guide_link}#_migrate_db[Migrating the database] documentation.
 

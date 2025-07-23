@@ -33,6 +33,7 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureRespons
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureSigningAlgorithmEnforceExecutorConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureSigningAlgorithmForSignedJwtEnforceExecutorConfig;
 
+import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -44,38 +45,58 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import jakarta.ws.rs.BadRequestException;
 
 import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.KeyUtils;
+import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.UriUtils;
+import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.models.Constants;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AuthorizationResponseToken;
 import org.keycloak.representations.IDToken;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -89,6 +110,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientRolesConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextConditionFactory;
+import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticationAssertionExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureClientUrisExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureLogoutExecutorFactory;
@@ -113,6 +135,7 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
+import org.keycloak.testsuite.util.SignatureSignerUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.ParResponse;
@@ -1646,5 +1669,163 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         this.requestUri = requestUri;
         successfulLoginAndLogout(TEST_CLIENT, TEST_CLIENT_SECRET);
 
+    }
+
+    @Test
+    public void testSecureClientAuthenticationAssertionExecutor() throws Exception {
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Le Premier Profil")
+                        .addExecutor(SecureClientAuthenticationAssertionExecutorFactory.PROVIDER_ID, null)
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
+                        .addCondition(AnyClientConditionFactory.PROVIDER_ID,
+                                createAnyClientConditionConfig())
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        // Register client with private-key-jwt
+        String clientId = generateSuffixedName(CLIENT_NAME);
+        createClientByAdmin(clientId, (ClientRepresentation clientRep) -> clientRep.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID));
+
+        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
+        assert clientResource != null;
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+
+        oauth.client(clientId);
+
+        // Get keys of client. Will be used for client authentication and signing of request object
+        KeyPair keyPair = setupJwksUrl(Algorithm.RS256, clientRep, clientResource);
+        PublicKey publicKey = keyPair.getPublic();
+        PrivateKey privateKey = keyPair.getPrivate();
+
+        // Send a push authorization request with invalid 'aud' . Should fail
+        String[] audienceUrls = {getRealmInfoUrl(), getRealmInfoUrl() + "/protocol/openid-connect/ext/par/request"};
+        String signedJwt = createSignedRequestToken(clientId, privateKey, publicKey, Algorithm.RS256, audienceUrls);
+        //     for the test, allow multiple audiences for JWT client authentication temporarily.
+        allowMultipleAudiencesForClientJWTOnServer(true);
+        ParResponse pResp = null;
+        try {
+            pResp = oauth.pushedAuthorizationRequest().request(request).signedJwt(signedJwt).send();
+        } finally {
+            allowMultipleAudiencesForClientJWTOnServer(false);
+        }
+        assertEquals(400, pResp.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, pResp.getError());
+
+        signedJwt = createSignedRequestToken(clientId, privateKey, publicKey, Algorithm.RS256, getRealmInfoUrl() + "/protocol/openid-connect/ext/par/request");
+        pResp = oauth.pushedAuthorizationRequest().request(request).signedJwt(signedJwt).send();
+        assertEquals(400, pResp.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, pResp.getError());
+
+        // Send a push authorization request with valid 'aud' . Should succeed
+        signedJwt = createSignedRequestToken(clientId, privateKey, publicKey, Algorithm.RS256, getRealmInfoUrl());
+        pResp = oauth.pushedAuthorizationRequest().request(request).signedJwt(signedJwt).send();
+        assertEquals(201, pResp.getStatusCode());
+        requestUri = pResp.getRequestUri();
+
+        // Send an authorization request . Should succeed
+        AuthorizationEndpointResponse loginResponse = oauth.loginForm().requestUri(requestUri).doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+        String code = loginResponse.getCode();
+        assertNotNull(code);
+
+        // Send a token request with invalid 'aud' . Should fail
+        signedJwt = createSignedRequestToken(clientId, privateKey, publicKey, Algorithm.RS256, getRealmInfoUrl() + "/protocol/openid-connect/token");
+        AccessTokenResponse tokenResponse = doAccessTokenRequestWithClientSignedJWT(code, signedJwt, DefaultHttpClient::new);
+        assertEquals(400, tokenResponse.getStatusCode());
+
+        // Send a token request with valid 'aud' . Should succeed
+        UserResource user = ApiUtil.findUserByUsernameId(adminClient.realm(REALM_NAME), TEST_USER_NAME);
+        user.logout();
+
+        loginResponse = oauth.loginForm().doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+        code = loginResponse.getCode();
+
+        signedJwt = createSignedRequestToken(clientId, privateKey, publicKey, Algorithm.RS256, getRealmInfoUrl());
+
+        tokenResponse = doAccessTokenRequestWithClientSignedJWT(code, signedJwt, DefaultHttpClient::new);
+        assertEquals(200, tokenResponse.getStatusCode());
+        MatcherAssert.assertThat(tokenResponse.getAccessToken(), Matchers.notNullValue());
+
+        // Send a token refresh request with invalid 'aud' . Should fail
+        signedJwt = createSignedRequestToken(clientId, privateKey, publicKey, Algorithm.RS256, getRealmInfoUrl() + "/protocol/openid-connect/token");
+        AccessTokenResponse refreshedResponse = doRefreshTokenRequestWithSignedJWT(tokenResponse.getRefreshToken(), signedJwt);
+        assertEquals(400, refreshedResponse.getStatusCode());
+
+        // Send a token refresh request with valid 'aud' . Should succeed
+        signedJwt = createSignedRequestToken(clientId, privateKey, publicKey, Algorithm.RS256, getRealmInfoUrl());
+        refreshedResponse = doRefreshTokenRequestWithSignedJWT(tokenResponse.getRefreshToken(), signedJwt);
+        assertEquals(200, refreshedResponse.getStatusCode());
+
+        // Send a token introspection request with invalid 'aud' . Should fail
+        signedJwt = createSignedRequestToken(clientId, privateKey, publicKey, Algorithm.RS256, getRealmInfoUrl() + "/protocol/openid-connect/introspect");
+        HttpResponse tokenIntrospectionResponse = doTokenIntrospectionWithSignedJWT("access_token", refreshedResponse.getAccessToken(), signedJwt);
+        assertEquals(401, tokenIntrospectionResponse.getStatusLine().getStatusCode());
+
+        // Send a token introspection request with valid 'aud' . Should succeed
+        signedJwt = createSignedRequestToken(clientId, privateKey, publicKey, Algorithm.RS256, getRealmInfoUrl());
+        tokenIntrospectionResponse = doTokenIntrospectionWithSignedJWT("access_token", refreshedResponse.getAccessToken(), signedJwt);
+        assertEquals(200, tokenIntrospectionResponse.getStatusLine().getStatusCode());
+
+        // Send a token revoke request with invalid 'aud' . Should fail
+        signedJwt = createSignedRequestToken(clientId, privateKey, publicKey, Algorithm.RS256, getRealmInfoUrl() + "/protocol/openid-connect/revoke");
+        HttpResponse revokeTokenResponse = doTokenRevokeWithSignedJWT("refresh_token", refreshedResponse.getRefreshToken(), signedJwt);
+        assertEquals(400, revokeTokenResponse.getStatusLine().getStatusCode());
+
+        // Send a token revoke request with valid 'aud' . Should succeed
+        signedJwt = createSignedRequestToken(clientId, privateKey, publicKey, Algorithm.RS256, getRealmInfoUrl());
+        revokeTokenResponse = doTokenRevokeWithSignedJWT("refresh_token", refreshedResponse.getRefreshToken(), signedJwt);
+        assertEquals(200, revokeTokenResponse.getStatusLine().getStatusCode());
+    }
+
+    private String createSignedRequestToken(String clientId, PrivateKey privateKey, PublicKey publicKey, String algorithm, String audUrl) {
+        JsonWebToken jwt = createRequestToken(clientId, audUrl);
+        String kid = KeyUtils.createKeyId(publicKey);
+        SignatureSignerContext signer = SignatureSignerUtil.createSigner(privateKey, kid, algorithm);
+        return new JWSBuilder().kid(kid).jsonContent(jwt).sign(signer);
+    }
+
+    private String createSignedRequestToken(String clientId, PrivateKey privateKey, PublicKey publicKey, String algorithm, String[] audienceUrls) {
+        JsonWebToken jwt = createRequestToken(clientId, audienceUrls);
+        String kid = KeyUtils.createKeyId(publicKey);
+        SignatureSignerContext signer = SignatureSignerUtil.createSigner(privateKey, kid, algorithm);
+        return new JWSBuilder().kid(kid).jsonContent(jwt).sign(signer);
+    }
+
+    private String getRealmInfoUrl() {
+        return KeycloakUriBuilder.fromUri(UriUtils.getOrigin(oauth.getRedirectUri()) + "/auth").path(ServiceUrlConstants.REALM_INFO_PATH).build(REALM_NAME).toString();
+    }
+
+    private AccessTokenResponse doAccessTokenRequestWithClientSignedJWT(String code, String signedJwt, Supplier<CloseableHttpClient> httpClientSupplier) {
+        try {
+            List<NameValuePair> parameters = new LinkedList<>();
+            parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
+            parameters.add(new BasicNameValuePair(OAuth2Constants.CODE, code));
+
+            parameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, oauth.getRedirectUri()));
+            parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
+            parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, signedJwt));
+
+            CloseableHttpResponse response = sendRequest(oauth.getEndpoints().getToken(), parameters, httpClientSupplier);
+            return new AccessTokenResponse(response);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private CloseableHttpResponse sendRequest(String requestUrl, List<NameValuePair> parameters, Supplier<CloseableHttpClient> httpClientSupplier) throws Exception {
+        try (CloseableHttpClient client = httpClientSupplier.get()) {
+            HttpPost post = new HttpPost(requestUrl);
+            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
+            post.setEntity(formEntity);
+            return client.execute(post);
+        }
     }
 }
