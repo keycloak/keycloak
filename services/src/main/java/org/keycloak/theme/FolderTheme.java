@@ -122,7 +122,7 @@ public class FolderTheme implements Theme {
         }
 
         // Chinese locales mapping
-        if (locale.getLanguage().equals("zh")) {
+        if (locale.getLanguage().equals("zh") && !locale.getCountry().isEmpty()) {
             filename = locale.getCountry().equals("TW") ? "zh_Hant" : "zh_Hans";
             file = new File(themeDir, "messages" + File.separator + filename + ".properties");
 
