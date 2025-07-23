@@ -203,6 +203,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
         addProviderInfo(result, "organization", "Organization Identity-First Login", "If organizations are enabled, automatically redirects users to the corresponding identity provider.");
         addProviderInfo(result, "conditional-sub-flow-executed", "Condition - sub-flow executed", "Condition to evaluate if a sub-flow was executed successfully during the authentication process");
         addProviderInfo(result, "conditional-client-scope", "Condition - client scope", "Condition to evaluate if a configured client scope is present as a client scope of the client requesting authentication");
+        addProviderInfo(result, "conditional-current-credential", "Condition - current credential", "Flow is executed only if the current credential is one of the included (or not inclded) in the configured list");
 
         return result;
     }
