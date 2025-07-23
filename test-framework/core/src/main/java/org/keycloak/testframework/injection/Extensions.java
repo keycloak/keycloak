@@ -20,7 +20,20 @@ public class Extensions {
     private final List<Supplier<?, ?>> suppliers;
     private final List<Class<?>> alwaysEnabledValueTypes;
 
-    public Extensions() {
+    private static Extensions INSTANCE;
+
+    public static Extensions getInstance() {
+        if (INSTANCE == null) {
+            INSTANCE = new Extensions();
+        }
+        return INSTANCE;
+    }
+
+    public static void reset() {
+        INSTANCE = null;
+    }
+
+    private Extensions() {
         List<TestFrameworkExtension> extensions = loadExtensions();
         valueTypeAlias = loadValueTypeAlias(extensions);
         Config.registerValueTypeAlias(valueTypeAlias);
