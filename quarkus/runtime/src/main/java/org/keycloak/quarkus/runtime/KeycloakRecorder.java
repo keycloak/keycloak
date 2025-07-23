@@ -30,6 +30,7 @@ import io.quarkus.arc.Arc;
 import io.quarkus.arc.InstanceHandle;
 import io.quarkus.hibernate.orm.runtime.integration.HibernateOrmIntegrationRuntimeInitListener;
 import io.quarkus.runtime.annotations.Recorder;
+import io.quarkus.smallrye.health.runtime.SmallRyeReadinessHandler;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
 import liquibase.Scope;
@@ -50,8 +51,6 @@ import org.keycloak.provider.Spi;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
-import org.keycloak.quarkus.runtime.services.health.KeycloakLocalReadinessHandler;
-import org.keycloak.quarkus.runtime.services.health.KeycloakReadyHealthCheck;
 import org.keycloak.quarkus.runtime.storage.database.liquibase.FastServiceLocator;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.theme.ClasspathThemeProviderFactory;
@@ -69,8 +68,8 @@ public class KeycloakRecorder {
         Profile.init(profileName, features);
     }
 
-    public Handler<RoutingContext> getLocalReadinessHandler() {
-        return new KeycloakLocalReadinessHandler();
+    public Handler<RoutingContext> getMainReadinessHandler() {
+        return new SmallRyeReadinessHandler();
     }
 
     // default handler for redirecting to specific path

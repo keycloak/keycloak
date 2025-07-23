@@ -26,6 +26,6 @@ import org.keycloak.config.ManagementOptions;
 public class AddHealthToMainInterface implements BooleanSupplier {
     @Override
     public boolean getAsBoolean() {
-        return isTrue(HealthOptions.HEALTH_ENABLED) && !isTrue(ManagementOptions.LEGACY_OBSERVABILITY_INTERFACE);
+        return isTrue(HealthOptions.HEALTH_ON_MAIN) && !isTrue(ManagementOptions.LEGACY_OBSERVABILITY_INTERFACE);
     }
 }
