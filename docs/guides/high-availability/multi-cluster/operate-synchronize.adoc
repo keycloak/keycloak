@@ -3,9 +3,10 @@
 
 <@tmpl.guide
 title="Synchronizing sites"
-summary="Synchronize an offline site with an online site." >
+summary="Synchronize an offline site with an online site."
+tileVisible="false" >
 
-include::partials/infinispan/infinispan-attributes.adoc[]
+include::../partials/infinispan/infinispan-attributes.adoc[]
 
 == When to use this procedure
 
@@ -32,16 +33,16 @@ This will clear all {project_name} caches and prevents the {project_name} state 
 +
 When deploying {project_name} using the {project_name} Operator, change the number of {project_name} instances in the {project_name} Custom Resource to 0.
 
-<#include "partials/infinispan/infinispan-cli-connect.adoc" />
-<#include "partials/infinispan/infinispan-cli-clear-caches.adoc" />
+<#include "/high-availability/partials/infinispan/infinispan-cli-connect.adoc" />
+<#include "/high-availability/partials/infinispan/infinispan-cli-clear-caches.adoc" />
 
 Now we are ready to transfer the state from the active site to the offline site.
 
 . Login into your Active site
 
-<#include "partials/infinispan/infinispan-cli-connect.adoc" />
+<#include "/high-availability/partials/infinispan/infinispan-cli-connect.adoc" />
 
-<#include "partials/infinispan/infinispan-cli-state-transfer.adoc" />
+<#include "/high-availability/partials/infinispan/infinispan-cli-state-transfer.adoc" />
 
 Now the state is available in the offline site, {project_name} can be started again:
 
@@ -58,10 +59,10 @@ No action required.
 === AWS Global Accelerator
 
 Once the two sites have been synchronized, it is safe to add the previously offline site back to the Global Accelerator
-EndpointGroup following the steps in the <@links.ha id="operate-site-online" /> {section}.
+EndpointGroup following the steps in the <@links.ha id="multi-cluster-operate-site-online" /> {section}.
 
 == Further reading
 
-See <@links.ha id="concepts-infinispan-cli-batch" />.
+See <@links.ha id="multi-cluster-concepts-infinispan-cli-batch" />.
 
 </@tmpl.guide>

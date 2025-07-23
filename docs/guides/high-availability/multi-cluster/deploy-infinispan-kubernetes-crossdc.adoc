@@ -4,19 +4,19 @@
 
 <@tmpl.guide
 title="Deploying {jdgserver_name} for HA with the {jdgserver_name} Operator"
-summary="Deploy {jdgserver_name} for high availability in multi availability zones on Kubernetes."
+summary="Deploy {jdgserver_name} for high availability in multi availability zones on {kubernetes}."
 tileVisible="false"
 includedOptions="cache-remote-*">
 
-include::partials/infinispan/infinispan-attributes.adoc[]
+include::../partials/infinispan/infinispan-attributes.adoc[]
 
-This {section} describes the procedures required to deploy {jdgserver_name} in a multiple-cluster environment (cross-site).
+This {section} describes the procedures required to deploy {jdgserver_name} in a multi-cluster environment (cross-site).
 For simplicity, this topic uses the minimum configuration possible that allows {project_name} to be used with an external {jdgserver_name}.
 
 This {section} assumes two {ocp} clusters named `{site-a}` and `{site-b}`.
 
-This is a building block following the concepts described in the <@links.ha id="concepts-multi-site" /> {section}.
-See the <@links.ha id="introduction" /> {section} for an overview.
+This is a building block following the concepts described in the <@links.ha id="multi-cluster-concepts" /> {section}.
+See the <@links.ha id="multi-cluster-introduction" /> {section} for an overview.
 
 
 [IMPORTANT]
@@ -40,12 +40,12 @@ image::high-availability/infinispan-crossdc-az.dio.svg[]
 
 == Prerequisites
 
-include::partials/infinispan/infinispan-prerequisites.adoc[]
+include::../partials/infinispan/infinispan-prerequisites.adoc[]
 
 == Procedure
 
-include::partials/infinispan/infinispan-install-operator.adoc[]
-include::partials/infinispan/infinispan-credentials.adoc[]
+include::../partials/infinispan/infinispan-install-operator.adoc[]
+include::../partials/infinispan/infinispan-credentials.adoc[]
 +
 These commands must be executed on both {ocp} clusters.
 
@@ -160,7 +160,7 @@ A basic example is provided in this {section} using the credentials, tokens, and
 .The `Infinispan` CR for `{site-a}`
 [source,yaml]
 ----
-include::examples/generated/ispn-site-a.yaml[tag=infinispan-crossdc]
+include::../examples/generated/ispn-site-a.yaml[tag=infinispan-crossdc]
 ----
 <1> The cluster name
 <2> Allows the cluster to be monitored by Prometheus.
@@ -184,7 +184,7 @@ Note the differences in point 4, 11 and 13.
 .The `Infinispan` CR for `{site-b}`
 [source,yaml]
 ----
-include::examples/generated/ispn-site-b.yaml[tag=infinispan-crossdc]
+include::../examples/generated/ispn-site-b.yaml[tag=infinispan-crossdc]
 ----
 
 . Creating the caches for {project_name}.
@@ -202,25 +202,25 @@ The following example shows the `Cache` CR for `{site-a}`.
 .Cache `actionTokens`
 [source,yaml]
 ----
-include::examples/generated/ispn-site-a.yaml[tag=infinispan-cache-actionTokens]
+include::../examples/generated/ispn-site-a.yaml[tag=infinispan-cache-actionTokens]
 ----
 +
 .Cache `authenticationSessions`
 [source,yaml]
 ----
-include::examples/generated/ispn-site-a.yaml[tag=infinispan-cache-authenticationSessions]
+include::../examples/generated/ispn-site-a.yaml[tag=infinispan-cache-authenticationSessions]
 ----
 +
 .Cache `loginFailures`
 [source,yaml]
 ----
-include::examples/generated/ispn-site-a.yaml[tag=infinispan-cache-loginFailures]
+include::../examples/generated/ispn-site-a.yaml[tag=infinispan-cache-loginFailures]
 ----
 +
 .Cache `work`
 [source,yaml]
 ----
-include::examples/generated/ispn-site-a.yaml[tag=infinispan-cache-work]
+include::../examples/generated/ispn-site-a.yaml[tag=infinispan-cache-work]
 ----
 <1> The transaction mode.
 <2> The locking mode used by the transaction.
@@ -256,7 +256,7 @@ For `{site-b}`, the `Cache` CR is similar, except for the `backups.<name>` outli
 .Example for `actionTokens` cache in `{site-b}`
 [source,yaml]
 ----
-include::examples/generated/ispn-site-b.yaml[tag=infinispan-cache-actionTokens]
+include::../examples/generated/ispn-site-b.yaml[tag=infinispan-cache-actionTokens]
 ----
 
 == Verifying the deployment
@@ -278,26 +278,26 @@ kubectl wait --for condition=CrossSiteViewFormed --timeout=300s infinispans.infi
 [#connecting-infinispan-to-keycloak]
 == Connecting {jdgserver_name} with {project_name}
 
-Now that the {jdgserver_name} server is running, here are the relevant {project_name} CR changes necessary to connect it to {project_name}. These changes will be required in the <@links.ha id="deploy-keycloak-kubernetes" /> {section}.
+Now that the {jdgserver_name} server is running, here are the relevant {project_name} CR changes necessary to connect it to {project_name}. These changes will be required in the <@links.ha id="multi-cluster-deploy-keycloak-kubernetes" /> {section}.
 
 . Create a Secret with the username and password to connect to the external {jdgserver_name} deployment:
 +
 [source,yaml]
 ----
-include::examples/generated/keycloak-ispn.yaml[tag=keycloak-ispn-secret]
+include::../examples/generated/keycloak-ispn.yaml[tag=keycloak-ispn-secret]
 ----
 
 . Extend the {project_name} Custom Resource with `additionalOptions` as shown below.
 +
 [NOTE]
 ====
-All the memory, resource and database configurations are skipped from the CR below as they have been described in the <@links.ha id="deploy-keycloak-kubernetes" /> {section} already.
+All the memory, resource and database configurations are skipped from the CR below as they have been described in the <@links.ha id="multi-cluster-deploy-keycloak-kubernetes" /> {section} already.
 Administrators should leave those configurations untouched.
 ====
 +
 [source,yaml]
 ----
-include::examples/generated/keycloak-ispn.yaml[tag=keycloak-ispn]
+include::../examples/generated/keycloak-ispn.yaml[tag=keycloak-ispn]
 ----
 <1> The hostname of the remote {jdgserver_name} cluster.
 <2> The port of the remote {jdgserver_name} cluster.
@@ -314,6 +314,6 @@ In other environments, add the necessary certificates to {project_name}'s trusts
 
 == Next steps
 
-After the Aurora AWS database and {jdgserver_name} are deployed and running, use the procedure in the <@links.ha id="deploy-keycloak-kubernetes" /> {section} to deploy {project_name} and connect it to all previously created building blocks.
+After the AWS Aurora database and {jdgserver_name} are deployed and running, use the procedure in the <@links.ha id="multi-cluster-deploy-keycloak-kubernetes" /> {section} to deploy {project_name} and connect it to all previously created building blocks.
 
 </@tmpl.guide>
