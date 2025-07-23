@@ -25,6 +25,7 @@ import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 
 import java.util.HashMap;
@@ -374,6 +375,20 @@ public class DefaultAuthenticationFlows {
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
 
+        AuthenticatorConfigModel configModel = new AuthenticatorConfigModel();
+        configModel.setAlias("browser-conditional-credential");
+        configModel.setConfig(Map.of("credentials", WebAuthnCredentialModel.TYPE_PASSWORDLESS));
+        configModel = realm.addAuthenticatorConfig(configModel);
+
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(conditionalOTP.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+        execution.setAuthenticator("conditional-credential");
+        execution.setPriority(20);
+        execution.setAuthenticatorFlow(false);
+        execution.setAuthenticatorConfig(configModel.getId());
+        realm.addAuthenticatorExecution(execution);
+
         // otp processing
         execution = new AuthenticationExecutionModel();
         execution.setParentFlow(conditionalOTP.getId());
@@ -382,7 +397,7 @@ public class DefaultAuthenticationFlows {
             execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
         }
         execution.setAuthenticator("auth-otp-form");
-        execution.setPriority(20);
+        execution.setPriority(30);
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
 
@@ -392,7 +407,7 @@ public class DefaultAuthenticationFlows {
             execution.setParentFlow(conditionalOTP.getId());
             execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
             execution.setAuthenticator("webauthn-authenticator");
-            execution.setPriority(30);
+            execution.setPriority(40);
             execution.setAuthenticatorFlow(false);
             realm.addAuthenticatorExecution(execution);
         }
@@ -403,7 +418,7 @@ public class DefaultAuthenticationFlows {
             execution.setParentFlow(conditionalOTP.getId());
             execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
             execution.setAuthenticator("auth-recovery-authn-code-form");
-            execution.setPriority(40);
+            execution.setPriority(50);
             execution.setAuthenticatorFlow(false);
             realm.addAuthenticatorExecution(execution);
         }
@@ -661,6 +676,20 @@ public class DefaultAuthenticationFlows {
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
 
+        AuthenticatorConfigModel configModel = new AuthenticatorConfigModel();
+        configModel.setAlias("first-broker-login-conditional-credential");
+        configModel.setConfig(Map.of("credentials", WebAuthnCredentialModel.TYPE_PASSWORDLESS));
+        configModel = realm.addAuthenticatorConfig(configModel);
+
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(conditionalOTP.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+        execution.setAuthenticator("conditional-credential");
+        execution.setPriority(20);
+        execution.setAuthenticatorFlow(false);
+        execution.setAuthenticatorConfig(configModel.getId());
+        realm.addAuthenticatorExecution(execution);
+
         execution = new AuthenticationExecutionModel();
         execution.setParentFlow(conditionalOTP.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
@@ -668,7 +697,7 @@ public class DefaultAuthenticationFlows {
             execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
         }
         execution.setAuthenticator("auth-otp-form");
-        execution.setPriority(20);
+        execution.setPriority(30);
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
 
@@ -678,7 +707,7 @@ public class DefaultAuthenticationFlows {
             execution.setParentFlow(conditionalOTP.getId());
             execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
             execution.setAuthenticator("webauthn-authenticator");
-            execution.setPriority(30);
+            execution.setPriority(40);
             execution.setAuthenticatorFlow(false);
             realm.addAuthenticatorExecution(execution);
         }
@@ -689,7 +718,7 @@ public class DefaultAuthenticationFlows {
             execution.setParentFlow(conditionalOTP.getId());
             execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
             execution.setAuthenticator("auth-recovery-authn-code-form");
-            execution.setPriority(40);
+            execution.setPriority(50);
             execution.setAuthenticatorFlow(false);
             realm.addAuthenticatorExecution(execution);
         }
@@ -757,7 +786,7 @@ public class DefaultAuthenticationFlows {
             execution.setParentFlow(flow.getId());
             execution.setRequirement(AuthenticationExecutionModel.Requirement.CONDITIONAL);
             execution.setFlowId(conditionalOrg.getId());
-            execution.setPriority(50);
+            execution.setPriority(60);
             execution.setAuthenticatorFlow(true);
             realm.addAuthenticatorExecution(execution);
 
