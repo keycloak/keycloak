@@ -101,21 +101,39 @@ public class PropertyMapper<T> {
     }
 
     /**
-     * This is the heart of the property mapping logic. In preference order we are looking for:
-     * <ul>
-     *   <li>the "from" value (the property is directly specified)
-     *   <li>the mapFrom (the property is inferred from another value)
-     *   <li>the default
-     * </ul>
+     * This is the heart of the property mapping logic. In the first step, we need to find the value of the property and then transform it into a form of our needs.
+     * <p>
      *
+     * <b>1. Find value</b>
      * <p>
-     * If we did not find a value, we simply move on in the interceptor chain.
+     * In preference order we are looking for:
+     * <pre>
+     *  [ {@link #from} ] ---> [ {@link #mapFrom} ] ---> [ default ] ---> [try other external]
+     * (explicit)     (derived)       (fallback)
+     * </pre>
+     * <ul>
+     *   <li>the {@link #from} value       (the property is directly specified)
+     *   <li>the {@link #mapFrom} value    (the property is inferred from another value)
+     *   <li>the default
+     *   <li>If we did not find a value, we simply move on in the interceptor chain.
+     * </ul>
      * <p>
-     * If we found a value, it needs to be transformed via {@link #transformValue(String, ConfigValue, ConfigSourceInterceptorContext, boolean)}. If the mapFrom value is being used or the name matches "to", the
-     * either the parentMapper (from {@link PropertyMapper.Builder} mapFrom methods), or the mapper (from {@link PropertyMapper.Builder} transformer methods) is applied.
+     *
+     * <b>2. Transform found value</b>
+     * <p>
+     * If we found a value for the attribute name, it needs to be transformed via {@link #transformValue} method. How to transform it?
+     * <pre>
+     * [ name = {@link #from} ? ] ---> [ name = {@link #to} ? ] ---> [ value from parent ? ]
+     *        | y                    | y                     | y
+     *        |                      |                       |
+     *      value            transform(value)      parent.transform(value)
+     * </pre>
+     * <ul>
+     *   <li>If the name matches {@link #to}, we use the {@link #mapper} from the {@link PropertyMapper.Builder#transformer} method.
+     *   <li>If we found the value on the parent side ({@link #mapFrom}), we use the {@link #parentMapper} specified either via {@link PropertyMapper.Builder#mapFrom(Option, ValueMapper)} method or parent's {@link PropertyMapper.Builder#transformer} method.
+     * </ul>
      * <p>
      * Finally the returned {@link ConfigValue} is made to match what was requested - with the name, value, rawValue, and ordinal set appropriately.
-     * <p>
      */
     ConfigValue getConfigValue(String name, ConfigSourceInterceptorContext context) {
         String from = getFrom();
