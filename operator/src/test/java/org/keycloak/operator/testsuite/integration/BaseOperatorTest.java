@@ -137,7 +137,7 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
 
     setDefaultAwaitilityTimings();
 
-    if (operatorDeployment == OperatorDeployment.local_apiserver) {
+    if (operatorDeployment == OperatorDeployment.local_apiserver && kubeApi == null) {
       kubeApi = new ApiServerHelper();
     }
 
@@ -486,10 +486,11 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
           k8sclient = null;
       }
 
-      if (kubeApi != null) {
+      // scope the api server to the entire test run
+      /*if (kubeApi != null) {
           kubeApi.stop();
           kubeApi = null;
-      }
+      }*/
   }
 
   private static void stopOperator() {
