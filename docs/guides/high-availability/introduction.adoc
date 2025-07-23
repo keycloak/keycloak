@@ -3,139 +3,57 @@
 <#import "/templates/profile.adoc" as profile>
 
 <@tmpl.guide
-title="Multi-site deployments"
-summary="Connect multiple {project_name} deployments in different sites to increase the overall availability." >
+title="High availability overview"
+summary="Explore the different {project_name} high-availability architectures" >
 
-{project_name} supports deployments that consist of multiple {project_name} instances that connect to each other using its Infinispan caches; load balancers can distribute the load evenly across those instances.
-Those setups are intended for a transparent network on a single site.
+{project_name} supports different high-availability architectures, allowing system administrators to pick the deployment type most suitable
+for their needs. Ease of deployment, cost and fault-tolerance guarantees are important considerations when determining the correct architecture
+for your deployments.
 
-The {project_name} high-availability guide goes one step further to describe setups across multiple sites.
-While this setup adds additional complexity, that extra amount of high availability may be needed for some environments.
+== Architectures
 
-== When to use a multi-site setup
+The following architectures are supported by {project_name}.
 
-The multi-site deployment capabilities of {project_name} are targeted at use cases that:
+=== Single cluster
 
-* Are constrained to a single
-<@profile.ifProduct>
-AWS Region.
-</@profile.ifProduct>
-<@profile.ifCommunity>
-AWS Region or an equivalent low-latency setup.
-</@profile.ifCommunity>
-* Permit planned outages for maintenance.
-* Fit within a defined user and request count.
-* Can accept the impact of periodic outages.
+Deploy {project_name} in a single cluster, optionally "stretched" across multiple availability-zones, using <@links.ha id="single-cluster-introduction" />.
 
-<@profile.ifCommunity>
-== Tested Configuration
+Advantages::
+* No external dependencies
+* Deployment in a single {kubernetes} cluster or a set of virtual machines with transparent networking
+* Tolerate availability-zone failures if deployed to multiple availability zones
 
-We regularly test {project_name} with the following configuration:
-</@profile.ifCommunity>
-<@profile.ifProduct>
-== Supported Configuration
-</@profile.ifProduct>
+Disadvantages::
+* {kubernetes} cluster is a single point of failure:
+** Control-plane failures could impact all {project_name} pods
 
-* Two Openshift single-AZ clusters, in the same AWS Region
-** Provisioned with https://www.redhat.com/en/technologies/cloud-computing/openshift/aws[Red Hat OpenShift Service on AWS] (ROSA),
-<@profile.ifProduct>
-either ROSA HCP or ROSA classic.
-</@profile.ifProduct>
-<@profile.ifCommunity>
-using ROSA HCP.
-</@profile.ifCommunity>
+=== Multi cluster
 
-** Each Openshift cluster has all its workers in a single Availability Zone.
-** OpenShift version
-<@profile.ifProduct>
-4.17 (or later).
-</@profile.ifProduct>
-<@profile.ifCommunity>
-4.17.
-</@profile.ifCommunity>
+Connect two {project_name} clusters deployed for example in different {kubernetes} clusters in two availability zones to increase availability using <@links.ha id="multi-cluster-introduction" />.
 
-* Amazon Aurora PostgreSQL database
-** High availability with a primary DB instance in one Availability Zone, and a synchronously replicated reader in the second Availability Zone
-** Version ${properties["aurora-postgresql.version"]}
-* AWS Global Accelerator, sending traffic to both ROSA clusters
-* AWS Lambda
-<@profile.ifCommunity>
-triggered by ROSA's Prometheus and Alert Manager
-</@profile.ifCommunity>
-to automate failover
+Advantages::
+* Tolerate availability-zone failure
+* Tolerate {kubernetes} cluster failure
+* Bridge two networks that do not offer transparent networking
+* Regulatory compliance when distinct deployments are required
 
-<@profile.ifProduct>
-Any deviation from the configuration above is not supported and any issue must be replicated in that environment for support.
-</@profile.ifProduct>
-<@profile.ifCommunity>
-While equivalent setups should work, you will need to verify the performance and failure behavior of your environment.
-We provide functional tests, failure tests and load tests in the https://github.com/keycloak/keycloak-benchmark[Keycloak Benchmark Project].
-</@profile.ifCommunity>
+Disadvantages::
+* Complexity:
+** External load-balancer required
+** Separate {jdgserver_name} cluster required on each site
+* Cost:
+** Additional load-balancer required
+** Additional compute is required for external {jdgserver_name} clusters
+** Two {kubernetes} control-planes must be provisioned
+* Not supported with three or more availability zones
 
-Read more on each item in the <@links.ha id="bblocks-multi-site" /> {section}.
+=== Next Steps
 
-<@profile.ifProduct>
-== Maximum load
-</@profile.ifProduct>
-<@profile.ifCommunity>
-== Tested load
-
-We regularly test {project_name} with the following load:
-</@profile.ifCommunity>
-
-* 100,000 users
-* 300 requests per second
+To learn more about the different high-availability architectures, please consult the individual guides.
 
 <@profile.ifCommunity>
-While we did not see a hard limit in our tests with these values, we ask you to test for higher volumes with horizontally and vertically scaled {project_name} name instances and databases.
-</@profile.ifCommunity>
-
-See the <@links.ha id="concepts-memory-and-cpu-sizing" /> {section} for more information.
-
-== Limitations
-
-<@profile.ifCommunity>
-Even with the additional redundancy of the two sites, downtimes can still occur:
-</@profile.ifCommunity>
-
-* During upgrades of {project_name} or {jdgserver_name} both sites needs to be taken offline for the duration of the upgrade.
-* During certain failure scenarios, there may be downtime of up to 5 minutes.
-* After certain failure scenarios, manual intervention may be required to restore redundancy by bringing the failed site back online.
-* During certain switchover scenarios, there may be downtime of up to 5 minutes.
-
-For more details on limitations see the <@links.ha id="concepts-multi-site" /> {section}.
-
-== Next steps
-
-The different {sections} introduce the necessary concepts and building blocks.
-For each building block, a blueprint shows how to set a fully functional example.
-Additional performance tuning and security hardening are still recommended when preparing a production setup.
-
-<@profile.ifCommunity>
-== Concept and building block overview
-
-* <@links.ha id="concepts-multi-site" />
-* <@links.ha id="bblocks-multi-site" />
-* <@links.ha id="concepts-database-connections" />
-* <@links.ha id="concepts-threads" />
-* <@links.ha id="concepts-memory-and-cpu-sizing" />
-* <@links.ha id="concepts-infinispan-cli-batch" />
-
-== Blueprints for building blocks
-
-* <@links.ha id="deploy-aurora-multi-az" />
-* <@links.ha id="deploy-infinispan-kubernetes-crossdc" />
-* <@links.ha id="deploy-keycloak-kubernetes" />
-* <@links.ha id="deploy-aws-accelerator-loadbalancer" />
-* <@links.ha id="deploy-aws-accelerator-fencing-lambda" />
-
-== Operational procedures
-
-* <@links.ha id="operate-synchronize" />
-* <@links.ha id="operate-site-offline" />
-* <@links.ha id="operate-site-online" />
-* <@links.ha id="health-checks-multi-site" />
-
+* <@links.ha id="single-cluster-introduction" />
+* <@links.ha id="multi-cluster-introduction" />
 </@profile.ifCommunity>
 
 </@tmpl.guide>

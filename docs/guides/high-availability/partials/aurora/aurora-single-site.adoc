@@ -1,0 +1,24 @@
+<#include "aurora-architecture.adoc" />
+
+[#${parent}-aurora-procedure]
+== Procedure
+
+The following procedure contains two sections:
+
+* Creation of an Aurora Multi-AZ database cluster with the name "keycloak-aurora" in eu-west-1.
+* Creation of a peering connection between the ROSA cluster(s) and the Aurora VPC to allow applications deployed on the ROSA clusters to establish connections with the database.
+
+[#${parent}-aurora-create]
+=== Create Aurora database Cluster
+
+include::../partials/aurora/aurora-multiaz-create-procedure.adoc[]
+
+[#${parent}-establish-peering-connection-with-rosa-cluster]
+=== Establish Peering Connection with ROSA cluster
+
+include::../partials/aurora/aurora-create-peering-connections.adoc[]
+
+[#${parent}-aurora-verify]
+== Verifying the connection
+
+include::../partials/aurora/aurora-verify-peering-connections.adoc[]
