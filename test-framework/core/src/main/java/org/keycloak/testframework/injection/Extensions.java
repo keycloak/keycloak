@@ -6,6 +6,7 @@ import org.keycloak.testframework.config.Config;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -71,7 +72,7 @@ public class Extensions {
             for (var supplier : extension.suppliers()) {
                 Class<?> valueType = supplier.getValueType();
                 String requestedSupplier = Config.getSelectedSupplier(valueType);
-                if (supplier.getAlias().equals(requestedSupplier) || (requestedSupplier == null && !loadedValueTypes.contains(valueType))) {
+                if (isSupplierIncluded(supplier) && (supplier.getAlias().equals(requestedSupplier) || (requestedSupplier == null && !loadedValueTypes.contains(valueType)))) {
                     configureSupplier(supplier);
                     suppliers.add(supplier);
                     loadedValueTypes.add(valueType);
@@ -84,6 +85,22 @@ public class Extensions {
         logger.logSuppliers(suppliers, skippedSuppliers);
 
         return suppliers;
+    }
+
+    private boolean isSupplierIncluded(Supplier<?, ?> supplier) {
+        String includedSuppliers = Config.getIncludedSuppliers(supplier.getValueType());
+        if (includedSuppliers != null) {
+            if (Arrays.stream(includedSuppliers.split(",")).noneMatch(s -> s.equals(supplier.getAlias()))) {
+                return false;
+            }
+        }
+
+        String excludedSuppliers = Config.getExcludedSuppliers(supplier.getValueType());
+        if (excludedSuppliers != null) {
+            return Arrays.stream(excludedSuppliers.split(",")).noneMatch(s -> s.equals(supplier.getAlias()));
+        }
+
+        return true;
     }
 
     private List<Class<?>> loadAlwaysEnabledValueTypes(List<TestFrameworkExtension> extensions) {
