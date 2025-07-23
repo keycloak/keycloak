@@ -108,32 +108,20 @@ public class PropertyMapper<T> {
      * <p>
      * In preference order we are looking for:
      * <pre>
-     *  [ {@link #from} ] ---> [ {@link #mapFrom} ] ---> [ default ] ---> [try other external]
-     * (explicit)     (derived)       (fallback)
+     *  [ {@link #from} ] ---> [ {@link #mapFrom} ] ---> [ {@link #getDefaultValue()} ] ---> [ directly retrieve `to` value if applicable ]
+     * (explicit)      (derived)        (fallback)
      * </pre>
-     * <ul>
-     *   <li>the {@link #from} value       (the property is directly specified)
-     *   <li>the {@link #mapFrom} value    (the property is inferred from another value)
-     *   <li>the default
-     *   <li>If we did not find a value, we simply move on in the interceptor chain.
-     * </ul>
      * <p>
      *
      * <b>2. Transform found value</b>
      * <p>
      * If we found a value for the attribute name, it needs to be transformed via {@link #transformValue} method. How to transform it?
-     * <pre>
-     * [ name = {@link #from} ? ] ---> [ name = {@link #to} ? ] ---> [ value from parent ? ]
-     *        | y                    | y                     | y
-     *        |                      |                       |
-     *      value            transform(value)      parent.transform(value)
-     * </pre>
      * <ul>
-     *   <li>If the name matches {@link #to}, we use the {@link #mapper} from the {@link PropertyMapper.Builder#transformer} method.
-     *   <li>If we found the value on the parent side ({@link #mapFrom}), we use the {@link #parentMapper} specified either via {@link PropertyMapper.Builder#mapFrom(Option, ValueMapper)} method or parent's {@link PropertyMapper.Builder#transformer} method.
+     *   <li>If the name matches {@link #from} or we using the {@link #mapFrom} value, then apply the {@link PropertyMapper.Builder#transformer} or the {@link PropertyMapper.Builder#mapFrom(Option, ValueMapper)}
+     *   <li>Check if the value may contain an expression and expand it using SmallRye logic
+     *   <li>Finally the returned {@link ConfigValue} is made to match what was requested - with the name, value, rawValue, and ordinal set appropriately.
      * </ul>
      * <p>
-     * Finally the returned {@link ConfigValue} is made to match what was requested - with the name, value, rawValue, and ordinal set appropriately.
      */
     ConfigValue getConfigValue(String name, ConfigSourceInterceptorContext context) {
         String from = getFrom();
@@ -161,7 +149,7 @@ public class PropertyMapper<T> {
                     context, false);
         }
 
-        if (config != null) {
+        if (config != null || name.equals(from)) {
             return config;
         }
 
