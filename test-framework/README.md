@@ -350,6 +350,7 @@ Valid values:
 | mssql    | Microsoft SQL Server test container     |
 | mysql    | MySQL test container                    |
 | postgres | PostgreSQL test container               |
+| tidb     | TiDb test container                     |
 
 Configuration:
 

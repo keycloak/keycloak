@@ -418,6 +418,29 @@
             </properties>
         </profile>
         <profile>
+            <id>db-tidb</id>
+            <properties>
+                <keycloak.storage.connections.vendor>mysql</keycloak.storage.connections.vendor>
+                <keycloak.connectionsJpa.driver>com.mysql.jdbc.Driver</keycloak.connectionsJpa.driver>
+                <keycloak.connectionsJpa.database>test</keycloak.connectionsJpa.database>
+                <keycloak.connectionsJpa.user>root</keycloak.connectionsJpa.user>
+                <keycloak.connectionsJpa.password></keycloak.connectionsJpa.password>
+                <keycloak.connectionsJpa.url>jdbc:mysql://${auth.server.db.host}:${docker.database.port}/${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.url>
+
+                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
+                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
+                <!-- for the particular EAP version -->
+                <jdbc.mvn.groupId>com.mysql</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>mysql-connector-j</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>${tidb-jdbc.version}</jdbc.mvn.version>
+                <docker.database.image>${tidb.container}</docker.database.image>
+                <docker.database.port>4000</docker.database.port>
+                <docker.database.skip>false</docker.database.skip>
+                <docker.database.cmd></docker.database.cmd>
+                <docker.database.wait-for-log-regex>server is running MySQL protocol</docker.database.wait-for-log-regex>
+            </properties>
+        </profile>
+        <profile>
             <id>db-postgres</id>
             <properties>
                 <keycloak.storage.connections.vendor>postgres</keycloak.storage.connections.vendor>
