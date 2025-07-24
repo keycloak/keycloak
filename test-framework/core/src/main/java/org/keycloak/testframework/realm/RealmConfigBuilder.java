@@ -4,6 +4,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
@@ -68,6 +69,18 @@ public class RealmConfigBuilder {
         GroupRepresentation group = new GroupRepresentation();
         rep.getGroups().add(group);
         return GroupConfigBuilder.update(group).name(name);
+    }
+
+    public RoleConfigBuilder addRole(String name) {
+        if (rep.getRoles() == null) {
+            rep.setRoles(new RolesRepresentation());
+        }
+        if (rep.getRoles().getRealm() == null) {
+            rep.getRoles().setRealm(new LinkedList<>());
+        }
+        RoleRepresentation role = new RoleRepresentation();
+        rep.getRoles().getRealm().add(role);
+        return RoleConfigBuilder.update(role).name(name);
     }
 
     public RealmConfigBuilder registrationEmailAsUsername(boolean registrationEmailAsUsername) {
