@@ -21,25 +21,11 @@ import java.io.File;
 import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import com.google.common.base.Suppliers;
-import io.agroal.api.AgroalDataSource;
-import io.quarkus.agroal.DataSource;
-import io.quarkus.arc.Arc;
-import io.quarkus.arc.InstanceHandle;
-import io.quarkus.hibernate.orm.runtime.integration.HibernateOrmIntegrationRuntimeInitListener;
-import io.quarkus.runtime.annotations.Recorder;
-import io.vertx.core.Handler;
-import io.vertx.ext.web.RoutingContext;
-import liquibase.Scope;
-import liquibase.servicelocator.ServiceLocator;
 import org.hibernate.cfg.AvailableSettings;
 import org.infinispan.protostream.SerializationContextInitializer;
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
@@ -51,11 +37,8 @@ import org.keycloak.marshalling.Marshalling;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
-import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
-import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
-import org.keycloak.quarkus.runtime.configuration.mappers.WildcardPropertyMapper;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.storage.database.liquibase.FastServiceLocator;
 import org.keycloak.representations.userprofile.config.UPConfig;
@@ -63,7 +46,16 @@ import org.keycloak.theme.ClasspathThemeProviderFactory;
 import org.keycloak.truststore.TruststoreBuilder;
 import org.keycloak.userprofile.DeclarativeUserProfileProviderFactory;
 
-import static org.keycloak.quarkus.runtime.storage.database.jpa.QuarkusJpaConnectionProviderFactory.DEFAULT_PERSISTENCE_UNIT;
+import io.agroal.api.AgroalDataSource;
+import io.quarkus.agroal.DataSource;
+import io.quarkus.arc.Arc;
+import io.quarkus.arc.InstanceHandle;
+import io.quarkus.hibernate.orm.runtime.integration.HibernateOrmIntegrationRuntimeInitListener;
+import io.quarkus.runtime.annotations.Recorder;
+import io.vertx.core.Handler;
+import io.vertx.ext.web.RoutingContext;
+import liquibase.Scope;
+import liquibase.servicelocator.ServiceLocator;
 
 @Recorder
 public class KeycloakRecorder {
@@ -84,50 +76,6 @@ public class KeycloakRecorder {
     // default handler for the management interface
     public Handler<RoutingContext> getManagementHandler() {
         return routingContext -> routingContext.response().end("Keycloak Management Interface");
-    }
-
-    public void validatePersistenceUnits(List<String> descriptors) {
-        if (descriptors.isEmpty()) {
-            return;
-        }
-
-        var dbKindMapper = DatabaseOptions.getKeyForDatasource(DatabaseOptions.DB)
-                .flatMap(key -> PropertyMappers.getWildcardMappers().stream().filter(f -> f.getOption().getKey().equals(key)).findAny())
-                .orElseThrow();
-
-        List<String> notSetPersistenceUnitsDBKinds = descriptors.stream()
-                .filter(descriptor -> findDbKind(dbKindMapper, descriptor).isEmpty()) // not provided
-                .map(descriptor -> DatabaseOptions.getNamedKey(DatabaseOptions.DB, descriptor).orElseThrow())
-                .toList();
-
-        if (!notSetPersistenceUnitsDBKinds.isEmpty()) {
-            throw new PropertyException("Detected additional named datasources. You need to explicitly set the DB kind for the datasource(s) to properly work as: %s".formatted(String.join(",", notSetPersistenceUnitsDBKinds)));
-        }
-    }
-
-    /**
-     * Try to find if DB kind is specified for the descriptor name.
-     * <p>
-     * Check it in order:
-     * <ol>
-     * <li> {@code db-kind-<descriptorName}
-     * <li> {@code quarkus.datasource."<descriptorName>".db-kind}
-     * <li> {@code quarkus.datasource.<descriptorName>.db-kind}
-     * </ol>
-     */
-    private Optional<String> findDbKind(WildcardPropertyMapper<?> mapper, String descriptorName) {
-        var from = Configuration.getOptionalValue(mapper.getFrom(descriptorName));
-
-        if (from.isPresent()) {
-            return from;
-        }
-        // quarkus properties
-        return Configuration.getOptionalValue(mapper.getTo(descriptorName))
-                .or(() -> Configuration.getOptionalValue(mapper.getTo(descriptorName).replaceAll("\"", "")))
-                .map(value -> {
-                    Logger.getLogger(KeycloakRecorder.class).warnf("You have set DB kind for '%s' datasource via Quarkus property. This approach is deprecated and you should use the Keycloak 'db-kind-%s' property.", descriptorName, descriptorName);
-                    return value;
-                });
     }
 
     public void configureTruststore() {

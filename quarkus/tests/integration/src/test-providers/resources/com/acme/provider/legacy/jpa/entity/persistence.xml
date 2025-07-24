@@ -20,12 +20,11 @@
              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
              xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
              version="3.0">
-    <persistence-unit name="user-store" transaction-type="JTA">
+    <persistence-unit name="new-user-store" transaction-type="JTA">
         <class>com.acme.provider.legacy.jpa.entity.Realm</class>
         <properties>
             <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect" />
-            <!-- Sets the name of the datasource to be the same as the datasource name in quarkus.properties-->
-            <property name="jakarta.persistence.jtaDataSource" value="user-store" />
+            <property name="jakarta.persistence.jtaDataSource" value="new-user-store" />
             <property name="hibernate.hbm2ddl.auto" value="update" />
             <property name="hibernate.show_sql" value="false" />
         </properties>
