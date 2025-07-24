@@ -1,8 +1,8 @@
 package org.keycloak.testframework.database;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jboss.logging.Logger;
 import org.testcontainers.containers.JdbcDatabaseContainer;
-import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.tidb.TiDBContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -14,7 +14,31 @@ class TiDBTestDatabase extends AbstractContainerTestDatabase {
 
     @Override
     public JdbcDatabaseContainer<?> createContainer() {
-        return new TiDBContainer(DockerImageName.parse(DatabaseProperties.getContainerImageName(NAME)).asCompatibleSubstituteFor(NAME));
+        return new TiDBContainer(DockerImageName.parse(DatabaseProperties.getContainerImageName(NAME)).asCompatibleSubstituteFor(NAME)){
+            @Override
+            public TiDBContainer withDatabaseName(String databaseName) {
+                if(StringUtils.equals(this.getDatabaseName(), databaseName)) {
+                    return this;
+                }
+                throw new UnsupportedOperationException("The TiDB docker image does not currently support this");
+            }
+
+            @Override
+            public TiDBContainer withUsername(String username) {
+                if(StringUtils.equals(this.getUsername(), username)) {
+                    return this;
+                }
+                throw new UnsupportedOperationException("The TiDB docker image does not currently support this");
+            }
+
+            @Override
+            public TiDBContainer withPassword(String password) {
+                if(StringUtils.equals(this.getPassword(), password)) {
+                    return this;
+                }
+                throw new UnsupportedOperationException("The TiDB docker image does not currently support this");
+            }
+        };
     }
 
     @Override
@@ -26,6 +50,7 @@ class TiDBTestDatabase extends AbstractContainerTestDatabase {
     public Logger getLogger() {
         return LOGGER;
     }
+
 
     @Override
     public String getDatabase() {
