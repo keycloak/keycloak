@@ -43,6 +43,7 @@ public final class QuarkusPropertiesConfigSource extends AbstractLocationConfigS
 
     private static final String FILE_NAME = "quarkus.properties";
     public static final String NAME = "KcQuarkusPropertiesConfigSource";
+    public static final int PROPERTIES_FILE_ORDINAL = KeycloakPropertiesConfigSource.PROPERTIES_FILE_ORDINAL-1;
 
     public static Path getConfigurationFile() {
         String homeDir = Environment.getHomeDir();
@@ -77,7 +78,7 @@ public final class QuarkusPropertiesConfigSource extends AbstractLocationConfigS
         Path configFile = getConfigurationFile();
 
         if (configFile != null) {
-            configSources.addAll(loadConfigSources(configFile.toUri().toString(), KeycloakPropertiesConfigSource.PROPERTIES_FILE_ORDINAL, classLoader));
+            configSources.addAll(loadConfigSources(configFile.toUri().toString(), PROPERTIES_FILE_ORDINAL, classLoader));
         }
 
         return configSources;

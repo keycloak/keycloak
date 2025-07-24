@@ -19,6 +19,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.quarkus.runtime.configuration.IgnoredArtifacts.JDBC_H2;
 
 public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
 
@@ -30,6 +31,7 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         assertConfig("db-kind-default", "mariadb");
         assertConfig("db", "postgres");
         assertExternalConfig("quarkus.datasource.\"default\".db-kind", "mariadb");
+        assertExternalConfig("quarkus.datasource.default.db-kind", "mariadb");
         assertExternalConfig("quarkus.datasource.db-kind", "postgresql");
 
         onAfter();
@@ -40,6 +42,7 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         // KC value is present as CLI is available data source
         assertConfig("db-kind-some<other>datasource", "mssql");
         assertExternalConfigNull("quarkus.datasource.\"some<other>datasource\".db-kind");
+        assertExternalConfigNull("quarkus.datasource.some<other>datasource.db-kind");
     }
 
     @Test
@@ -50,6 +53,7 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
 
         assertConfig("db-dialect-user-store", MariaDBDialect.class.getName());
         assertExternalConfig("quarkus.datasource.\"user-store\".jdbc.url", "jdbc:mariadb://localhost/keycloak");
+        assertExternalConfig("quarkus.datasource.user-store.jdbc.url", "jdbc:mariadb://localhost/keycloak");
     }
 
     @Test
@@ -64,9 +68,13 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         assertConfig("db-kind-user-store", "mssql");
         assertExternalConfig(Map.of(
                 "quarkus.datasource.\"user-store\".jdbc.url", "jdbc:sqlserver://localhost/keycloak",
+                "quarkus.datasource.user-store.jdbc.url", "jdbc:sqlserver://localhost/keycloak",
                 "quarkus.datasource.\"user-store\".db-kind", "mssql",
+                "quarkus.datasource.user-store.db-kind", "mssql",
                 "quarkus.datasource.\"user-store\".jdbc.driver", "com.microsoft.sqlserver.jdbc.SQLServerDriver",
-                "quarkus.datasource.\"user-store\".jdbc.transactions", "enabled")
+                "quarkus.datasource.user-store.jdbc.driver", "com.microsoft.sqlserver.jdbc.SQLServerDriver",
+                "quarkus.datasource.\"user-store\".jdbc.transactions", "enabled",
+                "quarkus.datasource.user-store.jdbc.transactions", "enabled")
         );
     }
 
@@ -433,7 +441,9 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
 
         assertExternalConfig(Map.of(
                 "quarkus.datasource.\"user_store$something\".db-kind", "mariadb",
-                "quarkus.datasource.\"client.store_123\".password", "password"
+                "quarkus.datasource.user_store$something.db-kind", "mariadb",
+                "quarkus.datasource.\"client.store_123\".password", "password",
+                "quarkus.datasource.client.store_123.password", "password"
         ));
     }
 
@@ -456,6 +466,21 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
                 "db-kind-my-store", "dev-mem",
                 "db-debug-jpql-my-store", "true",
                 "db-log-slow-queries-threshold-my-store","5000"
+        ));
+    }
+
+    @Test
+    public void quarkusPropertiesHandling() {
+        initConfig();
+
+        assertConfig("db-kind-dog-store", "dev-file");
+        assertConfig("db-kind-cat-store", "dev-file");
+
+        assertExternalConfig(Map.of(
+                "quarkus.datasource.dog-store.db-kind", "mariadb",
+                "quarkus.datasource.\"dog-store\".db-kind", "mariadb",
+                "quarkus.datasource.cat-store.db-kind", "postgresql",
+                "quarkus.datasource.\"cat-store\".db-kind", "postgresql"
         ));
     }
 }

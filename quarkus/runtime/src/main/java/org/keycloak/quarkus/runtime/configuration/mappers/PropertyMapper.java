@@ -20,6 +20,7 @@ import static java.util.Optional.ofNullable;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.toCliFormat;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.toEnvVarFormat;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_QUARKUS_PREFIX;
 
 import java.util.Iterator;
 import java.util.List;
@@ -42,6 +43,7 @@ import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.KcEnvConfigSource;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.quarkus.runtime.configuration.NestedPropertyMappingInterceptor;
+import org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource;
 import org.keycloak.utils.StringUtil;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
@@ -120,6 +122,21 @@ public class PropertyMapper<T> {
         if (config != null && config.getValue() != null) {
             config = transformValue(name, config, context, parentValue);
         } else {
+            if (name.startsWith(NS_QUARKUS_PREFIX)) {
+                var unquotedTo = getTo().replaceAll("\"", "");
+                if (name.equals(getTo()) || name.equals(unquotedTo)) {
+                    config = context.proceed(getTo());
+                    if (isValidAndFromQuarkusProperties(config)) {
+                        return config;
+                    } else {
+                        config = context.proceed(unquotedTo);
+                        if (isValidAndFromQuarkusProperties(config)) {
+                            return config;
+                        }
+                    }
+                }
+            }
+
             String defaultValue = this.option.getDefaultValue().map(Option::getDefaultValueString).orElse(null);
             config = transformValue(name, new ConfigValueBuilder().withName(name)
                     .withValue(defaultValue).withRawValue(defaultValue).build(),
@@ -132,6 +149,10 @@ public class PropertyMapper<T> {
 
         // now try any defaults from quarkus
         return context.proceed(name);
+    }
+
+    private static boolean isValidAndFromQuarkusProperties(ConfigValue config) {
+        return config != null && config.getValue() != null && config.getConfigSourceOrdinal() == QuarkusPropertiesConfigSource.PROPERTIES_FILE_ORDINAL;
     }
 
     public Option<T> getOption() {

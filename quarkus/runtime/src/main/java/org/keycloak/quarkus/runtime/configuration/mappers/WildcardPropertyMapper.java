@@ -101,8 +101,15 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
         if (key.startsWith(fromPrefix)) {
             result = key.substring(fromPrefix.length());
         } else if (key.startsWith(toPrefix) && key.endsWith(toSuffix)) {
-            // TODO: this presumes that the quarkus value is quoted
+            // this presumes that the quarkus value is quoted
             result = key.substring(toPrefix.length(), key.length() - toSuffix.length());
+        } else if (toPrefix.endsWith("\"") && toSuffix.startsWith("\"")) {
+            // this checks unquoted properties
+            String unquotedToPrefix = toPrefix.replaceAll("\"", "");
+            String unquotedToSuffix = toSuffix.replaceAll("\"", "");
+            if (key.startsWith(unquotedToPrefix) && key.endsWith(unquotedToSuffix)) {
+                result = key.substring(unquotedToPrefix.length(), key.length() - unquotedToSuffix.length());
+            }
         }
         // TODO: it would be nice to warn the user for property file or env entries that look
         // like they should be wildcards, but aren't allowed
