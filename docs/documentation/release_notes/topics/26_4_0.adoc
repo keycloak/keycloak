@@ -20,3 +20,18 @@ You can now add context information to each log message like the realm or the cl
 This helps you to track down a warning or error message in the log to a specific caller or environment
 
 For more details on this opt-in feature, see the https://www.keycloak.org/server/logging[Logging guide].
+
+= Organization invitation management
+
+Organization administrators can now manage organization invitations through both the Admin Console and REST API:
+
+* View all sent invitations with their current status (Pending, Expired)
+* Resend pending invitations to recipients
+* Delete invitation records from the system
+* Filter invitations by status for easier management
+
+All invitations are now persistently stored in the database, providing better tracking and management capabilities.
+
+The invitation management features are available in the *Invitations* tab when managing an organization in the Admin Console, and through the Organizations REST API endpoints under `/admin/realms/{realm}/orgs/{orgId}/invitations`.
+
+For more information, see the link:{adminguide_link}#managing-organization-members_[Managing organization members] chapter in the {adminguide_name}.
