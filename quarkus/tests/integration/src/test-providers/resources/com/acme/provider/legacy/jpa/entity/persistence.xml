@@ -30,4 +30,10 @@
             <property name="hibernate.show_sql" value="false" />
         </properties>
     </persistence-unit>
+
+    <persistence-unit name="client-store" transaction-type="JTA">
+        <properties>
+            <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect" />
+        </properties>
+    </persistence-unit>
 </persistence>

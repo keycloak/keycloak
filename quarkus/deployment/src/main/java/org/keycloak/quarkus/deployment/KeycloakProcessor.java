@@ -106,6 +106,7 @@ import org.keycloak.provider.Spi;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakRecorder;
 import org.keycloak.quarkus.runtime.cli.Picocli;
+import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
@@ -170,6 +171,7 @@ import static org.keycloak.quarkus.runtime.configuration.Configuration.getOption
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalValue;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
+import static org.keycloak.quarkus.runtime.storage.database.jpa.QuarkusJpaConnectionProviderFactory.DEFAULT_PERSISTENCE_UNIT;
 import static org.keycloak.quarkus.runtime.storage.database.jpa.QuarkusJpaConnectionProviderFactory.QUERY_PROPERTY_PREFIX;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.AUTHENTICATORS;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.MAPPERS;
@@ -369,6 +371,18 @@ class KeycloakProcessor {
         recorder.setDefaultUserProfileConfiguration(configuration.getDefaultConfig());
     }
 
+    @BuildStep
+    @Record(ExecutionTime.RUNTIME_INIT)
+    @Produce(ValidatePersistenceUnitsBuildItem.class)
+    void checkPersistenceUnits(KeycloakRecorder recorder, List<PersistenceXmlDescriptorBuildItem> descriptors) {
+        var descriptorsNames = descriptors.stream()
+                .map(PersistenceXmlDescriptorBuildItem::getDescriptor)
+                .filter(descriptor -> !descriptor.getName().equals(DEFAULT_PERSISTENCE_UNIT)) // not default persistence unit
+                .map(KeycloakProcessor::getDatasourceNameFromPersistenceXml)
+                .toList();
+        recorder.validatePersistenceUnits(descriptorsNames);
+    }
+
     /**
      * Get datasource name obtained from the persistence.xml file based on this order:
      * <ol>
@@ -422,6 +436,7 @@ class KeycloakProcessor {
      * @param descriptors
      */
     @BuildStep
+    @Consume(ValidatePersistenceUnitsBuildItem.class)
     @Record(ExecutionTime.RUNTIME_INIT)
     void configurePersistenceUnits(HibernateOrmConfig config,
             List<PersistenceXmlDescriptorBuildItem> descriptors,
@@ -436,7 +451,7 @@ class KeycloakProcessor {
         for (PersistenceXmlDescriptorBuildItem item : descriptors) {
             ParsedPersistenceXmlDescriptor descriptor = (ParsedPersistenceXmlDescriptor) item.getDescriptor();
 
-            if ("keycloak-default".equals(descriptor.getName())) {
+            if (DEFAULT_PERSISTENCE_UNIT.equals(descriptor.getName())) {
                 defaultUnitDescriptor = descriptor;
                 configureDefaultPersistenceUnitProperties(defaultUnitDescriptor, config, getDefaultDataSource(jdbcDataSources));
                 runtimeConfigured.produce(new HibernateOrmIntegrationRuntimeConfiguredBuildItem("keycloak", defaultUnitDescriptor.getName())
@@ -626,7 +641,7 @@ class KeycloakProcessor {
         descriptors.stream()
                 .map(PersistenceXmlDescriptorBuildItem::getDescriptor)
                 .map(PersistenceUnitDescriptor::getName)
-                .filter(Predicate.not("keycloak-default"::equals))
+                .filter(Predicate.not(DEFAULT_PERSISTENCE_UNIT::equals))
                 .forEach((String unitName) -> {
                     NamedJpaConnectionProviderFactory factory = new NamedJpaConnectionProviderFactory();
 
