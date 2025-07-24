@@ -30,6 +30,7 @@ import io.quarkus.arc.Arc;
 import io.quarkus.arc.InstanceHandle;
 import io.quarkus.hibernate.orm.runtime.integration.HibernateOrmIntegrationRuntimeInitListener;
 import io.quarkus.runtime.annotations.Recorder;
+import io.quarkus.smallrye.health.runtime.SmallRyeReadinessHandler;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
 import liquibase.Scope;
@@ -65,6 +66,10 @@ public class KeycloakRecorder {
 
     public void configureProfile(Profile.ProfileName profileName, Map<Profile.Feature, Boolean> features) {
         Profile.init(profileName, features);
+    }
+
+    public Handler<RoutingContext> getMainReadinessHandler() {
+        return new SmallRyeReadinessHandler();
     }
 
     // default handler for redirecting to specific path

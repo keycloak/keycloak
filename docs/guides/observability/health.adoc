@@ -11,6 +11,8 @@ includedOptions="health-enabled">
 {project_name} has built in support for health checks. This {section} describes how to enable and use the {project_name} health checks.
 The {project_name} health checks are exposed on the management port `9000` by default. For more details, see <@links.server id="management-interface" />
 
+You may also access the `/health/ready` endpoint on the main HTTP or HTTPS port, but only when using a client making a connection from the localhost.
+
 == {project_name} health check endpoints
 
 {project_name} exposes 4 health endpoints:
