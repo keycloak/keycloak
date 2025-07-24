@@ -45,8 +45,8 @@
 
         <asciidoctor.plugin.version>1.5.8</asciidoctor.plugin.version>
 
-        <quarkus.version>3.24.4</quarkus.version>
-        <quarkus.build.version>3.24.4</quarkus.build.version>
+        <quarkus.version>3.24.5</quarkus.version>
+        <quarkus.build.version>3.24.5</quarkus.build.version>
         <jboss-logging-annotations.version>3.0.4.Final</jboss-logging-annotations.version> <!-- keep in sync with the version used by quarkus -->
 
         <project.build-time>${timestamp}</project.build-time>
