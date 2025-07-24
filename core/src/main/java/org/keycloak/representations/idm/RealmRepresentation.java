@@ -158,6 +158,20 @@ public class RealmRepresentation {
     protected List<String> webAuthnPolicyPasswordlessExtraOrigins;
     protected Boolean webAuthnPolicyPasswordlessPasskeysEnabled;
 
+    //OpenId Federation
+    private Boolean openIdFederationEnabled;
+    private String openIdFederationOrganizationName;
+    private List<String> openIdFederationContacts;
+    private String openIdFederationLogoUri;
+    private String openIdFederationPolicyUri;
+    private String openIdFederationOrganizationUri;
+    private List<String> openIdFederationAuthorityHints;
+    private Integer openIdFederationLifespan;
+    private String openIdFederationResolveEndpoint;
+    private String openIdFederationHistoricalKeysEndpoint;
+    private List<OpenIdFederationRepresentation> openIdFederationList;
+
+
     // Client Policies/Profiles
 
     @JsonProperty("clientProfiles")
@@ -1270,6 +1284,95 @@ public class RealmRepresentation {
 
     public void setWebAuthnPolicyPasswordlessPasskeysEnabled(Boolean webAuthnPolicyPasswordlessPasskeysEnabled) {
         this.webAuthnPolicyPasswordlessPasskeysEnabled = webAuthnPolicyPasswordlessPasskeysEnabled;
+    }
+    
+    //OpenId Federation
+    public Boolean getOpenIdFederationEnabled() {
+        return openIdFederationEnabled;
+    }
+
+    public void setOpenIdFederationEnabled(Boolean openIdFederationEnabled) {
+        this.openIdFederationEnabled = openIdFederationEnabled;
+    }
+
+    public String getOpenIdFederationOrganizationName() {
+        return openIdFederationOrganizationName;
+    }
+
+    public List<String> getOpenIdFederationContacts() {
+        return openIdFederationContacts;
+    }
+
+    public void setOpenIdFederationContacts(List<String> openIdFederationContacts) {
+        this.openIdFederationContacts = openIdFederationContacts;
+    }
+
+    public String getOpenIdFederationLogoUri() {
+        return openIdFederationLogoUri;
+    }
+
+    public void setOpenIdFederationLogoUri(String openIdFederationLogoUri) {
+        this.openIdFederationLogoUri = openIdFederationLogoUri;
+    }
+
+    public String getOpenIdFederationPolicyUri() {
+        return openIdFederationPolicyUri;
+    }
+
+    public void setOpenIdFederationPolicyUri(String openIdFederationPolicyUri) {
+        this.openIdFederationPolicyUri = openIdFederationPolicyUri;
+    }
+
+    public String getOpenIdFederationOrganizationUri() {
+        return openIdFederationOrganizationUri;
+    }
+
+    public void setOpenIdFederationOrganizationUri(String openIdFederationOrganizationUri) {
+        this.openIdFederationOrganizationUri = openIdFederationOrganizationUri;
+    }
+
+    public void setOpenIdFederationOrganizationName(String openIdFederationOrganizationName) {
+        this.openIdFederationOrganizationName = openIdFederationOrganizationName;
+    }
+
+    public List<String> getOpenIdFederationAuthorityHints() {
+        return openIdFederationAuthorityHints;
+    }
+
+    public void setOpenIdFederationAuthorityHints(List<String> openIdFederationAuthorityHints) {
+        this.openIdFederationAuthorityHints = openIdFederationAuthorityHints;
+    }
+
+    public Integer getOpenIdFederationLifespan() {
+        return openIdFederationLifespan;
+    }
+
+    public void setOpenIdFederationLifespan(Integer openIdFederationLifespan) {
+        this.openIdFederationLifespan = openIdFederationLifespan;
+    }
+
+    public String getOpenIdFederationResolveEndpoint() {
+        return openIdFederationResolveEndpoint;
+    }
+
+    public void setOpenIdFederationResolveEndpoint(String openIdFederationResolveEndpoint) {
+        this.openIdFederationResolveEndpoint = openIdFederationResolveEndpoint;
+    }
+
+    public String getOpenIdFederationHistoricalKeysEndpoint() {
+        return openIdFederationHistoricalKeysEndpoint;
+    }
+
+    public void setOpenIdFederationHistoricalKeysEndpoint(String openIdFederationHistoricalKeysEndpoint) {
+        this.openIdFederationHistoricalKeysEndpoint = openIdFederationHistoricalKeysEndpoint;
+    }
+
+    public List<OpenIdFederationRepresentation> getOpenIdFederationList() {
+        return openIdFederationList;
+    }
+
+    public void setOpenIdFederationList(List<OpenIdFederationRepresentation> openIdFederationList) {
+        this.openIdFederationList = openIdFederationList;
     }
 
     // Client Policies/Profiles
