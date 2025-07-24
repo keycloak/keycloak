@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 public class UserConfigBuilder {
 
@@ -79,6 +80,11 @@ public class UserConfigBuilder {
             rep.getClientRoles().put(client, new LinkedList<>());
         }
         rep.getClientRoles().get(client).addAll(List.of(roles));
+        return this;
+    }
+
+    public UserConfigBuilder requiredActions(String... requiredActions) {
+        rep.setRequiredActions(Collections.combine(rep.getRequiredActions(), requiredActions));
         return this;
     }
 

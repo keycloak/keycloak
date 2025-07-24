@@ -2,9 +2,11 @@ package org.keycloak.testframework.realm;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 class Collections {
@@ -49,6 +51,20 @@ class Collections {
 
     static <K, V> Map<K, List<V>> combine(Map<K, List<V>> m1, K key, Stream<V> values) {
         return combine(m1, Map.of(key, values.toList()));
+    }
+
+    static <T> Set<T> combine(Set<T> l1, Set<T> l2) {
+        if (l1 == null) {
+            return new HashSet<>(l2);
+        } else {
+            l1.addAll(l2);
+            return l1;
+        }
+    }
+
+    @SafeVarargs
+    static <V> Set<V> combine(Set<V> l1, V... values) {
+        return combine(l1, Set.of(values));
     }
 
 }

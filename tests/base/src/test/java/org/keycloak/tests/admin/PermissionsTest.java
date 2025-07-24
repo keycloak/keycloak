@@ -50,7 +50,7 @@ import org.keycloak.tests.utils.admin.ApiUtil;
 import org.keycloak.testsuite.util.CredentialBuilder;
 import org.keycloak.testsuite.util.FederatedIdentityBuilder;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
-import org.keycloak.testsuite.util.RoleBuilder;
+import org.keycloak.testframework.realm.RoleConfigBuilder;
 
 import java.util.List;
 import java.util.Map;
@@ -290,7 +290,7 @@ public class PermissionsTest extends AbstractPermissionsTest {
 
     @Test
     public void roles() {
-        RoleRepresentation newRole = RoleBuilder.create().name("sample-role").build();
+        RoleRepresentation newRole = RoleConfigBuilder.create().name("sample-role").build();
         managedRealm1.admin().roles().create(newRole);
         managedRealm1.cleanup().add(r -> r.roles().deleteRole("sample-role"));
 
@@ -320,7 +320,7 @@ public class PermissionsTest extends AbstractPermissionsTest {
 
     @Test
     public void rolesById() {
-        RoleRepresentation newRole = RoleBuilder.create().name("role-by-id").build();
+        RoleRepresentation newRole = RoleConfigBuilder.create().name("role-by-id").build();
         managedRealm1.admin().roles().create(newRole);
         RoleRepresentation role = managedRealm1.admin().roles().get("role-by-id").toRepresentation();
         managedRealm1.cleanup().add(r -> r.roles().deleteRole("role-by-id"));
