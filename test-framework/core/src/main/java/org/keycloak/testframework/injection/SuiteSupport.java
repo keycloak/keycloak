@@ -15,6 +15,7 @@ public class SuiteSupport {
     public static void stopSuite() {
         SuiteConfigSource.clear();
         Config.initConfig();
+        Extensions.reset();
         suiteConfig = null;
     }
 
