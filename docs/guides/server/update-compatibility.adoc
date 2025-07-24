@@ -159,7 +159,9 @@ Changing the following features versions triggers a recreate update:
 
 Changing the value of one of the following CLI options triggers a recreate update:
 
-[cols="30%,70%"]
+[caption=]
+.Cache
+[cols="30%,70%", options="header"]
 |===
 | Option                          | Rationale
 | `--cache`                       | The `ispn` and `local` configurations are mutually exclusive, changing from one to another will lead to data loss.
@@ -175,6 +177,25 @@ Changing the value of one of the following CLI options triggers a recreate updat
 {project_name} does not verify changes to the content of the cache configuration file provided via `--cache-config-file`.
 If you change this file, you need to review and test your changes to ensure that nodes using the new configuration can form a cluster with the nodes running the old configuration.
 If a cluster cannot be formed, you should shut down {project_name} running the old configuration first before migrating to the new configuration.
+====
+
+[caption=]
+.Database
+[cols="30%,70%", options="header"]
+|===
+| Option              | Rationale
+| `--db`              | Migration to a new database vendor should be applied to all cluster members to ensure data consistency.
+| `--db-schema`       | Migration to a new database schema should be applied to all cluster members to ensure data consistency.
+| `--db-url-database` | Migration to a new database name should be applied to all cluster members to ensure data consistency.
+| `--db-url-host`     | All cluster members should be connecting to the same database to ensure data consistency.
+| `--db-url-port`     | All cluster members should be connecting to the same database to ensure data consistency.
+|===
+
+[WARNING]
+====
+{project_name} allows changes to the `--db-url` option to be rolled out in order to facilitate changes to JDBC properties.
+Great care should be taken when updating this value as changes to the host, port or database name could lead to distinct
+cluster members connecting to a different database, resulting in data consistency issues.
 ====
 
 [[rolling-updates-for-patch-releases]]
