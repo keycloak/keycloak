@@ -219,7 +219,10 @@ public final class JGroupsConfigurator {
                     "delete_single_sql", String.format("DELETE from %s WHERE address=?", tableName),
                     "insert_single_sql", String.format("INSERT INTO %s values (?, ?, ?, ?, ?)", tableName),
                     "select_all_pingdata_sql", String.format("SELECT address, name, ip, coord FROM %s WHERE cluster_name=?", tableName),
+                    // This guarantees cleanup of stale data
                     "remove_all_data_on_view_change", "true",
+                    // This guarantees that merging happens even after the info writer completed
+                    "write_data_on_find", "true",
                     "register_shutdown_hook", "false",
                     "stack.combine", "REPLACE",
                     "stack.position", udp ? "PING" : "MPING"
