@@ -782,16 +782,20 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         oauth.client("resource-owner-refresh", "secret");
         AccessTokenResponse response = oauth.doPasswordGrantRequest("service-account-resource-owner", "password");
 
-        assertEquals(400, response.getStatusCode());
-        assertEquals(AuthenticationFlowError.UNKNOWN_USER.name(), response.getError());
-        assertEquals("Cannot find user (Unknown user)", response.getErrorDescription());
+        assertEquals(401, response.getStatusCode());
+        assertEquals("invalid_grant", response.getError());
+        assertEquals("Invalid user credentials", response.getErrorDescription());
+
         events.expectLogin()
                 .client("resource-owner-refresh")
-                .user((String) null)
                 .session((String) null)
-                .detail(Details.REASON, "Cannot find user (Unknown user)")
-                .error(Errors.USER_NOT_FOUND)
-                .clearDetails()
+                .user((String) null)
+                .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
+                .detail(Details.REASON, "User is a service account")
+                .removeDetail(Details.CODE_ID)
+                .removeDetail(Details.REDIRECT_URI)
+                .removeDetail(Details.CONSENT)
+                .error(Errors.INVALID_USER)
                 .assertEvent();
 
         ClientManager.realm(adminClient.realm("test")).clientId("resource-owner").setServiceAccountsEnabled(false);

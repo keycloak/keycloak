@@ -24,7 +24,6 @@ import org.jboss.logging.Logger;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.authentication.AuthenticationFlowException;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -112,16 +111,7 @@ public class ResourceOwnerPasswordCredentialsGrantType extends OAuth2GrantTypeBa
                 .setSession(session)
                 .setUriInfo(session.getContext().getUri())
                 .setRequest(request);
-        Response challenge = null;
-        try {
-            challenge = processor.authenticateOnly();
-        } catch (AuthenticationFlowException afe) {
-            new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authSession, false);
-            String errorMessage = "Cannot find user (Unknown user)";
-            event.detail(Details.REASON, errorMessage);
-            event.error(Errors.USER_NOT_FOUND);
-            throw new CorsErrorResponseException(cors, afe.getError().name(), errorMessage, Response.Status.BAD_REQUEST);
-        }
+        Response challenge = processor.authenticateOnly();
         if (challenge != null) {
             // Remove authentication session as "Resource Owner Password Credentials Grant" is single-request scoped authentication
             new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authSession, false);
