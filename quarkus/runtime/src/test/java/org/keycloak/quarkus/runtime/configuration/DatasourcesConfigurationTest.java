@@ -3,22 +3,30 @@ package org.keycloak.quarkus.runtime.configuration;
 import io.smallrye.config.Expressions;
 import io.smallrye.config.SmallRyeConfig;
 import org.h2.jdbcx.JdbcDataSource;
+import org.hamcrest.CoreMatchers;
 import org.hibernate.dialect.H2Dialect;
 import org.hibernate.dialect.MariaDBDialect;
 import org.hibernate.dialect.PostgreSQLDialect;
 import org.junit.Test;
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.mariadb.jdbc.MariaDbDataSource;
 import org.postgresql.xa.PGXADataSource;
 
+import java.util.List;
 import java.util.Map;
+import java.util.stream.StreamSupport;
 
 import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_QUARKUS;
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_QUARKUS_PREFIX;
 
 public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
 
@@ -457,5 +465,27 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
                 "db-debug-jpql-my-store", "true",
                 "db-log-slow-queries-threshold-my-store","5000"
         ));
+    }
+
+    @Test
+    public void propagatedPropertyNames() {
+        ConfigArgsConfigSource.setCliArgs("--db-kind-user-store=mysql");
+
+        var config = createConfig();
+        Iterable<String> propertyNames = config.getPropertyNames();
+
+        assertThat(propertyNames, hasItems(
+                "kc.db-kind-user-store",
+                "quarkus.datasource.\"user-store\".db-kind",
+                "quarkus.datasource.\"user-store\".jdbc.url",
+                "quarkus.datasource.\"user-store\".jdbc.transactions"
+        ));
+
+        assertThat(propertyNames, not(hasItems(
+                "kc.db-dialect-user-store",
+                "quarkus.datasource.\"user-store\".username",
+                "quarkus.datasource.\"user-store\".password",
+                "quarkus.datasource.\"user-store\".jdbc.driver"
+        )));
     }
 }
