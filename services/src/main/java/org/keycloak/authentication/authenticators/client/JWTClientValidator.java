@@ -116,6 +116,13 @@ public class JWTClientValidator {
 
         jws = new JWSInput(clientAssertion);
         token = jws.readJsonContent(JsonWebToken.class);
+
+        var event = context.getEvent();
+        if (token != null && event != null) {
+            event.detail("client_assertion_jti", token.getId());
+            event.detail("client_assertion_issuer", token.getIssuer());
+            event.detail("client_assertion_subject", token.getSubject());
+        }
     }
 
     public boolean validateClient() {
