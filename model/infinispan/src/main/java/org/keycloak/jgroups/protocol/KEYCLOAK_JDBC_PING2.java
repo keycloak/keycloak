@@ -67,8 +67,14 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
                     startInfoWriter();
                 }
             }
-        } else if (coord_changed) { // I'm no longer the coordinator
-            remove(cluster_name, local_addr);
+        } else if (coord_changed && !remove_all_data_on_view_change) {
+            // I'm no longer the coordinator, usually due to a merge.
+            // The new coordinator will update my status to non-coordinator, and remove me fully
+            // if 'remove_all_data_on_view_change' is enabled and I'm no longer part of the view.
+            // Maybe this branch even be removed completely, but for JDBC_PING 'remove_all_data_on_view_change' is always set to true.
+            PhysicalAddress physical_addr = (PhysicalAddress) down(new Event(Event.GET_PHYSICAL_ADDRESS, local_addr));
+            PingData coord_data = new PingData(local_addr, true, NameCache.get(local_addr), physical_addr).coord(is_coord);
+            write(Collections.singletonList(coord_data), cluster_name);
         }
     }
 
@@ -84,6 +90,7 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
             for (PingData data : list) {
                 Address addr = data.getAddress();
                 if (view != null && !view.containsMember(addr)) {
+                    addDiscoveryResponseToCaches(addr, data.getLogicalName(), data.getPhysicalAddr());
                     remove(cluster_name, addr);
                 }
             }
@@ -107,12 +114,32 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
     }
 
     @Override
+    public synchronized boolean isInfoWriterRunning() {
+        // Do not rely on the InfoWriter, instead always write the missing information on find if it is missing. Find is also triggered by MERGE.
+        return false;
+    }
+
+    @Override
     public void findMembers(List<Address> members, boolean initial_discovery, Responses responses) {
-        // Insert ourselves before reading, to ensure that concurrently starting nodes see each other.
-        // Also re-add ourselves in case the coordinator removed us.
-        PhysicalAddress physical_addr = (PhysicalAddress) down(new Event(Event.GET_PHYSICAL_ADDRESS, local_addr));
-        PingData coord_data = new PingData(local_addr, true, NameCache.get(local_addr), physical_addr).coord(is_coord);
-        write(Collections.singletonList(coord_data), cluster_name);
+        if (initial_discovery) {
+            try {
+                List<PingData> pingData = readFromDB(cluster_name);
+                PhysicalAddress physical_addr = (PhysicalAddress) down(new Event(Event.GET_PHYSICAL_ADDRESS, local_addr));
+                PingData coord_data = new PingData(local_addr, true, NameCache.get(local_addr), physical_addr).coord(is_coord);
+                write(Collections.singletonList(coord_data), cluster_name);
+                while (pingData.stream().noneMatch(PingData::isCoord)) {
+                    // Do a quick check if more nodes have arrived, to have a more complete list of nodes to start with.
+                    List<PingData> newPingData = readFromDB(cluster_name);
+                    if (newPingData.size() == pingData.size() || pingData.stream().anyMatch(PingData::isCoord)) {
+                        break;
+                    }
+                    pingData = newPingData;
+                }
+            } catch (Exception e) {
+                log.error(String.format("%s: failed reading from the DB", local_addr), e);
+            }
+        }
+
         super.findMembers(members, initial_discovery, responses);
     }
 
