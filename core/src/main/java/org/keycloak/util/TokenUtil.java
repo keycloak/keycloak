@@ -61,6 +61,10 @@ public class TokenUtil {
     public static final String TOKEN_TYPE_OFFLINE = "Offline";
 
     public static final String TOKEN_TYPE_LOGOUT = "Logout";
+    public static final String ENTITY_STATEMENT_JWT = "entity-statement+jwt";
+    public static final String APPLICATION_ENTITY_STATEMENT_JWT = "application/entity-statement+jwt";
+    public static final String EXPLICIT_REGISTRATION_RESPONSE_JWT = "explicit-registration-response+jwt";
+    public static final String APPLICATION_EXPLICIT_REGISTRATION_RESPONSE_JWT = "application/explicit-registration-response+jwt";
 
     public static final String TOKEN_BACKCHANNEL_LOGOUT_EVENT = "http://schemas.openid.net/event/backchannel-logout";
     

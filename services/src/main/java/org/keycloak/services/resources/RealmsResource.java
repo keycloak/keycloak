@@ -29,14 +29,18 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
+import org.keycloak.protocol.oidc.federation.OpenIdFederationWellKnownProvider;
 import org.keycloak.services.CorsErrorResponseException;
+import org.keycloak.services.clientregistration.ClientRegistrationAuth;
 import org.keycloak.services.clientregistration.ClientRegistrationService;
+import org.keycloak.services.clientregistration.openid_federation.OpenIdFederationClientRegistrationService;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resources.account.AccountLoader;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.ResolveRelative;
+import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.ProfileHelper;
 import org.keycloak.wellknown.WellKnownProvider;
 import org.keycloak.wellknown.WellKnownProviderFactory;
@@ -172,6 +176,16 @@ public class RealmsResource {
         return new ClientRegistrationService(session, event);
     }
 
+    @Path("{realm}/openid-federation/clients-registrations")
+    public OpenIdFederationClientRegistrationService getOpenIdFederationClientsService(final @PathParam("realm") String name) {
+        resolveRealmAndUpdateSession(name);
+        EventBuilder event = new EventBuilder(session.getContext().getRealm(), session, session.getContext().getConnection());
+        OpenIdFederationClientRegistrationService provider = new OpenIdFederationClientRegistrationService(session);
+        provider.setEvent(event);
+        provider.setAuth(new ClientRegistrationAuth(session, provider, event, "openid-connect"));
+        return provider;
+    }
+
     @Path("{realm}/clients-managements")
     public ClientsManagementService getClientsManagementService(final @PathParam("realm") String name) {
         resolveRealmAndUpdateSession(name);
@@ -240,6 +254,9 @@ public class RealmsResource {
 
         if (wellKnown != null) {
             ResponseBuilder responseBuilder = Response.ok(wellKnown.getConfig()).cacheControl(CacheControlUtil.noCache());
+            if (wellKnown instanceof OpenIdFederationWellKnownProvider) {
+                responseBuilder.header("Content-Type", TokenUtil.APPLICATION_ENTITY_STATEMENT_JWT);
+            }
             return Cors.builder().allowAllOrigins().auth().add(responseBuilder);
         }
 

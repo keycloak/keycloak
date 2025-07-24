@@ -182,6 +182,9 @@ public final class Marshalling {
 
     public static final int RELOAD_CERTIFICATE_FUNCTION = 65615;
 
+    //org.keycloak.services.scheduled.TaskCancellationEvent
+    public static final int TASK_CANCELLATION = 65616;
+
     public static void configure(GlobalConfigurationBuilder builder) {
         getSchemas().forEach(builder.serialization()::addContextInitializer);
     }
