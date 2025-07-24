@@ -21,7 +21,13 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
+
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+
 import org.jboss.logging.Logger;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
@@ -41,8 +47,11 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.oauth2.resourceindicators.CheckedResourceIndicators;
+import org.keycloak.protocol.oauth2.resourceindicators.ResourceIndicatorsUtil;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.endpoints.request.AuthzEndpointRequestParser;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.rar.AuthorizationRequestContext;
 import org.keycloak.representations.AccessToken;
@@ -56,8 +65,10 @@ import org.keycloak.services.util.AuthorizationContextUtil;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.util.TokenUtil;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 
 /**
@@ -240,6 +251,60 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         if (client.isBearerOnly()) {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Bearer-only not allowed", Response.Status.BAD_REQUEST);
         }
+    }
+
+    protected CheckedResourceIndicators checkResourceIndicators(AuthenticatedClientSessionModel clientSession) {
+
+        List<String> resourceParamValues = formParams.get(OAuth2Constants.RESOURCE);
+        if (resourceParamValues == null || resourceParamValues.isEmpty()) {
+            return null;
+        }
+
+        CheckedResourceIndicators checkedResourceIndicators = ResourceIndicatorsUtil.narrowResourceIndicators(session, client, clientSession, Set.copyOf(resourceParamValues));
+        if (checkedResourceIndicators.hasUnsupportedResources()) {
+            logger.debugf("Unsupported resource indicator(s) found: '%s'", checkedResourceIndicators.getUnsupportedResources());
+            String errorMessage = "Unsupported resource indicator(s): " + checkedResourceIndicators.getUnsupportedResources();
+            event.detail(Details.REASON, errorMessage);
+            event.error(Errors.INVALID_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Invalid resource", Response.Status.BAD_REQUEST);
+        }
+
+        return checkedResourceIndicators;
+    }
+
+    /**
+     * Store requested resource indicators in ClientSessionContext for token generation.
+     * @param clientSessionCtx
+     */
+    protected void updateResourceIndicatorsInClientSession(ClientSessionContext clientSessionCtx) {
+
+        if (clientSessionCtx == null) {
+            return;
+        }
+
+        CheckedResourceIndicators checkedResourceIndicators = checkResourceIndicators(clientSessionCtx.getClientSession());
+        if (checkedResourceIndicators == null) {
+            return;
+        }
+
+        if (!checkedResourceIndicators.hasSupportedResources()) {
+            event.detail(Details.RESOURCE, checkedResourceIndicators.getRequestedResources());
+            return;
+        }
+
+        Set<String> supportedResources = checkedResourceIndicators.getSupportedResources();
+        clientSessionCtx.setAttribute(OAuth2Constants.RESOURCE, supportedResources);
+
+        event.detail(Details.RESOURCE, supportedResources);
+
+        // encode validated requested OAuth Resource Indicators to authentication session for validation during token / refresh requests
+        String encodedResourceIndicators = ResourceIndicatorsUtil.encodeResourceIndicators(supportedResources);
+        clientSessionCtx.getClientSession().setNote(OAuth2Constants.RESOURCE, encodedResourceIndicators);
+    }
+
+    @Override
+    public Set<String> getSupportedMultivaluedRequestParameters() {
+        return AuthzEndpointRequestParser.KNOWN_MULTI_PARAMS;
     }
 
     @Override
