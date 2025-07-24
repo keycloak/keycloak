@@ -32,6 +32,7 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Enhanced JDBC_PING2 to handle entries transactionally.
@@ -130,7 +131,8 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
                 while (pingData.stream().noneMatch(PingData::isCoord)) {
                     // Do a quick check if more nodes have arrived, to have a more complete list of nodes to start with.
                     List<PingData> newPingData = readFromDB(cluster_name);
-                    if (newPingData.size() == pingData.size() || pingData.stream().anyMatch(PingData::isCoord)) {
+                    if (newPingData.stream().map(PingData::getAddress).collect(Collectors.toSet()).equals(pingData.stream().map(PingData::getAddress).collect(Collectors.toSet()))
+                            || pingData.stream().anyMatch(PingData::isCoord)) {
                         break;
                     }
                     pingData = newPingData;

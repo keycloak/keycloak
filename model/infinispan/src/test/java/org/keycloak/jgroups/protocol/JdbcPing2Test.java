@@ -1,5 +1,6 @@
 package org.keycloak.jgroups.protocol;
 
+import org.jboss.logging.Logger;
 import org.jgroups.JChannel;
 import org.jgroups.conf.ClassConfigurator;
 import org.jgroups.protocols.pbcast.GMS;
@@ -18,11 +19,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Misc tests for {@link org.jgroups.protocols.JDBC_PING2}, running against H2
+ * Misc tests for {@link KEYCLOAK_JDBC_PING2}, running against H2
  * @author Bela Ban
- * @since  5.4, 5.3.7
+ * @author Alexander Schwartz
  */
-public class JDBC_PING2_Test {
+public class JdbcPing2Test {
+    protected static Logger log = Logger.getLogger(JdbcPing2Test.class);
+
     protected static final String CLUSTER="jdbc-test";
     protected static final int NUM_NODES=8;
     public static final String PROTOCOAL_STACK = "jdbc-h2.xml";
@@ -41,7 +44,7 @@ public class JDBC_PING2_Test {
                     b.connect(CLUSTER);
                     Util.waitUntilAllChannelsHaveSameView(10000, 10, a,b);
                     long time=System.nanoTime()-start;
-                    System.out.printf("-- join #%d took %s\n", i, Util.printTime(time, TimeUnit.NANOSECONDS));
+                    log.infof("-- join #%d took %s\n", i, Util.printTime(time, TimeUnit.NANOSECONDS));
                 }
             }
         }
@@ -85,12 +88,12 @@ public class JDBC_PING2_Test {
         long start = System.nanoTime();
         Util.waitUntilAllChannelsHaveSameView(20000, 100, channels);
         long time = System.nanoTime() - start;
-        System.out.printf("-- cluster of %d formed in %s:\n%s\n", NUM_NODES, Duration.ofNanos(time),
+        log.infof("-- cluster of %d formed in %s:\n%s\n", NUM_NODES, Duration.ofNanos(time),
                 Stream.of(channels).map(ch -> String.format("%s: %s", ch.address(), ch.view()))
                         .collect(Collectors.joining("\n")));
         Arrays.stream(channels).filter(ch -> ch.view().getCoord() != ch.getAddress()).forEach(JChannel::close);
         Arrays.stream(channels).filter(ch -> !ch.isClosed()).forEach(JChannel::close);
-        System.out.println("Closed");
+        log.infof("Closed");
     }
 
     protected static JChannel modify(JChannel ch) {
@@ -103,22 +106,13 @@ public class JDBC_PING2_Test {
         return modify(new JChannel(cfg).name(name));
     }
 
-    protected static class Connector implements Runnable {
-        protected final CountDownLatch latch;
-        protected final JChannel       ch;
-
-        protected Connector(CountDownLatch latch, JChannel ch) {
-            this.latch=latch;
-            this.ch=ch;
-        }
-
+    protected record Connector(CountDownLatch latch, JChannel ch) implements Runnable {
         @Override
         public void run() {
             try {
                 latch.await();
                 ch.connect(CLUSTER);
-            }
-            catch(Exception e) {
+            } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         }
