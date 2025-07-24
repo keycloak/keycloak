@@ -32,6 +32,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.common.Profile;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -773,6 +774,31 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
         assertNotNull(response.getAccessToken());
         assertNull(response.getRefreshToken());
+    }
+
+    @Test
+    public void grantAccessTokenServiceAccountUserOfOtherClient() throws Exception {
+        ClientManager.realm(adminClient.realm("test")).clientId("resource-owner").setServiceAccountsEnabled(true);
+        oauth.client("resource-owner-refresh", "secret");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("service-account-resource-owner", "password");
+
+        assertEquals(401, response.getStatusCode());
+        assertEquals("invalid_grant", response.getError());
+        assertEquals("Invalid user credentials", response.getErrorDescription());
+
+        events.expectLogin()
+                .client("resource-owner-refresh")
+                .session((String) null)
+                .user((String) null)
+                .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
+                .detail(Details.REASON, "User is a service account")
+                .removeDetail(Details.CODE_ID)
+                .removeDetail(Details.REDIRECT_URI)
+                .removeDetail(Details.CONSENT)
+                .error(Errors.INVALID_USER)
+                .assertEvent();
+
+        ClientManager.realm(adminClient.realm("test")).clientId("resource-owner").setServiceAccountsEnabled(false);
     }
 
     private int getAuthenticationSessionsCount() {
