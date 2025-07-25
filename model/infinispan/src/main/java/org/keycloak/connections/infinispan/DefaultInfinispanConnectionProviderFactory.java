@@ -311,7 +311,6 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     }
 
     private void addRemoteOperationalINfo(Map<String, String> info) {
-        info.put("externalServers", Integer.toString(remoteCacheManager.getServers().length));
         info.put("connectionCount", Integer.toString(remoteCacheManager.getConnectionCount()));
     }
 }
