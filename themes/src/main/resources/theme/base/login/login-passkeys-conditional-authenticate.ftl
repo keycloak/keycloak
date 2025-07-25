@@ -114,7 +114,7 @@
             };
             authButton.addEventListener("click", () => {
                 authenticateByWebAuthn(input);
-            });
+            }, { once: true });
 
             const args = {
                 isUserIdentified : ${isUserIdentified},

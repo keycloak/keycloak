@@ -1,8 +1,8 @@
 package org.keycloak.tests.db;
 
-import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 import org.keycloak.testframework.annotations.InjectTestDatabase;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.conditions.DisabledForDatabases;
 import org.keycloak.testframework.database.DatabaseConfigBuilder;
 import org.keycloak.testframework.database.PostgresTestDatabase;
 import org.keycloak.testframework.database.TestDatabase;
@@ -10,9 +10,10 @@ import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
-@DisabledIfEnvironmentVariable(named = "KC_TEST_DATABASE", matches = "mssql", disabledReason = "MSSQL does not support setting the default schema per session")
-@DisabledIfEnvironmentVariable(named = "KC_TEST_DATABASE", matches = "oracle", disabledReason = "Oracle image does not support configuring user/databases with '-'")
 @KeycloakIntegrationTest(config = PreserveSchemaCaseLiquibaseTest.KeycloakConfig.class)
+// MSSQL does not support setting the default schema per session.
+// Oracle image does not support configuring user/databases with '-'
+@DisabledForDatabases({ "mssql", "oracle" })
 public class PreserveSchemaCaseLiquibaseTest extends CaseSensitiveSchemaTest {
 
     @InjectTestDatabase(lifecycle = LifeCycle.CLASS, config = DatabaseConfigurator.class)

@@ -17,10 +17,31 @@
 
 package org.keycloak.testsuite.components;
 
-import org.keycloak.component.ComponentFactory;
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.Spi;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public interface TestProviderFactory<T extends TestProvider> extends ComponentFactory<T, TestProvider> {
+public class TestComponentSpi implements Spi {
+    @Override
+    public boolean isInternal() {
+        return false;
+    }
+
+    @Override
+    public String getName() {
+        return "test-component";
+    }
+
+    @Override
+    public Class<? extends Provider> getProviderClass() {
+        return TestComponentProvider.class;
+    }
+
+    @Override
+    public Class<? extends ProviderFactory> getProviderFactoryClass() {
+        return TestComponentProviderFactory.class;
+    }
 }

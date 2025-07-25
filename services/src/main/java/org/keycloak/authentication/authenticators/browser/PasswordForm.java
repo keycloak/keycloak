@@ -47,6 +47,12 @@ public class PasswordForm extends UsernamePasswordForm implements CredentialVali
             context.success();
             return;
         }
+
+        // setup webauthn data when passkeys enabled
+        if (isConditionalPasskeysEnabled(context.getUser())) {
+            webauthnAuth.fillContextForm(context);
+        }
+
         Response challengeResponse = context.form().createLoginPassword();
         context.challenge(challengeResponse);
     }
@@ -54,6 +60,7 @@ public class PasswordForm extends UsernamePasswordForm implements CredentialVali
     @Override
     public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
         return user.credentialManager().isConfiguredFor(getCredentialProvider(session).getType())
+                || (isConditionalPasskeysEnabled(user))
                 || alreadyAuthenticatedUsingPasswordlessCredential(session.getContext().getAuthenticationSession());
     }
 

@@ -30,6 +30,18 @@ public class Config {
         return config.getOptionalValue("kc.test." + valueTypeAlias.getAlias(valueType), String.class).orElse(null);
     }
 
+    public static String getIncludedSuppliers(Class<?> valueType) {
+        return config.getOptionalValue("kc.test." + valueTypeAlias.getAlias(valueType) + ".suppliers.included", String.class).orElse(null);
+    }
+
+    public static String getExcludedSuppliers(Class<?> valueType) {
+        return config.getOptionalValue("kc.test." + valueTypeAlias.getAlias(valueType) + ".suppliers.excluded", String.class).orElse(null);
+    }
+
+    public static String getSupplierConfig(Class<?> valueType) {
+        return config.getOptionalValue("kc.test." + valueTypeAlias.getAlias(valueType) + ".config", String.class).orElse(null);
+    }
+
     public static <T> T getValueTypeConfig(Class<?> valueType, String name, String defaultValue, Class<T> type) {
         name = getValueTypeFQN(valueType, name);
         Optional<T> optionalValue = config.getOptionalValue(name, type);
@@ -80,7 +92,8 @@ public class Config {
                 .addDefaultSources()
                 .addDefaultInterceptors()
                 .withConverters(new Converter[]{ new CharsetConverter(), new MemorySizeConverter(), new InetSocketAddressConverter() })
-                .withInterceptors(new LogConfigInterceptor());
+                .withInterceptors(new LogConfigInterceptor())
+                .withSources(new SuiteConfigSource());
 
         ConfigSource testEnvConfigSource = initTestEnvConfigSource();
         if (testEnvConfigSource != null) {

@@ -110,10 +110,10 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
                     formData.add("rememberMe", "on");
                 }
             }
-            // setup webauthn data when the user is not already selected
-            if (webauthnAuth != null && webauthnAuth.isPasskeysEnabled()) {
-                webauthnAuth.fillContextForm(context);
-            }
+        }
+        // setup webauthn data when passkeys enabled
+        if (isConditionalPasskeysEnabled(context.getUser())) {
+            webauthnAuth.fillContextForm(context);
         }
         Response challengeResponse = challenge(context, formData);
         context.challenge(challengeResponse);
@@ -134,8 +134,8 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
 
     @Override
     protected Response challenge(AuthenticationFlowContext context, String error, String field) {
-        if (context.getUser() == null && webauthnAuth != null && webauthnAuth.isPasskeysEnabled()) {
-            // setup webauthn data when the user is not already selected
+        if (isConditionalPasskeysEnabled(context.getUser())) {
+            // setup webauthn data when possible
             webauthnAuth.fillContextForm(context);
         }
         return super.challenge(context, error, field);
@@ -155,6 +155,11 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
     @Override
     public void close() {
 
+    }
+
+    protected boolean isConditionalPasskeysEnabled(UserModel currentUser) {
+        return webauthnAuth != null && webauthnAuth.isPasskeysEnabled() &&
+                (currentUser == null || currentUser.credentialManager().isConfiguredFor(webauthnAuth.getCredentialType()));
     }
 
 }

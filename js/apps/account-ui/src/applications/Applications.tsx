@@ -216,7 +216,8 @@ export const Applications = () => {
                       </DescriptionListTerm>
                       {application.consent.grantedScopes.map((scope) => (
                         <DescriptionListDescription key={`scope${scope.id}`}>
-                          <CheckIcon /> {t(scope.name as TFuncKey)}
+                          <CheckIcon />{" "}
+                          {t(scope.name as TFuncKey, scope.displayText)}
                         </DescriptionListDescription>
                       ))}
                     </DescriptionListGroup>

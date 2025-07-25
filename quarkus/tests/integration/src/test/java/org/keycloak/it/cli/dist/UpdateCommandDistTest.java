@@ -34,6 +34,7 @@ import org.keycloak.common.Version;
 import org.keycloak.compatibility.CompatibilityResult;
 import org.keycloak.compatibility.FeatureCompatibilityMetadataProvider;
 import org.keycloak.compatibility.KeycloakCompatibilityMetadataProvider;
+import org.keycloak.config.DatabaseOptions;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
@@ -43,6 +44,7 @@ import org.keycloak.jgroups.certificates.DefaultJGroupsCertificateProviderFactor
 import org.keycloak.quarkus.runtime.cli.command.UpdateCompatibility;
 import org.keycloak.quarkus.runtime.cli.command.UpdateCompatibilityCheck;
 import org.keycloak.quarkus.runtime.cli.command.UpdateCompatibilityMetadata;
+import org.keycloak.quarkus.runtime.configuration.compatibility.DatabaseCompatibilityMetadataProvider;
 import org.keycloak.spi.infinispan.CacheEmbeddedConfigProviderSpi;
 import org.keycloak.spi.infinispan.CacheRemoteConfigProviderSpi;
 import org.keycloak.spi.infinispan.JGroupsCertificateProviderSpi;
@@ -217,12 +219,90 @@ public class UpdateCommandDistTest {
         result.assertError("[%1$s] Rolling Update is not available. '%1$s.stack' is incompatible: null -> jdbc-ping-udp".formatted(CacheEmbeddedConfigProviderSpi.SPI_NAME));
     }
 
+    @Test
+    public void testDatabaseTypeChanged(KeycloakDistribution distribution) throws IOException {
+        var jsonFile = createTempFile("compatible", ".json");
+        var result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityMetadata.NAME, UpdateCompatibilityMetadata.OUTPUT_OPTION_NAME, jsonFile.getAbsolutePath());
+        result.assertMessage("Metadata:");
+        assertEquals(0, result.exitCode());
+
+        var info = JsonSerialization.mapper.readValue(jsonFile, UpdateCompatibilityCheck.METADATA_TYPE_REF);
+        info.remove(FeatureCompatibilityMetadataProvider.ID);
+        assertEquals(defaultMeta(distribution), info);
+
+        result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath(), "--db", "postgres");
+        result.assertExitCode(CompatibilityResult.ExitCode.RECREATE.value());
+        result.assertError("[%1$s] Rolling Update is not available. '%1$s.db' is incompatible: dev-file -> postgres".formatted(DatabaseCompatibilityMetadataProvider.ID));
+    }
+
+    @Test
+    public void testDatabaseUrlChanged(KeycloakDistribution distribution) throws IOException {
+        var jsonFile = createTempFile("compatible", ".json");
+        var result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityMetadata.NAME, UpdateCompatibilityMetadata.OUTPUT_OPTION_NAME, jsonFile.getAbsolutePath(), "--db", "postgres", "--db-url", "jdbc:postgresql://mypostgres/mydatabase");
+        result.assertMessage("Metadata:");
+        assertEquals(0, result.exitCode());
+
+        var info = JsonSerialization.mapper.readValue(jsonFile, UpdateCompatibilityCheck.METADATA_TYPE_REF);
+        var expectedMeta = defaultMeta(distribution);
+        expectedMeta.put(DatabaseCompatibilityMetadataProvider.ID, Map.of(
+              DatabaseOptions.DB.getKey(), "postgres"
+        ));
+        info.remove(FeatureCompatibilityMetadataProvider.ID);
+        assertEquals(expectedMeta, info);
+
+        result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath(), "--db", "postgres", "--db-url", "jdbc:postgresql://mypostgres/mydatabase?ssl=false");
+        result.assertExitCode(CompatibilityResult.ExitCode.ROLLING.value());
+    }
+
+    @Test
+    public void testDatabaseUrlOptions(KeycloakDistribution distribution) throws IOException {
+        var jsonFile = createTempFile("compatible", ".json");
+        var result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityMetadata.NAME, UpdateCompatibilityMetadata.OUTPUT_OPTION_NAME, jsonFile.getAbsolutePath(), "--db-url-host", "localhost", "--db-url-port", "9999", "--db-url-database", "keycloak");
+        result.assertMessage("Metadata:");
+        assertEquals(0, result.exitCode());
+
+        // Assert that expected db-url-* options are written to the metadata when --db-url is not present
+        var info = JsonSerialization.mapper.readValue(jsonFile, UpdateCompatibilityCheck.METADATA_TYPE_REF);
+        var expectedMeta = defaultMeta(distribution);
+        expectedMeta.put(DatabaseCompatibilityMetadataProvider.ID, Map.of(
+              DatabaseOptions.DB.getKey(), DatabaseOptions.DB.getDefaultValue().get(),
+              DatabaseOptions.DB_URL_DATABASE.getKey(), "keycloak",
+              DatabaseOptions.DB_URL_HOST.getKey(), "localhost",
+              DatabaseOptions.DB_URL_PORT.getKey(), "9999"
+        ));
+        info.remove(FeatureCompatibilityMetadataProvider.ID);
+        assertEquals(expectedMeta, info);
+
+        // Assert that changing to --db-url requires a recreate
+        result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath(), "--db-url", "jdbc:h2:mem:keycloakdb");
+        result.assertExitCode(CompatibilityResult.ExitCode.RECREATE.value());
+
+        // Assert that db-url-* options are not written to metadata when db-url is present
+        result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityMetadata.NAME, UpdateCompatibilityMetadata.OUTPUT_OPTION_NAME, jsonFile.getAbsolutePath(), "--db-url", "jdbc:h2:mem:keycloakdb", "--db-url-host", "localhost", "--db-url-port", "9999", "--db-url-database", "keycloak");
+        result.assertMessage("Metadata:");
+        assertEquals(0, result.exitCode());
+
+        info = JsonSerialization.mapper.readValue(jsonFile, UpdateCompatibilityCheck.METADATA_TYPE_REF);
+        expectedMeta.put(DatabaseCompatibilityMetadataProvider.ID, Map.of(
+              DatabaseOptions.DB.getKey(), DatabaseOptions.DB.getDefaultValue().get()
+        ));
+        info.remove(FeatureCompatibilityMetadataProvider.ID);
+        assertEquals(expectedMeta, info);
+
+        // Assert that changes to the db-url does not trigger a recreate
+        result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath(), "--db-url", "jdbc:h2:mem:keycloak");
+        result.assertExitCode(CompatibilityResult.ExitCode.ROLLING.value());
+    }
+
     private Map<String, Map<String, String>> defaultMeta(KeycloakDistribution distribution) {
         Map<String, String> keycloak = new HashMap<>(1);
         keycloak.put("version", Version.VERSION);
 
         Map<String, Map<String, String>> m = new HashMap<>();
         m.put(KeycloakCompatibilityMetadataProvider.ID, keycloak);
+        m.put(DatabaseCompatibilityMetadataProvider.ID, Map.of(
+              DatabaseOptions.DB.getKey(), DatabaseOptions.DB.getDefaultValue().get()
+        ));
         m.put(CacheEmbeddedConfigProviderSpi.SPI_NAME, embeddedCachingMeta(distribution));
         m.put(JGroupsCertificateProviderSpi.SPI_NAME, Map.of(
               "enabled", "true"

@@ -63,6 +63,13 @@ In order to maintain backwards compatibility, {project_name}'s upgrade will modi
 
 For more information about client configuration, please see link:{adminguide_link}#_client-saml-configuration[Creating a SAML client] chapter in the {adminguide_name}.
 
+=== Tracing extended for embedded Infinispan caches
+
+When tracing is enabled, now also calls to other nodes of a {project_name} cluster will create spans in the traces.
+
+To disable this kind of tracing, set the option `tracing-infinispan-enabled` to `false`.
+
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 

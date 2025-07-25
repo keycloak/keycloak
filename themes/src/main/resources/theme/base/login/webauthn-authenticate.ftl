@@ -89,7 +89,7 @@
                 errmsg : "${msg("webauthn-unsupported-browser-text")?no_esc}"
             };
             authenticateByWebAuthn(input);
-        });
+        }, { once: true });
     </script>
 
     <#elseif section = "info">
