@@ -25,6 +25,7 @@ The server has built-in support for different databases. You can query the avail
 |Oracle Database | `oracle` | ${properties["oracledb.version"]}
 |PostgreSQL | `postgres` | ${properties["postgresql.version"]}
 |Amazon Aurora PostgreSQL | `postgres` | ${properties["aurora-postgresql.version"]}
+|TiDB | `tidb` | ${properties["tidb.version"]}
 |===
 
 By default, the server uses the `dev-file` database. This is the default database that the server will use to persist data and
