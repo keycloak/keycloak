@@ -24,6 +24,9 @@ describe("Clients", () => {
     kcAdminClient = new KeycloakAdminClient();
     await kcAdminClient.auth(credentials);
 
+    expect(kcAdminClient.accessToken).to.be.a("string");
+    expect(kcAdminClient.expiresIn).to.be.a("number");
+
     // create client and also test it
     // NOTICE: to be clear, clientId stands for the property `clientId` of client
     // clientUniqueId stands for property `id` of client
