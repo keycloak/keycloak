@@ -290,7 +290,8 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     @Override
     public Map<String, String> getOperationalInfo() {
         Map<String, String> info = new LinkedHashMap<>();
-        info.put("version", Version.getVersion());
+        info.put("product", Version.getBrandName());
+        info.put("version", Version.getBrandVersion());
         if (InfinispanUtils.isRemoteInfinispan()) {
             addRemoteOperationalINfo(info);
         } else {
