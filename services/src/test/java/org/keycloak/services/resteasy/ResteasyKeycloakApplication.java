@@ -28,6 +28,7 @@ import org.keycloak.services.filters.KeycloakSecurityHeadersFilter;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.services.resources.LoadBalancerResource;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.services.resources.ServerMetadataResource;
 import org.keycloak.services.resources.ThemeResource;
 import org.keycloak.services.resources.WelcomeResource;
 import org.keycloak.services.resources.admin.AdminRoot;
@@ -54,6 +55,7 @@ public class ResteasyKeycloakApplication extends KeycloakApplication {
 
         singletons.add(new ObjectMapperResolver());
         classes.add(WelcomeResource.class);
+        classes.add(ServerMetadataResource.class);
 
         if (MultiSiteUtils.isMultiSiteEnabled()) {
             // If we are running in multi-site mode, we need to add a resource which to expose
