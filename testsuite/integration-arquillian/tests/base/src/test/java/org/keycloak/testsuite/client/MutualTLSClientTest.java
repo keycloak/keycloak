@@ -29,7 +29,8 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.MutualTLSUtils;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 /**
  * Mutual TLS Client tests.
@@ -102,7 +103,7 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
       Supplier<CloseableHttpClient> clientWithProperCertificate = MutualTLSUtils::newCloseableHttpClientWithDefaultKeyStoreAndTrustStore;
 
       //when
-      OAuthClient.AccessTokenResponse token = loginAndGetAccessTokenResponse(CLIENT_ID, clientWithProperCertificate);
+      AccessTokenResponse token = loginAndGetAccessTokenResponse(CLIENT_ID, clientWithProperCertificate);
 
       //then
       assertTokenObtained(token);
@@ -114,7 +115,7 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
       Supplier<CloseableHttpClient> clientWithProperCertificate = MutualTLSUtils::newCloseableHttpClientWithDefaultKeyStoreAndTrustStore;
 
       //when
-      OAuthClient.AccessTokenResponse token = loginAndGetAccessTokenResponse(EXACT_SUBJECT_DN_CLIENT_ID, clientWithProperCertificate);
+      AccessTokenResponse token = loginAndGetAccessTokenResponse(EXACT_SUBJECT_DN_CLIENT_ID, clientWithProperCertificate);
 
       //then
       assertTokenObtained(token);
@@ -126,7 +127,7 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
       Supplier<CloseableHttpClient> clientWithProperCertificate = MutualTLSUtils::newCloseableHttpClientWithDefaultKeyStoreAndTrustStore;
 
       //when (Certificate with the client's expected subjectDN is available in the certificate chain, but not on the 1st position. Hence authentication should not be successful)
-      OAuthClient.AccessTokenResponse token = loginAndGetAccessTokenResponse(ISSUER_SUBJECT_DN_CLIENT_ID, clientWithProperCertificate);
+      AccessTokenResponse token = loginAndGetAccessTokenResponse(ISSUER_SUBJECT_DN_CLIENT_ID, clientWithProperCertificate);
 
       //then
       assertTokenNotObtained(token);
@@ -135,7 +136,7 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
    @Test
    public void testSuccessfulClientInvocationWithClientIdInQueryParams() throws Exception {
       //given//when
-      OAuthClient.AccessTokenResponse token = null;
+      AccessTokenResponse token = null;
       try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
          login(CLIENT_ID);
          token = getAccessTokenResponseWithQueryParams(CLIENT_ID, client);
@@ -151,7 +152,7 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
       Supplier<CloseableHttpClient> clientWithProperCertificate = MutualTLSUtils::newCloseableHttpClientWithOtherKeyStoreAndTrustStore;
 
       //when
-      OAuthClient.AccessTokenResponse token = loginAndGetAccessTokenResponse(EXACT_SUBJECT_DN_CLIENT_ID, clientWithProperCertificate);
+      AccessTokenResponse token = loginAndGetAccessTokenResponse(EXACT_SUBJECT_DN_CLIENT_ID, clientWithProperCertificate);
 
       //then
       assertTokenNotObtained(token);
@@ -163,7 +164,7 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
       Supplier<CloseableHttpClient> clientWithoutCertificate = MutualTLSUtils::newCloseableHttpClientWithoutKeyStoreAndTrustStore;
 
       //when
-      OAuthClient.AccessTokenResponse token = loginAndGetAccessTokenResponse(CLIENT_ID, clientWithoutCertificate);
+      AccessTokenResponse token = loginAndGetAccessTokenResponse(CLIENT_ID, clientWithoutCertificate);
 
       //then
       assertTokenNotObtained(token);
@@ -172,7 +173,7 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
    @Test
    public void testFailedClientInvocationWithDisabledClient() throws Exception {
       //given//when
-      OAuthClient.AccessTokenResponse token = null;
+      AccessTokenResponse token = null;
       try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
          login(DISABLED_CLIENT_ID);
 
@@ -223,7 +224,7 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
       config.setTlsClientAuthSubjectDn(expectedSubjectDN);
       client.update(clientRep);
 
-      OAuthClient.AccessTokenResponse token = loginAndGetAccessTokenResponse(OBB_SUBJECT_DN_CLIENT_ID, clientWithProperCertificate);
+      AccessTokenResponse token = loginAndGetAccessTokenResponse(OBB_SUBJECT_DN_CLIENT_ID, clientWithProperCertificate);
       if (expectSuccess) {
          assertTokenObtained(token);
       } else {
@@ -231,7 +232,7 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
       }
    }
 
-   private OAuthClient.AccessTokenResponse loginAndGetAccessTokenResponse(String clientId, Supplier<CloseableHttpClient> client) throws IOException{
+   private AccessTokenResponse loginAndGetAccessTokenResponse(String clientId, Supplier<CloseableHttpClient> client) throws IOException{
       try (CloseableHttpClient closeableHttpClient = client.get()) {
          login(clientId);
          return getAccessTokenResponse(clientId, closeableHttpClient);
@@ -240,29 +241,31 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
       }
    }
 
-   private OAuthClient.AccessTokenResponse getAccessTokenResponse(String clientId, CloseableHttpClient closeableHttpClient) {
-      String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+   private AccessTokenResponse getAccessTokenResponse(String clientId, CloseableHttpClient closeableHttpClient) {
+      String code = oauth.parseLoginResponse().getCode();
       // Call protected endpoint with supplied client.
-      return oauth
-            .httpClient(() -> closeableHttpClient)
-            .clientId(clientId)
-            .doAccessTokenRequest(code, null, closeableHttpClient);
+      try {
+          oauth.httpClient().set(closeableHttpClient);
+          return oauth.clientId(clientId)
+                  .doAccessTokenRequest(code);
+      } finally {
+          oauth.httpClient().reset();
+      }
    }
 
    private void login(String clientId) {
       // Login with default client, despite what has been supplied into this method.
-      oauth
-            .httpClient(OAuthClient::newCloseableHttpClient)
-            .clientId(clientId)
-            .doLogin(USER, PASSWORD);
+      oauth.httpClient().reset();
+      oauth.client(clientId)
+        .doLogin(USER, PASSWORD);
    }
 
-   private void assertTokenObtained(OAuthClient.AccessTokenResponse token) {
+   private void assertTokenObtained(AccessTokenResponse token) {
       Assert.assertEquals(200, token.getStatusCode());
       Assert.assertNotNull(token.getAccessToken());
    }
 
-   private void assertTokenNotObtained(OAuthClient.AccessTokenResponse token) {
+   private void assertTokenNotObtained(AccessTokenResponse token) {
       Assert.assertEquals(401, token.getStatusCode());
       Assert.assertNull(token.getAccessToken());
    }
@@ -271,16 +274,16 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
     * This is a very simplified version of OAuthClient#doAccessTokenRequest.
     * It test a scenario, where we do not follow the spec and specify client_id in Query Params (for in a form).
     */
-   private OAuthClient.AccessTokenResponse getAccessTokenResponseWithQueryParams(String clientId, CloseableHttpClient client) throws Exception {
-      HttpPost post = new HttpPost(oauth.getAccessTokenUrl() + "?client_id=" + clientId);
+   private AccessTokenResponse getAccessTokenResponseWithQueryParams(String clientId, CloseableHttpClient client) throws Exception {
+      HttpPost post = new HttpPost(oauth.getEndpoints().getToken() + "?client_id=" + clientId);
       List<NameValuePair> parameters = new LinkedList<>();
       parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
-      parameters.add(new BasicNameValuePair(OAuth2Constants.CODE, oauth.getCurrentQuery().get(OAuth2Constants.CODE)));
+      parameters.add(new BasicNameValuePair(OAuth2Constants.CODE, oauth.parseLoginResponse().getCode()));
       parameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, oauth.getRedirectUri()));
       UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
       post.setEntity(formEntity);
 
-      return new OAuthClient.AccessTokenResponse(client.execute(post));
+      return new AccessTokenResponse(client.execute(post));
    }
 
    private void disableClient(String clientId) {

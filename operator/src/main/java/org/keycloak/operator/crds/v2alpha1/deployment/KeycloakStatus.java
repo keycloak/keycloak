@@ -24,14 +24,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import io.fabric8.kubernetes.model.annotation.LabelSelector;
 import io.fabric8.kubernetes.model.annotation.StatusReplicas;
-import io.javaoperatorsdk.operator.api.ObservedGenerationAware;
 import io.sundr.builder.annotations.Buildable;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 @Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder", lazyCollectionInitEnabled = false)
-public class KeycloakStatus implements ObservedGenerationAware {
+public class KeycloakStatus {
 
     @LabelSelector
     private String selector;
@@ -77,12 +76,10 @@ public class KeycloakStatus implements ObservedGenerationAware {
         return findCondition(KeycloakStatusCondition.READY).map(KeycloakStatusCondition::getStatus).orElse(false);
     }
 
-    @Override
     public Long getObservedGeneration() {
         return observedGeneration;
     }
 
-    @Override
     public void setObservedGeneration(Long generation) {
         this.observedGeneration = generation;
     }

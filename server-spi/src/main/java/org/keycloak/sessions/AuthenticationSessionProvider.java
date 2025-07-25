@@ -18,7 +18,6 @@
 package org.keycloak.sessions;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.Provider;
 
@@ -98,8 +97,10 @@ public interface AuthenticationSessionProvider extends Provider {
      * @param compoundId {@code AuthenticationSessionCompoundId} The method has no effect if {@code null}.
      * @param authNotesFragment {@code Map<String, String>} Map with authNote values.
      * Auth note is removed if the corresponding value in the map is {@code null}. Map itself can't be {@code null}.
+     * @deprecated For removal in Keycloak 27
      */
-    void updateNonlocalSessionAuthNotes(AuthenticationSessionCompoundId compoundId, Map<String, String> authNotesFragment);
+    @Deprecated(since = "26.3", forRemoval = true)
+    default void updateNonlocalSessionAuthNotes(AuthenticationSessionCompoundId compoundId, Map<String, String> authNotesFragment) {}
 
     default void migrate(String modelVersion) {
     }

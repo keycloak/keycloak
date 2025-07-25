@@ -11,13 +11,8 @@ realm and only be able to interact with customer-facing apps.
 
 .Procedure
 
-. Click *{project_name}* next to *master realm*, then click *Create Realm*.
-+
-.Add realm menu
-image:images/add-realm-menu.png[Add realm menu]
-
+. In the Admin Console, click *Create Realm* next to *Current realm*.
 . Enter a name for the realm.
-
 . Click *Create*.
 +
 .Create realm

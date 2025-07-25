@@ -424,8 +424,7 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
         ClaimsRepresentation claims = new ClaimsRepresentation();
         claims.setIdTokenClaims(Collections.singletonMap(IDToken.ACR, acrClaim));
 
-        oauth.claims(claims);
-        oauth.openLoginForm();
+        oauth.loginForm().claims(claims).open();
     }
 
     /**
@@ -445,7 +444,7 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
      */
     private void logout(String userId, Tokens tokens){
         // Logout
-        oauth.doLogout(tokens.refreshToken, CLIENT_SECRET);
+        oauth.doLogout(tokens.refreshToken);
         events.expectLogout(tokens.idToken.getSessionState())
                 .client(CLIENT_ID)
                 .user(userId)

@@ -17,12 +17,13 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.File;
 import java.io.IOException;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.Map;
+import java.util.stream.Collectors;
+import org.keycloak.compatibility.CompatibilityMetadataProvider;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
-import org.keycloak.quarkus.runtime.compatibility.ServerInfo;
 import org.keycloak.util.JsonSerialization;
 import picocli.CommandLine;
 
@@ -40,12 +41,16 @@ public class UpdateCompatibilityMetadata extends AbstractUpdatesCommand {
     String outputFile;
 
     @Override
-    public void run() {
-        printPreviewWarning();
-        validateConfig();
-        var info = compatibilityManager.current();
-        printToConsole(info);
-        writeToFile(info);
+    int executeAction() {
+        var metadata = loadAllProviders()
+                .values()
+                .stream()
+                .map(Entry::new)
+                .filter(Entry::hasMetadata)
+                .collect(Collectors.toMap(Entry::id, Entry::metadata));
+        printToConsole(metadata);
+        writeToFile(metadata);
+        return 0;
     }
 
     @Override
@@ -75,22 +80,22 @@ public class UpdateCompatibilityMetadata extends AbstractUpdatesCommand {
         validateFileIsNotDirectory(file, OUTPUT_OPTION_NAME);
     }
 
-    private void printToConsole(ServerInfo info) {
+    private void printToConsole(Map<String, Map<String, String>> metadata) {
         try {
-            var json = JsonSerialization.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(info);
-            printOut("Metadata:%n%s".formatted(json));
+            var json = JsonSerialization.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(metadata);
+            picocli.getOutWriter().println("Metadata:%n%s".formatted(json));
         } catch (JsonProcessingException e) {
             throw new PropertyException("Unable to create JSON representation of the metadata", e);
         }
     }
 
-    private void writeToFile(ServerInfo info) {
+    private void writeToFile(Map<String, Map<String, String>> metadata) {
         if (noOutputFileSet()) {
             return;
         }
         var file = new File(outputFile);
         try {
-            JsonSerialization.mapper.writeValue(file, info);
+            JsonSerialization.mapper.writeValue(file, metadata);
         } catch (IOException e) {
             throw new PropertyException("Unable to write file '%s'".formatted(file.getAbsolutePath()), e);
         }
@@ -98,5 +103,16 @@ public class UpdateCompatibilityMetadata extends AbstractUpdatesCommand {
 
     private boolean noOutputFileSet() {
         return outputFile == null || outputFile.isBlank();
+    }
+
+    private record Entry(String id, Map<String, String> metadata) {
+
+        Entry(CompatibilityMetadataProvider provider) {
+            this(provider.getId(), provider.metadata());
+        }
+
+        boolean hasMetadata() {
+            return !metadata().isEmpty();
+        }
     }
 }

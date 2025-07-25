@@ -180,6 +180,7 @@ export const AddScopeDialog = ({
                     onClick={() => setAddToggle(!addToggle)}
                     variant="primary"
                     id="add-dropdown"
+                    data-testid="add-dropdown"
                     statusIcon={<CaretUpIcon />}
                   >
                     {t("add")}

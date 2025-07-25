@@ -1,6 +1,7 @@
 package org.keycloak.testframework.events;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.keycloak.common.util.reflections.Reflections;
 import org.keycloak.events.admin.OperationType;
@@ -31,12 +32,31 @@ public class AdminEventAssertion {
 
     public static AdminEventAssertion assertSuccess(AdminEventRepresentation event) {
         Assertions.assertFalse(event.getOperationType().endsWith("_ERROR"), "Expected successful event");
-        return new AdminEventAssertion(event, true).assertValidOperationType();
+        return new AdminEventAssertion(event, true)
+                .assertEventId()
+                .assertValidOperationType();
     }
 
     public static AdminEventAssertion assertError(AdminEventRepresentation event) {
         Assertions.assertTrue(event.getOperationType().endsWith("_ERROR"), "Expected error event");
-        return new AdminEventAssertion(event, false).assertValidOperationType();
+        return new AdminEventAssertion(event, false)
+                .assertEventId()
+                .assertValidOperationType();
+    }
+
+    public static AdminEventAssertion assertEvent(AdminEventRepresentation event, OperationType operationType, String resourcePath, Object representation, ResourceType resourceType) {
+        return assertSuccess(event)
+                .operationType(operationType)
+                .resourcePath(resourcePath)
+                .representation(representation)
+                .resourceType(resourceType);
+    }
+
+    public static AdminEventAssertion assertEvent(AdminEventRepresentation event, OperationType operationType, String resourcePath, ResourceType resourceType) {
+        return assertSuccess(event)
+                .operationType(operationType)
+                .resourcePath(resourcePath)
+                .resourceType(resourceType);
     }
 
     public AdminEventAssertion operationType(OperationType operationType) {
@@ -111,6 +131,11 @@ public class AdminEventAssertion {
                 throw new RuntimeException(ioe);
             }
         }
+        return this;
+    }
+
+    private AdminEventAssertion assertEventId() {
+        MatcherAssert.assertThat(event.getId(), EventMatchers.isUUID());
         return this;
     }
 

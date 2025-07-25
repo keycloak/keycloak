@@ -1,5 +1,5 @@
 import { ProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
-import { ActionGroup, Button, FormGroup } from "@patternfly/react-core";
+import { ActionGroup, Button, FormGroup, Switch } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { HelpItem, SelectControl } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
@@ -8,6 +8,7 @@ import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { convertAttributeNameToForm, sortProviders } from "../../util";
 import { FormFields } from "../ClientDetails";
 import { ApplicationUrls } from "./ApplicationUrls";
+import { Controller, useFormContext } from "react-hook-form";
 
 type FineGrainOpenIdConnectProps = {
   save: () => void;
@@ -21,6 +22,7 @@ export const FineGrainOpenIdConnect = ({
   hasConfigureAccess,
 }: FineGrainOpenIdConnectProps) => {
   const { t } = useTranslation();
+  const { control } = useFormContext();
   const providers = useServerInfo().providers;
   const clientSignatureProviders = providers?.clientSignature.providers;
   const contentEncryptionProviders = providers?.contentencryption.providers;
@@ -63,6 +65,35 @@ export const FineGrainOpenIdConnect = ({
         }}
         options={prependEmpty(clientSignatureProviders!)}
       />
+      <FormGroup
+        label={t("useRfc9068AccessTokenType")}
+        fieldId="useRfc9068AccessTokenType"
+        hasNoPaddingTop
+        labelIcon={
+          <HelpItem
+            helpText={t("useRfc9068AccessTokenTypeHelp")}
+            fieldLabelId="useRfc9068AccessTokenType"
+          />
+        }
+      >
+        <Controller
+          name={convertAttributeNameToForm<FormFields>(
+            "attributes.access.token.header.type.rfc9068",
+          )}
+          defaultValue="false"
+          control={control}
+          render={({ field }) => (
+            <Switch
+              id="useRfc9068AccessTokenType"
+              label={t("on")}
+              labelOff={t("off")}
+              isChecked={field.value === "true"}
+              onChange={(_event, value) => field.onChange(value.toString())}
+              aria-label={t("useRfc9068AccessTokenType")}
+            />
+          )}
+        />
+      </FormGroup>
       <SelectControl
         name={convertAttributeNameToForm<FormFields>(
           "attributes.id.token.signed.response.alg",
@@ -138,7 +169,7 @@ export const FineGrainOpenIdConnect = ({
         label={t("requestObjectSignatureAlgorithm")}
         labelIcon={t("requestObjectSignatureAlgorithmHelp")}
         controller={{
-          defaultValue: "",
+          defaultValue: "any",
         }}
         options={[
           { key: "any", value: t("any") },
@@ -152,7 +183,7 @@ export const FineGrainOpenIdConnect = ({
         label={t("requestObjectEncryption")}
         labelIcon={t("requestObjectEncryptionHelp")}
         controller={{
-          defaultValue: "",
+          defaultValue: "any",
         }}
         options={prependAny(cekManagementProviders!)}
       />
@@ -163,7 +194,7 @@ export const FineGrainOpenIdConnect = ({
         label={t("requestObjectEncoding")}
         labelIcon={t("requestObjectEncodingHelp")}
         controller={{
-          defaultValue: "",
+          defaultValue: "any",
         }}
         options={prependAny(contentEncryptionProviders!)}
       />
@@ -174,7 +205,7 @@ export const FineGrainOpenIdConnect = ({
         label={t("requestObjectRequired")}
         labelIcon={t("requestObjectRequiredHelp")}
         controller={{
-          defaultValue: "",
+          defaultValue: "not required",
         }}
         options={[
           "not required",
@@ -237,10 +268,20 @@ export const FineGrainOpenIdConnect = ({
         options={prependEmpty(contentEncryptionProviders!)}
       />
       <ActionGroup>
-        <Button variant="secondary" id="fineGrainSave" onClick={save}>
+        <Button
+          variant="secondary"
+          id="fineGrainSave"
+          data-testid="fineGrainSave"
+          onClick={save}
+        >
           {t("save")}
         </Button>
-        <Button id="fineGrainRevert" variant="link" onClick={reset}>
+        <Button
+          id="fineGrainRevert"
+          data-testid="fineGrainRevert"
+          variant="link"
+          onClick={reset}
+        >
           {t("revert")}
         </Button>
       </ActionGroup>

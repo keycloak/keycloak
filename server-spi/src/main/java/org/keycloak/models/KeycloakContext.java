@@ -87,6 +87,10 @@ public interface KeycloakContext {
         return resolveLocale(user);
     }
 
+    default Locale resolveLocale(UserModel user, boolean ignoreAcceptLanguageHeader) {
+        return resolveLocale(user);
+    }
+
     /**
      * Get current AuthenticationSessionModel, can be null out of the AuthenticationSession context.
      *
@@ -110,7 +114,20 @@ public interface KeycloakContext {
 
     void setUserSession(UserSessionModel session);
 
+    /**
+     * Returns a {@link Token} representing the bearer token used to authenticate and authorize the current request.
+     *
+     * @return the bearer token
+     */
     Token getBearerToken();
 
     void setBearerToken(Token token);
+
+    /**
+     * Returns the {@link UserModel} bound to this context. The user is first resolved from the {@link #getBearerToken()} set to this
+     * context, if any. Otherwise, it will be resolved from the {@link #getUserSession()} set to this context, if any.
+     *
+     * @return the {@link UserModel} bound to this context.
+     */
+    UserModel getUser();
 }

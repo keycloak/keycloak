@@ -17,10 +17,21 @@
 
 package org.keycloak.exportimport;
 
+import java.util.Map;
+
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderFactory;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public interface ImportProviderFactory extends ProviderFactory<ImportProvider> {
+
+    ImportProvider create(KeycloakSession session, Map<String, String> overrides);
+
+    @Override
+    default ImportProvider create(KeycloakSession session) {
+        return create(session, Map.of());
+    }
+
 }

@@ -8,16 +8,6 @@ import org.keycloak.testframework.injection.Supplier;
 public class KeycloakUrlsSupplier implements Supplier<KeycloakUrls, InjectKeycloakUrls> {
 
     @Override
-    public Class<InjectKeycloakUrls> getAnnotationClass() {
-        return InjectKeycloakUrls.class;
-    }
-
-    @Override
-    public Class<KeycloakUrls> getValueType() {
-        return KeycloakUrls.class;
-    }
-
-    @Override
     public KeycloakUrls getValue(InstanceContext<KeycloakUrls, InjectKeycloakUrls> instanceContext) {
         KeycloakServer server = instanceContext.getDependency(KeycloakServer.class);
         return new KeycloakUrls(server.getBaseUrl(), server.getManagementBaseUrl());

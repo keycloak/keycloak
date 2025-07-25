@@ -1,16 +1,14 @@
-import { SelectControl } from "@keycloak/keycloak-ui-shared";
+import { SelectControl, FileUploadControl } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   ButtonVariant,
-  FileUpload,
   Form,
-  FormGroup,
   Modal,
   ModalVariant,
   Text,
   TextContent,
 } from "@patternfly/react-core";
-import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
+import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { StoreSettings } from "./StoreSettings";
@@ -24,7 +22,7 @@ export type ImportFile = {
   keystoreFormat: string;
   keyAlias: string;
   storePassword: string;
-  file: { value?: string; filename: string };
+  file: File | string;
 };
 
 export const ImportKeyDialog = ({
@@ -60,8 +58,8 @@ export const ImportKeyDialog = ({
           id="modal-confirm"
           data-testid="confirm"
           key="confirm"
-          onClick={() => {
-            handleSubmit((importFile) => {
+          onClick={async () => {
+            await handleSubmit((importFile) => {
               save(importFile);
               toggleDialog();
             })();
@@ -74,9 +72,7 @@ export const ImportKeyDialog = ({
           data-testid="cancel"
           key="cancel"
           variant={ButtonVariant.link}
-          onClick={() => {
-            toggleDialog();
-          }}
+          onClick={toggleDialog}
         >
           {t("cancel")}
         </Button>,
@@ -96,27 +92,15 @@ export const ImportKeyDialog = ({
             }}
             options={formats}
           />
+          <FileUploadControl
+            label={t("importFile")}
+            id="importFile"
+            name="file"
+            rules={{
+              required: t("required"),
+            }}
+          />
           {baseFormats.includes(format) && <StoreSettings hidePassword />}
-          <FormGroup label={t("importFile")} fieldId="importFile">
-            <Controller
-              name="file"
-              control={control}
-              defaultValue={{ filename: "" }}
-              render={({ field }) => (
-                <FileUpload
-                  id="importFile"
-                  value={field.value.value}
-                  filename={field.value.filename}
-                  onTextChange={(value) =>
-                    field.onChange({ ...field.value, value })
-                  }
-                  onFileInputChange={(_, file) =>
-                    field.onChange({ ...field.value, filename: file.name })
-                  }
-                />
-              )}
-            />
-          </FormGroup>
         </FormProvider>
       </Form>
     </Modal>

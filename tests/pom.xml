@@ -35,6 +35,19 @@
     <modules>
         <module>base</module>
         <module>utils</module>
+        <module>utils-shared</module>
+        <module>custom-providers</module>
+        <module>custom-scripts</module>
+        <module>clustering</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>test-migration-util</id>
+            <modules>
+                <module>migration-util</module>
+            </modules>
+        </profile>
+    </profiles>
 
 </project>

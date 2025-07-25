@@ -1,7 +1,4 @@
 import type PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
-import ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
-import ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
-import PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
 import { SelectControl, TextControl } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
@@ -24,25 +21,17 @@ export type SearchForm = {
   type?: string;
   uri?: string;
   owner?: string;
-  resourceType?: string;
-  policy?: string;
 };
 
 type SearchDropdownProps = {
-  policies?: PolicyRepresentation[];
   types?: PolicyProviderRepresentation[] | PolicyProviderRepresentation[];
-  resources?: ResourceRepresentation[];
-  scopes?: ScopeRepresentation[];
   search: SearchForm;
   onSearch: (form: SearchForm) => void;
-  type: "resource" | "policy" | "permission" | "adminPermission";
+  type: "resource" | "policy" | "permission";
 };
 
 export const SearchDropdown = ({
-  policies,
   types,
-  resources,
-  scopes,
   search,
   onSearch,
   type,
@@ -76,8 +65,7 @@ export const SearchDropdown = ({
         >
           {type === "resource" && t("searchClientAuthorizationResource")}
           {type === "policy" && t("searchClientAuthorizationPolicy")}
-          {(type === "permission" || type === "adminPermission") &&
-            t("searchClientAuthorizationPermission")}
+          {type === "permission" && t("searchClientAuthorizationPermission")}
         </MenuToggle>
       )}
       isOpen={open}
@@ -96,71 +84,20 @@ export const SearchDropdown = ({
               <TextControl name="owner" label={t("owner")} />
             </>
           )}
-          {type !== "resource" &&
-            type !== "policy" &&
-            type !== "adminPermission" && (
-              <TextControl name="resource" label={t("resource")} />
-            )}
-          {type !== "policy" && type !== "adminPermission" && (
-            <TextControl name="scope" label={t("scope")} />
+          {type !== "resource" && type !== "policy" && (
+            <TextControl name="resource" label={t("resource")} />
           )}
+          {type !== "policy" && <TextControl name="scope" label={t("scope")} />}
           {type !== "resource" && (
             <SelectControl
-              name={type !== "adminPermission" ? "type" : "resourceType"}
-              label={type !== "adminPermission" ? t("type") : t("resourceType")}
+              name="type"
+              label={t("type")}
               controller={{
                 defaultValue: "",
               }}
               options={[
                 { key: "", value: t("allTypes") },
-                ...(Array.isArray(types)
-                  ? types.map(({ type, name }) => ({
-                      key: type!,
-                      value: name!,
-                    }))
-                  : []),
-              ]}
-            />
-          )}
-          {type === "adminPermission" && (
-            <SelectControl
-              name={"resource"}
-              label={t("resource")}
-              controller={{
-                defaultValue: "",
-              }}
-              options={[
-                ...(resources || []).map(({ type, name }) => ({
-                  key: type!,
-                  value: name!,
-                })),
-              ]}
-            />
-          )}
-          {type === "adminPermission" && (
-            <SelectControl
-              name={"authorizationScope"}
-              label={t("authorizationScope")}
-              controller={{
-                defaultValue: "",
-              }}
-              options={[
-                ...(scopes || []).map(({ name }) => ({
-                  key: name!,
-                  value: name!,
-                })),
-              ]}
-            />
-          )}
-          {type === "adminPermission" && (
-            <SelectControl
-              name={"policy"}
-              label={t("policy")}
-              controller={{
-                defaultValue: "",
-              }}
-              options={[
-                ...(policies || []).map(({ type, name }) => ({
+                ...(types || []).map(({ type, name }) => ({
                   key: type!,
                   value: name!,
                 })),

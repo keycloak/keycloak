@@ -26,11 +26,22 @@ import static org.junit.Assert.assertEquals;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Locale;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+import jakarta.ws.rs.core.HttpHeaders;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.message.BasicNameValuePair;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -50,6 +61,7 @@ import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
+import org.openqa.selenium.Cookie;
 
 /**
  * @author <a href="mailto:gerbermichi@me.com">Michael Gerber</a>
@@ -81,11 +93,12 @@ public class EmailTest extends AbstractI18NTest {
     @Test
     public void restPasswordEmail() throws MessagingException, IOException {
         String expectedBodyContent = "Someone just requested to change";
-        verifyResetPassword("Reset password", expectedBodyContent, 1);
+        sendResetPasswordEmail();
+        verifyResetPassword("Reset password", expectedBodyContent, null, 1);
 
         changeUserLocale("en");
-
-        verifyResetPassword("Reset password", expectedBodyContent, 2);
+        sendResetPasswordEmail();
+        verifyResetPassword("Reset password", expectedBodyContent, null, 2);
     }
 
     @Test
@@ -109,11 +122,13 @@ public class EmailTest extends AbstractI18NTest {
         getCleanup().addLocalization(Locale.GERMAN.toLanguageTag());
 
         try {
-            verifyResetPassword(subjectEn, expectedBodyContentEn, 1);
+            sendResetPasswordEmail();
+            verifyResetPassword(subjectEn, expectedBodyContentEn, "<html lang=\"en\" dir=\"ltr\">", 1);
 
             changeUserLocale("de");
 
-            verifyResetPassword(subjectDe, expectedBodyContentDe, 2);
+            sendResetPasswordEmail();
+            verifyResetPassword(subjectDe, expectedBodyContentDe, "<html lang=\"de\" dir=\"ltr\">", 2);
         } finally {
             // Revert
             changeUserLocale("en");
@@ -124,7 +139,8 @@ public class EmailTest extends AbstractI18NTest {
     public void restPasswordEmailGerman() throws MessagingException, IOException {
         changeUserLocale("de");
         try {
-            verifyResetPassword("Passwort zurücksetzen", "Es wurde eine Änderung", 1);
+            sendResetPasswordEmail();
+            verifyResetPassword("Passwort zurücksetzen", "Es wurde eine Änderung", null, 1);
         } finally {
             // Revert
             changeUserLocale("en");
@@ -158,12 +174,50 @@ public class EmailTest extends AbstractI18NTest {
         }
     }
 
-    private void verifyResetPassword(String expectedSubject, String expectedTextBodyContent, int expectedMsgCount)
-            throws MessagingException, IOException {
+    @Test
+    public void restPasswordEmailWithAcceptLanguageHeader() throws MessagingException, IOException {
+        changeUserLocale(null);
+        try {
+
+            loginPage.open();
+            loginPage.resetPassword();
+
+            try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+
+                Set<Cookie> cookies =  oauth.getDriver().manage().getCookies();
+                String cookieHeader = cookies.stream()
+                        .map(cookie -> cookie.getName() + "=" + cookie.getValue())
+                        .collect(Collectors.joining("; "));
+                String resetFormUrl = resetPasswordPage.getFormUrl();
+
+                HttpPost post = new HttpPost(resetFormUrl);
+                post.setHeader(HttpHeaders.COOKIE, cookieHeader);
+                post.addHeader(HttpHeaders.ACCEPT_LANGUAGE, "de");
+
+                List<NameValuePair> parameters = new LinkedList<>();
+                parameters.add(new BasicNameValuePair("username", "login-test"));
+                UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
+                post.setEntity(formEntity);
+
+                CloseableHttpResponse response = client.execute(post);
+                assertEquals(200, response.getStatusLine().getStatusCode());
+            }
+            verifyResetPassword("Passwort zurücksetzen", "Es wurde eine Änderung", null, 1);
+        } finally {
+            // Revert
+            changeUserLocale("en");
+        }
+    }
+
+
+    private void sendResetPasswordEmail() {
         loginPage.open();
         loginPage.resetPassword();
         resetPasswordPage.changePassword("login-test");
+    }
 
+    private void verifyResetPassword(String expectedSubject, String expectedTextBodyContent, String expectedHtmlBodyContent, int expectedMsgCount)
+            throws MessagingException, IOException {
         assertEquals(expectedMsgCount, greenMail.getReceivedMessages().length);
 
         MimeMessage message = greenMail.getReceivedMessages()[expectedMsgCount - 1];
@@ -175,6 +229,11 @@ public class EmailTest extends AbstractI18NTest {
         // make sure all placeholders have been replaced
         assertThat(textBody, not(containsString("{")));
         assertThat(textBody, not(containsString("}")));
+
+        if (expectedHtmlBodyContent != null) {
+            String htmlBody = MailUtils.getBody(message).getHtml();
+            assertThat(htmlBody, containsString(expectedHtmlBodyContent));
+        }
     }
 
     //KEYCLOAK-7478
@@ -226,10 +285,8 @@ public class EmailTest extends AbstractI18NTest {
     // Issue 10981
     @Test
     public void resetPasswordOriginalUiLocalePreservedAfterForgetPassword() throws MessagingException, IOException {
-        oauth.uiLocales("de");
-
         // Assert login page is in german
-        loginPage.open();
+        oauth.loginForm().uiLocales("de").open();
         assertEquals("Deutsch", loginPage.getLanguageDropdownText());
 
         // Click "Forget password"

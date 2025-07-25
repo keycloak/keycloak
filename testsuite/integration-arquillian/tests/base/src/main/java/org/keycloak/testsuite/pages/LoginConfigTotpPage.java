@@ -89,10 +89,6 @@ public class LoginConfigTotpPage extends LogoutSessionsPage {
         }
     }
 
-    public void open() {
-        throw new UnsupportedOperationException();
-    }
-
     public void clickManual() {
         UIUtils.clickLink(manualLink);
     }

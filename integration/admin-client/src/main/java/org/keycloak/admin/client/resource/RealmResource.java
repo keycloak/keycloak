@@ -126,6 +126,23 @@ public interface RealmResource {
             @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
             @QueryParam("max") Integer maxResults);
 
+    /**
+     * Get events
+     *
+     * Returns all events, or filters them based on URL query parameters listed here
+     *
+     * @param types The types of events to return
+     * @param client App or oauth client name
+     * @param user User id
+     * @param ipAddress IP address
+     * @param dateFrom From (inclusive) date (yyyy-MM-dd)
+     * @param dateTo To (inclusive) date (yyyy-MM-dd)
+     * @param firstResult Paging offset
+     * @param maxResults Maximum results size (defaults to 100)
+     * @param direction The direction to sort events by. Available values are "asc" or "desc". The parameter is supported since Keycloak 26.2
+     * @return events
+     * @since Keycloak 26.2. Use method {@link #getEvents(List, String, String, String, String, String, Integer, Integer)} for the older versions of the Keycloak server
+     */
     @Path("events")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -135,6 +152,23 @@ public interface RealmResource {
             @QueryParam("max") Integer maxResults,
             @QueryParam("direction") String direction);
 
+    /**
+     * Get events
+     *
+     * Returns all events, or filters them based on URL query parameters listed here
+     *
+     * @param types The types of events to return
+     * @param client App or oauth client name
+     * @param user User id
+     * @param ipAddress IP address
+     * @param dateFrom time in Epoch timestamp. The parameter is supported since Keycloak 26.2
+     * @param dateTo time in Epoch timestamp. The parameter is supported since Keycloak 26.2
+     * @param firstResult Paging offset
+     * @param maxResults Maximum results size (defaults to 100)
+     * @param direction The direction to sort events by. Available values are "asc" or "desc". The parameter is supported since Keycloak 26.2
+     * @return events
+     * @since Keycloak 26.2. Use method {@link #getEvents(List, String, String, String, String, String, Integer, Integer)} for the older versions of the Keycloak server
+     */
     @Path("events")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -171,6 +205,26 @@ public interface RealmResource {
             @QueryParam("dateTo") String dateTo, @QueryParam("first") Integer firstResult,
             @QueryParam("max") Integer maxResults);
 
+    /**
+     * Get admin events
+     *
+     * Returns all admin events, or filters events based on URL query parameters listed here
+     *
+     * @param operationTypes operation types
+     * @param authRealm realm, from where the user was authenticated
+     * @param authClient client, which authenticated the event operation
+     * @param authUser user, which did the particular admin event
+     * @param authIpAddress IP address from which the event was done
+     * @param resourcePath resource path
+     * @param resourceTypes resource types
+     * @param dateFrom time in Epoch timestamp. The parameter is supported since Keycloak 26.2
+     * @param dateTo time in Epoch timestamp. The parameter is supported since Keycloak 26.2
+     * @param firstResult Paging offset
+     * @param maxResults Maximum results size (defaults to 100)
+     * @param direction The direction to sort events by. Available values are "asc" or "desc". The parameter is supported since Keycloak 26.2
+     * @return admin events
+     * @since Keycloak 26.2. Use method {@link #getAdminEvents(List, String, String, String, String, String, List, String, String, Integer, Integer)} for the older versions of the Keycloak server
+     */
     @GET
     @Path("admin-events")
     @Produces(MediaType.APPLICATION_JSON)
@@ -180,6 +234,26 @@ public interface RealmResource {
             @QueryParam("dateTo") String dateTo, @QueryParam("first") Integer firstResult,
             @QueryParam("max") Integer maxResults, @QueryParam("direction") String direction);
 
+    /**
+     * Get admin events
+     *
+     * Returns all admin events, or filters events based on URL query parameters listed here
+     *
+     * @param operationTypes operation types
+     * @param authRealm realm, from where the user was authenticated
+     * @param authClient client, which authenticated the event operation
+     * @param authUser user, which did the particular admin event
+     * @param authIpAddress IP address from which the event was done
+     * @param resourcePath resource path
+     * @param resourceTypes resource types
+     * @param dateFrom From (inclusive) date (yyyy-MM-dd)
+     * @param dateTo To (inclusive) date (yyyy-MM-dd)
+     * @param firstResult Paging offset
+     * @param maxResults Maximum results size (defaults to 100)
+     * @param direction The direction to sort events by. Available values are "asc" or "desc". The parameter is supported since Keycloak 26.2
+     * @return admin events
+     * @since Keycloak 26.2. Use method {@link #getAdminEvents(List, String, String, String, String, String, List, String, String, Integer, Integer)} for the older versions of the Keycloak server
+     */
     @GET
     @Path("admin-events")
     @Produces(MediaType.APPLICATION_JSON)
@@ -293,6 +367,10 @@ public interface RealmResource {
     @POST
     void clearKeysCache();
 
+    /**
+     * Clear the crl cache (CRLs loaded for X509 authentication
+     * @since Keycloak 26.2
+     */
     @Path("clear-crl-cache")
     @POST
     void clearCrlCache();

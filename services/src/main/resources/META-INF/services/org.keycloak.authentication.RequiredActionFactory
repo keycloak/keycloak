@@ -28,3 +28,4 @@ org.keycloak.authentication.requiredactions.DeleteCredentialAction
 org.keycloak.authentication.requiredactions.VerifyUserProfile
 org.keycloak.authentication.requiredactions.RecoveryAuthnCodesAction
 org.keycloak.authentication.requiredactions.UpdateEmail
+org.keycloak.broker.provider.IdpLinkAction

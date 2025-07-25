@@ -11,9 +11,13 @@ import jakarta.ws.rs.core.UriBuilder;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.requiredactions.DeleteAccount;
+import org.keycloak.authentication.requiredactions.UpdateEmail;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Environment;
+import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderStorageProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.PkceUtils;
 import org.keycloak.utils.SecureContextResolver;
@@ -22,7 +26,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -59,14 +62,12 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Created by st on 29/03/17.
  */
 public class AccountConsole implements AccountResourceProvider {
-
-    // Used when some other context (ie. IdentityBrokerService) wants to forward error to account management and display it here
-    public static final String ACCOUNT_MGMT_FORWARDED_ERROR_NOTE = "ACCOUNT_MGMT_FORWARDED_ERROR";
 
     private final Pattern bundleParamPattern = Pattern.compile("(\\{\\s*(\\d+)\\s*\\})");
 
@@ -184,6 +185,7 @@ public class AccountConsole implements AccountResourceProvider {
         });
 
         map.put("isAuthorizationEnabled", Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION));
+        map.put("isLinkedAccountsEnabled", isLinkedAccountsEnabled(user));
 
         boolean deleteAccountAllowed = false;
         boolean isViewGroupsEnabled = false;
@@ -201,8 +203,7 @@ public class AccountConsole implements AccountResourceProvider {
         map.put("isOid4VciEnabled", realm.isVerifiableCredentialsEnabled());
 
         map.put("updateEmailFeatureEnabled", Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL));
-        RequiredActionProviderModel updateEmailActionProvider = realm.getRequiredActionProviderByAlias(UserModel.RequiredAction.UPDATE_EMAIL.name());
-        map.put("updateEmailActionEnabled", updateEmailActionProvider != null && updateEmailActionProvider.isEnabled());
+        map.put("updateEmailActionEnabled", UpdateEmail.isEnabled(realm));
 
         final var devServerUrl = Environment.isDevMode() ? System.getenv(ViteManifest.ACCOUNT_VITE_URL) : null;
 
@@ -264,6 +265,9 @@ public class AccountConsole implements AccountResourceProvider {
         UriBuilder uriBuilder = UriBuilder.fromUri(OIDCLoginProtocolService.authUrl(session.getContext().getUri()).build(realm.getName()).toString())
                 .queryParam(OAuth2Constants.CLIENT_ID, Constants.ACCOUNT_CONSOLE_CLIENT_ID)
                 .queryParam(OAuth2Constants.REDIRECT_URI, targetUri)
+                // dummy state param to make it usable with secure-session client policy.
+                // Once bootstrapped the account-console frontend will send the actual state with the authorize request.
+                .queryParam(OAuth2Constants.STATE, UUID.randomUUID().toString())
                 .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE)
                 .queryParam(OAuth2Constants.CODE_CHALLENGE, pkceChallenge)
                 .queryParam(OAuth2Constants.CODE_CHALLENGE_METHOD, OAuth2Constants.PKCE_METHOD_S256);
@@ -271,10 +275,20 @@ public class AccountConsole implements AccountResourceProvider {
         if (!queryParameters.isEmpty()) {
             String error = queryParameters.getFirst(OAuth2Constants.ERROR);
             if (error != null) {
-                try {
-                    return renderAccountConsole();
-                } catch (IOException | FreeMarkerException e) {
-                    throw new ServerErrorException(Status.INTERNAL_SERVER_ERROR);
+                String state = queryParameters.getFirst(OAuth2Constants.STATE);
+                if (state != null) {
+                    // Omit the "state" parameter to make sure that account console displays the error (it may not be shown due the keycloak.js, which will not be able to find the "callback data" in the browser callbackStorage)
+                    URI url = session.getContext().getUri(UrlType.FRONTEND)
+                            .getRequestUriBuilder()
+                            .replaceQueryParam(OAuth2Constants.STATE, null)
+                            .build();
+                    return Response.status(302).location(url).build();
+                } else {
+                    try {
+                        return renderAccountConsole();
+                    } catch (IOException | FreeMarkerException e) {
+                        throw new ServerErrorException(Status.INTERNAL_SERVER_ERROR);
+                    }
                 }
             }
             String scope = queryParameters.getFirst(OIDCLoginProtocol.SCOPE_PARAM);
@@ -368,5 +382,21 @@ public class AccountConsole implements AccountResourceProvider {
         }
 
         return new String[]{referrer, referrerName, referrerUri};
+    }
+
+    private boolean isLinkedAccountsEnabled(UserModel user) {
+        if (user == null) {
+            return false;
+        }
+
+        IdentityProviderStorageProvider identityProviders = session.identityProviders();
+        Stream<IdentityProviderModel> realmBrokers = identityProviders.getAllStream(Map.of(
+                IdentityProviderModel.ENABLED, "true",
+                IdentityProviderModel.ORGANIZATION_ID, ""), 0, 1);
+        Stream<IdentityProviderModel> linkedBrokers = session.users().getFederatedIdentitiesStream(realm, user)
+                .map(FederatedIdentityModel::getIdentityProvider)
+                .map(identityProviders::getByAlias);
+
+        return Stream.concat(realmBrokers, linkedBrokers).findAny().isPresent();
     }
 }

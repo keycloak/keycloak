@@ -40,7 +40,7 @@ import org.keycloak.testsuite.auth.page.login.OneTimeCode;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
-import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 /**
  * <p>Test for the ConditionalSubFlowExecutedAuthenticator. A <em>test</em> parent
@@ -75,12 +75,9 @@ public class ConditionalSubFlowExecutedAuthenticatorTest extends AbstractTestRea
 
     @Test
     public void testWithoutOtpConfiguredExecuted() {
-        configureConditionalSubFlowExecutedAuthenticatorInFlow("test Browser - Conditional OTP", ConditionalSubFlowExecutedAuthenticatorFactory.CHECK_RESULT_EXECUTED);
+        configureConditionalSubFlowExecutedAuthenticatorInFlow("test Browser - Conditional 2FA", ConditionalSubFlowExecutedAuthenticatorFactory.CHECK_RESULT_EXECUTED);
 
-        loginPage.open();
-
-        loginPage.assertCurrent();
-        loginPage.login("test-user@localhost", "password");
+        oauth.doLogin("test-user@localhost", "password");
 
         // no otp => check executed => allowed
         checkAllowed("test-user@localhost");
@@ -88,12 +85,9 @@ public class ConditionalSubFlowExecutedAuthenticatorTest extends AbstractTestRea
 
     @Test
     public void testWithoutOtpConfiguredNotExecuted() {
-        configureConditionalSubFlowExecutedAuthenticatorInFlow("test Browser - Conditional OTP", ConditionalSubFlowExecutedAuthenticatorFactory.CHECK_RESULT_NOT_EXECUTED);
+        configureConditionalSubFlowExecutedAuthenticatorInFlow("test Browser - Conditional 2FA", ConditionalSubFlowExecutedAuthenticatorFactory.CHECK_RESULT_NOT_EXECUTED);
 
-        loginPage.open();
-
-        loginPage.assertCurrent();
-        loginPage.login("test-user@localhost", "password");
+        oauth.doLogin("test-user@localhost", "password");
 
         // no otp => check not-executed => denied
         checkDenied();
@@ -101,12 +95,9 @@ public class ConditionalSubFlowExecutedAuthenticatorTest extends AbstractTestRea
 
     @Test
     public void testWithOtpConfiguredExecuted() {
-        configureConditionalSubFlowExecutedAuthenticatorInFlow("test Browser - Conditional OTP", ConditionalSubFlowExecutedAuthenticatorFactory.CHECK_RESULT_EXECUTED);
+        configureConditionalSubFlowExecutedAuthenticatorInFlow("test Browser - Conditional 2FA", ConditionalSubFlowExecutedAuthenticatorFactory.CHECK_RESULT_EXECUTED);
 
-        loginPage.open();
-
-        loginPage.assertCurrent();
-        loginPage.login("user-with-one-configured-otp", "password");
+        oauth.doLogin("user-with-one-configured-otp", "password");
 
         loginTotpPage.assertCurrent();
         oneTimeCodePage.sendCode(new TimeBasedOTP().generateTOTP("DJmQfC73VGFhw7D4QJ8A"));
@@ -117,12 +108,9 @@ public class ConditionalSubFlowExecutedAuthenticatorTest extends AbstractTestRea
 
     @Test
     public void testWithOtpConfiguredNotExecuted() {
-        configureConditionalSubFlowExecutedAuthenticatorInFlow("test Browser - Conditional OTP", ConditionalSubFlowExecutedAuthenticatorFactory.CHECK_RESULT_NOT_EXECUTED);
+        configureConditionalSubFlowExecutedAuthenticatorInFlow("test Browser - Conditional 2FA", ConditionalSubFlowExecutedAuthenticatorFactory.CHECK_RESULT_NOT_EXECUTED);
 
-        loginPage.open();
-
-        loginPage.assertCurrent();
-        loginPage.login("user-with-two-configured-otp", "password");
+        oauth.doLogin("user-with-two-configured-otp", "password");
 
         loginTotpPage.assertCurrent();
         oneTimeCodePage.sendCode(new TimeBasedOTP().generateTOTP("DJmQfC73VGFhw7D4QJ8A"));
@@ -135,10 +123,7 @@ public class ConditionalSubFlowExecutedAuthenticatorTest extends AbstractTestRea
     public void testWithInvalidFlowExecuted() {
         configureConditionalSubFlowExecutedAuthenticatorInFlow("invalid flow", ConditionalSubFlowExecutedAuthenticatorFactory.CHECK_RESULT_EXECUTED);
 
-        loginPage.open();
-
-        loginPage.assertCurrent();
-        loginPage.login("test-user@localhost", "password");
+        oauth.doLogin("test-user@localhost", "password");
 
         // no flow => check executed => allowed
         checkAllowed("test-user@localhost");
@@ -148,10 +133,7 @@ public class ConditionalSubFlowExecutedAuthenticatorTest extends AbstractTestRea
     public void testWithInvalidFlowNotExecuted() {
         configureConditionalSubFlowExecutedAuthenticatorInFlow("invalid flow", ConditionalSubFlowExecutedAuthenticatorFactory.CHECK_RESULT_NOT_EXECUTED);
 
-        loginPage.open();
-
-        loginPage.assertCurrent();
-        loginPage.login("test-user@localhost", "password");
+        oauth.doLogin("test-user@localhost", "password");
 
         // no flow => check executed => denied
         checkDenied();
@@ -165,9 +147,9 @@ public class ConditionalSubFlowExecutedAuthenticatorTest extends AbstractTestRea
     }
 
     private void checkAllowed(String username) {
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         Assert.assertNotNull(code);
-        AccessTokenResponse res = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         Assert.assertNull(res.getError());
         Assert.assertNotNull(res.getAccessToken());
 

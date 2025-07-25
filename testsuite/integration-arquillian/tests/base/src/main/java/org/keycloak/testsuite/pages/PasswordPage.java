@@ -1,7 +1,7 @@
 package org.keycloak.testsuite.pages;
 
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
@@ -38,11 +38,11 @@ public class PasswordPage extends LanguageComboboxAwarePage {
         passwordInput.clear();
         passwordInput.sendKeys(password);
 
-        submitButton.click();
+        UIUtils.clickLink(submitButton);
     }
 
     public void clickResetPassword() {
-        resetPasswordLink.click();
+        UIUtils.clickLink(resetPasswordLink);
     }
 
     public String getPassword() {
@@ -91,9 +91,4 @@ public class PasswordPage extends LanguageComboboxAwarePage {
         return true;
     }
 
-
-    @Override
-    public void open() throws Exception {
-        throw new UnsupportedOperationException();
-    }
 }

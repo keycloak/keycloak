@@ -43,6 +43,8 @@ import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.exportimport.ExportImportConfig;
+import org.keycloak.exportimport.dir.DirExportProviderFactory;
+import org.keycloak.exportimport.dir.DirImportProviderFactory;
 import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
 import org.keycloak.exportimport.singlefile.SingleFileImportProviderFactory;
 import org.keycloak.models.OrganizationModel;
@@ -113,8 +115,21 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
             }
         }
 
-        RealmRepresentation importedRealm = exportRemoveImportRealm();
+        RealmRepresentation importedSingleFileRealm = exportRemoveImportRealm(true);
 
+        validateImported(expectedOrganizations, expectedManagedMembers, expectedUnmanagedMembers, importedSingleFileRealm);
+
+        testRealm().logoutAll();
+        providerRealm.logoutAll();
+
+        RealmRepresentation importedDirRealm = exportRemoveImportRealm(false);
+
+        validateImported(expectedOrganizations, expectedManagedMembers, expectedUnmanagedMembers, importedDirRealm);
+    }
+
+    private void validateImported(List<OrganizationRepresentation> expectedOrganizations,
+            Map<String, List<String>> expectedManagedMembers, Map<String, List<String>> expectedUnmanagedMembers,
+            RealmRepresentation importedRealm) {
         assertTrue(importedRealm.isOrganizationsEnabled());
 
         List<OrganizationRepresentation> organizations = testRealm().organizations().list(-1, -1);
@@ -175,31 +190,44 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         List<OrganizationRepresentation> orgs = testRealm().organizations().list(-1, -1);
         assertEquals(1, orgs.size());
 
-        RealmRepresentation importedRealm = exportRemoveImportRealm();
+        RealmRepresentation importedSingleFileRealm = exportRemoveImportRealm(true);
 
-        assertTrue(importedRealm.isOrganizationsEnabled());
+        assertTrue(importedSingleFileRealm.isOrganizationsEnabled());
 
         orgs = testRealm().organizations().list(-1, -1);
         assertEquals(1, orgs.size());
         assertEquals("acme", orgs.get(0).getName());
     }
 
-    private RealmRepresentation exportRemoveImportRealm() {
-        //export
+    private RealmRepresentation exportRemoveImportRealm(boolean file) {
         TestingExportImportResource exportImport = testingClient.testing().exportImport();
-        exportImport.setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
+        String fileOrDir;
+
+        //export
+        if (file) {
+            exportImport.setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
+            fileOrDir = exportImport.getExportImportTestDirectory() + File.separator + "org-export.json";
+            exportImport.setFile(fileOrDir);
+        } else {
+            exportImport.setProvider(DirExportProviderFactory.PROVIDER_ID);
+            fileOrDir = exportImport.getExportImportTestDirectory();
+            exportImport.setDir(fileOrDir);
+        }
         exportImport.setAction(ExportImportConfig.ACTION_EXPORT);
         exportImport.setRealmName(testRealm().toRepresentation().getRealm());
-        String targetFilePath = exportImport.getExportImportTestDirectory() + File.separator + "org-export.json";
-        exportImport.setFile(targetFilePath);
         exportImport.runExport();
 
         // remove the realm and import it back
         testRealm().remove();
         exportImport = testingClient.testing().exportImport();
-        exportImport.setProvider(SingleFileImportProviderFactory.PROVIDER_ID);
+        if (file) {
+            exportImport.setProvider(SingleFileImportProviderFactory.PROVIDER_ID);
+            exportImport.setFile(fileOrDir);
+        } else {
+            exportImport.setProvider(DirImportProviderFactory.PROVIDER_ID);
+            exportImport.setDir(fileOrDir);
+        }
         exportImport.setAction(ExportImportConfig.ACTION_IMPORT);
-        exportImport.setFile(targetFilePath);
         exportImport.runImport();
         getCleanup().addCleanup(() -> {
             testRealm().remove();

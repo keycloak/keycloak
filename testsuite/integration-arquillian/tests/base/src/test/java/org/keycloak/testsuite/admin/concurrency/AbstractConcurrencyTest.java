@@ -41,6 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@Deprecated(forRemoval = true)
 public abstract class AbstractConcurrencyTest extends AbstractTestRealmKeycloakTest {
 
     private static final int DEFAULT_THREADS = 4;

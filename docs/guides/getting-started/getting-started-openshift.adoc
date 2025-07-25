@@ -3,7 +3,7 @@
 
 <@tmpl.guide
 title="OpenShift"
-summary="Get started with {project_name} on OpenShift">
+summary="Get started with {project_name} on OpenShift.">
 
 :links-admin-console: {project_name} Admin Console
 :links-account-console: {project_name} Account Console

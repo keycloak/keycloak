@@ -48,6 +48,7 @@ export const GroupToolbar = ({
           onOpenChange={toggleKebab}
           toggle={(ref) => (
             <MenuToggle
+              data-testid="kebab"
               ref={ref}
               isExpanded={openKebab}
               onClick={toggleKebab}

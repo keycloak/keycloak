@@ -111,7 +111,11 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
     private boolean isReadableOrWritableDuringRegistration(String name) {
         if (context.equals(UserProfileContext.REGISTRATION) && isRequired(name)) {
             // in context of registration, username or email (email as username) cannot be readonly otherwise registration is not possible
-            return UserModel.EMAIL.equals(name) || UserModel.USERNAME.equals(name);
+            if (UserModel.EMAIL.equals(name)) {
+                RealmModel realm = session.getContext().getRealm();
+                return realm.isRegistrationEmailAsUsername();
+            }
+            return UserModel.USERNAME.equals(name);
         }
         return false;
     }
@@ -295,12 +299,14 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
                 continue;
             }
 
-            if (!isReadableOrWritableDuringRegistration(name)) {
-                AttributeContext attributeContext = createAttributeContext(metadata);
+            if (isReadableOrWritableDuringRegistration(name)) {
+                continue;
+            }
 
-                if (!metadata.canView(attributeContext) || !metadata.isSelected(attributeContext)) {
-                    attributes.remove(name);
-                }
+            AttributeContext attributeContext = createAttributeContext(metadata);
+
+            if (!metadata.canView(attributeContext) || !metadata.isSelected(attributeContext)) {
+                attributes.remove(name);
             }
         }
 
@@ -340,7 +346,7 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
     }
 
     private Map<String, AttributeMetadata> getUserStorageProviderMetadata(UserProfileMetadata profileMetadata) {
-        if (user == null || (StorageId.isLocalStorage(user.getId()) && user.getFederationLink() == null)) {
+        if (user == null || (StorageId.isLocalStorage(user.getId()) && !user.isFederated())) {
             // new user or not a user from a storage provider other than local
             return Collections.emptyMap();
         }
@@ -559,6 +565,19 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
     @Override
     public Map<String, List<String>> getUnmanagedAttributes() {
         return unmanagedAttributes;
+    }
+
+    @Override
+    public Map<String, Object> getAnnotations(String name) {
+        AttributeMetadata metadata = getMetadata(name);
+
+        if (metadata == null) {
+            return Collections.emptyMap();
+        }
+
+        AttributeContext context = createAttributeContext(metadata);
+
+        return metadata.getAnnotations(context);
     }
 
     protected AttributeMetadata createUnmanagedAttributeMetadata(String name) {

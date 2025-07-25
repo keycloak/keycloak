@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.pages;
 
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -30,20 +31,16 @@ public class TermsAndConditionsPage extends AbstractPage {
     @FindBy(id = "kc-decline")
     private WebElement cancelButton;
 
+    @Override
     public boolean isCurrent() {
         return PageUtils.getPageTitle(driver).equals("Terms and Conditions");
     }
 
     public void acceptTerms() {
-        submitButton.click();
+        UIUtils.clickLink(submitButton);
     }
     public void declineTerms() {
-        cancelButton.click();
-    }
-
-    @Override
-    public void open() {
-        throw new UnsupportedOperationException();
+        UIUtils.clickLink(cancelButton);
     }
 
 }

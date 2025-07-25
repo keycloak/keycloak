@@ -760,7 +760,12 @@ public class LoginActionsService {
                                  @QueryParam(Constants.EXECUTION) String execution,
                                  @QueryParam(Constants.CLIENT_ID) String clientId,
                                  @QueryParam(Constants.CLIENT_DATA) String clientData,
-                                 @QueryParam(Constants.TAB_ID) String tabId) {
+                                 @QueryParam(Constants.TAB_ID) String tabId,
+                                 @QueryParam(Constants.TOKEN) String tokenString) {
+        if (Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION) && tokenString != null) {
+            //this call should extract orgId from token and set the organization to the session context
+            preHandleActionToken(tokenString);
+        }
         return registerRequest(authSessionId, code, execution, clientId,  tabId,clientData);
     }
 
@@ -907,7 +912,8 @@ public class LoginActionsService {
         }
 
         event.detail(Details.IDENTITY_PROVIDER, identityProviderAlias)
-                .detail(Details.IDENTITY_PROVIDER_USERNAME, brokerContext.getUsername());
+                .detail(Details.IDENTITY_PROVIDER_USERNAME, brokerContext.getUsername())
+                .detail(Details.IDENTITY_PROVIDER_BROKER_SESSION_ID, brokerContext.getBrokerSessionId());
 
         event.success();
 
@@ -1168,7 +1174,7 @@ public class LoginActionsService {
         if (isCancelAppInitiatedAction(factory.getId(), authSession, context)) {
             provider.initiatedActionCanceled(session, authSession);
             AuthenticationManager.setKcActionStatus(factory.getId(), RequiredActionContext.KcActionStatus.CANCELLED, authSession);
-            context.success();
+            context.cancel();
         } else {
             provider.processAction(context);
         }
@@ -1177,7 +1183,14 @@ public class LoginActionsService {
             authSession.setAuthNote(AuthenticationProcessor.LAST_PROCESSED_EXECUTION, action);
         }
 
-        if (context.getStatus() == RequiredActionContext.Status.SUCCESS) {
+        if (context.getStatus() == RequiredActionContext.Status.CANCELLED) {
+            event.clone().error(Errors.REJECTED_BY_USER);
+            initLoginEvent(authSession);
+            event.event(EventType.LOGIN);
+            authSession.removeAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION);
+            AuthenticationManager.setKcActionStatus(factory.getId(), RequiredActionContext.KcActionStatus.CANCELLED, authSession);
+            response = AuthenticationManager.nextActionAfterAuthentication(session, authSession, clientConnection, request, session.getContext().getUri(), event);
+        } else if (context.getStatus() == RequiredActionContext.Status.SUCCESS) {
             event.clone().success();
             initLoginEvent(authSession);
             event.event(EventType.LOGIN);

@@ -17,22 +17,26 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import java.io.File;
 import java.io.IOException;
-
+import java.util.Map;
+import org.keycloak.compatibility.CompatibilityResult;
+import org.keycloak.compatibility.Util;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
-import org.keycloak.quarkus.runtime.compatibility.ServerInfo;
 import org.keycloak.util.JsonSerialization;
 import picocli.CommandLine;
 
 @CommandLine.Command(
         name = UpdateCompatibilityCheck.NAME,
-        description = "Checks if the metadata is compatible with the current configuration. A zero exit code means a rolling upgrade is possible between old and the current metadata."
+        description = "Checks if the metadata is compatible with the current configuration. A zero exit code means a rolling update is possible between old and the current metadata."
 )
 public class UpdateCompatibilityCheck extends AbstractUpdatesCommand {
 
     public static final String NAME = "check";
     public static final String INPUT_OPTION_NAME = "--file";
+    public static final TypeReference<Map<String, Map<String, String>>> METADATA_TYPE_REF = new TypeReference<>() {
+    };
 
 
     @CommandLine.Option(names = {INPUT_OPTION_NAME}, paramLabel = "FILE",
@@ -40,14 +44,32 @@ public class UpdateCompatibilityCheck extends AbstractUpdatesCommand {
     String inputFile;
 
     @Override
-    public void run() {
-        printPreviewWarning();
-        validateConfig();
+    int executeAction() {
         var info = readServerInfo();
-        var result = compatibilityManager.isCompatible(info);
-        result.errorMessage().ifPresent(this::printError);
-        result.endMessage().ifPresent(this::printOut);
-        picocli.exit(result.exitCode());
+        var providers = loadAllProviders();
+        var idIterator = Util.mergeKeySet(info, providers)
+                .sorted()
+                .iterator();
+
+        while (idIterator.hasNext()) {
+            var id = idIterator.next();
+            var provider = providers.get(id);
+            if (provider == null) {
+                picocli.error("[%s] Provider not found. Rolling Update is not available.".formatted(id));
+                return CompatibilityResult.ExitCode.RECREATE.value();
+            }
+
+            var result = provider.isCompatible(Map.copyOf(info.getOrDefault(id, Map.of())));
+            result.endMessage().ifPresent(picocli.getOutWriter()::println);
+
+            if (Util.isNotCompatible(result)) {
+                result.errorMessage().ifPresent(picocli::error);
+                return result.exitCode();
+            }
+        }
+
+        picocli.getOutWriter().println("[OK] Rolling Update is available.");
+        return CompatibilityResult.ExitCode.ROLLING.value();
     }
 
     @Override
@@ -67,7 +89,9 @@ public class UpdateCompatibilityCheck extends AbstractUpdatesCommand {
     }
 
     private void validateFileParameter() {
-        validateOptionIsPresent(inputFile, INPUT_OPTION_NAME);
+        if (inputFile == null || inputFile.isBlank()) {
+            throw new PropertyException("Missing required argument: " + INPUT_OPTION_NAME);
+        }
         var file = new File(inputFile);
         if (!file.exists()) {
             throw new PropertyException("Incorrect argument %s. Path '%s' not found".formatted(INPUT_OPTION_NAME, file.getAbsolutePath()));
@@ -75,10 +99,10 @@ public class UpdateCompatibilityCheck extends AbstractUpdatesCommand {
         validateFileIsNotDirectory(file, INPUT_OPTION_NAME);
     }
 
-    private ServerInfo readServerInfo() {
+    private Map<String, Map<String, String>> readServerInfo() {
         var file = new File(inputFile);
         try {
-            return JsonSerialization.mapper.readValue(file, ServerInfo.class);
+            return JsonSerialization.mapper.readValue(file, METADATA_TYPE_REF);
         } catch (IOException e) {
             throw new PropertyException("Unable to read file '%s'".formatted(file.getAbsolutePath()), e);
         }

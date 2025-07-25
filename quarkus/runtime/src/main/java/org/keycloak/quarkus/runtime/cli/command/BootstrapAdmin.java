@@ -17,6 +17,8 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
+import org.keycloak.quarkus.runtime.cli.Picocli;
+
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ScopeType;
@@ -29,7 +31,7 @@ public class BootstrapAdmin {
     public static final String HEADER = "Commands for bootstrapping admin access";
     public static final String KEYCLOAK_BOOTSTRAP_ADMIN_EXPIRATION_ENV_VAR = "KEYCLOAK_BOOTSTRAP_ADMIN_EXPIRATION";
 
-    @Option(names = { "--no-prompt" }, description = "Run non-interactive without prompting", scope = ScopeType.INHERIT)
+    @Option(arity = "0", paramLabel = Picocli.NO_PARAM_LABEL, names = { "--no-prompt" }, description = "Run non-interactive without prompting", scope = ScopeType.INHERIT)
     boolean noPrompt;
 
     /*@Option(names = {

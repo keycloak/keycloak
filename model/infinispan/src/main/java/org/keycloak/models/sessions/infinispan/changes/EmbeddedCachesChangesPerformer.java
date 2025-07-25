@@ -18,7 +18,6 @@
 package org.keycloak.models.sessions.infinispan.changes;
 
 import org.infinispan.Cache;
-import org.infinispan.context.Flag;
 import org.jboss.logging.Logger;
 import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.models.sessions.infinispan.CacheDecorators;
@@ -50,19 +49,16 @@ public class EmbeddedCachesChangesPerformer<K, V extends SessionEntity> implemen
         switch (operation) {
             case REMOVE:
                 // Just remove it
-                CacheDecorators.skipCacheStoreIfRemoteCacheIsEnabled(cache)
-                        .withFlags(Flag.IGNORE_RETURN_VALUES)
-                        .remove(key);
+                CacheDecorators.ignoreReturnValues(cache).remove(key);
                 break;
             case ADD:
-                CacheDecorators.skipCacheStoreIfRemoteCacheIsEnabled(cache)
-                        .withFlags(Flag.IGNORE_RETURN_VALUES)
+                CacheDecorators.ignoreReturnValues(cache)
                         .put(key, sessionWrapper, task.getLifespanMs(), TimeUnit.MILLISECONDS, task.getMaxIdleTimeMs(), TimeUnit.MILLISECONDS);
 
                 LOG.tracef("Added entity '%s' to the cache '%s' . Lifespan: %d ms, MaxIdle: %d ms", key, cache.getName(), task.getLifespanMs(), task.getMaxIdleTimeMs());
                 break;
             case ADD_IF_ABSENT:
-                SessionEntityWrapper<V> existing = CacheDecorators.skipCacheStoreIfRemoteCacheIsEnabled(cache).putIfAbsent(key, sessionWrapper, task.getLifespanMs(), TimeUnit.MILLISECONDS, task.getMaxIdleTimeMs(), TimeUnit.MILLISECONDS);
+                SessionEntityWrapper<V> existing = cache.putIfAbsent(key, sessionWrapper, task.getLifespanMs(), TimeUnit.MILLISECONDS, task.getMaxIdleTimeMs(), TimeUnit.MILLISECONDS);
                 if (existing != null) {
                     LOG.debugf("Existing entity in cache for key: %s . Will update it", key);
 
@@ -89,10 +85,9 @@ public class EmbeddedCachesChangesPerformer<K, V extends SessionEntity> implemen
             SessionEntityWrapper<V> returnValue = null;
             int iteration = 0;
             V session = oldVersion.getEntity();
-            var writeCache = CacheDecorators.skipCacheStoreIfRemoteCacheIsEnabled(cache);
             while (iteration++ < InfinispanUtil.MAXIMUM_REPLACE_RETRIES) {
                 SessionEntityWrapper<V> newVersionEntity = generateNewVersionAndWrapEntity(session, oldVersion.getLocalMetadata());
-                returnValue = writeCache.computeIfPresent(key, new ReplaceFunction<>(oldVersion.getVersion(), newVersionEntity), lifespanMs, TimeUnit.MILLISECONDS, maxIdleTimeMs, TimeUnit.MILLISECONDS);
+                returnValue = cache.computeIfPresent(key, new ReplaceFunction<>(oldVersion.getVersion(), newVersionEntity), lifespanMs, TimeUnit.MILLISECONDS, maxIdleTimeMs, TimeUnit.MILLISECONDS);
 
                 if (returnValue == null) {
                     LOG.debugf("Entity %s not found. Maybe removed in the meantime. Replace task will be ignored", key);

@@ -76,11 +76,12 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
                 Set<Scope> policyScopes = policy.getScopes();
                 Set<Resource> policyResources = policy.getResources();
                 boolean containsResource = policyResources.contains(resource);
+                Evaluation evaluation = result.getEvaluation();
 
                 if (isGranted(policyResult)) {
                     if (isScopePermission(policy)) {
                         for (Scope scope : requestedScopes) {
-                            if (policyScopes.contains(scope)) {
+                            if (evaluation.isGranted(policy, scope)) {
                                 grantedScopes.add(scope);
                                 // we need to grant any scope granted by a permission in case it is not explicitly
                                 // associated with the resource. For instance, resources inheriting scopes from parent resources.
@@ -109,6 +110,12 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
                         // resource or if the permission applies to any resource associated with the scopes
                         if (containsResource || policyResources.isEmpty()) {
                             deniedScopes.addAll(policyScopes);
+                        } else {
+                            for (Scope scope : requestedScopes) {
+                                if (evaluation.isDenied(policy, scope)) {
+                                    deniedScopes.add(scope);
+                                }
+                            }
                         }
                     }
                     if (!anyDeny) {

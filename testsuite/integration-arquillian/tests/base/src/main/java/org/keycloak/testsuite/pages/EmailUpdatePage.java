@@ -53,11 +53,6 @@ public class EmailUpdatePage extends AbstractPage {
 		return PageUtils.getPageTitle(driver).equals("Update email");
 	}
 
-	@Override
-	public void open() throws Exception {
-		throw new UnsupportedOperationException();
-	}
-
 	public String getEmailError() {
 		try {
 			return getTextFromElement(emailError);

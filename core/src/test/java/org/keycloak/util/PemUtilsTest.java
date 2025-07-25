@@ -12,6 +12,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
+import org.keycloak.common.util.PemException;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.rule.CryptoInitRule;
 
@@ -118,6 +119,50 @@ public abstract class PemUtilsTest {
         String pk = PemUtils.removeBeginEnd(privateKeyPkcs8).replace("\n", "");
         PrivateKey decodedPrivateKey2 = PemUtils.decodePrivateKey(pk);
         Assert.assertEquals(decodedPrivateKey1, decodedPrivateKey2);
+
+        String ecPrivateKeyPkcs8 = "-----BEGIN PRIVATE KEY-----\n" +
+                "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgO1oavi4kqVFc/rxj\n" +
+                "24SJivHXq7buWX58U0tswYikPwyhRANCAASCIp6nVvOk9flbUrMW7JPDmyaXCnDc\n" +
+                "Q2uMfvxVWIJzBuhG6VDoeFPk3yf2EN5t7Q8FU5jPSp6gJz9xbaFYYLL6\n" +
+                "-----END PRIVATE KEY-----";
+
+        PrivateKey decodedEcPrivateKey = PemUtils.decodePrivateKey(ecPrivateKeyPkcs8);
+        Assert.assertEquals("EC", decodedEcPrivateKey.getAlgorithm());
+    }
+
+    @Test
+    public void testDecodeCertificateBundle() {
+        String certBundleEC = "-----BEGIN CERTIFICATE-----\n" +
+                "MIIBUTCB96ADAgECAggYMJVpV/BvyTAKBggqhkjOPQQDAjARMQ8wDQYDVQQDEwZz\n" +
+                "dWItY2EwIBcNMDAwMTAxMDkwMDAwWhgPMjEwMDAxMDEwOTAwMDBaMBUxEzARBgNV\n" +
+                "BAMTCmVuZC1lbnRpdHkwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAASCIp6nVvOk\n" +
+                "9flbUrMW7JPDmyaXCnDcQ2uMfvxVWIJzBuhG6VDoeFPk3yf2EN5t7Q8FU5jPSp6g\n" +
+                "Jz9xbaFYYLL6ozMwMTAOBgNVHQ8BAf8EBAMCBaAwHwYDVR0jBBgwFoAU3etTPCDC\n" +
+                "f31HxBuYWWjF9ImW4ccwCgYIKoZIzj0EAwIDSQAwRgIhAKpP+HBEvUWEfjdr2qD2\n" +
+                "sw/bVLtW1HnpqVnQm2i/kDp2AiEA6F+kKyMNu+jGKmzj0Pf6v0cj0c+f00bqoJdk\n" +
+                "h+GXGnM=\n" +
+                "-----END CERTIFICATE-----\n" +
+                "-----BEGIN CERTIFICATE-----\n" +
+                "MIIBejCCAR+gAwIBAgIIGDCVaVflNG8wCgYIKoZIzj0EAwIwDTELMAkGA1UEAxMC\n" +
+                "Y2EwIBcNMDAwMTAxMDkwMDAwWhgPMjEwMDAxMDEwOTAwMDBaMBExDzANBgNVBAMT\n" +
+                "BnN1Yi1jYTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABI4bNe/0VXXojhjdh76p\n" +
+                "89esSheOT5WEBVQnJUvDBDSRoxRiFx2BEdPaVn8L4cCbaZIxLsoJusOJadm7Eltc\n" +
+                "h3qjYzBhMA4GA1UdDwEB/wQEAwIBBjAPBgNVHRMBAf8EBTADAQH/MB0GA1UdDgQW\n" +
+                "BBTd61M8IMJ/fUfEG5hZaMX0iZbhxzAfBgNVHSMEGDAWgBQ9q0KnjYuFWTSXf4YM\n" +
+                "Taz6vbNVRTAKBggqhkjOPQQDAgNJADBGAiEA3y9pa2JMhtM898f6NOZhezoHzj1a\n" +
+                "2JQIZRLQbOTjk0wCIQCg9A8414teP9whzRGSxM4eJNExdfHeJBYjDD345EW0vg==\n" +
+                "-----END CERTIFICATE-----";
+
+        X509Certificate[] certs = PemUtils.decodeCertificates(certBundleEC);
+        Assert.assertEquals(2, certs.length);
+        Assert.assertEquals("CN=end-entity", certs[0].getSubjectX500Principal().getName());
+        Assert.assertEquals("CN=sub-ca", certs[1].getSubjectX500Principal().getName());
+
+        String invalidCertBundle = "foo\n";
+        Assert.assertThrows(PemException.class, () -> {
+            PemUtils.decodeCertificates(invalidCertBundle);
+        });
+
     }
 
     private void testPrivateKeyEncodeDecode(String origPrivateKeyPem) {

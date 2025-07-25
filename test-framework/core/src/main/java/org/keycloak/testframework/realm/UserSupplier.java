@@ -1,5 +1,6 @@
 package org.keycloak.testframework.realm;
 
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import org.keycloak.admin.client.resource.UserResource;
@@ -14,16 +15,6 @@ import org.keycloak.testframework.util.ApiUtil;
 public class UserSupplier implements Supplier<ManagedUser, InjectUser> {
 
     private static final String USER_UUID_KEY = "userUuid";
-
-    @Override
-    public Class<InjectUser> getAnnotationClass() {
-        return InjectUser.class;
-    }
-
-    @Override
-    public Class<ManagedUser> getValueType() {
-        return ManagedUser.class;
-    }
 
     @Override
     public ManagedUser getValue(InstanceContext<ManagedUser, InjectUser> instanceContext) {
@@ -59,7 +50,9 @@ public class UserSupplier implements Supplier<ManagedUser, InjectUser> {
 
     @Override
     public void close(InstanceContext<ManagedUser, InjectUser> instanceContext) {
-        instanceContext.getValue().admin().remove();
+        try {
+            instanceContext.getValue().admin().remove();
+        } catch (NotFoundException ex) {}
     }
 
 }

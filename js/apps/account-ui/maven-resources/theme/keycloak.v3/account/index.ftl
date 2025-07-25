@@ -2,7 +2,6 @@
 <html lang="${locale}">
   <head>
     <meta charset="utf-8">
-    <base href="${resourceUrl}/">
     <link rel="icon" type="${properties.favIconType!'image/svg+xml'}" href="${resourceUrl}${properties.favIcon!'/favicon.svg'}">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light${darkMode?then(' dark', '')}">
@@ -123,15 +122,13 @@
       </#list>
     </#if>
   </head>
-  <body>
+  <body data-page-id="account">
     <div id="app">
       <main class="container">
         <div class="keycloak__loading-container">
-          <span class="pf-c-spinner pf-m-xl" role="progressbar" aria-valuetext="Loading&hellip;">
-            <span class="pf-c-spinner__clipper"></span>
-            <span class="pf-c-spinner__lead-ball"></span>
-            <span class="pf-c-spinner__tail-ball"></span>
-          </span>
+          <svg class="pf-v5-c-spinner pf-m-xl" role="progressbar" aria-valuetext="Loading..." viewBox="0 0 100 100" aria-label="Contents">
+            <circle class="pf-v5-c-spinner__path" cx="50" cy="50" r="45" fill="none"></circle>
+          </svg>
           <div>
             <p id="loading-text">Loading the Account Console</p>
           </div>
@@ -157,7 +154,7 @@
           "isRegistrationEmailAsUsername": ${realm.registrationEmailAsUsername?c},
           "isEditUserNameAllowed": ${realm.editUsernameAllowed?c},
           "isInternationalizationEnabled": ${realm.isInternationalizationEnabled()?c},
-          "isLinkedAccountsEnabled": ${realm.identityFederationEnabled?c},
+          "isLinkedAccountsEnabled": ${isLinkedAccountsEnabled?c},
           "isMyResourcesEnabled": ${(realm.userManagedAccessAllowed && isAuthorizationEnabled)?c},
           "isViewOrganizationsEnabled": ${isViewOrganizationsEnabled?c},
           "deleteAccountAllowed": ${deleteAccountAllowed?c},

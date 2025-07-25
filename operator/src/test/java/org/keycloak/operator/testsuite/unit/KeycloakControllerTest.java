@@ -53,9 +53,9 @@ class KeycloakControllerTest {
         // both the instances and hostname should be updated
         UpdateControl<Keycloak> update = controller.reconcile(kc, mockContext);
 
-        assertTrue(update.isUpdateResource());
-        assertEquals(1, update.getResource().getSpec().getInstances());
-        assertEquals("example-kc-ingress-ns.openshift.com", update.getResource().getSpec().getHostnameSpec().getHostname());
+        assertTrue(update.isPatchResource());
+        assertEquals(1, update.getResource().orElseThrow().getSpec().getInstances());
+        assertEquals("example-kc-ingress-ns.openshift.com", update.getResource().orElseThrow().getSpec().getHostnameSpec().getHostname());
 
         // just the instances should be updated if not openshift-default
         kc = K8sUtils.getDefaultKeycloakDeployment();
@@ -63,9 +63,9 @@ class KeycloakControllerTest {
         kc.getSpec().setInstances(null);
         kc.getSpec().getHostnameSpec().setHostname(null);
         update = controller.reconcile(kc, mockContext);
-        assertTrue(update.isUpdateResource());
-        assertEquals(1, update.getResource().getSpec().getInstances());
-        assertNull(update.getResource().getSpec().getHostnameSpec().getHostname());
+        assertTrue(update.isPatchResource());
+        assertEquals(1, update.getResource().orElseThrow().getSpec().getInstances());
+        assertNull(update.getResource().orElseThrow().getSpec().getHostnameSpec().getHostname());
     }
 
 }

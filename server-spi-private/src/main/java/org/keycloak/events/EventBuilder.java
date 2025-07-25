@@ -60,7 +60,7 @@ public class EventBuilder {
 
     public EventBuilder(RealmModel realm, KeycloakSession session, ClientConnection clientConnection) {
         this(realm, session);
-        ipAddress(clientConnection.getRemoteAddr());
+        ipAddress(clientConnection.getRemoteHost());
     }
 
     public EventBuilder(RealmModel realm, KeycloakSession session) {
@@ -236,6 +236,7 @@ public class EventBuilder {
         send(this.storeImmediately == null ? true : this.storeImmediately);
     }
 
+    @Override
     public EventBuilder clone() {
         return new EventBuilder(session, store, listeners, realm, event.clone());
     }

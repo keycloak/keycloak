@@ -266,6 +266,10 @@ public class SamlService extends AuthorizationEndpointBase {
             try {
                 session.clientPolicy().triggerOnEvent(ctx);
             } catch (ClientPolicyException cpe) {
+                event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+                event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+                event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+                event.error(cpe.getError());
                 logger.warnf("Error in client policies processing the request: %s - %s", cpe.getError(), cpe.getErrorDetail());
                 return error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             }
@@ -587,8 +591,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
                     //artifact binding state must be attached to the user session upon logout, as authenticated session
                     //no longer exists when the LogoutResponse message is sent
-                    if ("true".equals(clientSession.getNote(JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.get()))
-                            && SamlProtocol.useArtifactForLogout(client)){
+                    if (SamlProtocol.SAML_ARTIFACT_BINDING.equals(SamlProtocol.getLogoutBindingTypeForClientSession(clientSession))){
                         clientSession.setAction(AuthenticationSessionModel.Action.LOGGING_OUT.name());
                         userSession.setNote(JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.get(), "true");
                         userSession.setNote(SamlProtocol.SAML_LOGOUT_INITIATOR_CLIENT_ID, client.getId());
@@ -1302,14 +1305,12 @@ public class SamlService extends AuthorizationEndpointBase {
 
             // Encrypt assertion if client requires it
             if (samlClient.requiresEncryption()) {
-                PublicKey publicKey = null;
                 try {
-                    publicKey = SamlProtocolUtils.getEncryptionKey(clientModel);
+                    SamlProtocolUtils.setupEncryption(samlClient, bindingBuilder);
                 } catch (Exception e) {
                     logger.error("Failed to obtain encryption key for client", e);
                     return emptyArtifactResponseMessage(artifactResolveMessage, null);
                 }
-                bindingBuilder.encrypt(publicKey);
             }
         }
 

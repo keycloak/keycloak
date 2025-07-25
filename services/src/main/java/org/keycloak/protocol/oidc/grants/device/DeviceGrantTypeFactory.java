@@ -34,9 +34,16 @@ import org.keycloak.protocol.oidc.grants.OAuth2GrantTypeFactory;
  */
 public class DeviceGrantTypeFactory implements OAuth2GrantTypeFactory, EnvironmentDependentProviderFactory {
 
+    public static final String GRANT_SHORTCUT = "dg";
+
     @Override
     public String getId() {
         return OAuth2Constants.DEVICE_CODE_GRANT_TYPE;
+    }
+
+    @Override
+    public String getShortcut() {
+        return GRANT_SHORTCUT;
     }
 
     @Override

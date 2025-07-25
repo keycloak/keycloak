@@ -31,7 +31,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -45,7 +45,7 @@ import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.util.FlowUtil;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.URLUtils;
 import org.openqa.selenium.By;
@@ -59,13 +59,12 @@ import java.util.function.Consumer;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GITHUB;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GITLAB;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GOOGLE;
 
-public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
+public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
     private static final String INVALID_AUTH_CODE = "Invalid authenticator code.";
 
     private static final String USER_WITH_ONE_OTP_OTP_SECRET = "DJmQfC73VGFhw7D4QJ8A";
@@ -99,28 +98,15 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-    }
-
-    private RealmRepresentation loadTestRealm() {
-        RealmRepresentation res = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
-        res.setBrowserFlow("browser");
-        return res;
-    }
-
     private void importTestRealm(Consumer<RealmRepresentation> realmUpdater) {
-        RealmRepresentation realm = loadTestRealm();
+        if (testRealmReps == null) {
+            testRealmReps = testContext.getTestRealmReps();
+        }
+        RealmRepresentation realm = testRealmReps.get(0); // test realm
         if (realmUpdater != null) {
             realmUpdater.accept(realm);
         }
         importRealm(realm);
-    }
-
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        log.debug("Adding test realm for import from testrealm.json");
-        testRealms.add(loadTestRealm());
     }
 
     private void provideUsernamePassword(String user) {
@@ -129,11 +115,11 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
         loginPage.assertCurrent();
 
         // Login attempt with an invalid password
-        loginPage.login(user, "invalid");
+        loginPage.login(user, getPassword(user) + "invalid");
         loginPage.assertCurrent();
 
         // Login attempt with a valid password - user with configured OTP
-        loginPage.login(user, "password");
+        loginPage.login(user, getPassword(user));
     }
 
     private String getOtpCode(String key) {
@@ -233,12 +219,14 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
                 // Move first OTP after second while priority are not used for import
                 user.getCredentials().add(user.getCredentials().remove(idxFirst));
             });
+            changePasswords(username);
 
             // Priority tells: second then first
             testCredentialsOrder(username, Arrays.asList(OTPFormAuthenticator.UNNAMED, "first"));
         } finally {
             // Restore default testrealm.json
-            importTestRealm(null);
+            testRealmReps = null;
+            importTestRealms();
         }
     }
 
@@ -535,7 +523,7 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
             // The conditional sub flow is executed only if a specific user attribute is not set.
             // This sub flow will set the user attribute and displays password form.
             passwordPage.assertCurrent();
-            passwordPage.login("password");
+            passwordPage.login(getPassword("user-with-two-configured-otp"));
 
             Assert.assertTrue(oneTimeCodePage.isOtpLabelPresent());
         } finally {
@@ -1056,13 +1044,13 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.open();
         loginPage.assertCurrent();
-        loginPage.login(user.getUsername(), "wrong_password");
+        loginPage.login(user.getUsername(), getPassword("test-user@localhost") + "wrong_password");
 
         Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
         events.clear();
 
         loginPage.assertCurrent();
-        loginPage.login(user.getUsername(), "password");
+        loginPage.login(user.getUsername(), getPassword("test-user@localhost"));
 
         Assert.assertFalse(loginPage.isCurrent());
         events.expectLogin()
@@ -1107,7 +1095,7 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
 
             passwordPage.assertCurrent();
             events.clear();
-            passwordPage.login("password");
+            passwordPage.login(getPassword(user.getUsername()));
 
             Assert.assertFalse(loginUsernameOnlyPage.isCurrent());
             Assert.assertFalse(passwordPage.isCurrent());
@@ -1197,7 +1185,7 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
             // Assert that the login skipped the OTP authenticator and moved to the password
             passwordPage.assertCurrent();
             passwordPage.assertTryAnotherWayLinkAvailability(true);
-            passwordPage.login("password");
+            passwordPage.login(getPassword("user-with-one-configured-otp"));
 
             Assert.assertFalse(loginPage.isCurrent());
             Assert.assertFalse(oneTimeCodePage.isOtpLabelPresent());

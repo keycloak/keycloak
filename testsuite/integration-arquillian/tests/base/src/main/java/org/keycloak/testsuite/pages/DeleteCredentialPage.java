@@ -53,9 +53,4 @@ public class DeleteCredentialPage extends AbstractPage {
     public void assertCredentialInMessage(String expectedLabel) {
         Assert.assertEquals("Do you want to delete " + expectedLabel + "?", message.getText());
     }
-
-    @Override
-    public void open() {
-        throw new UnsupportedOperationException();
-    }
 }

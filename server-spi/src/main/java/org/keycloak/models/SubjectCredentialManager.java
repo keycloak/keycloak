@@ -81,6 +81,24 @@ public interface SubjectCredentialManager {
     Stream<CredentialModel> getStoredCredentialsStream();
 
     /**
+     * Returns a stream consisting of the federated credentials.
+     *
+     * @return a stream consisting of the federated credentials
+     */
+    default Stream<CredentialModel> getFederatedCredentialsStream() {
+        return Stream.empty();
+    }
+
+    /**
+     * Returns a stream consisting of both local and federated credentials.
+     *
+     * @return a stream of both local and federated credentials
+     */
+    default Stream<CredentialModel> getCredentials() {
+        return Stream.concat(getStoredCredentialsStream(), getFederatedCredentialsStream());
+    }
+
+    /**
      * Read stored credentials by type as a stream.
      */
     Stream<CredentialModel> getStoredCredentialsByTypeStream(String type);

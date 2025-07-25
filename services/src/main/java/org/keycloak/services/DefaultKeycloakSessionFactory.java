@@ -42,6 +42,7 @@ import org.keycloak.component.ComponentFactoryProviderFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.ThemeManager;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.InvalidationHandler;
 import org.keycloak.provider.KeycloakDeploymentInfo;
@@ -53,8 +54,8 @@ import org.keycloak.provider.ProviderManager;
 import org.keycloak.provider.ProviderManagerDeployer;
 import org.keycloak.provider.ProviderManagerRegistry;
 import org.keycloak.provider.Spi;
-import org.keycloak.services.resources.admin.permissions.AdminPermissions;
-import org.keycloak.theme.DefaultThemeManagerFactory;
+import org.keycloak.services.resources.admin.fgap.AdminPermissions;
+import org.keycloak.theme.ThemeManagerFactory;
 
 public abstract class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, ProviderManagerDeployer {
 
@@ -64,8 +65,6 @@ public abstract class DefaultKeycloakSessionFactory implements KeycloakSessionFa
     protected Map<Class<? extends Provider>, String> provider = new HashMap<>();
     protected volatile Map<Class<? extends Provider>, Map<String, ProviderFactory>> factoriesMap = new HashMap<>();
     protected CopyOnWriteArrayList<ProviderEventListener> listeners = new CopyOnWriteArrayList<>();
-
-    private final DefaultThemeManagerFactory themeManagerFactory = new DefaultThemeManagerFactory();
 
     // TODO: Likely should be changed to int and use Time.currentTime() to be compatible with all our "time" reps
     protected long serverStartupTimestamp;
@@ -139,14 +138,14 @@ public abstract class DefaultKeycloakSessionFactory implements KeycloakSessionFa
         Stack<ProviderFactory> recursionPrevention = new Stack<>();
 
         for(Map.Entry<Class<? extends Provider>, Map<String, ProviderFactory>>  f : factories.entrySet()) {
-            if (initializedProviders.contains(f.getKey())) {
-                continue;
-            }
             initializeProviders(f.getKey(), factories, initializedProviders, recursionPrevention);
         }
     }
 
-    private void initializeProviders(Class<? extends Provider> provider, Map<Class<? extends Provider>, Map<String, ProviderFactory>> factories, Set<Class<? extends Provider>> intializedProviders, Stack<ProviderFactory> recursionPrevention) {
+    private void initializeProviders(Class<? extends Provider> provider, Map<Class<? extends Provider>, Map<String, ProviderFactory>> factories, Set<Class<? extends Provider>> initializedProviders, Stack<ProviderFactory> recursionPrevention) {
+        if (initializedProviders.contains(provider)) {
+            return;
+        }
         for (ProviderFactory<?> factory : factories.get(provider).values()) {
             if (factory == componentFactoryPF)
                 continue;
@@ -159,14 +158,14 @@ public abstract class DefaultKeycloakSessionFactory implements KeycloakSessionFa
                 }
                 Map<String, ProviderFactory> f = factories.get(providerDep);
                 if (f == null) {
-                    throw new RuntimeException("No provider factories exists for provider " + providerDep.getSimpleName());
+                    throw new RuntimeException("No provider factories exists for provider " + providerDep.getSimpleName() + " required by " + factory.getClass().getName() + " (" + factory.getId() + ")");
                 }
                 recursionPrevention.push(factory);
-                initializeProviders(providerDep, factories, intializedProviders, recursionPrevention);
+                initializeProviders(providerDep, factories, initializedProviders, recursionPrevention);
                 recursionPrevention.pop();
             }
             factory.postInit(this);
-            intializedProviders.add(provider);
+            initializedProviders.add(provider);
         }
     }
 
@@ -222,7 +221,7 @@ public abstract class DefaultKeycloakSessionFactory implements KeycloakSessionFa
         initProviderFactories(cfChanged, deployed);
 
         if (pm.getInfo().hasThemes() || pm.getInfo().hasThemeResources()) {
-            themeManagerFactory.clearCache();
+            ((ThemeManagerFactory)getProviderFactory(ThemeManager.class)).clearCache();
         }
     }
 
@@ -261,10 +260,6 @@ public abstract class DefaultKeycloakSessionFactory implements KeycloakSessionFa
         for (ProviderFactory factory : undeployed) {
             factory.close();
         }
-    }
-
-    protected DefaultThemeManagerFactory getThemeManagerFactory() {
-        return themeManagerFactory;
     }
 
     protected void checkProvider() {

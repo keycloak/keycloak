@@ -140,11 +140,6 @@ public class LoginUpdateProfilePage extends AbstractPage {
         }
     }
 
-    @Override
-    public void open() {
-        throw new UnsupportedOperationException();
-    }
-
     public boolean isCancelDisplayed() {
         try {
             return cancelAIAButton.isDisplayed();

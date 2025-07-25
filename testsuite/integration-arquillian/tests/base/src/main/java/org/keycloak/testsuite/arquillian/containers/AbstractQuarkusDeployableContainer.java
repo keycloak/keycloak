@@ -44,7 +44,6 @@ import java.util.stream.Collectors;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
@@ -66,6 +65,7 @@ import org.keycloak.common.Profile.Feature.Type;
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.SuiteContext;
+import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.model.StoreProvider;
 import org.keycloak.utils.StringUtil;
 
@@ -80,7 +80,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
 
     protected KeycloakQuarkusConfiguration configuration;
     protected List<String> additionalBuildArgs = Collections.emptyList();
-    protected Map<String, List<String>> spis = new HashMap<String, List<String>>();
+    protected Map<String, List<String>> spis = new HashMap<>();
 
     @Override
     public Class<KeycloakQuarkusConfiguration> getConfigurationClass() {
@@ -134,7 +134,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
     }
 
     @Override
-    public void undeploy(Descriptor descriptor) throws DeploymentException {
+    public void undeploy(Descriptor descriptor) {
 
     }
 
@@ -168,13 +168,12 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
 
         commands.add("--http-port=" + configuration.getBindHttpPort());
         commands.add("--https-port=" + configuration.getBindHttpsPort());
-        
+
         commands.add("--http-relative-path=/auth");
         commands.add("--health-enabled=true"); // expose something to management interface to turn it on
 
         if (suiteContext.get().isAuthServerMigrationEnabled()) {
             commands.add("--hostname-strict=false");
-            commands.add("--hostname-strict-https=false");
         } else { // Do not set management port for older versions of Keycloak for migration tests - available since Keycloak 25
             commands.add("--http-management-port=" + configuration.getManagementPort());
         }
@@ -184,7 +183,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
         }
 
         if (configuration.getRoute() != null) {
-            commands.add("-Djboss.node.name=" + configuration.getRoute());
+            commands.add("--spi-cache-embedded-default-node-name=" + configuration.getRoute());
         }
 
         if (System.getProperty("auth.server.quarkus.log-level") != null) {
@@ -211,8 +210,9 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
             commands.add("--cache-config-file=cluster-" + cacheMode + ".xml");
 
             var stack = System.getProperty("auth.server.quarkus.cluster.stack");
-            if (stack != null)
+            if (stack != null) {
                 commands.add("--cache-stack=" + stack);
+            }
         }
 
         log.debugf("FIPS Mode: %s", configuration.getFipsMode());
@@ -223,7 +223,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
 
         addStorageOptions(storeProvider, commands);
         addFeaturesOption(commands);
-        
+
         spis.values().forEach(commands::addAll);
 
         var features = getDefaultFeatures();
@@ -232,9 +232,14 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
             commands.add("--cache-remote-username=keycloak");
             commands.add("--cache-remote-password=Password1!");
             commands.add("--cache-remote-tls-enabled=false");
-            commands.add("--spi-connections-infinispan-quarkus-site-name=test");
+            commands.add("--spi-cache-embedded-default-site-name=test");
             configuration.appendJavaOpts("-Dkc.cache-remote-create-caches=true");
             System.setProperty("kc.cache-remote-create-caches", "true");
+        }
+
+        if (!suiteContext.get().isAuthServerMigrationEnabled()) {
+            commands.add("--bootstrap-admin-username=" + AuthRealm.ADMIN);
+            commands.add("--bootstrap-admin-password=" + AuthRealm.ADMIN);
         }
 
         return commands;
@@ -243,7 +248,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
     protected void addFeaturesOption(List<String> commands) {
         String enabledFeatures = Optional.ofNullable(configuration.getEnabledFeatures()).orElse("");
         String disabledFeatures = Optional.ofNullable(configuration.getDisabledFeatures()).orElse("");
-        
+
         var disabled = ProfileAssume.getDisabledFeatures();
         // TODO: this is not ideal, we're trying to infer what should be enabled / disabled from what was captured
         // as the disabled features. This at least does not understand the profile and may not age well.
@@ -360,8 +365,8 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
                 }
 
                 connection.disconnect();
-            } catch (Exception ignore) {
-                e = ignore;
+            } catch (Exception exception) {
+                e = exception;
             }
         }
 
@@ -383,22 +388,20 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
     }
 
     private HostnameVerifier createInsecureHostnameVerifier() {
-        return new HostnameVerifier() {
-            @Override
-            public boolean verify(String s, SSLSession sslSession) {
-                return true;
-            }
-        };
+        return (s, sslSession) -> true;
     }
 
     private SSLSocketFactory createInsecureSslSocketFactory() throws IOException {
         TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
+            @Override
             public void checkClientTrusted(final X509Certificate[] chain, final String authType) {
             }
 
+            @Override
             public void checkServerTrusted(final X509Certificate[] chain, final String authType) {
             }
 
+            @Override
             public X509Certificate[] getAcceptedIssuers() {
                 return null;
             }
@@ -463,7 +466,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
     public void setSpiConfig(String spi, List<String> args) {
         this.spis.put(spi, args);
     }
-    
+
     public void removeSpiConfig(String spi) {
         this.spis.remove(spi);
     }

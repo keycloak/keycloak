@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.authz;
 
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.client.resource.PermissionResource;
@@ -27,11 +26,12 @@ import org.keycloak.representations.idm.authorization.DecisionEffect;
 import org.keycloak.representations.idm.authorization.PermissionTicketRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyEvaluationRequest;
 import org.keycloak.representations.idm.authorization.PolicyEvaluationResponse;
+import org.keycloak.representations.idm.authorization.PolicyEvaluationResponse.PolicyResultRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 
 import java.util.List;
+import java.util.Set;
 
-@Ignore
 public class UmaRepresentationTest extends AbstractResourceServerTest {
     private ResourceRepresentation resource;
     private PermissionResource permission;
@@ -103,11 +103,11 @@ public class UmaRepresentationTest extends AbstractResourceServerTest {
         Assert.assertFalse(evaluations.isEmpty());
         Assert.assertEquals(1, evaluations.size());
 
-        List<PolicyEvaluationResponse.PolicyResultRepresentation> policies = evaluations.get(0).getPolicies();
+        Set<PolicyResultRepresentation> policies = evaluations.get(0).getPolicies();
         Assert.assertFalse(evaluations.isEmpty());
         Assert.assertEquals(1, evaluations.size());
 
-        String description = policies.get(0).getPolicy().getDescription();
+        String description = policies.iterator().next().getPolicy().getDescription();
         Assert.assertTrue(description.startsWith("Resource owner (marta) grants access"));
     }
 
@@ -132,11 +132,11 @@ public class UmaRepresentationTest extends AbstractResourceServerTest {
         Assert.assertFalse(evaluations.isEmpty());
         Assert.assertEquals(1, evaluations.size());
 
-        List<PolicyEvaluationResponse.PolicyResultRepresentation> policies = evaluations.get(0).getPolicies();
+        Set<PolicyEvaluationResponse.PolicyResultRepresentation> policies = evaluations.get(0).getPolicies();
         Assert.assertFalse(evaluations.isEmpty());
         Assert.assertEquals(1, evaluations.size());
 
-        String description = policies.get(0).getPolicy().getDescription();
+        String description = policies.iterator().next().getPolicy().getDescription();
         Assert.assertTrue(description.startsWith("Resource owner (resource-server-test) grants access"));
     }
 }

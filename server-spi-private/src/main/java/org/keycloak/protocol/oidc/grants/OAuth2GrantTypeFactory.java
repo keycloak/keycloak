@@ -26,4 +26,9 @@ import org.keycloak.provider.ProviderFactory;
  */
 public interface OAuth2GrantTypeFactory extends ProviderFactory<OAuth2GrantType> {
 
+    /**
+     * @return usually like 3-letters shortcut of specific grants. It can be useful for example in the tokens when the amount of characters should be limited and hence using full grant name
+     * is not ideal. Shortcut should be unique across grants.
+     */
+    String getShortcut();
 }

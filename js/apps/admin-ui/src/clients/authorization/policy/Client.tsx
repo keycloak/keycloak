@@ -12,6 +12,7 @@ export const Client = () => {
       required
       defaultValue={[]}
       variant="typeaheadMulti"
+      clientKey="id"
     />
   );
 };

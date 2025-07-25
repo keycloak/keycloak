@@ -37,7 +37,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.KerberosEmbeddedServer;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.KerberosRule;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -85,7 +85,7 @@ public class KerberosLdapMultipleLDAPProvidersTest extends AbstractKerberosTest 
         getCleanup().addComponentId(ApiUtil.getCreatedId(resp));
         resp.close();
 
-        OAuthClient.AccessTokenResponse tokenResponse = assertSuccessfulSpnegoLogin("hnelson2@KC2.COM", "hnelson2", "secret");
+        AccessTokenResponse tokenResponse = assertSuccessfulSpnegoLogin("hnelson2@KC2.COM", "hnelson2", "secret");
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
         Assert.assertEquals(token.getEmail(), "hnelson2@kc2.com");
         UserRepresentation user = assertUser("hnelson2", "hnelson2@kc2.com", "Horatio", "Nelson", "hnelson2@KC2.COM", false);
@@ -104,7 +104,7 @@ public class KerberosLdapMultipleLDAPProvidersTest extends AbstractKerberosTest 
         getCleanup().addComponentId(ApiUtil.getCreatedId(resp));
         resp.close();
 
-        OAuthClient.AccessTokenResponse tokenResponse = assertSuccessfulSpnegoLogin("hnelson2@KC2.COM", "hnelson2", "secret");
+        AccessTokenResponse tokenResponse = assertSuccessfulSpnegoLogin("hnelson2@KC2.COM", "hnelson2", "secret");
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
         Assert.assertEquals(token.getEmail(), "hnelson2@kc2.com");
         UserRepresentation user = assertUser("hnelson2", "hnelson2@kc2.com", "Horatio", "Nelson", "hnelson2@KC2.COM", false);

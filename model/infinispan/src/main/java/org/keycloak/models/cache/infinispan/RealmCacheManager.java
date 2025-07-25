@@ -64,8 +64,9 @@ public class RealmCacheManager extends CacheManager {
         addInvalidations(InRealmPredicate.create().realm(id), invalidations);
     }
 
-    public void roleAdded(String roleContainerId, Set<String> invalidations) {
+    public void roleAdded(String roleContainerId, String roleName, Set<String> invalidations) {
         invalidations.add(RealmCacheSession.getRolesCacheKey(roleContainerId));
+        invalidations.add(RealmCacheSession.getRoleByNameCacheKey(roleContainerId, roleName));
     }
 
     public void roleUpdated(String roleContainerId, String roleName, Set<String> invalidations) {
@@ -94,7 +95,6 @@ public class RealmCacheManager extends CacheManager {
 
     public void groupQueriesInvalidations(String realmId, Set<String> invalidations) {
         invalidations.add(RealmCacheSession.getGroupsQueryCacheKey(realmId));
-        invalidations.add(RealmCacheSession.getTopGroupsQueryCacheKey(realmId));
         addInvalidations(GroupListPredicate.create().realm(realmId), invalidations);
     }
 

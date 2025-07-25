@@ -2,8 +2,8 @@
 
 <div class="${properties.kcFormGroupClass}">
     <div class="${properties.kcFormGroupLabelClass}">
-        <label for="${name}" class="${properties.kcFormGroupLabelClass}">
-        <span class="${properties.kcFormGroupLabelTextClass}">
+        <label for="${name}" class="${properties.kcFormLabelClass}">
+        <span class="${properties.kcFormLabelTextClass}">
             ${label}
         </span>
             <#if required>
@@ -41,8 +41,7 @@
   </#if>
 </#macro>
 
-<#macro input name label value="" required=false autocomplete="off" fieldName=name autofocus=false>
-  <#assign error=kcSanitize(messagesPerField.get(fieldName))?no_esc>
+<#macro input name label value="" required=false autocomplete="off" fieldName=name error=kcSanitize(messagesPerField.get(fieldName))?no_esc autofocus=false>
   <@group name=name label=label error=error required=required>
     <span class="${properties.kcInputClass} <#if error?has_content>${properties.kcError}</#if>">
         <input id="${name}" name="${name}" value="${value}" type="text" autocomplete="${autocomplete}" <#if autofocus>autofocus</#if>
@@ -52,8 +51,7 @@
   </@group>
 </#macro>
 
-<#macro password name label value="" required=false forgotPassword=false fieldName=name autocomplete="off" autofocus=false>
-  <#assign error=kcSanitize(messagesPerField.get(fieldName))?no_esc>
+<#macro password name label value="" required=false forgotPassword=false fieldName=name error=kcSanitize(messagesPerField.get(fieldName))?no_esc autocomplete="off" autofocus=false>
   <@group name=name label=label error=error required=required>
     <div class="${properties.kcInputGroup}">
       <div class="${properties.kcInputGroupItemClass} ${properties.kcFill}">
@@ -67,22 +65,25 @@
         <button class="${properties.kcFormPasswordVisibilityButtonClass}" type="button" aria-label="${msg('showPassword')}"
                 aria-controls="${name}" data-password-toggle
                 data-icon-show="fa-eye fas" data-icon-hide="fa-eye-slash fas"
-                data-label-show="${msg('showPassword')}" data-label-hide="${msg('hidePassword')}">
+                data-label-show="${msg('showPassword')}" data-label-hide="${msg('hidePassword')}" id="${name}-show-password">
             <i class="fa-eye fas" aria-hidden="true"></i>
         </button>
       </div>
     </div>
-      <#if forgotPassword>
-        <div class="${properties.kcFormHelperTextClass}" aria-live="polite">
-            <div class="${properties.kcInputHelperTextClass}">
+    <div class="${properties.kcFormHelperTextClass}" aria-live="polite">
+        <div class="${properties.kcInputHelperTextClass}">
+            <#-- Additional helper items -->
+            <#nested>
+            <#if forgotPassword>
                 <div class="${properties.kcInputHelperTextItemClass}">
-                    <span class="${properties.kcInputHelperTextItemTextClass}">
-                        <a href="${url.loginResetCredentialsUrl}">${msg("doForgotPassword")}</a>
-                    </span>
+                  <span class="${properties.kcInputHelperTextItemTextClass}">
+                      <a href="${url.loginResetCredentialsUrl}">${msg("doForgotPassword")}</a>
+                  </span>
                 </div>
-            </div>
+            </#if>
         </div>
-      </#if>
+    </div>
+
   </@group>
 </#macro>
 

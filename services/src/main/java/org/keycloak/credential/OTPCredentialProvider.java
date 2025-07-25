@@ -16,6 +16,8 @@
  */
 package org.keycloak.credential;
 
+import java.util.List;
+
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.common.util.Time;
@@ -64,7 +66,7 @@ public class OTPCredentialProvider implements CredentialProvider<OTPCredentialMo
 
     @Override
     public boolean supportsCredentialType(String credentialType) {
-        return getType().equals(credentialType);
+        return List.of(OTPCredentialModel.TYPE, OTPCredentialModel.TOTP, OTPCredentialModel.HOTP).contains(credentialType);
     }
 
     @Override

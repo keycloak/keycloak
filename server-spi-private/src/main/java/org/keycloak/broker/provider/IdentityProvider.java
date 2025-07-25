@@ -84,7 +84,7 @@ public interface IdentityProvider<C extends IdentityProviderModel> extends Provi
          *
          * @return see description
          */
-        Response error(String message);
+        Response error(IdentityProviderModel idpConfig, String message);
     }
 
     C getConfig();

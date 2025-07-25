@@ -46,6 +46,8 @@ import org.keycloak.util.JsonSerialization;
  */
 public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPolicyRepresentation> {
 
+    public static final String ID = "user";
+
     private UserPolicyProvider provider = new UserPolicyProvider(this::toRepresentation);
 
     @Override
@@ -65,7 +67,7 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
 
     @Override
     public PolicyProvider create(KeycloakSession session) {
-        return null;
+        return provider;
     }
 
     @Override
@@ -193,6 +195,6 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
 
     @Override
     public String getId() {
-        return "user";
+        return ID;
     }
 }

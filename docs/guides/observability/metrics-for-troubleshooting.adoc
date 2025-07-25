@@ -2,8 +2,8 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Metrics for troubleshooting {project_name} deployment"
-summary="Learn about metrics that can indicate where the issue is, for example, when service level objective is not met"
+title="Troubleshooting using metrics"
+summary="Use metrics for troubleshooting errors and performance issues."
 >
 
 For a running {project_name} deployment it is important to understand how the system performs and whether it meets your service level objectives (SLOs).
@@ -37,6 +37,11 @@ A guidance provided by this guide is illustrated in the following example:
 Troubleshooting the database itself is out of scope.
 * This guide provides general guidance.
 You should always confirm the configuration change by conducting a performance test comparing the metrics in question for the old and the new configuration.
+====
+
+[NOTE]
+====
+Grafana dashboards for the metrics below can be found in <@links.observability id="grafana-dashboards"/> {section}.
 ====
 
 == List of {project_name} key metrics

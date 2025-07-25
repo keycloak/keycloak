@@ -138,7 +138,7 @@ public class LDAPTestUtils {
                 } else if (otherAttrs.containsKey(name)) {
                     return otherAttrs.getFirst(name);
                 }
-                return super.getFirstAttribute(name);
+                return null;
             }
 
             @Override
@@ -455,6 +455,17 @@ public class LDAPTestUtils {
             return getGroupMapper(mapperModel, ldapProvider, appRealm).createLDAPGroup(groupName, additAttrs);
         } else {
             return getRoleMapper(mapperModel, ldapProvider, appRealm).createLDAPRole(groupName);
+        }
+    }
+
+    public static LDAPObject getLdapGroupByName(KeycloakSession session, RealmModel realm, String mapperName, String groupName) {
+        ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+        ComponentModel mapperModel = getSubcomponentByName(realm, ldapModel, mapperName);
+        LDAPStorageProvider ldapProvider = getLdapProvider(session, ldapModel);
+        if (GroupLDAPStorageMapperFactory.PROVIDER_ID.equals(mapperModel.getProviderId())) {
+            return getGroupMapper(mapperModel, ldapProvider, realm).loadLDAPGroupByName(groupName);
+        } else {
+            return getRoleMapper(mapperModel, ldapProvider, realm).loadLDAPRoleByName(groupName);
         }
     }
 

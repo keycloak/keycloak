@@ -29,6 +29,7 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 
 import static org.keycloak.exportimport.ExportImportConfig.DEFAULT_STRATEGY;
 
@@ -47,9 +48,9 @@ public class SingleFileImportProviderFactory implements ImportProviderFactory {
     private Config.Scope config;
 
     @Override
-    public ImportProvider create(KeycloakSession session) {
+    public ImportProvider create(KeycloakSession session, Map<String, String> overrides) {
         Strategy strategy = Enum.valueOf(Strategy.class, System.getProperty(ExportImportConfig.STRATEGY, config.get(STRATEGY, DEFAULT_STRATEGY.toString())));
-        String fileName = System.getProperty(ExportImportConfig.FILE, config.get(FILE));
+        String fileName = overrides.getOrDefault(ExportImportConfig.FILE, System.getProperty(ExportImportConfig.FILE, config.get(FILE)));
         if (fileName == null) {
             throw new IllegalArgumentException("Property " + FILE + " needs to be provided!");
         }
@@ -75,6 +76,7 @@ public class SingleFileImportProviderFactory implements ImportProviderFactory {
         return PROVIDER_ID;
     }
 
+    @Override
     public List<ProviderConfigProperty> getConfigMetadata() {
         return ProviderConfigurationBuilder.create()
                 .property()

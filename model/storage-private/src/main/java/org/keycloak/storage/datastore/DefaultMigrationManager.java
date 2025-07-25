@@ -42,6 +42,8 @@ import org.keycloak.migration.migrators.MigrateTo24_0_3;
 import org.keycloak.migration.migrators.MigrateTo25_0_0;
 import org.keycloak.migration.migrators.MigrateTo26_0_0;
 import org.keycloak.migration.migrators.MigrateTo26_1_0;
+import org.keycloak.migration.migrators.MigrateTo26_2_0;
+import org.keycloak.migration.migrators.MigrateTo26_3_0;
 import org.keycloak.migration.migrators.MigrateTo2_0_0;
 import org.keycloak.migration.migrators.MigrateTo2_1_0;
 import org.keycloak.migration.migrators.MigrateTo2_2_0;
@@ -123,6 +125,8 @@ public class DefaultMigrationManager implements MigrationManager {
             new MigrateTo25_0_0(),
             new MigrateTo26_0_0(),
             new MigrateTo26_1_0(),
+            new MigrateTo26_2_0(),
+            new MigrateTo26_3_0(),
     };
 
     private final KeycloakSession session;
@@ -192,13 +196,7 @@ public class DefaultMigrationManager implements MigrationManager {
 
     @Override
     public void migrate(RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
-        ModelVersion stored = null;
-        if (rep.getKeycloakVersion() != null) {
-            stored = convertRHSSOVersionToKeycloakVersion(rep.getKeycloakVersion());
-            if (stored == null) {
-                stored = new ModelVersion(rep.getKeycloakVersion());
-            }
-        }
+        ModelVersion stored = getModelVersionFromRep(rep);
         if (stored == null) {
             stored = migrations[0].getVersion();
         } else {
@@ -235,6 +233,17 @@ public class DefaultMigrationManager implements MigrationManager {
             return new ModelVersion(Integer.parseInt(version), 0, 0);
         }
         return null;
+    }
+
+    public static ModelVersion getModelVersionFromRep(RealmRepresentation rep) {
+        ModelVersion version = null;
+        if (rep.getKeycloakVersion() != null) {
+            version = convertRHSSOVersionToKeycloakVersion(rep.getKeycloakVersion());
+            if (version == null) {
+                version = new ModelVersion(rep.getKeycloakVersion());
+            }
+        }
+        return version;
     }
 
 }

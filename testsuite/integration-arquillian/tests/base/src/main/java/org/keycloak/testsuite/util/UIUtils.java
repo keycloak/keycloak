@@ -3,6 +3,7 @@ package org.keycloak.testsuite.util;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.keycloak.testsuite.page.AbstractPatternFlyAlert;
+import org.keycloak.testsuite.pages.AbstractPage;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.Keys;
@@ -84,6 +85,16 @@ public final class UIUtils {
         clickElement(element, Keys.ENTER);
     }
 
+    /**
+     * Same than clickLink but it does not perform any wait after clicking or sending the
+     * enter key.
+     *
+     * @param element The element to click
+     */
+    public static void clickLinkWithoutWait(WebElement element) {
+        clickLinkWithoutWait(element, Keys.ENTER);
+    }
+
     private static void clickElement(WebElement element, CharSequence key) {
         WebDriver driver = getCurrentDriver();
 
@@ -94,6 +105,17 @@ public final class UIUtils {
                 : element::click);
     }
 
+    private static void clickLinkWithoutWait(WebElement element, CharSequence key) {
+        WebDriver driver = getCurrentDriver();
+
+        waitUntilElement(element).is().clickable();
+
+        if (BrowserDriverUtil.isDriverChrome(driver)) {
+            element.sendKeys(key);
+        } else {
+            element.click();
+        }
+    }
 
     /**
      * The method executes click in the element. This method always uses click and
@@ -289,5 +311,23 @@ public final class UIUtils {
 
     public static String getRawPageSource() {
         return getRawPageSource(getCurrentDriver());
+    }
+
+    /**
+     * Navigates the driver back but it refreshes the page if it is not the expected one for
+     * chrome. Chrome 136 does not respect cache-control and refresh is needed
+     * to reach the server again (the page is cached no matter the cache-control
+     * directive returned).
+     * See https://issues.chromium.org/issues/415773538
+     *
+     * @param driver The driver used
+     * @param expectedPage The expected page
+     */
+    public static void navigateBackWithRefresh(WebDriver driver, AbstractPage expectedPage) {
+        driver.navigate().back();
+        if (!expectedPage.isCurrent() && BrowserDriverUtil.isDriverChrome(driver)) {
+            driver.navigate().refresh();
+        }
+        expectedPage.assertCurrent();
     }
 }

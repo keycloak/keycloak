@@ -62,8 +62,4 @@ public class WebAuthnErrorPage extends LanguageComboboxAwarePage {
         }
     }
 
-    @Override
-    public void open() {
-        throw new UnsupportedOperationException();
-    }
 }

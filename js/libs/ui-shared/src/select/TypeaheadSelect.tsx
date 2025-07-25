@@ -115,7 +115,11 @@ export const TypeaheadSelect = ({
       {...rest}
       onClick={toggle}
       onOpenChange={(isOpen) => onToggle?.(isOpen)}
-      onSelect={(_, value) => onSelect?.(value || "")}
+      onSelect={(_, value) => {
+        onSelect?.(value || "");
+        onFilter?.("");
+        setFilterValue("");
+      }}
       maxMenuHeight={propertyToString(maxHeight)}
       popperProps={{ direction, width: propertyToString(width) }}
       toggle={(ref) => (

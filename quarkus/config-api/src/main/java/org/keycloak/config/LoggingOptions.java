@@ -1,6 +1,6 @@
 package org.keycloak.config;
 
-import io.quarkus.runtime.configuration.MemorySize;
+import io.quarkus.runtime.logging.LogRuntimeConfig;
 import org.jboss.logmanager.handlers.SyslogHandler;
 
 import java.io.File;
@@ -21,10 +21,9 @@ public class LoggingOptions {
     public static final String DEFAULT_LOG_PATH = "data" + File.separator + "log" + File.separator + DEFAULT_LOG_FILENAME;
 
     // Log format + tracing
-    private static final Function<String, String> DEFAULT_LOG_FORMAT_FUNC = (additionalFields) ->
+    public static final Function<String, String> DEFAULT_LOG_FORMAT_FUNC = (additionalFields) ->
             "%d{yyyy-MM-dd HH:mm:ss,SSS} " + additionalFields + "%-5p [%c] (%t) %s%e%n";
     public static final String DEFAULT_LOG_FORMAT = DEFAULT_LOG_FORMAT_FUNC.apply("");
-    public static final String DEFAULT_LOG_TRACING_FORMAT = DEFAULT_LOG_FORMAT_FUNC.apply("traceId=%X{traceId}, parentId=%X{parentId}, spanId=%X{spanId}, sampled=%X{sampled} ");
 
     public enum Handler {
         console,
@@ -66,9 +65,25 @@ public class LoggingOptions {
             .caseInsensitiveExpectedValues(true)
             .build();
 
+    public static final Option<Boolean> LOG_ASYNC = new OptionBuilder<>("log-async", Boolean.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(false)
+            .description("Indicates whether to log asynchronously to all handlers.")
+            .build();
+
     public enum Output {
         DEFAULT,
         JSON;
+
+        @Override
+        public String toString() {
+            return super.toString().toLowerCase(Locale.ROOT);
+        }
+    }
+
+    public enum JsonFormat {
+        DEFAULT,
+        ECS;
 
         @Override
         public String toString() {
@@ -98,9 +113,21 @@ public class LoggingOptions {
             .defaultValue(DEFAULT_LOG_FORMAT)
             .build();
 
+    public static final Option<JsonFormat> LOG_CONSOLE_JSON_FORMAT = new OptionBuilder<>("log-console-json-format", JsonFormat.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(JsonFormat.DEFAULT)
+            .description("Set the format of the produced JSON.")
+            .build();
+
     public static final Option<Boolean> LOG_CONSOLE_INCLUDE_TRACE = new OptionBuilder<>("log-console-include-trace", Boolean.class)
             .category(OptionCategory.LOGGING)
             .description(format("Include tracing information in the console log. If the '%s' option is specified, this option has no effect.", LOG_CONSOLE_FORMAT.getKey()))
+            .defaultValue(true)
+            .build();
+
+    public static final Option<Boolean> LOG_CONSOLE_INCLUDE_MDC = new OptionBuilder<>("log-console-include-mdc", Boolean.class)
+            .category(OptionCategory.LOGGING)
+            .description(format("Include mdc information in the console log. If the '%s' option is specified, this option has no effect.", LOG_CONSOLE_FORMAT.getKey()))
             .defaultValue(true)
             .build();
 
@@ -113,6 +140,19 @@ public class LoggingOptions {
     public static final Option<Boolean> LOG_CONSOLE_ENABLED = new OptionBuilder<>("log-console-enabled", Boolean.class)
             .category(OptionCategory.LOGGING)
             .hidden()
+            .build();
+
+    // Console Async
+    public static final Option<Boolean> LOG_CONSOLE_ASYNC = new OptionBuilder<>("log-console-async", Boolean.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(false)
+            .description("Indicates whether to log asynchronously to console. If not set, value from the parent property '%s' is used.".formatted(LOG_ASYNC.getKey()))
+            .build();
+
+    public static final Option<Integer> LOG_CONSOLE_ASYNC_QUEUE_LENGTH = new OptionBuilder<>("log-console-async-queue-length", Integer.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(512)
+            .description("The queue length to use before flushing writing when logging to console.")
             .build();
 
     // File
@@ -142,9 +182,21 @@ public class LoggingOptions {
             .defaultValue(DEFAULT_LOG_FORMAT)
             .build();
 
+    public static final Option<JsonFormat> LOG_FILE_JSON_FORMAT = new OptionBuilder<>("log-file-json-format", JsonFormat.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(JsonFormat.DEFAULT)
+            .description("Set the format of the produced JSON.")
+            .build();
+
     public static final Option<Boolean> LOG_FILE_INCLUDE_TRACE = new OptionBuilder<>("log-file-include-trace", Boolean.class)
             .category(OptionCategory.LOGGING)
             .description(format("Include tracing information in the file log. If the '%s' option is specified, this option has no effect.", LOG_FILE_FORMAT.getKey()))
+            .defaultValue(true)
+            .build();
+
+    public static final Option<Boolean> LOG_FILE_INCLUDE_MDC = new OptionBuilder<>("log-file-include-mdc", Boolean.class)
+            .category(OptionCategory.LOGGING)
+            .description(format("Include MDC information in the file log. If the '%s' option is specified, this option has no effect.", LOG_FILE_FORMAT.getKey()))
             .defaultValue(true)
             .build();
 
@@ -152,6 +204,19 @@ public class LoggingOptions {
             .category(OptionCategory.LOGGING)
             .defaultValue(DEFAULT_CONSOLE_OUTPUT)
             .description("Set the log output to JSON or default (plain) unstructured logging.")
+            .build();
+
+    // File async
+    public static final Option<Boolean> LOG_FILE_ASYNC = new OptionBuilder<>("log-file-async", Boolean.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(false)
+            .description("Indicates whether to log asynchronously to file log. If not set, value from the parent property '%s' is used.".formatted(LOG_ASYNC.getKey()))
+            .build();
+
+    public static final Option<Integer> LOG_FILE_ASYNC_QUEUE_LENGTH = new OptionBuilder<>("log-file-async-queue-length", Integer.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(512)
+            .description("The queue length to use before flushing writing when logging to file log.")
             .build();
 
     // Syslog
@@ -208,9 +273,21 @@ public class LoggingOptions {
             .defaultValue(DEFAULT_LOG_FORMAT)
             .build();
 
+    public static final Option<JsonFormat> LOG_SYSLOG_JSON_FORMAT = new OptionBuilder<>("log-syslog-json-format", JsonFormat.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(JsonFormat.DEFAULT)
+            .description("Set the format of the produced JSON.")
+            .build();
+
     public static final Option<Boolean> LOG_SYSLOG_INCLUDE_TRACE = new OptionBuilder<>("log-syslog-include-trace", Boolean.class)
             .category(OptionCategory.LOGGING)
             .description(format("Include tracing information in the Syslog. If the '%s' option is specified, this option has no effect.", LOG_SYSLOG_FORMAT.getKey()))
+            .defaultValue(true)
+            .build();
+
+    public static final Option<Boolean> LOG_SYSLOG_INCLUDE_MDC = new OptionBuilder<>("log-syslog-include-mdc", Boolean.class)
+            .category(OptionCategory.LOGGING)
+            .description(format("Include MDC information in the Syslog. If the '%s' option is specified, this option has no effect.", LOG_SYSLOG_FORMAT.getKey()))
             .defaultValue(true)
             .build();
 
@@ -218,6 +295,41 @@ public class LoggingOptions {
             .category(OptionCategory.LOGGING)
             .defaultValue(DEFAULT_SYSLOG_OUTPUT)
             .description("Set the Syslog output to JSON or default (plain) unstructured logging.")
+            .build();
+
+    public static final Option<LogRuntimeConfig.SyslogConfig.CountingFraming> LOG_SYSLOG_COUNTING_FRAMING = new OptionBuilder<>("log-syslog-counting-framing", LogRuntimeConfig.SyslogConfig.CountingFraming.class)
+            .category(OptionCategory.LOGGING)
+            .transformEnumValues(true)
+            .defaultValue(LogRuntimeConfig.SyslogConfig.CountingFraming.PROTOCOL_DEPENDENT)
+            .description("If 'true', the message being sent is prefixed with the size of the message. If '%s', the default value is 'true' when '%s' is 'tcp' or 'ssl-tcp', otherwise 'false'."
+                    .formatted(Option.transformEnumValue(LogRuntimeConfig.SyslogConfig.CountingFraming.PROTOCOL_DEPENDENT.name()), LOG_SYSLOG_PROTOCOL.getKey()))
+            .build();
+
+    // Syslog async
+    public static final Option<Boolean> LOG_SYSLOG_ASYNC = new OptionBuilder<>("log-syslog-async", Boolean.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(false)
+            .description("Indicates whether to log asynchronously to Syslog. If not set, value from the parent property '%s' is used.".formatted(LOG_ASYNC.getKey()))
+            .build();
+
+    public static final Option<Integer> LOG_SYSLOG_ASYNC_QUEUE_LENGTH = new OptionBuilder<>("log-syslog-async-queue-length", Integer.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(512)
+            .description("The queue length to use before flushing writing when logging to Syslog.")
+            .build();
+
+    public static final Option<Boolean> LOG_MDC_ENABLED = new OptionBuilder<>("log-mdc-enabled", Boolean.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(false)
+            .buildTime(true)
+            .description("Indicates whether to add information about the realm and other information to the mapped diagnostic context. All elements will be prefixed with 'kc.'")
+            .build();
+
+    public static final Option<List<String>> LOG_MDC_KEYS = OptionBuilder.listOptionBuilder("log-mdc-keys", String.class)
+            .category(OptionCategory.LOGGING)
+            .expectedValues(List.of("realm", "clientId", "userId", "ipAddress", "org"))
+            .defaultValue(List.of("realm", "org", "clientId"))
+            .description("Defines which information should be added to the mapped diagnostic context as a comma-separated list.")
             .build();
 
 }

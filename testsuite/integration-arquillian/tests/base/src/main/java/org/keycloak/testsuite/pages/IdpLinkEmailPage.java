@@ -39,11 +39,6 @@ public class IdpLinkEmailPage extends AbstractPage {
         return PageUtils.getPageTitle(driver).startsWith("Link ");
     }
 
-    @Override
-    public void open() throws Exception {
-        throw new UnsupportedOperationException();
-    }
-
     public String getMessage() {
         return message.getText();
     }

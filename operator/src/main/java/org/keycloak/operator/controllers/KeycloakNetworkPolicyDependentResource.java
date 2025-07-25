@@ -26,6 +26,7 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyFluent;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
@@ -46,7 +47,9 @@ import static org.keycloak.operator.Constants.KEYCLOAK_JGROUPS_FD_PORT;
 import static org.keycloak.operator.Constants.KEYCLOAK_JGROUPS_PROTOCOL;
 import static org.keycloak.operator.Constants.KEYCLOAK_SERVICE_PROTOCOL;
 
-@KubernetesDependent(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)
+@KubernetesDependent(
+        informer = @Informer(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)
+)
 public class KeycloakNetworkPolicyDependentResource extends CRUDKubernetesDependentResource<NetworkPolicy, Keycloak> {
 
     private static final Logger LOG = Logger.getLogger(KeycloakNetworkPolicyDependentResource.class.getName());

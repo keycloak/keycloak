@@ -565,7 +565,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
         String cfgId = createConfig(browserExecution.getId(), cfg);
         Assert.assertNotNull(cfgId);
 
-        loginConfirmationPage.open();
+        oauth.openLoginForm();
 
         WaitUtils.waitForPageToLoad();
 
@@ -575,7 +575,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
         loginConfirmationPage.confirm();
 
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
 
         AssertEvents.ExpectedEvent expectedEvent = events.expectLogin()
                 .user(userId)

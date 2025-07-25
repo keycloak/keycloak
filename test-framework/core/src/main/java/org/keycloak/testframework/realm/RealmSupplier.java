@@ -16,16 +16,6 @@ import org.keycloak.testframework.server.KeycloakServer;
 public class RealmSupplier implements Supplier<ManagedRealm, InjectRealm> {
 
     @Override
-    public Class<InjectRealm> getAnnotationClass() {
-        return InjectRealm.class;
-    }
-
-    @Override
-    public Class<ManagedRealm> getValueType() {
-        return ManagedRealm.class;
-    }
-
-    @Override
     public ManagedRealm getValue(InstanceContext<ManagedRealm, InjectRealm> instanceContext) {
         KeycloakServer server = instanceContext.getDependency(KeycloakServer.class);
         Keycloak adminClient = instanceContext.getDependency(Keycloak.class, "bootstrap-client");
@@ -68,12 +58,7 @@ public class RealmSupplier implements Supplier<ManagedRealm, InjectRealm> {
 
     @Override
     public boolean compatible(InstanceContext<ManagedRealm, InjectRealm> a, RequestedInstance<ManagedRealm, InjectRealm> b) {
-        if (!a.getAnnotation().config().equals(b.getAnnotation().config())) {
-            return false;
-        }
-
-        RealmConfigInterceptorHelper interceptor = new RealmConfigInterceptorHelper(a.getRegistry());
-        return interceptor.sameInterceptors(a);
+        return a.getAnnotation().config().equals(b.getAnnotation().config());
     }
 
     @Override

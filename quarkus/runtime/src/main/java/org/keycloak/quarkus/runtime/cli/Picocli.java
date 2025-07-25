@@ -19,17 +19,13 @@ package org.keycloak.quarkus.runtime.cli;
 
 import static java.lang.String.format;
 import static org.keycloak.quarkus.runtime.Environment.getProviderFiles;
-import static org.keycloak.quarkus.runtime.Environment.isDevMode;
 import static org.keycloak.quarkus.runtime.Environment.isRebuild;
 import static org.keycloak.quarkus.runtime.Environment.isRebuildCheck;
 import static org.keycloak.quarkus.runtime.Environment.isRebuilt;
 import static org.keycloak.quarkus.runtime.cli.OptionRenderer.decorateDuplicitOptionName;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
-import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.parseConfigArgs;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getRawPersistedProperty;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.isUserModifiable;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
-import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.maskValue;
 import static picocli.CommandLine.Model.UsageMessageSpec.SECTION_KEY_COMMAND_LIST;
 
 import java.io.File;
@@ -38,9 +34,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
@@ -49,6 +46,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.keycloak.common.profile.ProfileException;
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.config.DeprecatedMetadata;
 import org.keycloak.config.Option;
 import org.keycloak.config.OptionCategory;
@@ -56,17 +54,13 @@ import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakMain;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
+import org.keycloak.quarkus.runtime.cli.command.AbstractNonServerCommand;
 import org.keycloak.quarkus.runtime.cli.command.Build;
-import org.keycloak.quarkus.runtime.cli.command.Completion;
 import org.keycloak.quarkus.runtime.cli.command.Main;
-import org.keycloak.quarkus.runtime.cli.command.ShowConfig;
-import org.keycloak.quarkus.runtime.cli.command.StartDev;
-import org.keycloak.quarkus.runtime.cli.command.UpdateCompatibility;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.DisabledMappersInterceptor;
 import org.keycloak.quarkus.runtime.configuration.KcUnmatchedArgumentException;
-import org.keycloak.quarkus.runtime.configuration.KeycloakPropertiesConfigSource;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.configuration.PropertyMappingInterceptor;
 import org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource;
@@ -76,6 +70,7 @@ import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import io.quarkus.bootstrap.runner.QuarkusEntryPoint;
 import io.quarkus.runtime.LaunchMode;
 import io.smallrye.config.ConfigValue;
+import io.smallrye.mutiny.tuples.Functions.TriConsumer;
 import picocli.CommandLine;
 import picocli.CommandLine.DuplicateOptionAnnotationsException;
 import picocli.CommandLine.Help.Ansi;
@@ -91,7 +86,7 @@ import picocli.CommandLine.ParseResult;
 
 public class Picocli {
 
-    private static final String KC_PROVIDER_FILE_PREFIX = "kc.provider.file.";
+    static final String KC_PROVIDER_FILE_PREFIX = "kc.provider.file.";
     public static final String ARG_PREFIX = "--";
     public static final String ARG_SHORT_PREFIX = "-";
     public static final String NO_PARAM_LABEL = "none";
@@ -104,6 +99,7 @@ public class Picocli {
     private final ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
     private Set<PropertyMapper<?>> allowedMappers;
     private final List<String> unrecognizedArgs = new ArrayList<>();
+    private Optional<AbstractCommand> parsedCommand = Optional.empty();
 
     public void parseAndRun(List<String> cliArgs) {
         // perform two passes over the cli args. First without option validation to determine the current command, then with option validation enabled
@@ -117,17 +113,7 @@ public class Picocli {
             // recreate the command specifically for the current
             cmd = createCommandLineForCommand(cliArgs, commandLineList);
 
-            int exitCode;
-            if (isRebuildCheck()) {
-                CommandLine currentCommand = null;
-                if (commandLineList.size() > 1) {
-                    currentCommand = commandLineList.get(commandLineList.size() - 1);
-                }
-                exitCode = runReAugmentationIfNeeded(cliArgs, cmd, currentCommand);
-            } else {
-                PropertyMappers.sanitizeDisabledMappers();
-                exitCode = cmd.execute(argArray);
-            }
+            int exitCode = cmd.execute(argArray);
 
             exit(exitCode);
         } catch (ParameterException parEx) {
@@ -167,21 +153,26 @@ public class Picocli {
                 addHelp(currentSpec);
             }
 
+            AbstractCommand currentCommand = null;
             if (currentSpec != null) {
                 CommandLine commandLine = currentSpec.commandLine();
                 addCommandOptions(cliArgs, commandLine);
 
                 if (commandLine != null && commandLine.getCommand() instanceof AbstractCommand ac) {
-                    // set current parsed command
-                    Environment.setParsedCommand(ac);
+                    currentCommand = ac;
                 }
             }
+            initConfig(currentCommand);
 
             if (isRebuildCheck()) {
                 // build command should be available when running re-aug
                 addCommandOptions(cliArgs, spec.subcommands().get(Build.NAME));
             }
         });
+    }
+
+    public Optional<AbstractCommand> getParsedCommand() {
+        return parsedCommand;
     }
 
     private void catchParameterException(ParameterException parEx, CommandLine cmd, String[] args) {
@@ -201,121 +192,7 @@ public class Picocli {
     }
 
     public void exit(int exitCode) {
-        if (exitCode != CommandLine.ExitCode.OK && (!Environment.isTestLaunchMode() || isRebuildCheck())) {
-            // hard exit wanted, as build failed and no subsequent command should be executed. no quarkus involved.
-            System.exit(exitCode);
-        }
-    }
-
-    private int runReAugmentationIfNeeded(List<String> cliArgs, CommandLine cmd, CommandLine currentCommand) {
-        int exitCode = 0;
-
-        if (currentCommand == null) {
-            return exitCode; // possible if using --version or the user made a mistake
-        }
-
-        String currentCommandName = currentCommand.getCommandName();
-
-        if (shouldSkipRebuild(cliArgs, currentCommandName)) {
-            return exitCode;
-        }
-
-        // TODO: ensure that the config has not yet been initialized
-        // - there's currently no good way to do that directly on ConfigProviderResolver
-        initProfile(cliArgs, currentCommandName);
-
-        if (requiresReAugmentation(currentCommand)) {
-            PropertyMappers.sanitizeDisabledMappers();
-            exitCode = runReAugmentation(cliArgs, cmd);
-        }
-
-        return exitCode;
-    }
-
-    protected void initProfile(List<String> cliArgs, String currentCommandName) {
-        if (currentCommandName.equals(StartDev.NAME)) {
-            // force the server image to be set with the dev profile
-            Environment.forceDevProfile();
-        } else {
-            Environment.updateProfile(false);
-
-            // override from the cli if specified
-            parseConfigArgs(cliArgs, (k, v) -> {
-                if (k.equals(Main.PROFILE_SHORT_NAME) || k.equals(Main.PROFILE_LONG_NAME)) {
-                    Environment.setProfile(v);
-                }
-            }, ignored -> {});
-        }
-    }
-
-    private static boolean shouldSkipRebuild(List<String> cliArgs, String currentCommandName) {
-        return cliArgs.contains("--help")
-                || cliArgs.contains("-h")
-                || cliArgs.contains("--help-all")
-                || currentCommandName.equals(Build.NAME)
-                || currentCommandName.equals(ShowConfig.NAME)
-                || currentCommandName.equals(Completion.NAME)
-                || currentCommandName.equals(UpdateCompatibility.NAME);
-    }
-
-    private static boolean requiresReAugmentation(CommandLine cmdCommand) {
-        Map<String, String> rawPersistedProperties = Configuration.getRawPersistedProperties();
-        if (rawPersistedProperties.isEmpty()) {
-            return true; // no build yet
-        }
-        var current = getNonPersistedBuildTimeOptions();
-
-        // everything but the optimized value must match
-        String key = Configuration.KC_OPTIMIZED;
-        Optional.ofNullable(rawPersistedProperties.get(key)).ifPresentOrElse(value -> current.put(key, value), () -> current.remove(key));
-        return !rawPersistedProperties.equals(current);
-    }
-
-    /**
-     * checks the raw cli input for possible credentials / properties which should be masked,
-     * and masks them.
-     * @return a list of potentially masked properties in CLI format, e.g. `--db-password=*******`
-     * instead of the actual passwords value.
-     */
-    private static List<String> getSanitizedRuntimeCliOptions() {
-        List<String> properties = new ArrayList<>();
-
-        parseConfigArgs(ConfigArgsConfigSource.getAllCliArgs(), (key, value) -> {
-            PropertyMapper<?> mapper = PropertyMappers.getMapper(key);
-
-            if (mapper == null || mapper.isRunTime()) {
-                properties.add(key + "=" + maskValue(key, value));
-            }
-        }, properties::add);
-
-        return properties;
-    }
-
-    private static int runReAugmentation(List<String> cliArgs, CommandLine cmd) {
-        if(!isDevMode() && cmd != null) {
-            cmd.getOut().println("Changes detected in configuration. Updating the server image.");
-            if (Configuration.isOptimized()) {
-                checkChangesInBuildOptionsDuringAutoBuild(cmd.getOut());
-            }
-        }
-
-        List<String> configArgsList = new ArrayList<>();
-        configArgsList.add(Build.NAME);
-        parseConfigArgs(cliArgs, (k, v) -> {
-            PropertyMapper<?> mapper = PropertyMappers.getMapper(k);
-
-            if (mapper != null && mapper.isBuildTime()) {
-                configArgsList.add(k + "=" + v);
-            }
-        }, ignored -> {});
-
-        int exitCode = cmd.execute(configArgsList.toArray(new String[0]));
-
-        if(!isDevMode() && exitCode == cmd.getCommandSpec().exitCodeOnSuccess()) {
-            cmd.getOut().printf("Next time you run the server, just run:%n%n\t%s %s %s%n%n", Environment.getCommand(), String.join(" ", getSanitizedRuntimeCliOptions()), OPTIMIZED_BUILD_OPTION_LONG);
-        }
-
-        return exitCode;
+        System.exit(exitCode);
     }
 
     private static boolean wasBuildEverRun() {
@@ -333,7 +210,7 @@ public class Picocli {
             if (arg.contains("=")) {
                 arg = arg.substring(0, arg.indexOf("="));
             }
-            PropertyMapper<?> mapper = PropertyMappers.getMapper(arg);
+            PropertyMapper<?> mapper = PropertyMappers.getMapperByCliKey(arg);
             return mapper != null && mapper.hasWildcard() && allowedMappers.contains(mapper);
         });
         if (!unrecognizedArgs.isEmpty()) {
@@ -350,17 +227,37 @@ public class Picocli {
             return;
         }
 
+        final List<String> ignoredBuildTime = new ArrayList<>();
+
+        if (!options.includeBuildTime) {
+            // check for provider changes, or overrides of existing persisted options
+            // we have to ignore things like the profile properties because the commands set them at runtime
+            checkChangesInBuildOptions((key, oldValue, newValue) -> {
+                if (key.startsWith(KC_PROVIDER_FILE_PREFIX)) {
+                    if (timestampChanged(oldValue, newValue)) {
+                        throw new PropertyException("A provider JAR was updated since the last build, please rebuild for this to be fully utilized.");
+                    }
+                } else if (newValue != null && !isIgnoredPersistedOption(key)
+                        && isUserModifiable(Configuration.getConfigValue(key))
+                        // let quarkus handle this - it's unsupported for direct usage in keycloak
+                        && !key.startsWith(MicroProfileConfigProvider.NS_QUARKUS_PREFIX)) {
+                    ignoredBuildTime.add(key);
+                }
+            });
+        }
+
         final boolean disabledMappersInterceptorEnabled = DisabledMappersInterceptor.isEnabled(); // return to the state before the disable
         try {
             PropertyMappingInterceptor.disable(); // we don't want the mapped / transformed properties, we want what the user effectively supplied
             DisabledMappersInterceptor.disable(); // we want all properties, even disabled ones
 
-            final List<String> ignoredBuildTime = new ArrayList<>();
             final List<String> ignoredRunTime = new ArrayList<>();
-            final Set<String> disabledBuildTime = new HashSet<>();
-            final Set<String> disabledRunTime = new HashSet<>();
-            final Set<String> deprecatedInUse = new HashSet<>();
-            final Set<String> missingOption = new HashSet<>();
+            final Set<String> disabledBuildTime = new LinkedHashSet<>();
+            final Set<String> disabledRunTime = new LinkedHashSet<>();
+            final Set<String> deprecatedInUse = new LinkedHashSet<>();
+            final Set<String> missingOption = new LinkedHashSet<>();
+            final Set<String> ambiguousSpi = new LinkedHashSet<>();
+            final LinkedHashMap<String, String> secondClassOptions = new LinkedHashMap<>();
 
             final Set<PropertyMapper<?>> disabledMappers = new HashSet<>();
             if (options.includeBuildTime) {
@@ -370,62 +267,55 @@ public class Picocli {
                 disabledMappers.addAll(PropertyMappers.getDisabledRuntimeMappers().values());
             }
 
-            checkSpiOptions(options, ignoredBuildTime, ignoredRunTime);
+            var categories = new HashSet<>(abstractCommand.getOptionCategories());
 
-            for (OptionCategory category : abstractCommand.getOptionCategories()) {
-                List<PropertyMapper<?>> mappers = new ArrayList<>(disabledMappers);
+            // first validate the advertised property names
+            // - this allows for efficient resolution of wildcard values and checking spi options
+            Configuration.getPropertyNames().forEach(name -> {
+                if (!name.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)) {
+                    return; // there are canonical mappings to kc. values - no need to consider alternative forms
+                }
+                if (!options.includeRuntime) {
+                    checkRuntimeSpiOptions(name, ignoredRunTime);
+                }
+                if (PropertyMappers.isMaybeSpiBuildTimeProperty(name)) {
+                    ambiguousSpi.add(name);
+                }
+                PropertyMapper<?> mapper = PropertyMappers.getMapper(name);
+                if (mapper == null) {
+                    return; // TODO: need to look for disabled Wildcard mappers
+                }
+                String from = mapper.forKey(name).getFrom();
+                if (!name.equals(from)) {
+                    ConfigValue value = Configuration.getConfigValue(name);
+                    if (value.getValue() != null && isUserModifiable(value)) {
+                        secondClassOptions.put(name, from);
+                    }
+                }
+                if (!mapper.hasWildcard()) {
+                    return; // non-wildcard options will be validated in the next pass
+                }
+                if (!categories.contains(mapper.getCategory())) {
+                    return; // not of interest to this command
+                    // TODO: due to picking values up from the env and auto-builds, this probably isn't correct
+                    // - the same issue exists with the second pass
+                }
+                validateProperty(abstractCommand, options, ignoredRunTime, disabledBuildTime, disabledRunTime,
+                        deprecatedInUse, missingOption, disabledMappers, mapper, from);
+            });
+
+            // second pass validate any property mapper not seen in the first pass
+            // - this will catch required values, anything missing from the property names, or disabled
+            List<PropertyMapper<?>> mappers = new ArrayList<>(disabledMappers);
+            for (OptionCategory category : categories) {
                 Optional.ofNullable(PropertyMappers.getRuntimeMappers().get(category)).ifPresent(mappers::addAll);
                 Optional.ofNullable(PropertyMappers.getBuildTimeMappers().get(category)).ifPresent(mappers::addAll);
-                for (PropertyMapper<?> mapper : mappers) {
-                    mapper.getKcConfigValues().forEach(configValue -> {
-                        String configValueStr = configValue.getValue();
+            }
 
-                        // don't consider missing or anything below standard env properties
-                        if (configValueStr != null && !isUserModifiable(configValue)) {
-                            return;
-                        }
-
-                        if (disabledMappers.contains(mapper)) {
-                            if (!PropertyMappers.isDisabledMapper(mapper.getFrom())) {
-                                return; // we found enabled mapper with the same name
-                            }
-
-                            // only check build-time for a rebuild, we'll check the runtime later
-                            if (configValueStr != null && (!mapper.isRunTime() || !isRebuild())) {
-                                if (PropertyMapper.isCliOption(configValue)) {
-                                    throw new KcUnmatchedArgumentException(abstractCommand.getCommandLine().orElseThrow(), List.of(mapper.getCliFormat()));
-                                } else {
-                                    handleDisabled(mapper.isRunTime() ? disabledRunTime : disabledBuildTime, mapper);
-                                }
-                            }
-                            return;
-                        }
-
-                        if (mapper.isBuildTime() && !options.includeBuildTime) {
-                            String currentValue = getRawPersistedProperty(mapper.getFrom()).orElse(null);
-                            if (!Objects.equals(configValueStr, currentValue)) {
-                                ignoredBuildTime.add(mapper.getFrom());
-                                return;
-                            }
-                        }
-                        if (mapper.isRunTime() && !options.includeRuntime) {
-                            if (configValueStr != null) {
-                                ignoredRunTime.add(mapper.getFrom());
-                            }
-                            return;
-                        }
-                        
-                        if (configValueStr == null) {
-                            if (mapper.isRequired()) {
-                                handleRequired(missingOption, mapper);
-                            }
-                            return;
-                        }
-
-                        mapper.validate(configValue);
-
-                        mapper.getDeprecatedMetadata().ifPresent(metadata -> handleDeprecated(deprecatedInUse, mapper, configValueStr, metadata));
-                    });
+            for (PropertyMapper<?> mapper : mappers) {
+                if (!mapper.hasWildcard()) {
+                    validateProperty(abstractCommand, options, ignoredRunTime, disabledBuildTime, disabledRunTime,
+                            deprecatedInUse, missingOption, disabledMappers, mapper, mapper.getFrom());
                 }
             }
 
@@ -436,8 +326,8 @@ public class Picocli {
                 throw new PropertyException(format("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: %s\n",
                         String.join(", ", ignoredBuildTime)));
             } else if (!ignoredRunTime.isEmpty()) {
-                warn(format("The following run time options were found, but will be ignored during build time: %s\n",
-                        String.join(", ", ignoredRunTime)), getOutWriter());
+                info(format("The following run time options were found, but will be ignored during build time: %s\n",
+                        String.join(", ", ignoredRunTime)));
             }
 
             if (!disabledBuildTime.isEmpty()) {
@@ -449,42 +339,92 @@ public class Picocli {
             if (!deprecatedInUse.isEmpty()) {
                 warn("The following used options or option values are DEPRECATED and will be removed or their behaviour changed in a future release:\n" + String.join("\n", deprecatedInUse) + "\nConsult the Release Notes for details.", getOutWriter());
             }
+            if (!ambiguousSpi.isEmpty()) {
+                warn("The following SPI options are using the legacy format and are not being treated as build time options. Please use the new format with the appropriate -- separators to resolve this ambiguity: " + String.join("\n", ambiguousSpi));
+            }
+            secondClassOptions.forEach((key, firstClass) -> {
+                warn("Please use the first-class option `%s` instead of `%s`".formatted(firstClass, key), getOutWriter());
+            });
         } finally {
             DisabledMappersInterceptor.enable(disabledMappersInterceptorEnabled);
             PropertyMappingInterceptor.enable();
         }
     }
 
-    private static boolean isUserModifiable(ConfigValue configValue) {
-        // This could check as low as SysPropConfigSource DEFAULT_ORDINAL, which is 400
-        // for now we won't validate these as it's not expected for the user to specify options via system properties
-        return configValue.getConfigSourceOrdinal() >= KeycloakPropertiesConfigSource.PROPERTIES_FILE_ORDINAL;
+    static boolean timestampChanged(String oldValue, String newValue) {
+        if (newValue != null && oldValue != null) {
+            long longNewValue = Long.valueOf(newValue);
+            long longOldValue = Long.valueOf(oldValue);
+            // docker commonly truncates to the second at runtime, so we'll allow that special case
+            return ((longNewValue / 1000) * 1000) != longNewValue || ((longOldValue / 1000) * 1000) != longNewValue;
+        }
+        return true;
     }
 
-    private static void checkSpiOptions(IncludeOptions options, final List<String> ignoredBuildTime,
-            final List<String> ignoredRunTime) {
-        for (String key : Configuration.getConfig().getPropertyNames()) {
-            if (!key.startsWith(PropertyMappers.KC_SPI_PREFIX)) {
-                continue;
-            }
-            boolean buildTimeOption = PropertyMappers.isSpiBuildTimeProperty(key);
+    private void validateProperty(AbstractCommand abstractCommand, IncludeOptions options,
+            final List<String> ignoredRunTime, final Set<String> disabledBuildTime, final Set<String> disabledRunTime,
+            final Set<String> deprecatedInUse, final Set<String> missingOption,
+            final Set<PropertyMapper<?>> disabledMappers, PropertyMapper<?> mapper, String from) {
+        ConfigValue configValue = Configuration.getConfigValue(from);
+        String configValueStr = configValue.getValue();
 
+        // don't consider missing or anything below standard env properties
+        if (configValueStr != null && !isUserModifiable(configValue)) {
+            return;
+        }
+
+        if (disabledMappers.contains(mapper)) {
+            if (PropertyMappers.getMapper(from) != null) {
+                return; // we found enabled mapper with the same name
+            }
+
+            // only check build-time for a rebuild, we'll check the runtime later
+            if (configValueStr != null && (!mapper.isRunTime() || !isRebuild())) {
+                if (PropertyMapper.isCliOption(configValue)) {
+                    throw new KcUnmatchedArgumentException(abstractCommand.getCommandLine().orElseThrow(), List.of(mapper.getCliFormat()));
+                } else {
+                    handleDisabled(mapper.isRunTime() ? disabledRunTime : disabledBuildTime, mapper);
+                }
+            }
+            return;
+        }
+
+        if (mapper.isRunTime() && !options.includeRuntime) {
+            if (configValueStr != null) {
+                ignoredRunTime.add(mapper.getFrom());
+            }
+            return;
+        }
+
+        if (configValueStr == null) {
+            if (mapper.isRequired()) {
+                handleRequired(missingOption, mapper);
+            }
+            return;
+        }
+
+        PropertyMappingInterceptor.enable();
+        try {
+            mapper.validate(configValue);
+        } finally {
+            PropertyMappingInterceptor.disable();
+        }
+
+        mapper.getDeprecatedMetadata().ifPresent(metadata -> handleDeprecated(deprecatedInUse, mapper, configValueStr, metadata));
+    }
+
+    private static void checkRuntimeSpiOptions(String key, final List<String> ignoredRunTime) {
+        if (!key.startsWith(PropertyMappers.KC_SPI_PREFIX)) {
+            return;
+        }
+        boolean buildTimeOption = PropertyMappers.isSpiBuildTimeProperty(key);
+
+        if (!buildTimeOption) {
             ConfigValue configValue = Configuration.getConfigValue(key);
             String configValueStr = configValue.getValue();
 
             // don't consider missing or anything below standard env properties
-            if (configValueStr == null || configValue.getConfigSourceOrdinal() < 300) {
-                continue;
-            }
-
-            if (!options.includeBuildTime) {
-                if (buildTimeOption) {
-                    String currentValue = getRawPersistedProperty(key).orElse(null);
-                    if (!configValueStr.equals(currentValue)) {
-                        ignoredBuildTime.add(key);
-                    }
-                }
-            } else if (!options.includeRuntime && !buildTimeOption) {
+            if (configValueStr != null && isUserModifiable(configValue)) {
                 ignoredRunTime.add(key);
             }
         }
@@ -552,6 +492,16 @@ public class Picocli {
         warn(text, getOutWriter());
     }
 
+    public void info(String text) {
+        ColorScheme defaultColorScheme = picocli.CommandLine.Help.defaultColorScheme(Help.Ansi.AUTO);
+        getOutWriter().println(defaultColorScheme.apply("INFO: ", Arrays.asList(Style.fg_green, Style.bold)) + text);
+    }
+
+    public void error(String text) {
+        ColorScheme defaultColorScheme = picocli.CommandLine.Help.defaultColorScheme(Help.Ansi.AUTO);
+        getErrWriter().println(defaultColorScheme.apply(text, Arrays.asList(Style.fg_red, Style.bold)));
+    }
+
     private static void warn(String text, PrintWriter outwriter) {
         ColorScheme defaultColorScheme = picocli.CommandLine.Help.defaultColorScheme(Help.Ansi.AUTO);
         outwriter.println(defaultColorScheme.apply("WARNING: ", Arrays.asList(Style.fg_yellow, Style.bold)) + text);
@@ -573,7 +523,7 @@ public class Picocli {
                 if (!mapper.isBuildTime()) {
                     return;
                 }
-                name = mapper.getFrom();
+                name = mapper.forKey(name).getFrom();
                 if (properties.containsKey(name)) {
                     return;
                 }
@@ -632,7 +582,8 @@ public class Picocli {
         consumer.accept(spec);
 
         CommandLine cmd = new CommandLine(spec);
-
+        cmd.setExpandAtFiles(false);
+        cmd.setPosixClusteredShortOptionsAllowed(false);
         cmd.setExecutionExceptionHandler(this.errorHandler);
         cmd.setParameterExceptionHandler(new ShortErrorMessageHandler());
         cmd.setHelpFactory(new HelpFactory());
@@ -671,7 +622,7 @@ public class Picocli {
 
         if (!result.includeBuildTime && !result.includeRuntime) {
             return result;
-        } else if (result.includeRuntime && !result.includeBuildTime && !ShowConfig.NAME.equals(commandName)) {
+        } else if (result.includeRuntime && !result.includeBuildTime) {
             result.includeBuildTime = isRebuilt() || !cliArgs.contains(OPTIMIZED_BUILD_OPTION_LONG);
         } else if (result.includeBuildTime && !result.includeRuntime) {
             result.includeRuntime = isRebuildCheck();
@@ -706,7 +657,9 @@ public class Picocli {
 
         addMappedOptionsToArgGroups(commandLine, mappers);
 
-        allowedMappers = mappers.values().stream().flatMap(List::stream).collect(Collectors.toUnmodifiableSet());
+        if (CollectionUtil.isEmpty(allowedMappers)) {
+            allowedMappers = mappers.values().stream().flatMap(List::stream).collect(Collectors.toUnmodifiableSet());
+        }
     }
 
     private static <T extends Map<OptionCategory, List<PropertyMapper<?>>>> void combinePropertyMappers(T origMappers, T additionalMappers) {
@@ -744,23 +697,25 @@ public class Picocli {
                     name = decorateDuplicitOptionName(name);
                 }
 
-                String description = mapper.getDescription();
-
-                if (description == null || cSpec.optionsMap().containsKey(name) || name.endsWith(OPTION_PART_SEPARATOR) || alreadyPresentArgs.contains(name)) {
-                    //when key is already added or has no description, don't add.
+                if (cSpec.optionsMap().containsKey(name) || alreadyPresentArgs.contains(name)) {
+                    //when key is already added, don't add.
                     continue;
                 }
 
                 OptionSpec.Builder optBuilder = OptionSpec.builder(name)
                         .description(getDecoratedOptionDescription(mapper))
-                        .paramLabel(mapper.getParamLabel())
                         .completionCandidates(() -> mapper.getExpectedValues().iterator())
                         .hidden(mapper.isHidden());
+
+                if (mapper.getParamLabel() != null) {
+                    optBuilder.paramLabel(mapper.getParamLabel());
+                }
 
                 if (mapper.getDefaultValue().isPresent()) {
                     optBuilder.defaultValue(Option.getDefaultValueString(mapper.getDefaultValue().get()));
                 }
 
+                optBuilder.arity("1"); // everything requires a value to match configargs parsing
                 if (mapper.getType() != null) {
                     optBuilder.type(mapper.getType());
                     if (mapper.isList()) {
@@ -789,7 +744,7 @@ public class Picocli {
     }
 
     private static String getDecoratedOptionDescription(PropertyMapper<?> mapper) {
-        StringBuilder transformedDesc = new StringBuilder(mapper.getDescription());
+        StringBuilder transformedDesc = new StringBuilder(Optional.ofNullable(mapper.getDescription()).orElse(""));
 
         if (mapper.getType() != Boolean.class && !mapper.getExpectedValues().isEmpty()) {
             List<String> decoratedExpectedValues = mapper.getExpectedValues().stream().map(value -> {
@@ -846,8 +801,8 @@ public class Picocli {
         return transformedDesc.toString();
     }
 
-    public static void println(CommandLine cmd, String message) {
-        cmd.getOut().println(message);
+    public void println(String message) {
+        getOutWriter().println(message);
     }
 
     public static List<String> parseArgs(String[] rawArgs) throws PropertyException {
@@ -877,26 +832,10 @@ public class Picocli {
         return args;
     }
 
-    private static void checkChangesInBuildOptionsDuringAutoBuild(PrintWriter out) {
+    public static void checkChangesInBuildOptionsDuringAutoBuild(PrintWriter out) {
         StringBuilder options = new StringBuilder();
 
-        var current = getNonPersistedBuildTimeOptions();
-        var persisted = Configuration.getRawPersistedProperties();
-
-        // TODO: order is not well defined here
-
-        current.forEach((key, value) -> {
-            String persistedValue = persisted.get(key);
-            if (!value.equals(persistedValue)) {
-                optionChanged(options, (String)key, persistedValue, (String)value);
-            }
-        });
-
-        persisted.forEach((key, value) -> {
-            if (current.get(key) == null) {
-                optionChanged(options, key, value, null);
-            }
-        });
+        checkChangesInBuildOptions((key, oldValue, newValue) -> optionChanged(options, key, oldValue, newValue));
 
         if (options.isEmpty()) {
             return;
@@ -912,11 +851,30 @@ public class Picocli {
         );
     }
 
+    private static void checkChangesInBuildOptions(TriConsumer<String, String, String> valueChanged) {
+        var current = getNonPersistedBuildTimeOptions();
+        var persisted = Configuration.getRawPersistedProperties();
+
+        // TODO: order is not well defined here
+
+        current.forEach((key, value) -> {
+            String persistedValue = persisted.get(key);
+            if (!value.equals(persistedValue)) {
+                valueChanged.accept((String)key, persistedValue, (String)value);
+            }
+        });
+
+        persisted.forEach((key, value) -> {
+            if (current.get(key) == null) {
+                valueChanged.accept(key, value, null);
+            }
+        });
+    }
+
     private static void optionChanged(StringBuilder options, String key, String oldValue, String newValue) {
         // the assumption here is that no build time options need mask handling
         boolean isIgnored = !key.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)
-                || key.startsWith(KC_PROVIDER_FILE_PREFIX) || key.equals(Configuration.KC_OPTIMIZED)
-                || key.equals(org.keycloak.common.util.Environment.PROFILE);
+                || key.startsWith(KC_PROVIDER_FILE_PREFIX) || isIgnoredPersistedOption(key);
         if (!isIgnored) {
             key = key.substring(3);
             options.append("\n\t- ").append(key).append("=")
@@ -926,12 +884,32 @@ public class Picocli {
         }
     }
 
+    private static boolean isIgnoredPersistedOption(String key) {
+        return key.equals(Configuration.KC_OPTIMIZED) || key.equals(org.keycloak.common.util.Environment.PROFILE)
+                || key.equals(LaunchMode.current().getProfileKey());
+    }
+
     public void start() {
-        KeycloakMain.start(errorHandler, getErrWriter());
+        KeycloakMain.start(this, (AbstractNonServerCommand) this.getParsedCommand()
+                .filter(AbstractNonServerCommand.class::isInstance).orElse(null), this.errorHandler);
     }
 
     public void build() throws Throwable {
         QuarkusEntryPoint.main();
+    }
+
+    public void initConfig(AbstractCommand command) {
+        if (Configuration.isInitialized()) {
+            throw new IllegalStateException("Config should not be initialized until profile is determined");
+        }
+        this.parsedCommand = Optional.ofNullable(command);
+
+        String profile = parsedCommand.map(AbstractCommand::getInitProfile)
+                .orElseGet(() -> Optional.ofNullable(org.keycloak.common.util.Environment.getProfile())
+                        .orElse(Environment.PROD_PROFILE_VALUE));
+
+        Environment.setProfile(profile);
+        parsedCommand.ifPresent(PropertyMappers::sanitizeDisabledMappers);
     }
 
 }

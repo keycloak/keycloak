@@ -48,6 +48,47 @@ public class ClusterConfigDistTest {
     }
 
     @Test
+    @Launch({ "start-dev", "--cache=ispn", "--cache-embedded-network-bind-address=127.0.0.1","--cache-embedded-network-bind-port=7801", "--cache-embedded-network-external-address=127.0.0.2", "--cache-embedded-network-external-port=7802"})
+    void changeBindAndExternalAddress(CLIResult result) {
+        result.assertClusteredCache();
+        result.assertMessage("physical addresses are `[127.0.0.2:7802]`");
+        result.assertMessage("ISPN000078: Starting JGroups channel `ISPN` with stack `jdbc-ping`");
+    }
+
+    @Test
+    @Launch({ "start-dev", "--cache=ispn", "--cache-embedded-network-bind-address=127.0.0.1", "-Djgroups.bind.address=127.0.0.2", "-Djgroups.bind_addr=127.0.0.3"})
+    void testJGroupsBindAddressPropertyAlsoExists(CLIResult result) {
+        result.assertClusteredCache();
+        result.assertMessage("Conflicting system property 'jgroups.bind.address' and CLI arg 'cache-embedded-network-bind-address' set, utilising CLI value '127.0.0.1'");
+        result.assertMessage("Conflicting system property 'jgroups.bind_addr' and CLI arg 'cache-embedded-network-bind-address' set, utilising CLI value '127.0.0.1'");
+        result.assertMessage("physical addresses are `[127.0.0.1:7800]`");
+        result.assertMessage("ISPN000078: Starting JGroups channel `ISPN` with stack `jdbc-ping`");
+    }
+
+    @Test
+    @Launch({ "start-dev", "--cache=ispn", "-Djgroups.bind.address=127.0.0.2", "-Djgroups.bind.port=7801"})
+    void testJGroupsBindAddressProperty(CLIResult result) {
+        result.assertClusteredCache();
+        result.assertMessage("physical addresses are `[127.0.0.2:7801]`");
+        result.assertMessage("ISPN000078: Starting JGroups channel `ISPN` with stack `jdbc-ping`");
+    }
+
+    @Test
+    @Launch({ "start-dev", "--cache=ispn", "--cache-embedded-network-bind-address=match-address:127.0.0.*"})
+    void testBindSiteMatches(CLIResult result) {
+        result.assertClusteredCache();
+        result.assertMessage("physical addresses are `[127.0.0.");
+        result.assertMessage("ISPN000078: Starting JGroups channel `ISPN` with stack `jdbc-ping`");
+    }
+
+    @Test
+    @Launch({ "start-dev", "--cache=ispn", "--cache-embedded-network-bind-address=SITE_LOCAL"})
+    void testBindSiteLocal(CLIResult result) {
+        result.assertClusteredCache();
+        result.assertMessage("ISPN000078: Starting JGroups channel `ISPN` with stack `jdbc-ping`");
+    }
+
+    @Test
     @Launch({ "start-dev", "--cache=ispn", "--cache-stack=jdbc-ping-udp"})
     void testJdbcPingTCP(CLIResult result) {
         result.assertClusteredCache();
@@ -63,7 +104,7 @@ public class ClusterConfigDistTest {
     @Test
     @Launch({ "start-dev", "--cache-config-file=invalid" })
     void failInvalidClusterConfig(CLIResult result) {
-        result.assertError("ERROR: Could not load cluster configuration file");
+        result.assertError("Cache config file 'invalid' does not exist in the conf directory");
     }
 
     @Test
@@ -114,6 +155,13 @@ public class ClusterConfigDistTest {
     @BeforeStartDistribution(ConfigureCacheUsingAsyncEncryption.class)
     @Launch({ "start-dev", "--cache-config-file=cache-ispn-asym-enc.xml" })
     void testCustomCacheStackInConfigFile(CLIResult result) {
+        result.assertMessage("ISPN000078: Starting JGroups channel `ISPN` with stack `encrypt-udp`");
+    }
+
+    @Test
+    @BeforeStartDistribution(ConfigureCacheUsingAsyncEncryption.class)
+    @Launch({"start", "--cache-config-file=cache-ispn-asym-enc.xml", "--http-enabled=true", "--hostname-strict=false", "--cache-embedded-mtls-enabled=false"})
+    void testCustomCacheStackInConfigFileNotDev(CLIResult result) {
         result.assertMessage("ISPN000078: Starting JGroups channel `ISPN` with stack `encrypt-udp`");
     }
 

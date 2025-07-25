@@ -3,7 +3,7 @@
 
 <@tmpl.guide
 title="Kubernetes"
-summary="Get started with {project_name} on Kubernetes">
+summary="Get started with {project_name} on Kubernetes.">
 
 :links-admin-console: {project_name} Admin Console
 :links-account-console: {project_name} Account Console
@@ -32,7 +32,7 @@ minikube addons enable ingress
 
 The {project_name} QuickStarts repository includes some example files to help deploy {project_name} to Kubernetes.
 
-As a first step, create the {project_name} deployment and service by entering the following command:
+As a first step, create the {project_name} statefulset and service by entering the following command:
 
 [source,bash,subs="attributes+"]
 ----

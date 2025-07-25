@@ -60,10 +60,6 @@ public class OAuthGrantPage extends LanguageComboboxAwarePage {
         return PageUtils.getPageTitle(driver).contains("Grant Access to ");
     }
 
-    @Override
-    public void open() {
-    }
-
     public List<String> getDisplayedGrants() {
         List<String> table = new ArrayList<>();
         WebElement divKcOauth = driver.findElement(By.id("kc-oauth"));

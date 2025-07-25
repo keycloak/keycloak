@@ -28,6 +28,7 @@ import org.keycloak.Config;
 import org.keycloak.ServerStartupError;
 import org.keycloak.common.util.StackUtil;
 import org.keycloak.common.util.StringPropertyReplacer;
+import org.keycloak.connections.jpa.support.EntityManagerProxy;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
 import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProviderFactory;
 import org.keycloak.connections.jpa.util.JpaUtils;
@@ -100,7 +101,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
 
             em = emf.createEntityManager(SynchronizationType.SYNCHRONIZED);
         }
-        em = PersistenceExceptionConverter.create(session, em);
+        em = EntityManagerProxy.create(session, em);
         if (!jtaEnabled) {
             session.getTransactionManager().enlist(new JpaKeycloakTransaction(em));
         }

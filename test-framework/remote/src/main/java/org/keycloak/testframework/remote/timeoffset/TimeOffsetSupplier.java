@@ -9,23 +9,7 @@ import org.keycloak.testframework.injection.SupplierOrder;
 import org.keycloak.testframework.remote.RemoteProviders;
 import org.keycloak.testframework.server.KeycloakUrls;
 
-import java.util.Set;
-
 public class TimeOffsetSupplier implements Supplier<TimeOffSet, InjectTimeOffSet> {
-    @Override
-    public Class<InjectTimeOffSet> getAnnotationClass() {
-        return InjectTimeOffSet.class;
-    }
-
-    @Override
-    public Class<TimeOffSet> getValueType() {
-        return TimeOffSet.class;
-    }
-
-    @Override
-    public Set<Class<?>> dependencies() {
-        return Set.of(HttpClient.class, RemoteProviders.class, KeycloakUrls.class);
-    }
 
     @Override
     public TimeOffSet getValue(InstanceContext<TimeOffSet, InjectTimeOffSet> instanceContext) {

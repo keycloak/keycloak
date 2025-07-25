@@ -309,7 +309,7 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
     }
 
     private void assertLoginFailedWithExpectedX509Error(String expectedError) {
-        loginConfirmationPage.open();
+        oauth.openLoginForm();
         loginPage.assertCurrent();
 
         // Verify there is an error message
@@ -321,7 +321,7 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
         loginPage.login("test-user@localhost", "password");
 
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
 
         events.expectLogin()
                 .user(userId)

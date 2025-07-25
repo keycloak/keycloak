@@ -17,24 +17,17 @@
 
 package org.keycloak.operator.controllers;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.utils.Serialization;
-
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import jakarta.enterprise.context.ApplicationScoped;
+import org.keycloak.operator.Utils;
 
 @ApplicationScoped
 public class WatchedResources {
@@ -53,25 +46,15 @@ public class WatchedResources {
         deployment.getMetadata().getAnnotations().put(WatchedResources.KEYCLOAK_MISSING_ANNOTATION_PREFIX + plural,
                 Boolean.valueOf(current.size() < names.size()).toString());
         deployment.getMetadata().getAnnotations().put(WatchedResources.KEYCLOAK_WATCHING_ANNOTATION_PREFIX + plural,
-                names.stream().collect(Collectors.joining(";")));
+                String.join(";", names));
         deployment.getSpec().getTemplate().getMetadata().getAnnotations()
                 .put(WatchedResources.KEYCLOAK_WATCHED_HASH_ANNOTATION_PREFIX + HasMetadata.getKind(type).toLowerCase() + "-hash", getHash(current));
-    }
-
-    static Object getData(Object object) {
-        if (object instanceof Secret) {
-            return ((Secret) object).getData();
-        }
-        if (object instanceof ConfigMap) {
-            return ((ConfigMap) object).getData();
-        }
-        return object;
     }
 
     public boolean hasMissing(StatefulSet deployment) {
         return deployment.getMetadata().getAnnotations().entrySet().stream()
                 .anyMatch(e -> e.getKey().startsWith(WatchedResources.KEYCLOAK_MISSING_ANNOTATION_PREFIX)
-                        && Boolean.valueOf(e.getValue()));
+                        && Boolean.parseBoolean(e.getValue()));
     }
 
     public boolean isWatching(StatefulSet deployment) {
@@ -81,19 +64,7 @@ public class WatchedResources {
     }
 
     public <T extends HasMetadata> String getHash(List<T> current) {
-        try {
-            // using hashes as it's more robust than resource versions that can change e.g.
-            // just when adding a label
-            // Uses a fips compliant hash
-            var messageDigest = MessageDigest.getInstance("SHA-256");
-
-            current.stream().map(s -> Serialization.asYaml(getData(s)).getBytes(StandardCharsets.UTF_8))
-                    .forEachOrdered(s -> messageDigest.update(s));
-
-            return new BigInteger(1, messageDigest.digest()).toString(16);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
+        return Utils.hash(current);
     }
 
     private <T extends HasMetadata> List<T> fetch(List<String> names, Class<T> type, String namespace,

@@ -28,8 +28,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.authentication.ExpectedParamAuthenticator;
 import org.keycloak.testsuite.authentication.ExpectedParamAuthenticatorFactory;
@@ -45,7 +44,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:n1330@me.com">Tomohiro Nagai</a>
  */
-public class AuthenticatorSubflowsTest2 extends AbstractTestRealmKeycloakTest {
+public class AuthenticatorSubflowsTest2 extends AbstractChangeImportedUserPasswordsTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -58,10 +57,6 @@ public class AuthenticatorSubflowsTest2 extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected ErrorPage errorPage;
-
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-    }
 
     @Before
     public void setupFlows() {
@@ -162,16 +157,12 @@ public class AuthenticatorSubflowsTest2 extends AbstractTestRealmKeycloakTest {
     @Test
     public void testSubflow1() throws Exception {
         // Add foo=bar1. I am redirected to subflow1 - username+password form.
-        String loginFormUrl = oauth.getLoginFormUrl();
-        loginFormUrl = loginFormUrl + "&foo=bar1";
-        log.info("loginFormUrl: " + loginFormUrl);
-
-        driver.navigate().to(loginFormUrl);
+        oauth.loginForm().param("foo", "bar1").open();
 
         loginPage.assertCurrent();
 
         // Fill username+password. I am successfully authenticated.
-        oauth.fillLoginForm("test-user@localhost", "password");
+        oauth.fillLoginForm("test-user@localhost", getPassword("test-user@localhost"));
         appPage.assertCurrent();
 
         events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
@@ -181,15 +172,12 @@ public class AuthenticatorSubflowsTest2 extends AbstractTestRealmKeycloakTest {
     @Test
     public void testSubflow2() throws Exception {
         // Don't add 'foo' parameter. I am redirected to subflow1 - username+password form, then move to subflow2.
-        String loginFormUrl = oauth.getLoginFormUrl();
-        log.info("loginFormUrl: " + loginFormUrl);
-
-        driver.navigate().to(loginFormUrl);
+        oauth.openLoginForm();
 
         loginPage.assertCurrent();
 
         // Fill username+password. I am redirected push the button.
-        oauth.fillLoginForm("test-user@localhost", "password");
+        oauth.fillLoginForm("test-user@localhost", getPassword("test-user@localhost"));
         Assert.assertEquals("PushTheButton", driver.getTitle());
 
         // Push the button. I am successfully authenticated.

@@ -25,6 +25,7 @@ import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import org.hibernate.annotations.DynamicUpdate;
 
 import java.io.Serializable;
 
@@ -50,6 +51,7 @@ import java.io.Serializable;
 })
 @Table(name="OFFLINE_CLIENT_SESSION")
 @Entity
+@DynamicUpdate
 @IdClass(PersistentClientSessionEntity.Key.class)
 public class PersistentClientSessionEntity {
 
@@ -191,8 +193,8 @@ public class PersistentClientSessionEntity {
 
             if (this.userSessionId != null ? !this.userSessionId.equals(key.userSessionId) : key.userSessionId != null) return false;
             if (this.clientId != null ? !this.clientId.equals(key.clientId) : key.clientId != null) return false;
-            if (this.externalClientId != null ? !this.externalClientId.equals(key.clientId) : key.externalClientId != null) return false;
-            if (this.clientStorageProvider != null ? !this.clientStorageProvider.equals(key.clientId) : key.clientStorageProvider != null) return false;
+            if (this.externalClientId != null ? !this.externalClientId.equals(key.externalClientId) : key.externalClientId != null) return false;
+            if (this.clientStorageProvider != null ? !this.clientStorageProvider.equals(key.clientStorageProvider) : key.clientStorageProvider != null) return false;
             if (this.offline != null ? !this.offline.equals(key.offline) : key.offline != null) return false;
 
             return true;

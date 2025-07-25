@@ -89,6 +89,9 @@
         <class>org.keycloak.models.jpa.entities.OrganizationEntity</class>
         <class>org.keycloak.models.jpa.entities.OrganizationDomainEntity</class>
 
+        <!-- Server Configuration -->
+        <class>org.keycloak.storage.configuration.jpa.entity.ServerConfigEntity</class>
+
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
 
         <properties>

@@ -52,6 +52,7 @@ import org.keycloak.credential.WebAuthnCredentialProviderFactory;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.WebAuthnPolicy;
@@ -71,14 +72,14 @@ import com.webauthn4j.data.RegistrationData;
 import com.webauthn4j.data.RegistrationParameters;
 import com.webauthn4j.server.ServerProperty;
 import com.webauthn4j.util.exception.WebAuthnException;
-import com.webauthn4j.validator.attestation.statement.androidkey.AndroidKeyAttestationStatementValidator;
-import com.webauthn4j.validator.attestation.statement.androidsafetynet.AndroidSafetyNetAttestationStatementValidator;
-import com.webauthn4j.validator.attestation.statement.none.NoneAttestationStatementValidator;
-import com.webauthn4j.validator.attestation.statement.packed.PackedAttestationStatementValidator;
-import com.webauthn4j.validator.attestation.statement.tpm.TPMAttestationStatementValidator;
-import com.webauthn4j.validator.attestation.statement.u2f.FIDOU2FAttestationStatementValidator;
-import com.webauthn4j.validator.attestation.trustworthiness.certpath.CertPathTrustworthinessValidator;
-import com.webauthn4j.validator.attestation.trustworthiness.self.DefaultSelfAttestationTrustworthinessValidator;
+import com.webauthn4j.verifier.attestation.statement.androidkey.AndroidKeyAttestationStatementVerifier;
+import com.webauthn4j.verifier.attestation.statement.androidsafetynet.AndroidSafetyNetAttestationStatementVerifier;
+import com.webauthn4j.verifier.attestation.statement.none.NoneAttestationStatementVerifier;
+import com.webauthn4j.verifier.attestation.statement.packed.PackedAttestationStatementVerifier;
+import com.webauthn4j.verifier.attestation.statement.tpm.TPMAttestationStatementVerifier;
+import com.webauthn4j.verifier.attestation.statement.u2f.FIDOU2FAttestationStatementVerifier;
+import com.webauthn4j.verifier.attestation.trustworthiness.certpath.CertPathTrustworthinessVerifier;
+import com.webauthn4j.verifier.attestation.trustworthiness.self.DefaultSelfAttestationTrustworthinessVerifier;
 
 import static org.keycloak.WebAuthnConstants.REG_ERR_DETAIL_LABEL;
 import static org.keycloak.WebAuthnConstants.REG_ERR_LABEL;
@@ -92,12 +93,12 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
     private static final String WEB_AUTHN_TITLE_ATTR = "webAuthnTitle";
     private static final Logger logger = Logger.getLogger(WebAuthnRegister.class);
 
-    private KeycloakSession session;
-    private CertPathTrustworthinessValidator certPathtrustValidator;
+    private final KeycloakSession session;
+    private final CertPathTrustworthinessVerifier certPathtrustVerifier;
 
-    public WebAuthnRegister(KeycloakSession session, CertPathTrustworthinessValidator certPathtrustValidator) {
+    public WebAuthnRegister(KeycloakSession session, CertPathTrustworthinessVerifier certPathtrustVerifier) {
         this.session = session;
-        this.certPathtrustValidator = certPathtrustValidator;
+        this.certPathtrustVerifier = certPathtrustVerifier;
     }
 
     @Override
@@ -107,7 +108,14 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
 
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
+        String actionParameter = context.getAuthenticationSession().getClientNote(Constants.KC_ACTION_PARAMETER);
         UserModel userModel = context.getUser();
+        if (Constants.KC_ACTION_PARAMETER_SKIP_IF_EXISTS.equals(actionParameter)
+                && userModel.credentialManager().getStoredCredentialsByTypeStream(getCredentialType()).findAny().isPresent()) {
+            context.success();
+            return;
+        }
+
         // Use standard UTF-8 charset to get bytes from string.
         // Otherwise the platform's default charset is used and it might cause problems later when
         // decoded on different system.
@@ -237,7 +245,7 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
         Challenge challenge = new DefaultChallenge(context.getAuthenticationSession().getAuthNote(WebAuthnConstants.AUTH_CHALLENGE_NOTE));
         ServerProperty serverProperty = new ServerProperty(allOrigins, rpId, challenge, null);
         // check User Verification by considering a malicious user might modify the result of calling WebAuthn API
-        boolean isUserVerificationRequired = policy.getUserVerificationRequirement().equals(WebAuthnConstants.OPTION_REQUIRED);
+        boolean isUserVerificationRequired = policy.getUserVerificationRequirement().equals(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED);
 
         final String transportsParam = params.getFirst(WebAuthnConstants.TRANSPORTS);
 
@@ -261,7 +269,7 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
             // parse
             RegistrationData registrationData = webAuthnRegistrationManager.parse(registrationRequest);
             // validate
-            webAuthnRegistrationManager.validate(registrationData, registrationParameters);
+            webAuthnRegistrationManager.verify(registrationData, registrationParameters);
 
             showInfoAfterWebAuthnApiCreate(registrationData);
 
@@ -311,15 +319,15 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
     protected WebAuthnRegistrationManager createWebAuthnRegistrationManager() {
         return new WebAuthnRegistrationManager(
                 Arrays.asList(
-                        new NoneAttestationStatementValidator(),
-                        new PackedAttestationStatementValidator(),
-                        new TPMAttestationStatementValidator(),
-                        new AndroidKeyAttestationStatementValidator(),
-                        new AndroidSafetyNetAttestationStatementValidator(),
-                        new FIDOU2FAttestationStatementValidator()
-                ), this.certPathtrustValidator,
-                new DefaultSelfAttestationTrustworthinessValidator(),
-                Collections.emptyList(), // Custom Registration Validator is not supported
+                        new NoneAttestationStatementVerifier(),
+                        new PackedAttestationStatementVerifier(),
+                        new TPMAttestationStatementVerifier(),
+                        new AndroidKeyAttestationStatementVerifier(),
+                        new AndroidSafetyNetAttestationStatementVerifier(),
+                        new FIDOU2FAttestationStatementVerifier()
+                ), this.certPathtrustVerifier,
+                new DefaultSelfAttestationTrustworthinessVerifier(),
+                Collections.emptyList(), // Custom Registration Verifier is not supported
                 new ObjectConverter()
                 );
     }

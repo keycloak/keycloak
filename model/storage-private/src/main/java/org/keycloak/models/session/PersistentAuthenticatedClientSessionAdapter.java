@@ -125,8 +125,11 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
     // Write updated model with latest serialized data
     public PersistentClientSessionModel getUpdatedModel() {
         try {
-            String updatedData = JsonSerialization.writeValueAsString(getData());
-            this.model.setData(updatedData);
+            if (data != null) {
+                // If data hasn't been initialized, it hasn't been touched and is unchanged. So need to deserialize and serialize it
+                String updatedData = JsonSerialization.writeValueAsString(getData());
+                this.model.setData(updatedData);
+            }
         } catch (IOException ioe) {
             throw new ModelException("Error persisting session", ioe);
         }

@@ -28,8 +28,9 @@ import jakarta.persistence.FlushModeType;
 import jakarta.persistence.SynchronizationType;
 import org.hibernate.internal.SessionFactoryImpl;
 import org.keycloak.Config;
+import org.keycloak.config.DatabaseOptions;
 import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
-import org.keycloak.connections.jpa.PersistenceExceptionConverter;
+import org.keycloak.connections.jpa.support.EntityManagerProxy;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
@@ -59,7 +60,7 @@ public abstract class AbstractJpaConnectionProviderFactory implements JpaConnect
 
     @Override
     public String getSchema() {
-        String schema = Configuration.getRawValue("kc.db-schema");
+        String schema = Configuration.getConfigValue(DatabaseOptions.DB_SCHEMA).getValue();
         if (schema != null && schema.contains("-") && ! Boolean.parseBoolean(System.getProperty(GlobalConfiguration.PRESERVE_SCHEMA_CASE.getKey()))) {
             System.setProperty(GlobalConfiguration.PRESERVE_SCHEMA_CASE.getKey(), "true");
             logger.warnf("The passed schema '%s' contains a dash. Setting liquibase config option PRESERVE_SCHEMA_CASE to true. See https://github.com/keycloak/keycloak/issues/20870 for more information.", schema);
@@ -108,7 +109,7 @@ public abstract class AbstractJpaConnectionProviderFactory implements JpaConnect
     }
 
     protected EntityManager createEntityManager(EntityManagerFactory emf, KeycloakSession session) {
-        EntityManager entityManager = PersistenceExceptionConverter.create(session, emf.createEntityManager(SynchronizationType.SYNCHRONIZED));
+        EntityManager entityManager = EntityManagerProxy.create(session, emf.createEntityManager(SynchronizationType.SYNCHRONIZED));
 
         entityManager.setFlushMode(FlushModeType.AUTO);
 

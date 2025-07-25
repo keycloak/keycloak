@@ -138,6 +138,7 @@ public class KeycloakDistributionDecorator implements KeycloakDistribution {
         }
 
         if (type.isInstance(delegate)) {
+            //noinspection unchecked
             return (D) delegate;
         }
 

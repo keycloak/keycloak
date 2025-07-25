@@ -42,6 +42,9 @@ public class TokenUtil {
 
     public static final String TOKEN_TYPE_DPOP = "DPoP";
 
+    // Mentioned in the token-exchange specification https://datatracker.ietf.org/doc/html/rfc8693#name-successful-response
+    public static final String TOKEN_TYPE_NA = "N_A";
+
     // JWT Access Token types from https://datatracker.ietf.org/doc/html/rfc9068#section-2.1
     public static final String TOKEN_TYPE_JWT_ACCESS_TOKEN = "at+jwt";
     public static final String TOKEN_TYPE_JWT_ACCESS_TOKEN_PREFIXED = "application/" + TOKEN_TYPE_JWT_ACCESS_TOKEN;

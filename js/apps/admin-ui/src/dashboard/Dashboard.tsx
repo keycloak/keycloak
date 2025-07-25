@@ -86,8 +86,17 @@ const FeatureItem = ({ feature }: FeatureItemProps) => {
       {feature.type === FeatureType.Preview && (
         <Label color="blue">{t("preview")}</Label>
       )}
+      {feature.type === FeatureType.PreviewDisabledByDefault && (
+        <Label color="blue">{t("preview")}</Label>
+      )}
       {feature.type === FeatureType.Default && (
         <Label color="green">{t("supported")}</Label>
+      )}
+      {feature.type === FeatureType.DisabledByDefault && (
+        <Label color="green">{t("supported")}</Label>
+      )}
+      {feature.type === FeatureType.Deprecated && (
+        <Label color="grey">{t("deprecated")}</Label>
       )}
     </ListItem>
   );
@@ -159,6 +168,7 @@ const Dashboard = () => {
               <div className="pf-v5-l-grid pf-v5-u-ml-lg">
                 <div className="pf-v5-l-grid__item pf-m-12-col">
                   <Title
+                    data-testid="welcomeTitle"
                     className="pf-v5-u-font-weight-bold"
                     headingLevel="h2"
                     size="3xl"
@@ -234,6 +244,19 @@ const Dashboard = () => {
                           </DescriptionListTerm>
                           <DescriptionListDescription>
                             {serverInfo.systemInfo?.version}
+                          </DescriptionListDescription>
+                        </DescriptionListGroup>
+                      </DescriptionList>
+                    </CardBody>
+                    <CardTitle>{t("cpu")}</CardTitle>
+                    <CardBody>
+                      <DescriptionList>
+                        <DescriptionListGroup>
+                          <DescriptionListTerm>
+                            {t("processorCount")}
+                          </DescriptionListTerm>
+                          <DescriptionListDescription>
+                            {serverInfo.cpuInfo?.processorCount}
                           </DescriptionListDescription>
                         </DescriptionListGroup>
                       </DescriptionList>

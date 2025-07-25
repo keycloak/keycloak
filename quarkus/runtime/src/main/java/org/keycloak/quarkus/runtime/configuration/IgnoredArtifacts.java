@@ -16,21 +16,19 @@
  */
 package org.keycloak.quarkus.runtime.configuration;
 
-import org.keycloak.common.Profile;
-import org.keycloak.config.database.Database;
+import static java.util.Collections.emptySet;
+import static org.keycloak.quarkus.runtime.Environment.getCurrentOrCreateFeatureProfile;
 
 import java.util.Collection;
 import java.util.HashSet;
-
-import org.keycloak.config.HealthOptions;
-import org.keycloak.config.MetricsOptions;
-
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.Collections.emptySet;
-import static org.keycloak.quarkus.runtime.Environment.getCurrentOrCreateFeatureProfile;
+import org.keycloak.common.Profile;
+import org.keycloak.config.HealthOptions;
+import org.keycloak.config.MetricsOptions;
+import org.keycloak.config.database.Database;
 
 /**
  * Ignore particular artifacts based on build configuration
@@ -75,7 +73,8 @@ public class IgnoredArtifacts {
     public static final Set<String> JDBC_H2 = Set.of(
             "io.quarkus:quarkus-jdbc-h2",
             "io.quarkus:quarkus-jdbc-h2-deployment",
-            "com.h2database:h2"
+            "com.h2database:h2",
+            "org.locationtech.jts:jts-core"
     );
 
     public static final Set<String> JDBC_POSTGRES = Set.of(
@@ -105,7 +104,7 @@ public class IgnoredArtifacts {
     public static final Set<String> JDBC_ORACLE = Set.of(
             "io.quarkus:quarkus-jdbc-oracle",
             "io.quarkus:quarkus-jdbc-oracle-deployment",
-            "com.oracle.database.jdbc:ojdbc11",
+            "com.oracle.database.jdbc:ojdbc17",
             "com.oracle.database.nls:orai18n"
     );
 
@@ -130,10 +129,6 @@ public class IgnoredArtifacts {
                         .ifPresent(vendorsOfAllDatasources::add);
             }
         });
-
-        if (vendorsOfAllDatasources.isEmpty()) {
-            vendorsOfAllDatasources.add(Database.Vendor.H2);
-        }
 
         final Set<String> jdbcArtifacts = vendorsOfAllDatasources.stream()
                 .map(vendor -> switch (vendor) {

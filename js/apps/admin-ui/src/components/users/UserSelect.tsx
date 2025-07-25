@@ -19,7 +19,7 @@ import {
 } from "@patternfly/react-core";
 import { TimesIcon } from "@patternfly/react-icons";
 import { debounce } from "lodash-es";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
@@ -72,7 +72,12 @@ export const UserSelect = ({
 
       return foundUsers.filter((user) => user !== undefined);
     },
-    setSelectedUsers,
+    (users) => {
+      setSelectedUsers(users);
+      if (variant !== "typeaheadMulti") {
+        setInputValue(users[0]?.username || "");
+      }
+    },
     [values],
   );
 
@@ -85,6 +90,13 @@ export const UserSelect = ({
     setSearchedUsers,
     [search],
   );
+
+  useEffect(() => {
+    if (!values || values.length === 0) {
+      setSelectedUsers([]);
+      setInputValue("");
+    }
+  }, [values]);
 
   const users = useMemo(
     () => [...selectedUsers, ...searchedUsers],
@@ -106,7 +118,7 @@ export const UserSelect = ({
     <FormGroup
       label={t(label!)}
       isRequired={isRequired}
-      labelIcon={<HelpItem helpText={helpText!} fieldLabelId={label!} />}
+      labelIcon={<HelpItem helpText={helpText!} fieldLabelId={t(label!)} />}
       fieldId={name!}
     >
       <Controller

@@ -12,4 +12,5 @@ export default interface CredentialRepresentation {
   type?: string;
   userLabel?: string;
   value?: string;
+  federationLink?: string;
 }

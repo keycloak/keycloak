@@ -21,13 +21,11 @@ import org.keycloak.models.RealmModel;
 
 public class GroupNameQuery extends AbstractRevisioned implements InRealm {
     private final String realm;
-    private final String realmName;
     private final String groupId;
 
     public GroupNameQuery(Long revisioned, String id, String groupId, RealmModel realm) {
         super(revisioned, id);
         this.realm = realm.getId();
-        this.realmName = realm.getName();
         this.groupId = groupId;
     }
 
@@ -43,7 +41,7 @@ public class GroupNameQuery extends AbstractRevisioned implements InRealm {
     public String toString() {
         return "GroupNameQuery{" +
                 "id='" + getId() + "'" +
-                "realmName='" + realmName + '\'' +
+                "realm='" + realm + '\'' +
                 '}';
     }
 }

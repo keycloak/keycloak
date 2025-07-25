@@ -18,7 +18,7 @@
 package org.keycloak.models.jpa;
 
 import org.keycloak.Config;
-import org.keycloak.authorization.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.ClientProvider;
@@ -70,9 +70,6 @@ public class JpaClientProviderFactory implements ClientProviderFactory {
                     if (Objects.equals(attrUpdateEvent.getAttributeName(), RealmAttributes.ADMIN_PERMISSIONS_ENABLED) && Boolean.parseBoolean(attrUpdateEvent.getAttributeValue())) {
                         KeycloakSession keycloakSession = attrUpdateEvent.getKeycloakSession();
                         RealmModel realm = attrUpdateEvent.getRealm();
-
-                        if (realm.getAdminPermissionsClient() != null) return;
-
                         AdminPermissionsSchema.SCHEMA.init(keycloakSession, realm);
                     }
                 }

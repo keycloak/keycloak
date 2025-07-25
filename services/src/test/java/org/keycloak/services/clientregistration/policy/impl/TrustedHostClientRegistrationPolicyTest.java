@@ -16,6 +16,9 @@
  */
 package org.keycloak.services.clientregistration.policy.impl;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -51,8 +54,8 @@ public class TrustedHostClientRegistrationPolicyTest {
         ComponentModel model = createComponentModel("localhost");
         TrustedHostClientRegistrationPolicy policy = (TrustedHostClientRegistrationPolicy) factory.create(session, model);
 
-        policy.verifyHost("127.0.0.1");
-        Assert.assertThrows(ClientRegistrationPolicyException.class, () -> policy.verifyHost("10.0.0.1"));
+        assertTrue(policy.verifyHost("127.0.0.1"));
+        assertFalse(policy.verifyHost("10.0.0.1"));
         policy.checkURLTrusted("https://localhost", policy.getTrustedHosts(), policy.getTrustedDomains());
         Assert.assertThrows(ClientRegistrationPolicyException.class, () -> policy.checkURLTrusted("https://otherhost",
                 policy.getTrustedHosts(), policy.getTrustedDomains()));
@@ -64,8 +67,8 @@ public class TrustedHostClientRegistrationPolicyTest {
         ComponentModel model = createComponentModel("*.localhost");
         TrustedHostClientRegistrationPolicy policy = (TrustedHostClientRegistrationPolicy) factory.create(session, model);
 
-        policy.verifyHost("127.0.0.1");
-        Assert.assertThrows(ClientRegistrationPolicyException.class, () -> policy.verifyHost("10.0.0.1"));
+        assertTrue(policy.verifyHost("127.0.0.1"));
+        assertFalse(policy.verifyHost("10.0.0.1"));
         policy.checkURLTrusted("https://localhost", policy.getTrustedHosts(), policy.getTrustedDomains());
         policy.checkURLTrusted("https://other.localhost", policy.getTrustedHosts(), policy.getTrustedDomains());
         Assert.assertThrows(ClientRegistrationPolicyException.class, () -> policy.checkURLTrusted("https://otherlocalhost",
@@ -78,8 +81,8 @@ public class TrustedHostClientRegistrationPolicyTest {
         ComponentModel model = createComponentModel("127.0.0.1");
         TrustedHostClientRegistrationPolicy policy = (TrustedHostClientRegistrationPolicy) factory.create(session, model);
 
-        policy.verifyHost("127.0.0.1");
-        Assert.assertThrows(ClientRegistrationPolicyException.class, () -> policy.verifyHost("10.0.0.1"));
+        assertTrue(policy.verifyHost("127.0.0.1"));
+        assertFalse(policy.verifyHost("10.0.0.1"));
         policy.checkURLTrusted("https://127.0.0.1", policy.getTrustedHosts(), policy.getTrustedDomains());
         Assert.assertThrows(ClientRegistrationPolicyException.class, () -> policy.checkURLTrusted("https://localhost",
                 policy.getTrustedHosts(), policy.getTrustedDomains()));

@@ -17,6 +17,7 @@
 
 package org.keycloak.marshalling;
 
+import java.lang.invoke.MethodHandles;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -24,13 +25,23 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.infinispan.api.annotations.indexing.model.Values;
+import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.client.hotrod.RemoteCacheManager;
+import org.infinispan.client.hotrod.RemoteCacheManagerAdmin;
+import org.infinispan.commons.internal.InternalCacheNames;
+import org.infinispan.protostream.GeneratedSchema;
 import org.infinispan.protostream.config.Configuration;
 import org.infinispan.protostream.descriptors.AnnotationElement;
 import org.infinispan.protostream.descriptors.Descriptor;
 import org.infinispan.protostream.descriptors.FieldDescriptor;
+import org.infinispan.protostream.descriptors.FileDescriptor;
 import org.infinispan.protostream.impl.AnnotatedDescriptorImpl;
+import org.infinispan.query.remote.client.ProtobufMetadataManagerConstants;
+import org.jboss.logging.Logger;
 
 public class KeycloakIndexSchemaUtil {
+
+    private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
     // Basic annotation data
     private static final String BASIC_ANNOTATION = "Basic";
@@ -43,6 +54,87 @@ public class KeycloakIndexSchemaUtil {
 
     // we only use Basic annotation, we may need to add others in the future.
     private static final List<String> INDEX_ANNOTATION = List.of(BASIC_ANNOTATION);
+
+    /**
+     * Uploads the {@link GeneratedSchema} to the Infinispan cluster.
+     * <p>
+     * If indexing is enabled for one or more entities present in the {@link GeneratedSchema}, users may add a list of
+     * entities, and the caches where they live. This method will update the indexing schema and perform the reindexing
+     * for the new schema. Note that reindexing may be an expensive operation, depending on the amount of data.
+     *
+     * @param remoteCacheManager The {@link RemoteCacheManager} connected to the Infinispan server.
+     * @param schema             The {@link GeneratedSchema} instance to upload.
+     * @param indexedEntities    The {@link List} of indexed entities and their caches. Duplicates are allowed if the
+     *                           same entity is stored in multiple caches.
+     * @throws NullPointerException if {@code remoteCacheManager} or {@code schema} is null.
+     */
+    public static void uploadAndReindexCaches(RemoteCacheManager remoteCacheManager, GeneratedSchema schema, List<IndexedEntity> indexedEntities) {
+        var key = schema.getProtoFileName();
+        var current = schema.getProtoFile();
+
+        var protostreamMetadataCache = remoteCacheManager.<String, String>getCache(InternalCacheNames.PROTOBUF_METADATA_CACHE_NAME);
+        var stored = protostreamMetadataCache.getWithMetadata(key);
+        if (stored == null) {
+            if (protostreamMetadataCache.putIfAbsent(key, current) == null) {
+                logger.info("Infinispan ProtoStream schema uploaded for the first time.");
+            } else {
+                logger.info("Failed to update Infinispan ProtoStream schema. Assumed it was updated by other Keycloak server.");
+            }
+            checkForProtoSchemaErrors(protostreamMetadataCache);
+            return;
+        }
+        if (Objects.equals(stored.getValue(), current)) {
+            logger.info("Infinispan ProtoStream schema is up to date!");
+            return;
+        }
+        if (protostreamMetadataCache.replaceWithVersion(key, current, stored.getVersion())) {
+            logger.info("Infinispan ProtoStream schema successful updated.");
+            reindexCaches(remoteCacheManager, stored.getValue(), current, indexedEntities);
+        } else {
+            logger.info("Failed to update Infinispan ProtoStream schema. Assumed it was updated by other Keycloak server.");
+        }
+        checkForProtoSchemaErrors(protostreamMetadataCache);
+    }
+
+    private static void checkForProtoSchemaErrors(RemoteCache<String, String> protostreamMetadataCache) {
+        var errors = protostreamMetadataCache.get(ProtobufMetadataManagerConstants.ERRORS_KEY_SUFFIX);
+        if (errors == null) {
+            return;
+        }
+        for (String errorFile : errors.split("\n")) {
+            logger.errorf("%nThere was an error in proto file: %s%nError message: %s%nCurrent proto schema: %s%n",
+                    errorFile,
+                    protostreamMetadataCache.get(errorFile + ProtobufMetadataManagerConstants.ERRORS_KEY_SUFFIX),
+                    protostreamMetadataCache.get(errorFile));
+        }
+    }
+
+    private static void reindexCaches(RemoteCacheManager remoteCacheManager, String oldSchema, String newSchema, List<IndexedEntity> indexedEntities) {
+        if (indexedEntities == null || indexedEntities.isEmpty()) {
+            return;
+        }
+        var oldPS = KeycloakModelSchema.parseProtoSchema(oldSchema);
+        var newPS = KeycloakModelSchema.parseProtoSchema(newSchema);
+        var admin = remoteCacheManager.administration();
+
+        indexedEntities.stream()
+                .filter(Objects::nonNull)
+                .filter(indexedEntity -> isEntityChanged(oldPS, newPS, indexedEntity.entity()))
+                .map(IndexedEntity::cache)
+                .distinct()
+                .forEach(cacheName -> updateSchemaAndReIndexCache(admin, cacheName));
+    }
+
+    private static boolean isEntityChanged(FileDescriptor oldSchema, FileDescriptor newSchema, String entity) {
+        var v1 = KeycloakModelSchema.findEntity(oldSchema, entity);
+        var v2 = KeycloakModelSchema.findEntity(newSchema, entity);
+        return v1.isPresent() && v2.isPresent() && KeycloakIndexSchemaUtil.isIndexSchemaChanged(v1.get(), v2.get());
+    }
+
+    private static void updateSchemaAndReIndexCache(RemoteCacheManagerAdmin admin, String cacheName) {
+        admin.updateIndexSchema(cacheName);
+        admin.reindexCache(cacheName);
+    }
 
     /**
      * Adds the annotations to the ProtoStream parser.
@@ -72,7 +164,8 @@ public class KeycloakIndexSchemaUtil {
     }
 
     /**
-     * Compares two entities and returns {@code true} if any indexing related annotation were changed, added or removed.
+     * Compares two entities and returns {@code true} if any indexing related annotation were changed, added or
+     * removed.
      */
     public static boolean isIndexSchemaChanged(Descriptor oldDescriptor, Descriptor newDescriptor) {
         var allFields = Stream.concat(
@@ -157,4 +250,10 @@ public class KeycloakIndexSchemaUtil {
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getValue().getValue()));
     }
 
+    public record IndexedEntity(String entity, String cache) {
+        public IndexedEntity {
+            Objects.requireNonNull(entity);
+            Objects.requireNonNull(cache);
+        }
+    }
 }

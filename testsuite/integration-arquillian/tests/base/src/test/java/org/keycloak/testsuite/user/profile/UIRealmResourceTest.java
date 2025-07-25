@@ -223,7 +223,7 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
         updateRealmExt(toUIRealmRepresentation(testRealm, upConfig));
 
         // open the registration form
-        driver.navigate().to(oauth.getLoginFormUrl());
+        oauth.openLoginForm();
         loginPage.form().register();
         registerPage.assertCurrent();
 
@@ -232,7 +232,7 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
         registerPage.registerWithEmailAsUsername("Tom", "Brady", "tbrady@email.com", "password", "password");
 
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
 
         String userId = events.expectRegister("tbrady@email.com", "tbrady@email.com").assertEvent().getUserId();
         UserRepresentation user = testRealm().users().get(userId).toRepresentation();
@@ -253,7 +253,7 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
         updateRealmExt(toUIRealmRepresentation(testRealm, upConfig));
 
         // open the registration form
-        driver.navigate().to(oauth.getLoginFormUrl());
+        oauth.openLoginForm();
         loginPage.form().register();
         registerPage.assertCurrent();
 
@@ -263,7 +263,7 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
         registerPage.register("Alice", "Wood",  null, "awood", "password", "password");
 
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
 
         String userId = events.expectRegister("awood", null).removeDetail("email").assertEvent().getUserId();
         UserRepresentation user = testRealm().users().get(userId).toRepresentation();

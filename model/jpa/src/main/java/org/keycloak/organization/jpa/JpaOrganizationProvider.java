@@ -60,6 +60,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.jpa.entities.GroupAttributeEntity;
 import org.keycloak.models.jpa.entities.GroupEntity;
+import org.keycloak.models.jpa.entities.OrganizationDomainEntity;
 import org.keycloak.models.jpa.entities.OrganizationEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
@@ -68,6 +69,7 @@ import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.organization.utils.Organizations;
+import org.keycloak.storage.StorageId;
 import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.utils.StringUtil;
 
@@ -232,28 +234,101 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
     @Override
     public Stream<OrganizationModel> getAllStream(String search, Boolean exact, Integer first, Integer max) {
-        TypedQuery<OrganizationEntity> query;
-        if (StringUtil.isBlank(search)) {
-            query = em.createNamedQuery("getByRealm", OrganizationEntity.class);
-        } else if (Boolean.TRUE.equals(exact)) {
-            query = em.createNamedQuery("getByNameOrDomain", OrganizationEntity.class);
-            query.setParameter("search", search);
-        } else {
-            query = em.createNamedQuery("getByNameOrDomainContained", OrganizationEntity.class);
-            query.setParameter("search", search.toLowerCase());
-        }
-        RealmModel realm = getRealm();
-        query.setParameter("realmId", realm.getId());
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<OrganizationEntity> query = builder.createQuery(OrganizationEntity.class);
+        Root<OrganizationEntity> org = query.from(OrganizationEntity.class);
 
-        return closing(paginateQuery(query, first, max).getResultStream()
-                .map(entity -> new OrganizationAdapter(session, realm, entity, this)));
+        Predicate predicate = buildStringSearchPredicate(builder, query, org, search, exact);
+
+        TypedQuery<OrganizationEntity> typedQuery = buildSearchQuery(builder, query, org, predicate);
+
+        return closing(paginateQuery(typedQuery, first, max).getResultStream()
+                .map(entity -> new OrganizationAdapter(session, getRealm(), entity, this)));
     }
 
     @Override
     public Stream<OrganizationModel> getAllStream(Map<String, String> attributes, Integer first, Integer max) {
         CriteriaBuilder builder = em.getCriteriaBuilder();
-        CriteriaQuery query = builder.createQuery(OrganizationEntity.class);
+        CriteriaQuery<OrganizationEntity> query = builder.createQuery(OrganizationEntity.class);
         Root<OrganizationEntity> org = query.from(OrganizationEntity.class);
+
+        Predicate predicate = buildAttributeSearchPredicate(builder, query, org, attributes);
+
+
+        TypedQuery<OrganizationEntity> typedQuery = buildSearchQuery(builder, query, org, predicate);
+        return closing(paginateQuery(typedQuery, first, max).getResultStream())
+                .map(entity -> new OrganizationAdapter(session, getRealm(), entity, this));
+    }
+
+    @Override
+    public long count(String search, Boolean exact) {
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<Long> query = builder.createQuery(Long.class);
+        Root<OrganizationEntity> org = query.from(OrganizationEntity.class);
+
+        Predicate predicate = buildStringSearchPredicate(builder, query, org, search, exact);
+
+        TypedQuery<Long> typedQuery = buildCountQuery(builder, query, org, predicate);
+
+        return typedQuery.getSingleResult();
+    }
+
+    @Override
+    public long count(Map<String, String> attributes) {
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<Long> query = builder.createQuery(Long.class);
+        Root<OrganizationEntity> org = query.from(OrganizationEntity.class);
+
+        Predicate predicate = buildAttributeSearchPredicate(builder, query, org, attributes);
+
+
+        TypedQuery<Long> typedQuery = buildCountQuery(builder, query, org, predicate);
+
+        return typedQuery.getSingleResult();
+    }
+
+    private TypedQuery<OrganizationEntity> buildSearchQuery(CriteriaBuilder builder,
+                                                            CriteriaQuery<OrganizationEntity> query,
+                                                            Root<OrganizationEntity> org,
+                                                            Predicate predicate) {
+        return em.createQuery(
+                query.select(org).distinct(true).where(predicate).orderBy(builder.asc(org.get("name"))));
+    }
+
+    private TypedQuery<Long> buildCountQuery(CriteriaBuilder builder, CriteriaQuery<Long> query,
+                                             Root<OrganizationEntity> org, Predicate predicate) {
+        return em.createQuery(query.select(builder.countDistinct(org)).where(predicate));
+    }
+
+    private Predicate buildStringSearchPredicate(CriteriaBuilder builder, CriteriaQuery<?> query, Root<OrganizationEntity> org, String search,
+                                                 Boolean exact) {
+        Root<OrganizationDomainEntity> domain = query.from(OrganizationDomainEntity.class);
+
+        List<Predicate> predicates = new ArrayList<>();
+        RealmModel realm = getRealm();
+        predicates.add(builder.equal(org.get("realmId"), realm.getId()));
+        predicates.add(builder.equal(org.get("id"), domain.get("organization").get("id")));
+
+        Predicate namePredicate;
+        Predicate domainPredicate;
+        if (StringUtil.isBlank(search)) {
+            namePredicate = builder.conjunction();  // constant true
+            domainPredicate = builder.conjunction();
+
+        } else if (Boolean.TRUE.equals(exact)) {
+            namePredicate = builder.equal(org.get("name"), search);
+            domainPredicate = builder.equal(domain.get("name"), search);
+        } else {
+            namePredicate = builder.like(builder.lower(org.get("name")), "%" + search.toLowerCase() + "%");
+            domainPredicate = builder.like(domain.get("name"), "%" + search.toLowerCase() + "%");
+        }
+        predicates.add(builder.or(namePredicate, domainPredicate));
+
+        return builder.and(predicates.toArray(new Predicate[0]));
+    }
+
+    private Predicate buildAttributeSearchPredicate(CriteriaBuilder builder, CriteriaQuery<?> query,
+                                                    Root<OrganizationEntity> org, Map<String, String> attributes) {
         Root<GroupEntity> group = query.from(GroupEntity.class);
 
         List<Predicate> predicates = new ArrayList<>();
@@ -276,10 +351,8 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             }
         }
 
-        Predicate finalPredicate = builder.and(predicates.toArray(new Predicate[0]));
-        TypedQuery<OrganizationEntity> typedQuery = em.createQuery(query.select(org).where(finalPredicate));
-        return closing(paginateQuery(typedQuery, first, max).getResultStream())
-                .map(entity -> new OrganizationAdapter(session, realm, entity, this));
+        builder.count(builder.and(predicates.toArray(new Predicate[0])));
+        return builder.and(predicates.toArray(new Predicate[0]));
     }
 
     @Override
@@ -379,7 +452,13 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     @Override
     public Stream<OrganizationModel> getByMember(UserModel member) {
         throwExceptionIfObjectIsNull(member, "User");
-        TypedQuery<String> query = em.createNamedQuery("getGroupsByMember", String.class);
+
+        TypedQuery<String> query;
+        if(StorageId.isLocalStorage(member.getId())) {
+            query = em.createNamedQuery("getGroupsByMember", String.class);
+        } else {
+            query = em.createNamedQuery("getGroupsByFederatedMember", String.class);
+        }
 
         query.setParameter("userId", member.getId());
 

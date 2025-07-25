@@ -62,6 +62,7 @@ public class CredentialRepresentation {
     private Integer period;
     @Deprecated
     private MultivaluedHashMap<String, String> config;
+    private String federationLink;
 
     public String getId() {
         return id;
@@ -246,5 +247,11 @@ public class CredentialRepresentation {
         return true;
     }
 
+    public void setFederationLink(String federationLink) {
+        this.federationLink = federationLink;
+    }
 
+    public String getFederationLink() {
+        return federationLink;
+    }
 }

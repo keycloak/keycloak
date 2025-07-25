@@ -43,7 +43,7 @@ import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.userprofile.config.UPConfigUtils;
 
@@ -97,8 +97,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
         userResource.update(user);
 
         // for user the same, the four attrs should be read-only
-        loginPage.open();
-        loginPage.login(username, getPassword(username));
+        oauth.doLogin(username, getPassword(username));
         WaitUtils.waitForPageToLoad();
         updateProfilePage.assertCurrent();
         Assert.assertEquals(getFirstName(username), updateProfilePage.getFirstName());
@@ -123,7 +122,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
                 .assertEvent();
 
         // logout
-        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+        AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         appPage.logout(tokenResponse.getIdToken());
         events.expectLogout(loginEvent.getSessionId()).user(loginEvent.getUserId()).assertEvent();
     }
@@ -141,8 +140,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
         testResource.update(test);
 
         // for user the same, the four attrs should be editable
-        loginPage.open();
-        loginPage.login("test-user@localhost", "password");
+        oauth.doLogin("test-user@localhost", "password");
         WaitUtils.waitForPageToLoad();
         updateProfilePage.assertCurrent();
         Assert.assertEquals("Tom", updateProfilePage.getFirstName());
@@ -167,7 +165,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
                 .assertEvent();
 
         // logout
-        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+        AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         appPage.logout(tokenResponse.getIdToken());
         events.expectLogout(loginEvent.getSessionId()).user(loginEvent.getUserId()).assertEvent();
     }
@@ -192,8 +190,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
             // for user, firstName and lastName are not visible, username and email read-only, postal_code editable
             user.getRequiredActions().add(UserModel.RequiredAction.UPDATE_PROFILE.toString());
             userResource.update(user);
-            loginPage.open();
-            loginPage.login(username, getPassword(username));
+            oauth.doLogin(username, getPassword(username));
             WaitUtils.waitForPageToLoad();
             updateProfilePage.assertCurrent();
             Assert.assertEquals(getEmail(username), updateProfilePage.getEmail());
@@ -218,7 +215,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
                     .assertEvent();
 
             // logout
-            OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+            AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
             appPage.logout(tokenResponse.getIdToken());
             events.expectLogout(loginEvent.getSessionId()).user(loginEvent.getUserId()).assertEvent();
         } finally {
@@ -244,8 +241,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
             // for user, firstName and lastName are not visible, username, email read-only and postal_code editable
             test.getRequiredActions().add(UserModel.RequiredAction.UPDATE_PROFILE.toString());
             testResource.update(test);
-            loginPage.open();
-            loginPage.login("test-user@localhost", "password");
+            oauth.doLogin("test-user@localhost", "password");
             WaitUtils.waitForPageToLoad();
             updateProfilePage.assertCurrent();
             Assert.assertEquals("test-user@localhost", updateProfilePage.getEmail());
@@ -270,7 +266,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
                     .assertEvent();
 
             // logout
-            OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+            AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
             appPage.logout(tokenResponse.getIdToken());
             events.expectLogout(loginEvent.getSessionId()).user(loginEvent.getUserId()).assertEvent();
         } finally {

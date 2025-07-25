@@ -1,0 +1,96 @@
+// ------------------------ Breaking changes ------------------------  //
+== Breaking changes
+
+Breaking changes are identified as requiring changes from existing users to their configurations.
+In minor or patch releases we will only do breaking changes to fix bugs.
+
+=== <TODO>
+
+// ------------------------ Notable changes ------------------------ //
+== Notable changes
+
+Notable changes where an internal behavior changed to prevent common misconfigurations, fix bugs or simplify running {project_name}.
+
+=== Usage of the `exact` request parameter when searching users by attributes
+
+If you are querying users by attributes through the User API where you want to fetch users that match a specific attribute key (regardless the value),
+you should consider setting the `exact` request parameter to `false` when invoking the `+/admin/realms/{realm}/users+` using
+the `GET` method.
+
+For instance, searching for all users with the attribute `myattribute` set should be done as follows:
+
+[source]
+----
+GET /admin/realms/{realm}/users?exact=false&q=myattribute:
+----
+
+The {project_name} Admin Client is also updated with a new method to search users by attribute using the `exact` request parameter.
+
+=== Automatic database connection properties for the PostgreSQL driver
+
+When running PostgreSQL reader and writer instances, {project_name} needs to always connect to the writer instance to do its work.
+
+Starting with this release, and when using the original PostgreSQL driver, {project_name} sets the `targetServerType` property of the PostgreSQL JDBC driver to `primary` to ensure that it always connects to a writable primary instance and never connects to a secondary reader instance in failover or switchover scenarios.
+
+You can override this behavior by setting your own value for `targetServerType` in the DB URL or additional properties.
+
+=== JGroups system properties replaced with CLI options
+
+Until now it was necessary to configure JGroups network addresses and ports using the `+jgroups.bind.*+` and `+jgroups.external_*+`
+system properties. In this release we have introduced the following CLI options to allow these addresses and ports to be
+configured directly via {project_name}: `cache-embedded-network-bind-address`, `cache-embedded-network-bind-port`,
+`cache-embedded-network-external-address`, `cache-embedded-network-external-port`. Configuring ports using the old
+properties will still function as before, but we recommend to change to the CLI options as this may change in the future.
+
+=== Volatile user sessions affecting offline session memory requirements
+
+Starting with this release, {project_name} will cache by default only 10000 entries for offline user and client sessions in memory when volatile user sessions are enabled. This will greatly reduce memory usage.
+
+Use the options `cache-embedded-offline-sessions-max-count` and `cache-embedded-offline-client-sessions-max-count` to change size of the offline session caches.
+
+=== Supported Update Email Feature
+
+The `Update Email` is now a supported feature so it is no longer needed to enable the feature during the server startup.
+The feature is enabled for a realm, if `Update Email` required action is enabled in the realm's required actions setting.
+The feature slightly changes behaviour from previous versions when updating the profile during the authentication flow (e.g. when running the `UPDATE_PROFILE` required action).
+If an existing user does have an email set when updating the profile during the authentication flow, the email attribute will not be available.
+
+=== Encryption algorithms for SAML updated
+
+When a SAML client was enabled to *Encrypt Assertions*, the assertion included in the SAML response was encrypted following the link:https://www.w3.org/TR/xmlenc-core1/[XML Encryption Syntax and Processing] specification. The algorithms used for encryption were fixed and outdated. Since this release, default encryption options are up to date and better suited in terms of security. Besides, the encryption details are also configurable, just in case a specific client needs a different set of algorithms to work properly. New attributes can be defined in the client to specify the exact algorithms used for encryption. The Admin console displays them in the client tab *Settings*, section *Signature and Encryption*, when the *Encrypt Assertions* option is enabled in the *Keys* tab.
+
+In order to maintain backwards compatibility, {project_name}'s upgrade will modify the existing SAML clients to set the encryption attributes to work as before. This way old clients will receive the same encrypted assertion using the same previous algorithms. If the client supports the new default configuration, removing the attributes is recommended.
+
+For more information about client configuration, please see link:{adminguide_link}#_client-saml-configuration[Creating a SAML client] chapter in the {adminguide_name}.
+
+=== Tracing extended for embedded Infinispan caches
+
+When tracing is enabled, now also calls to other nodes of a {project_name} cluster will create spans in the traces.
+
+To disable this kind of tracing, set the option `tracing-infinispan-enabled` to `false`.
+
+
+// ------------------------ Deprecated features ------------------------ //
+== Deprecated features
+
+The following sections provide details on deprecated features.
+
+=== Deprecated `displayTest` field in `ConsentScopeRepresentation`
+
+The `displayTest` field in the `ConsentScopeRepresentation` class returned by the Account REST service has been deprecated due to a typo in its name.
+A new field `displayText` with the correct spelling has been added to replace it. The old field will be removed in {project_name} 27.0.
+The Typescript code `ConsentScopeRepresentation` for the Account Console already contains only the new field.
+
+=== Lifetime of offline session caches
+
+The options `+--spi-user-sessions--infinispan--offline-session-cache-entry-lifespan-override+` and `+--spi-user-sessions--infinispan--offline-client-session-cache-entry-lifespan-override+` are now deprecated for removal.
+
+Instead use the options `cache-embedded-offline-sessions-max-count` and `cache-embedded-offline-client-sessions-max-count` to limit the memory usage if the default of 10000 cache offline user and client sessions does not work in your scenario.
+
+// ------------------------ Removed features ------------------------ //
+== Removed features
+
+The following features have been removed from this release.
+
+=== <TODO>
+

@@ -9,7 +9,7 @@ import { useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
-import { KeySelect } from "../key-value-form/KeySelect";
+import { KeySelect } from "../../realm-settings/user-profile/attribute/KeySelect";
 import type { ComponentProps } from "./components";
 
 export const UserProfileAttributeListComponent = ({
@@ -40,11 +40,17 @@ export const UserProfileAttributeListComponent = ({
 
     return config.attributes.map((option) => ({
       key: option.name!,
-      label: option.name!,
+      value: option.name!,
     }));
   };
 
   if (!config) return null;
+
+  const getError = () => {
+    return convertedName
+      .split(".")
+      .reduce((record: any, key) => record?.[key], errors);
+  };
 
   return (
     <FormGroup
@@ -58,7 +64,7 @@ export const UserProfileAttributeListComponent = ({
         rules={required ? { required: true } : {}}
         selectItems={convert(config)}
       />
-      {errors[convertedName!] && <FormErrorText message={t("required")} />}
+      {getError() && <FormErrorText message={t("required")} />}
     </FormGroup>
   );
 };

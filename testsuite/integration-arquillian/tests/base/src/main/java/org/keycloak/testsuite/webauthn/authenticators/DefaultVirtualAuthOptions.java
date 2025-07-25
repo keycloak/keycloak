@@ -44,6 +44,7 @@ public enum DefaultVirtualAuthOptions {
             .setHasUserVerification(true)
             .setIsUserVerified(true)
             .setIsUserConsenting(true)),
+    PASSKEYS(() -> DEFAULT_RESIDENT_KEY.getOptions().setTransport(INTERNAL)),
 
     YUBIKEY_4(DefaultVirtualAuthOptions::getYubiKeyGeneralOptions),
     YUBIKEY_5_USB(DefaultVirtualAuthOptions::getYubiKeyGeneralOptions),

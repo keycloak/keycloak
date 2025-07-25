@@ -85,6 +85,10 @@ public interface CLIResult extends LaunchResult {
                 getErrorOutput(), not(containsString(msg)));
     }
 
+    default void assertExitCode(int code) {
+        assertThat("Exit codes do not match: ", exitCode(), is(code));
+    }
+
     default void assertMessage(String message) {
         assertThat(getOutput(), containsString(message));
     }

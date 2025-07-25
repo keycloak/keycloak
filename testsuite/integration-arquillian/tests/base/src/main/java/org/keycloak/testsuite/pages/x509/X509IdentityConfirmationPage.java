@@ -20,7 +20,7 @@ package org.keycloak.testsuite.pages.x509;
 
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.keycloak.testsuite.pages.LanguageComboboxAwarePage;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -84,9 +84,4 @@ public class X509IdentityConfirmationPage extends LanguageComboboxAwarePage {
         return driver.getTitle().equals("Sign in to test") || driver.getTitle().equals("Anmeldung bei test");
     }
 
-    @Override
-    public void open() {
-        oauth.openLoginForm();
-        assertCurrent();
-    }
 }

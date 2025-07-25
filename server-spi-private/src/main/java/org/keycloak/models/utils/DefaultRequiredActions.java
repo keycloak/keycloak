@@ -83,7 +83,8 @@ public class DefaultRequiredActions {
         CONFIGURE_RECOVERY_AUTHN_CODES(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name(), DefaultRequiredActions::addRecoveryAuthnCodesAction, () -> isFeatureEnabled(Profile.Feature.RECOVERY_CODES)),
         WEBAUTHN_REGISTER("webauthn-register", DefaultRequiredActions::addWebAuthnRegisterAction, () -> isFeatureEnabled(Profile.Feature.WEB_AUTHN)),
         WEBAUTHN_PASSWORDLESS_REGISTER("webauthn-register-passwordless", DefaultRequiredActions::addWebAuthnPasswordlessRegisterAction, () -> isFeatureEnabled(Profile.Feature.WEB_AUTHN)),
-        VERIFY_USER_PROFILE(UserModel.RequiredAction.VERIFY_PROFILE.name(), DefaultRequiredActions::addVerifyProfile);
+        VERIFY_USER_PROFILE(UserModel.RequiredAction.VERIFY_PROFILE.name(), DefaultRequiredActions::addVerifyProfile),
+        IDP_LINK_ACCOUNT("idp_link", DefaultRequiredActions::addIdpLink);
 
         private final String alias;
         private final Consumer<RealmModel> addAction;
@@ -186,14 +187,14 @@ public class DefaultRequiredActions {
 
     public static void addVerifyProfile(RealmModel realm) {
         if (realm.getRequiredActionProviderByAlias(UserModel.RequiredAction.VERIFY_PROFILE.name()) == null) {
-            RequiredActionProviderModel termsAndConditions = new RequiredActionProviderModel();
-            termsAndConditions.setEnabled(true);
-            termsAndConditions.setAlias(UserModel.RequiredAction.VERIFY_PROFILE.name());
-            termsAndConditions.setName("Verify Profile");
-            termsAndConditions.setProviderId(UserModel.RequiredAction.VERIFY_PROFILE.name());
-            termsAndConditions.setDefaultAction(false);
-            termsAndConditions.setPriority(90);
-            realm.addRequiredActionProvider(termsAndConditions);
+            RequiredActionProviderModel verifyProfile = new RequiredActionProviderModel();
+            verifyProfile.setEnabled(true);
+            verifyProfile.setAlias(UserModel.RequiredAction.VERIFY_PROFILE.name());
+            verifyProfile.setName("Verify Profile");
+            verifyProfile.setProviderId(UserModel.RequiredAction.VERIFY_PROFILE.name());
+            verifyProfile.setDefaultAction(false);
+            verifyProfile.setPriority(100);
+            realm.addRequiredActionProvider(verifyProfile);
         }
     }
 
@@ -218,8 +219,21 @@ public class DefaultRequiredActions {
             deleteCredential.setName("Delete Credential");
             deleteCredential.setProviderId("delete_credential");
             deleteCredential.setDefaultAction(false);
-            deleteCredential.setPriority(100);
+            deleteCredential.setPriority(110);
             realm.addRequiredActionProvider(deleteCredential);
+        }
+    }
+    
+    public static void addIdpLink(RealmModel realm) {
+        if (realm.getRequiredActionProviderByAlias("idp_link") == null) {
+            RequiredActionProviderModel idpLink = new RequiredActionProviderModel();
+            idpLink.setEnabled(true);
+            idpLink.setAlias("idp_link");
+            idpLink.setName("Linking Identity Provider");
+            idpLink.setProviderId("idp_link");
+            idpLink.setDefaultAction(false);
+            idpLink.setPriority(120);
+            realm.addRequiredActionProvider(idpLink);
         }
     }
 
@@ -247,7 +261,7 @@ public class DefaultRequiredActions {
 
         if (!isRequiredActionActive) {
             RequiredActionProviderModel updateEmail = new RequiredActionProviderModel();
-            updateEmail.setEnabled(true);
+            updateEmail.setEnabled(false);
             updateEmail.setAlias(PROVIDER_ID);
             updateEmail.setName("Update Email");
             updateEmail.setProviderId(PROVIDER_ID);
@@ -273,7 +287,7 @@ public class DefaultRequiredActions {
             recoveryCodes.setName("Recovery Authentication Codes");
             recoveryCodes.setProviderId(PROVIDER_ID);
             recoveryCodes.setDefaultAction(false);
-            recoveryCodes.setPriority(70);
+            recoveryCodes.setPriority(130);
             realm.addRequiredActionProvider(recoveryCodes);
         }
     }
@@ -294,7 +308,7 @@ public class DefaultRequiredActions {
             webauthnRegister.setName("Webauthn Register");
             webauthnRegister.setProviderId(PROVIDER_ID);
             webauthnRegister.setDefaultAction(false);
-            webauthnRegister.setPriority(70);
+            webauthnRegister.setPriority(80);
             realm.addRequiredActionProvider(webauthnRegister);
         }
     }
@@ -315,7 +329,7 @@ public class DefaultRequiredActions {
             webauthnRegister.setName("Webauthn Register Passwordless");
             webauthnRegister.setProviderId(PROVIDER_ID);
             webauthnRegister.setDefaultAction(false);
-            webauthnRegister.setPriority(80);
+            webauthnRegister.setPriority(90);
             realm.addRequiredActionProvider(webauthnRegister);
         }
     }

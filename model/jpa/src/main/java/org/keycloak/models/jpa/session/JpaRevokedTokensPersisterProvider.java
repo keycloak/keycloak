@@ -43,9 +43,20 @@ public class JpaRevokedTokensPersisterProvider implements RevokedTokenPersisterP
 
     @Override
     public void revokeToken(String tokenId, long lifetime) {
-        RevokedTokenEntity revokedTokenEntity = new RevokedTokenEntity();
+        RevokedTokenEntity revokedTokenEntity = em.find(RevokedTokenEntity.class, tokenId);
+        long expire = Time.currentTime() + lifetime;
+        if (revokedTokenEntity != null) {
+            // The token has already been revoked.
+            // There shouldn't be much need to update the expiry of the token, let's do it anyway to be on the safe side.
+            if (revokedTokenEntity.getExpire() < expire) {
+                revokedTokenEntity.setExpire(expire);
+            }
+            return;
+        }
+
+        revokedTokenEntity = new RevokedTokenEntity();
         revokedTokenEntity.setId(tokenId);
-        revokedTokenEntity.setExpire(Time.currentTime() + lifetime);
+        revokedTokenEntity.setExpire(expire);
         em.persist(revokedTokenEntity);
     }
 

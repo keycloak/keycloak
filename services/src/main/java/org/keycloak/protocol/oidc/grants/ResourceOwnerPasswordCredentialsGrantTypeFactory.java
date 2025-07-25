@@ -36,6 +36,11 @@ public class ResourceOwnerPasswordCredentialsGrantTypeFactory implements OAuth2G
     }
 
     @Override
+    public String getShortcut() {
+        return "ro";
+    }
+
+    @Override
     public OAuth2GrantType create(KeycloakSession session) {
         return new ResourceOwnerPasswordCredentialsGrantType();
     }

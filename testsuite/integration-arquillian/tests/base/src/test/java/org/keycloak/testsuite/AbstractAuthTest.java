@@ -90,14 +90,18 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
 
 
     public void createTestUserWithAdminClient() {
-        createTestUserWithAdminClient(true);
+        createTestUserWithAdminClient(true, PASSWORD);
     }
 
     public void createTestUserWithAdminClient(boolean setRealmRoles) {
+        createTestUserWithAdminClient(setRealmRoles, PASSWORD);
+    }
+
+    public void createTestUserWithAdminClient(boolean setRealmRoles, String password) {
         ApiUtil.removeUserByUsername(testRealmResource(), "test");
 
         log.debug("creating test user");
-        String id = createUserAndResetPasswordWithAdminClient(testRealmResource(), testUser, PASSWORD);
+        String id = createUserAndResetPasswordWithAdminClient(testRealmResource(), testUser, password);
         testUser.setId(id);
 
         if (setRealmRoles) {

@@ -18,7 +18,8 @@
             <span class="kc-tooltip-text">${msg("restartLoginTooltip")}</span>
         </button>
       </div>
-    </@field.group>
+    </div>
+  </@field.group>
 </#macro>
 
 <#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false>
@@ -93,6 +94,29 @@
             "${url.ssoLoginInOtherTabsUrl?no_esc}"
         );
     </script>
+    <script type="module">
+        document.addEventListener("click", (event) => {
+            const link = event.target.closest("a[data-once-link]");
+
+            if (!link) {
+                return;
+            }
+
+            if (link.getAttribute("aria-disabled") === "true") {
+                event.preventDefault();
+                return;
+            }
+
+            const { disabledClass } = link.dataset;
+
+            if (disabledClass) {
+                link.classList.add(...disabledClass.trim().split(/\s+/));
+            }
+
+            link.setAttribute("role", "link");
+            link.setAttribute("aria-disabled", "true");
+        });
+    </script>
     <#if authenticationSession??>
         <script type="module">
             import { checkAuthSession } from "${url.resourcesPath}/js/authChecker.js";
@@ -108,7 +132,7 @@
     </script>
 </head>
 
-<body id="keycloak-bg" class="${properties.kcBodyClass!}">
+<body id="keycloak-bg" class="${properties.kcBodyClass!}" data-page-id="login-${pageId}">
 <div class="${properties.kcLogin!}">
   <div class="${properties.kcLoginContainer!}">
     <header id="kc-header" class="pf-v5-c-login__header">
@@ -215,20 +239,23 @@
           </form>
         </#if>
 
-        <#if displayInfo>
-          <div id="kc-info" class="${properties.kcSignUpClass!}">
-              <div id="kc-info-wrapper" class="${properties.kcInfoAreaWrapperClass!}">
-                  <#nested "info">
-              </div>
-          </div>
-        </#if>
-      </div>
-      <div class="pf-v5-c-login__main-footer">
-        <#nested "socialProviders">
-      </div>
-    </main>
+          <div class="${properties.kcLoginMainFooter!}">
+              <#nested "socialProviders">
 
-    <@loginFooter.content/>
+              <#if displayInfo>
+                  <div id="kc-info" class="${properties.kcLoginMainFooterBand!} ${properties.kcFormClass}">
+                      <div id="kc-info-wrapper" class="${properties.kcLoginMainFooterBandItem!}">
+                          <#nested "info">
+                      </div>
+                  </div>
+              </#if>
+          </div>
+      </div>
+
+        <div class="${properties.kcLoginMainFooter!}">
+            <@loginFooter.content/>
+        </div>
+    </main>
   </div>
 </div>
 </body>

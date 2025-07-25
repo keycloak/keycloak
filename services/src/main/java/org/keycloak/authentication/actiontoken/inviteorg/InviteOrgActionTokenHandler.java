@@ -37,7 +37,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
@@ -117,6 +116,7 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
             return session.getProvider(LoginFormsProvider.class)
                     .setAuthenticationSession(authSession)
                     .setInfo(Messages.ORG_MEMBER_ALREADY, user.getUsername())
+                    .setAttribute("pageRedirectUri", organization.getRedirectUrl())
                     .createInfoPage();
         }
 

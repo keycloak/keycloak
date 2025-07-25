@@ -3,7 +3,7 @@
 
 <@tmpl.guide
 title="Embedded Infinispan metrics for single site deployments"
-summary="Learn about metrics monitoring caching health and cluster replication"
+summary="Use metrics to monitor caching health and cluster replication."
 tileVisible="false"
 >
 

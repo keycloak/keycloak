@@ -17,22 +17,23 @@
 
 package org.keycloak.testsuite.page;
 
+import jakarta.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.logging.Logger;
+import org.junit.Assert;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.URLUtils;
 import org.openqa.selenium.WebDriver;
 
-import jakarta.ws.rs.core.UriBuilder;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
-import org.junit.Assert;
 
 /**
  *
  * @author tkyjovsk
  */
+@Deprecated
 public abstract class AbstractPage {
 
     protected final Logger log = Logger.getLogger(this.getClass());

@@ -21,6 +21,7 @@ package org.keycloak.models.cache.infinispan.authorization.entities;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.cache.infinispan.DefaultLazyLoader;
 import org.keycloak.models.cache.infinispan.LazyLoader;
 import org.keycloak.models.cache.infinispan.entities.AbstractRevisioned;
@@ -75,8 +76,8 @@ public class CachedResource extends AbstractRevisioned implements InResourceServ
         return this.displayName;
     }
 
-    public Set<String> getUris(Supplier<Resource> source) {
-        return this.uris.get(source);
+    public Set<String> getUris(KeycloakSession session, Supplier<Resource> source) {
+        return this.uris.get(session, source);
     }
 
     public String getType() {
@@ -99,11 +100,11 @@ public class CachedResource extends AbstractRevisioned implements InResourceServ
         return this.resourceServerId;
     }
 
-    public Set<String> getScopesIds(Supplier<Resource> source) {
-        return this.scopesIds.get(source);
+    public Set<String> getScopesIds(KeycloakSession session, Supplier<Resource> source) {
+        return this.scopesIds.get(session, source);
     }
 
-    public Map<String, List<String>> getAttributes(Supplier<Resource> source) {
-        return attributes.get(source);
+    public Map<String, List<String>> getAttributes(KeycloakSession session, Supplier<Resource> source) {
+        return attributes.get(session, source);
     }
 }

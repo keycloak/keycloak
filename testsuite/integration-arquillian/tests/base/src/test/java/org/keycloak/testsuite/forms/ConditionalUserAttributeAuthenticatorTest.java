@@ -25,6 +25,7 @@ import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.GroupBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 
 import java.util.HashMap;
 import java.util.List;
@@ -48,7 +49,7 @@ public class ConditionalUserAttributeAuthenticatorTest extends AbstractTestRealm
     private final static String APPROVED_USER = "approved";
     private final static String APPROVED_BY_GROUP_USER = "approved-by-group";
     private final static String APPROVED_BY_SUBGROUP_USER = "approved-by-subgroup";
-    private final static String PASSWORD = "password";
+    private final static String PASSWORD = generatePassword();
 
     @Page
     protected LoginUsernameOnlyPage loginUsernameOnlyPage;
@@ -68,7 +69,7 @@ public class ConditionalUserAttributeAuthenticatorTest extends AbstractTestRealm
     @Before
     public void configureUserProfile() {
         UserProfileResource userProfileRes = testRealm().users().userProfile();
-        VerifyProfileTest.enableUnmanagedAttributes(userProfileRes);
+        UserProfileUtil.enableUnmanagedAttributes(userProfileRes);
     }
 
     private void createUsers() {

@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -81,6 +82,7 @@ public interface OAuth2GrantType extends Provider {
         protected EventBuilder event;
         protected Cors cors;
         protected Object tokenManager;
+        protected String grantType;
 
         public Context(KeycloakSession session, Object clientConfig, Map<String, String> clientAuthAttributes,
                 MultivaluedMap<String, String> formParams, EventBuilder event, Cors cors, Object tokenManager) {
@@ -97,22 +99,7 @@ public interface OAuth2GrantType extends Provider {
             this.event = event;
             this.cors = cors;
             this.tokenManager = tokenManager;
-        }
-
-        public Context(Context context) {
-            this.session = context.session;
-            this.realm = context.realm;
-            this.client = context.client;
-            this.clientConfig = context.clientConfig;
-            this.clientConnection = context.clientConnection;
-            this.clientAuthAttributes = context.clientAuthAttributes;
-            this.request = context.request;
-            this.response = context.response;
-            this.headers = context.headers;
-            this.formParams = context.formParams;
-            this.event = context.event;
-            this.cors = context.cors;
-            this.tokenManager = context.tokenManager;
+            this.grantType = formParams.getFirst(OAuth2Constants.GRANT_TYPE);
         }
 
         public void setFormParams(MultivaluedHashMap<String, String> formParams) {
@@ -181,6 +168,10 @@ public interface OAuth2GrantType extends Provider {
 
         public Object getTokenManager() {
             return tokenManager;
+        }
+
+        public String getGrantType() {
+            return grantType;
         }
     }
 

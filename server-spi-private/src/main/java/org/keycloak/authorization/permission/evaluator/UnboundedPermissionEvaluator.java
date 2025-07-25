@@ -31,7 +31,7 @@ public class UnboundedPermissionEvaluator implements PermissionEvaluator {
             AuthorizationRequest request) {
         this.executionContext = executionContext;
         this.authorizationProvider = authorizationProvider;
-        this.policyEvaluator = authorizationProvider.getPolicyEvaluator();
+        this.policyEvaluator = authorizationProvider.getPolicyEvaluator(resourceServer);
         this.resourceServer = resourceServer;
         this.request = request;
     }

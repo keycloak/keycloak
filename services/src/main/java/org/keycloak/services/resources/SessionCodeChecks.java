@@ -43,6 +43,8 @@ import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.ClientData;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.RestartLoginCookie;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -446,6 +448,19 @@ public class SessionCodeChecks {
             String flowPath = authSession.getClientNote(AuthorizationEndpointBase.APP_INITIATED_FLOW);
             if (flowPath == null) {
                 flowPath = LoginActionsService.AUTHENTICATE_PATH;
+            }
+
+            //set redirect uri and other notes from client data parameter
+            try {
+                ClientData clientData = ClientData.decodeClientDataFromParameter(clientDataString);
+                if (RedirectUtils.verifyRedirectUri(session, clientData.getRedirectUri(), authSession.getClient()) != null) {
+                    authSession.setRedirectUri(clientData.getRedirectUri());
+                    authSession.setClientNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM, clientData.getResponseType());
+                    authSession.setClientNote(OIDCLoginProtocol.RESPONSE_MODE_PARAM, clientData.getResponseMode());
+                    authSession.setClientNote(OIDCLoginProtocol.STATE_PARAM, clientData.getState());
+                }
+            } catch (Exception e) {
+                logger.debugf(e, "ClientData parameter in invalid format. ClientData parameter was %s", clientDataString);
             }
 
             String clientData = AuthenticationProcessor.getClientData(session, authSession);

@@ -6,11 +6,21 @@ import org.junit.jupiter.api.Assertions;
 public class ApiUtil {
 
     public static String handleCreatedResponse(Response response) {
+        try (response) {
+            if (response.getStatus() != Response.Status.CONFLICT.getStatusCode()) {
+                String uuid = getCreatedId(response);
+                response.close();
+                return uuid;
+            } else {
+                return null;
+            }
+        }
+    }
+
+    public static String getCreatedId(Response response) {
         Assertions.assertEquals(201, response.getStatus());
         String path = response.getLocation().getPath();
-        String uuid = path.substring(path.lastIndexOf('/') + 1);
-        response.close();
-        return uuid;
+        return path.substring(path.lastIndexOf('/') + 1);
     }
 
 }

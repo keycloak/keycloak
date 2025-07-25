@@ -80,10 +80,17 @@ export const ScrollForm = ({
               const scrollId = spacesToHyphens(title.toLowerCase());
 
               return (
-                // note that JumpLinks currently does not work with spaces in the href
                 <JumpLinksItem
                   key={title}
-                  href={`#${scrollId}`}
+                  onClick={() => {
+                    const element = document.getElementById(scrollId);
+                    if (element) {
+                      element.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start",
+                      });
+                    }
+                  }}
                   data-testid={`jump-link-${scrollId}`}
                 >
                   {title}

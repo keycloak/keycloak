@@ -44,12 +44,6 @@ public class LogoutConfirmPage extends LanguageComboboxAwarePage {
         return "Logging out".equals(PageUtils.getPageTitle(driver1));
     }
 
-
-    @Override
-    public void open() throws Exception {
-        throw new UnsupportedOperationException("Not supported  to directly open logout confirmation page");
-    }
-
     public void confirmLogout() {
         UIUtils.clickLink(confirmLogoutButton);
     }

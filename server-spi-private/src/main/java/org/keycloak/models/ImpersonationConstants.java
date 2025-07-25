@@ -17,6 +17,8 @@
 
 package org.keycloak.models;
 
+import static org.keycloak.models.AdminRoles.IMPERSONATION;
+
 import org.keycloak.Config;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
@@ -25,8 +27,6 @@ import org.keycloak.models.utils.KeycloakModelUtils;
  * @version $Revision: 1 $
  */
 public class ImpersonationConstants {
-    public static String IMPERSONATION_ROLE = "impersonation";
-
 
     public static void setupMasterRealmRole(RealmProvider model, RealmModel realm) {
         RealmModel adminRealm;
@@ -39,10 +39,10 @@ public class ImpersonationConstants {
             adminRealm = model.getRealmByName(Config.getAdminRealm());
             adminRole = adminRealm.getRole(AdminRoles.ADMIN);
         }
-        ClientModel realmAdminApp = adminRealm.getClientByClientId(KeycloakModelUtils.getMasterRealmAdminApplicationClientId(realm.getName()));
-        if (realmAdminApp.getRole(IMPERSONATION_ROLE) != null) return;
-        RoleModel impersonationRole = realmAdminApp.addRole(IMPERSONATION_ROLE);
-        impersonationRole.setDescription("${role_" + IMPERSONATION_ROLE + "}");
+        ClientModel realmAdminApp = adminRealm.getClientByClientId(KeycloakModelUtils.getMasterRealmAdminManagementClientId(realm.getName()));
+        if (realmAdminApp.getRole(IMPERSONATION) != null) return;
+        RoleModel impersonationRole = realmAdminApp.addRole(IMPERSONATION);
+        impersonationRole.setDescription("${role_" + IMPERSONATION + "}");
         adminRole.addCompositeRole(impersonationRole);
     }
 
@@ -50,9 +50,9 @@ public class ImpersonationConstants {
         if (realm.getName().equals(Config.getAdminRealm())) { return; } // don't need to do this for master realm
         String realmAdminApplicationClientId = Constants.REALM_MANAGEMENT_CLIENT_ID;
         ClientModel realmAdminApp = realm.getClientByClientId(realmAdminApplicationClientId);
-        if (realmAdminApp.getRole(IMPERSONATION_ROLE) != null) return;
-        RoleModel impersonationRole = realmAdminApp.addRole(IMPERSONATION_ROLE);
-        impersonationRole.setDescription("${role_" + IMPERSONATION_ROLE + "}");
+        if (realmAdminApp.getRole(IMPERSONATION) != null) return;
+        RoleModel impersonationRole = realmAdminApp.addRole(IMPERSONATION);
+        impersonationRole.setDescription("${role_" + IMPERSONATION + "}");
         RoleModel adminRole = realmAdminApp.getRole(AdminRoles.REALM_ADMIN);
         adminRole.addCompositeRole(impersonationRole);
     }

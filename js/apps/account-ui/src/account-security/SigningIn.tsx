@@ -15,8 +15,12 @@ import {
   SplitItem,
   Title,
 } from "@patternfly/react-core";
-import { EllipsisVIcon } from "@patternfly/react-icons";
-import { CSSProperties, useState } from "react";
+import {
+  EllipsisVIcon,
+  ExclamationTriangleIcon,
+  InfoAltIcon,
+} from "@patternfly/react-icons";
+import { CSSProperties, Fragment, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useEnvironment } from "@keycloak/keycloak-ui-shared";
 import { getCredentials } from "../api/methods";
@@ -118,6 +122,57 @@ export const SigningIn = () => {
         </DataListCell>,
       );
     }
+    if (
+      credMetadata.infoMessage ||
+      (credMetadata.warningMessageTitle &&
+        credMetadata.warningMessageDescription)
+    ) {
+      items.push(
+        <DataListCell
+          key={"warning-message" + credential.id}
+          data-testrole="warning-message"
+        >
+          <>
+            {credMetadata.infoMessage && (
+              <p>
+                <InfoAltIcon />{" "}
+                {t(
+                  credMetadata.infoMessage.key,
+                  credMetadata.infoMessage.parameters?.reduce(
+                    (acc, val, idx) => ({ ...acc, [idx]: val }),
+                    {},
+                  ),
+                )}
+              </p>
+            )}
+            {credMetadata.warningMessageTitle &&
+              credMetadata.warningMessageDescription && (
+                <>
+                  <p>
+                    <ExclamationTriangleIcon />{" "}
+                    {t(
+                      credMetadata.warningMessageTitle.key,
+                      credMetadata.warningMessageTitle.parameters?.reduce(
+                        (acc, val, idx) => ({ ...acc, [idx]: val }),
+                        {},
+                      ),
+                    )}
+                  </p>
+                  <p>
+                    {t(
+                      credMetadata.warningMessageDescription.key,
+                      credMetadata.warningMessageDescription.parameters?.reduce(
+                        (acc, val, idx) => ({ ...acc, [idx]: val }),
+                        {},
+                      ),
+                    )}
+                  </p>
+                </>
+              )}
+          </>
+        </DataListCell>,
+      );
+    }
     return items;
   };
 
@@ -139,7 +194,7 @@ export const SigningIn = () => {
           {credentials
             .filter((cred) => cred.category == category)
             .map((container) => (
-              <>
+              <Fragment key={container.type}>
                 <Split className="pf-v5-u-mt-lg pf-v5-u-mb-lg">
                   <SplitItem>
                     <Title
@@ -211,8 +266,8 @@ export const SigningIn = () => {
                                 <Button
                                   variant="danger"
                                   data-testrole="remove"
-                                  onClick={() => {
-                                    login({
+                                  onClick={async () => {
+                                    await login({
                                       action:
                                         "delete_credential:" +
                                         meta.credential.id,
@@ -225,8 +280,10 @@ export const SigningIn = () => {
                               {container.updateAction && (
                                 <Button
                                   variant="secondary"
-                                  onClick={() => {
-                                    login({ action: container.updateAction });
+                                  onClick={async () => {
+                                    await login({
+                                      action: container.updateAction,
+                                    });
                                   }}
                                   data-testrole="update"
                                 >
@@ -240,7 +297,7 @@ export const SigningIn = () => {
                     </DataListItem>
                   ))}
                 </DataList>
-              </>
+              </Fragment>
             ))}
         </PageSection>
       ))}

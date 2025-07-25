@@ -36,6 +36,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
@@ -122,8 +123,8 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
         KeycloakContext context = session.getContext();
         RealmModel realm = context.getRealm();
         ProtocolMapperModel effectiveModel = getEffectiveModel(session, realm, model);
-
-        Object claim = resolveValue(effectiveModel, organizations.toList());
+        UserModel user = userSession.getUser();
+        Object claim = resolveValue(effectiveModel, user, organizations.toList());
 
         if (claim == null) {
             return;
@@ -133,7 +134,7 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
     }
 
     private Stream<OrganizationModel> resolveFromRequestedScopes(KeycloakSession session, UserSessionModel userSession, ClientSessionContext context) {
-        String rawScopes = context.getScopeString();
+        String rawScopes = context.getScopeString(true);
         OrganizationScope scope = OrganizationScope.valueOfScope(session, rawScopes);
 
         if (scope == null) {
@@ -141,10 +142,9 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
         }
 
         return scope.resolveOrganizations(userSession.getUser(), rawScopes, session);
-
     }
 
-    private Object resolveValue(ProtocolMapperModel model, List<OrganizationModel> organizations) {
+    private Object resolveValue(ProtocolMapperModel model, UserModel user, List<OrganizationModel> organizations) {
         if (organizations.isEmpty()) {
             return null;
         }
@@ -156,7 +156,7 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
         Map<String, Map<String, Object>> value = new HashMap<>();
 
         for (OrganizationModel o : organizations) {
-            if (o == null || !o.isEnabled()) {
+            if (o == null || !o.isEnabled() || user == null || !o.isMember(user)) {
                 continue;
             }
 

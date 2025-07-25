@@ -9,19 +9,21 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@SuppressWarnings({"unchecked", "OptionalUsedAsFieldOrParameterType", "rawtypes"})
 public class OptionBuilder<T> {
 
     private static final List<String> BOOLEAN_TYPE_VALUES = List.of(Boolean.TRUE.toString(), Boolean.FALSE.toString());
 
     private final Class<T> type;
     private final Class<?> auxiliaryType;
-    private final String key;
+    private String key;
     private OptionCategory category;
     private boolean hidden;
     private boolean build;
     private String description;
     private Optional<T> defaultValue;
     private List<String> expectedValues;
+    private boolean transformEnumValues;
     // Denotes whether a custom value can be provided among the expected values
     private boolean strictExpectedValues;
     private boolean caseInsensitiveExpectedValues;
@@ -48,6 +50,11 @@ public class OptionBuilder<T> {
         description = null;
         defaultValue = Optional.empty();
         strictExpectedValues = true;
+    }
+
+    OptionBuilder<T> key(String key) {
+        this.key = key;
+        return this;
     }
 
     public OptionBuilder<T> category(OptionCategory category) {
@@ -94,6 +101,14 @@ public class OptionBuilder<T> {
         return expectedValues(Stream.of(expected).map(Object::toString).collect(Collectors.toList()));
     }
 
+    /**
+     * For more details, see the {@link Option#transformEnumValue(String)}
+     */
+    public OptionBuilder<T> transformEnumValues(boolean transform) {
+        this.transformEnumValues = transform;
+        return this;
+    }
+
     public OptionBuilder<T> strictExpectedValues(boolean strictExpectedValues) {
         this.strictExpectedValues = strictExpectedValues;
         return this;
@@ -129,10 +144,12 @@ public class OptionBuilder<T> {
             expected = auxiliaryType;
         }
 
+        boolean isEnumType = Enum.class.isAssignableFrom(expected);
+
         if (expectedValues == null) {
             if (Boolean.class.equals(expected)) {
                 expectedValues(BOOLEAN_TYPE_VALUES);
-            } else if (Enum.class.isAssignableFrom(expected)) {
+            } else if (isEnumType) {
                 expectedValues((Class<? extends Enum>) expected);
             } else {
                 expectedValues = List.of();
@@ -141,6 +158,15 @@ public class OptionBuilder<T> {
 
         if (defaultValue.isEmpty() && Boolean.class.equals(expected)) {
             defaultValue = Optional.of((T) Boolean.FALSE);
+        }
+
+        if (transformEnumValues) {
+            if (isEnumType) {
+                expectedValues(expectedValues.stream().map(Option::transformEnumValue).toList());
+                defaultValue.ifPresent(t -> defaultValue(Optional.of((T) Option.transformEnumValue(t.toString()))));
+            } else {
+                throw new IllegalArgumentException("You can use 'transformEnumValues' only for Enum types");
+            }
         }
 
         return new Option<T>(type, key, category, hidden, build, description, defaultValue, expectedValues, strictExpectedValues, caseInsensitiveExpectedValues, deprecatedMetadata);

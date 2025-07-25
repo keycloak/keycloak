@@ -68,7 +68,7 @@ export default function NewClientForm() {
       authorizationServicesEnabled: false,
       serviceAccountsEnabled: false,
       implicitFlowEnabled: false,
-      directAccessGrantsEnabled: true,
+      directAccessGrantsEnabled: false,
       standardFlowEnabled: true,
       frontchannelLogout: true,
       attributes: {

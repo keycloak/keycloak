@@ -29,7 +29,6 @@ import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
 
 @DistributionTest(keepAlive = true, defaultOptions = { "--db=dev-file", "--features=fips", "--http-enabled=true", "--hostname-strict=false", "--log-level=org.keycloak.common.crypto.CryptoIntegration:trace" })
 @RawDistOnly(reason = "Containers are immutable")
@@ -149,8 +148,7 @@ public class FipsDistTest {
 
             CLIResult cliResult = dist.run("--verbose", "start", "--fips-mode=non-strict", "--https-key-store-password=passwordpassword",
                     "--https-trust-store-file=" + truststorePath, "--https-trust-store-password=passwordpassword");
-            cliResult.assertError("Unable to determine 'https-trust-store-type' automatically. Adjust the file extension or specify the property.");
-
+            cliResult.assertMessage("Unable to determine 'https-trust-store-type' automatically. Adjust the file extension or specify the property.");
             dist.stop();
 
             dist.copyOrReplaceFileFromClasspath("/server.keystore.pkcs12", Path.of("conf", "server.p12"));

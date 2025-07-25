@@ -17,14 +17,14 @@
 
 package org.keycloak.testsuite.forms;
 
+import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 
 /**
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public abstract class AbstractFlowTest extends AbstractTestRealmKeycloakTest {
+public abstract class AbstractFlowTest extends AbstractChangeImportedUserPasswordsTest {
 
     protected AuthenticationFlowRepresentation findFlowByAlias(String alias) {
         for (AuthenticationFlowRepresentation rep : testRealm().flows().getFlows()) {

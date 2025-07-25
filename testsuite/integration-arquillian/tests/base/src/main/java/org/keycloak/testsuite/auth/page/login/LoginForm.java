@@ -34,6 +34,7 @@ import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
  *
  * @author tkyjovsk
  */
+@Deprecated
 public class LoginForm extends Form {
 
     @Page

@@ -19,6 +19,7 @@ package org.keycloak.quarkus.runtime.cli;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
@@ -26,19 +27,27 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.List;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Properties;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.keycloak.config.LoggingOptions;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakMain;
-import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
-import org.keycloak.quarkus.runtime.configuration.test.AbstractConfigurationTest;
+import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
+import org.keycloak.quarkus.runtime.configuration.AbstractConfigurationTest;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 
 import io.smallrye.config.SmallRyeConfig;
 import picocli.CommandLine;
@@ -92,9 +101,10 @@ public class PicocliTest extends AbstractConfigurationTest {
         }
 
         @Override
-        protected void initProfile(List<String> cliArgs, String currentCommandName) {
-            super.initProfile(cliArgs, currentCommandName);
-            config = createConfig();
+        public void initConfig(AbstractCommand command) {
+            KeycloakConfigSourceProvider.reload();
+            super.initConfig(command);
+            config = Configuration.getConfig();
         }
 
         @Override
@@ -107,10 +117,27 @@ public class PicocliTest extends AbstractConfigurationTest {
 
     NonRunningPicocli pseudoLaunch(String... args) {
         NonRunningPicocli nonRunningPicocli = new NonRunningPicocli();
-        ConfigArgsConfigSource.setCliArgs(args);
-        nonRunningPicocli.config = createConfig();
         KeycloakMain.main(args, nonRunningPicocli);
         return nonRunningPicocli;
+    }
+
+    @Test
+    public void testUnbuiltHelp() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("bootstrap-admin");
+        assertTrue(nonRunningPicocli.getErrString().contains("Missing required subcommand"));
+    }
+
+    @Test
+    public void testProfileForHelp() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("-pf=dev", "bootstrap-admin", "-h");
+        assertEquals("dev", nonRunningPicocli.config.getConfigValue("kc.profile").getValue());
+    }
+
+    @Test
+    public void testCleanStartDev() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev");
+        assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().toUpperCase().contains("WARN"));
+        assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().toUpperCase().contains("ERROR"));
     }
 
     @Test
@@ -119,10 +146,33 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertEquals("1h",
                 nonRunningPicocli.config.getConfigValue("quarkus.http.ssl.certificate.reload-period").getValue());
+        assertEquals("1h",
+                nonRunningPicocli.config.getConfigValue("quarkus.management.ssl.certificate.reload-period").getValue());
 
+        onAfter();
         nonRunningPicocli = pseudoLaunch("start-dev", "--https-certificates-reload-period=-1");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertNull(nonRunningPicocli.config.getConfigValue("quarkus.http.ssl.certificate.reload-period").getValue());
+        assertNull(nonRunningPicocli.config.getConfigValue("quarkus.management.ssl.certificate.reload-period").getValue());
+    }
+
+    @Test
+    public void testNegativeArgumentMgmtInterfaceCertReload() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertEquals("1h",
+                nonRunningPicocli.config.getConfigValue("quarkus.management.ssl.certificate.reload-period").getValue());
+
+        onAfter();
+        nonRunningPicocli = pseudoLaunch("start-dev", "--https-management-certificates-reload-period=-1");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertNull(nonRunningPicocli.config.getConfigValue("quarkus.management.ssl.certificate.reload-period").getValue());
+
+        onAfter();
+        nonRunningPicocli = pseudoLaunch("start-dev", "--https-certificates-reload-period=5m");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertEquals("5m",
+                nonRunningPicocli.config.getConfigValue("quarkus.management.ssl.certificate.reload-period").getValue());
     }
 
     @Test
@@ -205,7 +255,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString(Help.defaultColorScheme(Help.Ansi.AUTO)
                 .errorText("Unknown option: '--db-pasword'")
-                + "\nPossible solutions: --db-url, --db-url-host, --db-url-database, --db-url-port, --db-url-properties, --db-username, --db-password, --db-schema, --db-pool-initial-size, --db-pool-min-size, --db-pool-max-size, --db-driver, --db"));
+                + "\nPossible solutions: --db-url, --db-url-host, --db-url-database, --db-url-port, --db-url-properties, --db-username, --db-password, --db-schema, --db-pool-initial-size, --db-pool-min-size, --db-pool-max-size, --db-debug-jpql, --db-log-slow-queries-threshold, --db-driver, --db"));
     }
 
     @Test
@@ -214,7 +264,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString(Help.defaultColorScheme(Help.Ansi.AUTO)
                 .errorText("Unknown option: '--db-pasword'")
-                + "\nPossible solutions: --db-url, --db-url-host, --db-url-database, --db-url-port, --db-url-properties, --db-username, --db-password, --db-schema, --db-pool-initial-size, --db-pool-min-size, --db-pool-max-size, --db-driver, --db"));
+                + "\nPossible solutions: --db-url, --db-url-host, --db-url-database, --db-url-port, --db-url-properties, --db-username, --db-password, --db-schema, --db-pool-initial-size, --db-pool-min-size, --db-pool-max-size, --db-debug-jpql, --db-log-slow-queries-threshold, --db-driver, --db"));
     }
 
     @Test
@@ -224,22 +274,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString(Help.defaultColorScheme(Help.Ansi.AUTO)
                 .errorText("Unknown option: '--db-pasword'")
-                + "\nPossible solutions: --db-url, --db-url-host, --db-url-database, --db-url-port, --db-url-properties, --db-username, --db-password, --db-schema, --db-pool-initial-size, --db-pool-min-size, --db-pool-max-size, --db-driver, --db"));
-    }
-
-    @Test
-    public void httpStoreTypeValidation() {
-        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--https-key-store-file=not-there.ks", "--hostname-strict=false");
-        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
-        assertThat(nonRunningPicocli.getErrString(), containsString("Unable to determine 'https-key-store-type' automatically. Adjust the file extension or specify the property"));
-
-        nonRunningPicocli = pseudoLaunch("start", "--https-key-store-file=not-there.ks", "--hostname-strict=false", "--https-key-store-type=jdk");
-        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
-        assertThat(nonRunningPicocli.getErrString(), containsString("Failed to load 'https-key-' material: NoSuchFileException not-there.ks"));
-
-        nonRunningPicocli = pseudoLaunch("start", "--https-trust-store-file=not-there.jks", "--https-key-store-file=not-there.ks", "--hostname-strict=false", "--https-key-store-type=jdk");
-        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
-        assertThat(nonRunningPicocli.getErrString(), containsString("No trust store password provided"));
+                + "\nPossible solutions: --db-url, --db-url-host, --db-url-database, --db-url-port, --db-url-properties, --db-username, --db-password, --db-schema, --db-pool-initial-size, --db-pool-min-size, --db-pool-max-size, --db-debug-jpql, --db-log-slow-queries-threshold, --db-driver, --db"));
     }
 
     @Test
@@ -251,6 +286,13 @@ public class PicocliTest extends AbstractConfigurationTest {
             // arbitrary kc system properties should not show up either
             assertThat(nonRunningPicocli.getOutString(), not(containsString("kc.something")));
         });
+    }
+
+    @Test
+    public void testShowConfigDisplaysPrimaryValue() {
+        build("build", "--db=postgres");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("show-config");
+        assertThat(nonRunningPicocli.getOutString(), containsString("postgres (Persisted)"));
     }
 
     @Test
@@ -277,7 +319,7 @@ public class PicocliTest extends AbstractConfigurationTest {
 
     @Test
     public void failBuildDev() {
-        NonRunningPicocli nonRunningPicocli = pseudoLaunch("--profile=dev", "build");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("--profile=dev", "build", "--verbose");
         assertThat(nonRunningPicocli.getErrString(), containsString("You can not 'build' the server in development mode."));
         assertEquals(CommandLine.ExitCode.SOFTWARE, nonRunningPicocli.exitCode);
     }
@@ -297,6 +339,14 @@ public class PicocliTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void optimizedExport() {
+        build("build", "--db=dev-file");
+
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("export", "--optimized", "--dir=data");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+    }
+
+    @Test
     public void testReaugFromProdToDev() {
         build("build", "--db=dev-file");
 
@@ -304,22 +354,31 @@ public class PicocliTest extends AbstractConfigurationTest {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--hostname=name", "--http-enabled=true");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertTrue(nonRunningPicocli.reaug);
-        assertEquals("dev", nonRunningPicocli.buildProps.getProperty(org.keycloak.common.util.Environment.PROFILE));;
+        assertEquals("dev", nonRunningPicocli.buildProps.getProperty(org.keycloak.common.util.Environment.PROFILE));
     }
 
     /**
      * Runs a fake build to setup the state of the persisted build properties
      */
-    private void build(String... args) {
+    private NonRunningPicocli build(String... args) {
+        return build(out -> {
+            assertFalse(out, out.contains("first-class"));
+            assertFalse(out, out.toUpperCase().contains("WARN"));
+        }, args);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private NonRunningPicocli build(Consumer<String> outChecker, String... args) {
         if (Stream.of(args).anyMatch("start-dev"::equals)) {
             Environment.setRebuildCheck(); // auto-build
         }
         NonRunningPicocli nonRunningPicocli = pseudoLaunch(args);
-        assertTrue(nonRunningPicocli.reaug);
-        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().contains("ignored"));
+        assertTrue(nonRunningPicocli.getErrString(), nonRunningPicocli.reaug);
+        assertEquals(nonRunningPicocli.getErrString(), CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        outChecker.accept(nonRunningPicocli.getOutString());
         onAfter();
         addPersistedConfigValues((Map)nonRunningPicocli.buildProps);
+        return nonRunningPicocli;
     }
 
     @Test
@@ -374,13 +433,13 @@ public class PicocliTest extends AbstractConfigurationTest {
 
     @Test
     public void testReaugFromDevToProdExport() {
-        build("start-dev");
+        build("start-dev", "-v");
 
         Environment.setRebuildCheck(); // will be reset by the system properties logic
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("export", "--db=dev-file", "--file=file");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertTrue(nonRunningPicocli.reaug);
-        assertEquals("prod", nonRunningPicocli.buildProps.getProperty(org.keycloak.common.util.Environment.PROFILE));;
+        assertEquals("prod", nonRunningPicocli.buildProps.getProperty(org.keycloak.common.util.Environment.PROFILE));
     }
 
     @Test
@@ -402,7 +461,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         System.setProperty("kc.hostname-strict", "false");
 
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--optimized");
-        assertEquals(Integer.MAX_VALUE, nonRunningPicocli.exitCode); // "running" state
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
     }
 
     @Test
@@ -419,6 +478,9 @@ public class PicocliTest extends AbstractConfigurationTest {
         var value = nonRunningPicocli.config.getConfigValue("quarkus.log.category.\"org.keycloak\".level");
         assertEquals("quarkus.log.category.\"org.keycloak\".level", value.getName());
         assertEquals("WARN", value.getValue());
+        value = nonRunningPicocli.config.getConfigValue("quarkus.log.category.\"org.keycloak1\".level");
+        assertEquals("quarkus.log.category.\"org.keycloak1\".level", value.getName());
+        assertNull(value.getValue());
     }
 
     @Test
@@ -428,6 +490,9 @@ public class PicocliTest extends AbstractConfigurationTest {
         var value = nonRunningPicocli.config.getConfigValue("quarkus.log.category.\"org.keycloak\".level");
         assertEquals("quarkus.log.category.\"org.keycloak\".level", value.getName());
         assertEquals("WARN", value.getValue());
+        value = nonRunningPicocli.config.getConfigValue("quarkus.log.category.\"org.keycloak1\".level");
+        assertEquals("quarkus.log.category.\"org.keycloak1\".level", value.getName());
+        assertNull(value.getValue());
     }
 
     @Test
@@ -451,14 +516,365 @@ public class PicocliTest extends AbstractConfigurationTest {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log=syslog", "--log-syslog-max-length=60k");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertEquals("60k", nonRunningPicocli.config.getConfigValue("quarkus.log.syslog.max-length").getValue());
+        onAfter();
 
         nonRunningPicocli = pseudoLaunch("start-dev", "--log=syslog");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.config.getConfigValue("quarkus.log.syslog.max-length").getValue(), nullValue());
+        onAfter();
 
         nonRunningPicocli = pseudoLaunch("start-dev", "--log=syslog", "--log-syslog-max-length=wrong");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString(
                 "Invalid value for option '--log-syslog-max-length': value wrong not in correct format (regular expression): [0-9]+[BbKkMmGgTtPpEeZzYy]?"));
+    }
+
+    @Test
+    public void syslogCountingFraming() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log=syslog", "--log-syslog-counting-framing=TRUE");
+        assertThat(nonRunningPicocli.exitCode, is(CommandLine.ExitCode.USAGE));
+        assertThat(nonRunningPicocli.getErrString(), containsString(
+                "Invalid value for option '--log-syslog-counting-framing': TRUE. Expected values are: true, false, protocol-dependent"));
+
+        onAfter();
+        nonRunningPicocli = pseudoLaunch("start-dev", "--log=syslog", "--log-syslog-counting-framing=true");
+        assertThat(nonRunningPicocli.exitCode, is(CommandLine.ExitCode.OK));
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.log.syslog.use-counting-framing").getValue(), is("true"));
+
+        onAfter();
+        nonRunningPicocli = pseudoLaunch("start-dev", "--log=syslog", "--log-syslog-counting-framing=false");
+        assertThat(nonRunningPicocli.exitCode, is(CommandLine.ExitCode.OK));
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.log.syslog.use-counting-framing").getValue(), is("false"));
+
+        onAfter();
+        nonRunningPicocli = pseudoLaunch("start-dev", "--log=syslog", "--log-syslog-protocol=ssl-tcp", "--log-syslog-counting-framing=protocol-dependent");
+        assertThat(nonRunningPicocli.exitCode, is(CommandLine.ExitCode.OK));
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.log.syslog.use-counting-framing").getValue(), is("protocol-dependent"));
+
+        onAfter();
+        nonRunningPicocli = pseudoLaunch("start-dev", "--log=syslog", "--log-syslog-counting-framing=wrong");
+        assertThat(nonRunningPicocli.exitCode, is(CommandLine.ExitCode.USAGE));
+        assertThat(nonRunningPicocli.getErrString(), containsString(
+                "Invalid value for option '--log-syslog-counting-framing': wrong. Expected values are: true, false, protocol-dependent"));
+    }
+
+    @Test
+    public void providerChanged() {
+        build("build", "--db=dev-file");
+
+        addPersistedConfigValues(Map.of(Picocli.KC_PROVIDER_FILE_PREFIX + "fake", "value"));
+
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--optimized");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertTrue(nonRunningPicocli.getErrString().contains("A provider JAR was updated since the last build, please rebuild for this to be fully utilized."));
+    }
+
+    @Test
+    public void buildOptionChangedWithOptimized() {
+        build("build", "--db=dev-file");
+
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--optimized", "--db=dev-mem");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertTrue(nonRunningPicocli.getErrString().contains("Build time option: '--db' not usable with pre-built image and --optimized"));
+    }
+
+    @Test
+    public void buildOptionWithOptimized() {
+        build("build", "--metrics-enabled=true", "--db=dev-file");
+
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--optimized", "--http-enabled=true", "--hostname-strict=false");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+    }
+
+    @Test
+    public void testHiddenCliConfigValueWithNoDescription() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--db-dialect=user-defined");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertEquals("user-defined", nonRunningPicocli.config.getConfigValue("kc.db-dialect").getValue());
+    }
+
+    @Test
+    public void buildDBWithOptimized() {
+        build("build", "--db=mariadb");
+
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("import", "--optimized", "--dir=./", "--override=false");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+    }
+
+    @Test
+    public void logConsoleJsonFormatDisabled() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log-console-json-format=ecs");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--log-console-json-format'. Available only when Console log handler is activated and output is set to 'json'"));
+    }
+
+    @Test
+    public void logConsoleJsonFormat() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log-console-output=json", "--log-console-json-format=invalid");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Invalid value for option '--log-console-json-format': invalid. Expected values are: default, ecs"));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--log-console-output=json", "--log-console-json-format=ecs");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+    }
+
+    @Test
+    public void logFileJsonFormatDisabled() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log=file", "--log-file-json-format=ecs");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--log-file-json-format'. Available only when File log handler is activated and output is set to 'json'"));
+    }
+
+    @Test
+    public void logFileJsonFormat() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log-console-output=json", "--log-console-json-format=invalid");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Invalid value for option '--log-console-json-format': invalid. Expected values are: default, ecs"));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--log-console-output=json", "--log-console-json-format=ecs");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+    }
+
+    @Test
+    public void logSyslogJsonFormatDisabled() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log=syslog", "--log-syslog-json-format=ecs");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--log-syslog-json-format'. Available only when Syslog is activated and output is set to 'json'"));
+    }
+
+    @Test
+    public void logSyslogJsonFormat() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log=syslog", "--log-syslog-output=json", "--log-syslog-json-format=invalid");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Invalid value for option '--log-syslog-json-format': invalid. Expected values are: default, ecs"));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--log=syslog", "--log-syslog-output=json", "--log-syslog-json-format=ecs");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+    }
+
+    @Test
+    public void proxyProtolNotAllowedWithProxyHeaders() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--proxy-headers=forwarded", "--proxy-protocol-enabled=true");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString(" protocol cannot be enabled when using the `proxy-headers` option"));
+    }
+
+    @Test
+    public void hostnameProxyValidation() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--hostname=foo", "--http-enabled=true");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), containsString("Likely misconfiguration detected"));
+    }
+
+    @Test
+    public void hostnameProxyValidationStrictFalse() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--hostname-strict=false", "--http-enabled=true");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), containsString("With HTTPS not enabled"));
+    }
+
+    @Test
+    public void hostnameValidationHttp() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--hostname=http://host", "--http-enabled=true");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), containsString("Likely misconfiguration detected"));
+    }
+
+    @Test
+    public void derivedPropertyUsage() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--hostname=localhost", "--spi-hostname-v2-hostname=second-class");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), containsString("Please use the first-class option `kc.hostname` instead of `kc.spi-hostname-v2-hostname`"));
+    }
+
+    @Test
+    public void testAmbiguousSpiOption() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--spi-x-y-enabled=true");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), containsString("The following SPI options are using the legacy format and are not being treated as build time options. Please use the new format with the appropriate -- separators to resolve this ambiguity: kc.spi-x-y-enabled"));
+    }
+
+    @Test
+    public void testAmbiguousSpiOptionBuild() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("build", "--db=dev-file", "--spi-x-y-enabled=true");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), containsString("The following SPI options are using the legacy format and are not being treated as build time options. Please use the new format with the appropriate -- separators to resolve this ambiguity: kc.spi-x-y-enabled"));
+    }
+
+    @Test
+    public void testDerivedShowConfig() {
+        NonRunningPicocli nonRunningPicocli = build("build", "--metrics-enabled=true", "--features=user-event-metrics", "--event-metrics-user-enabled=true", "--db=dev-file");
+
+        nonRunningPicocli = pseudoLaunch("show-config");
+        // first class kc form should show up
+        assertThat(nonRunningPicocli.getOutString(), containsString("kc.event-metrics-user-enabled"));
+        // second class kc form should not
+        assertThat(nonRunningPicocli.getOutString(), not(containsString("kc.spi-events-listener-micrometer-user-event-metrics-enabled")));
+    }
+
+    @Test
+    public void logAsyncDisabledParent() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log=file", "--log-console-async=true");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--log-console-async'. Available only when Console log handler is activated"));
+
+        onAfter();
+        nonRunningPicocli = pseudoLaunch("start-dev", "--log=console", "--log-file-async=true");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--log-file-async'. Available only when File log handler is activated"));
+
+        onAfter();
+        nonRunningPicocli = pseudoLaunch("start-dev", "--log=file", "--log-syslog-async=true");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--log-syslog-async'. Available only when Syslog is activated"));
+    }
+
+    @Test
+    public void logAsyncGlobal() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log-async=true", "--log-console-async=false", "--log-console-async-queue-length=222");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--log-console-async-queue-length'. Available only when Console log handler is activated"));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--log-async=true", "--log-console-async-queue-length=222");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--log=console,file", "--log-async=true", "--log-console-async=false", "--log-console-async-queue-length=222");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--log-console-async-queue-length'. Available only when Console log handler is activated"));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--log=console,file", "--log-async=true", "--log-console-async=false", "--log-file-async-queue-length=222");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+    }
+
+    @Test
+    public void logAsyncConsoleDisabledOptions() {
+        assertLogAsyncHandlerDisabledOptions(LoggingOptions.Handler.file, LoggingOptions.Handler.console, "Console log handler");
+    }
+
+    @Test
+    public void logAsyncFileDisabledOptions() {
+        assertLogAsyncHandlerDisabledOptions(LoggingOptions.Handler.console, LoggingOptions.Handler.file, "File log handler");
+    }
+
+    @Test
+    public void logAsyncSyslogDisabledOptions() {
+        assertLogAsyncHandlerDisabledOptions(LoggingOptions.Handler.console, LoggingOptions.Handler.syslog, "Syslog");
+    }
+
+    private void assertLogAsyncHandlerDisabledOptions(LoggingOptions.Handler logHandler, LoggingOptions.Handler logHandlerOptions, String logHandlerFullName) {
+        var logHandlerName = logHandler.toString();
+        var logHandlerOptionsName = logHandlerOptions.toString();
+
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log=%s".formatted(logHandlerName), "--log-%s-async-queue-length=invalid".formatted(logHandlerOptionsName));
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Invalid value for option '--log-%s-async-queue-length': 'invalid' is not an int".formatted(logHandlerOptionsName)));
+
+        onAfter();
+        nonRunningPicocli = pseudoLaunch("start-dev", "--log=%s".formatted(logHandlerName), "--log-%s-async-queue-length=768".formatted(logHandlerOptionsName));
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--log-%s-async-queue-length'. Available only when %s is activated and asynchronous logging is enabled".formatted(logHandlerOptionsName, logHandlerFullName)));
+
+    }
+
+    @Test
+    public void logAsyncConsoleInvalidValues() {
+        assertLogAsyncHandlerInvalidValues(LoggingOptions.Handler.console);
+    }
+
+    @Test
+    public void logAsyncFileInvalidValues() {
+        assertLogAsyncHandlerInvalidValues(LoggingOptions.Handler.file);
+    }
+
+    @Test
+    public void logAsyncSyslogInvalidValues() {
+        assertLogAsyncHandlerInvalidValues(LoggingOptions.Handler.syslog);
+    }
+
+    @Test
+    public void timestampChanged() {
+        assertTrue(Picocli.timestampChanged("12345", null));
+        assertTrue(Picocli.timestampChanged("12345", "12346"));
+        assertTrue(Picocli.timestampChanged("12000", "12346"));
+        // new is truncated - should not be a change
+        assertFalse(Picocli.timestampChanged("12345", "12000"));
+    }
+
+    @Test
+    public void quarkusRuntimeChangeNoError() throws IOException {
+        Path conf = Paths.get("src/test/resources/");
+        Path tmp = Paths.get("target/home-tmp");
+        FileUtils.copyDirectory(conf.toFile(), tmp.toFile());
+        Files.delete(tmp.resolve("conf/quarkus.properties"));
+        Environment.setHomeDir(tmp);
+        try {
+            build("build", "--db=dev-file");
+        } finally {
+            Environment.setHomeDir(conf);
+        }
+
+        var nonRunningPicocli = pseudoLaunch("start", "--optimized", "--http-enabled=true", "--hostname=foo");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+    }
+
+    protected void assertLogAsyncHandlerInvalidValues(LoggingOptions.Handler handler) {
+        var handlerName = handler.toString();
+
+        var nonRunningPicocli = pseudoLaunch("start-dev", "--log=%s".formatted(handlerName), "--log-%s-async=true".formatted(handlerName), "--log-%s-async-queue-length=invalid".formatted(handlerName));
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Invalid value for option '--log-%s-async-queue-length': 'invalid' is not an int".formatted(handlerName)));
+    }
+
+    @Test
+    public void testUnaryBooleanFails() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--health-enabled");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Option '--health-enabled' (true|false) expects a single value. Expected values are: true, false"));
+    }
+
+    @Test
+    public void datasourcesNotAllowedChar(){
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev","--db-kind-<default>=postgres");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Unknown option: '--db-kind-<default>'"));
+    }
+
+    @Test
+    public void updateCommandValidation(){
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("update-compatibility","check");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Missing required argument: --file"));
+    }
+
+    @Test
+    public void errorSpiBuildtimeChanged() {
+        putEnvVar("KC_SPI_EVENTS_LISTENER__PROVIDER", "jboss-logging");
+        build("build", "--db=dev-file");
+
+        putEnvVar("KC_SPI_EVENTS_LISTENER__PROVIDER", "new-jboss-logging");
+
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--optimized", "--http-enabled=true", "--hostname-strict=false");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.spi-events-listener--provider"));
+    }
+
+    @Test
+    public void spiAmbiguousSpiAutoBuild() {
+        putEnvVar("KC_SPI_EVENTS_LISTENER_PROVIDER", "jboss-logging");
+        NonRunningPicocli nonRunningPicocli = build(out -> assertThat(out, containsString("The following SPI options")), "build", "--db=dev-file");
+
+        Environment.setRebuildCheck(); // auto-build
+        putEnvVar("KC_SPI_EVENTS_LISTENER_PROVIDER", "new-jboss-logging");
+        nonRunningPicocli = pseudoLaunch("start", "--http-enabled=true", "--hostname-strict=false");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertTrue(nonRunningPicocli.reaug);
+        assertThat(nonRunningPicocli.getOutString(), containsString("The following SPI options"));
     }
 }

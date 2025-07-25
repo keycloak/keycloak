@@ -45,7 +45,7 @@ export const TableToolbar = ({
 
   return (
     <>
-      <Toolbar>
+      <Toolbar data-testid="table-toolbar">
         <ToolbarContent>
           {inputGroupName && (
             <ToolbarItem>

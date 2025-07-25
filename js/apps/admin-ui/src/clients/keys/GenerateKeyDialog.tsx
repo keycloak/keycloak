@@ -1,23 +1,20 @@
 import type KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
-import { HelpItem, SelectControl } from "@keycloak/keycloak-ui-shared";
+import {
+  HelpItem,
+  NumberControl,
+  SelectControl,
+  FileUploadControl,
+} from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   ButtonVariant,
-  FileUpload,
   Form,
-  FormGroup,
   Modal,
   ModalVariant,
   Text,
   TextContent,
 } from "@patternfly/react-core";
-import { useState } from "react";
-import {
-  Controller,
-  FormProvider,
-  useForm,
-  useFormContext,
-} from "react-hook-form";
+import { FormProvider, useForm, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { StoreSettings } from "./StoreSettings";
@@ -55,9 +52,7 @@ export const KeyForm = ({
 }: KeyFormProps) => {
   const { t } = useTranslation();
 
-  const [filename, setFilename] = useState<string>();
-
-  const { control, watch } = useFormContext<FormFields>();
+  const { watch } = useFormContext<FormFields>();
   const format = watch("format");
 
   const { cryptoInfo } = useServerInfo();
@@ -65,6 +60,7 @@ export const KeyForm = ({
     ...(cryptoInfo?.supportedKeystoreTypes ?? []),
     ...(hasPem ? [CERT_PEM] : []),
   ];
+  const keySizes = ["4096", "3072", "2048"];
 
   return (
     <Form className="pf-v5-u-pt-lg">
@@ -79,7 +75,7 @@ export const KeyForm = ({
         options={supportedKeystoreTypes}
       />
       {useFile && (
-        <FormGroup
+        <FileUploadControl
           label={t("importFile")}
           labelIcon={
             <HelpItem
@@ -87,29 +83,38 @@ export const KeyForm = ({
               fieldLabelId="importFile"
             />
           }
-          fieldId="importFile"
-        >
-          <Controller
-            name="file"
-            defaultValue=""
-            control={control}
-            render={({ field }) => (
-              <FileUpload
-                id="importFile"
-                value={field.value}
-                filename={filename}
-                browseButtonText={t("browse")}
-                onTextChange={(value) => {
-                  field.onChange(value);
-                }}
-                onFileInputChange={(_, file) => setFilename(file.name)}
-              />
-            )}
-          />
-        </FormGroup>
+          rules={{
+            required: t("required"),
+          }}
+          name="file"
+          id="importFile"
+        />
       )}
       {format !== CERT_PEM && (
         <StoreSettings hidePassword={useFile} isSaml={isSaml} />
+      )}
+      {!useFile && (
+        <>
+          <SelectControl
+            name="keySize"
+            label={t("keySize")}
+            labelIcon={t("keySizeHelp")}
+            controller={{
+              defaultValue: keySizes[0],
+            }}
+            menuAppendTo="parent"
+            options={keySizes}
+          />
+          <NumberControl
+            name="validity"
+            label={t("validity")}
+            labelIcon={t("validityHelp")}
+            controller={{
+              defaultValue: 3,
+              rules: { required: t("required"), min: 1, max: 10 },
+            }}
+          />
+        </>
       )}
     </Form>
   );
@@ -143,8 +148,8 @@ export const GenerateKeyDialog = ({
           key="confirm"
           data-testid="confirm"
           isDisabled={!isValid}
-          onClick={() => {
-            handleSubmit((config) => {
+          onClick={async () => {
+            await handleSubmit((config) => {
               save(config);
               toggleDialog();
             })();

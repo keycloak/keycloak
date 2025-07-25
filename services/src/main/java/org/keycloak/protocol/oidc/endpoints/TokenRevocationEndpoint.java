@@ -17,7 +17,10 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.OPTIONS;
@@ -37,6 +40,7 @@ import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
@@ -100,6 +104,9 @@ public class TokenRevocationEndpoint {
         try {
             session.clientPolicy().triggerOnEvent(new TokenRevokeContext(formParams));
         } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
             event.error(cpe.getError());
             throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
         }
@@ -124,6 +131,9 @@ public class TokenRevocationEndpoint {
         try {
             session.clientPolicy().triggerOnEvent(new TokenRevokeResponseContext(formParams));
         } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
             event.error(cpe.getError());
             throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
         }
@@ -256,6 +266,9 @@ public class TokenRevocationEndpoint {
             AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
             if (clientSession != null) {
                 TokenManager.dettachClientSession(clientSession);
+
+                revokeTokenExchangeSession(userSession);
+
                 // TODO: Might need optimization to prevent loading client sessions from cache in getAuthenticatedClientSessions()
                 if (userSession.getAuthenticatedClientSessions().isEmpty()) {
                     session.sessions().removeUserSession(realm, userSession);
@@ -269,5 +282,29 @@ public class TokenRevocationEndpoint {
         int currentTime = Time.currentTime();
         long lifespanInSecs = Math.max(token.getExp() - currentTime + 1, 10);
         singleUseStore.put(token.getId() + SingleUseObjectProvider.REVOKED_KEY, lifespanInSecs, Collections.emptyMap());
+        revokeTokenExchangeSession();
+    }
+
+    private void revokeTokenExchangeSession() {
+        if (token.getSessionId() != null) {
+            UserSessionModel userSession = session.sessions().getUserSession(realm, token.getSessionId());
+            if (userSession != null) {
+                revokeTokenExchangeSession(userSession);
+            }
+        }
+    }
+
+    private void revokeTokenExchangeSession(UserSessionModel userSession) {
+        Map<String, AuthenticatedClientSessionModel> clientSessionModelMap = userSession.getAuthenticatedClientSessions();
+        List<String> revokedClients = new ArrayList<>();
+        clientSessionModelMap.forEach((key, clientSessionModel) -> {
+            if (clientSessionModel.getNote(Constants.TOKEN_EXCHANGE_SUBJECT_CLIENT + token.getIssuedFor()) != null) {
+                revokedClients.add(clientSessionModel.getClient().getClientId());
+                TokenManager.dettachClientSession(clientSessionModel);
+            }
+        });
+        if (!revokedClients.isEmpty()) {
+            event.detail(Details.TOKEN_EXCHANGE_REVOKED_CLIENTS, String.join(",", revokedClients));
+        }
     }
 }

@@ -24,6 +24,7 @@ import {
 import { getRuleValue } from "../../utils/getRuleValue";
 import { FormLabel } from "../FormLabel";
 import {
+  OptionType,
   SelectControlOption,
   SelectControlProps,
   SelectVariant,
@@ -43,6 +44,7 @@ export const TypeaheadSelectControl = <
   name,
   label,
   options,
+  selectedOptions = [],
   controller,
   labelIcon,
   placeholderText,
@@ -57,26 +59,49 @@ export const TypeaheadSelectControl = <
   const [open, setOpen] = useState(false);
   const [filterValue, setFilterValue] = useState("");
   const [focusedItemIndex, setFocusedItemIndex] = useState<number>(0);
+  const [selectedOptionsState, setSelectedOptions] = useState<
+    SelectControlOption[]
+  >([]);
   const textInputRef = useRef<HTMLInputElement>();
   const required = getRuleValue(controller.rules?.required) === true;
+  const isTypeaheadMulti = variant === SelectVariant.typeaheadMulti;
 
-  const filteredOptions = options.filter((option) =>
+  const combinedOptions = useMemo(
+    () =>
+      [
+        ...options.filter(
+          (o) => !selectedOptions.map((o) => getValue(o)).includes(getValue(o)),
+        ),
+        ...selectedOptions,
+      ] as OptionType,
+    [selectedOptions, options],
+  );
+
+  const filteredOptions = combinedOptions.filter((option) =>
     getValue(option).toLowerCase().startsWith(filterValue.toLowerCase()),
   );
 
-  const convert = useMemo(
-    () =>
-      filteredOptions.map((option, index) => (
-        <SelectOption
-          key={key(option)}
-          value={key(option)}
-          isFocused={focusedItemIndex === index}
-        >
-          {getValue(option)}
-        </SelectOption>
-      )),
-    [focusedItemIndex, filteredOptions],
-  );
+  const updateValue = (
+    option: string | string[],
+    field: ControllerRenderProps<FieldValues, string>,
+  ) => {
+    if (field.value.includes(option)) {
+      field.onChange(field.value.filter((item: string) => item !== option));
+      if (isSelectBasedOptions(options)) {
+        setSelectedOptions(
+          selectedOptionsState.filter((item) => item.key !== option),
+        );
+      }
+    } else {
+      field.onChange([...field.value, option]);
+      if (isSelectBasedOptions(combinedOptions)) {
+        setSelectedOptions([
+          ...selectedOptionsState,
+          combinedOptions.find((o) => o.key === option)!,
+        ]);
+      }
+    }
+  };
 
   const onInputKeyDown = (
     event: React.KeyboardEvent<HTMLDivElement>,
@@ -89,17 +114,14 @@ export const TypeaheadSelectControl = <
       case "Enter": {
         event.preventDefault();
 
-        if (variant !== SelectVariant.typeaheadMulti) {
+        if (!isTypeaheadMulti) {
           setFilterValue(getValue(focusedItem));
         } else {
           setFilterValue("");
         }
 
-        field.onChange(
-          Array.isArray(field.value)
-            ? [...field.value, key(focusedItem)]
-            : key(focusedItem),
-        );
+        updateValue(key(focusedItem), field);
+
         setOpen(false);
         setFocusedItemIndex(0);
 
@@ -147,6 +169,7 @@ export const TypeaheadSelectControl = <
 
   return (
     <FormLabel
+      id={id}
       name={name}
       label={label}
       isRequired={required}
@@ -162,8 +185,8 @@ export const TypeaheadSelectControl = <
             {...rest}
             onOpenChange={() => setOpen(false)}
             selected={
-              isSelectBasedOptions(options)
-                ? options
+              isSelectBasedOptions(combinedOptions)
+                ? combinedOptions
                     .filter((o) =>
                       Array.isArray(field.value)
                         ? field.value.includes(o.key)
@@ -176,7 +199,7 @@ export const TypeaheadSelectControl = <
             toggle={(ref) => (
               <MenuToggle
                 ref={ref}
-                id={id || name.slice(name.lastIndexOf(".") + 1)}
+                id={id || name}
                 variant="typeahead"
                 onClick={() => {
                   setOpen(!open);
@@ -191,8 +214,8 @@ export const TypeaheadSelectControl = <
                     placeholder={placeholderText}
                     value={
                       variant === SelectVariant.typeahead && field.value
-                        ? isSelectBasedOptions(options)
-                          ? options.find(
+                        ? isSelectBasedOptions(combinedOptions)
+                          ? combinedOptions.find(
                               (o) =>
                                 o.key ===
                                 (Array.isArray(field.value)
@@ -230,9 +253,11 @@ export const TypeaheadSelectControl = <
                                   );
                                 }}
                               >
-                                {isSelectBasedOptions(options)
-                                  ? options.find((o) => selection === o.key)
-                                      ?.value
+                                {isSelectBasedOptions(combinedOptions)
+                                  ? [
+                                      ...combinedOptions,
+                                      ...selectedOptionsState,
+                                    ].find((o) => selection === o.key)?.value
                                   : getValue(selection)}
                               </Chip>
                             ),
@@ -246,7 +271,7 @@ export const TypeaheadSelectControl = <
                         variant="plain"
                         onClick={() => {
                           setFilterValue("");
-                          field.onChange("");
+                          field.onChange(isTypeaheadMulti ? [] : "");
                           textInputRef?.current?.focus();
                         }}
                         aria-label="Clear input value"
@@ -261,17 +286,9 @@ export const TypeaheadSelectControl = <
             onSelect={(event, v) => {
               event?.stopPropagation();
               const option = v?.toString();
-              if (
-                variant === SelectVariant.typeaheadMulti &&
-                Array.isArray(field.value)
-              ) {
-                if (field.value.includes(option)) {
-                  field.onChange(
-                    field.value.filter((item: string) => item !== option),
-                  );
-                } else {
-                  field.onChange([...field.value, option]);
-                }
+              if (isTypeaheadMulti && Array.isArray(field.value)) {
+                setFilterValue("");
+                updateValue(option || "", field);
               } else {
                 field.onChange(Array.isArray(field.value) ? [option] : option);
                 setOpen(false);
@@ -279,7 +296,18 @@ export const TypeaheadSelectControl = <
             }}
             isOpen={open}
           >
-            <SelectList>{convert}</SelectList>
+            <SelectList>
+              {filteredOptions.map((option, index) => (
+                <SelectOption
+                  key={key(option)}
+                  value={key(option)}
+                  isFocused={focusedItemIndex === index}
+                  isActive={field.value.includes(getValue(option))}
+                >
+                  {getValue(option)}
+                </SelectOption>
+              ))}
+            </SelectList>
           </Select>
         )}
       />

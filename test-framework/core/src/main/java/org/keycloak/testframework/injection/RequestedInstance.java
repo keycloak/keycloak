@@ -1,12 +1,15 @@
 package org.keycloak.testframework.injection;
 
 import java.lang.annotation.Annotation;
+import java.util.HashSet;
+import java.util.Set;
 
 public class RequestedInstance<T, A extends Annotation> {
 
     private final int instanceId;
     private final Supplier<T, A> supplier;
     private final A annotation;
+    private final Set<InstanceContext<?, ?>> dependencies = new HashSet<>();
     private final Class<? extends T> valueType;
     private final LifeCycle lifeCycle;
     private final String ref;
@@ -44,4 +47,11 @@ public class RequestedInstance<T, A extends Annotation> {
         return ref;
     }
 
+    public void registerDependency(InstanceContext<?, ?> instanceContext) {
+        dependencies.add(instanceContext);
+    }
+
+    public Set<InstanceContext<?, ?>> getDependencies() {
+        return dependencies;
+    }
 }

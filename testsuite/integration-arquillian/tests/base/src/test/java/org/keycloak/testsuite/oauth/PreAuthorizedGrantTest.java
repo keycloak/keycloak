@@ -36,7 +36,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.UserBuilder;
 
 import java.nio.charset.StandardCharsets;
@@ -59,7 +60,7 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
     public void testPreAuthorizedGrant() throws Exception {
         String userSessionId = getUserSession();
         String preAuthorizedCode = getTestingClient().testing().getPreAuthorizedCode(TEST_REALM_NAME, userSessionId, "test-app", Time.currentTime() + 30);
-        OAuthClient.AccessTokenResponse accessTokenResponse = postCode(preAuthorizedCode);
+        AccessTokenResponse accessTokenResponse = postCode(preAuthorizedCode);
 
         assertEquals("An access token should have successfully been returned.", HttpStatus.SC_OK, accessTokenResponse.getStatusCode());
         assertEquals("The correct session should have been used for the pre-authorized code.", userSessionId, accessTokenResponse.getSessionState());
@@ -69,7 +70,7 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
     public void testPreAuthorizedGrantExpired() throws Exception {
         String userSessionId = getUserSession();
         String preAuthorizedCode = getTestingClient().testing().getPreAuthorizedCode(TEST_REALM_NAME, userSessionId, "test-app", Time.currentTime() - 30);
-        OAuthClient.AccessTokenResponse accessTokenResponse = postCode(preAuthorizedCode);
+        AccessTokenResponse accessTokenResponse = postCode(preAuthorizedCode);
         assertEquals("An expired code should not get an access token.", HttpStatus.SC_BAD_REQUEST, accessTokenResponse.getStatusCode());
     }
 
@@ -77,7 +78,7 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
     public void testPreAuthorizedGrantInvalidCode() throws Exception {
         // assure that a session exists.
         getUserSession();
-        OAuthClient.AccessTokenResponse accessTokenResponse = postCode("invalid-code");
+        AccessTokenResponse accessTokenResponse = postCode("invalid-code");
         assertEquals("An invalid code should not get an access token.", HttpStatus.SC_BAD_REQUEST, accessTokenResponse.getStatusCode());
     }
 
@@ -91,11 +92,11 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
         UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
         post.setEntity(formEntity);
 
-        OAuthClient.AccessTokenResponse accessTokenResponse = new OAuthClient.AccessTokenResponse(httpClient.execute(post));
+        AccessTokenResponse accessTokenResponse = new AccessTokenResponse(httpClient.execute(post));
         assertEquals("If no code is provided, no access token should be returned.", HttpStatus.SC_BAD_REQUEST, accessTokenResponse.getStatusCode());
     }
 
-    private OAuthClient.AccessTokenResponse postCode(String preAuthorizedCode) throws Exception {
+    private AccessTokenResponse postCode(String preAuthorizedCode) throws Exception {
         HttpPost post = new HttpPost(getTokenEndpoint());
         List<NameValuePair> parameters = new LinkedList<>();
         parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE));
@@ -103,7 +104,7 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
         UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
         post.setEntity(formEntity);
 
-        return new OAuthClient.AccessTokenResponse(httpClient.execute(post));
+        return new AccessTokenResponse(httpClient.execute(post));
     }
 
     private String getTokenEndpoint() {
@@ -115,7 +116,7 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
 
     private String getUserSession() {
         // create a session
-        OAuthClient.AuthorizationEndpointResponse authorizationEndpointResponse = oauth.doLogin("john", "password");
+        AuthorizationEndpointResponse authorizationEndpointResponse = oauth.doLogin("john", "password");
         return authorizationEndpointResponse.getSessionState();
     }
 

@@ -31,7 +31,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.ClientManager;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.openqa.selenium.By;
 
 import jakarta.ws.rs.core.UriBuilder;
@@ -53,9 +53,8 @@ public class AuthorizationTokenResponseModeTest extends AbstractTestRealmKeycloa
     @Test
     public void authorizationRequestQueryJWTResponseMode() throws Exception {
         oauth.responseMode(OIDCResponseMode.QUERY_JWT.value());
-        oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
 
-        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response = oauth.loginForm().state("OpenIdConnect.AuthenticationProperties=2302984sdlk").doLogin("test-user@localhost", "password");
 
         assertTrue(response.isRedirected());
         AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(response.getResponse());
@@ -72,9 +71,8 @@ public class AuthorizationTokenResponseModeTest extends AbstractTestRealmKeycloa
     public void authorizationRequestJWTResponseMode() throws Exception {
         // jwt response_mode. It should fallback to query.jwt
         oauth.responseMode("jwt");
-        oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
 
-        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response = oauth.loginForm().state("OpenIdConnect.AuthenticationProperties=2302984sdlk").doLogin("test-user@localhost", "password");
 
         assertTrue(response.isRedirected());
         AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(response.getResponse());
@@ -96,9 +94,8 @@ public class AuthorizationTokenResponseModeTest extends AbstractTestRealmKeycloa
     @Test
     public void authorizationRequestFragmentJWTResponseMode() throws Exception {
         oauth.responseMode(OIDCResponseMode.FRAGMENT_JWT.value());
-        oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
 
-        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response = oauth.loginForm().state("OpenIdConnect.AuthenticationProperties=2302984sdlk").doLogin("test-user@localhost", "password");
 
         assertTrue(response.isRedirected());
         AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(response.getResponse());
@@ -118,8 +115,7 @@ public class AuthorizationTokenResponseModeTest extends AbstractTestRealmKeycloa
     @Test
     public void authorizationRequestFormPostJWTResponseMode() throws IOException {
         oauth.responseMode(OIDCResponseMode.FORM_POST_JWT.value());
-        oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
-        oauth.doLoginGrant("test-user@localhost", "password");
+        oauth.loginForm().state("OpenIdConnect.AuthenticationProperties=2302984sdlk").doLogin("test-user@localhost", "password");
 
         String sources = driver.getPageSource();
         System.out.println(sources);
@@ -142,10 +138,8 @@ public class AuthorizationTokenResponseModeTest extends AbstractTestRealmKeycloa
         // jwt response_mode. It should fallback to fragment.jwt when its hybrid flow
         oauth.responseMode("jwt");
         oauth.responseType("code id_token");
-        oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
-        oauth.nonce("123456");
 
-        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response = oauth.loginForm().state("OpenIdConnect.AuthenticationProperties=2302984sdlk").nonce("123456").doLogin("test-user@localhost", "password");
 
         assertTrue(response.isRedirected());
         AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(response.getResponse());
@@ -173,10 +167,8 @@ public class AuthorizationTokenResponseModeTest extends AbstractTestRealmKeycloa
         // jwt response_mode. It should fallback to fragment.jwt when its hybrid flow
         oauth.responseMode("jwt");
         oauth.responseType("token id_token");
-        oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
-        oauth.nonce("123456");
 
-        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response = oauth.loginForm().state("OpenIdConnect.AuthenticationProperties=2302984sdlk").nonce("123456").doLogin("test-user@localhost", "password");
 
         assertTrue(response.isRedirected());
         AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(response.getResponse());
@@ -206,12 +198,9 @@ public class AuthorizationTokenResponseModeTest extends AbstractTestRealmKeycloa
         ClientManager.realm(adminClient.realm("test")).clientId("test-app").implicitFlow(true);
         oauth.responseMode("query.jwt");
         oauth.responseType("code id_token");
-        oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
-        oauth.nonce("123456");
-        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
-        driver.navigate().to(b.build().toURL());
+        oauth.loginForm().state("OpenIdConnect.AuthenticationProperties=2302984sdlk").nonce("123456").open();
 
-        OAuthClient.AuthorizationEndpointResponse errorResponse = new OAuthClient.AuthorizationEndpointResponse(oauth);
+        AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
         AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(errorResponse.getResponse());
         Assert.assertEquals(OAuthErrorException.INVALID_REQUEST, responseToken.getOtherClaims().get("error"));
         Assert.assertEquals("Response_mode 'query.jwt' is allowed only when the authorization response token is encrypted", responseToken.getOtherClaims().get("error_description"));
@@ -224,12 +213,9 @@ public class AuthorizationTokenResponseModeTest extends AbstractTestRealmKeycloa
         ClientManager.realm(adminClient.realm("test")).clientId("test-app").implicitFlow(true);
         oauth.responseMode("query.jwt");
         oauth.responseType("code id_token");
-        oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
-        oauth.nonce("123456");
-        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
-        driver.navigate().to(b.build().toURL());
+        oauth.loginForm().state("OpenIdConnect.AuthenticationProperties=2302984sdlk").nonce("123456").open();
 
-        OAuthClient.AuthorizationEndpointResponse errorResponse = new OAuthClient.AuthorizationEndpointResponse(oauth);
+        AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
         AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(errorResponse.getResponse());
 
         assertNotNull(responseToken.getIssuer());

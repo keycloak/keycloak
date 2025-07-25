@@ -47,7 +47,7 @@ import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.KerberosRule;
 import org.keycloak.testsuite.KerberosEmbeddedServer;
 import org.keycloak.testsuite.util.LDAPTestUtils;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.TestAppHelper;
 
 import static org.keycloak.common.constants.KerberosConstants.KERBEROS_PRINCIPAL;
@@ -92,7 +92,7 @@ public class KerberosLdapTest extends AbstractKerberosSingleRealmTest {
         ContainerAssume.assumeNotAuthServerQuarkus();
 
         try {
-            OAuthClient.AccessTokenResponse accessTokenResponse = assertSuccessfulSpnegoLogin("hnelson", "hnelson", "secret");
+            AccessTokenResponse accessTokenResponse = assertSuccessfulSpnegoLogin("hnelson", "hnelson", "secret");
 
             // Assert user was imported
             assertUser("hnelson", "hnelson@keycloak.org", "Horatio", "Nelson", "hnelson@KEYCLOAK.ORG", false);

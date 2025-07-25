@@ -36,32 +36,30 @@ Since this sub-flow is marked as _alternative_, it will not be executed if the *
 
 The first execution is the *Username Password Form*, an authentication type that renders the username and password page. It is marked as _required_, so the user must enter a valid username and password.
 
-The second execution is the *Browser - Conditional OTP* sub-flow. This sub-flow is _conditional_ and executes depending on the result of the *Condition - User Configured* execution. If the result is true, {project_name} loads the executions for this sub-flow and processes them.
+The second execution is the *Browser - Conditional 2FA* sub-flow. This sub-flow is _conditional_ and executes depending on the result of the *Condition - User Configured* execution. If the result is true, {project_name} loads the executions for this sub-flow and processes them.
 
-The next execution is the *Condition - User Configured* authentication. This authentication checks if {project_name} has configured other executions in the flow for the user. The *Browser - Conditional OTP* sub-flow executes only when the user has a configured OTP credential.
+The next execution is the *Condition - User Configured* authentication. This authentication checks if {project_name} has configured other executions in the flow for the user. The *Browser - Conditional 2FA* sub-flow executes only when the user has a configured OTP credential.
 
-The final execution is the *OTP Form*. {project_name} marks this execution as _required_ but it runs only when the user has an OTP credential set up because of the setup in the _conditional_ sub-flow. If not, the user does not see an OTP form.
+The final execution is the *OTP Form*. {project_name} marks this execution as _alternative_, but it runs only when the user has an OTP credential set up because of the setup in the _conditional_ sub-flow. If the OTP credential is not set up, the user does not see an OTP form.
 
-===== Requirement
-A set of radio buttons that control the execution of an action executes.
+The default *browser* flow contains two more executions inside the *Browser - Conditional 2FA*, *WebAuthn Authenticator* and *Recovery Authentication Code Form*. These executions are _Disabled_ by default and they are the other 2FA methods that can be added to the flow. Change the requirement from _Disabled_ to _Alternative_ to make them available if the respective credential has been configured for the user. If the user has configured all alternative credential types, the credential with the highest priority is displayed by default. However, the *Try Another Way* option will appear so that the user has the alternative methods to log in.
 
 [[_execution-requirements]]
-====== Required
+===== Requirement
+A drop-down menu that controls the execution of an action.
 
+Required::
 All _Required_ elements in the flow must be successfully sequentially executed. The flow terminates if a required element fails.
 
-====== Alternative
-
+Alternative::
 Only a single element must successfully execute for the flow to evaluate as successful. Because the _Required_ flow elements are sufficient to mark a flow as successful, any _Alternative_ flow element within a flow containing _Required_ flow elements will not execute.
 
-====== Disabled
-
+Disabled::
 The element does not count to mark a flow as successful.
 
-====== Conditional
-
+Conditional::
 This requirement type is only set on sub-flows.
-
++
 * A _Conditional_ sub-flow contains executions. These executions must evaluate to logical statements.
 * If all executions evaluate as _true_, the _Conditional_ sub-flow acts as _Required_.
 * If any executions evaluate as _false_, the _Conditional_ sub-flow acts as _Disabled_.

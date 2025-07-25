@@ -1,0 +1,58 @@
+{
+    "allowRemoteResourceManagement": true,
+    "policyEnforcementMode": "ENFORCING",
+    "resources": [
+        {
+            "name": "Default Resource",
+            "type": "urn:default:resources:default",
+            "ownerManagedAccess": false,
+            "attributes": {},
+            "uris": [
+                "/*"
+            ]
+        },
+        {
+            "name": "default",
+            "type": "default",
+            "ownerManagedAccess": true,
+            "displayName": "default",
+            "attributes": {},
+            "uris": [
+                "/default"
+            ]
+        }
+    ],
+    "policies": [
+        {
+            "name": "Default Policy",
+            "description": "A policy that grants access only for users within this realm",
+            "type": "script-scripts/default-policy.js",
+            "logic": "POSITIVE",
+            "decisionStrategy": "AFFIRMATIVE"
+        },
+        {
+            "name": "Default Permission",
+            "description": "A permission that applies to the default resource type",
+            "type": "resource",
+            "logic": "POSITIVE",
+            "decisionStrategy": "UNANIMOUS",
+            "config": {
+                "defaultResourceType": "urn:default:resources:default",
+                "applyPolicies": "[\"Default Policy\"]"
+            }
+        },
+        {
+            "name": "default-permission",
+            "description": "default-permission",
+            "type": "resource",
+            "logic": "POSITIVE",
+            "decisionStrategy": "UNANIMOUS",
+            "config": {
+                "resources": "[\"default\"]",
+                "applyPolicies": "[\"Default Policy\"]"
+            }
+        }
+    ],
+    "scopes": [],
+    "decisionStrategy": "UNANIMOUS"
+}

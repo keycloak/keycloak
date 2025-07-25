@@ -74,7 +74,7 @@ import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.CredentialBuilder;
-import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
@@ -436,6 +436,7 @@ public class RealmTest extends AbstractAdminTest {
     public void smtpPasswordSecret() {
         RealmRepresentation rep = RealmBuilder.create().testEventListener().testMail().build();
         rep.setRealm("realm-with-smtp");
+        rep.getSmtpServer().put("auth", "true");
         rep.getSmtpServer().put("user", "user");
         rep.getSmtpServer().put("password", "secret");
 
@@ -461,6 +462,19 @@ public class RealmTest extends AbstractAdminTest {
         assertEquals("secret", internalRep.getSmtpServer().get("password"));
 
         RealmRepresentation realm = adminClient.realms().findAll().stream().filter(r -> r.getRealm().equals("realm-with-smtp")).findFirst().get();
+        assertEquals(ComponentRepresentation.SECRET_VALUE, realm.getSmtpServer().get("password"));
+
+        // updating setting the secret value with asterisks
+        rep.getSmtpServer().put("password", ComponentRepresentation.SECRET_VALUE);
+        adminClient.realm("realm-with-smtp").update(rep);
+
+        event = testingClient.testing().pollAdminEvent();
+        assertTrue(event.getRepresentation().contains(ComponentRepresentation.SECRET_VALUE));
+
+        internalRep = serverClient.fetch(RunHelpers.internalRealm());
+        assertEquals("secret", internalRep.getSmtpServer().get("password"));
+
+        realm = adminClient.realm("realm-with-smtp").toRepresentation();
         assertEquals(ComponentRepresentation.SECRET_VALUE, realm.getSmtpServer().get("password"));
     }
 
@@ -1017,7 +1031,7 @@ public class RealmTest extends AbstractAdminTest {
         realm.users().get(userId).resetPassword(CredentialBuilder.create().password("password").build());
         assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResetPasswordPath(userId), ResourceType.USER);
 
-        oauth.doLogin("user", "password");
+        oauth.doPasswordGrantRequest("user", "password");
 
         GlobalRequestResult globalRequestResult = realm.logoutAll();
         assertAdminEvents.assertEvent(realmId, OperationType.ACTION, "logout-all", globalRequestResult, ResourceType.REALM);
@@ -1034,7 +1048,7 @@ public class RealmTest extends AbstractAdminTest {
         setupTestAppAndUser();
 
         oauth.doLogin("testuser", "password");
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), "secret");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
         assertEquals(200, tokenResponse.getStatusCode());
 
         EventRepresentation event = events.poll();
@@ -1050,7 +1064,7 @@ public class RealmTest extends AbstractAdminTest {
             assertAdminEvents.assertEmpty();
         }
 
-        tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "secret");
+        tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
         assertEquals(400, tokenResponse.getStatusCode());
         assertEquals("Session not active", tokenResponse.getErrorDescription());
     }
@@ -1065,8 +1079,7 @@ public class RealmTest extends AbstractAdminTest {
         System.out.println(sessionStats.size());
 
         oauth.doLogin("testuser", "password");
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE),
-            "secret");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
         assertEquals(200, tokenResponse.getStatusCode());
 
         sessionStats = realm.getClientSessionStats();
@@ -1153,6 +1166,7 @@ public class RealmTest extends AbstractAdminTest {
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientResourcePath(clientDbId), client, ResourceType.CLIENT);
 
         oauth.realm(REALM_NAME);
+        oauth.client("test-app", "secret");
         oauth.redirectUri(redirectUri);
 
         UserRepresentation userRep = UserBuilder.create().username("testuser").build();

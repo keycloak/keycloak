@@ -11,16 +11,6 @@ import java.lang.reflect.Constructor;
 public class PageSupplier  implements Supplier<AbstractPage, InjectPage> {
 
     @Override
-    public Class<InjectPage> getAnnotationClass() {
-        return InjectPage.class;
-    }
-
-    @Override
-    public Class<AbstractPage> getValueType() {
-        return AbstractPage.class;
-    }
-
-    @Override
     public AbstractPage getValue(InstanceContext<AbstractPage, InjectPage> instanceContext) {
         WebDriver webDriver = instanceContext.getDependency(WebDriver.class);
         return createPage(webDriver, instanceContext.getRequestedValueType());

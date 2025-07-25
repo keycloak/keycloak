@@ -57,6 +57,10 @@ export const ExtendedNonDiscoverySettings = () => {
         />
         <SwitchField field="config.disableUserInfo" label="disableUserInfo" />
         <SwitchField field="config.disableNonce" label="disableNonce" />
+        <SwitchField
+          field="config.disableTypeClaimCheck"
+          label="disableTypeClaimCheck"
+        />
         <TextField field="config.defaultScope" label="scopes" />
         <FormGroupField label="prompt">
           <Controller
@@ -92,6 +96,10 @@ export const ExtendedNonDiscoverySettings = () => {
         <SwitchField
           field="config.acceptsPromptNoneForwardFromClient"
           label="acceptsPromptNone"
+        />
+        <SwitchField
+          field="config.requiresShortStateParameter"
+          label="requiresShortStateParameter"
         />
         <FormGroup
           label={t("allowedClockSkew")}

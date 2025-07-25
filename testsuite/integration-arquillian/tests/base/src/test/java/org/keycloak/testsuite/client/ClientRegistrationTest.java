@@ -45,10 +45,12 @@ import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.util.JsonSerialization;
 
@@ -155,7 +157,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     public void registerClientInMasterRealm() throws Exception {
         ClientRegistration masterReg = ClientRegistration.create().url(suiteContext.getAuthServerInfo().getContextRoot() + "/auth", "master").build();
 
-        String token = oauth.doGrantAccessTokenRequest("master", "admin", "admin", null, Constants.ADMIN_CLI_CLIENT_ID, null).getAccessToken();
+        String token = oauth.realm("master").client(Constants.ADMIN_CLI_CLIENT_ID).doPasswordGrantRequest( "admin", "admin").getAccessToken();
         masterReg.auth(Auth.token(token));
 
         ClientRepresentation client = new ClientRepresentation();
@@ -208,9 +210,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
 
         oauth.clientId("myclient");
         String bearerToken = getToken("myclient", "password", "manage-clients", "password");
-        try (CloseableHttpResponse response = oauth.doTokenRevoke(bearerToken, "access_token", "password")) {
-            assertEquals(Response.Status.OK.getStatusCode(), response.getStatusLine().getStatusCode());
-        }
+        assertTrue(oauth.tokenRevocationRequest(bearerToken).accessToken().send().isSuccess());
 
         try {
             reg.auth(Auth.token(bearerToken));
@@ -850,5 +850,40 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
 
         //controls the number of uses of the initial access token
         assertEquals(initialTokenCounts, createdCount.get());
+    }
+
+    @Test
+    public void registerWithLightweightAccessTokenAndTransientSession() throws Exception {
+
+        String TEST_ADMIN_CLIENT = "test-admin-client";
+        ClientRepresentation testAdminClient = new ClientRepresentation();
+        testAdminClient.setClientId(TEST_ADMIN_CLIENT);
+        testAdminClient.setSecret(TEST_ADMIN_CLIENT);
+        testAdminClient.setServiceAccountsEnabled(true);
+        testAdminClient.setAttributes(new HashMap<>());
+        testAdminClient.getAttributes().put(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED, Boolean.TRUE.toString());
+
+        Response response = adminClient.realm("master").clients().create(testAdminClient);
+        testAdminClient = adminClient.realm("master").clients().get( ApiUtil.getCreatedId(response)).toRepresentation();
+
+        UserRepresentation serviceAccountUser = adminClient.realm("master").clients().get(testAdminClient.getId()).getServiceAccountUser();
+        RoleRepresentation adminRole =  adminClient.realm("master").roles().get("admin").toRepresentation();
+        adminClient.realm("master").users().get(serviceAccountUser.getId()).roles().realmLevel().add(List.of(adminRole));
+
+        oauth.client(TEST_ADMIN_CLIENT, TEST_ADMIN_CLIENT);
+        oauth.realm("master");
+        String token = oauth.doClientCredentialsGrantAccessTokenRequest().getAccessToken();
+        ClientRegistration masterReg = ClientRegistration.create().url(suiteContext.getAuthServerInfo().getContextRoot() + "/auth", "master").build();
+        masterReg.auth(Auth.token(token));
+
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId(CLIENT_ID);
+        client.setSecret(CLIENT_SECRET);
+
+        ClientRepresentation createdClient = masterReg.create(client);
+        assertNotNull(createdClient);
+
+        adminClient.realm("master").clients().get(testAdminClient.getId()).remove();
+        adminClient.realm("master").clients().get(createdClient.getId()).remove();
     }
 }

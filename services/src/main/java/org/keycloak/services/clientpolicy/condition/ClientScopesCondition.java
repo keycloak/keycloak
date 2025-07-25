@@ -28,6 +28,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.grants.ciba.channel.CIBAAuthenticationRequest;
 import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.context.BackchannelAuthenticationRequestContext;
@@ -40,6 +41,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 import org.keycloak.services.clientpolicy.context.ServiceAccountTokenRequestContext;
 import org.keycloak.services.clientpolicy.context.ServiceAccountTokenResponseContext;
+import org.keycloak.services.clientpolicy.context.TokenExchangeRequestContext;
 import org.keycloak.services.clientpolicy.context.TokenRequestContext;
 import org.keycloak.services.clientpolicy.context.TokenResponseContext;
 
@@ -113,6 +115,9 @@ public class ClientScopesCondition extends AbstractClientPolicyConditionProvider
             case BACKCHANNEL_TOKEN_RESPONSE:
                 if (isScopeMatched(((BackchannelTokenResponseContext)context).getParsedRequest())) return ClientPolicyVote.YES;
                 return ClientPolicyVote.NO;
+            case TOKEN_EXCHANGE_REQUEST:
+                if (isScopeMatched(((TokenExchangeRequestContext) context).getTokenExchangeContext())) return ClientPolicyVote.YES;
+                return ClientPolicyVote.NO;
             default:
                 return ClientPolicyVote.ABSTAIN;
         }
@@ -133,6 +138,11 @@ public class ClientScopesCondition extends AbstractClientPolicyConditionProvider
         return isScopeMatched(request.getScope(), session.getContext().getRealm().getClientByClientId(request.getClient().getClientId()));
     }
 
+    private boolean isScopeMatched(TokenExchangeContext context) {
+        if (context == null) return false;
+        return isScopeMatched(context.getParams().getScope(), context.getClient());
+    }
+
     private boolean isScopeMatched(String explicitScopes, ClientModel client) {
         if (explicitScopes == null) explicitScopes = "";
         Collection<String> explicitSpecifiedScopes = new HashSet<>(Arrays.asList(explicitScopes.split(" ")));
@@ -148,22 +158,28 @@ public class ClientScopesCondition extends AbstractClientPolicyConditionProvider
             expectedScopes.forEach(i -> logger.tracev("expected scope = {0}", i));
         }
 
-        boolean isDefaultScope = ClientScopesConditionFactory.DEFAULT.equals(configuration.getType());
+        switch (configuration.getType()) {
+            case ClientScopesConditionFactory.DEFAULT:
+                expectedScopes.retainAll(defaultScopes);
+                return !expectedScopes.isEmpty();
 
-        if (isDefaultScope) {
-            expectedScopes.retainAll(defaultScopes); // may change expectedScopes so that it has needed to be instantiated.
-            return expectedScopes.isEmpty() ? false : true;
-        } else {
-            explicitSpecifiedScopes.retainAll(expectedScopes);
-            explicitSpecifiedScopes.retainAll(optionalScopes);
-            if (!explicitSpecifiedScopes.isEmpty()) {
+            case ClientScopesConditionFactory.OPTIONAL:
+                explicitSpecifiedScopes.retainAll(expectedScopes);
+                explicitSpecifiedScopes.retainAll(optionalScopes);
                 if (logger.isTraceEnabled()) {
                     explicitSpecifiedScopes.forEach(i->logger.tracev("matched scope = {0}", i));
                 }
-                return true;
-            }
+                return !explicitSpecifiedScopes.isEmpty();
+
+            case ClientScopesConditionFactory.ANY:
+                explicitSpecifiedScopes.retainAll(expectedScopes);
+                explicitSpecifiedScopes.retainAll(optionalScopes);
+                expectedScopes.retainAll(defaultScopes);
+                return !expectedScopes.isEmpty() || !explicitSpecifiedScopes.isEmpty();
+
+            default:
+                return false;
         }
-        return false;
     }
 
     private Set<String> getScopesForMatching() {
@@ -171,5 +187,4 @@ public class ClientScopesCondition extends AbstractClientPolicyConditionProvider
         if (scopes == null) return null;
         return new HashSet<>(scopes);
     }
-
 }

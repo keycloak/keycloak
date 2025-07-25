@@ -22,6 +22,9 @@ defaults:
   run:
     shell: bash
 
+permissions:
+  contents: read
+
 jobs:
 
   conditional:
@@ -34,9 +37,12 @@ jobs:
       ci-sssd: ${{ steps.conditional.outputs.ci-sssd }}
       ci-webauthn: ${{ steps.conditional.outputs.ci-webauthn }}
       ci-aurora: ${{ steps.auroradb-tests.outputs.run-aurora-tests }}
-
+      ci-compatibility-matrix: ${{ steps.version-compatibility.outputs.matrix }}
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - id: conditional
         uses: ./.github/actions/conditional
@@ -52,13 +58,27 @@ jobs:
           fi
           echo "run-aurora-tests=$RUN_AURORADB_TESTS" >> $GITHUB_OUTPUT
 
+      - name: Version Compatibility Matrix
+        id: version-compatibility
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BRANCH="${{ github.base_ref }}"
+          else
+            BRANCH="${{ github.ref_name }}"
+          fi
+          MATRIX_JSON=$(./.github/scripts/version-compatibility.sh "${BRANCH}")
+          echo "${MATRIX_JSON}"
+          echo "matrix=${MATRIX_JSON}" >> $GITHUB_OUTPUT
+
   build:
     name: Build
     if: needs.conditional.outputs.ci == 'true'
     runs-on: ubuntu-latest
     needs: conditional
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Build Keycloak
         uses: ./.github/actions/build-keycloak
@@ -73,7 +93,7 @@ jobs:
     needs: build
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - id: unit-test-setup
         name: Unit test setup
@@ -110,7 +130,7 @@ jobs:
         group: [1, 2, 3, 4, 5, 6]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - id: integration-test-setup
         name: Integration test setup
@@ -145,7 +165,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - id: integration-test-setup
         name: Integration test setup
@@ -186,7 +206,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - id: integration-test-setup
         name: Integration test setup
@@ -231,7 +251,7 @@ jobs:
         os: [ ubuntu-latest, windows-latest ]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       # We want to download Keycloak artifacts
       - id: integration-test-setup
@@ -281,9 +301,9 @@ jobs:
       fail-fast: false
     runs-on: ${{ matrix.os }}
     env:
-      MAVEN_OPTS: -Xmx1024m
+      MAVEN_OPTS: -Xmx1536m
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - id: integration-test-setup
         name: Integration test setup
@@ -325,11 +345,11 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         dist: [temurin]
-        version: [17]
+        version: [17, 24]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - id: integration-test-setup
         name: Integration test setup
@@ -342,7 +362,7 @@ jobs:
         run: ./mvnw install -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus
 
       - name: Run new base tests
-        run: ./mvnw test -f tests/pom.xml -Dtest=JDKTestSuite
+        run: ./mvnw package -f tests/pom.xml -Dtest=JDKTestSuite
 
       - name: Run base tests
         run: |
@@ -356,7 +376,7 @@ jobs:
 
       - name: Build with JDK
         run:
-          ./mvnw install -e -DskipTests -DskipExamples
+          ./mvnw install -e -DskipTests -DskipExamples -DskipProtoLock=true
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -381,7 +401,7 @@ jobs:
     timeout-minutes: 100
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - id: integration-test-setup
         name: Integration test setup
@@ -417,7 +437,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 150
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - id: integration-test-setup
         name: Integration test setup
@@ -448,7 +468,7 @@ jobs:
 
       - name: EC2 Maven Logs
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: store-it-mvn-logs
           path: .github/scripts/ansible/files
@@ -464,7 +484,7 @@ jobs:
         variant: [ "clusterless,multi-site" ]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - id: integration-test-setup
         name: Integration test setup
@@ -499,8 +519,11 @@ jobs:
     if: needs.conditional.outputs.ci-aurora == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 150
+    permissions:
+      contents: read
+      actions: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - id: node-cache
         name: Node cache
@@ -554,7 +577,7 @@ jobs:
           pipx inject ansible-core boto3 botocore
           ./aws_ec2.sh create ${AWS_REGION} ${EC2_CLUSTER_NAME}
           ./keycloak_ec2_installer.sh ${AWS_REGION} ${EC2_CLUSTER_NAME} /tmp/keycloak.zip m2.tar.gz
-          ./mvn_ec2_runner.sh ${AWS_REGION} ${EC2_CLUSTER_NAME} "clean install -B -DskipTests -Pdistribution"
+          ./mvn_ec2_runner.sh ${AWS_REGION} ${EC2_CLUSTER_NAME} "clean install -B -DskipTests -Pdistribution -DskipProtoLock=true"
           ./mvn_ec2_runner.sh ${AWS_REGION} ${EC2_CLUSTER_NAME} "clean install -B -DskipTests -pl testsuite/integration-arquillian/servers/auth-server/quarkus -Pauth-server-quarkus -Pdb-aurora-postgres -Dmaven.build.cache.enabled=true"
 
       - name: Run Aurora migration tests on EC2
@@ -597,7 +620,7 @@ jobs:
 
       - name: EC2 Maven Logs
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: auroraDB-migration-tests-mvn-logs
           path: .github/scripts/ansible/files
@@ -640,7 +663,7 @@ jobs:
 
       - name: EC2 Maven Logs
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: aurora-integration-tests-mvn-logs
           path: .github/scripts/ansible/files
@@ -673,7 +696,7 @@ jobs:
         db: [postgres, mysql, oracle, mssql, mariadb]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - id: integration-test-setup
         name: Integration test setup
@@ -681,10 +704,15 @@ jobs:
 
       - name: Run new base tests
         run: |
-          KC_TEST_DATABASE=${{ matrix.db }} KC_TEST_DATABASE_REUSE=true TESTCONTAINERS_REUSE_ENABLE=true ./mvnw test -f tests/pom.xml -Dtest=DatabaseTestSuite
+          KC_TEST_DATABASE=${{ matrix.db }} KC_TEST_DATABASE_REUSE=true TESTCONTAINERS_REUSE_ENABLE=true ./mvnw package -f tests/pom.xml -Dtest=DatabaseTestSuite -Dkeycloak.distribution.start.timeout=360
 
       - name: Database container port
         run: |
+          # The Ryuk container process exists temporarily after the JVM terminates, wait for only the database container to remain
+          while [ "$(docker ps -q | wc -l)" -ne 1 ]; do
+            docker ps
+            sleep 10
+          done
           DATABASE_PORT=$(docker ps -l --format '{{ .ID }}' | xargs docker port | cut -d ':' -f 2)
           echo "DATABASE_PORT=$DATABASE_PORT" >> $GITHUB_ENV 
 
@@ -699,6 +727,7 @@ jobs:
             -Ddocker.database.skip=true \
             -Ddocker.database.port=$DATABASE_PORT \
             -Ddocker.container.testdb.ip=localhost \
+            -Dkeycloak.distribution.start.timeout=360 \
             -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
       - name: Run cluster JDBC_PING2 UDP smoke test
@@ -753,7 +782,7 @@ jobs:
     if: needs.conditional.outputs.ci-store == 'true'
     timeout-minutes: 75
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - id: integration-test-setup
         name: Integration test setup
@@ -785,9 +814,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
-      MAVEN_OPTS: -Xmx1024m
+      MAVEN_OPTS: -Xmx1536m
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - id: integration-test-setup
         name: Integration test setup
@@ -820,17 +849,17 @@ jobs:
     needs: build
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - id: unit-test-setup
+        name: Unit test setup
+        uses: ./.github/actions/unit-test-setup
 
       - name: Fake fips
         run: |
           cd .github/fake_fips
           make
           sudo insmod fake_fips.ko
-
-      - id: unit-test-setup
-        name: Unit test setup
-        uses: ./.github/actions/unit-test-setup
 
       - name: Run crypto tests
         run: docker run --rm --workdir /github/workspace -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi8/ubi:latest .github/scripts/run-fips-ut.sh
@@ -855,19 +884,19 @@ jobs:
         mode: [non-strict, strict]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Fake fips
-        run: |
-          cd .github/fake_fips
-          make
-          sudo insmod fake_fips.ko
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - id: integration-test-setup
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
         with:
           jdk-version: 21
+
+      - name: Fake fips
+        run: |
+          cd .github/fake_fips
+          make
+          sudo insmod fake_fips.ko
 
       - name: Run base tests
         run: docker run --rm --workdir /github/workspace -e "SUREFIRE_RERUN_FAILING_COUNT" -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi8/ubi:latest .github/scripts/run-fips-it.sh ${{ matrix.mode }}
@@ -899,11 +928,14 @@ jobs:
         browser: [chrome, firefox]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - id: integration-test-setup
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
+
+      - uses: ./.github/actions/install-chrome
+        if: matrix.browser == 'chrome'
 
       - name: Run Forms IT
         run: |
@@ -941,11 +973,14 @@ jobs:
           - firefox
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - id: integration-test-setup
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
+
+      - uses: ./.github/actions/install-chrome
+        if: matrix.browser == 'chrome'
 
       - name: Run WebAuthn IT
         run: |
@@ -980,7 +1015,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - id: integration-test-setup
         name: Integration test setup
@@ -993,7 +1028,7 @@ jobs:
 
       - id: cache-maven-repository
         name: ipa-data cache
-        uses: actions/cache@v4
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
         with:
           path: ~/ipa-data.tar
           key: ${{ steps.weekly-cache-key.outputs.key }}
@@ -1018,7 +1053,7 @@ jobs:
         database: [postgres, mysql, oracle, mssql, mariadb]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - id: integration-test-setup
         name: Integration test setup
@@ -1060,7 +1095,7 @@ jobs:
     needs: build
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - id: integration-test-setup
         name: Integration test setup
@@ -1076,14 +1111,49 @@ jobs:
       - build
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - id: integration-test-setup
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
 
+        # This step is necessary because test/clustering requires building a new Keycloak image built from tar.gz
+        # file that is not part of m2-keycloak.tzts archive
+      - name: Build tar keycloak-quarkus-dist
+        run: ./mvnw package -pl quarkus/server/,quarkus/dist/
+
       - name: Run tests
-        run: ./mvnw test -f tests/pom.xml
+        run: ./mvnw package -f tests/pom.xml
+
+  mixed-cluster-compatibility-tests:
+    name: Cluster Compatibility Tests
+    if: needs.conditional.outputs.ci-compatibility-matrix != ''
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - conditional
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.conditional.outputs.ci-compatibility-matrix) }}
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+        # This step is necessary because test/clustering requires building a new Keycloak image built from tar.gz
+        # file that is not part of m2-keycloak.tzts archive
+      - name: Build tar keycloak-quarkus-dist
+        run: ./mvnw package -pl quarkus/server/,quarkus/dist/
+
+      - name: Run tests
+        run: ./mvnw verify -pl tests/clustering
+        env:
+          KC_TEST_SERVER_IMAGES: "quay.io/keycloak/keycloak:${{ matrix.version }},-"
 
   check:
     name: Status Check - Keycloak CI
@@ -1111,9 +1181,10 @@ jobs:
       - external-infinispan-tests
       - test-framework
       - base-new-integration-tests
+      - mixed-cluster-compatibility-tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - uses: ./.github/actions/status-check
         with:
           jobs: ${{ toJSON(needs) }}

@@ -66,7 +66,7 @@ public class SessionTest extends AbstractClientTest {
         int sessionCount = accountClient.getApplicationSessionCount().get("count");
         assertEquals(0, sessionCount);
 
-        driver.navigate().to(oauth.getLoginFormUrl());
+        oauth.openLoginForm();
         loginPage.form().login(testUser);
 
         sessionCount = accountClient.getApplicationSessionCount().get("count");
@@ -83,7 +83,7 @@ public class SessionTest extends AbstractClientTest {
         //List<java.util.Map<String, String>> stats = this.testRealmResource().getClientSessionStats();
         ClientResource account = findClientResourceById("test-app");
 
-        driver.navigate().to(oauth.getLoginFormUrl());
+        oauth.openLoginForm();
         loginPage.form().login(testUser);
 
         List<UserSessionRepresentation> sessions = account.getUserSessions(0, 5);
@@ -111,7 +111,7 @@ public class SessionTest extends AbstractClientTest {
         realm.setRememberMe(true);
         adminClient.realm(TEST).update(realm);
 
-        driver.navigate().to(oauth.getLoginFormUrl());
+        oauth.openLoginForm();
         loginPage.form().rememberMe(true);
         loginPage.form().login(testUser);
 

@@ -33,25 +33,29 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.ProtocolMapperContainerModel;
-import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapper;
-import org.keycloak.protocol.oid4vc.OID4VCClientRegistrationProvider;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBody;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
+import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilderFactory;
+import org.keycloak.protocol.oid4vc.issuance.keybinding.CNonceHandler;
+import org.keycloak.protocol.oid4vc.issuance.keybinding.JwtCNonceHandler;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.ProofValidator;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
 import org.keycloak.protocol.oid4vc.issuance.signing.CredentialSigner;
@@ -62,7 +66,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.ErrorResponse;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.Format;
-import org.keycloak.protocol.oid4vc.model.OID4VCClient;
+import org.keycloak.protocol.oid4vc.model.NonceResponse;
 import org.keycloak.protocol.oid4vc.model.OfferUriType;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
@@ -73,7 +77,6 @@ import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
-import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.cors.Cors;
@@ -94,12 +97,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static org.keycloak.protocol.oid4vc.model.Format.JWT_VC;
-import static org.keycloak.protocol.oid4vc.model.Format.LDP_VC;
-import static org.keycloak.protocol.oid4vc.model.Format.SD_JWT_VC;
-import static org.keycloak.protocol.oid4vc.model.Format.SUPPORTED_FORMATS;
 
 /**
  * Provides the (REST-)endpoints required for the OID4VCI protocol.
@@ -117,6 +114,7 @@ public class OID4VCIssuerEndpoint {
     private static final String CODE_LIFESPAN_REALM_ATTRIBUTE_KEY = "preAuthorizedCodeLifespanS";
     private static final int DEFAULT_CODE_LIFESPAN_S = 30;
 
+    public static final String NONCE_PATH = "nonce";
     public static final String CREDENTIAL_PATH = "credential";
     public static final String CREDENTIAL_OFFER_PATH = "credential-offer/";
     public static final String RESPONSE_TYPE_IMG_PNG = "image/png";
@@ -127,6 +125,9 @@ public class OID4VCIssuerEndpoint {
 
     // lifespan of the preAuthorizedCodes in seconds
     private final int preAuthorizedCodeLifeSpan;
+
+    // constant for the OID4VCI enabled attribute key
+    private static final String OID4VCI_ENABLED_ATTRIBUTE_KEY = "oid4vci.enabled";
 
     /**
      * Credential builders are responsible for initiating the production of
@@ -140,19 +141,16 @@ public class OID4VCIssuerEndpoint {
      */
     private final Map<String, CredentialBuilder> credentialBuilders;
 
-    private final boolean isIgnoreScopeCheck;
-
     public OID4VCIssuerEndpoint(KeycloakSession session,
                                 Map<String, CredentialBuilder> credentialBuilders,
                                 AppAuthManager.BearerTokenAuthenticator authenticator,
-                                TimeProvider timeProvider, int preAuthorizedCodeLifeSpan,
-                                boolean isIgnoreScopeCheck) {
+                                TimeProvider timeProvider,
+                                int preAuthorizedCodeLifeSpan) {
         this.session = session;
         this.bearerTokenAuthenticator = authenticator;
         this.timeProvider = timeProvider;
         this.credentialBuilders = credentialBuilders;
         this.preAuthorizedCodeLifeSpan = preAuthorizedCodeLifeSpan;
-        this.isIgnoreScopeCheck = isIgnoreScopeCheck;
     }
 
     public OID4VCIssuerEndpoint(KeycloakSession keycloakSession) {
@@ -166,7 +164,6 @@ public class OID4VCIssuerEndpoint {
         this.preAuthorizedCodeLifeSpan = Optional.ofNullable(realm.getAttribute(CODE_LIFESPAN_REALM_ATTRIBUTE_KEY))
                 .map(Integer::valueOf)
                 .orElse(DEFAULT_CODE_LIFESPAN_S);
-        this.isIgnoreScopeCheck = false;
     }
 
     /**
@@ -176,25 +173,68 @@ public class OID4VCIssuerEndpoint {
      */
     private Map<String, CredentialBuilder> loadCredentialBuilders(KeycloakSession keycloakSession) {
         KeycloakSessionFactory keycloakSessionFactory = keycloakSession.getKeycloakSessionFactory();
-        RealmModel realm = keycloakSession.getContext().getRealm();
-        Stream<ComponentModel> componentModels = realm.getComponentsStream(
-                realm.getId(), CredentialBuilder.class.getName());
+        return keycloakSessionFactory.getProviderFactoriesStream(CredentialBuilder.class)
+                                     .map(factory -> (CredentialBuilderFactory) factory)
+                                     .map(factory -> factory.create(keycloakSession, null))
+                                     .collect(Collectors.toMap(CredentialBuilder::getSupportedFormat,
+                                                               credentialBuilder ->  credentialBuilder));
+    }
 
-        return componentModels.map(componentModel -> {
-                    ProviderFactory<CredentialBuilder> providerFactory = keycloakSessionFactory
-                            .getProviderFactory(CredentialBuilder.class, componentModel.getProviderId());
+    /**
+     * Validates whether the authenticated client is enabled for OID4VCI features.
+     * <p>
+     * If the client is not enabled, this method logs the status and throws a
+     * {@link CorsErrorResponseException} with an appropriate error message.
+     * </p>
+     *
+     * @throws CorsErrorResponseException if the client is not enabled for OID4VCI.
+     */
+    private void checkClientEnabled() {
+        AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession();
+        ClientModel client = clientSession.getClient();
 
-                    if (!(providerFactory instanceof ComponentFactory<?, ?>)) {
-                        throw new IllegalArgumentException(String.format(
-                                "Component %s is unexpectedly not a ComponentFactory",
-                                componentModel.getProviderId()
-                        ));
-                    }
+        boolean oid4vciEnabled = Boolean.parseBoolean(client.getAttributes().get(OID4VCI_ENABLED_ATTRIBUTE_KEY));
 
-                    var componentFactory = (ComponentFactory<CredentialBuilder, CredentialBuilder>) providerFactory;
-                    return componentFactory.create(keycloakSession, componentModel);
-                })
-                .collect(Collectors.toMap(CredentialBuilder::getSupportedFormat, component -> component));
+        if (!oid4vciEnabled) {
+            LOGGER.debugf("Client '%s' is not enabled for OID4VCI features.", client.getClientId());
+            throw new CorsErrorResponseException(
+                    cors,
+                    Errors.INVALID_CLIENT,
+                    "Client not enabled for OID4VCI",
+                    Response.Status.FORBIDDEN
+            );
+        }
+
+        LOGGER.debugf("Client '%s' is enabled for OID4VCI features.", client.getClientId());
+    }
+
+    /**
+     * Generates a unique notification ID for use in CredentialResponse.
+     *
+     * @return a unique string identifier
+     */
+    private String generateNotificationId() {
+        return SecretGenerator.getInstance().randomString();
+    }
+    
+    /**
+     * the OpenId4VCI nonce-endpoint
+     *
+     * @return a short-lived c_nonce value that must be presented in key-bound proofs at the credential endpoint.
+     * @see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-15.html#name-nonce-endpoint
+     * @see https://datatracker.ietf.org/doc/html/draft-demarco-nonce-endpoint#name-nonce-response
+     */
+    @POST
+    @Produces({MediaType.APPLICATION_JSON})
+    @Path(NONCE_PATH)
+    public Response getCNonce() {
+        CNonceHandler cNonceHandler = session.getProvider(CNonceHandler.class);
+        NonceResponse nonceResponse = new NonceResponse();
+        String sourceEndpoint = OID4VCIssuerWellKnownProvider.getNonceEndpoint(session.getContext());
+        String audience = OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(session.getContext());
+        String nonce = cNonceHandler.buildCNonce(List.of(audience), Map.of(JwtCNonceHandler.SOURCE_ENDPOINT, sourceEndpoint));
+        nonceResponse.setNonce(nonce);
+        return Response.ok().header(HttpHeaders.CACHE_CONTROL, "no-store").entity(nonceResponse).build();
     }
 
     /**
@@ -207,6 +247,15 @@ public class OID4VCIssuerEndpoint {
 
         AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession();
 
+        // Initialize CORS configuration and validate if the client is enabled for OID4VCI
+        cors = Cors.builder()
+                .auth()
+                .allowedMethods("GET")
+                .auth()
+                .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
+
+        checkClientEnabled();
+
         Map<String, SupportedCredentialConfiguration> credentialsMap = OID4VCIssuerWellKnownProvider.getSupportedCredentials(session);
         LOGGER.debugf("Get an offer for %s", vcId);
         if (!credentialsMap.containsKey(vcId)) {
@@ -215,13 +264,7 @@ public class OID4VCIssuerEndpoint {
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST));
         }
         SupportedCredentialConfiguration supportedCredentialConfiguration = credentialsMap.get(vcId);
-        String format = supportedCredentialConfiguration.getFormat();
 
-        // check that the user is allowed to get such credential
-        if (getClientsOfScope(supportedCredentialConfiguration.getScope(), format).isEmpty()) {
-            LOGGER.debugf("No OID4VP-Client supporting type %s registered.", supportedCredentialConfiguration.getScope());
-            throw new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_TYPE));
-        }
         // calculate the expiration of the preAuthorizedCode. The sessionCode will also expire at that time.
         int expiration = timeProvider.currentTimeSeconds() + preAuthorizedCodeLifeSpan;
         String preAuthorizedCode = generateAuthorizationCodeForClientSession(expiration, clientSession);
@@ -294,20 +337,25 @@ public class OID4VCIssuerEndpoint {
                 .build();
     }
 
-    private void checkScope(CredentialRequest credentialRequestVO) {
+    private void checkScope(CredentialScopeModel requestedCredential) {
         AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession();
         String vcIssuanceFlow = clientSession.getNote(PreAuthorizedCodeGrantType.VC_ISSUANCE_FLOW);
+
         if (vcIssuanceFlow == null || !vcIssuanceFlow.equals(PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE)) {
-            // authz code flow
-            ClientModel client = clientSession.getClient();
-            String credentialIdentifier = credentialRequestVO.getCredentialIdentifier();
-            String scope = client.getAttributes().get("vc." + credentialIdentifier + ".scope"); // following credential identifier in client attribute
             AccessToken accessToken = bearerTokenAuthenticator.authenticate().getToken();
-            if (Arrays.stream(accessToken.getScope().split(" ")).sequential().noneMatch(i -> i.equals(scope))) {
-                LOGGER.debugf("Scope check failure: credentialIdentifier = %s, required scope = %s, scope in access token = %s.", credentialIdentifier, scope, accessToken.getScope());
-                throw new CorsErrorResponseException(cors, ErrorType.UNSUPPORTED_CREDENTIAL_TYPE.toString(), "Scope check failure", Response.Status.BAD_REQUEST);
+            if (Arrays.stream(accessToken.getScope().split(" "))
+                    .noneMatch(tokenScope -> tokenScope.equals(requestedCredential.getScope()))) {
+                LOGGER.debugf("Scope check failure: required scope = %s, " +
+                                      "scope in access token = %s.",
+                              requestedCredential.getName(), accessToken.getScope());
+                throw new CorsErrorResponseException(cors,
+                        ErrorType.UNSUPPORTED_CREDENTIAL_TYPE.toString(),
+                        "Scope check failure",
+                        Response.Status.BAD_REQUEST);
             } else {
-                LOGGER.debugf("Scope check success: credentialIdentifier = %s, required scope = %s, scope in access token = %s.", credentialIdentifier, scope, accessToken.getScope());
+                LOGGER.debugf("Scope check success: required scope = %s, #" +
+                                      "scope in access token = %s.",
+                              requestedCredential.getScope(), accessToken.getScope());
             }
         } else {
             clientSession.removeNote(PreAuthorizedCodeGrantType.VC_ISSUANCE_FLOW);
@@ -330,92 +378,41 @@ public class OID4VCIssuerEndpoint {
         // do first to fail fast on auth
         AuthenticationManager.AuthResult authResult = getAuthResult();
 
-        if (!isIgnoreScopeCheck) {
-            checkScope(credentialRequestVO);
-        }
+        // checkClientEnabled call after authentication
+        checkClientEnabled();
 
-        // Both Format and identifier are optional.
-        // If the credential_identifier is present, Format can't be present. But this implementation will
-        // tolerate the presence of both, waiting for clarity in specifications.
-        // This implementation will privilege the presence of the credential config identifier.
-        String requestedCredentialId = credentialRequestVO.getCredentialIdentifier();
-        String requestedFormat = credentialRequestVO.getFormat();
+        // Both credential_configuration_id and credential_identifier are optional.
+        // If the credential_configuration_id is present, credential_identifier can't be present.
+        // But this implementation will tolerate the presence of both, waiting for clarity in specifications.
+        // This implementation will privilege the presence of the credential_configuration_id.
+        String requestedCredentialConfigurationId = credentialRequestVO.getCredentialConfigurationId();
+        String requestedCredentialIdentifier = credentialRequestVO.getCredentialIdentifier();
 
         // Check if at least one of both is available.
-        if (requestedCredentialId == null && requestedFormat == null) {
-            LOGGER.debugf("Missing both configuration id and requested format. At least one shall be specified.");
-            throw new BadRequestException(getErrorResponse(ErrorType.MISSING_CREDENTIAL_CONFIG_AND_FORMAT));
+        if (requestedCredentialConfigurationId == null && requestedCredentialIdentifier == null) {
+            LOGGER.debugf("Missing both credential_configuration_id and credential_identifier. " +
+                    "At least one must be specified.");
+            throw new BadRequestException(getErrorResponse(ErrorType.MISSING_CREDENTIAL_IDENTIFIER_AND_CONFIGURATION_ID));
         }
 
-        Map<String, SupportedCredentialConfiguration> supportedCredentials = OID4VCIssuerWellKnownProvider.getSupportedCredentials(this.session);
+        CredentialScopeModel requestedCredential = credentialRequestVO.findCredentialScope(session).orElseThrow(() -> {
+            LOGGER.debugf("Credential for request '%s' not found.",
+                          credentialRequestVO.toString());
+            return new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_TYPE));
+        });
 
-        // resolve from identifier first
-        SupportedCredentialConfiguration supportedCredentialConfiguration = null;
-        if (requestedCredentialId != null) {
-            supportedCredentialConfiguration = supportedCredentials.get(requestedCredentialId);
-            if (supportedCredentialConfiguration == null) {
-                LOGGER.debugf("Credential with configuration id %s not found.", requestedCredentialId);
-                throw new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_TYPE));
-            }
-            // Then for format. We know spec does not allow both parameter. But we are tolerant if you send both
-            // Was found by id, check that the format matches.
-            if (requestedFormat != null && !requestedFormat.equals(supportedCredentialConfiguration.getFormat())) {
-                LOGGER.debugf("Credential with configuration id %s does not support requested format %s, but supports %s.", requestedCredentialId, requestedFormat, supportedCredentialConfiguration.getFormat());
-                throw new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_FORMAT));
-            }
-        }
+        checkScope(requestedCredential);
 
-        if (supportedCredentialConfiguration == null && requestedFormat != null) {
-            // Search by format
-            supportedCredentialConfiguration = getSupportedCredentialConfiguration(credentialRequestVO, supportedCredentials, requestedFormat);
-            if (supportedCredentialConfiguration == null) {
-                LOGGER.debugf("Credential with requested format %s, not supported.", requestedFormat);
-                throw new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_FORMAT));
-            }
-        }
+        SupportedCredentialConfiguration supportedCredential =
+                OID4VCIssuerWellKnownProvider.toSupportedCredentialConfiguration(session, requestedCredential);
+
+        Object theCredential = getCredential(authResult, supportedCredential, credentialRequestVO);
 
         CredentialResponse responseVO = new CredentialResponse();
-
-        Object theCredential = getCredential(authResult, supportedCredentialConfiguration, credentialRequestVO);
-        if (SUPPORTED_FORMATS.contains(requestedFormat)) {
-            responseVO.setCredential(theCredential);
-        } else {
-            throw new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_TYPE));
-        }
+        responseVO
+                    .addCredential(theCredential)
+                    .setNotificationId(generateNotificationId());
         return Response.ok().entity(responseVO).build();
-    }
-
-    private SupportedCredentialConfiguration getSupportedCredentialConfiguration(CredentialRequest credentialRequestVO, Map<String, SupportedCredentialConfiguration> supportedCredentials, String requestedFormat) {
-        // 1. Format resolver
-        List<SupportedCredentialConfiguration> configs = supportedCredentials.values().stream()
-                .filter(supportedCredential -> Objects.equals(supportedCredential.getFormat(), requestedFormat))
-                .collect(Collectors.toList());
-
-        List<SupportedCredentialConfiguration> matchingConfigs;
-
-        switch (requestedFormat) {
-            case SD_JWT_VC:
-                // Resolve from vct for sd-jwt
-                matchingConfigs = configs.stream()
-                        .filter(supportedCredential -> Objects.equals(supportedCredential.getVct(), credentialRequestVO.getVct()))
-                        .collect(Collectors.toList());
-                break;
-            case JWT_VC:
-            case LDP_VC:
-                // Will detach this when each format provides logic on how to resolve from definition.
-                matchingConfigs = configs.stream()
-                        .filter(supportedCredential -> Objects.equals(supportedCredential.getCredentialDefinition(), credentialRequestVO.getCredentialDefinition()))
-                        .collect(Collectors.toList());
-                break;
-            default:
-                throw new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_FORMAT));
-        }
-
-        if (matchingConfigs.isEmpty()) {
-            throw new BadRequestException(getErrorResponse(ErrorType.MISSING_CREDENTIAL_CONFIG));
-        }
-
-        return matchingConfigs.iterator().next();
     }
 
     private AuthenticatedClientSessionModel getAuthenticatedClientSession() {
@@ -452,17 +449,20 @@ public class OID4VCIssuerEndpoint {
      * @param credentialRequestVO the credential request
      * @return the signed credential
      */
-    private Object getCredential(AuthenticationManager.AuthResult authResult, SupportedCredentialConfiguration credentialConfig, CredentialRequest credentialRequestVO) {
+    private Object getCredential(AuthenticationManager.AuthResult authResult,
+                                 SupportedCredentialConfiguration credentialConfig,
+                                 CredentialRequest credentialRequestVO) {
 
-        List<OID4VCClient> clients = getClientsOfScope(credentialConfig.getScope(), credentialConfig.getFormat());
+        // Get the client scope model from the credential configuration
+        CredentialScopeModel credentialScopeModel = getClientScopeModel(credentialConfig);
 
-        List<OID4VCMapper> protocolMappers = getProtocolMappers(clients)
-                .stream()
+        // Get the protocol mappers from the client scope
+        List<OID4VCMapper> protocolMappers = credentialScopeModel.getProtocolMappersStream()
                 .map(pm -> {
                     if (session.getProvider(ProtocolMapper.class, pm.getProtocolMapper()) instanceof OID4VCMapper mapperFactory) {
                         ProtocolMapper protocolMapper = mapperFactory.create(session);
                         if (protocolMapper instanceof OID4VCMapper oid4VCMapper) {
-                            oid4VCMapper.setMapperModel(pm);
+                            oid4VCMapper.setMapperModel(pm, credentialScopeModel.getFormat());
                             return oid4VCMapper;
                         }
                     }
@@ -478,8 +478,8 @@ public class OID4VCIssuerEndpoint {
         enforceKeyBindingIfProofProvided(vcIssuanceContext);
 
         // Retrieve matching credential signer
-        String format = credentialRequestVO.getFormat();
-        CredentialSigner<?> credentialSigner = session.getProvider(CredentialSigner.class, format);
+        CredentialSigner<?> credentialSigner = session.getProvider(CredentialSigner.class,
+                                                                   credentialConfig.getFormat());
 
         return Optional.ofNullable(credentialSigner)
                 .map(signer -> signer.signCredential(
@@ -487,17 +487,23 @@ public class OID4VCIssuerEndpoint {
                         credentialConfig.getCredentialBuildConfig()
                 ))
                 .orElseThrow(() -> new BadRequestException(
-                        String.format("No signer found for format '%s'.", format)
+                        String.format("No signer found for format '%s'.", credentialConfig.getFormat())
                 ));
     }
 
-    private List<ProtocolMapperModel> getProtocolMappers(List<OID4VCClient> oid4VCClients) {
+    private CredentialScopeModel getClientScopeModel(SupportedCredentialConfiguration credentialConfig) {
+        // Get the current client from the session
+        ClientModel clientModel = session.getContext().getClient();
 
-        return oid4VCClients.stream()
-                .map(OID4VCClient::getClientDid)
-                .map(this::getClient)
-                .flatMap(ProtocolMapperContainerModel::getProtocolMappersStream)
-                .toList();
+        // Get the client scope that matches the credentialConfig scope
+        Map<String, ClientScopeModel> clientScopes = clientModel.getClientScopes(false);
+        ClientScopeModel clientScopeModel = clientScopes.get(credentialConfig.getScope());
+
+        if (clientScopeModel == null) {
+            throw new BadRequestException("Client scope not found for the specified scope: " + credentialConfig.getScope());
+        }
+
+        return new CredentialScopeModel(clientScopeModel);
     }
 
     private String generateCodeForSession(int expiration, AuthenticatedClientSessionModel clientSession) {
@@ -543,33 +549,6 @@ public class OID4VCIssuerEndpoint {
                 .build();
     }
 
-    // Return all {@link  OID4VCClient}s that support the given scope and format
-    // Scope might be different from vct. In the case of sd-jwt for example
-    private List<OID4VCClient> getClientsOfScope(String vcScope, String format) {
-        LOGGER.debugf("Retrieve all clients of scope %s, supporting format %s", vcScope, format);
-
-        if (Optional.ofNullable(vcScope).filter(scope -> !scope.isEmpty()).isEmpty()) {
-            throw new BadRequestException("No VerifiableCredential-Scope was provided in the request.");
-        }
-
-        // Since clients are not bound to specific VC definitions, they can all
-        // potentially define protocol mappers to source data.
-        return getOID4VCClientsFromSession();
-    }
-
-    private ClientModel getClient(String clientId) {
-        return session.clients().getClientByClientId(session.getContext().getRealm(), clientId);
-    }
-
-    private List<OID4VCClient> getOID4VCClientsFromSession() {
-        return session.clients().getClientsStream(session.getContext().getRealm())
-                .filter(clientModel -> clientModel.getProtocol() != null)
-                .filter(clientModel -> clientModel.getProtocol()
-                        .equals(OID4VCLoginProtocolFactory.PROTOCOL_ID))
-                .map(clientModel -> OID4VCClientRegistrationProvider.fromClientAttributes(clientModel.getClientId(), clientModel.getAttributes()))
-                .toList();
-    }
-
     // builds the unsigned credential by applying all protocol mappers.
     private VCIssuanceContext getVCToSign(List<OID4VCMapper> protocolMappers, SupportedCredentialConfiguration credentialConfig,
                                           AuthenticationManager.AuthResult authResult, CredentialRequest credentialRequestVO) {
@@ -580,22 +559,18 @@ public class OID4VCIssuerEndpoint {
 
         Map<String, Object> subjectClaims = new HashMap<>();
         protocolMappers
-                .stream()
-                .filter(mapper -> mapper.isScopeSupported(credentialConfig.getScope()))
                 .forEach(mapper -> mapper.setClaimsForSubject(subjectClaims, authResult.getSession()));
 
         subjectClaims.forEach((key, value) -> vc.getCredentialSubject().setClaims(key, value));
 
         protocolMappers
-                .stream()
-                .filter(mapper -> mapper.isScopeSupported(credentialConfig.getScope()))
                 .forEach(mapper -> mapper.setClaimsForCredential(vc, authResult.getSession()));
 
         LOGGER.debugf("The credential to sign is: %s", vc);
 
         // Build format-specific credential
-        CredentialBody credentialBody = findCredentialBuilder(credentialConfig)
-                .buildCredentialBody(vc, credentialConfig.getCredentialBuildConfig());
+        CredentialBody credentialBody = this.findCredentialBuilder(credentialConfig)
+                                            .buildCredentialBody(vc, credentialConfig.getCredentialBuildConfig());
 
         return new VCIssuanceContext()
                 .setAuthResult(authResult)
@@ -614,9 +589,11 @@ public class OID4VCIssuerEndpoint {
             return;
         }
 
-        ProofValidator proofValidator = session.getProvider(ProofValidator.class, proof.getProofType());
+        String proofType = proof.getProofType();
+
+        ProofValidator proofValidator = session.getProvider(ProofValidator.class, proofType);
         if (proofValidator == null) {
-            throw new BadRequestException(String.format("Unable to validate proofs of type %s", proof.getProofType()));
+            throw new BadRequestException(String.format("Unable to validate proofs of type %s", proofType));
         }
 
         // Validate proof and bind public key to credential

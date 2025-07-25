@@ -107,7 +107,7 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
         } else if (managedOrganizations.containsKey(id)) {
             return managedOrganizations.get(id);
         }
-        OrganizationAdapter adapter = new OrganizationAdapter(cached, () -> getDelegate(), this);
+        OrganizationAdapter adapter = new OrganizationAdapter(session, cached, this::getDelegate, this);
         managedOrganizations.put(id, adapter);
         return adapter;
     }
@@ -148,6 +148,16 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     public Stream<OrganizationModel> getAllStream(Map<String, String> attributes, Integer first, Integer max) {
         // Return cache delegates to ensure cache invalidation during write operations
         return getCacheDelegates(getDelegate().getAllStream(attributes, first, max));
+    }
+
+    @Override
+    public long count(String search, Boolean exact) {
+        return getDelegate().count(search, exact);
+    }
+
+    @Override
+    public long count(Map<String, String> attributes) {
+        return getDelegate().count(attributes);
     }
 
     @Override

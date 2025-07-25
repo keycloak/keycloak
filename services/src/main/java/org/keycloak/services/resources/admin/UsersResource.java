@@ -16,12 +16,19 @@
  */
 package org.keycloak.services.resources.admin;
 
+import java.util.Arrays;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
@@ -39,13 +46,15 @@ import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.policy.PasswordPolicyNotMetException;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.KeycloakOpenAPI;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
-import org.keycloak.services.resources.admin.permissions.UserPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.UserPermissionEvaluator;
 import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.utils.SearchQueryUtils;
 
@@ -71,7 +80,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -122,8 +130,15 @@ public class UsersResource {
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
+    @APIResponses(value = {
+        @APIResponse(responseCode = "201", description = "Created"),
+        @APIResponse(responseCode = "400", description = "Bad Request", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "409", description = "Conflict", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class))),
+        @APIResponse(responseCode = "500", description = "Internal Server Error", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class)))
+    })
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation( summary = "Create a new user Username must be unique.")
+    @Operation(summary = "Create a new user Username must be unique.")
     public Response createUser(final UserRepresentation rep) {
         // first check if user has manage rights
         try {
@@ -176,7 +191,7 @@ public class UsersResource {
     }
 
     private boolean canCreateGroupMembers(UserRepresentation rep) {
-        if (!Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ) && !Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2)) {
             return false;
         }
 
@@ -251,8 +266,12 @@ public class UsersResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = UserRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation( summary = "Get users Returns a stream of users, filtered according to query parameters.")
+    @Operation(summary = "Get users Returns a stream of users, filtered according to query parameters.")
     public Stream<UserRepresentation> getUsers(
             @Parameter(description = "A String contained in username, first or last name, or email. Default search behavior is prefix-based (e.g., foo or foo*). Use *foo* for infix search and \"foo\" for exact search.") @QueryParam("search") String search,
             @Parameter(description = "A String contained in lastName, or the complete lastName, if param \"exact\" is true") @QueryParam("lastName") String last,
@@ -282,10 +301,10 @@ public class UsersResource {
         Stream<UserModel> userModels = Stream.empty();
         if (search != null) {
             if (search.startsWith(SEARCH_ID_PARAMETER)) {
-                UserModel userModel =
-                        session.users().getUserById(realm, search.substring(SEARCH_ID_PARAMETER.length()).trim());
-                if (userModel != null) {
-                    userModels = Stream.of(userModel);
+                String[] userIds = search.substring(SEARCH_ID_PARAMETER.length()).trim().split("\\s+");
+                userModels = Arrays.stream(userIds).map(id -> session.users().getUserById(realm, id)).filter(Objects::nonNull);
+                if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+                    userModels = userModels.filter(userPermissionEvaluator::canView);
                 }
             } else {
                 Map<String, String> attributes = new HashMap<>();
@@ -293,6 +312,10 @@ public class UsersResource {
                 if (enabled != null) {
                     attributes.put(UserModel.ENABLED, enabled.toString());
                 }
+                if (emailVerified != null) {
+                    attributes.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
+                }
+
                 return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult,
                         maxResults, false);
             }
@@ -354,18 +377,27 @@ public class UsersResource {
      * {@code email} or {@code username} those criteria are matched against their
      * respective fields on a user entity. Combined with a logical and.
      *
-     * @param search   arbitrary search string for all the fields below. Default search behavior is prefix-based (e.g., <code>foo</code> or <code>foo*</code>). Use <code>*foo*</code> for infix search and <code>"foo"</code> for exact search.
-     * @param last     last name filter
-     * @param first    first name filter
-     * @param email    email filter
-     * @param username username filter
+     * @param search A String contained in username, first or last name, or email. Default search behavior is prefix-based (e.g., <code>foo</code> or <code>foo*</code>). Use <code>*foo*</code> for infix search and <code>"foo"</code> for exact search.
+     * @param last A String contained in lastName, or the complete lastName, if param "exact" is true
+     * @param first A String contained in firstName, or the complete firstName, if param "exact" is true
+     * @param email A String contained in email, or the complete email, if param "exact" is true
+     * @param username A String contained in username, or the complete username, if param "exact" is true
+     * @param emailVerified whether the email has been verified
+     * @param idpAlias The alias of an Identity Provider linked to the user
+     * @param idpUserId The userId at an Identity Provider linked to the user
      * @param enabled Boolean representing if user is enabled or not
+     * @param exact Boolean which defines whether the params "last", "first", "email" and "username" must match exactly
+     * @param searchQuery A query to search for custom attributes, in the format 'key1:value2 key2:value2'
      * @return the number of users that match the given criteria
      */
     @Path("count")
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = Integer.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation(
             summary = "Returns the number of users that match the given criteria.",
@@ -374,29 +406,47 @@ public class UsersResource {
                     "2. If {@code search} is specified other criteria such as {@code last} will be ignored even though you set them. The {@code search} string will be matched against the first and last name, the username and the email of a user. <p> " +
                     "3. If {@code search} is unspecified but any of {@code last}, {@code first}, {@code email} or {@code username} those criteria are matched against their respective fields on a user entity. Combined with a logical and.")
     public Integer getUsersCount(
-            @Parameter(description = "arbitrary search string for all the fields below. Default search behavior is prefix-based (e.g., foo or foo*). Use *foo* for infix search and \"foo\" for exact search.") @QueryParam("search") String search,
-            @Parameter(description = "last name filter") @QueryParam("lastName") String last,
-            @Parameter(description = "first name filter") @QueryParam("firstName") String first,
-            @Parameter(description = "email filter") @QueryParam("email") String email,
-            @QueryParam("emailVerified") Boolean emailVerified,
-            @Parameter(description = "username filter") @QueryParam("username") String username,
+            @Parameter(description = "A String contained in username, first or last name, or email. Default search behavior is prefix-based (e.g., foo or foo*). Use *foo* for infix search and \"foo\" for exact search.") @QueryParam("search") String search,
+            @Parameter(description = "A String contained in lastName, or the complete lastName, if param \"exact\" is true") @QueryParam("lastName") String last,
+            @Parameter(description = "A String contained in firstName, or the complete firstName, if param \"exact\" is true") @QueryParam("firstName") String first,
+            @Parameter(description = "A String contained in email, or the complete email, if param \"exact\" is true") @QueryParam("email") String email,
+            @Parameter(description = "A String contained in username, or the complete username, if param \"exact\" is true") @QueryParam("username") String username,
+            @Parameter(description = "whether the email has been verified") @QueryParam("emailVerified") Boolean emailVerified,
+            @Parameter(description = "The alias of an Identity Provider linked to the user") @QueryParam("idpAlias") String idpAlias,
+            @Parameter(description = "The userId at an Identity Provider linked to the user") @QueryParam("idpUserId") String idpUserId,
             @Parameter(description = "Boolean representing if user is enabled or not") @QueryParam("enabled") Boolean enabled,
-            @QueryParam("q") String searchQuery) {
+            @Parameter(description = "Boolean which defines whether the params \"last\", \"first\", \"email\" and \"username\" must match exactly") @QueryParam("exact") Boolean exact,
+            @Parameter(description = "A query to search for custom attributes, in the format 'key1:value2 key2:value2'") @QueryParam("q") String searchQuery) {
         UserPermissionEvaluator userPermissionEvaluator = auth.users();
         userPermissionEvaluator.requireQuery();
 
         Map<String, String> searchAttributes = searchQuery == null
                 ? Collections.emptyMap()
                 : SearchQueryUtils.getFields(searchQuery);
-
         if (search != null) {
             if (search.startsWith(SEARCH_ID_PARAMETER)) {
                 UserModel userModel = session.users().getUserById(realm, search.substring(SEARCH_ID_PARAMETER.length()).trim());
                 return userModel != null && userPermissionEvaluator.canView(userModel) ? 1 : 0;
-            } else if (userPermissionEvaluator.canView()) {
-                return session.users().getUsersCount(realm, search.trim());
+            }
+
+            Map<String, String> parameters = new HashMap<>();
+            parameters.put(UserModel.SEARCH, search.trim());
+
+            if (enabled != null) {
+                parameters.put(UserModel.ENABLED, enabled.toString());
+            }
+            if (emailVerified != null) {
+                parameters.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
+            }
+
+            if (userPermissionEvaluator.canView()) {
+                return session.users().getUsersCount(realm, parameters);
             } else {
-                return session.users().getUsersCount(realm, search.trim(), auth.groups().getGroupsWithViewPermission());
+                if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
+                    return session.users().getUsersCount(realm, parameters, auth.groups().getGroupIdsWithViewPermission());
+                } else {
+                    return session.users().getUsersCount(realm, parameters);
+                }
             }
         } else if (last != null || first != null || email != null || username != null || emailVerified != null || enabled != null || !searchAttributes.isEmpty()) {
             Map<String, String> parameters = new HashMap<>();
@@ -415,20 +465,37 @@ public class UsersResource {
             if (emailVerified != null) {
                 parameters.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
             }
+            if (idpAlias != null) {
+                parameters.put(UserModel.IDP_ALIAS, idpAlias);
+            }
+            if (idpUserId != null) {
+                parameters.put(UserModel.IDP_USER_ID, idpUserId);
+            }
             if (enabled != null) {
                 parameters.put(UserModel.ENABLED, enabled.toString());
+            }
+            if (exact != null) {
+                parameters.put(UserModel.EXACT, exact.toString());
             }
             parameters.putAll(searchAttributes);
 
             if (userPermissionEvaluator.canView()) {
                 return session.users().getUsersCount(realm, parameters);
             } else {
-                return session.users().getUsersCount(realm, parameters, auth.groups().getGroupsWithViewPermission());
+                if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
+                    return session.users().getUsersCount(realm, parameters, auth.groups().getGroupIdsWithViewPermission());
+                } else {
+                    return session.users().getUsersCount(realm, parameters);
+                }
             }
         } else if (userPermissionEvaluator.canView()) {
             return session.users().getUsersCount(realm);
         } else {
-            return session.users().getUsersCount(realm, auth.groups().getGroupsWithViewPermission());
+            if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
+                return session.users().getUsersCount(realm, auth.groups().getGroupIdsWithViewPermission());
+            } else {
+                return session.users().getUsersCount(realm);
+            }
         }
     }
 
@@ -446,28 +513,35 @@ public class UsersResource {
     private Stream<UserRepresentation> searchForUser(Map<String, String> attributes, RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, Integer firstResult, Integer maxResults, Boolean includeServiceAccounts) {
         attributes.put(UserModel.INCLUDE_SERVICE_ACCOUNT, includeServiceAccounts.toString());
 
-        if (!auth.users().canView()) {
-            Set<String> groupModels = auth.groups().getGroupsWithViewPermission();
-
-            if (!groupModels.isEmpty()) {
-                session.setAttribute(UserModel.GROUPS, groupModels);
+        if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
+            Set<String> groupIds = auth.groups().getGroupIdsWithViewPermission();
+            if (!groupIds.isEmpty()) {
+                session.setAttribute(UserModel.GROUPS, groupIds);
             }
         }
 
-        Stream<UserModel> userModels = session.users().searchForUserStream(realm, attributes, firstResult, maxResults).filter(usersEvaluator::canView);
-        return toRepresentation(realm, usersEvaluator, briefRepresentation, userModels);
+        return toRepresentation(realm, usersEvaluator, briefRepresentation, session.users().searchForUserStream(realm, attributes, firstResult, maxResults));
     }
 
     private Stream<UserRepresentation> toRepresentation(RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, Stream<UserModel> userModels) {
         boolean briefRepresentationB = briefRepresentation != null && briefRepresentation;
 
-        usersEvaluator.grantIfNoPermission(session.getAttribute(UserModel.GROUPS) != null);
-        return userModels.filter(usersEvaluator::canView)
+        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+            usersEvaluator.grantIfNoPermission(session.getAttribute(UserModel.GROUPS) != null);
+            userModels = userModels.filter(usersEvaluator::canView);
+            usersEvaluator.grantIfNoPermission(session.getAttribute(UserModel.GROUPS) != null);
+        }
+
+        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
+
+        return userModels
                 .map(user -> {
-                    UserRepresentation userRep = briefRepresentationB
-                            ? ModelToRepresentation.toBriefRepresentation(user)
-                            : ModelToRepresentation.toRepresentation(session, realm, user);
-                    userRep.setAccess(usersEvaluator.getAccess(user));
+                    UserProfile profile = provider.create(UserProfileContext.USER_API, user);
+                    UserRepresentation rep = profile.toRepresentation();
+                    UserRepresentation userRep = briefRepresentationB ?
+                            ModelToRepresentation.toBriefRepresentation(user, rep, false) :
+                            ModelToRepresentation.toRepresentation(session, realm, user, rep, false);
+                    userRep.setAccess(usersEvaluator.getAccessForListing(user));
                     return userRep;
                 });
     }

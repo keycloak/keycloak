@@ -47,6 +47,9 @@ public class LoginPasswordResetPage extends LanguageComboboxAwarePage {
     @FindBy(id = "kc-info-wrapper")
     private WebElement infoWrapper;
 
+    @FindBy(id = "kc-reset-password-form")
+    private WebElement formResetPassword;
+
     public void changePassword() {
         UIUtils.clickLink(submitButton);
     }
@@ -60,10 +63,6 @@ public class LoginPasswordResetPage extends LanguageComboboxAwarePage {
 
     public boolean isCurrent() {
         return PageUtils.getPageTitle(driver).equals("Forgot Your Password?");
-    }
-
-    public void open() {
-        throw new UnsupportedOperationException();
     }
 
     public String getSuccessMessage() {
@@ -100,5 +99,9 @@ public class LoginPasswordResetPage extends LanguageComboboxAwarePage {
         } catch (NoSuchElementException e) {
             return null;
         }
+    }
+
+    public String getFormUrl() {
+            return formResetPassword.getAttribute("action");
     }
 }

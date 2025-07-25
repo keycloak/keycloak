@@ -17,10 +17,7 @@
 
 package org.keycloak.testsuite.adapter;
 
-import org.apache.commons.io.IOUtils;
 import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.shrinkwrap.api.Archive;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -31,10 +28,9 @@ import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.adapter.page.AppServerContextRoot;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.util.ServerURLs;
+import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 
-import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -123,7 +119,7 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
     public void enableUnmanagedAttributes() {
         for (RealmRepresentation realm : adminClient.realms().findAll()) {
             UserProfileResource upResource = adminClient.realm(realm.getRealm()).users().userProfile();
-            VerifyProfileTest.enableUnmanagedAttributes(upResource);
+            UserProfileUtil.enableUnmanagedAttributes(upResource);
         }
     }
 

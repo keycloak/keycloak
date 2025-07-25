@@ -70,6 +70,10 @@ public class JsonSerialization {
         return mapper.writeValueAsBytes(obj);
     }
 
+    public static JsonNode writeValueAsNode(Object obj) {
+        return mapper.valueToTree(obj);
+    }
+
     public static <T> T readValue(byte[] bytes, Class<T> type) throws IOException {
         return mapper.readValue(bytes, type);
     }

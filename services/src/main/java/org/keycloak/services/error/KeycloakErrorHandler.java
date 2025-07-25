@@ -94,6 +94,8 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
             error.setError(getErrorCode(throwable));
             if (throwable.getCause() instanceof ModelException) {
                 error.setErrorDescription(throwable.getMessage());
+            } if (throwable instanceof ModelDuplicateException) {
+                error.setErrorDescription(throwable.getMessage());
             } else if (throwable instanceof JsonProcessingException || throwable.getCause() instanceof JsonProcessingException) {
                 error.setErrorDescription("Cannot parse the JSON");
             } else if (isServerError) {
@@ -153,6 +155,10 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
             return OAuthErrorException.INVALID_REQUEST;
         }
 
+        if (cause instanceof ModelDuplicateException || throwable instanceof ModelDuplicateException) {
+            return "conflict";
+        }
+
         if (throwable instanceof WebApplicationException && throwable.getMessage() != null) {
             return throwable.getMessage();
         }
@@ -188,6 +194,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
         final var localeBean =  new LocaleBean(realm, locale, session.getContext().getUri().getRequestUriBuilder(), messagesBundle);
         final var lang = realm.isInternationalizationEnabled() ? localeBean.getCurrentLanguageTag() : Locale.ENGLISH.toLanguageTag();
 
+        attributes.put("pageId", "error");
         attributes.put("statusCode", responseStatus.getStatusCode());
 
         attributes.put("realm", realm);

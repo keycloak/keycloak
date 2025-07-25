@@ -18,19 +18,7 @@
 package org.keycloak.authentication.authenticators.client;
 
 
-import java.security.PublicKey;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import jakarta.ws.rs.core.Response;
-
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
@@ -42,13 +30,18 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
-import org.keycloak.protocol.oidc.par.endpoints.ParEndpoint;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ServicesLogger;
-import org.keycloak.services.Urls;
+
+import java.security.PublicKey;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.keycloak.models.TokenManager.DEFAULT_VALIDATOR;
 
@@ -113,13 +106,7 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
                 throw new RuntimeException("Signature on JWT token failed validation");
             }
 
-            // Allow both "issuer" or "token-endpoint" as audience
-            List<String> expectedAudiences = getExpectedAudiences(context, realm);
-
-            if (!token.hasAnyAudience(expectedAudiences)) {
-                throw new RuntimeException("Token audience doesn't match domain. Expected audiences are any of " + expectedAudiences
-                        + " but audience from token is '" + Arrays.asList(token.getAudience()) + "'");
-            }
+            validator.validateTokenAudience(context, realm, token);
 
             validator.validateToken();
             validator.validateTokenReuse();
@@ -207,17 +194,5 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
         } else {
             return Collections.emptySet();
         }
-    }
-
-    private List<String> getExpectedAudiences(ClientAuthenticationFlowContext context, RealmModel realm) {
-        String issuerUrl = Urls.realmIssuer(context.getUriInfo().getBaseUri(), realm.getName());
-        String tokenUrl = OIDCLoginProtocolService.tokenUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
-        String tokenIntrospectUrl = OIDCLoginProtocolService.tokenIntrospectionUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
-        String parEndpointUrl = ParEndpoint.parUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
-        List<String> expectedAudiences = new ArrayList<>(Arrays.asList(issuerUrl, tokenUrl, tokenIntrospectUrl, parEndpointUrl));
-        String backchannelAuthenticationUrl = CibaGrantType.authorizationUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
-        expectedAudiences.add(backchannelAuthenticationUrl);
-
-        return expectedAudiences;
     }
 }

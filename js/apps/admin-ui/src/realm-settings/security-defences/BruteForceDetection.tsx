@@ -140,7 +140,7 @@ export const BruteForceDetection = ({
               labelIcon={t("failureFactorHelp")}
               controller={{
                 defaultValue: 0,
-                rules: { required: t("required") },
+                rules: { required: t("required"), min: 0 },
               }}
             />
             {bruteForceMode ===
@@ -151,6 +151,7 @@ export const BruteForceDetection = ({
                 labelIcon={t("maxTemporaryLockoutsHelp")}
                 controller={{
                   defaultValue: 0,
+                  rules: { min: 0 },
                 }}
               />
             )}
@@ -161,16 +162,18 @@ export const BruteForceDetection = ({
                 <SelectControl
                   name="bruteForceStrategy"
                   label={t("bruteForceStrategy")}
-                  labelIcon={t("bruteForceStrategyHelp")}
+                  labelIcon={t("bruteForceStrategyHelp", {
+                    failureFactor: form.getValues("failureFactor"),
+                  })}
                   controller={{ defaultValue: "" }}
                   options={bruteForceStrategyTypes.map((key) => ({
                     key,
                     value: t(`bruteForceStrategy.${key}`),
                   }))}
                 />
-                <Time name="waitIncrementSeconds" />
-                <Time name="maxFailureWaitSeconds" />
-                <Time name="maxDeltaTimeSeconds" />
+                <Time name="waitIncrementSeconds" min={0} />
+                <Time name="maxFailureWaitSeconds" min={0} />
+                <Time name="maxDeltaTimeSeconds" min={0} />
               </>
             )}
             <NumberControl
@@ -179,9 +182,10 @@ export const BruteForceDetection = ({
               labelIcon={t("quickLoginCheckMilliSecondsHelp")}
               controller={{
                 defaultValue: 0,
+                rules: { min: 0 },
               }}
             />
-            <Time name="minimumQuickLoginWaitSeconds" />
+            <Time name="minimumQuickLoginWaitSeconds" min={0} />
           </>
         )}
 

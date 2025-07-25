@@ -41,13 +41,19 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak.testframework</groupId>
+                <artifactId>keycloak-test-framework-junit5-config</artifactId>
+                <version>${project.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak.testframework</groupId>
                 <artifactId>keycloak-test-framework-ui</artifactId>
                 <version>${project.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.keycloak.testframework</groupId>
-                <artifactId>keycloak-test-framework-oauth-nimbus-poc</artifactId>
+                <artifactId>keycloak-test-framework-oauth</artifactId>
                 <version>${project.version}</version>
                 <scope>test</scope>
             </dependency>
@@ -96,6 +102,12 @@
             <dependency>
                 <groupId>org.keycloak.testframework</groupId>
                 <artifactId>keycloak-test-framework-remote-providers</artifactId>
+                <version>${project.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak.testframework</groupId>
+                <artifactId>keycloak-test-framework-clustering</artifactId>
                 <version>${project.version}</version>
                 <scope>test</scope>
             </dependency>

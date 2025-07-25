@@ -23,6 +23,7 @@ import java.util.Optional;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import io.fabric8.generator.annotation.Default;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.sundr.builder.annotations.Buildable;
 import org.keycloak.operator.Constants;
@@ -41,8 +42,9 @@ public class NetworkPolicySpec {
             "If this field is present and contains at least one item, this rule allows traffic only if the traffic matches at least one item in the from list.";
 
     @JsonProperty("enabled")
-    @JsonPropertyDescription("Enables or disable the ingress traffic control.")
-    private boolean networkPolicyEnabled = false;
+    @JsonPropertyDescription("Enables or disables the ingress traffic control.")
+    @Default("true")
+    private boolean networkPolicyEnabled = true;
 
     @JsonProperty("http")
     @JsonPropertyDescription(RULE_DESCRIPTION)
@@ -96,7 +98,7 @@ public class NetworkPolicySpec {
     public static boolean isNetworkPolicyEnabled(Keycloak keycloak) {
         return networkPolicySpecOf(keycloak)
                 .map(NetworkPolicySpec::isNetworkPolicyEnabled)
-                .orElse(false);
+                .orElse(true);
     }
 
     public static String networkPolicyName(Keycloak keycloak) {

@@ -19,10 +19,8 @@ package org.keycloak.models;
 import org.keycloak.provider.Provider;
 import org.keycloak.storage.client.ClientLookupProvider;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -105,19 +103,19 @@ public interface ClientProvider extends ClientLookupProvider, Provider {
     void removeClients(RealmModel realm);
 
     /**
-     * Assign clientScopes to the client. Add as default scopes (if parameter 'defaultScope' is true) 
+     * Assign clientScopes to the client. Add as default scopes (if parameter 'defaultScope' is true)
      * or optional scopes (if parameter 'defaultScope' is false)
-     * 
+     *
      * @param realm Realm.
      * @param client Client.
      * @param clientScopes to be assigned
-     * @param defaultScope if true the scopes are assigned as default, or optional in case of false 
+     * @param defaultScope if true the scopes are assigned as default, or optional in case of false
      */
     void addClientScopes(RealmModel realm, ClientModel client, Set<ClientScopeModel> clientScopes, boolean defaultScope);
 
     /**
-     * Unassign clientScope from the client. 
-     * 
+     * Unassign clientScope from the client.
+     *
      * @param realm Realm.
      * @param client Client.
      * @param clientScope to be unassigned
@@ -144,4 +142,5 @@ public interface ClientProvider extends ClientLookupProvider, Provider {
      */
     @Deprecated
     Map<ClientModel, Set<String>> getAllRedirectUrisOfEnabledClients(RealmModel realm);
+
 }

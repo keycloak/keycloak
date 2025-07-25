@@ -33,7 +33,6 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientCond
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -79,16 +78,16 @@ import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResou
 import org.keycloak.testsuite.rest.representation.TestAuthenticationChannelRequest;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject;
 import org.keycloak.testsuite.util.MutualTLSUtils;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
-import org.keycloak.testsuite.util.OAuthClient.AuthenticationRequestAcknowledgement;
+import org.keycloak.testsuite.util.oauth.ciba.AuthenticationRequestAcknowledgement;
 import org.keycloak.util.JsonSerialization;
 
 /**
  * Test for the FAPI CIBA specifications (still implementer's draft):
- * - Financial-grade API: Client Initiated Backchannel Authentication Profile - https://bitbucket.org/openid/fapi/src/master/Financial_API_WD_CIBA.md
- *
+ * - <a href="https://openid.net/specs/openid-financial-api-ciba.html">Financial-grade API: Client Initiated Backchannel Authentication Profile</a>
+ * <p>
  * Mostly tests the global FAPI policies work as expected
  * This class only tests FAPI CIBA related requirements. OIDC CIBA related requirements has been tested by CIBATest.
  *
@@ -105,9 +104,7 @@ public class FAPICIBATest extends AbstractFAPITest {
 
         // Register client with clientIdAndSecret - should fail
         try {
-            createClientByAdmin("invalid", (ClientRepresentation clientRep) -> {
-                clientRep.setClientAuthenticatorType(ClientIdAndSecretAuthenticator.PROVIDER_ID);
-            });
+            createClientByAdmin("invalid", (ClientRepresentation clientRep) -> clientRep.setClientAuthenticatorType(ClientIdAndSecretAuthenticator.PROVIDER_ID));
             fail();
         } catch (ClientPolicyException e) {
             assertEquals(OAuthErrorException.INVALID_CLIENT_METADATA, e.getMessage());
@@ -115,9 +112,7 @@ public class FAPICIBATest extends AbstractFAPITest {
 
         // Register client with signedJWT - should fail
         try {
-            createClientByAdmin("invalid", (ClientRepresentation clientRep) -> {
-                clientRep.setClientAuthenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID);
-            });
+            createClientByAdmin("invalid", (ClientRepresentation clientRep) -> clientRep.setClientAuthenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID));
             fail();
         } catch (ClientPolicyException e) {
             assertEquals(OAuthErrorException.INVALID_CLIENT_METADATA, e.getMessage());
@@ -135,16 +130,12 @@ public class FAPICIBATest extends AbstractFAPITest {
         }
 
         // Try to register client with "client-jwt" - should pass
-        String clientUUID = createClientByAdmin("client-jwt", (ClientRepresentation clientRep) -> {
-            clientRep.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID);
-        });
+        String clientUUID = createClientByAdmin("client-jwt", (ClientRepresentation clientRep) -> clientRep.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID));
         ClientRepresentation client = getClientByAdmin(clientUUID);
         Assert.assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // Try to register client with "client-x509" - should pass
-        clientUUID = createClientByAdmin("client-x509", (ClientRepresentation clientRep) -> {
-            clientRep.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID);
-        });
+        clientUUID = createClientByAdmin("client-x509", (ClientRepresentation clientRep) -> clientRep.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID));
         client = getClientByAdmin(clientUUID);
         Assert.assertEquals(X509ClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
@@ -195,13 +186,11 @@ public class FAPICIBATest extends AbstractFAPITest {
         Assert.assertEquals(Algorithm.ES256, client.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG));
 
         // Test default algorithms set everywhere
-        clientUUID = createClientByAdmin("client-jwt-default-alg", (ClientRepresentation clientRep) -> {
-            clientRep.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID);
-        });
+        clientUUID = createClientByAdmin("client-jwt-default-alg", (ClientRepresentation clientRep) -> clientRep.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID));
         client = getClientByAdmin(clientUUID);
         clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
         Assert.assertEquals(Algorithm.PS256, clientConfig.getIdTokenSignedResponseAlg());
-        Assert.assertEquals(Algorithm.PS256, clientConfig.getRequestObjectSignatureAlg().toString());
+        Assert.assertEquals(Algorithm.PS256, clientConfig.getRequestObjectSignatureAlg());
         Assert.assertEquals(Algorithm.PS256, clientConfig.getUserInfoSignedResponseAlg());
         Assert.assertEquals(Algorithm.PS256, clientConfig.getTokenEndpointAuthSigningAlg());
         Assert.assertEquals(Algorithm.PS256, client.getAttributes().get(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG));
@@ -237,7 +226,7 @@ public class FAPICIBATest extends AbstractFAPITest {
 
         // user Backchannel Authentication Request
         AuthenticationRequestAcknowledgement response = doBackchannelAuthenticationRequestWithClientSignedJWT(
-                signedJwt, encodedRequestObject, () -> MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore());
+                signedJwt, encodedRequestObject, MutualTLSUtils::newCloseableHttpClientWithDefaultKeyStoreAndTrustStore);
         assertThat(response.getStatusCode(), is(equalTo(200)));
 
         // user Authentication Channel Request
@@ -252,8 +241,8 @@ public class FAPICIBATest extends AbstractFAPITest {
         String signedJwt2 = createSignedRequestToken(clientId, privateKey, publicKey, org.keycloak.crypto.Algorithm.PS256);
 
         // user Token Request
-        OAuthClient.AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequestWithClientSignedJWT(
-                signedJwt2, response.getAuthReqId(), () -> MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore());
+        AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequestWithClientSignedJWT(
+                signedJwt2, response.getAuthReqId(), MutualTLSUtils::newCloseableHttpClientWithDefaultKeyStoreAndTrustStore);
         verifyBackchannelAuthenticationTokenRequest(tokenRes, clientId, TEST_USERNAME);
 
         // Logout and remove consent of the user for next logins
@@ -290,7 +279,7 @@ public class FAPICIBATest extends AbstractFAPITest {
 
         // user Backchannel Authentication Request
         AuthenticationRequestAcknowledgement response = doBackchannelAuthenticationRequestWithClientSignedJWT(
-                signedJwt, encodedRequestObject, () -> MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore());
+                signedJwt, encodedRequestObject, MutualTLSUtils::newCloseableHttpClientWithDefaultKeyStoreAndTrustStore);
         assertThat(response.getStatusCode(), is(equalTo(200)));
 
         // user Authentication Channel Request
@@ -305,8 +294,8 @@ public class FAPICIBATest extends AbstractFAPITest {
         String signedJwt2 = createSignedRequestToken(clientId, privateKey, publicKey, org.keycloak.crypto.Algorithm.PS256);
 
         // user Token Request
-        OAuthClient.AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequestWithClientSignedJWT(
-                signedJwt2, response.getAuthReqId(), () -> MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore());
+        AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequestWithClientSignedJWT(
+                signedJwt2, response.getAuthReqId(), MutualTLSUtils::newCloseableHttpClientWithDefaultKeyStoreAndTrustStore);
         assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
         assertThat(tokenRes.getError(), is(equalTo(OAuthErrorException.ACCESS_DENIED)));
         assertThat(tokenRes.getErrorDescription(), is(equalTo("not authorized")));
@@ -335,7 +324,7 @@ public class FAPICIBATest extends AbstractFAPITest {
 
         // user Backchannel Authentication Request
         AuthenticationRequestAcknowledgement response = doBackchannelAuthenticationRequestWithMTLS(
-                clientId, encodedRequestObject, () -> MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore());
+                clientId, encodedRequestObject, MutualTLSUtils::newCloseableHttpClientWithDefaultKeyStoreAndTrustStore);
         assertThat(response.getStatusCode(), is(equalTo(200)));
 
         // user Authentication Channel Request
@@ -348,8 +337,8 @@ public class FAPICIBATest extends AbstractFAPITest {
         doAuthenticationChannelCallback(testRequest);
 
         // user Token Request
-        OAuthClient.AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequestWithMTLS(
-                clientId, response.getAuthReqId(), () -> MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore());
+        AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequestWithMTLS(
+                clientId, response.getAuthReqId(), MutualTLSUtils::newCloseableHttpClientWithDefaultKeyStoreAndTrustStore);
         verifyBackchannelAuthenticationTokenRequest(tokenRes, clientId, TEST_USERNAME);
 
         // Logout and remove consent of the user for next logins
@@ -380,7 +369,7 @@ public class FAPICIBATest extends AbstractFAPITest {
 
         // user Backchannel Authentication Request
         AuthenticationRequestAcknowledgement response = doBackchannelAuthenticationRequestWithMTLS(
-                clientId, encodedRequestObject, () -> MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore());
+                clientId, encodedRequestObject, MutualTLSUtils::newCloseableHttpClientWithDefaultKeyStoreAndTrustStore);
         assertThat(response.getStatusCode(), is(equalTo(400)));
         assertThat(response.getError(), is(equalTo(OAuthErrorException.INVALID_REQUEST)));
         assertThat(response.getErrorDescription(), is(equalTo("Missing parameter: binding_message")));
@@ -403,7 +392,7 @@ public class FAPICIBATest extends AbstractFAPITest {
         ClientRepresentation client = clientResource.toRepresentation();
         assertEquals(X509ClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
-        AuthenticationRequestAcknowledgement response = doInvalidBackchannelAuthenticationRequestWithMTLS(clientId, TEST_USERNAME, bindingMessage, () -> MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore());
+        AuthenticationRequestAcknowledgement response = doInvalidBackchannelAuthenticationRequestWithMTLS(clientId, TEST_USERNAME, bindingMessage, MutualTLSUtils::newCloseableHttpClientWithDefaultKeyStoreAndTrustStore);
         assertThat(response.getStatusCode(), is(equalTo(400)));
         assertThat(response.getError(), is(equalTo(OAuthErrorException.INVALID_REQUEST)));
         assertThat(response.getErrorDescription(), is(equalTo("Missing parameter: 'request' or 'request_uri'")));
@@ -436,9 +425,9 @@ public class FAPICIBATest extends AbstractFAPITest {
     private AuthorizationEndpointRequestObject createValidAuthorizationEndpointRequestObject(String username, String bindingMessage) throws Exception {
         AuthorizationEndpointRequestObject requestObject = new AuthorizationEndpointRequestObject();
         requestObject.id(org.keycloak.models.utils.KeycloakModelUtils.generateId());
-        requestObject.iat(Long.valueOf(Time.currentTime()));
+        requestObject.iat((long) Time.currentTime());
         requestObject.setScope("openid");
-        requestObject.setMax_age(Integer.valueOf(600));
+        requestObject.setMax_age(600);
         requestObject.audience(Urls.realmIssuer(new URI(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth"), REALM_NAME), "https://example.com");
         requestObject.setLoginHint(username);
         requestObject.setBindingMessage(bindingMessage);
@@ -447,16 +436,16 @@ public class FAPICIBATest extends AbstractFAPITest {
 
     private AuthorizationEndpointRequestObject createFAPIValidAuthorizationEndpointRequestObject(String username, String bindingMessage) throws Exception {
     	AuthorizationEndpointRequestObject requestObject = createValidAuthorizationEndpointRequestObject(username, bindingMessage);
-        requestObject.exp(requestObject.getIat() + Long.valueOf(300));
+        requestObject.exp(requestObject.getIat() + 300L);
         requestObject.nbf(requestObject.getIat());
         requestObject.audience(Urls.realmIssuer(new URI(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth"), REALM_NAME));
         requestObject.issuer(clientId);
         requestObject.id(org.keycloak.models.utils.KeycloakModelUtils.generateId());
-        requestObject.iat(Long.valueOf(Time.currentTime()));
+        requestObject.iat((long) Time.currentTime());
         return requestObject;
     }
 
-    private String registerSharedAuthenticationRequest(AuthorizationEndpointRequestObject requestObject, String clientId, String sigAlg) throws URISyntaxException, IOException {
+    private String registerSharedAuthenticationRequest(AuthorizationEndpointRequestObject requestObject, String clientId, String sigAlg) throws IOException {
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
 
         // register request object
@@ -476,7 +465,7 @@ public class FAPICIBATest extends AbstractFAPITest {
             parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
             parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, signedJwt));
             parameters.add(new BasicNameValuePair(OIDCLoginProtocol.REQUEST_PARAM, request));
-            CloseableHttpResponse response = sendRequest(oauth.getBackchannelAuthenticationUrl(), parameters, httpClientSupplier);
+            CloseableHttpResponse response = sendRequest(oauth.getEndpoints().getBackchannelAuthentication(), parameters, httpClientSupplier);
             return new AuthenticationRequestAcknowledgement(response);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -490,7 +479,7 @@ public class FAPICIBATest extends AbstractFAPITest {
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CIBA_GRANT_TYPE));
             parameters.add(new BasicNameValuePair(OIDCLoginProtocol.REQUEST_PARAM, request));
             parameters.add(new BasicNameValuePair(OIDCLoginProtocol.CLIENT_ID_PARAM, clientId));
-            CloseableHttpResponse response = sendRequest(oauth.getBackchannelAuthenticationUrl(), parameters, httpClientSupplier);
+            CloseableHttpResponse response = sendRequest(oauth.getEndpoints().getBackchannelAuthentication(), parameters, httpClientSupplier);
             return new AuthenticationRequestAcknowledgement(response);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -498,7 +487,7 @@ public class FAPICIBATest extends AbstractFAPITest {
     }
 
     private AuthenticationRequestAcknowledgement doInvalidBackchannelAuthenticationRequestWithMTLS(
-            String clientId, String username, String bindingMessage, Supplier<CloseableHttpClient> httpClientSupplier) throws Exception {
+            String clientId, String username, String bindingMessage, Supplier<CloseableHttpClient> httpClientSupplier) {
         try {
             List<NameValuePair> parameters = new LinkedList<>();
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CIBA_GRANT_TYPE));
@@ -506,7 +495,7 @@ public class FAPICIBATest extends AbstractFAPITest {
             parameters.add(new BasicNameValuePair(LOGIN_HINT_PARAM, username));
             parameters.add(new BasicNameValuePair(BINDING_MESSAGE, bindingMessage));
             parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, OAuth2Constants.SCOPE_OPENID));
-            CloseableHttpResponse response = sendRequest(oauth.getBackchannelAuthenticationUrl(), parameters, httpClientSupplier);
+            CloseableHttpResponse response = sendRequest(oauth.getEndpoints().getBackchannelAuthentication(), parameters, httpClientSupplier);
             return new AuthenticationRequestAcknowledgement(response);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -516,12 +505,11 @@ public class FAPICIBATest extends AbstractFAPITest {
     private TestAuthenticationChannelRequest doAuthenticationChannelRequest(String bindingMessage) {
         // get Authentication Channel Request keycloak has done on Backchannel Authentication Endpoint from the FIFO queue of testing Authentication Channel Request API
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
-        TestAuthenticationChannelRequest authenticationChannelReq = oidcClientEndpointsResource.getAuthenticationChannel(bindingMessage);
-        return authenticationChannelReq;
+        return oidcClientEndpointsResource.getAuthenticationChannel(bindingMessage);
     }
 
     private EventRepresentation doAuthenticationChannelCallback(TestAuthenticationChannelRequest request) throws Exception {
-        int statusCode = oauth.doAuthenticationChannelCallback(request.getBearerToken(), SUCCEED);
+        int statusCode = oauth.ciba().doAuthenticationChannelCallback(request.getBearerToken(), SUCCEED);
         assertThat(statusCode, is(equalTo(200)));
         // check login event : ignore user id and other details except for username
         EventRepresentation representation = new EventRepresentation();
@@ -532,7 +520,7 @@ public class FAPICIBATest extends AbstractFAPITest {
     }
 
     private EventRepresentation doAuthenticationChannelCallbackCancelled(TestAuthenticationChannelRequest request) throws Exception {
-        int statusCode = oauth.doAuthenticationChannelCallback(request.getBearerToken(), CANCELLED);
+        int statusCode = oauth.ciba().doAuthenticationChannelCallback(request.getBearerToken(), CANCELLED);
         assertThat(statusCode, is(equalTo(200)));
         // check login event : ignore user id and other details except for username
         EventRepresentation representation = new EventRepresentation();
@@ -542,7 +530,7 @@ public class FAPICIBATest extends AbstractFAPITest {
         return representation;
     }
 
-    private OAuthClient.AccessTokenResponse doBackchannelAuthenticationTokenRequestWithClientSignedJWT(
+    private AccessTokenResponse doBackchannelAuthenticationTokenRequestWithClientSignedJWT(
             String signedJwt, String authReqId, Supplier<CloseableHttpClient> httpClientSupplier) {
         try {
             List<NameValuePair> parameters = new LinkedList<>();
@@ -550,28 +538,28 @@ public class FAPICIBATest extends AbstractFAPITest {
             parameters.add(new BasicNameValuePair(AUTH_REQ_ID, authReqId));
             parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
             parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, signedJwt));
-            CloseableHttpResponse response = sendRequest(oauth.getBackchannelAuthenticationTokenRequestUrl(), parameters, httpClientSupplier);
-            return new OAuthClient.AccessTokenResponse(response);
+            CloseableHttpResponse response = sendRequest(oauth.getEndpoints().getToken(), parameters, httpClientSupplier);
+            return new AccessTokenResponse(response);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    private OAuthClient.AccessTokenResponse doBackchannelAuthenticationTokenRequestWithMTLS(
+    private AccessTokenResponse doBackchannelAuthenticationTokenRequestWithMTLS(
             String clientId, String authReqId, Supplier<CloseableHttpClient> httpClientSupplier) {
         try {
             List<NameValuePair> parameters = new LinkedList<>();
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CIBA_GRANT_TYPE));
             parameters.add(new BasicNameValuePair(AUTH_REQ_ID, authReqId));
             parameters.add(new BasicNameValuePair(OIDCLoginProtocol.CLIENT_ID_PARAM, clientId));
-            CloseableHttpResponse response = sendRequest(oauth.getBackchannelAuthenticationTokenRequestUrl(), parameters, httpClientSupplier);
-            return new OAuthClient.AccessTokenResponse(response);
+            CloseableHttpResponse response = sendRequest(oauth.getEndpoints().getToken(), parameters, httpClientSupplier);
+            return new AccessTokenResponse(response);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    private void verifyBackchannelAuthenticationTokenRequest(OAuthClient.AccessTokenResponse tokenRes, String clientId, String username) {
+    private void verifyBackchannelAuthenticationTokenRequest(AccessTokenResponse tokenRes, String clientId, String username) {
         assertThat(tokenRes.getStatusCode(), is(equalTo(200)));
 
         AccessToken accessToken = oauth.verifyToken(tokenRes.getAccessToken());

@@ -29,7 +29,9 @@ import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.TestProvider;
 import org.keycloak.it.junit5.extension.WithEnvVars;
+import org.keycloak.it.resource.realm.TestRealmResourceTestProvider;
 import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 
@@ -61,24 +63,33 @@ public class ProxyHostnameV2DistTest {
         assertForwardedHeaderIsIgnored();
         assertXForwardedHeadersAreIgnored();
     }
-    
+
     @Test
     void testTrustedProxiesWithoutProxyHeaders(KeycloakDistribution distribution) {
         CLIResult result = distribution.run("start-dev", "--proxy-trusted-addresses=1.0.0.0");
         result.assertError("proxy-trusted-addresses available only when proxy-headers is set");
     }
-    
+
     @Test
     void testTrustedProxiesWithInvalidAddress(KeycloakDistribution distribution) {
         CLIResult result = distribution.run("start-dev", "--proxy-headers=xforwarded", "--proxy-trusted-addresses=1.0.0.0:8080");
         result.assertError("1.0.0.0:8080 is not a valid IP address (IPv4 or IPv6) nor valid CIDR notation.");
     }
-    
+
     @Test
     @Launch({ "start-dev", "--hostname-strict=false", "--proxy-headers=xforwarded", "--proxy-trusted-addresses=1.0.0.0" })
+    @TestProvider(TestRealmResourceTestProvider.class)
     public void testProxyNotTrusted() {
         assertForwardedHeaderIsIgnored();
         assertForwardedHeaderIsIgnored();
+        given().header("X-Forwarded-Host", "test:123").when().get("http://mykeycloak.org:8080/realms/master/test-resources/trusted").then().statusCode(204);
+    }
+
+    @Test
+    @Launch({ "start-dev", "--hostname-strict=false", "--proxy-headers=xforwarded", "--proxy-trusted-addresses=127.0.0.1,0:0:0:0:0:0:0:1" })
+    @TestProvider(TestRealmResourceTestProvider.class)
+    public void testProxyTrusted() {
+        given().header("X-Forwarded-Host", "test:123").when().get("http://mykeycloak.org:8080/realms/master/test-resources/trusted").then().statusCode(200);
     }
 
     @Test
@@ -86,9 +97,9 @@ public class ProxyHostnameV2DistTest {
     public void testForwardedProxyHeaders(LaunchResult result) {
         assertForwardedHeader();
         assertXForwardedHeadersAreIgnored();
-        
+
         CLIResult cliResult = (CLIResult)result;
-        cliResult.assertNoMessage(NOT_ADDRESS);
+        cliResult.assertMessage(NOT_ADDRESS); // non-ip addresses are still reported as the client ip
         cliResult.assertMessage(ADDRESS);
     }
 
@@ -117,9 +128,9 @@ public class ProxyHostnameV2DistTest {
     }
 
     private void assertXForwardedHeaders() {
-        given().header("X-Forwarded-Host", "test").when().get("http://mykeycloak.org:8080").then().header(HttpHeaders.LOCATION, containsString("http://test:8080/admin"));
-        given().header("X-Forwarded-Host", "test").when().get("http://localhost:8080").then().header(HttpHeaders.LOCATION, containsString("http://test:8080/admin"));
-        given().header("X-Forwarded-Host", "test").when().get("https://localhost:8443").then().header(HttpHeaders.LOCATION, containsString("https://test:8443/admin"));
+        given().header("X-Forwarded-Host", "test:123").when().get("http://mykeycloak.org:8080").then().header(HttpHeaders.LOCATION, containsString("http://test:123/admin"));
+        given().header("X-Forwarded-Host", "test:123").when().get("http://localhost:8080").then().header(HttpHeaders.LOCATION, containsString("http://test:123/admin"));
+        given().header("X-Forwarded-Host", "test:123").when().get("https://localhost:8443").then().header(HttpHeaders.LOCATION, containsString("https://test:123/admin"));
         given().header("X-Forwarded-Proto", "https").when().get("http://localhost:8080").then().header(HttpHeaders.LOCATION, containsString("https://localhost/admin"));
         given().header("X-Forwarded-Proto", "https").header("X-Forwarded-Port", "8443").when().get("http://localhost:8080").then().header(HttpHeaders.LOCATION, containsString("https://localhost:8443/admin"));
     }

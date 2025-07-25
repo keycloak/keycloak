@@ -34,6 +34,7 @@ import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.DryRun;
 import org.keycloak.it.junit5.extension.KeepServerAlive;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.WithEnvVars;
 import org.keycloak.it.utils.KeycloakDistribution;
 
 import java.util.Optional;
@@ -42,9 +43,9 @@ import java.util.function.Consumer;
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 @DistributionTest(reInstall = DistributionTest.ReInstall.NEVER, defaultOptions = "--db=dev-file")
+@WithEnvVars({"KC_CACHE", "local"}) // avoid flakey port conflicts
 @RawDistOnly(reason = "Containers are immutable")
 @Tag(DistributionTest.WIN)
 @TestMethodOrder(OrderAnnotation.class)
@@ -187,8 +188,9 @@ public class QuarkusPropertiesDistTest {
             "--config-keystore=../../../../src/test/resources/keystore", "--config-keystore-password=secret" })
     @Order(12)
     void testSmallRyeKeyStoreConfigSource(CLIResult cliResult) {
-        // keytool -importpass -alias kc.log-level -keystore keystore -storepass secret -storetype PKCS12 -v (with "debug" as the stored password)
-        cliResult.assertMessage("DEBUG");
+        // keytool -importpass -alias kc.log-level -keystore keystore -storepass secret -storetype PKCS12 -v (with "org.keycloak.timer:debug" as the stored password)
+        cliResult.assertNoMessage("DEBUG [org.keycloak.services");
+        cliResult.assertMessage("DEBUG [org.keycloak.timer");
         cliResult.assertStarted();
     }
 
@@ -200,7 +202,8 @@ public class QuarkusPropertiesDistTest {
             "--https-certificate-key-file=/tmp/kc/bin/../conf/server.key.pem" })
     @Order(13)
     void testHttpCertsPathTransformer(CLIResult cliResult) {
-        cliResult.assertError("Failed to load 'https-key-' material: NoSuchFileException /tmp/kc/bin/../conf/server.crt.pem");
+        cliResult.assertExitCode(1);
+        cliResult.assertMessage("Failed to load 'https-trust-store' or 'https-key-' material: NoSuchFileException");
     }
 
     @Test
@@ -211,7 +214,8 @@ public class QuarkusPropertiesDistTest {
             "--https-certificate-key-file=C:\\tmp\\kc\\bin\\..\\conf/server.key.pem" })
     @Order(14)
     void testHttpCertsPathTransformerOnWindows(CLIResult cliResult) {
-        cliResult.assertError("Failed to load 'https-key-' material: NoSuchFileException C:\\tmp\\kc\\bin\\..\\conf\\server.crt.pem");
+        cliResult.assertExitCode(1);
+        cliResult.assertMessage("ERROR: Failed to load 'https-trust-store' or 'https-key-' material: NoSuchFileException C:");
     }
 
     public static class AddConsoleHandlerFromQuarkusProps implements Consumer<KeycloakDistribution> {

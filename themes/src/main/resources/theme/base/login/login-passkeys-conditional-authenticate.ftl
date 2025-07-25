@@ -109,23 +109,29 @@
                 challenge : '${challenge}',
                 userVerification : '${userVerification}',
                 rpId : '${rpId}',
-                createTimeout : ${createTimeout},
+                createTimeout : ${createTimeout?c},
                 errmsg : "${msg("webauthn-unsupported-browser-text")?no_esc}"
             };
             authButton.addEventListener("click", () => {
                 authenticateByWebAuthn(input);
-            });
+            }, { once: true });
 
             const args = {
                 isUserIdentified : ${isUserIdentified},
                 challenge : '${challenge}',
                 userVerification : '${userVerification}',
                 rpId : '${rpId}',
-                createTimeout : ${createTimeout},
+                createTimeout : ${createTimeout?c},
                 errmsg : "${msg("passkey-unsupported-browser-text")?no_esc}"
             };
 
-            document.addEventListener("DOMContentLoaded", (event) => initAuthenticate(args));
+            document.addEventListener("DOMContentLoaded", (event) => initAuthenticate(args, (available) => {
+                if (available) {
+                    document.getElementById("kc-form-login").style.display = "block";
+                } else {
+                    document.getElementById("kc-form-passkey-button").style.display = 'block';
+                }
+            }));
         </script>
 
     <#elseif section = "info">

@@ -86,7 +86,7 @@ public class SAMLClientRegistrationTest extends AbstractClientRegistrationTest {
 
         adminClient.realm(TEST).users().get(oidcClientServiceId).roles().clientLevel(realmManagementId).add(Arrays.asList(role));
 
-        String accessToken = oauth.clientId("oidc-client").doClientCredentialsGrantAccessTokenRequest("secret").getAccessToken();
+        String accessToken = oauth.client("oidc-client", "secret").doClientCredentialsGrantAccessTokenRequest().getAccessToken();
         reg.auth(Auth.token(accessToken));
 
         String entityDescriptor = IOUtils.toString(getClass().getResourceAsStream("/clientreg-test/saml-entity-descriptor.xml"), Charset.defaultCharset());

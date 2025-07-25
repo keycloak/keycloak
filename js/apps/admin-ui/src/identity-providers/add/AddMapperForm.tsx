@@ -91,7 +91,7 @@ export const AddMapperForm = ({
               {mapperTypes.map((option) => (
                 <SelectOption
                   selected={option === field.value}
-                  datatest-id={option.id}
+                  data-testid={option.id}
                   key={option.name}
                   value={option}
                 >

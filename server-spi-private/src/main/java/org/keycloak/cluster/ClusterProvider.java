@@ -78,8 +78,14 @@ public interface ClusterProvider extends Provider {
      * @param event
      * @param ignoreSender if true, then sender node itself won't receive the notification
      * @param dcNotify Specify which DCs to notify. See {@link DCNotify} enum values for more info
+     * @deprecated use {@link ClusterProvider#notify(String, ClusterEvent, boolean)} instead. {@link DCNotify} is deprecated. For removal in Keycloak 27.
      */
+    @Deprecated(since = "26.3", forRemoval = true)
     void notify(String taskKey, ClusterEvent event, boolean ignoreSender, DCNotify dcNotify);
+
+    default void notify(String taskKey, ClusterEvent event, boolean ignoreSender) {
+        notify(taskKey, event, ignoreSender, DCNotify.ALL_DCS);
+    }
 
     /**
      * An alternative to {@link #notify(String, ClusterEvent, boolean, DCNotify)} that sends multiple events in a single
@@ -89,11 +95,23 @@ public interface ClusterProvider extends Provider {
      * given {@code taskKey}
      *
      * @see #notify(String, ClusterEvent, boolean, DCNotify)
+     * @deprecated use {@link ClusterProvider#notify(String, Collection, boolean)} instead. {@link DCNotify} is deprecated. For removal in Keycloak 27.
      */
+    @Deprecated(since = "26.3", forRemoval = true)
     default void notify(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender, DCNotify dcNotify) {
         events.forEach(event -> notify(taskKey, event, ignoreSender, dcNotify));
     }
 
+    default void notify(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender) {
+        events.forEach(event -> notify(taskKey, event, ignoreSender, DCNotify.ALL_DCS));
+    }
+
+    /**
+     * This is now used only in deprecated methods.
+     * All methods that are using this enum have a Javadoc suggesting alternative.
+     * @deprecated For removal in Keycloak 27.
+     */
+    @Deprecated(since = "26.3", forRemoval = true)
     enum DCNotify {
         /** Send message to all cluster nodes in all DCs **/
         ALL_DCS,
@@ -102,7 +120,7 @@ public interface ClusterProvider extends Provider {
         LOCAL_DC_ONLY,
 
         /** Send message to all cluster nodes in all datacenters, but NOT to this datacenter. Option "ignoreSender" of method {@link #notify} will be ignored as sender is ignored anyway due it is in this datacenter **/
-        ALL_BUT_LOCAL_DC
+         ALL_BUT_LOCAL_DC
     }
 
 }

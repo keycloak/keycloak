@@ -182,7 +182,6 @@ public abstract class AbstractStorageManager<ProviderType extends Provider,
         if (componentModel == null) {
             return null;
         }
-
         return toStorageProviderModelTypeFunction.apply(componentModel);
     }
 

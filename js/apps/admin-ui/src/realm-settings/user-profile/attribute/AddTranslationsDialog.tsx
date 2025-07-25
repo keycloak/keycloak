@@ -34,6 +34,7 @@ type AddTranslationsDialogProps = {
   translationKey: string;
   fieldName: string;
   toggleDialog: () => void;
+  predefinedAttributes?: string[];
 };
 
 export const AddTranslationsDialog = ({
@@ -41,6 +42,7 @@ export const AddTranslationsDialog = ({
   translationKey,
   fieldName,
   toggleDialog,
+  predefinedAttributes,
 }: AddTranslationsDialogProps) => {
   const { adminClient } = useAdminClient();
   const { t } = useTranslation();
@@ -139,7 +141,10 @@ export const AddTranslationsDialog = ({
         spaceItems={{ default: "spaceItemsNone" }}
       >
         <FlexItem>
-          <Trans i18nKey="addTranslationsModalTitle" values={{ fieldName }}>
+          <Trans
+            i18nKey="addTranslationsModalTitle"
+            values={{ fieldName: t(fieldName) }}
+          >
             You are able to translate the fieldName based on your locale or
             <strong>location</strong>
           </Trans>
@@ -152,7 +157,11 @@ export const AddTranslationsDialog = ({
                 label={t("translationKey")}
                 data-testid="translation-key"
                 isDisabled
-                value={t(orgKey) !== orgKey ? `\${${orgKey}}` : translationKey}
+                value={
+                  predefinedAttributes?.includes(orgKey)
+                    ? `\${${orgKey}}`
+                    : `\${${translationKey}}`
+                }
               />
             </FormGroup>
             <FlexItem>

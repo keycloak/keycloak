@@ -45,6 +45,7 @@ import org.keycloak.credential.CredentialAuthentication;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialInputUpdater;
 import org.keycloak.credential.CredentialInputValidator;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.UserCredentialManager;
 import org.keycloak.federation.kerberos.KerberosPrincipal;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
@@ -101,6 +102,8 @@ import org.keycloak.userprofile.UserProfileMetadata;
 import org.keycloak.userprofile.UserProfileUtil;
 
 import org.keycloak.utils.StreamsUtil;
+import org.keycloak.utils.StringUtil;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -117,6 +120,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
         UserProfileDecorator {
     private static final Logger logger = Logger.getLogger(LDAPStorageProvider.class);
     private static final int DEFAULT_MAX_RESULTS = Integer.MAX_VALUE >> 1;
+    public static final List<String> INTERNAL_ATTRIBUTES = List.of(UserModel.LOCALE);
 
     protected LDAPStorageProviderFactory factory;
     protected KeycloakSession session;
@@ -353,8 +357,11 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
         LDAPObject ldapObject = loadAndValidateUser(realm, user);
         if (ldapObject == null) {
-            logger.warnf("User '%s' can't be deleted from LDAP as it doesn't exist here", user.getUsername());
-            return false;
+            if (model.isRemoveInvalidUsersEnabled()) {
+                logger.warnf("User '%s' can't be deleted from LDAP as it doesn't exist here", user.getUsername());
+                return false;
+            }
+            return true;
         }
 
         ldapIdentityStore.remove(ldapObject);
@@ -660,15 +667,8 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
     private void doImportUser(final RealmModel realm, final UserModel user, final LDAPObject ldapUser) {
         user.setEnabled(true);
-        realm.getComponentsStream(model.getId(), LDAPStorageMapper.class.getName())
-                .sorted(ldapMappersComparator.sortDesc())
-                .forEachOrdered(mapperModel -> {
-                    if (logger.isTraceEnabled()) {
-                        logger.tracef("Using mapper %s during import user from LDAP", mapperModel);
-                    }
-                    LDAPStorageMapper ldapMapper = mapperManager.getMapper(mapperModel);
-                    ldapMapper.onImportUserFromLDAP(ldapUser, user, realm, true);
-                });
+
+        importUserAttributes(realm, user, ldapUser);
 
         String userDN = ldapUser.getDn().toString();
         if (model.isImportEnabled()) user.setFederationLink(model.getId());
@@ -777,6 +777,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
             LDAPUtils.checkUuid(ldapUser, ldapIdentityStore.getConfig());
             // If email attribute mapper is set to "Always Read Value From LDAP" the user may be in Keycloak DB with an old email address
             if (ldapUser.getUuid().equals(user.getFirstAttribute(LDAPConstants.LDAP_ID))) {
+                importUserAttributes(realm, user, ldapUser);
                 return proxy(realm, user, ldapUser, false);
             }
             throw new ModelDuplicateException("User with username '" + ldapUsername + "' already exists in Keycloak. It conflicts with LDAP user with email '" + email + "'");
@@ -1195,9 +1196,54 @@ public class LDAPStorageProvider implements UserStorageProvider,
         // 3 - make all attributes read-only for LDAP users in case that LDAP itself is read-only
         if (getEditMode() == EditMode.READ_ONLY) {
             Stream.concat(metadata.getAttributes().stream(), metadatas.stream())
+                    .filter((m) -> !INTERNAL_ATTRIBUTES.contains(m.getName()))
                     .forEach(attrMetadata -> attrMetadata.addWriteCondition(AttributeMetadata.ALWAYS_FALSE));
         }
 
         return metadatas;
+    }
+
+    @Override
+    public Stream<CredentialModel> getCredentials(RealmModel realm, UserModel user) {
+        LDAPObject ldapObject = loadLDAPUserByUuid(realm, user.getFirstAttribute(LDAPConstants.LDAP_ID));
+
+        if (ldapObject == null) {
+            LDAPConfig config = getLdapIdentityStore().getConfig();
+            throw new IllegalStateException("LDAP object not found for user with attribute [" + config.getUuidLDAPAttributeName() + "] and value [" + user.getFirstAttribute(LDAPConstants.LDAP_ID) + "]");
+        }
+
+        CredentialModel credential = new CredentialModel();
+
+        credential.setType(PasswordCredentialModel.TYPE);
+        credential.setFederationLink(model.getId());
+        credential.setCreatedDate(getPasswordChangedTime(ldapObject));
+
+        return Stream.of(credential);
+    }
+
+    private long getPasswordChangedTime(LDAPObject ldapObject) {
+        String attributeName = getLdapIdentityStore().getPasswordModificationTimeAttributeName();
+        String value = ldapObject.getAttributeAsString(attributeName);
+
+        if (StringUtil.isBlank(value)) {
+            return -1L;
+        }
+
+        if (LDAPConstants.PWD_LAST_SET.equals(attributeName)) {
+            return (Long.parseLong(value) / 10000L) - 11644473600000L;
+        }
+        return LDAPUtils.generalizedTimeToDate(value).getTime();
+    }
+
+    private void importUserAttributes(RealmModel realm, UserModel user, LDAPObject ldapUser) {
+        realm.getComponentsStream(model.getId(), LDAPStorageMapper.class.getName())
+                .sorted(ldapMappersComparator.sortDesc())
+                .forEachOrdered(mapperModel -> {
+                    if (logger.isTraceEnabled()) {
+                        logger.tracef("Using mapper %s during import user from LDAP", mapperModel);
+                    }
+                    LDAPStorageMapper ldapMapper = mapperManager.getMapper(mapperModel);
+                    ldapMapper.onImportUserFromLDAP(ldapUser, user, realm, true);
+                });
     }
 }

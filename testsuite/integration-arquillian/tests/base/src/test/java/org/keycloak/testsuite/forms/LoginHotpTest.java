@@ -27,8 +27,8 @@ import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -43,12 +43,13 @@ import java.net.MalformedURLException;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public class LoginHotpTest extends AbstractTestRealmKeycloakTest {
+public class LoginHotpTest extends AbstractChangeImportedUserPasswordsTest {
 
     public static OTPPolicy policy;
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
+        super.configureTestRealm(testRealm);
         testRealm.setOtpPolicyType(OTPCredentialModel.HOTP);
         testRealm.setOtpPolicyAlgorithm(HmacOTP.DEFAULT_ALGORITHM);
         testRealm.setOtpPolicyLookAheadWindow(2);
@@ -98,7 +99,7 @@ public class LoginHotpTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void loginWithHotpFailure() throws Exception {
         loginPage.open();
-        loginPage.login("test-user@localhost", "password");
+        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
         Assert.assertTrue(loginTotpPage.isCurrent());
 
@@ -117,7 +118,7 @@ public class LoginHotpTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void loginWithMissingHotp() throws Exception {
         loginPage.open();
-        loginPage.login("test-user@localhost", "password");
+        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
         Assert.assertTrue(loginTotpPage.isCurrent());
 
@@ -136,7 +137,7 @@ public class LoginHotpTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void loginWithHotpSuccess() throws Exception {
         loginPage.open();
-        loginPage.login("test-user@localhost", "password");
+        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
         Assert.assertTrue("expecting totpPage got: " + driver.getCurrentUrl(), loginTotpPage.isCurrent());
 

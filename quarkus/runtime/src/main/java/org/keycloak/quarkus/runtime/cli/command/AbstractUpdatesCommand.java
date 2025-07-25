@@ -18,38 +18,45 @@
 package org.keycloak.quarkus.runtime.cli.command;
 
 import java.io.File;
-import java.util.List;
-import java.util.function.Predicate;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.ServiceLoader;
 
-import org.keycloak.config.OptionCategory;
+import org.keycloak.Config;
+import org.keycloak.common.Profile;
+import org.keycloak.compatibility.CompatibilityMetadataProvider;
+import org.keycloak.config.ConfigProviderFactory;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
-import org.keycloak.quarkus.runtime.compatibility.CompatibilityManager;
-import org.keycloak.quarkus.runtime.compatibility.CompatibilityManagerImpl;
 import picocli.CommandLine;
 
-public abstract class AbstractUpdatesCommand extends AbstractCommand implements Runnable {
+public abstract class AbstractUpdatesCommand extends AbstractStartCommand {
 
-    protected final CompatibilityManager compatibilityManager = new CompatibilityManagerImpl();
-
-    @CommandLine.Mixin
-    HelpAllMixin helpAllMixin;
+    private static final int FEATURE_DISABLED_EXIT_CODE = 4;
 
     @CommandLine.Mixin
-    OptimizedMixin optimizedMixin;
+    OptimizedMixin optimizedMixin = new OptimizedMixin();
 
     @Override
-    public List<OptionCategory> getOptionCategories() {
-        return super.getOptionCategories().stream()
-                .filter(Predicate.not(OptionCategory.EXPORT::equals))
-                .filter(Predicate.not(OptionCategory.IMPORT::equals))
-                .toList();
+    protected boolean shouldStart() {
+        return false;
     }
 
-    static void validateOptionIsPresent(String value, String option) {
-        if (value == null || value.isBlank()) {
-            throw new PropertyException("Missing required argument: " + option);
-        }
+    @Override
+    protected Optional<Integer> callCommand() {
+        return super.callCommand().or(() -> {
+            if (!Profile.isAnyVersionOfFeatureEnabled(Profile.Feature.ROLLING_UPDATES_V1)) {
+                printFeatureDisabled();
+                return Optional.of(FEATURE_DISABLED_EXIT_CODE);
+            }
+            loadConfiguration();
+            printPreviewWarning();
+            validateConfig();
+            return Optional.of(executeAction());
+        });
     }
+
+    abstract int executeAction();
 
     static void validateFileIsNotDirectory(File file, String option) {
         if (file.isDirectory()) {
@@ -57,27 +64,41 @@ public abstract class AbstractUpdatesCommand extends AbstractCommand implements 
         }
     }
 
-    void printOut(String message) {
-        var cmd = getCommandLine();
-        if (cmd.isPresent()) {
-            cmd.get().getOut().println(message);
-        } else {
-            System.out.println(message);
+    private void printPreviewWarning() {
+        if (Profile.isFeatureEnabled(Profile.Feature.ROLLING_UPDATES_V2) && (Profile.Feature.ROLLING_UPDATES_V2.getType() == Profile.Feature.Type.PREVIEW || Profile.Feature.ROLLING_UPDATES_V2.getType() == Profile.Feature.Type.EXPERIMENTAL)) {
+            picocli.error("Warning! This command is '" + Profile.Feature.ROLLING_UPDATES_V2.getType() + "' and is not recommended for use in production. It may change or be removed at a future release.");
         }
     }
 
-    void printError(String message) {
-        var cmd = getCommandLine();
-        if (cmd.isPresent()) {
-            var colorScheme = cmd.get().getColorScheme();
-            cmd.get().getErr().println(colorScheme.errorText(message));
-        } else {
-            System.err.println(message);
-        }
+    void printFeatureDisabled() {
+        picocli.error("Unable to use this command. None of the versions of the feature '" + Profile.Feature.ROLLING_UPDATES_V1.getUnversionedKey() + "' is enabled.");
     }
 
-    void printPreviewWarning() {
-        printError("Warning! This command is preview and is not recommended for use in production. It may change or be removed at a future release.");
+    static Map<String, CompatibilityMetadataProvider> loadAllProviders() {
+        Map<String, CompatibilityMetadataProvider> providers = new HashMap<>();
+        for (var p : ServiceLoader.load(CompatibilityMetadataProvider.class)) {
+            providers.merge(p.getId(), p, (existing, current) -> {
+                if (existing.priority() == current.priority()) {
+                    throw new IllegalArgumentException("Unable to handle two providers with the same id (%s) and priority.".formatted(existing.getId()));
+                }
+                // If a user wants to replace default providers with their own.
+                return existing.priority() < current.priority() ?
+                        current :
+                        existing;
+            });
+        }
+        return providers;
+    }
+
+    private static void loadConfiguration() {
+        // Initialize config
+        var configProvider = ServiceLoader.load(ConfigProviderFactory.class)
+                .stream()
+                .findFirst()
+                .map(ServiceLoader.Provider::get)
+                .flatMap(ConfigProviderFactory::create)
+                .orElseThrow(() -> new RuntimeException("Failed to load Keycloak Configuration"));
+        Config.init(configProvider);
     }
 
 }

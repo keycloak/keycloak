@@ -42,7 +42,6 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.cluster.AuthenticationSessionFailoverClusterTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
@@ -77,7 +76,6 @@ import java.util.Set;
 
 import org.hamcrest.Matchers;
 import org.junit.Assume;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -889,7 +887,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
             appPage.assertCurrent();
 
             // Browser 2: Log in
-            driver2.navigate().to(oauth.getLoginFormUrl());
+            driver2.navigate().to(oauth.loginForm().build());
 
             assertThat(driver2.getTitle(), is("Sign in to " + testRealmName));
             driver2.findElement(By.id("username")).sendKeys("test-user@localhost");
@@ -1044,7 +1042,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         assertThat(driver2.getPageSource(), Matchers.containsString("kc-info-message"));
         assertThat(driver2.getPageSource(), Matchers.containsString("Your email address has been verified."));
 
-        driver2.navigate().to(oauth.getLoginFormUrl());
+        driver2.navigate().to(oauth.loginForm().build());
 
         // login page should be shown in the second browser
         assertThat(driver2.getPageSource(), Matchers.containsString("kc-login"));
@@ -1064,9 +1062,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     public void verifyEmailExpiredRegistration() throws IOException, MessagingException {
         final String COMMON_ATTR = "verifyEmailRegistrationUser";
 
-        String appInitiatedRegisterUrl = oauth.getLoginFormUrl();
-        appInitiatedRegisterUrl = appInitiatedRegisterUrl.replace("openid-connect/auth", "openid-connect/registrations");
-        driver.navigate().to(appInitiatedRegisterUrl);
+        driver.navigate().to(oauth.registrationForm().build());
 
         registerPage.assertCurrent();
         registerPage.register(COMMON_ATTR, COMMON_ATTR, COMMON_ATTR + "@" + COMMON_ATTR, COMMON_ATTR, COMMON_ATTR, COMMON_ATTR);
@@ -1115,7 +1111,6 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.UPDATE_EMAIL, skipRestart = true)
     public void actionTokenWithInvalidRequiredActions() throws IOException {
         // Send email with required action
         testRealm().users().get(testUserId).executeActionsEmail(List.of(RequiredAction.UPDATE_EMAIL.name()));

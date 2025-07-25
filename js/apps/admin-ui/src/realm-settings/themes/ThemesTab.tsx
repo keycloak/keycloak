@@ -21,6 +21,8 @@ type ThemesTabProps = {
 };
 
 export type ThemeRealmRepresentation = RealmRepresentation & {
+  fileName?: string;
+  favicon?: File;
   logo?: File;
   bgimage?: File;
 };
@@ -35,14 +37,16 @@ export default function ThemesTab({ realm, save }: ThemesTabProps) {
     const zip = new JSZip();
 
     const styles = JSON.parse(realm.attributes?.style ?? "{}");
-
-    const { logo, bgimage, ...rest } = realm;
+    const { favicon, logo, bgimage, fileName } = realm;
 
     const logoName =
       "img/logo" + logo?.name?.substring(logo?.name?.lastIndexOf("."));
     const bgimageName =
       "img/bgimage" + bgimage?.name?.substring(bgimage?.name?.lastIndexOf("."));
 
+    if (favicon) {
+      zip.file(`theme/quick-theme/common/resources/img/favicon.ico`, favicon);
+    }
     if (logo) {
       zip.file(`theme/quick-theme/common/resources/${logoName}`, logo);
     }
@@ -56,7 +60,7 @@ export default function ThemesTab({ realm, save }: ThemesTabProps) {
 parent=keycloak.v2
 import=common/quick-theme
 
-logo=${logoName}
+${logo ? "logo=" + logoName : ""}
 styles=css/theme-styles.css
 `,
     );
@@ -67,7 +71,7 @@ styles=css/theme-styles.css
 parent=keycloak.v3
 import=common/quick-theme
 
-logo=${logoName}
+${logo ? "logo=" + logoName : ""}
 styles=css/theme-styles.css
 `,
     );
@@ -90,6 +94,20 @@ styles=css/login.css css/theme-styles.css
       "types": [ "login", "account", "admin", "common" ]
   }]
 }`,
+    );
+
+    zip.file(
+      "theme-settings.json",
+      JSON.stringify({
+        ...styles,
+        logo: logo ? `theme/quick-theme/common/resources/${logoName}` : "",
+        bgimage: bgimage
+          ? `theme/quick-theme/common/resources/${bgimageName}`
+          : "",
+        favicon: favicon
+          ? "theme/quick-theme/common/resources/img/favicon.ico"
+          : "",
+      }),
     );
 
     const toCss = (obj?: object) =>
@@ -116,22 +134,11 @@ styles=css/login.css css/theme-styles.css
       }
       `,
     );
-    save({
-      ...rest,
-      attributes: {
-        ...rest.attributes,
-        style: JSON.stringify({
-          ...styles,
-          logo: logoName,
-          bgimage: bgimageName,
-        }),
-      },
-    });
-    zip.generateAsync({ type: "blob" }).then((content) => {
+    await zip.generateAsync({ type: "blob" }).then((content) => {
       const url = URL.createObjectURL(content);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "quick-theme.jar";
+      a.download = fileName || "quick-theme.jar";
       a.click();
       URL.revokeObjectURL(url);
     });

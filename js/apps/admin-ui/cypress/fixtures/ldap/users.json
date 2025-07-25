@@ -1,7 +1,0 @@
-[
-  {
-    "dn": "cn=user,dc=test",
-    "objectClass": "person",
-    "cn": "user-login"
-  }
-]

@@ -14,16 +14,6 @@ import java.io.IOException;
 public class SysLogServerSupplier implements Supplier<SysLogServer, InjectSysLogServer>, KeycloakServerConfigInterceptor<SysLogServer, InjectSysLogServer> {
 
     @Override
-    public Class<InjectSysLogServer> getAnnotationClass() {
-        return InjectSysLogServer.class;
-    }
-
-    @Override
-    public Class<SysLogServer> getValueType() {
-        return SysLogServer.class;
-    }
-
-    @Override
     public SysLogServer getValue(InstanceContext<SysLogServer, InjectSysLogServer> instanceContext) {
         try {
             return new SysLogServer();

@@ -545,7 +545,7 @@ public class SAML11ParserUtil {
             if (xmlEvent instanceof EndElement) {
                 tag = StaxParserUtil.getElementName((EndElement) xmlEvent);
                 if (tag.equals(WSTrustConstants.XMLDSig.KEYINFO)) {
-                    xmlEvent = StaxParserUtil.getNextEndElement(xmlEventReader);
+                    StaxParserUtil.getNextEndElement(xmlEventReader);
                     break;
                 } else
                     throw logger.parserUnknownEndElement(tag, xmlEvent.getLocation());
@@ -606,7 +606,7 @@ public class SAML11ParserUtil {
             if (xmlEvent instanceof EndElement) {
                 tag = StaxParserUtil.getElementName((EndElement) xmlEvent);
                 if (tag.equals(WSTrustConstants.XMLDSig.RSA_KEYVALUE)) {
-                    xmlEvent = StaxParserUtil.getNextEndElement(xmlEventReader);
+                    StaxParserUtil.getNextEndElement(xmlEventReader);
                     break;
                 } else
                     throw logger.parserUnknownEndElement(tag, xmlEvent.getLocation());

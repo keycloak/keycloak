@@ -18,35 +18,31 @@
 package org.keycloak.tests.admin.authz.fgap;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.keycloak.authorization.AdminPermissionsSchema.IMPERSONATE;
-import static org.keycloak.authorization.AdminPermissionsSchema.MANAGE;
-import static org.keycloak.authorization.AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP;
-import static org.keycloak.authorization.AdminPermissionsSchema.MAP_ROLES;
-import static org.keycloak.authorization.AdminPermissionsSchema.VIEW;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.IMPERSONATE;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLES;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
+
+import java.util.List;
+import java.util.Set;
 
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
-import org.keycloak.admin.client.resource.ScopePermissionsResource;
-import org.keycloak.authorization.AdminPermissionsSchema;
+import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
@@ -57,7 +53,7 @@ import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 
-@KeycloakIntegrationTest(config = KeycloakAdminPermissionsServerConfig.class)
+@KeycloakIntegrationTest
 public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
 
     @InjectUser(ref = "alice")
@@ -66,17 +62,19 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
     @InjectAdminClient(mode = InjectAdminClient.Mode.MANAGED_REALM, client = "myclient", user = "myadmin")
     Keycloak realmAdminClient;
 
+    private final String usersType = AdminPermissionsSchema.USERS.getType();
+
     private final String newUserUsername = "new_user";
 
-    @AfterEach
-    public void onAfter() {
-        ScopePermissionsResource permissions = getScopePermissionsResource();
-
-        for (ScopePermissionRepresentation permission : permissions.findAll(null, null, null, -1, -1)) {
-            permissions.findById(permission.getId()).remove();
-        }
-
-        realm.admin().users().search(newUserUsername).forEach(user -> realm.admin().users().get(user.getId()).remove());
+    @Test
+    public void testSingleUserPermission() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowMyAdminPermission = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());
+        // allow my admin to see alice only
+        createPermission(client, userAlice.admin().toRepresentation().getId(), usersType, Set.of(VIEW), allowMyAdminPermission);
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
+        assertEquals(1, search.size());
+        assertEquals(userAlice.getUsername(), search.get(0).getUsername());
     }
 
     @Test
@@ -90,11 +88,12 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         }
 
         //create all-users permission for "myadmin" (so that myadmin can impersonate all users in the realm)
-        UserPolicyRepresentation policy = createUserPolicy("Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
-        createAllUserPermission(policy, Set.of(IMPERSONATE));
+        UserPolicyRepresentation policy = createUserPolicy(realm, client,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+        createAllPermission(client, usersType, policy, Set.of(IMPERSONATE));
 
         // create user permission forbidding the impersonation for userAlice
-        String cannotImpersonateAlice = createUserPermission(Logic.NEGATIVE, userAlice.admin().toRepresentation(), Set.of(IMPERSONATE)).getName();
+        UserPolicyRepresentation negativePolicy = createUserPolicy(Logic.NEGATIVE, realm, client,"Not My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+        String cannotImpersonateAlice = createPermission(client, userAlice.getId(), usersType, Set.of(IMPERSONATE), negativePolicy).getName();
 
         // even though "myadmin" has permission to impersonate all users in realm it should be denied to impersonate userAlice
         try {
@@ -105,9 +104,9 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         }
 
         // remove the negative permission
-        String cannotImpersonateAliceId = getScopePermissionsResource().findByName(cannotImpersonateAlice).getId();
-        getScopePermissionsResource().findById(cannotImpersonateAliceId).remove();
-        
+        String cannotImpersonateAliceId = getScopePermissionsResource(client).findByName(cannotImpersonateAlice).getId();
+        getScopePermissionsResource(client).findById(cannotImpersonateAliceId).remove();
+
         // need to create a separate client for the impersonation call, otherwise next usage of the 'realmAdminClient' would throw 401
         try (Keycloak adminClient = KeycloakBuilder.builder()
                 .serverUrl("http://localhost:8080")
@@ -122,25 +121,6 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         }
     }
 
-    private UserPolicyRepresentation createUserPolicy(String name, String userId) {
-        return createUserPolicy(name, userId, Logic.POSITIVE);
-    }
-
-    private UserPolicyRepresentation createUserPolicy(String name, String userId, Logic logic) {
-        UserPolicyRepresentation policy = new UserPolicyRepresentation();
-        policy.setName(name);
-        policy.addUser(userId);
-        policy.setLogic(logic);
-        try (Response response = client.admin().authorization().policies().user().create(policy)) {
-            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
-            realm.cleanup().add(r -> {
-                String policyId = r.clients().get(client.getId()).authorization().policies().user().findByName(name).getId();
-                r.clients().get(client.getId()).authorization().policies().user().findById(policyId).remove();
-            });
-        }
-        return policy;
-    }
-
     @Test
     public void testManageAllPermission() {
         // myadmin shouldn't be able to create user just yet
@@ -149,8 +129,8 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         }
 
         //create all-users permission for "myadmin" (so that myadmin can manage all users in the realm)
-        UserPolicyRepresentation policy = createUserPolicy("Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
-        createAllUserPermission(policy, Set.of(MANAGE));
+        UserPolicyRepresentation policy = createUserPolicy(realm, client,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+        createAllPermission(client, usersType, policy, Set.of(VIEW, MANAGE));
 
         // creating user requires manage scope
         String newUserId = ApiUtil.handleCreatedResponse(realmAdminClient.realm(realm.getName()).users().create(UserConfigBuilder.create().username(newUserUsername).build()));
@@ -163,26 +143,26 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
     @Test
     public void testManageUserPermission() {
         String myadminId = realm.admin().users().search("myadmin").get(0).getId();
-        UserPolicyRepresentation policy = createUserPolicy("Only My Admin User Policy", myadminId);
-        createAllUserPermission(policy, Set.of(MANAGE));
+        UserPolicyRepresentation policy = createUserPolicy(realm, client,"Only My Admin User Policy", myadminId);
+        ScopePermissionRepresentation allUsersPermission = createAllPermission(client, usersType, policy, Set.of(VIEW, MANAGE));
 
         // creating user requires manage scope
         String newUserId = ApiUtil.handleCreatedResponse(realmAdminClient.realm(realm.getName()).users().create(UserConfigBuilder.create().username(newUserUsername).build()));
 
         // remove all-users permissions to test user-permission
-        ScopePermissionRepresentation allUsersPermission = getScopePermissionsResource().findByName(AdminPermissionsSchema.USERS.getType());
-        getScopePermissionsResource().findById(allUsersPermission.getId()).remove();
+        allUsersPermission = getScopePermissionsResource(client).findByName(allUsersPermission.getName());
+        getScopePermissionsResource(client).findById(allUsersPermission.getId()).remove();
 
         // create user-permissions
-        createUserPermission(UserConfigBuilder.create().id(newUserId).build(), Set.of(MANAGE), policy);
+        createPermission(client, UserConfigBuilder.create().id(newUserId).build().getId(), usersType, Set.of(VIEW, MANAGE), policy);
 
         // it should be possible to update the user due to single user-permission
         realmAdminClient.realm(realm.getName()).users().get(newUserId).update(UserConfigBuilder.create().email("email@test.com").build());
         assertEquals("email@test.com", realmAdminClient.realm(realm.getName()).users().get(newUserId).toRepresentation().getEmail());
 
         // remove the user permission
-        getScopePermissionsResource().findAll(null, null, null, null, null).forEach(permission -> {
-            getScopePermissionsResource().findById(permission.getId()).remove();
+        getScopePermissionsResource(client).findAll(null, null, null, null, null).forEach(permission -> {
+            getScopePermissionsResource(client).findById(permission.getId()).remove();
         });
 
         // updating the user should be denied
@@ -196,8 +176,8 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
 
     @Test
     public void testViewAllPermission() {
-        UserPolicyRepresentation policy = createUserPolicy("Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
-        ScopePermissionRepresentation permission = createAllUserPermission(policy, Set.of(VIEW));
+        UserPolicyRepresentation policy = createUserPolicy(realm, client,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+        ScopePermissionRepresentation permission = createAllPermission(client, usersType, policy, Set.of(VIEW));
         List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
         assertFalse(search.isEmpty());
 
@@ -211,24 +191,44 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
     @Test
     public void testViewUserPermission() {
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
-        UserPolicyRepresentation allowMyAdminPermission = createUserPolicy("Only My Admin User Policy", myadmin.getId());
-        createAllUserPermission(allowMyAdminPermission, Set.of(VIEW));
+        UserPolicyRepresentation allowMyAdminPermission = createUserPolicy(realm, client,"Only My Admin User Policy", myadmin.getId());
+        createAllPermission(client, usersType, allowMyAdminPermission, Set.of(VIEW));
 
-        UserPolicyRepresentation denyMyAdminAccessingHisAccountPermission = createUserPolicy("Not My Admin User Policy", myadmin.getId(), Logic.NEGATIVE);
-        createUserPermission(myadmin, Set.of(VIEW), denyMyAdminAccessingHisAccountPermission);
+        UserPolicyRepresentation denyMyAdminAccessingHisAccountPermission = createUserPolicy(Logic.NEGATIVE, realm, client,"Not My Admin User Policy", myadmin.getId());
+        createPermission(client, myadmin.getId(), usersType, Set.of(VIEW), denyMyAdminAccessingHisAccountPermission);
         List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
         assertEquals(1, search.size());
         assertEquals(userAlice.getUsername(), search.get(0).getUsername());
     }
 
     @Test
+    public void testViewUserPermissionUserMemberOfGroup() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowMyAdminPermission = createUserPolicy(realm, client,"Only My Admin User Policy", myadmin.getId());
+        createPermission(client, userAlice.getId(), usersType, Set.of(VIEW), allowMyAdminPermission);
+
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName("foo");
+        try (Response response = realm.admin().groups().add(group)) {
+            group.setId(ApiUtil.getCreatedId(response));
+            // See org.keycloak.services.resources.admin.permissions.UserPermissionsV2.canView()
+            realm.admin().users().get(myadmin.getId()).joinGroup(group.getId());
+            List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
+            assertEquals(1, search.size());
+            assertEquals(userAlice.getUsername(), search.get(0).getUsername());
+        } finally {
+            realm.admin().users().get(myadmin.getId()).leaveGroup(group.getId());
+        }
+    }
+
+    @Test
     public void testViewUserPermissionDenyByDefault() {
         String myadminId = realm.admin().users().search("myadmin").get(0).getId();
-        UserPolicyRepresentation disallowMyAdmin = createUserPolicy("Not My Admin User Policy", myadminId, Logic.NEGATIVE);
-        createAllUserPermission(disallowMyAdmin, Set.of(VIEW));
+        UserPolicyRepresentation disallowMyAdmin = createUserPolicy(Logic.NEGATIVE, realm, client,"Not My Admin User Policy", myadminId);
+        createAllPermission(client, usersType, disallowMyAdmin, Set.of(VIEW));
 
-        UserPolicyRepresentation allowAliceOnlyForMyAdmin = createUserPolicy("My Admin User Policy", myadminId);
-        createUserPermission(userAlice.admin().toRepresentation(), Set.of(VIEW), allowAliceOnlyForMyAdmin);
+        UserPolicyRepresentation allowAliceOnlyForMyAdmin = createUserPolicy(realm, client,"My Admin User Policy", myadminId);
+        createPermission(client, userAlice.getId(), usersType, Set.of(VIEW), allowAliceOnlyForMyAdmin);
 
         List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
         assertEquals(1, search.size());
@@ -251,8 +251,8 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         }
 
         //create all-users permission for "myadmin" (so that myadmin can map roles to users in the realm)
-        UserPolicyRepresentation policy = createUserPolicy("Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
-        createAllUserPermission(policy, Set.of(MAP_ROLES));
+        UserPolicyRepresentation policy = createUserPolicy(realm, client,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+        ScopePermissionRepresentation allUsersPermission = createAllPermission(client, usersType, policy, Set.of(MAP_ROLES));
 
         try {
             realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).roles().realmLevel().add(List.of(testRole));
@@ -266,8 +266,8 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         }
 
         // remove all-users permissions to test user-permission
-        ScopePermissionRepresentation allUsersPermission = getScopePermissionsResource().findByName(AdminPermissionsSchema.USERS.getType());
-        getScopePermissionsResource().findById(allUsersPermission.getId()).remove();
+        allUsersPermission = getScopePermissionsResource(client).findByName(allUsersPermission.getName());
+        getScopePermissionsResource(client).findById(allUsersPermission.getId()).remove();
 
         // now myadmin cannot map roles
         try {
@@ -278,7 +278,7 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         }
 
         // create userPermission
-        createUserPermission(userAlice.admin().toRepresentation(), Set.of(MAP_ROLES), policy);
+        createPermission(client, userAlice.getId(), usersType, Set.of(MAP_ROLES), policy);
 
         //check myadmin can map roles
         try {
@@ -301,8 +301,8 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         }
 
         //create all-users permission for "myadmin" (so that myadmin can add users into a group)
-        UserPolicyRepresentation policy = createUserPolicy("Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
-        createAllUserPermission(policy, Set.of(MANAGE_GROUP_MEMBERSHIP));
+        UserPolicyRepresentation policy = createUserPolicy(realm, client,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+        ScopePermissionRepresentation allUsersPermission = createAllPermission(client, usersType, policy, Set.of(MANAGE_GROUP_MEMBERSHIP));
 
         //check myadmin can manage membership using all-users permission
         try {
@@ -314,8 +314,8 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         }
 
         // remove all-users permissions to test user-permission
-        ScopePermissionRepresentation allUsersPermission = getScopePermissionsResource().findByName(AdminPermissionsSchema.USERS.getType());
-        getScopePermissionsResource().findById(allUsersPermission.getId()).remove();
+        allUsersPermission = getScopePermissionsResource(client).findByName(allUsersPermission.getName());
+        getScopePermissionsResource(client).findById(allUsersPermission.getId()).remove();
 
         // now myadmin cannot manage membership
         try {
@@ -326,7 +326,7 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         }
 
         // create userPermission
-        createUserPermission(userAlice.admin().toRepresentation(), Set.of(MANAGE_GROUP_MEMBERSHIP), policy);
+        createPermission(client, userAlice.getId(), usersType, Set.of(MANAGE_GROUP_MEMBERSHIP), policy);
 
         //check myadmin can manage membership using individual permission
         try {
@@ -339,31 +339,29 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
     }
 
     @Test
-    public void testTransitiveUserPermissions() {
+    public void testNoTransitiveUserPermissions() {
         //create all-users manage permission for "myadmin"
-        UserPolicyRepresentation policy = createUserPolicy("Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
-        createAllUserPermission(policy, Set.of(MANAGE));
+        UserPolicyRepresentation policy = createUserPolicy(realm, client,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+        createAllPermission(client, usersType, policy, Set.of(MANAGE));
 
-        // with manage permission it is possible also view
+        // with manage permission it is NOT possible to view
         List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertFalse(search.isEmpty());
+        assertTrue(search.isEmpty());
 
-        // with manage permission it is possible also map roles
+        // with manage permission it is NOT possible to map roles
         try {
             realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).roles().realmLevel().add(List.of(new RoleRepresentation()));
             fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
-            // expecting here NotFoundException: https://github.com/keycloak/keycloak/blob/792b673f49d5faeed8b3bb2c61fb4a3b404df695/services/src/main/java/org/keycloak/services/resources/admin/RoleMapperResource.java#L243
-            assertThat(ex, instanceOf(NotFoundException.class));
+            assertThat(ex, instanceOf(ForbiddenException.class));
         }
 
-        // with manage permission it is possible also manage group membership
+        // with manage permission it is NOT possible to manage group membership
         try {
             realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).joinGroup("no-such");
             fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
-            // expecting here NotFoundException: https://github.com/keycloak/keycloak/blob/b5c95e9f1c58bc500316dd5c0f2d3bb5e197ca99/services/src/main/java/org/keycloak/services/resources/admin/UserResource.java#L1060
-            assertThat(ex, instanceOf(NotFoundException.class));
+            assertThat(ex, instanceOf(ForbiddenException.class));
         }
 
         // with manage permission it is NOT possible to impersonate
@@ -375,34 +373,55 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         }
     }
 
-    private ScopePermissionRepresentation createAllUserPermission(UserPolicyRepresentation policy, Set<String> scopes) {
-        ScopePermissionRepresentation permission = PermissionBuilder.create()
-                .name(AdminPermissionsSchema.USERS.getType())
-                .resourceType(AdminPermissionsSchema.USERS.getType())
-                .scopes(scopes)
-                .addPolicies(List.of(policy.getName()))
-                .build();
+    @Test
+    public void testEvaluateAllResourcePermissionsForSpecificResourcePermission() {
+        UserRepresentation adminUser = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowPolicy = createUserPolicy(realm, client, "Only My Admin", adminUser.getId());
+        ScopePermissionRepresentation allResourcesPermission = createAllPermission(client, usersType, allowPolicy, Set.of(MANAGE, IMPERSONATE));
+        // all resource permissions grants manage scope
+        UsersResource users = realmAdminClient.realm(realm.getName()).users();
+        users.get(userAlice.getId()).update(userAlice.admin().toRepresentation());
 
-        createPermission(permission);
+        ScopePermissionRepresentation resourcePermission = createPermission(client, userAlice.getId(), usersType, Set.of(MANAGE), allowPolicy);
+        // both all and specific resource permission grants manage scope
+        users.get(userAlice.getId()).update(userAlice.admin().toRepresentation());
 
-        return permission;
-    }
+        allResourcesPermission = getScopePermissionsResource(client).findByName(allResourcesPermission.getName());
+        allResourcesPermission.setScopes(Set.of(IMPERSONATE));
+        getScopePermissionsResource(client).findById(allResourcesPermission.getId()).update(allResourcesPermission);
+        // all resource permission does not have the manage scope but the scope is granted by the resource permission
+        users.get(userAlice.getId()).update(userAlice.admin().toRepresentation());
 
-    private ScopePermissionRepresentation createUserPermission(UserRepresentation user, Set<String> scopes, UserPolicyRepresentation... policies) {
-        return createUserPermission(Logic.POSITIVE, user, scopes, policies);
-    }
+        resourcePermission = getScopePermissionsResource(client).findByName(resourcePermission.getName());
+        resourcePermission.setScopes(Set.of(IMPERSONATE));
+        getScopePermissionsResource(client).findById(resourcePermission.getId()).update(resourcePermission);
+        try {
+            // neither the all and specific resource permission grants access to the manage scope
+            users.get(userAlice.getId()).update(userAlice.admin().toRepresentation());
+            fail("Expected Exception wasn't thrown.");
+        } catch (ForbiddenException expected) {}
 
-    private ScopePermissionRepresentation createUserPermission(Logic logic, UserRepresentation user, Set<String> scopes, UserPolicyRepresentation... policies) {
-        ScopePermissionRepresentation permission = PermissionBuilder.create()
-                .logic(logic)
-                .resourceType(AdminPermissionsSchema.USERS.getType())
-                .scopes(scopes)
-                .resources(Set.of(user.getId()))
-                .addPolicies(Arrays.asList(policies).stream().map(AbstractPolicyRepresentation::getName).collect(Collectors.toList()))
-                .build();
+        allResourcesPermission.setScopes(Set.of(MANAGE));
+        getScopePermissionsResource(client).findById(allResourcesPermission.getId()).update(allResourcesPermission);
+        // all resource permission grants access again to manage
+        users.get(userAlice.getId()).update(userAlice.admin().toRepresentation());
 
-        createPermission(permission);
+        UserPolicyRepresentation notAllowPolicy = createUserPolicy(Logic.NEGATIVE, realm, client, "Not My Admin", adminUser.getId());
+        createPermission(client, userAlice.getId(), usersType, Set.of(MANAGE), notAllowPolicy);
+        try {
+            // a specific resource permission that explicitly negates access to the manage scope denies access to the scope
+            users.get(userAlice.getId()).update(userAlice.admin().toRepresentation());
+            fail("Expected Exception wasn't thrown.");
+        } catch (ForbiddenException expected) {}
 
-        return permission;
+        resourcePermission = getScopePermissionsResource(client).findByName(resourcePermission.getName());
+        resourcePermission.setScopes(Set.of(IMPERSONATE, MANAGE));
+        getScopePermissionsResource(client).findById(resourcePermission.getId()).update(resourcePermission);
+        try {
+            // the specific resource permission that explicitly negates access to the manage scope denies access to the scope
+            // even though there is another resource permission that grants access to the scope - conflict resolution denies by default
+            users.get(userAlice.getId()).update(userAlice.admin().toRepresentation());
+            fail("Expected Exception wasn't thrown.");
+        } catch (ForbiddenException expected) {}
     }
 }

@@ -4,7 +4,7 @@
 
 <@tmpl.guide
 title="Configuring {project_name} for production"
-summary="Learn how to make {project_name} ready for production."
+summary="Prepare {project_name} for use in production."
 includedOptions="">
 
 A {project_name} production environment provides secure authentication and authorization for deployments that range from on-premise deployments that support a few thousand users to deployments that serve millions of users.

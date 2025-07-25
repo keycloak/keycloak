@@ -80,7 +80,6 @@ public class KeycloakUriBuilder {
     }
 
     private static final Pattern opaqueUri = Pattern.compile("^([^:/?#]+):([^/].*)");
-    private static final Pattern hierarchicalUri = Pattern.compile("^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?");
     private static final Pattern hostPortPattern = Pattern.compile("([^/:]+):(\\d+)");
 
     public static boolean compare(String s1, String s2) {
@@ -139,13 +138,41 @@ public class KeycloakUriBuilder {
         return uri(uriTemplate, true);
     }
 
-    protected KeycloakUriBuilder parseHierarchicalUri(String uri, Matcher match, boolean template) {
-        boolean scheme = match.group(2) != null;
-        if (scheme) this.scheme = match.group(2);
-        String authority = match.group(4);
+    private String matchesHierarchicalUriPart(Map<String, String> map, String s, String regex, String part) {
+        if (!s.isEmpty()) {
+            Matcher m = Pattern.compile(regex).matcher(s);
+            if (m.find()) {
+                map.put(part, m.group(1));
+                return s.substring(m.end());
+            }
+        }
+        return s;
+    }
+
+    private Map<String,String> matchesHierarchicalUri(final String uri) {
+        // hierarchicalUri regex: ^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?
+        Map<String,String> result = new HashMap<>();
+        // scheme
+        String s = matchesHierarchicalUriPart(result, uri, "^([^:/?#]+):", "scheme");
+        // authority
+        s = matchesHierarchicalUriPart(result, s, "^//([^/?#]*)", "authority");
+        // path
+        s = matchesHierarchicalUriPart(result, s, "^([^?#]*)", "path");
+        // query
+        s = matchesHierarchicalUriPart(result, s, "^\\?([^#]*)", "query");
+        // fragment
+        s = matchesHierarchicalUriPart(result, s, "^#(.*)", "fragment");
+        // if the uri is parsed completely it is a valid uri
+        return s.isEmpty() ? result : null;
+    }
+
+    protected KeycloakUriBuilder parseHierarchicalUri(String uri, Map<String,String> match, boolean template) {
+        boolean scheme = match.get("scheme") != null;
+        if (scheme) this.scheme = match.get("scheme");
+        String authority = match.get("authority");
         if (authority != null) {
             this.authority = null;
-            String host = match.group(4);
+            String host = authority;
             int at = host.indexOf('@');
             if (at > -1) {
                 String user = host.substring(0, at);
@@ -164,14 +191,14 @@ public class KeycloakUriBuilder {
                 this.host = host;
             }
         }
-        if (match.group(5) != null) {
-            String group = match.group(5);
+        if (match.get("path") != null) {
+            String group = match.get("path");
             if (!scheme && !"".equals(group) && !group.startsWith("/") && group.indexOf(':') > -1)
                 throw new IllegalArgumentException("Illegal uri template: " + uri);
             if (!"".equals(group)) replacePath(group, template);
         }
-        if (match.group(7) != null) replaceQuery(match.group(7), template);
-        if (match.group(9) != null) fragment(match.group(9), template);
+        if (match.get("query") != null) replaceQuery(match.get("query"), template);
+        if (match.get("fragment") != null) fragment(match.get("fragment"), template);
         return this;
     }
 
@@ -193,8 +220,8 @@ public class KeycloakUriBuilder {
             this.ssp = opaque.group(2);
             return this;
         } else {
-            Matcher match = hierarchicalUri.matcher(uri);
-            if (match.matches()) {
+            Map<String,String> match = matchesHierarchicalUri(uri);
+            if (match != null) {
                 ssp = null;
                 return parseHierarchicalUri(uri, match, template);
             }

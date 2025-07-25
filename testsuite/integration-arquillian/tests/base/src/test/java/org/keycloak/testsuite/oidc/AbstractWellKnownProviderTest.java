@@ -26,9 +26,12 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.crypto.Algorithm;
@@ -55,7 +58,9 @@ import org.keycloak.testsuite.forms.BrowserFlowTest;
 import org.keycloak.testsuite.forms.LevelOfAssuranceFlowTest;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientManager;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.util.JsonSerialization;
 
@@ -65,9 +70,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static jakarta.ws.rs.core.HttpHeaders.ACCEPT;
+import static jakarta.ws.rs.core.HttpHeaders.CONTENT_TYPE;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
+import static org.keycloak.utils.MediaType.APPLICATION_JWKS;
 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest {
 
     private CloseableHttpClient client;
@@ -114,10 +123,9 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
 
             // URIs are filled
             assertEquals(oidcConfig.getAuthorizationEndpoint(), OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT)).build("test").toString());
-            assertEquals(oidcConfig.getTokenEndpoint(), oauth.getAccessTokenUrl());
+            assertEquals(oidcConfig.getTokenEndpoint(), oauth.getEndpoints().getToken());
             assertEquals(oidcConfig.getUserinfoEndpoint(), OIDCLoginProtocolService.userInfoUrl(UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT)).build("test").toString());
-            assertEquals(oidcConfig.getJwksUri(), oauth.getCertsUrl("test"));
-
+            assertEquals(oidcConfig.getJwksUri(), oauth.getEndpoints().getJwks());
 
             String registrationUri = UriBuilder
                     .fromUri(OAuthClient.AUTH_SERVER_ROOT)
@@ -130,9 +138,9 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
 
             // Support standard + implicit + hybrid flow
             assertContains(oidcConfig.getResponseTypesSupported(), OAuth2Constants.CODE, OIDCResponseType.ID_TOKEN, "id_token token", "code id_token", "code token", "code id_token token");
-            assertEquals(7, oidcConfig.getGrantTypesSupported().size());
+            assertEquals(9, oidcConfig.getGrantTypesSupported().size());
             assertContains(oidcConfig.getGrantTypesSupported(), OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.IMPLICIT,
-                    OAuth2Constants.DEVICE_CODE_GRANT_TYPE);
+                    OAuth2Constants.DEVICE_CODE_GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
             assertContains(oidcConfig.getResponseModesSupported(), "query", "fragment", "form_post", "jwt", "query.jwt", "fragment.jwt", "form_post.jwt");
 
             Assert.assertNames(oidcConfig.getSubjectTypesSupported(), "pairwise", "public");
@@ -165,7 +173,7 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
                     Algorithm.ES384, Algorithm.ES512, Algorithm.HS256, Algorithm.HS384, Algorithm.HS512, Algorithm.EdDSA);
 
             // Claims
-            assertContains(oidcConfig.getClaimsSupported(), IDToken.NAME, IDToken.EMAIL, IDToken.PREFERRED_USERNAME, IDToken.FAMILY_NAME, IDToken.ACR);
+            assertContains(oidcConfig.getClaimsSupported(), "iss", IDToken.SUBJECT, IDToken.AUD, "exp", "iat", IDToken.AUTH_TIME, IDToken.NAME, IDToken.GIVEN_NAME, IDToken.FAMILY_NAME, IDToken.PREFERRED_USERNAME, IDToken.EMAIL, IDToken.ACR, IDToken.AZP, "nonce");
             Assert.assertNames(oidcConfig.getClaimTypesSupported(), "normal");
             Assert.assertTrue(oidcConfig.getClaimsParameterSupported());
 
@@ -189,7 +197,7 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
             Assert.assertEquals(oidcConfig.getRevocationEndpoint(), mtlsEndpointAliases.getRevocationEndpoint());
 
             // CIBA
-            assertEquals(oidcConfig.getBackchannelAuthenticationEndpoint(), oauth.getBackchannelAuthenticationUrl());
+            assertEquals(oidcConfig.getBackchannelAuthenticationEndpoint(), oauth.getEndpoints().getBackchannelAuthentication());
             assertContains(oidcConfig.getGrantTypesSupported(), OAuth2Constants.CIBA_GRANT_TYPE);
             Assert.assertNames(oidcConfig.getBackchannelTokenDeliveryModesSupported(), "poll", "ping");
             Assert.assertNames(oidcConfig.getBackchannelAuthenticationRequestSigningAlgValuesSupported(), Algorithm.PS256, Algorithm.PS384, Algorithm.PS512, Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256, Algorithm.ES384, Algorithm.ES512, Algorithm.EdDSA);
@@ -198,17 +206,17 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
             Assert.assertTrue(oidcConfig.getBackchannelLogoutSessionSupported());
 
             // Token Revocation
-            assertEquals(oidcConfig.getRevocationEndpoint(), oauth.getTokenRevocationUrl());
+            assertEquals(oidcConfig.getRevocationEndpoint(), oauth.getEndpoints().getRevocation());
             Assert.assertNames(oidcConfig.getRevocationEndpointAuthMethodsSupported(), "client_secret_basic",
                     "client_secret_post", "private_key_jwt", "client_secret_jwt", "tls_client_auth");
             Assert.assertNames(oidcConfig.getRevocationEndpointAuthSigningAlgValuesSupported(), Algorithm.PS256,
                     Algorithm.PS384, Algorithm.PS512, Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256,
                     Algorithm.ES384, Algorithm.ES512, Algorithm.HS256, Algorithm.HS384, Algorithm.HS512, Algorithm.EdDSA);
 
-            assertEquals(oidcConfig.getDeviceAuthorizationEndpoint(), oauth.getDeviceAuthorizationUrl());
+            assertEquals(oidcConfig.getDeviceAuthorizationEndpoint(), oauth.getEndpoints().getDeviceAuthorization());
 
             // Pushed Authorization Request (PAR)
-            assertEquals(oauth.getParEndpointUrl(), oidcConfig.getPushedAuthorizationRequestEndpoint());
+            assertEquals(oauth.getEndpoints().getPushedAuthorizationRequest(), oidcConfig.getPushedAuthorizationRequestEndpoint());
             assertEquals(Boolean.FALSE, oidcConfig.getRequirePushedAuthorizationRequests());
 
             // frontchannel logout
@@ -242,8 +250,8 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
 
     @Test
     public void testIssuerMatches() throws Exception {
-        OAuthClient.AuthorizationEndpointResponse authzResp = oauth.doLogin("test-user@localhost", "password");
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(authzResp.getCode(), "password");
+        AuthorizationEndpointResponse authzResp = oauth.doLogin("test-user@localhost", "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(authzResp.getCode());
         assertEquals(200, response.getStatusCode());
         IDToken idToken = oauth.verifyIDToken(response.getIdToken());
 
@@ -289,6 +297,17 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
 
         JSONWebKeySet jsonWebKeySet = SimpleHttpDefault.doGet(jwksUri, client).asJson(JSONWebKeySet.class);
         assertEquals(3, jsonWebKeySet.getKeys().length);
+    }
+
+    @Test
+    public void certsWithJwks() throws IOException {
+        TokenSignatureUtil.registerKeyProvider(Algorithm.ES256, adminClient, testContext);
+
+        OIDCConfigurationRepresentation representation = SimpleHttpDefault.doGet(getAuthServerRoot().toString() + "realms/test/.well-known/openid-configuration", client).asJson(OIDCConfigurationRepresentation.class);
+        String jwksUri = representation.getJwksUri();
+
+        SimpleHttp.Response response = SimpleHttpDefault.doGet(jwksUri, client).header(ACCEPT, APPLICATION_JWKS).asResponse();
+        assertEquals(APPLICATION_JWKS, response.getFirstHeader(CONTENT_TYPE));
     }
 
     @Test
@@ -350,19 +369,6 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
             realmRep.getAttributes().remove(Constants.ACR_LOA_MAP);
             testRealm.update(realmRep);
             BrowserFlowTest.revertFlows(testRealm, "browser -  Level of Authentication FLow");
-        } finally {
-            client.close();
-        }
-    }
-
-    @Test
-    @EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
-    public void testGrantTypesSupportedWithTokenExchange() throws IOException {
-        Client client = AdminClientUtil.createResteasyClient();
-        try {
-            OIDCConfigurationRepresentation oidcConfig = getOIDCDiscoveryRepresentation(client, OAuthClient.AUTH_SERVER_ROOT);
-            assertEquals(oidcConfig.getGrantTypesSupported().size(),8);
-            assertContains(oidcConfig.getGrantTypesSupported(), OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
         } finally {
             client.close();
         }

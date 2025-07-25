@@ -3,7 +3,7 @@
 
 <@tmpl.guide
 title="Health checks for multi-site deployments"
-summary="Validating the health of a multi-site deployment" >
+summary="Validate the health of a multi-site deployment." >
 
 When running the <@links.ha id="introduction" /> in a Kubernetes environment,
 you should automate checks to see if everything is up and running as expected.

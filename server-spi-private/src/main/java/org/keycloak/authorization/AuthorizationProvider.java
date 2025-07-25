@@ -26,6 +26,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
@@ -42,14 +43,11 @@ import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.cache.authorization.CachedStoreFactoryProvider;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
-import org.keycloak.representations.idm.authorization.AuthorizationSchema;
-import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 
 /**
  * <p>The main contract here is the creation of {@link org.keycloak.authorization.permission.evaluator.PermissionEvaluator} instances.  Usually
@@ -172,8 +170,9 @@ public final class AuthorizationProvider implements Provider {
         return realm;
     }
 
-    public PolicyEvaluator getPolicyEvaluator() {
-        return policyEvaluator;
+    public PolicyEvaluator getPolicyEvaluator(ResourceServer resourceServer) {
+        PolicyEvaluator schemaPolicyEvaluator = AdminPermissionsSchema.SCHEMA.getPolicyEvaluator(keycloakSession, resourceServer);
+        return schemaPolicyEvaluator == null ? policyEvaluator : schemaPolicyEvaluator;
     }
 
     @Override
@@ -299,9 +298,9 @@ public final class AuthorizationProvider implements Provider {
                 AdminPermissionsSchema.SCHEMA.throwExceptionIfResourceTypeOrScopesNotProvided(keycloakSession, resourceServer, representation);
                 Set<String> resources = representation.getResources();
 
-                if (resources != null) {
+                if (resources != null && !resources.isEmpty()) {
                     representation.setResources(resources.stream().map(id -> {
-                        Resource resource = AdminPermissionsSchema.SCHEMA.getOrCreateResource(keycloakSession, resourceServer, representation.getResourceType(), id);
+                        Resource resource = AdminPermissionsSchema.SCHEMA.getOrCreateResource(keycloakSession, resourceServer, representation.getType(), representation.getResourceType(), id);
 
                         if (resource == null) {
                             resource = storeFactory.getResourceStore().findById(resourceServer, id);
@@ -347,7 +346,11 @@ public final class AuthorizationProvider implements Provider {
                     }).collect(Collectors.toSet()));
                 }
 
-                return RepresentationToModel.toModel(representation, AuthorizationProvider.this, policyStore.create(resourceServer, representation));
+                Policy policy = RepresentationToModel.toModel(representation, AuthorizationProvider.this, policyStore.create(resourceServer, representation));
+
+                AdminPermissionsSchema.SCHEMA.addUResourceTypeResource(keycloakSession, resourceServer, policy, representation.getResourceType());
+
+                return policy;
             }
 
             @Override
@@ -440,6 +443,16 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
+            public Stream<Policy> findDependentPolicies(ResourceServer resourceServer, String resourceType, String associatedPolicyType, String configKey, String configValue) {
+                return policyStore.findDependentPolicies(resourceServer, resourceType, associatedPolicyType, configKey, configValue);
+            }
+
+            @Override
+            public Stream<Policy> findDependentPolicies(ResourceServer resourceServer, String resourceType, String associatedPolicyType, String configKey, List<String> configValues) {
+                return policyStore.findDependentPolicies(resourceServer, resourceType, associatedPolicyType, configKey, configValues);
+            }
+
+            @Override
             public void findByResourceType(ResourceServer resourceServer, String type, Consumer<Policy> policyConsumer) {
                 policyStore.findByResourceType(resourceServer, type, policyConsumer);
             }
@@ -465,17 +478,18 @@ public final class AuthorizationProvider implements Provider {
                 Resource resource = findById(null, id);
                 StoreFactory storeFactory = AuthorizationProvider.this.getStoreFactory();
                 PermissionTicketStore ticketStore = storeFactory.getPermissionTicketStore();
-                List<PermissionTicket> permissions = ticketStore.findByResource(resource.getResourceServer(), resource);
+                ResourceServer resourceServer = resource.getResourceServer();
+                List<PermissionTicket> permissions = ticketStore.findByResource(resourceServer, resource);
 
                 for (PermissionTicket permission : permissions) {
                     ticketStore.delete(permission.getId());
                 }
 
                 PolicyStore policyStore = storeFactory.getPolicyStore();
-                List<Policy> policies = policyStore.findByResource(resource.getResourceServer(), resource);
+                List<Policy> policies = policyStore.findByResource(resourceServer, resource);
 
                 for (Policy policyModel : policies) {
-                    if (policyModel.getResources().size() == 1) {
+                    if (policyModel.getResources().size() == 1 && !AdminPermissionsSchema.SCHEMA.isAdminPermissionClient(realm, resourceServer.getId())) {
                         policyStore.delete(policyModel.getId());
                     } else {
                         policyModel.removeResource(resource);

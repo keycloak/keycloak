@@ -25,7 +25,7 @@ import static org.keycloak.testsuite.util.UIUtils.clickLink;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class LoginExpiredPage extends AbstractPage {
+public class LoginExpiredPage extends LanguageComboboxAwarePage {
 
     @FindBy(id = "loginRestartLink")
     private WebElement loginRestartLink;
@@ -42,12 +42,9 @@ public class LoginExpiredPage extends AbstractPage {
         clickLink(loginContinueLink);
     }
 
-
+    @Override
     public boolean isCurrent() {
         return PageUtils.getPageTitle(driver).equals("Page has expired");
     }
 
-    public void open() {
-        throw new UnsupportedOperationException();
-    }
 }

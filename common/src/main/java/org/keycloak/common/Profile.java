@@ -55,15 +55,15 @@ public class Profile {
 
         ADMIN_FINE_GRAINED_AUTHZ("Fine-Grained Admin Permissions", Type.PREVIEW, 1),
 
-        ADMIN_FINE_GRAINED_AUTHZ_V2("Fine-Grained Admin Permissions version 2", Type.EXPERIMENTAL, 2, Feature.AUTHORIZATION),
+        ADMIN_FINE_GRAINED_AUTHZ_V2("Fine-Grained Admin Permissions version 2", Type.DEFAULT, 2, Feature.AUTHORIZATION),
 
         ADMIN_API("Admin API", Type.DEFAULT),
 
         ADMIN_V2("New Admin Console", Type.DEFAULT, 2, Feature.ADMIN_API),
 
-        LOGIN_V2("New Login Theme", Type.DEFAULT, 2),
+        LOGIN_V2("New Login Theme", Type.DEFAULT, 2, FeatureUpdatePolicy.ROLLING_NO_UPGRADE),
 
-        LOGIN_V1("Legacy Login Theme", Type.DEPRECATED, 1),
+        LOGIN_V1("Legacy Login Theme", Type.DEPRECATED, 1, FeatureUpdatePolicy.ROLLING_NO_UPGRADE),
 
         QUICK_THEME("WYSIWYG theme configuration tool", Type.EXPERIMENTAL, 1),
 
@@ -74,9 +74,8 @@ public class Profile {
         SCRIPTS("Write custom authenticators using JavaScript", Type.PREVIEW),
 
         TOKEN_EXCHANGE("Token Exchange Service", Type.PREVIEW, 1),
-        TOKEN_EXCHANGE_STANDARD_V2("Standard Token Exchange version 2", Type.EXPERIMENTAL, 2, Feature.ADMIN_FINE_GRAINED_AUTHZ), // TODO: Switch v2 token exchanges to depend admin-fine-grained-authz-v2
-        TOKEN_EXCHANGE_FEDERATED_V2("Federated Token Exchange for external-internal and internal-external token exchange", Type.EXPERIMENTAL, 2, Feature.ADMIN_FINE_GRAINED_AUTHZ),
-        TOKEN_EXCHANGE_SUBJECT_IMPERSONATION_V2("Subject impersonation Token Exchange", Type.EXPERIMENTAL, 2, Feature.ADMIN_FINE_GRAINED_AUTHZ),
+        TOKEN_EXCHANGE_STANDARD_V2("Standard Token Exchange version 2", Type.DEFAULT, 2),
+        TOKEN_EXCHANGE_EXTERNAL_INTERNAL_V2("External to Internal Token Exchange version 2", Type.EXPERIMENTAL, 2),
 
         WEB_AUTHN("W3C Web Authentication (WebAuthn)", Type.DEFAULT),
 
@@ -95,9 +94,9 @@ public class Profile {
         // Check if kerberos is available in underlying JVM and auto-detect if feature should be enabled or disabled by default based on that
         KERBEROS("Kerberos", Type.DEFAULT, 1, () -> KerberosJdkProvider.getProvider().isKerberosAvailable()),
 
-        RECOVERY_CODES("Recovery codes", Type.PREVIEW),
+        RECOVERY_CODES("Recovery codes", Type.DEFAULT),
 
-        UPDATE_EMAIL("Update Email Action", Type.PREVIEW),
+        UPDATE_EMAIL("Update Email Action", Type.DEFAULT),
 
         FIPS("FIPS 140-2 mode", Type.DISABLED_BY_DEFAULT),
 
@@ -107,15 +106,15 @@ public class Profile {
 
         TRANSIENT_USERS("Transient users for brokering", Type.EXPERIMENTAL),
 
-        MULTI_SITE("Multi-site support", Type.DISABLED_BY_DEFAULT),
+        MULTI_SITE("Multi-site support", Type.DISABLED_BY_DEFAULT, FeatureUpdatePolicy.SHUTDOWN),
 
-        CLUSTERLESS("Store all session data, work cache and login failure data in an external Infinispan cluster.", Type.EXPERIMENTAL),
+        CLUSTERLESS("Store all session data, work cache and login failure data in an external Infinispan cluster.", Type.EXPERIMENTAL, FeatureUpdatePolicy.SHUTDOWN),
 
         CLIENT_TYPES("Client Types", Type.EXPERIMENTAL),
 
         HOSTNAME_V2("Hostname Options V2", Type.DEFAULT, 2),
 
-        PERSISTENT_USER_SESSIONS("Persistent online user sessions across restarts and upgrades", Type.DEFAULT),
+        PERSISTENT_USER_SESSIONS("Persistent online user sessions across restarts and upgrades", Type.DEFAULT, FeatureUpdatePolicy.SHUTDOWN),
 
         OID4VC_VCI("Support for the OID4VCI protocol as part of OID4VC.", Type.EXPERIMENTAL),
 
@@ -125,37 +124,60 @@ public class Profile {
 
         ORGANIZATION("Organization support within realms", Type.DEFAULT),
 
-        PASSKEYS("Passkeys", Type.PREVIEW),
+        PASSKEYS("Passkeys", Type.PREVIEW, Feature.WEB_AUTHN),
 
-        CACHE_EMBEDDED_REMOTE_STORE("Support for remote-store in embedded Infinispan caches", Type.EXPERIMENTAL),
+        USER_EVENT_METRICS("Collect metrics based on user events", Type.DEFAULT),
 
-        USER_EVENT_METRICS("Collect metrics based on user events", Type.PREVIEW),
+        IPA_TUURA_FEDERATION("IPA-Tuura user federation provider", Type.EXPERIMENTAL),
 
-        IPA_TUURA_FEDERATION("IPA-Tuura user federation provider", Type.EXPERIMENTAL)
-        ;
+        LOGOUT_ALL_SESSIONS_V1("Logout all sessions logs out only regular sessions", Type.DEPRECATED, 1),
+
+        ROLLING_UPDATES_V1("Rolling Updates", Type.DEFAULT, 1),
+        ROLLING_UPDATES_V2("Rolling Updates for patch releases", Type.PREVIEW, 2),
+
+        LOG_MDC("Mapped Diagnostic Context (MDC) information in logs", Type.PREVIEW),
+
+        /**
+         * @see <a href="https://github.com/keycloak/keycloak/issues/37967">Deprecate for removal the Instagram social broker</a>.
+         */
+        @Deprecated
+        INSTAGRAM_BROKER("Instagram Identity Broker", Type.DEPRECATED, 1);
 
         private final Type type;
         private final String label;
         private final String unversionedKey;
         private final String key;
         private final BooleanSupplier isAvailable;
-
-        private Set<Feature> dependencies;
-        private int version;
+        private final FeatureUpdatePolicy updatePolicy;
+        private final Set<Feature> dependencies;
+        private final int version;
 
         Feature(String label, Type type, Feature... dependencies) {
-            this(label, type, 1, null, dependencies);
+            this(label, type, 1, null, null, dependencies);
+        }
+
+        Feature(String label, Type type, FeatureUpdatePolicy updatePolicy, Feature... dependencies) {
+            this(label, type, 1, null, updatePolicy, dependencies);
+        }
+
+        Feature(String label, Type type, int version, FeatureUpdatePolicy updatePolicy, Feature... dependencies) {
+            this(label, type, version, null, updatePolicy, dependencies);
         }
 
         Feature(String label, Type type, int version, Feature... dependencies) {
-            this(label, type, version, null, dependencies);
+            this(label, type, version, null, null, dependencies);
         }
 
         Feature(String label, Type type, int version, BooleanSupplier isAvailable, Feature... dependencies) {
+            this(label, type, version, isAvailable, null, dependencies);
+        }
+
+        Feature(String label, Type type, int version, BooleanSupplier isAvailable, FeatureUpdatePolicy updatePolicy, Feature... dependencies) {
             this.label = label;
             this.type = type;
             this.version = version;
             this.isAvailable = isAvailable;
+            this.updatePolicy = updatePolicy == null ? FeatureUpdatePolicy.ROLLING : updatePolicy;
             this.key = name().toLowerCase().replaceAll("_", "-");
             if (this.name().endsWith("_V" + version)) {
                 unversionedKey = key.substring(0, key.length() - (String.valueOf(version).length() + 2));
@@ -210,6 +232,10 @@ public class Profile {
 
         public boolean isAvailable() {
             return isAvailable == null || isAvailable.getAsBoolean();
+        }
+
+        public FeatureUpdatePolicy getUpdatePolicy() {
+            return updatePolicy;
         }
 
         public enum Type {
@@ -407,6 +433,13 @@ public class Profile {
         return getInstance().features.get(feature);
     }
 
+    public static boolean isAnyVersionOfFeatureEnabled(Feature feature) {
+        return isFeatureEnabled(feature) ||
+                getInstance().getEnabledFeatures()
+                .stream()
+                .anyMatch(f -> Objects.equals(f.getUnversionedKey(), feature.getUnversionedKey()));
+    }
+
     public ProfileName getName() {
         return profileName;
     }
@@ -417,6 +450,10 @@ public class Profile {
 
     public Set<Feature> getDisabledFeatures() {
         return features.entrySet().stream().filter(e -> !e.getValue()).map(Map.Entry::getKey).collect(Collectors.toSet());
+    }
+
+    public Set<Feature> getEnabledFeatures() {
+        return features.entrySet().stream().filter(Map.Entry::getValue).map(Map.Entry::getKey).collect(Collectors.toSet());
     }
 
     /**
@@ -480,4 +517,12 @@ public class Profile {
         }
     }
 
+    public enum FeatureUpdatePolicy {
+        // Always allow a rolling update when the Feature is enabled/disabled
+        ROLLING,
+        // Allow rolling update, but not when going from V1 to V2 or V2 to V1
+        ROLLING_NO_UPGRADE,
+        // Always require a cluster shutdown when the Feature is enabled/disabled
+        SHUTDOWN;
+    }
 }

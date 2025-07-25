@@ -1,7 +1,4 @@
 import PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
-import ResourceServerRepresentation, {
-  ResourceTypesRepresentation,
-} from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
 import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
@@ -11,7 +8,7 @@ import {
   DropdownItem,
   PageSection,
 } from "@patternfly/react-core";
-import { useMemo, useState, type JSX } from "react";
+import { useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
@@ -29,17 +26,10 @@ import { toPermissionsConfigurationTabs } from "../routes/PermissionsConfigurati
 import PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
 import { AssignedPolicies } from "./AssignedPolicies";
 import { ScopePicker } from "../../clients/authorization/ScopePicker";
-import { Users } from "./permission-type/Users";
+import { ResourceType } from "../resource-types/ResourceType";
 import { sortBy } from "lodash-es";
 import { NameDescription } from "../../clients/authorization/policy/NameDescription";
-
-const COMPONENTS: {
-  [index: string]: () => JSX.Element;
-} = {
-  Users: Users,
-} as const;
-
-export const isValidComponentType = (value: string) => value in COMPONENTS;
+import useSortedResourceTypes from "../../utils/useSortedResourceTypes";
 
 export default function PermissionConfigurationDetails() {
   const { adminClient } = useAdminClient();
@@ -53,16 +43,18 @@ export default function PermissionConfigurationDetails() {
   const [permission, setPermission] = useState<PolicyRepresentation>();
   const [providers, setProviders] = useState<PolicyProviderRepresentation[]>();
   const [policies, setPolicies] = useState<PolicyRepresentation[]>();
-  const [adminPermissionClient, setAdminPermissionClient] =
-    useState<ResourceServerRepresentation>();
-  const resourceTypeScopes = useMemo(() => {
-    const resourceTypes =
-      adminPermissionClient?.authorizationSchema?.resourceTypes ?? {};
-    return (Object.values(resourceTypes) as ResourceTypesRepresentation[])
-      .filter((resource) => resource.type === resourceType)
-      .flatMap((resource) => resource.scopes || [])
-      .map((scope) => scope || "");
-  }, [adminPermissionClient, resourceType]);
+  const resourceTypes = useSortedResourceTypes({
+    clientId: permissionClientId,
+  });
+
+  const resourceTypeScopes = useMemo(
+    () =>
+      resourceTypes
+        .filter(({ type }) => type === resourceType)
+        .flatMap(({ scopes = [] }) => scopes)
+        .map((scope) => scope || ""),
+    [resourceTypes, resourceType],
+  );
 
   useFetch(
     async () => {
@@ -70,8 +62,7 @@ export default function PermissionConfigurationDetails() {
         return {};
       }
 
-      const [adminClientData, providers, policies] = await Promise.all([
-        adminClient.clients.getResourceServer({ id: permissionClientId }),
+      const [providers, policies] = await Promise.all([
         adminClient.clients.listPolicyProviders({ id: permissionClientId }),
         adminClient.clients.listPolicies({
           id: permissionClientId,
@@ -79,18 +70,13 @@ export default function PermissionConfigurationDetails() {
         }),
       ]);
 
-      return { adminClientData, providers, policies };
+      return { providers, policies };
     },
-    ({ adminClientData, providers, policies }) => {
-      if (!adminClientData) {
-        throw new Error(t("notFound"));
-      }
-
-      const filteredProviders = providers.filter(
+    ({ providers, policies }) => {
+      const filteredProviders = providers?.filter(
         (p) => p.type !== "resource" && p.type !== "scope",
       );
 
-      setAdminPermissionClient(adminClientData);
       setProviders(
         sortBy(
           filteredProviders,
@@ -201,7 +187,7 @@ export default function PermissionConfigurationDetails() {
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "deletePermission",
-    messageKey: t("deletePermissionConfirm", {
+    messageKey: t("deleteAdminPermissionConfirm", {
       permission: permission?.name,
     }),
     continueButtonVariant: ButtonVariant.danger,
@@ -214,7 +200,13 @@ export default function PermissionConfigurationDetails() {
           permissionId: permissionId,
         });
         addAlert(t("permissionDeletedSuccess"), AlertVariant.success);
-        navigate(toPermissionsConfigurationTabs({ realm, tab: "permissions" }));
+        navigate(
+          toPermissionsConfigurationTabs({
+            realm,
+            permissionClientId,
+            tab: "permissions",
+          }),
+        );
       } catch (error) {
         addError("permissionDeletedError", error);
       }
@@ -225,27 +217,15 @@ export default function PermissionConfigurationDetails() {
     return <KeycloakSpinner />;
   }
 
-  function getComponentType() {
-    return isValidComponentType(resourceType)
-      ? COMPONENTS[resourceType]
-      : COMPONENTS["js"];
-  }
-
-  const ComponentType = getComponentType();
-
   return (
     <>
       <DeleteConfirm />
       <ViewHeader
-        titleKey={
-          permissionId
-            ? permission?.name!
-            : t("createPermissionOfType", { resourceType })
-        }
+        titleKey={permissionId ? permission?.name! : t("createPermission")}
         subKey={
           permissionId
-            ? permission?.description
-            : t(`resourceType.${resourceType}`)
+            ? permission?.description!
+            : t("createPermissionOfType", { resourceType })
         }
         dropdownItems={
           permissionId
@@ -269,7 +249,7 @@ export default function PermissionConfigurationDetails() {
               clientId={permissionClientId}
               resourceTypeScopes={resourceTypeScopes ?? []}
             />
-            <ComponentType />
+            <ResourceType resourceType={resourceType} />
             <AssignedPolicies
               permissionClientId={permissionClientId}
               providers={providers!}
@@ -295,6 +275,7 @@ export default function PermissionConfigurationDetails() {
                     {...props}
                     to={toPermissionsConfigurationTabs({
                       realm,
+                      permissionClientId,
                       tab: "permissions",
                     })}
                   />

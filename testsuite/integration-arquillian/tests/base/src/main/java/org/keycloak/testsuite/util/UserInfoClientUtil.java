@@ -20,6 +20,7 @@ package org.keycloak.testsuite.util;
 import org.junit.Assert;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.UserInfo;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.utils.MediaType;
 
 import jakarta.ws.rs.client.Client;

@@ -28,7 +28,6 @@ import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.browser.PasswordFormFactory;
 import org.keycloak.authentication.authenticators.browser.UsernameFormFactory;
@@ -38,7 +37,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.login.OneTimeCode;
@@ -52,13 +51,13 @@ import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.util.BrowserTabUtil;
 import org.keycloak.testsuite.util.FederatedIdentityBuilder;
 import org.keycloak.testsuite.util.FlowUtil;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GITHUB;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GOOGLE;
 
@@ -67,7 +66,7 @@ import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GOOGLE;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
+public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTest {
 
     @ArquillianResource
     protected OAuthClient oauth;
@@ -98,13 +97,10 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
-    }
+        super.configureTestRealm(testRealm);
 
-    private RealmRepresentation loadTestRealm() {
-        RealmRepresentation res = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
-        res.setBrowserFlow("browser");
-        res.setRememberMe(true);
-
+        testRealm.setBrowserFlow("browser");
+        testRealm.setRememberMe(true);
         // Add some sample dummy GitHub, Gitlab & Google social providers to the testing realm. Those are dummy providers for test if they are visible (clickable)
         // on the login pages
         List<IdentityProviderRepresentation> idps = new ArrayList<>();
@@ -112,17 +108,8 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
             SocialLoginTest socialLoginTest = new SocialLoginTest();
             idps.add(socialLoginTest.buildIdp(provider));
         }
-        res.setIdentityProviders(idps);
-
-        return res;
+        testRealm.setIdentityProviders(idps);
     }
-
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        log.debug("Adding test realm for import from testrealm.json");
-        testRealms.add(loadTestRealm());
-    }
-
 
     @Test
     public void usernamePasswordFormReauthentication() {
@@ -140,15 +127,14 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
         loginPage.assertCurrent();
         assertUsernameFieldAndOtherFields(true);
         assertSocialButtonsPresent(true, true);
-        loginPage.login("test-user@localhost", "password");
+        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         // Set time offset
         setTimeOffset(10);
 
         // Request re-authentication
-        oauth.maxAge("1");
-        loginPage.open();
+        oauth.loginForm().maxAge(1).open();
         loginPage.assertCurrent();
 
         // Username input hidden as well as register and rememberMe. Info message should be shown
@@ -165,7 +151,7 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
         assertUsernameFieldAndOtherFields(false);
         assertInfoMessageAboutReAuthenticate(false);
 
-        loginPage.login("password");
+        loginPage.login(getPassword("test-user@localhost"));
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         // Remove link
@@ -180,15 +166,14 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
         loginPage.assertCurrent();
         assertUsernameFieldAndOtherFields(true);
         assertSocialButtonsPresent(true, true);
-        loginPage.login("test-user@localhost", "password");
+        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         // Set time offset
         setTimeOffset(10);
 
         // Request re-authentication
-        oauth.maxAge("1");
-        loginPage.open();
+        oauth.loginForm().maxAge(1).open();
         loginPage.assertCurrent();
 
         // Username input hidden as well as register and rememberMe. Info message should be shown
@@ -211,7 +196,7 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
         assertSocialButtonsPresent(true, true);
 
         // Successfully login as different user. It should be possible due previous SSO session was removed
-        loginPage.login("john-doh@localhost", "password");
+        loginPage.login("john-doh@localhost", getPassword("john-doh@localhost"));
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
     }
 
@@ -228,15 +213,14 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
         assertSocialButtonsPresent(true, true);
         loginUsernameOnlyPage.login("test-user@localhost");
         passwordPage.assertCurrent();
-        passwordPage.login("password");
+        passwordPage.login(getPassword("test-user@localhost"));
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         // Set time offset
         setTimeOffset(10);
 
         // Request re-authentication
-        oauth.maxAge("1");
-        loginPage.open();
+        oauth.loginForm().maxAge(1).open();
 
         // User directly on the password page. Info message should be shown here
         passwordPage.assertCurrent();
@@ -245,7 +229,7 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
 
         passwordPage.login("bad-password");
         Assert.assertEquals("Invalid password.", passwordPage.getPasswordError());
-        passwordPage.login("password");
+        passwordPage.login(getPassword("test-user@localhost"));
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         // Revert flows
@@ -272,14 +256,12 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
         loginUsernameOnlyPage.assertCurrent();
         loginUsernameOnlyPage.login("test-user@localhost");
         passwordPage.assertCurrent();
-        passwordPage.login("password");
+        passwordPage.login(getPassword("test-user@localhost"));
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         // See that user can re-authenticate with the github link present on the page as user has link to github social provider
         setTimeOffset(10);
-        oauth.maxAge("1");
-
-        loginPage.open();
+        oauth.loginForm().maxAge(1).open();
 
         // Username input hidden as well as register and rememberMe. Info message should be present
         loginPage.assertCurrent();
@@ -297,7 +279,7 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
 
         // Login with password. Info message should not be there anymore
         passwordPage.assertCurrent();
-        passwordPage.login("password");
+        passwordPage.login(getPassword("test-user@localhost"));
         assertInfoMessageAboutReAuthenticate(false);
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
@@ -309,17 +291,16 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void restartLoginWithNewRootAuthSession() {
         loginPage.open();
-        loginPage.login("test-user@localhost", "password");
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response1 = oauth.doAccessTokenRequest(code, "password");
+        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response1 = oauth.doAccessTokenRequest(code);
 
-        oauth.prompt(OIDCLoginProtocol.PROMPT_VALUE_LOGIN);
-        loginPage.open();
+        oauth.loginForm().prompt(OIDCLoginProtocol.PROMPT_VALUE_LOGIN).open();
         loginPage.clickResetLogin();
-        loginPage.login("john-doh@localhost", "password");
+        loginPage.login("john-doh@localhost", getPassword("john-doh@localhost"));
 
-        code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response2 = oauth.doAccessTokenRequest(code, "password");
+        code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response2 = oauth.doAccessTokenRequest(code);
 
 
         AccessToken accessToken1 = oauth.verifyToken(response1.getAccessToken());
@@ -341,19 +322,19 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.open();
         driver.navigate().refresh();
-        loginPage.login("test-user@localhost", "password");
+        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response1 = oauth.doAccessTokenRequest(code, "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response1 = oauth.doAccessTokenRequest(code);
 
         //set time offset after user session expiration (10s) but before accessCodeLifespanLogin (1800s) and accessCodeLifespan (60s)
         setTimeOffset(20);
 
         loginPage.open();
-        loginPage.login("john-doh@localhost", "password");
+        loginPage.login("john-doh@localhost", getPassword("john-doh@localhost"));
 
-        code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response2 = oauth.doAccessTokenRequest(code, "password");
+        code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response2 = oauth.doAccessTokenRequest(code);
 
         AccessToken accessToken1 = oauth.verifyToken(response1.getAccessToken());
         AccessToken accessToken2 = oauth.verifyToken(response2.getAccessToken());
@@ -375,7 +356,7 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
         oauth.openLoginForm();
         loginPage.assertCurrent();
 
-        tabUtil.newTab(oauth.getLoginFormUrl());
+        tabUtil.newTab(oauth.loginForm().build());
         assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
         oauth.openLoginForm();
 
@@ -385,18 +366,18 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
         tabUtil.switchToTab(0);
         loginPage.assertCurrent();
 
-        loginPage.login("test-user@localhost", "password");
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response1 = oauth.doAccessTokenRequest(code, "password");
+        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response1 = oauth.doAccessTokenRequest(code);
         AccessToken accessToken1 = oauth.verifyToken(response1.getAccessToken());
 
-        oauth.doLogout(response1.getRefreshToken(), "password");
+        oauth.doLogout(response1.getRefreshToken());
 
         oauth.openLoginForm();
         loginPage.assertCurrent();
-        loginPage.login("test-user@localhost", "password");
-        code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response2 = oauth.doAccessTokenRequest(code, "password");
+        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
+        code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response2 = oauth.doAccessTokenRequest(code);
         AccessToken accessToken2 = oauth.verifyToken(response2.getAccessToken());
 
         Assert.assertNotEquals(accessToken1.getId(), accessToken2.getId());

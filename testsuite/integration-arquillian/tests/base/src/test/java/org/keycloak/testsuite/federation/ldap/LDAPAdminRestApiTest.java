@@ -56,7 +56,7 @@ import static org.junit.Assert.assertEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.forms.VerifyProfileTest.setUserProfileConfiguration;
+import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.setUserProfileConfiguration;
 import static org.keycloak.util.JsonSerialization.writeValueAsString;
 
 /**

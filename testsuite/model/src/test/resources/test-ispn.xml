@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2025 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<infinispan
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="urn:infinispan:config:15.0 http://www.infinispan.org/schemas/infinispan-config-15.0.xsd
+            urn:org:jgroups http://www.jgroups.org/schema/jgroups-5.3.xsd"
+        xmlns="urn:infinispan:config:15.0"
+        xmlns:ispn="urn:infinispan:config:15.0">
+
+    <jgroups>
+        <stack name="test" extends="tcp">
+            <!-- no network traffic as all messages are handled inside the JVM -->
+            <SHARED_LOOPBACK xmlns="urn:org:jgroups" ispn:stack.combine="REPLACE" ispn:stack.position="TCP"
+                             thread_pool.use_virtual_threads="true"
+                             bundler_type="no-bundler"/>
+            <SHARED_LOOPBACK_PING xmlns="urn:org:jgroups" ispn:stack.combine="REPLACE" ispn:stack.position="MPING"/>
+            <!-- in JVM cluster, no failure detection, no flow control, no fragmentation. -->
+            <RED xmlns="urn:org:jgroups" ispn:stack.combine="REMOVE"/>
+            <FD_SOCK2 xmlns="urn:org:jgroups" ispn:stack.combine="REMOVE"/>
+            <UFC xmlns="urn:org:jgroups" ispn:stack.combine="REMOVE"/>
+            <MFC xmlns="urn:org:jgroups" ispn:stack.combine="REMOVE"/>
+            <FRAG4 xmlns="urn:org:jgroups" ispn:stack.combine="REMOVE"/>
+        </stack>
+    </jgroups>
+
+    <cache-container name="keycloak">
+        <transport lock-timeout="60000" stack="test"/>
+        <local-cache name="realms" simple-cache="true">
+            <encoding>
+                <key media-type="application/x-java-object"/>
+                <value media-type="application/x-java-object"/>
+            </encoding>
+            <memory max-count="10000"/>
+        </local-cache>
+        <local-cache name="users" simple-cache="true">
+            <encoding>
+                <key media-type="application/x-java-object"/>
+                <value media-type="application/x-java-object"/>
+            </encoding>
+            <memory max-count="10000"/>
+        </local-cache>
+        <distributed-cache name="sessions" owners="1">
+            <expiration lifespan="-1"/>
+            <memory max-count="10000"/>
+        </distributed-cache>
+        <distributed-cache name="authenticationSessions" owners="2">
+            <expiration lifespan="-1"/>
+        </distributed-cache>
+        <distributed-cache name="offlineSessions" owners="1">
+            <expiration lifespan="-1"/>
+            <memory max-count="10000"/>
+        </distributed-cache>
+        <distributed-cache name="clientSessions" owners="1">
+            <expiration lifespan="-1"/>
+            <memory max-count="10000"/>
+        </distributed-cache>
+        <distributed-cache name="offlineClientSessions" owners="1">
+            <expiration lifespan="-1"/>
+            <memory max-count="10000"/>
+        </distributed-cache>
+        <distributed-cache name="loginFailures" owners="2">
+            <expiration lifespan="-1"/>
+        </distributed-cache>
+        <local-cache name="authorization" simple-cache="true">
+            <encoding>
+                <key media-type="application/x-java-object"/>
+                <value media-type="application/x-java-object"/>
+            </encoding>
+            <memory max-count="10000"/>
+        </local-cache>
+        <replicated-cache name="work">
+            <expiration lifespan="-1"/>
+        </replicated-cache>
+        <local-cache name="keys" simple-cache="true">
+            <encoding>
+                <key media-type="application/x-java-object"/>
+                <value media-type="application/x-java-object"/>
+            </encoding>
+            <expiration max-idle="3600000"/>
+            <memory max-count="1000"/>
+        </local-cache>
+        <local-cache name="crl" simple-cache="true">
+            <encoding>
+                <key media-type="application/x-java-object"/>
+                <value media-type="application/x-java-object"/>
+            </encoding>
+            <expiration lifespan="-1"/>
+            <memory max-count="1000"/>
+        </local-cache>
+        <distributed-cache name="actionTokens" owners="2">
+            <encoding>
+                <key media-type="application/x-java-object"/>
+                <value media-type="application/x-java-object"/>
+            </encoding>
+            <expiration max-idle="-1" lifespan="-1" interval="300000"/>
+            <memory max-count="-1"/>
+        </distributed-cache>
+    </cache-container>
+</infinispan>

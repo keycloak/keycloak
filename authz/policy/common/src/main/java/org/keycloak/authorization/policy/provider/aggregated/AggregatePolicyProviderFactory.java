@@ -54,7 +54,7 @@ public class AggregatePolicyProviderFactory implements PolicyProviderFactory<Agg
 
     @Override
     public PolicyProvider create(KeycloakSession session) {
-        return null;
+        return provider;
     }
 
     @Override

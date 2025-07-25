@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
+import java.util.ArrayList;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.issuance.OffsetTimeProvider;
@@ -30,6 +31,8 @@ import java.util.List;
  */
 public class JwtCredentialBuilderFactory implements CredentialBuilderFactory {
 
+    protected static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
+
     @Override
     public String getSupportedFormat() {
         return Format.JWT_VC;
@@ -42,14 +45,11 @@ public class JwtCredentialBuilderFactory implements CredentialBuilderFactory {
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return null;
+        return configProperties;
     }
 
     @Override
     public CredentialBuilder create(KeycloakSession session, ComponentModel model) {
-        String credentialIssuer = CredentialBuilderUtils.getIssuerDid(session)
-                .orElseThrow(() -> new CredentialBuilderException("No issuerDid configured."));
-
-        return new JwtCredentialBuilder(credentialIssuer, new OffsetTimeProvider());
+        return new JwtCredentialBuilder(new OffsetTimeProvider());
     }
 }

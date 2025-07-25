@@ -26,6 +26,7 @@ export const ClientRegistration = () => {
     <RoutableTabs
       defaultLocation={toClientRegistration({ realm, subTab: "anonymous" })}
       mountOnEnter
+      unmountOnExit
     >
       <Tab
         data-testid="anonymous"

@@ -77,7 +77,14 @@ public abstract class AbstractEvents<R> {
     }
 
     public void skipAll() {
+        try {
+            Thread.sleep(1); // Wait 1 ms to make sure time passes
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         testStarted = getCurrentTime();
+        lastFetch = -1;
+        events.clear();
     }
 
     public void clear() {
@@ -101,7 +108,7 @@ public abstract class AbstractEvents<R> {
 
     protected abstract Logger getLogger();
 
-    protected long getCurrentTime() {
+    public long getCurrentTime() {
         return System.currentTimeMillis();
     }
 

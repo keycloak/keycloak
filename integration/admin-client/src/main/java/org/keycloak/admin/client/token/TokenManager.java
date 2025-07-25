@@ -123,7 +123,7 @@ public class TokenManager {
     }
 
     public synchronized void logout() {
-        if (currentToken.getRefreshToken() == null) {
+        if (currentToken == null || currentToken.getRefreshToken() == null || refreshTokenExpired()) {
             return;
         }
 

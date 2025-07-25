@@ -131,7 +131,7 @@ public class LDAPSpecialCharsTest extends AbstractLDAPTest {
         // Success login as username exactly match
         loginPage.login("jamees,key*cložak)ppp", "Password1");
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
     }
 
 
@@ -223,7 +223,7 @@ public class LDAPSpecialCharsTest extends AbstractLDAPTest {
             // Success login as username exactly match
             loginPage.login("jamees,key*cložak)ppp", "Password1");
             Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-            Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+            Assert.assertNotNull(oauth.parseLoginResponse().getCode());
         } finally {
             // Revert config changes to be back to previous UUID attribute
             ComponentRepresentation ldapRep = testRealm().components().component(ldapModelId).toRepresentation();

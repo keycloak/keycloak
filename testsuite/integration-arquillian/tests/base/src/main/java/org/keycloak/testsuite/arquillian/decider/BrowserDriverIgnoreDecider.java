@@ -68,7 +68,7 @@ public class BrowserDriverIgnoreDecider implements TestExecutionDecider {
         final WebDriver webDriver = driver.get();
 
         Predicate<IgnoreBrowserDriver> shouldBeIgnored = (item) -> {
-            return webDriver != null && (isDriverInstanceOf(webDriver, item.value()) ^ item.negate());
+            return webDriver != null && (isPresent(webDriver, item.value()) ^ item.negate());
         };
 
         return Arrays.stream(element.getAnnotationsByType(IgnoreBrowserDriver.class))
@@ -76,6 +76,13 @@ public class BrowserDriverIgnoreDecider implements TestExecutionDecider {
                 .findAny()
                 .map(f -> ExecutionDecision.dontExecute("This test should not be executed with this browser."))
                 .orElse(ExecutionDecision.execute());
+    }
+
+    private boolean isPresent(WebDriver webDriver, Class<? extends WebDriver>[] items) {
+        if (items == null) {
+            return false;
+        }
+        return Arrays.stream(items).filter(item -> isDriverInstanceOf(webDriver, item)).findAny().isPresent();
     }
 
     @Override

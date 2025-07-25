@@ -1,4 +1,5 @@
 
+[[managing-user-sessions]]
 == Managing user sessions
 
 When users log into realms, {project_name} maintains a user session for each user and remembers each client visited by the user within the session. Realm administrators can perform multiple actions on each user session:

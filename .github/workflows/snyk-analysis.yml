@@ -10,18 +10,23 @@ defaults:
   run:
     shell: bash
 
+permissions:
+  contents: read
+
 jobs:
   analysis:
     name: Analysis of Quarkus and Operator
     runs-on: ubuntu-latest
     if: github.repository == 'keycloak/keycloak'
+    permissions:
+      security-events: write # Required for SARIF uploads
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Build Keycloak
         uses: ./.github/actions/build-keycloak
 
-      - uses: snyk/actions/setup@master
+      - uses: snyk/actions/setup@28606799782bc8e809f4076e9f8293bc4212d05e # master
 
       - name: Check for vulnerabilities in Quarkus
         run: snyk test --policy-path=${GITHUB_WORKSPACE}/.github/snyk/.snyk --all-projects --prune-repeated-subdependencies --exclude=tests --sarif-file-output=quarkus-report.sarif quarkus/deployment
@@ -30,7 +35,7 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
       - name: Upload Quarkus scanner results to GitHub
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@d6bbdef45e766d081b84a2def353b0055f728d3e # v3.29.3
         continue-on-error: true
         with:
           sarif_file: quarkus-report.sarif
@@ -45,7 +50,7 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
       - name: Upload Operator scanner results to GitHub
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@d6bbdef45e766d081b84a2def353b0055f728d3e # v3.29.3
         with:
           sarif_file: operator-report.sarif
           category: snyk-operator-report

@@ -6,7 +6,7 @@
 
 <@tmpl.guide
 title="Running {project_name} in a container"
-summary="Learn how to run {project_name} from a container image"
+summary="Run {project_name} from a container image."
 includedOptions="db db-url db-username db-password features hostname https-key-store-file https-key-store-password health-enabled metrics-enabled">
 
 This {section} describes how to optimize and run the {project_name} container image to provide the best experience running a container.
@@ -24,6 +24,22 @@ For the best start up of your {project_name} container, build an image by runnin
 This step will save time in every subsequent start phase of the container image.
 
 === Writing your optimized {project_name} Containerfile
+
+<@profile.ifCommunity>
+
+[NOTE]
+====
+A Containerfile is functionally identical to a Dockerfile and uses the same syntax.
+The term "Containerfile" is used to be more tool-agnostic, especially in non-Docker environments like Podman or Buildah.
+When using Docker, you have two options: either name your file `Dockerfile` (which Docker expects by default), or keep the name `Containerfile` and specify it explicitly using the `-f` flag:
+
+----
+docker build -f Containerfile -t mykeycloak .
+----
+====
+
+</@profile.ifCommunity>
+
 The following `Containerfile` creates a pre-configured {project_name} image that enables the health and metrics endpoints, enables the token exchange feature, and uses a PostgreSQL database.
 
 .Containerfile:
@@ -120,13 +136,42 @@ This approach uses a chroot, `+/mnt/rootfs+`, so that only the packages you spec
 
 WARNING: Some packages have a large tree of dependencies. By installing new RPMs you may unintentionally increase the container's attack surface. Check the list of installed packages carefully.
 
+=== Custom ENTRYPOINT shell scripts
+
+If you use a custom entry point script, start {project_name} with `exec` so it can receive termination signals that are essential for a graceful shutdown.
+
+.Correct approach for an ENTRYPOINT shell script
+[source,bash]
+----
+#!/bin/bash
+
+# (add your custom logic here)
+
+# Run the 'exec' command as the last step of the script.
+# As it replaces the current shell process, no additional shell commands will run after the 'exec' command.
+exec /opt/keycloak/bin/kc.sh start "$@"
+----
+
+[WARNING]
+====
+Without `exec`, the shell script remains PID 1 in the container and blocks signals like `SIGTERM` from reaching {project_name}.
+This prevents a graceful shutdown and can lead to cache inconsistencies or data loss.
+====
+
 === Building the container image
 To build the actual container image, run the following command from the directory containing your Containerfile:
 
 [source,bash]
 ----
-podman|docker build . -t mykeycloak
+podman|docker build . -t mykeycloak -f Containerfile
 ----
+
+<@profile.ifProduct>
+[NOTE]
+====
+Podman can be used only for creating or customizing images. Podman is not supported for running {project_name} in production environments.
+====
+</@profile.ifProduct>
 
 === Starting the optimized {project_name} container image
 To start the image, run:
@@ -144,6 +189,33 @@ podman|docker run --name mykeycloak -p 8443:8443 -p 9000:9000 \
 Health check endpoints are available at `https://localhost:9000/health`, `https://localhost:9000/health/ready` and `https://localhost:9000/health/live`.
 
 Opening up `https://localhost:9000/metrics` leads to a page containing operational metrics that could be used by your monitoring solution.
+
+=== Known issues with Docker
+
+* If a `RUN dnf install` command seems to be taking an excessive amount of time, then likely your Docker systemd service has the file limit setting `LimitNOFILE` configured incorrectly.
+Either update the service configuration to use a better value, such as 1024000, or directly use `ulimit` in the RUN command:
+
+[source, dockerfile]
+----
+...
+RUN ulimit -n 1024000 && dnf install --installroot ...
+...
+----
+
+* If you are including provider JARs and your container fails a `start --optimized` with a notification that a provider JAR has changed, this is due to Docker truncating
+or otherwise modifying file modification timestamps from what the `build` command recorded to what is seen at runtime.
+  In this case you will need to force the image to use a known timestamp of your choosing with a `touch` command prior to running a `build`:
+
+[source, dockerfile]
+----
+...
+# ADD or copy one or more provider jars
+ADD --chown=keycloak:keycloak --chmod=644 some-jar.jar /opt/keycloak/providers/
+...
+RUN touch -m --date=@1743465600 /opt/keycloak/providers/*
+RUN /opt/keycloak/bin/kc.sh build
+...
+----
 
 == Exposing the container to a different port
 
@@ -168,7 +240,7 @@ You use the `start-dev` command:
 
 [source,bash,subs="attributes+"]
 ----
-podman|docker run --name mykeycloak -p 8080:8080 \
+podman|docker run --name mykeycloak -p 127.0.0.1:8080:8080 \
         -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=change_me \
         quay.io/keycloak/keycloak:{containerlabel} \
         start-dev
@@ -187,10 +259,11 @@ For example:
 
 [source,bash,subs="attributes+"]
 ----
-podman|docker run --name mykeycloak -p 8080:8080 \
+podman|docker run --name mykeycloak -p 127.0.0.1:8080:8080 \
         -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=change_me \
         quay.io/keycloak/keycloak:{containerlabel} \
         start \
+        --hostname=localhost --http-enabled=true
         --db=postgres --features=token-exchange \
         --db-url=<JDBC-URL> --db-username=<DB-USER> --db-password=<DB-PASSWORD> \
         --https-key-store-file=<file> --https-key-store-password=<password>
@@ -220,7 +293,7 @@ The {project_name} containers have a directory `/opt/keycloak/data/import`. If y
 
 [source,bash,subs="attributes+"]
 ----
-podman|docker run --name keycloak_unoptimized -p 8080:8080 \
+podman|docker run --name keycloak_unoptimized -p 127.0.0.1:8080:8080 \
         -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=change_me \
         -v /path/to/realm/data:/opt/keycloak/data/import \
         quay.io/keycloak/keycloak:{containerlabel} \
@@ -249,7 +322,7 @@ For example, you can specify the environment variable and memory limit as follow
 
 [source,bash,subs="attributes+"]
 ----
-podman|docker run --name mykeycloak -p 8080:8080 -m 1g \
+podman|docker run --name mykeycloak -p 127.0.0.1:8080:8080 -m 1g \
         -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=change_me \
         -e JAVA_OPTS_KC_HEAP="-XX:MaxHeapFreeRatio=30 -XX:MaxRAMPercentage=65" \
         quay.io/keycloak/keycloak:{containerlabel} \

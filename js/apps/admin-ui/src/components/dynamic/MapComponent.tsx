@@ -28,6 +28,7 @@ export const MapComponent = ({
   helpText,
   required,
   isDisabled,
+  defaultValue,
   convertToName,
 }: ComponentProps) => {
   const { t } = useTranslation();
@@ -38,7 +39,9 @@ export const MapComponent = ({
 
   useEffect(() => {
     register(fieldName);
-    const values: KeyValueType[] = JSON.parse(getValues(fieldName) || "[]");
+    const values: KeyValueType[] = JSON.parse(
+      getValues(fieldName) || defaultValue || "[]",
+    );
     setMap(values.map((value) => ({ ...value, id: generateId() })));
   }, []);
 

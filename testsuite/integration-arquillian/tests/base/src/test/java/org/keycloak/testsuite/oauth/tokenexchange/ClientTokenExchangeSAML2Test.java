@@ -31,8 +31,8 @@ import org.keycloak.crypto.Algorithm;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AudienceRestrictionType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -52,16 +52,17 @@ import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
 import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
-import org.keycloak.services.resources.admin.permissions.AdminPermissions;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionManagement;
+import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.KeyUtils;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.BasicAuthHelper;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -77,9 +78,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.Assert.assertNotNull;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
@@ -92,6 +91,7 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
  */
 @EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
 @EnableFeature(value = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, skipRestart = true)
+@DisableFeature(value = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2, skipRestart = true)
 public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
 
     private static final String SAML_SIGNED_TARGET = "http://localhost:8080/saml-signed-assertion/";
@@ -123,7 +123,7 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
         RoleModel exampleRole = realm.getRole("example");
 
         AdminPermissionManagement management = AdminPermissions.management(session, realm);
-        RoleModel impersonateRole = management.getRealmPermissionsClient().getRole(ImpersonationConstants.IMPERSONATION_ROLE);
+        RoleModel impersonateRole = management.getRealmPermissionsClient().getRole(AdminRoles.IMPERSONATION);
 
         ClientModel clientExchanger = realm.addClient("client-exchanger");
         clientExchanger.setClientId("client-exchanger");
@@ -238,19 +238,16 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
         testingClient.server().run(ClientTokenExchangeSAML2Test::setupRealm);
 
         oauth.realm(TEST);
-        oauth.clientId("client-exchanger");
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
+        oauth.client("client-exchanger", "secret");
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doPasswordGrantRequest("user", "password");
         String accessToken = response.getAccessToken();
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();
         Assert.assertEquals(token.getPreferredUsername(), "user");
         Assert.assertTrue(token.getRealmAccess() == null || !token.getRealmAccess().isUserInRole("example"));
 
-        Map<String, String> params = new HashMap<>();
-        params.put(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.SAML2_TOKEN_TYPE);
-
         {
-            response = oauth.doTokenExchange(TEST, accessToken, SAML_SIGNED_TARGET, "client-exchanger", "secret", params);
+            response = oauth.tokenExchangeRequest(accessToken).audience(SAML_SIGNED_TARGET).requestedTokenType(OAuth2Constants.SAML2_TOKEN_TYPE).send();
 
             String exchangedTokenString = response.getAccessToken();
             String assertionXML = new String(Base64Url.decode(exchangedTokenString), StandardCharsets.UTF_8);
@@ -280,7 +277,8 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
         }
 
         {
-            response = oauth.doTokenExchange(TEST, accessToken, SAML_SIGNED_TARGET, "legal", "secret", params);
+            oauth.client("legal", "secret");
+            response = oauth.tokenExchangeRequest(accessToken).audience(SAML_SIGNED_TARGET).requestedTokenType(OAuth2Constants.SAML2_TOKEN_TYPE).send();
 
             String exchangedTokenString = response.getAccessToken();
             String assertionXML = new String(Base64Url.decode(exchangedTokenString), StandardCharsets.UTF_8);
@@ -306,7 +304,8 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
             Assert.assertTrue(roles.contains("example"));
         }
         {
-            response = oauth.doTokenExchange(TEST, accessToken, SAML_SIGNED_TARGET, "illegal", "secret", params);
+            oauth.client("illegal", "secret");
+            response = oauth.tokenExchangeRequest(accessToken).audience(SAML_SIGNED_TARGET).requestedTokenType(OAuth2Constants.SAML2_TOKEN_TYPE).send();
             Assert.assertEquals(403, response.getStatusCode());
         }
     }
@@ -317,19 +316,16 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
         testingClient.server().run(ClientTokenExchangeSAML2Test::setupRealm);
 
         oauth.realm(TEST);
-        oauth.clientId("client-exchanger");
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
+        oauth.client("client-exchanger", "secret");
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doPasswordGrantRequest("user", "password");
         String accessToken = response.getAccessToken();
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();
         Assert.assertEquals(token.getPreferredUsername(), "user");
         Assert.assertTrue(token.getRealmAccess() == null || !token.getRealmAccess().isUserInRole("example"));
 
-        Map<String, String> params = new HashMap<>();
-        params.put(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.SAML2_TOKEN_TYPE);
-
         {
-            response = oauth.doTokenExchange(TEST, accessToken, SAML_ENCRYPTED_TARGET, "client-exchanger", "secret", params);
+            response = oauth.tokenExchangeRequest(accessToken).audience(SAML_ENCRYPTED_TARGET).requestedTokenType(OAuth2Constants.SAML2_TOKEN_TYPE).send();
 
             String exchangedTokenString = response.getAccessToken();
             String assertionXML = new String(Base64Url.decode(exchangedTokenString), StandardCharsets.UTF_8);
@@ -365,19 +361,16 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
         testingClient.server().run(ClientTokenExchangeSAML2Test::setupRealm);
 
         oauth.realm(TEST);
-        oauth.clientId("client-exchanger");
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
+        oauth.client("client-exchanger", "secret");
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doPasswordGrantRequest("user", "password");
         String accessToken = response.getAccessToken();
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();
         Assert.assertEquals(token.getPreferredUsername(), "user");
         Assert.assertTrue(token.getRealmAccess() == null || !token.getRealmAccess().isUserInRole("example"));
 
-        Map<String, String> params = new HashMap<>();
-        params.put(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.SAML2_TOKEN_TYPE);
-
         {
-            response = oauth.doTokenExchange(TEST, accessToken, SAML_SIGNED_AND_ENCRYPTED_TARGET, "client-exchanger", "secret", params);
+            response = oauth.tokenExchangeRequest(accessToken).audience(SAML_SIGNED_AND_ENCRYPTED_TARGET).requestedTokenType(OAuth2Constants.SAML2_TOKEN_TYPE).send();
 
             String exchangedTokenString = response.getAccessToken();
             String assertionXML = new String(Base64Url.decode(exchangedTokenString), StandardCharsets.UTF_8);
@@ -411,19 +404,16 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
         testingClient.server().run(ClientTokenExchangeSAML2Test::setupRealm);
 
         oauth.realm(TEST);
-        oauth.clientId("client-exchanger");
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
+        oauth.client("client-exchanger", "secret");
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doPasswordGrantRequest("user", "password");
         String accessToken = response.getAccessToken();
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();
         Assert.assertEquals(token.getPreferredUsername(), "user");
         Assert.assertTrue(token.getRealmAccess() == null || !token.getRealmAccess().isUserInRole("example"));
 
-        Map<String, String> params = new HashMap<>();
-        params.put(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.SAML2_TOKEN_TYPE);
-
         {
-            response = oauth.doTokenExchange(TEST, accessToken, SAML_UNSIGNED_AND_UNENCRYPTED_TARGET, "client-exchanger", "secret", params);
+            response = oauth.tokenExchangeRequest(accessToken).audience(SAML_UNSIGNED_AND_UNENCRYPTED_TARGET).requestedTokenType(OAuth2Constants.SAML2_TOKEN_TYPE).send();
 
             String exchangedTokenString = response.getAccessToken();
             String assertionXML = new String(Base64Url.decode(exchangedTokenString), StandardCharsets.UTF_8);
@@ -455,22 +445,19 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
         testingClient.server().run(ClientTokenExchangeSAML2Test::setupRealm);
 
         oauth.realm(TEST);
-        oauth.clientId("client-exchanger");
+        oauth.client("client-exchanger", "secret");
 
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doPasswordGrantRequest("user", "password");
         String accessToken = response.getAccessToken();
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();
         Assert.assertEquals(token.getPreferredUsername(), "user");
         Assert.assertTrue(token.getRealmAccess() == null || !token.getRealmAccess().isUserInRole("example"));
 
-        Map<String, String> params = new HashMap<>();
-        params.put(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.SAML2_TOKEN_TYPE);
 
         // client-exchanger can impersonate from token "user" to user "impersonated-user" and to "target" client
         {
-            params.put(OAuth2Constants.REQUESTED_SUBJECT, "impersonated-user");
-            response = oauth.doTokenExchange(TEST, accessToken, SAML_SIGNED_TARGET, "client-exchanger", "secret", params);
+            response = oauth.tokenExchangeRequest(accessToken).audience(SAML_SIGNED_TARGET).requestedTokenType(OAuth2Constants.SAML2_TOKEN_TYPE).requestedSubject("impersonated-user").send();
 
             String exchangedTokenString = response.getAccessToken();
             String assertionXML = new String(Base64Url.decode(exchangedTokenString), StandardCharsets.UTF_8);
@@ -503,22 +490,18 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
         testingClient.server().run(ClientTokenExchangeSAML2Test::setupRealm);
 
         oauth.realm(TEST);
-        oauth.clientId("client-exchanger");
+        oauth.client("client-exchanger", "secret");
 
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "bad-impersonator", "password");
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doPasswordGrantRequest("bad-impersonator", "password");
         String accessToken = response.getAccessToken();
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();
         Assert.assertEquals(token.getPreferredUsername(), "bad-impersonator");
         Assert.assertTrue(token.getRealmAccess() == null || !token.getRealmAccess().isUserInRole("example"));
 
-        Map<String, String> params = new HashMap<>();
-        params.put(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.SAML2_TOKEN_TYPE);
-
         // test that user does not have impersonator permission
         {
-            params.put(OAuth2Constants.REQUESTED_SUBJECT, "impersonated-user");
-            response = oauth.doTokenExchange(TEST, accessToken, SAML_SIGNED_TARGET, "client-exchanger", "secret", params);
+            response = oauth.tokenExchangeRequest(accessToken).audience(SAML_SIGNED_TARGET).requestedTokenType(OAuth2Constants.SAML2_TOKEN_TYPE).requestedSubject("impersonated-user").send();
             Assert.assertEquals(403, response.getStatusCode());
         }
     }

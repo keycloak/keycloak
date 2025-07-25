@@ -1,5 +1,12 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
+  HelpItem,
+  NumberControl,
+  SelectControl,
+  SwitchControl,
+  useAlerts,
+} from "@keycloak/keycloak-ui-shared";
+import {
   ActionGroup,
   AlertVariant,
   Button,
@@ -10,17 +17,10 @@ import {
   PageSection,
   Radio,
 } from "@patternfly/react-core";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import {
-  HelpItem,
-  NumberControl,
-  SelectControl,
-  SwitchControl,
-} from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../../admin-client";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
 import { TimeSelectorControl } from "../../components/time-selector/TimeSelectorControl";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -46,7 +46,19 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
   const { adminClient } = useAdminClient();
 
   const { t } = useTranslation();
-  const form = useForm<FormFields>({ mode: "onChange", defaultValues: realm });
+  const form = useForm<FormFields>({
+    mode: "onChange",
+    defaultValues: {
+      otpPolicyType: realm.otpPolicyType ?? POLICY_TYPES[0],
+      otpPolicyAlgorithm:
+        realm.otpPolicyAlgorithm ?? `Hmac${OTP_HASH_ALGORITHMS[0]}`,
+      otpPolicyDigits: realm.otpPolicyDigits ?? NUMBER_OF_DIGITS[0],
+      otpPolicyLookAheadWindow: realm.otpPolicyLookAheadWindow ?? 1,
+      otpPolicyPeriod: realm.otpPolicyPeriod ?? 30,
+      otpPolicyInitialCounter: realm.otpPolicyInitialCounter ?? 30,
+      otpPolicyCodeReusable: realm.otpPolicyCodeReusable ?? false,
+    },
+  });
   const {
     control,
     reset,
@@ -57,15 +69,9 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
   const { addAlert, addError } = useAlerts();
   const localeSort = useLocaleSort();
 
-  const otpType = useWatch({
-    name: "otpPolicyType",
-    control,
-    defaultValue: POLICY_TYPES[0],
-  });
+  const otpType = useWatch({ name: "otpPolicyType", control });
 
   const setupForm = (formValues: FormFields) => reset(formValues);
-
-  useEffect(() => setupForm(realm), []);
 
   const supportedApplications = useMemo(() => {
     const labels = (realm.otpSupportedApplications ?? []).map((key) =>
@@ -110,16 +116,16 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
               data-testid="otpPolicyType"
               defaultValue={POLICY_TYPES[0]}
               control={control}
-              render={({ field }) => (
+              render={({ field: { value, onChange } }) => (
                 <>
                   {POLICY_TYPES.map((type) => (
                     <Radio
                       key={type}
                       id={type}
                       data-testid={type}
-                      isChecked={field.value === type}
+                      isChecked={value === type}
                       name="otpPolicyType"
-                      onChange={() => field.onChange(type)}
+                      onChange={() => onChange(type)}
                       label={t(`policyType.${type}`)}
                       className="keycloak__otp_policies_authentication__policy-type"
                     />

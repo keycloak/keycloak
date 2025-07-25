@@ -2,8 +2,8 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Synchronize Sites"
-summary="This describes the procedures required to synchronize an offline site with an online site" >
+title="Synchronizing sites"
+summary="Synchronize an offline site with an online site." >
 
 include::partials/infinispan/infinispan-attributes.adoc[]
 

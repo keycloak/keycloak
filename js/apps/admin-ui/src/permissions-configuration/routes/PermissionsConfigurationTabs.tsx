@@ -6,10 +6,11 @@ import type { AppRouteObject } from "../../routes";
 export type PermissionsConfigurationTabs =
   | "permissions"
   | "policies"
-  | "evaluate";
+  | "evaluation";
 
 export type PermissionsConfigurationTabsParams = {
   realm: string;
+  permissionClientId: string;
   tab: PermissionsConfigurationTabs;
 };
 
@@ -18,7 +19,7 @@ const PermissionsConfigurationSection = lazy(
 );
 
 export const PermissionsConfigurationTabsRoute: AppRouteObject = {
-  path: "/:realm/permissions/:tab",
+  path: "/:realm/permissions/:permissionClientId/:tab",
   element: <PermissionsConfigurationSection />,
   handle: {
     access: (accessChecker) =>

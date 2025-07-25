@@ -38,6 +38,11 @@ public class TokenExchangeGrantTypeFactory implements OAuth2GrantTypeFactory, En
     }
 
     @Override
+    public String getShortcut() {
+        return "te";
+    }
+
+    @Override
     public OAuth2GrantType create(KeycloakSession session) {
         return new TokenExchangeGrantType();
     }
@@ -45,9 +50,7 @@ public class TokenExchangeGrantTypeFactory implements OAuth2GrantTypeFactory, En
     @Override
     public boolean isSupported(Config.Scope config) {
         return     Profile.isFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE)
-                || Profile.isFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE_STANDARD_V2)
-                || Profile.isFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE_FEDERATED_V2)
-                || Profile.isFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE_SUBJECT_IMPERSONATION_V2);
+                || Profile.isFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE_STANDARD_V2);
     }
 
     @Override

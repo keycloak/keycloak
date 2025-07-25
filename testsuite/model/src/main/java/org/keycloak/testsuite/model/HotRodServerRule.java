@@ -21,7 +21,7 @@ import org.infinispan.transaction.TransactionMode;
 import org.junit.rules.ExternalResource;
 import org.keycloak.Config;
 import org.keycloak.connections.infinispan.InfinispanUtil;
-import org.keycloak.marshalling.KeycloakModelSchema;
+import org.keycloak.marshalling.Marshalling;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ACTION_TOKEN_CACHE;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
@@ -75,7 +75,7 @@ public class HotRodServerRule extends ExternalResource {
 
         // Create a Hot Rod client
         org.infinispan.client.hotrod.configuration.ConfigurationBuilder remoteBuilder = new org.infinispan.client.hotrod.configuration.ConfigurationBuilder();
-        remoteBuilder.addContextInitializers(KeycloakModelSchema.INSTANCE);
+        Marshalling.configure(remoteBuilder);
         org.infinispan.client.hotrod.configuration.Configuration cfg = remoteBuilder
                 .addServers(hotRodServer.getHost() + ":" + hotRodServer.getPort() + ";"
                         + hotRodServer2.getHost() + ":" + hotRodServer2.getPort()).build();

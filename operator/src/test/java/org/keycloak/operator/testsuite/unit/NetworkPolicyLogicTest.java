@@ -60,6 +60,18 @@ public class NetworkPolicyLogicTest {
     public void testDefaults() {
         var keycloak = K8sUtils.getDefaultKeycloakDeployment();
         var controller = new MockKeycloakNetworkPolicy(keycloak);
+        assertTrue(controller.isEnabled());
+        assertTrue(controller.reconciled());
+        assertFalse(controller.deleted());
+        assertEnabledAndGet(keycloak);
+    }
+
+    @Test
+    public void testNetworkPolicyDisabled() {
+        var keycloak = K8sUtils.getDefaultKeycloakDeployment();
+        K8sUtils.disableNetworkPolicy(keycloak);
+
+        var controller = new MockKeycloakNetworkPolicy(keycloak);
         assertFalse(controller.isEnabled());
         assertFalse(controller.reconciled());
         assertFalse(controller.deleted());
@@ -163,6 +175,17 @@ public class NetworkPolicyLogicTest {
         var networkPolicy = controller.getReconciledResource();
         assertTrue(networkPolicy.isPresent());
         return networkPolicy.get();
+    }
+
+    private static void assertDisabled(Keycloak keycloak) {
+        var controller = new MockKeycloakNetworkPolicy(keycloak);
+
+        assertTrue(controller.isEnabled());
+        assertTrue(controller.reconciled());
+        assertFalse(controller.deleted());
+
+        var networkPolicy = controller.getReconciledResource();
+        assertTrue(networkPolicy.isEmpty());
     }
 
     private static void disableManagement(Keycloak keycloak, boolean legacyOption) {

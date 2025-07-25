@@ -3,6 +3,10 @@ For more information, see the [Running Keycloak in a container guide](https://ww
 
 ## Build the image
 
+It is possible to download the Keycloak distribution from GitHub:
+
+    docker build --build-arg KEYCLOAK_VERSION=<VERSION> -t <YOUR_TAG> .
+
 It is possible to download the Keycloak distribution from a URL:
 
     docker build --build-arg KEYCLOAK_DIST=http://<HOST>:<PORT>/keycloak-<VERSION>.tar.gz -t <YOUR_TAG> .

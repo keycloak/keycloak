@@ -1099,6 +1099,30 @@ describe("Clients", () => {
       expect(result).to.deep.equal([]);
     });
 
+    it("list permission scope", async () => {
+      permission = await kcAdminClient.clients.createPermission(
+        {
+          id: currentClient.id!,
+          type: "scope",
+        },
+        {
+          name: permissionConfig.name,
+          // @ts-ignore
+          resources: [resource._id],
+          policies: [policy.id!],
+          scopes: scopes.map((scope) => scope.id!),
+        },
+      );
+
+      const p = await kcAdminClient.clients.listPermissionScope({
+        id: currentClient.id!,
+        name: permissionConfig.name,
+      });
+
+      expect(p.length).to.be.eq(1);
+      expect(p[0].name).to.be.eq(permissionConfig.name);
+    });
+
     it("import resource", async () => {
       await kcAdminClient.clients.importResource(
         { id: currentClient.id! },

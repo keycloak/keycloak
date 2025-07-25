@@ -28,8 +28,10 @@ import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
+import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -103,5 +105,31 @@ public final class CRDUtils {
     public static <T> JsonNode toJsonNode(T value, Context<Keycloak> context) {
         final var kubernetesSerialization = context.getClient().getKubernetesSerialization();
         return kubernetesSerialization.convertValue(value, JsonNode.class);
+    }
+
+    public static Stream<Volume> volumesFromStatefulSet(StatefulSet statefulSet) {
+        return Optional.of(statefulSet)
+                .map(StatefulSet::getSpec)
+                .map(StatefulSetSpec::getTemplate)
+                .map(PodTemplateSpec::getSpec)
+                .map(PodSpec::getVolumes)
+                .stream()
+                .flatMap(Collection::stream);
+    }
+
+    public static Optional<Boolean> fetchIsRecreateUpdate(StatefulSet statefulSet) {
+        var value = statefulSet.getMetadata().getAnnotations().get(Constants.KEYCLOAK_RECREATE_UPDATE_ANNOTATION);
+        return Optional.ofNullable(value).map(Boolean::parseBoolean);
+    }
+
+    public static Optional<String> findUpdateReason(StatefulSet statefulSet) {
+        return Optional.ofNullable(statefulSet.getMetadata().getAnnotations().get(Constants.KEYCLOAK_UPDATE_REASON_ANNOTATION));
+    }
+
+    public static Optional<String> getRevision(StatefulSet statefulSet) {
+        return Optional.ofNullable(statefulSet)
+                .map(StatefulSet::getMetadata)
+                .map(ObjectMeta::getAnnotations)
+                .map(annotations -> annotations.get(Constants.KEYCLOAK_UPDATE_REVISION_ANNOTATION));
     }
 }

@@ -95,7 +95,10 @@ Any Client::
     This condition always evaluates to true. It can be used for example to ensure that all clients in the particular realm are FAPI compliant.
 
 ACR Condition::
-Applied when an ACR value requested in the authentication request matches the value configured in the condition. For example, it can be used to select an authentication flow based on the requested ACR value. For more details, see the <<_client-policy-auth-flow, related documentation>> and the https://openid.net/specs/openid-connect-core-1_0.html#acrSemantics[official OIDC specification].
+    Applied when an ACR value requested in the authentication request matches the value configured in the condition. For example, it can be used to select an authentication flow based on the requested ACR value. For more details, see the <<_client-policy-auth-flow, related documentation>> and the https://openid.net/specs/openid-connect-core-1_0.html#acrSemantics[official OIDC specification].
+
+Grant Type::
+    Evaluates to true when a specific grant type is used. For example, it can be used in combination with Client Scope to block a token exchange request when a specific client scope is requested.
 
 
 === Executor

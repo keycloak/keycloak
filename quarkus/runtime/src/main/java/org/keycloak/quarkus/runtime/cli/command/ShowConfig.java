@@ -21,11 +21,10 @@ import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfig
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getPropertyNames;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.maskValue;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.keycloak.quarkus.runtime.Environment;
@@ -42,7 +41,7 @@ import picocli.CommandLine.Parameters;
 @Command(name = "show-config",
         header = "Print out the current configuration.",
         description = "%nPrint out the current configuration.")
-public final class ShowConfig extends AbstractCommand implements Runnable {
+public final class ShowConfig extends AbstractCommand {
 
     public static final String NAME = "show-config";
     private static final List<String> allowedSystemPropertyKeys = List.of(
@@ -55,83 +54,82 @@ public final class ShowConfig extends AbstractCommand implements Runnable {
     String filter;
 
     @Override
-    public void run() {
-        String profile = Environment.updateProfile(true);
-
-        Map<String, Set<String>> properties = getPropertiesByGroup();
-        printRunTimeConfig(properties, profile);
-
-        if (filter.equalsIgnoreCase("all")) {
-            spec.commandLine().getOut().println("Quarkus Configuration:");
-            properties.get(MicroProfileConfigProvider.NS_QUARKUS).stream().sorted()
-                    .forEachOrdered(this::printProperty);
-        }
-
-        Quarkus.asyncExit(0);
+    public String getDefaultProfile() {
+        return null;
     }
 
-    private void printRunTimeConfig(Map<String, Set<String>> properties, String profile) {
-        Set<String> uniqueNames = new HashSet<>();
+    @Override
+    protected void runCommand() {
+        String profile = org.keycloak.common.util.Environment.getProfile();
 
         spec.commandLine().getOut().printf("Current Mode: %s%n", Environment.getKeycloakModeFromProfile(profile));
 
         spec.commandLine().getOut().println("Current Configuration:");
 
-        properties.get(MicroProfileConfigProvider.NS_KEYCLOAK).stream().sorted()
-                .filter(uniqueNames::add)
-                .forEachOrdered(this::printProperty);
+        Set<String> uniqueNames = new HashSet<>();
+        List<ConfigValue> quarkusValues = new ArrayList<ConfigValue>();
+        StreamSupport.stream(getPropertyNames().spliterator(), false).forEachOrdered(property -> {
+            ConfigValue configValue = getConfigValue(property);
+
+            if (configValue.getValue() == null) {
+                return;
+            }
+
+            if (configValue.getSourceName() == null) {
+                return;
+            }
+
+            PropertyMapper<?> mapper = PropertyMappers.getMapper(property);
+
+            if (mapper == null && configValue.getSourceName().equals("SysPropConfigSource") && !allowedSystemPropertyKeys.contains(property)) {
+                return; // most system properties are internally used, and not relevant during show-config
+            }
+
+            if (mapper != null) {
+                String from = mapper.forKey(property).getFrom();
+
+                // only report from when it exists
+                if (!property.equals(from)) {
+                    ConfigValue value = getConfigValue(from);
+                    if (value.getValue() != null) {
+                        return;
+                    }
+                    configValue = value;
+                    property = from;
+                }
+            }
+
+            if (!uniqueNames.add(property)) {
+                return;
+            }
+
+            if (property.startsWith(MicroProfileConfigProvider.NS_QUARKUS_PREFIX)) {
+                if (mapper == null) {
+                    quarkusValues.add(configValue);
+                    return;
+                }
+            } else if (!property.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)) {
+                return;
+            }
+
+            printProperty(property, mapper, configValue);
+        });
+
+        if (filter.equalsIgnoreCase("all")) {
+            spec.commandLine().getOut().println("Quarkus Configuration:");
+            quarkusValues.forEach(v -> printProperty(v.getName(), null, v));
+        }
+
+        Quarkus.asyncExit(0);
     }
 
-    private static Map<String, Set<String>> getPropertiesByGroup() {
-        Map<String, Set<String>> properties = StreamSupport
-                .stream(getPropertyNames().spliterator(), false)
-                .filter(ShowConfig::filterByGroup)
-                .collect(Collectors.groupingBy(ShowConfig::groupProperties, Collectors.toSet()));
+    private void printProperty(String property, PropertyMapper<?> mapper, ConfigValue configValue) {
+        String sourceName = configValue.getConfigSourceName();
+        String value = configValue.getValue();
 
-        return properties;
-    }
+        value = maskValue(value, sourceName, mapper);
 
-    private void printProperty(String property) {
-        ConfigValue configValue = getConfigValue(property);
-
-        if (configValue.getValue() == null) {
-            return;
-        }
-
-        if (configValue.getSourceName() == null) {
-            return;
-        }
-
-        String value = configValue.getRawValue();
-
-        if (value == null) {
-            value = configValue.getValue();
-        }
-
-        PropertyMapper<?> mapper = PropertyMappers.getMapper(property);
-
-        if (mapper == null && configValue.getSourceName().equals("SysPropConfigSource") && !allowedSystemPropertyKeys.contains(property)) {
-            return; // most system properties are internally used, and not relevant during show-config
-        }
-
-        value = maskValue(configValue.getName(), value, configValue.getConfigSourceName());
-
-        spec.commandLine().getOut().printf("\t%s =  %s (%s)%n", configValue.getName(), value, KeycloakConfigSourceProvider.getConfigSourceDisplayName(configValue.getConfigSourceName()));
-    }
-
-    private static String groupProperties(String property) {
-        int endIndex = property.indexOf('.');
-
-        if (endIndex == -1) {
-            return "";
-        }
-
-        return property.substring(0, endIndex);
-    }
-
-    private static boolean filterByGroup(String property) {
-        return property.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)
-                || property.startsWith(MicroProfileConfigProvider.NS_QUARKUS_PREFIX);
+        spec.commandLine().getOut().printf("\t%s =  %s (%s)%n", property, value, KeycloakConfigSourceProvider.getConfigSourceDisplayName(sourceName));
     }
 
     @Override

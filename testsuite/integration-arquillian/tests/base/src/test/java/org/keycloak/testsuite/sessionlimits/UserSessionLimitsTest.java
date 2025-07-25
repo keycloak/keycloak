@@ -45,12 +45,13 @@ import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.pages.ErrorPage;
 
 import jakarta.mail.internet.MimeMessage;
 
 import static org.junit.Assert.assertEquals;
+import static org.keycloak.testsuite.sessionlimits.UserSessionLimitsUtil.assertClientSessionCount;
 import static org.keycloak.testsuite.sessionlimits.UserSessionLimitsUtil.assertSessionCount;
 import static org.keycloak.testsuite.sessionlimits.UserSessionLimitsUtil.configureSessionLimits;
 import static org.keycloak.testsuite.sessionlimits.UserSessionLimitsUtil.ERROR_TO_DISPLAY;
@@ -82,6 +83,18 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
 
             AuthenticationFlowModel resetPasswordFlow = realm.getResetCredentialsFlow();
             configureSessionLimits(realm, resetPasswordFlow, UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION, "0", "1");
+
+            var directClient1 = realm.addClient("direct-grant-1");
+            directClient1.setName("direct-grant-1");
+            directClient1.setSecret("password");
+            directClient1.setDirectAccessGrantsEnabled(true);
+            directClient1.setEnabled(true);
+
+            var directClient2 = realm.addClient("direct-grant-2");
+            directClient2.setName("direct-grant-2");
+            directClient2.setSecret("password");
+            directClient2.setDirectAccessGrantsEnabled(true);
+            directClient2.setEnabled(true);
         });
         testContext.setInitialized(true);
     }
@@ -143,8 +156,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
         events.expectLogin().assertEvent();
 
         // Re-authenticate the user with prompt=login
-        oauth.prompt("login");
-        loginPage.open();
+        oauth.loginForm().prompt("login").open();
         loginPage.login("test-user@localhost", "password");
         events.expectLogin().assertEvent();
     }
@@ -221,12 +233,96 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testClientSessionCountExceededAndNewSessionDeniedDirectGrantFlow() throws Exception {
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("test-user@localhost", "password");
         assertEquals(200, response.getStatusCode());
 
-        response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        response = oauth.doPasswordGrantRequest("test-user@localhost", "password");
         assertEquals(403, response.getStatusCode());
         assertEquals(ERROR_TO_DISPLAY, response.getError());
+    }
+
+    @Test
+    public void testRealmSessionCountAndClientSessionCountExceededAndOldestClientSessionShouldBePrioritized() throws Exception {
+        try {
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION);
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "2");
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "1");
+
+            AccessTokenResponse response =  oauth.client("direct-grant-1", "password")
+                    .doPasswordGrantRequest("test-user@localhost", "password");
+            assertEquals(200, response.getStatusCode());
+
+            response =  oauth.client("direct-grant-2", "password")
+                    .doPasswordGrantRequest("test-user@localhost", "password");
+            assertEquals(200, response.getStatusCode());
+
+            testingClient.server(realmName).run(assertSessionCount(realmName, username, 2));
+            testingClient.server(realmName).run(assertClientSessionCount(realmName, username, "direct-grant-1", 1));
+            testingClient.server(realmName).run(assertClientSessionCount(realmName, username, "direct-grant-2", 1));
+
+            response =  oauth.client("direct-grant-2", "password")
+                    .doPasswordGrantRequest("test-user@localhost", "password");
+            assertEquals(200, response.getStatusCode());
+
+            testingClient.server(realmName).run(assertSessionCount(realmName, username, 2));
+            testingClient.server(realmName).run(assertClientSessionCount(realmName, username, "direct-grant-1", 1));
+            testingClient.server(realmName).run(assertClientSessionCount(realmName, username, "direct-grant-2", 1));
+        } finally {
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION);
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "0");
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "1");
+        }
+    }
+
+    public void testRealmSessionCountAndClientSessionCountExceededAndDecreaseLimitsAfterActiveSessionsAreCreated() throws Exception {
+        try {
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION);
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "4");
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "2");
+
+            AccessTokenResponse response =  oauth.client("direct-grant-1", "password")
+                    .doPasswordGrantRequest("test-user@localhost", "password");
+            assertEquals(200, response.getStatusCode());
+
+            response =  oauth.client("direct-grant-2", "password")
+                    .doPasswordGrantRequest("test-user@localhost", "password");
+            assertEquals(200, response.getStatusCode());
+
+            response =  oauth.client("direct-grant-1", "password")
+                    .doPasswordGrantRequest("test-user@localhost", "password");
+            assertEquals(200, response.getStatusCode());
+
+            response =  oauth.client("direct-grant-2", "password")
+                    .doPasswordGrantRequest("test-user@localhost", "password");
+            assertEquals(200, response.getStatusCode());
+
+            testingClient.server(realmName).run(assertSessionCount(realmName, username, 4));
+            testingClient.server(realmName).run(assertClientSessionCount(realmName, username, "direct-grant-1", 2));
+            testingClient.server(realmName).run(assertClientSessionCount(realmName, username, "direct-grant-2", 2));
+
+            response =  oauth.client("direct-grant-2", "password")
+                    .doPasswordGrantRequest("test-user@localhost", "password");
+            assertEquals(200, response.getStatusCode());
+
+            testingClient.server(realmName).run(assertSessionCount(realmName, username, 4));
+            testingClient.server(realmName).run(assertClientSessionCount(realmName, username, "direct-grant-1", 2));
+            testingClient.server(realmName).run(assertClientSessionCount(realmName, username, "direct-grant-2", 2));
+
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "2");
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "1");
+
+            response =  oauth.client("direct-grant-2", "password")
+                    .doPasswordGrantRequest("test-user@localhost", "password");
+            assertEquals(200, response.getStatusCode());
+
+            testingClient.server(realmName).run(assertSessionCount(realmName, username, 2));
+            testingClient.server(realmName).run(assertClientSessionCount(realmName, username, "direct-grant-1", 1));
+            testingClient.server(realmName).run(assertClientSessionCount(realmName, username, "direct-grant-2", 1));
+        } finally {
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION);
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "0");
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "1");
+        }
     }
 
     @Test
@@ -235,13 +331,13 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION);
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "2");
             for (int i = 0; i < 2; ++i) {
-                OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+                AccessTokenResponse response = oauth.doPasswordGrantRequest("test-user@localhost", "password");
                 assertEquals(200, response.getStatusCode());
             }
             testingClient.server(realmName).run(assertSessionCount(realmName, username, 2));
 
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "1");
-            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+            AccessTokenResponse response = oauth.doPasswordGrantRequest("test-user@localhost", "password");
             assertEquals(200, response.getStatusCode());
             testingClient.server(realmName).run(assertSessionCount(realmName, username, 1));
         } finally {
@@ -256,10 +352,10 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
         try {
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "1");
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "0");
-            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+            AccessTokenResponse response = oauth.doPasswordGrantRequest("test-user@localhost", "password");
             assertEquals(200, response.getStatusCode());
 
-            response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+            response = oauth.doPasswordGrantRequest("test-user@localhost", "password");
             assertEquals(403, response.getStatusCode());
             assertEquals(ERROR_TO_DISPLAY, response.getError());
         } finally {
@@ -274,10 +370,10 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "1");
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "0");
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION);
-            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+            AccessTokenResponse response = oauth.doPasswordGrantRequest("test-user@localhost", "password");
             assertEquals(200, response.getStatusCode());
 
-            response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+            response = oauth.doPasswordGrantRequest("test-user@localhost", "password");
             assertEquals(200, response.getStatusCode());
             testingClient.server(realmName).run(assertSessionCount(realmName, username, 1));
         } finally {

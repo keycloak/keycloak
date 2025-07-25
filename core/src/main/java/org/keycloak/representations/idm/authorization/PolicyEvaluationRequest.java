@@ -30,6 +30,7 @@ public class PolicyEvaluationRequest {
 
     private Map<String, Map<String, String>> context = new HashMap<>();
     private List<ResourceRepresentation> resources = new LinkedList<>();
+    private String resourceType;
     private String clientId;
     private String userId;
     private List<String> roleIds = new LinkedList<>();
@@ -49,6 +50,14 @@ public class PolicyEvaluationRequest {
 
     public void setResources(List<ResourceRepresentation> resources) {
         this.resources = resources;
+    }
+
+    public String getResourceType() {
+        return resourceType;
+    }
+
+    public void setResourceType(String resourceType) {
+        this.resourceType = resourceType;
     }
 
     public String getClientId() {

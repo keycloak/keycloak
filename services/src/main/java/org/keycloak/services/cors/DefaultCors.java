@@ -27,6 +27,7 @@ import jakarta.ws.rs.core.Response.ResponseBuilder;
 import org.jboss.logging.Logger;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.common.util.CollectionUtil;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -42,6 +43,7 @@ public class DefaultCors implements Cors {
 
     private final HttpRequest request;
     private final HttpResponse response;
+    private final KeycloakSession session;
     private ResponseBuilder builder;
     private Set<String> allowedOrigins;
     private Set<String> allowedMethods;
@@ -51,6 +53,7 @@ public class DefaultCors implements Cors {
     private boolean auth;
 
     DefaultCors(KeycloakSession session) {
+        this.session = session;
         this.request = session.getContext().getHttpRequest();
         this.response = session.getContext().getHttpResponse();
     }
@@ -137,7 +140,8 @@ public class DefaultCors implements Cors {
         }
 
         if (!preflight && (allowedOrigins == null || (!allowedOrigins.contains(origin) && !allowedOrigins.contains(ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD)))) {
-            if (logger.isDebugEnabled()) {
+            String requestOrigin = UriUtils.getOrigin(session.getContext().getUri().getRequestUri());
+            if (!origin.equals(requestOrigin) && logger.isDebugEnabled()) {
                 logger.debugv("Invalid CORS request: origin {0} not in allowed origins {1}", origin, allowedOrigins);
             }
             return;

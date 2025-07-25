@@ -63,12 +63,11 @@ import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
-import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.DocumentUtil;
-import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
+import org.keycloak.saml.processing.core.saml.v2.util.ArtifactResponseUtil;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
 import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
 import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
@@ -121,7 +120,6 @@ import org.keycloak.saml.validators.DestinationValidator;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.utils.StringUtil;
-import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
@@ -471,15 +469,28 @@ public class SAMLEndpoint {
                     return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
                 }
 
+                // extract the SAML Response from the original SAML ArtifactResponse
+                Optional<String>  optionalEmbeddedResponseAsString = ArtifactResponseUtil.convertResponseToString(
+                        samlDocumentHolder.getSamlDocument()
+                );
+
+                // leave early if the embedded Response cannot be converted to string
+                if(optionalEmbeddedResponseAsString.isEmpty()) {
+                    logger.error("artifact binding failed: the embedded Response cannot be converted to string");
+                    event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
+                    event.detail(Details.REASON, Errors.INVALID_SAML_ARTIFACT_RESPONSE);
+                    event.error(Errors.INVALID_REQUEST);
+                    return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
+                }
+
                 // convert the embedded SAML response to a base64 serialized string
-                Document embeddedResponseAsDoc = SAML2Request.convert(embeddedResponse);
-                String embeddedResponseAsString = DocumentUtil.getDocumentAsString(embeddedResponseAsDoc);
+                String embeddedResponseAsString = optionalEmbeddedResponseAsString.get();
                 logger.debugf("embeddedResponseAsString %s", embeddedResponseAsString);
                 String embeddedResponseAsBase64 =  PostBindingUtil.base64Encode(embeddedResponseAsString);
 
                 // continue the flow with POST binding
                 return execute(null, embeddedResponseAsBase64, null, relayState, clientId);
-            } catch (IOException | ConfigurationException | ProcessingException | ParsingException e) {
+            } catch (IOException e) {
                 logger.error("artifact binding failed", e);
                 event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                 event.detail(Details.REASON, Errors.INVALID_SAML_ARTIFACT_RESPONSE);
@@ -531,11 +542,11 @@ public class SAMLEndpoint {
                     if (Constants.AUTHENTICATION_EXPIRED_MESSAGE.equals(statusMessage)) {
                         return callback.retryLogin(provider, authSession);
                     } else {
-                        return callback.error(statusMessage);
+                        return callback.error(config, statusMessage);
                     }
                 }
                 if (responseType.getAssertions() == null || responseType.getAssertions().isEmpty()) {
-                    return callback.error(Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+                    return callback.error(config, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
                 }
 
                 boolean assertionIsEncrypted = AssertionUtil.isAssertionEncrypted(responseType);
@@ -594,11 +605,11 @@ public class SAMLEndpoint {
                 final boolean signatureNotValid = signed && config.isValidateSignature() && !AssertionUtil.isSignatureValid(assertionElement, getIDPKeyLocator());
                 final boolean hasNoSignatureWhenRequired = ! signed && config.isValidateSignature() && ! containsUnencryptedSignature(holder);
 
-                if (!isArtifactBinding && (assertionSignatureNotExistsWhenRequired || signatureNotValid || hasNoSignatureWhenRequired)) {
+                if (assertionSignatureNotExistsWhenRequired || signatureNotValid || hasNoSignatureWhenRequired) {
                     logger.error("validation failed");
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                     event.error(Errors.INVALID_SIGNATURE);
-                    return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
+                    return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.IDENTITY_PROVIDER_INVALID_SIGNATURE);
                 }
 
                 if (AssertionUtil.isIdEncrypted(responseType)) {
@@ -892,24 +903,40 @@ public class SAMLEndpoint {
     }
 
     protected class ArtifactBinding extends Binding {
+
+        private boolean unencryptedSignaturesVerified = false;
+
         @Override
         protected boolean containsUnencryptedSignature(SAMLDocumentHolder documentHolder) {
+            if (unencryptedSignaturesVerified) {
+                return true;
+            }
             NodeList nl = documentHolder.getSamlDocument().getElementsByTagNameNS(XMLSignature.XMLNS, "Signature");
             return (nl != null && nl.getLength() > 0);
         }
 
         @Override
         protected void verifySignature(String key, SAMLDocumentHolder documentHolder) throws VerificationException {
-            if ((! containsUnencryptedSignature(documentHolder)) && (documentHolder.getSamlObject() instanceof ResponseType)) {
-                ResponseType responseType = (ResponseType) documentHolder.getSamlObject();
-                List<ResponseType.RTChoiceType> assertions = responseType.getAssertions();
-                if (! assertions.isEmpty() ) {
+            if (unencryptedSignaturesVerified) {
+                // this is the second pass and signatures were already verified in the artifact response time
+                return;
+            }
+            if (!containsUnencryptedSignature(documentHolder)) {
+                List<ResponseType.RTChoiceType> assertions = null;
+                if (documentHolder.getSamlObject() instanceof ResponseType responseType) {
+                    assertions = responseType.getAssertions();
+                } else if (documentHolder.getSamlObject() instanceof ArtifactResponseType artifactResponseType
+                        && artifactResponseType.getAny() instanceof ResponseType responseType) {
+                    assertions = responseType.getAssertions();
+                }
+                if (assertions != null && !assertions.isEmpty() ) {
                     // Only relax verification if the response is an authnresponse and contains (encrypted/plaintext) assertion.
                     // In that case, signature is validated on assertion element
                     return;
                 }
             }
             SamlProtocolUtils.verifyDocumentSignature(documentHolder.getSamlDocument(), getIDPKeyLocator());
+            unencryptedSignaturesVerified = true; // mark signatures as verified
         }
 
         @Override

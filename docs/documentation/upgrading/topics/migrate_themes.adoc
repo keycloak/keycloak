@@ -14,9 +14,7 @@ If you created custom themes, those themes must be migrated to the new server. A
 
 === Migrating templates
 
-If you customized any template, review the new version to decide about updating your customized template. If you made minor changes, you could compare the updated template to your customized template. However, if you made many changes, consider comparing the new template to your customized template. This comparison will show you what changes you need to make.
-
-You can use a diff tool to compare the templates. The following screenshot compares the `info.ftl` template from the Login theme and an example custom theme:
+If you customized any template, compare it to the new version of that template. This comparison shows you what changes you need to apply to your customized template. You can use a diff tool to compare the templates. The following screenshot compares the `info.ftl` template from the Login theme and an example custom theme:
 
 .Updated version of a Login theme template versus a custom Login theme template
 image:images/theme-migration-meld-info-1.png[Updated version of a Login theme template versus a custom Login theme template]

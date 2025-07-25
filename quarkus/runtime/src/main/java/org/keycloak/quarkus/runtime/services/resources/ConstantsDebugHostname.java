@@ -16,44 +16,36 @@
  */
 package org.keycloak.quarkus.runtime.services.resources;
 
+import java.util.stream.Stream;
+
+import org.keycloak.config.HostnameV2Options;
+import org.keycloak.config.HttpOptions;
+import org.keycloak.config.ProxyOptions;
+
 public class ConstantsDebugHostname {
-    public static final String[] RELEVANT_HEADERS = new String[] {
-            "Host",
-            "Forwarded",
+    public static final String[] X_FORWARDED_PROXY_HEADERS = new String[] {
             "X-Forwarded-Host",
             "X-Forwarded-Proto",
             "X-Forwarded-Port",
             "X-Forwarded-For"
     };
 
-    public static final String[] RELEVANT_OPTIONS = {
-            "hostname",
-            "hostname-url",
-            "hostname-admin",
-            "hostname-admin-url",
-            "hostname-strict",
-            "hostname-strict-backchannel",
-            "hostname-strict-https",
-            "hostname-path",
-            "hostname-port",
-            "proxy",
-            "proxy-headers",
-            "http-enabled",
-            "http-relative-path",
-            "http-port",
-            "https-port"
-    };
+    public static final String FORWARDED_PROXY_HEADER = "Forwarded";
+
+    public static final String[] RELEVANT_HEADERS = Stream
+            .concat(Stream.of("Host", FORWARDED_PROXY_HEADER), Stream.of(X_FORWARDED_PROXY_HEADERS))
+            .toArray(String[]::new);
 
     public static final String[] RELEVANT_OPTIONS_V2 = {
-            "hostname",
-            "hostname-admin",
-            "hostname-backchannel-dynamic",
-            "hostname-strict",
-            "proxy-headers",
-            "http-enabled",
-            "http-relative-path",
-            "http-port",
-            "https-port"
+            HostnameV2Options.HOSTNAME.getKey(),
+            HostnameV2Options.HOSTNAME_ADMIN.getKey(),
+            HostnameV2Options.HOSTNAME_BACKCHANNEL_DYNAMIC.getKey(),
+            HostnameV2Options.HOSTNAME_STRICT.getKey(),
+            ProxyOptions.PROXY_HEADERS.getKey(),
+            HttpOptions.HTTP_ENABLED.getKey(),
+            HttpOptions.HTTP_RELATIVE_PATH.getKey(),
+            HttpOptions.HTTP_PORT.getKey(),
+            HttpOptions.HTTPS_PORT.getKey()
     };
 
 }

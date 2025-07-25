@@ -29,6 +29,7 @@ import { CredentialRow } from "./user-credentials/CredentialRow";
 import { InlineLabelEdit } from "./user-credentials/InlineLabelEdit";
 import { ResetCredentialDialog } from "./user-credentials/ResetCredentialDialog";
 import { ResetPasswordDialog } from "./user-credentials/ResetPasswordDialog";
+import useFormatDate from "../utils/useFormatDate";
 
 import "./user-credentials.css";
 
@@ -99,6 +100,7 @@ export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const [key, setKey] = useState(0);
+  const formatDate = useFormatDate();
   const refresh = () => setKey(key + 1);
   const [isOpen, setIsOpen] = useState(false);
   const [openCredentialReset, setOpenCredentialReset] = useState(false);
@@ -122,8 +124,18 @@ export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
   });
 
   useFetch(
-    () => adminClient.users.getCredentials({ id: user.id! }),
+    () => {
+      if (user.enabled) {
+        return adminClient.users.getCredentials({ id: user.id! });
+      }
+      return Promise.resolve([]);
+    },
     (credentials) => {
+      credentials = [
+        ...credentials.filter((c: CredentialRepresentation) => {
+          return c.federationLink === undefined;
+        }),
+      ];
       setUserCredentials(credentials);
 
       const groupedCredentials = credentials.reduce((r, a) => {
@@ -144,10 +156,6 @@ export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
       );
     },
     [key],
-  );
-
-  const passwordTypeFinder = userCredentials.find(
-    (credential) => credential.type === "password",
   );
 
   const toggleModal = () => setIsOpen(!isOpen);
@@ -255,9 +263,9 @@ export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
     );
   };
 
-  const onDrop = (evt: ReactDragEvent) => {
+  const onDrop = async (evt: ReactDragEvent) => {
     if (isValidDrop(evt)) {
-      onDragFinish(state.draggedItemId, state.tempItemOrder);
+      await onDragFinish(state.draggedItemId, state.tempItemOrder);
     } else {
       onDragCancel();
     }
@@ -353,12 +361,26 @@ export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
   };
 
   const useFederatedCredentials = user.federationLink;
-  const [credentialTypes, setCredentialTypes] = useState<string[]>([]);
+  const [credentialTypes, setCredentialTypes] = useState<
+    CredentialRepresentation[]
+  >([]);
 
   useFetch(
-    () => adminClient.users.getUserStorageCredentialTypes({ id: user.id! }),
-    setCredentialTypes,
-    [],
+    () => {
+      if (user.enabled) {
+        return adminClient.users.getCredentials({ id: user.id! });
+      }
+      return Promise.resolve([]);
+    },
+    (credentials) => {
+      credentials = [
+        ...credentials.filter((c: CredentialRepresentation) => {
+          return c.federationLink !== undefined;
+        }),
+      ];
+      setCredentialTypes(credentials);
+    },
+    [key],
   );
 
   if (!credentialTypes) {
@@ -400,22 +422,26 @@ export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
           {t("credentialResetBtn")}
         </Button>
       )}
-      {userCredentials.length !== 0 && passwordTypeFinder === undefined && (
-        <>
-          <Button
-            className="kc-setPasswordBtn-tbl"
-            data-testid="setPasswordBtn-table"
-            variant="primary"
-            form="userCredentials-form"
-            onClick={() => {
-              setIsOpen(true);
-            }}
-          >
-            {t("setPassword")}
-          </Button>
-          <Divider />
-        </>
-      )}
+      {userCredentials.length !== 0 &&
+        !userCredentials.find((credential) => credential.type === "password") &&
+        !credentialTypes.find(
+          (credential) => credential.type === "password",
+        ) && (
+          <>
+            <Button
+              className="kc-setPasswordBtn-tbl"
+              data-testid="setPasswordBtn-table"
+              variant="primary"
+              form="userCredentials-form"
+              onClick={() => {
+                setIsOpen(true);
+              }}
+            >
+              {t("setPassword")}
+            </Button>
+            <Divider />
+          </>
+        )}
       {groupedUserCredentials.length !== 0 && (
         <PageSection variant={PageSectionVariants.light}>
           <Table variant={"compact"}>
@@ -554,19 +580,21 @@ export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
               <Tr>
                 <Th>{t("type")}</Th>
                 <Th>{t("providedBy")}</Th>
+                <Th>{t("createdAt")}</Th>
                 <Th aria-hidden="true" />
               </Tr>
             </Thead>
             <Tbody>
               {credentialTypes.map((credential) => (
-                <Tr key={credential}>
+                <Tr key={credential.type}>
                   <Td>
-                    <b>{credential}</b>
+                    <b>{credential.type}</b>
                   </Td>
                   <Td>
                     <FederatedUserLink user={user} />
                   </Td>
-                  {credential === "password" && (
+                  <Td>{formatDate(new Date(credential.createdDate!))}</Td>
+                  {credential.type === "password" && (
                     <Td modifier="fitContent">
                       <Button variant="secondary" onClick={toggleModal}>
                         {t("setPassword")}

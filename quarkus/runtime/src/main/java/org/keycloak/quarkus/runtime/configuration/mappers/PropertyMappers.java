@@ -2,19 +2,20 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
-
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.config.ConfigSupportLevel;
+import org.keycloak.config.Option;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
-import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.cli.command.ShowConfig;
 import org.keycloak.quarkus.runtime.configuration.DisabledMappersInterceptor;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
+import org.keycloak.quarkus.runtime.configuration.NestedPropertyMappingInterceptor;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 import java.util.ArrayList;
@@ -24,15 +25,14 @@ import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static org.keycloak.quarkus.runtime.Environment.isParsedCommand;
 import static org.keycloak.quarkus.runtime.Environment.isRebuild;
 import static org.keycloak.quarkus.runtime.Environment.isRebuildCheck;
 import static org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider.isKeyStoreConfigSource;
@@ -76,15 +76,15 @@ public final class PropertyMappers {
     }
 
     public static ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
-        name = removeProfilePrefixIfNeeded(name);
         PropertyMapper<?> mapper = getMapper(name);
 
-        // During re-aug do not resolve the server runtime properties and avoid they included by quarkus in the default value config source.
+        // During re-aug do not resolve server runtime properties and avoid they included by quarkus in the default value config source.
         //
         // The special handling of log properties is because some logging runtime properties are requested during build time
         // and we need to resolve them. That should be fine as they are generally not considered security sensitive.
         // See https://github.com/quarkusio/quarkus/pull/42157
-        if ((isRebuild() || Environment.isRebuildCheck()) && isKeycloakRuntime(name, mapper) && !name.startsWith("quarkus.log.")) {
+        if (isRebuild() && isKeycloakRuntime(name, mapper)
+                && !NestedPropertyMappingInterceptor.getResolvingRoot().orElse(name).startsWith("quarkus.log.")) {
             return ConfigValue.builder().withName(name).build();
         }
 
@@ -95,7 +95,13 @@ public final class PropertyMappers {
     }
 
     public static boolean isSpiBuildTimeProperty(String name) {
+        // we can't require the new property formant until we're ok with a breaking change
+        //return name.startsWith(KC_SPI_PREFIX) && (name.endsWith("--provider") || name.endsWith("--enabled") || name.endsWith("--provider-default"));
         return name.startsWith(KC_SPI_PREFIX) && (name.endsWith("-provider") || name.endsWith("-enabled") || name.endsWith("-provider-default"));
+    }
+
+    public static boolean isMaybeSpiBuildTimeProperty(String name) {
+        return isSpiBuildTimeProperty(name) && !name.contains("--");
     }
 
     private static boolean isKeycloakRuntime(String name, PropertyMapper<?> mapper) {
@@ -130,18 +136,15 @@ public final class PropertyMappers {
     /**
      * Removes all disabled mappers from the runtime/buildtime mappers
      */
-    public static void sanitizeDisabledMappers() {
-        MAPPERS.sanitizeDisabledMappers();
+    public static void sanitizeDisabledMappers(AbstractCommand command) {
+        MAPPERS.sanitizeDisabledMappers(command);
     }
 
-    public static String maskValue(String property, String value) {
-        return maskValue(property, value, null);
+    public static String maskValue(String value, PropertyMapper<?> mapper) {
+        return maskValue(value, null, mapper);
     }
 
-    public static String maskValue(String property, String value, String configSourceName) {
-        property = removeProfilePrefixIfNeeded(property);
-        PropertyMapper<?> mapper = getMapper(property);
-
+    public static String maskValue(String value, String configSourceName, PropertyMapper<?> mapper) {
         if ((configSourceName != null && isKeyStoreConfigSource(configSourceName) || (mapper != null && mapper.isMask()))) {
             return VALUE_MASK;
         }
@@ -149,16 +152,7 @@ public final class PropertyMappers {
         return value;
     }
 
-    private static String removeProfilePrefixIfNeeded(String property) {
-        if(property.startsWith("%")) {
-            String profilePrefix = property.substring(0, property.indexOf(".") +1);
-            property = property.split(profilePrefix)[1];
-        }
-        return property;
-    }
-
     private static PropertyMapper<?> getMapperOrDefault(String property, PropertyMapper<?> defaultMapper, OptionCategory category) {
-        property = removeProfilePrefixIfNeeded(property);
         final var mappers = new ArrayList<>(MAPPERS.getOrDefault(property, Collections.emptyList()));
         if (category != null) {
             mappers.removeIf(m -> !m.getCategory().equals(category));
@@ -182,12 +176,31 @@ public final class PropertyMappers {
         return getMapper(property, null);
     }
 
+    public static PropertyMapper<?> getMapperByCliKey(String cliKey) {
+        return getKcKeyFromCliKey(cliKey).map(PropertyMappers::getMapper).orElse(null);
+    }
+
+    public static Optional<String> getKcKeyFromCliKey(String cliKey) {
+        if (!cliKey.startsWith(Picocli.ARG_PREFIX)) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(
+                MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + cliKey.substring(Picocli.ARG_PREFIX.length()));
+    }
+
+    /**
+     * @return a mutable copy of all known mappers
+     */
     public static Set<PropertyMapper<?>> getMappers() {
-        return MAPPERS.values().stream().flatMap(Collection::stream).collect(Collectors.toSet());
+        return MAPPERS.values().stream().flatMap(Collection::stream).collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     public static Set<WildcardPropertyMapper<?>> getWildcardMappers() {
         return MAPPERS.getWildcardMappers();
+    }
+
+    public static WildcardPropertyMapper<?> getWildcardMappedFrom(Option<?> from) {
+        return MAPPERS.wildcardMapFrom.get(from.getKey());
     }
 
     public static boolean isSupported(PropertyMapper<?> mapper) {
@@ -208,19 +221,11 @@ public final class PropertyMappers {
     }
 
     public static boolean isDisabledMapper(String property) {
-        final Predicate<String> isDisabledMapper = (p) -> getDisabledMapper(p).isPresent() && getMapper(p) == null;
-
-        if (property.startsWith("%")) {
-            return isDisabledMapper.test(property.substring(property.indexOf('.') + 1));
-        }
-        return isDisabledMapper.test(property);
+        return getDisabledMapper(property).isPresent() && getMapper(property) == null;
     }
 
-    private static Set<PropertyMapper<?>> filterDeniedCategories(List<PropertyMapper<?>> mappers) {
-        final var allowedCategories = Environment.getParsedCommand()
-                .map(AbstractCommand::getOptionCategories)
-                .map(EnumSet::copyOf)
-                .orElseGet(() -> EnumSet.allOf(OptionCategory.class));
+    private static Set<PropertyMapper<?>> filterDeniedCategories(List<PropertyMapper<?>> mappers, AbstractCommand command) {
+        final var allowedCategories = EnumSet.copyOf(command.getOptionCategories());
 
         return mappers.stream().filter(f -> allowedCategories.contains(f.getCategory())).collect(Collectors.toSet());
     }
@@ -232,7 +237,9 @@ public final class PropertyMappers {
 
         private final Map<String, PropertyMapper<?>> disabledBuildTimeMappers = new HashMap<>();
         private final Map<String, PropertyMapper<?>> disabledRuntimeMappers = new HashMap<>();
+
         private final Set<WildcardPropertyMapper<?>> wildcardMappers = new HashSet<>();
+        private final Map<String, WildcardPropertyMapper<?>> wildcardMapFrom = new HashMap<>();
 
         public void addAll(PropertyMapper<?>[] mappers) {
             for (PropertyMapper<?> mapper : mappers) {
@@ -252,14 +259,24 @@ public final class PropertyMappers {
 
         public void addMapper(PropertyMapper<?> mapper) {
             if (mapper.hasWildcard()) {
+                if (mapper.getMapFrom() != null) {
+                    wildcardMapFrom.put(mapper.getMapFrom(), (WildcardPropertyMapper<?>) mapper);
+                }
                 wildcardMappers.add((WildcardPropertyMapper<?>)mapper);
+            } else {
+                handleMapper(mapper, this::add);
             }
-            handleMapper(mapper, this::add);
         }
 
         public void removeMapper(PropertyMapper<?> mapper) {
-            wildcardMappers.remove(mapper);
-            handleMapper(mapper, this::remove);
+            if (mapper.hasWildcard()) {
+                wildcardMappers.remove(mapper);
+                if (mapper.getFrom() != null) {
+                    wildcardMapFrom.remove(mapper.getMapFrom());
+                }
+            } else {
+                handleMapper(mapper, this::remove);
+            }
         }
 
         private void remove(String key, PropertyMapper<?> mapper) {
@@ -270,18 +287,29 @@ public final class PropertyMappers {
         }
 
         @Override
+        @SuppressWarnings({"rawtypes", "unchecked"})
         public List<PropertyMapper<?>> get(Object key) {
-            // First check if the requested option matches any wildcard mappers
+            // First check the base mappings
             String strKey = (String) key;
-            List ret = wildcardMappers.stream()
-                    .filter(m -> m.matchesWildcardOptionName(strKey))
-                    .toList();
-            if (!ret.isEmpty()) {
+
+            List ret = super.get(key);
+            if (ret != null) {
                 return ret;
             }
 
-            // If no wildcard mappers match, check for exact matches
-            return super.get(key);
+            // TODO: we may want to introduce a prefix tree here as we add more wildcardMappers
+            // for now we'll just limit ourselves to searching wildcards when we see a quarkus or
+            // keycloak key
+            if (strKey.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX) || strKey.startsWith(MicroProfileConfigProvider.NS_QUARKUS_PREFIX)) {
+                ret = wildcardMappers.stream()
+                        .filter(m -> m.matchesWildcardOptionName(strKey))
+                        .toList();
+                if (!ret.isEmpty()) {
+                    return ret;
+                }
+            }
+
+            return null;
         }
 
         @Override
@@ -293,9 +321,7 @@ public final class PropertyMappers {
             return Collections.unmodifiableSet(wildcardMappers);
         }
 
-        public void sanitizeDisabledMappers() {
-            if (Environment.getParsedCommand().isEmpty()) return; // do not sanitize when no command is present
-
+        public void sanitizeDisabledMappers(AbstractCommand command) {
             DisabledMappersInterceptor.runWithDisabled(() -> { // We need to have the whole configuration available
 
                 // Initialize profile in order to check state of features. Disable Persisted CS for re-augmentation
@@ -308,22 +334,22 @@ public final class PropertyMappers {
                 sanitizeMappers(buildTimeMappers, disabledBuildTimeMappers);
                 sanitizeMappers(runtimeTimeMappers, disabledRuntimeMappers);
 
-                assertDuplicatedMappers();
+                assertDuplicatedMappers(command);
             });
         }
 
-        private void assertDuplicatedMappers() {
+        private void assertDuplicatedMappers(AbstractCommand command) {
             final var duplicatedMappers = entrySet().stream()
                     .filter(e -> CollectionUtil.isNotEmpty(e.getValue()))
                     .filter(e -> e.getValue().size() > 1)
                     .toList();
 
-            final var isBuildPhase = isRebuild() || isRebuildCheck() || isParsedCommand(Build.NAME);
-            final var allowedForCommand = isParsedCommand(ShowConfig.NAME);
+            final var isBuildPhase = isRebuild() || isRebuildCheck() || command.includeBuildTime();
+            final var allowedForCommand = ShowConfig.NAME.equals(command.getName());
 
             if (!duplicatedMappers.isEmpty()) {
                 duplicatedMappers.forEach(f -> {
-                    final var filteredMappers = filterDeniedCategories(f.getValue());
+                    final var filteredMappers = filterDeniedCategories(f.getValue(), command);
 
                     if (filteredMappers.size() > 1) {
                         final var areBuildTimeMappers = filteredMappers.stream().anyMatch(PropertyMapper::isBuildTime);
@@ -370,10 +396,17 @@ public final class PropertyMappers {
         private static void handleMapper(PropertyMapper<?> mapper, BiConsumer<String, PropertyMapper<?>> operation) {
             operation.accept(mapper.getFrom(), mapper);
             if (!mapper.getFrom().equals(mapper.getTo())) {
-                operation.accept(mapper.getTo(), mapper);
+                String to = mapper.getTo();
+                operation.accept(to, mapper);
+                if (to.startsWith(KC_SPI_PREFIX)) {
+                    if (!mapper.getTo().contains("--")) {
+                        throw new IllegalStateException("Mapper should use the new form of the SPI option with the `--` separator: " + to);
+                    }
+                    String legacyTo = mapper.getTo().replace("--", "-");
+                    operation.accept(legacyTo, mapper);
+                }
             }
-            operation.accept(mapper.getCliFormat(), mapper);
-            operation.accept(mapper.getEnvVarFormat(), mapper);
         }
     }
+
 }

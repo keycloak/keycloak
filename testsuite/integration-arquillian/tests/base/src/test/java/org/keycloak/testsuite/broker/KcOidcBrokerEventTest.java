@@ -77,6 +77,7 @@ public final class KcOidcBrokerEventTest extends AbstractBrokerTest {
                 .user((String)null)
                 .detail(Details.IDENTITY_PROVIDER, IDP_OIDC_ALIAS)
                 .detail(Details.IDENTITY_PROVIDER_USERNAME, bc.getUserLogin())
+                .detail(Details.IDENTITY_PROVIDER_BROKER_SESSION_ID,  Matchers.startsWith(bc.getIDPAlias()))
                 .assertEvent();
 
         events.expect(EventType.UPDATE_PROFILE)

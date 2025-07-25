@@ -34,6 +34,7 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.broker.provider.util.SimpleHttp;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.federation.kerberos.KerberosFederationProvider;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
@@ -46,10 +47,10 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.account.AccountCredentialResource;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
-import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.testsuite.util.TokenUtil;
+import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -90,6 +91,7 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
 
     @Override
     protected void afterImportTestRealm() {
+        boolean isEmbeddedServer = ldapRule.isEmbeddedServer();
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
@@ -97,8 +99,17 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
             // Delete all LDAP users and add some new for testing
             LDAPTestUtils.removeAllLDAPUsers(ctx.getLdapProvider(), appRealm);
 
-            LDAPObject john = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "johnkeycloak", "John", "Doe", "john@email.org", null, "1234");
-            LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), john, "Password1");
+            if (isEmbeddedServer) {
+                MultivaluedHashMap<String, String> otherAttrs = new MultivaluedHashMap<>();
+
+                otherAttrs.putSingle(LDAPConstants.PWD_CHANGED_TIME, "22000101000000Z");
+
+                LDAPObject john = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "johnkeycloak", "John", "Doe", "john@email.org", otherAttrs);
+                LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), john, "Password1");
+            } else {
+                LDAPObject john = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "johnkeycloak", "John", "Doe", "john@email.org", null, "1234");
+                LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), john, "Password1");
+            }
         });
     }
 
@@ -173,7 +184,7 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
     public void testUpdateProfileUnmanagedAttributes() throws IOException {
         // User profile unmanaged attributes supported
         UserProfileResource userProfileRes = testRealm().users().userProfile();
-        UPConfig origConfig = VerifyProfileTest.enableUnmanagedAttributes(userProfileRes);
+        UPConfig origConfig = UserProfileUtil.enableUnmanagedAttributes(userProfileRes);
 
         try {
             UserRepresentation user = getProfile();
@@ -241,7 +252,7 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
 
         // Password won't have createdDate and any metadata set
         Assert.assertEquals(PasswordCredentialModel.TYPE, userPassword.getType());
-        Assert.assertEquals(userPassword.getCreatedDate(), Long.valueOf(-1L));
+        Assert.assertTrue(userPassword.getCreatedDate() > -1L);
         Assert.assertNull(userPassword.getCredentialData());
         Assert.assertNull(userPassword.getSecretData());
     }

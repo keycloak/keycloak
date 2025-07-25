@@ -48,11 +48,13 @@ import org.keycloak.util.JsonSerialization;
  */
 public class GroupPolicyProviderFactory implements PolicyProviderFactory<GroupPolicyRepresentation> {
 
+    public static final String ID = "group";
+
     private GroupPolicyProvider provider = new GroupPolicyProvider(this::toRepresentation);
 
     @Override
     public String getId() {
-        return "group";
+        return ID;
     }
 
     @Override

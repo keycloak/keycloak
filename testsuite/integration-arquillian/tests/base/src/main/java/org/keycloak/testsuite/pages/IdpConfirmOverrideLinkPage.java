@@ -41,8 +41,4 @@ public class IdpConfirmOverrideLinkPage extends LanguageComboboxAwarePage {
         confirmOverrideButton.click();
     }
 
-    @Override
-    public void open() throws Exception {
-        throw new UnsupportedOperationException();
-    }
 }

@@ -22,7 +22,6 @@ import org.keycloak.authentication.AuthenticatorSpi;
 import org.keycloak.authentication.authenticators.browser.RecoveryAuthnCodesFormAuthenticatorFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 
 public class RecoveryAuthnCodesFeatureTest extends AbstractFeatureStateTest {
 
@@ -37,7 +36,6 @@ public class RecoveryAuthnCodesFeatureTest extends AbstractFeatureStateTest {
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.RECOVERY_CODES, skipRestart = true)
     public void featureEnabled() {
         testFeatureAvailability(true);
     }

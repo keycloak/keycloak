@@ -28,11 +28,13 @@ import static org.keycloak.client.admin.cli.KcAdmMain.CMD;
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 
-@Command(name = "config", description = "COMMAND [ARGUMENTS]", subcommands = {
+@Command(name = ConfigCmd.NAME, description = "COMMAND [ARGUMENTS]", subcommands = {
         ConfigCredentialsCmd.class,
         ConfigTruststoreCmd.class
 } )
 public class ConfigCmd extends AbstractAuthOptionsCmd {
+
+    public static final String NAME = "config";
 
     @Override
     protected void process() {

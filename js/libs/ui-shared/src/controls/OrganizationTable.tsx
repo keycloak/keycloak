@@ -63,6 +63,7 @@ export type OrganizationTableProps = PropsWithChildren & {
   toolbarItem?: ReactNode;
   isPaginated?: boolean;
   isSearching?: boolean;
+  searchPlaceholderKey?: string;
   onSelect?: (orgs: OrganizationRepresentation[]) => void;
   onDelete?: (org: OrganizationRepresentation) => void;
   deleteLabel?: string;
@@ -73,6 +74,7 @@ export const OrganizationTable = ({
   toolbarItem,
   isPaginated = false,
   isSearching = false,
+  searchPlaceholderKey,
   onSelect,
   onDelete,
   deleteLabel = "delete",
@@ -87,6 +89,7 @@ export const OrganizationTable = ({
       isPaginated={isPaginated}
       isSearching={isSearching}
       ariaLabelKey="organizationList"
+      searchPlaceholderKey={searchPlaceholderKey}
       toolbarItem={toolbarItem}
       onSelect={onSelect}
       canSelectAll={onSelect !== undefined}

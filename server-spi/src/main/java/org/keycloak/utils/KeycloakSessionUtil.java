@@ -18,9 +18,13 @@
 package org.keycloak.utils;
 
 import org.keycloak.common.util.Resteasy;
+import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 
 public class KeycloakSessionUtil {
+
+    private static final String NO_REALM = "no_realm_found_in_session";
 
     private KeycloakSessionUtil() {
 
@@ -44,6 +48,28 @@ public class KeycloakSessionUtil {
      */
     public static KeycloakSession setKeycloakSession(KeycloakSession session) {
         return Resteasy.pushContext(KeycloakSession.class, session);
+    }
+
+    public static String getRealmNameFromContext(KeycloakSession session) {
+        if(session == null) {
+            return NO_REALM;
+        }
+
+        KeycloakContext context = session.getContext();
+        if(context == null) {
+            return NO_REALM;
+        }
+
+        RealmModel realm = context.getRealm();
+        if (realm == null) {
+            return NO_REALM;
+        }
+
+        if(realm.getName() != null) {
+            return realm.getName();
+        } else {
+            return NO_REALM;
+        }
     }
 
 }

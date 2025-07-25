@@ -16,12 +16,17 @@
  */
 package org.keycloak.models.cache.infinispan;
 
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.runWithoutAuthorization;
+
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.keycloak.models.KeycloakSession;
+
 /**
- * Default implementation of {@link DefaultLazyLoader} that only fetches data once. This implementation is not thread-safe
- * and cached data is assumed to not be shared across different threads to sync state.
+ * Default implementation of {@link DefaultLazyLoader} that only fetches data once. This implementation is thread-safe
+ * as cached data is used in instanced of {@link org.keycloak.models.cache.infinispan.entities.CachedRealm} which are shared
+ * between multiple threads within a Keycloak instance.
  *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
@@ -29,7 +34,7 @@ public class DefaultLazyLoader<S, D> implements LazyLoader<S, D> {
 
     private final Function<S, D> loader;
     private final Supplier<D> fallback;
-    private D data;
+    private volatile D data;
 
     public DefaultLazyLoader(Function<S, D> loader, Supplier<D> fallback) {
         this.loader = loader;
@@ -37,10 +42,17 @@ public class DefaultLazyLoader<S, D> implements LazyLoader<S, D> {
     }
 
     @Override
-    public D get(Supplier<S> sourceSupplier) {
+    public D get(KeycloakSession session, Supplier<S> sourceSupplier) {
         if (data == null) {
-            S source = sourceSupplier.get();
-            data = source == null ? fallback.get() : this.loader.apply(source);
+            synchronized (this) {
+                if (data == null) {
+                    runWithoutAuthorization(session, () -> {
+                        // make sure caching does not include partial results when FGAP is enabled
+                        S source = sourceSupplier.get();
+                        data = source == null ? fallback.get() : loader.apply(source);
+                    });
+                }
+            }
         }
         return data;
     }

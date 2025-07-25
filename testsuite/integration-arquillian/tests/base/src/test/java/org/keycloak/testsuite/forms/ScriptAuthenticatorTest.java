@@ -74,13 +74,13 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
-
+        super.configureTestRealm(testRealm);
         UserRepresentation failUser = UserBuilder.create()
                 .id(UUID.randomUUID().toString())
                 .username("fail")
                 .email("fail@test.com")
                 .enabled(true)
-                .password("password")
+                .password(generatePassword("fail"))
                 .build();
 
         UserRepresentation okayUser = UserBuilder.create()
@@ -88,7 +88,7 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
                 .username("user")
                 .email("user@test.com")
                 .enabled(true)
-                .password("password")
+                .password(generatePassword("user"))
                 .build();
 
         RealmBuilder.edit(testRealm)
@@ -162,7 +162,7 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
     public void loginShouldWorkWithScriptAuthenticator() {
         loginPage.open();
 
-        loginPage.login("user", "password");
+        loginPage.login("user", getPassword("user"));
 
         events.expectLogin().user(userId).detail(Details.USERNAME, "user").assertEvent();
     }
@@ -174,7 +174,7 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
     public void loginShouldFailWithScriptAuthenticator() {
         loginPage.open();
 
-        loginPage.login("fail", "password");
+        loginPage.login("fail", getPassword("fail"));
 
         events.expect(EventType.LOGIN_ERROR).user((String) null).error(Errors.USER_NOT_FOUND).assertEvent();
     }
@@ -197,7 +197,7 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
 
         loginPage.open();
 
-        loginPage.login("user", "password");
+        loginPage.login("user", getPassword("user"));
 
         events.expectLogin().user(userId).detail(Details.USERNAME, "user").assertEvent();
     }

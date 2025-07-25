@@ -248,6 +248,7 @@ export default function NewClientPolicyCondition() {
                 >
                   {conditionTypes?.map((condition) => (
                     <SelectOption
+                      data-testid={condition.id}
                       selected={condition.id === field.value}
                       description={t(
                         camelCase(condition.id.replace(/-/g, " ")),

@@ -43,6 +43,12 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-junit5</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-junit5-config</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 

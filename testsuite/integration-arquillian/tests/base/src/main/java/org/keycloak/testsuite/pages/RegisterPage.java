@@ -36,7 +36,8 @@ import org.openqa.selenium.support.FindBy;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class RegisterPage extends AbstractPage {
+public class RegisterPage extends LanguageComboboxAwarePage
+{
 
     @Page
     private AccountFields.AccountErrors accountErrors;
@@ -79,6 +80,10 @@ public class RegisterPage extends AbstractPage {
 
     @FindBy(linkText = "« Back to Login")
     private WebElement backToLoginLink;
+
+    public void register(String firstName, String lastName, String email, String username, String password) {
+        register(firstName, lastName, email, username, password, password, null, null, null);
+    }
 
     public void register(String firstName, String lastName, String email, String username, String password, String passwordConfirm) {
         register(firstName, lastName, email, username, password, passwordConfirm, null, null, null);
@@ -143,6 +148,10 @@ public class RegisterPage extends AbstractPage {
         }
 
         UIUtils.clickLink(submitButton);
+    }
+
+    public void registerWithEmailAsUsername(String firstName, String lastName, String email, String password) {
+        registerWithEmailAsUsername(firstName, lastName, email, password, password);
     }
 
     public void registerWithEmailAsUsername(String firstName, String lastName, String email, String password, String passwordConfirm) {
@@ -275,14 +284,8 @@ public class RegisterPage extends AbstractPage {
         return passwordErrors;
     }
 
-    @Override
-    public void open() {
-        oauth.openRegistrationForm();
-        assertCurrent();
-    }
-
     public void openWithLoginHint(String loginHint) {
-        oauth.addCustomParameter(OIDCLoginProtocol.LOGIN_HINT_PARAM, loginHint).openRegistrationForm();
+        oauth.registrationForm().loginHint(loginHint).open();
         assertCurrent();
     }
 

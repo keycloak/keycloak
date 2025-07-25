@@ -22,6 +22,7 @@ import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.IntOrString;
+import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.PodTemplateSpecBuilder;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
@@ -32,12 +33,15 @@ import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
+import io.fabric8.kubernetes.api.model.apps.StatefulSetSpec;
+import io.fabric8.kubernetes.api.model.batch.v1.Job;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedDependentResourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedWorkflowAndDependentResourceContext;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
-
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -46,6 +50,7 @@ import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
 import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
 import org.keycloak.operator.controllers.KeycloakDistConfigurator;
+import org.keycloak.operator.controllers.KeycloakUpdateJobDependentResource;
 import org.keycloak.operator.controllers.WatchedResources;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakBuilder;
@@ -62,12 +67,16 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import jakarta.inject.Inject;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.keycloak.operator.ContextUtils.DIST_CONFIGURATOR_KEY;
+import static org.keycloak.operator.ContextUtils.NEW_DEPLOYMENT_KEY;
+import static org.keycloak.operator.ContextUtils.OLD_DEPLOYMENT_KEY;
+import static org.keycloak.operator.ContextUtils.OPERATOR_CONFIG_KEY;
+import static org.keycloak.operator.ContextUtils.WATCHED_RESOURCES_KEY;
 
 @QuarkusTest
 public class PodTemplateTest {
@@ -83,17 +92,28 @@ public class PodTemplateTest {
 
     KeycloakDeploymentDependentResource deployment;
 
+    @Inject
+    KeycloakUpdateJobDependentResource jobResource;
+
     @BeforeEach
     protected void setup() {
-        this.deployment = new KeycloakDeploymentDependentResource(operatorConfig, watchedResources, distConfigurator);
+        this.deployment = new KeycloakDeploymentDependentResource();
     }
 
     private StatefulSet getDeployment(PodTemplateSpec podTemplate, StatefulSet existingDeployment, Consumer<KeycloakSpecBuilder> additionalSpec) {
-        var kc = new KeycloakBuilder().withNewMetadata().withName("instance").withNamespace("keycloak-ns").endMetadata().build();
-        existingDeployment = new StatefulSetBuilder(existingDeployment).editOrNewSpec().editOrNewSelector()
+        var kc = createKeycloak(podTemplate, additionalSpec);
+
+        existingDeployment = new StatefulSetBuilder(existingDeployment).editOrNewMetadata().endMetadata().editOrNewSpec().editOrNewSelector()
                 .withMatchLabels(Utils.allInstanceLabels(kc))
                 .endSelector().endSpec().build();
 
+        //noinspection unchecked
+        Context<Keycloak> context = mockContext(existingDeployment);
+        return deployment.desired(kc, context);
+    }
+
+    private Keycloak createKeycloak(PodTemplateSpec podTemplate, Consumer<KeycloakSpecBuilder> additionalSpec) {
+        var kc = new KeycloakBuilder().withNewMetadata().withName("instance").withNamespace("keycloak-ns").endMetadata().build();
         var httpSpec = new HttpSpecBuilder().withTlsSecret("example-tls-secret").build();
         var hostnameSpec = new HostnameSpecBuilder().withHostname("example.com").build();
 
@@ -107,14 +127,19 @@ public class PodTemplateTest {
         }
 
         kc.setSpec(keycloakSpecBuilder.build());
+        return kc;
+    }
 
-        var managedDependentResourceContext = new DefaultManagedDependentResourceContext();
-        //noinspection unchecked
+    private Context<Keycloak> mockContext(StatefulSet existingDeployment) {
         Context<Keycloak> context = Mockito.mock(Context.class);
-        Mockito.when(context.managedDependentResourceContext()).thenReturn(managedDependentResourceContext);
-        Mockito.when(context.getSecondaryResource(StatefulSet.class)).thenReturn(Optional.ofNullable(existingDeployment));
-
-        return deployment.desired(kc, context);
+        ManagedWorkflowAndDependentResourceContext managedWorkflowAndDependentResourceContext = Mockito.mock(ManagedWorkflowAndDependentResourceContext.class);
+        Mockito.when(context.managedWorkflowAndDependentResourceContext()).thenReturn(managedWorkflowAndDependentResourceContext);
+        Mockito.when(managedWorkflowAndDependentResourceContext.getMandatory(OLD_DEPLOYMENT_KEY, StatefulSet.class)).thenReturn(existingDeployment);
+        Mockito.when(managedWorkflowAndDependentResourceContext.getMandatory(OPERATOR_CONFIG_KEY, Config.class)).thenReturn(operatorConfig);
+        Mockito.when(managedWorkflowAndDependentResourceContext.getMandatory(WATCHED_RESOURCES_KEY, WatchedResources.class)).thenReturn(watchedResources);
+        Mockito.when(managedWorkflowAndDependentResourceContext.getMandatory(DIST_CONFIGURATOR_KEY, KeycloakDistConfigurator.class)).thenReturn(distConfigurator);
+        Mockito.when(context.getClient()).thenReturn(Mockito.mock(KubernetesClient.class));
+        return context;
     }
 
     private StatefulSet getDeployment(PodTemplateSpec podTemplate, StatefulSet existingDeployment) {
@@ -222,8 +247,8 @@ public class PodTemplateTest {
         // Assert
         assertEquals(1, podTemplate.getSpec().getContainers().get(0).getCommand().size());
         assertEquals(command, podTemplate.getSpec().getContainers().get(0).getCommand().get(0));
-        assertEquals(3, podTemplate.getSpec().getContainers().get(0).getArgs().size());
-        assertEquals(arg, podTemplate.getSpec().getContainers().get(0).getArgs().get(2));
+        assertEquals(2, podTemplate.getSpec().getContainers().get(0).getArgs().size());
+        assertEquals(arg, podTemplate.getSpec().getContainers().get(0).getArgs().get(1));
     }
 
     @Test
@@ -364,6 +389,19 @@ public class PodTemplateTest {
     }
 
     @Test
+    public void testHttpManagment() {
+        var result = getDeployment(null, new StatefulSet(),
+                spec -> spec.withAdditionalOptions(new ValueOrSecret("http-management-scheme", "http")))
+                .getSpec()
+                .getTemplate()
+                .getSpec()
+                .getContainers()
+                .get(0);
+
+        assertEquals("HTTP", result.getReadinessProbe().getHttpGet().getScheme());
+    }
+
+    @Test
     public void testRelativePathHealthProbes() {
         final Function<String, Container> setUpRelativePath = (path) -> getDeployment(null, new StatefulSet(),
                 spec -> spec.withAdditionalOptions(new ValueOrSecret("http-management-relative-path", path)))
@@ -400,10 +438,12 @@ public class PodTemplateTest {
         PodTemplateSpec additionalPodTemplate = null;
 
         // Act
-        var podTemplate = getDeployment(additionalPodTemplate).getSpec().getTemplate();
+        StatefulSetSpec spec = getDeployment(additionalPodTemplate).getSpec();
+        var podTemplate = spec.getTemplate();
         var container = podTemplate.getSpec().getContainers().get(0);
 
         // Assert
+        assertThat(spec.getServiceName()).isEqualTo("instance-discovery");
         assertNotNull(container);
         assertThat(container.getArgs()).doesNotContain(KeycloakDeploymentDependentResource.OPTIMIZED_ARG);
         assertThat(container.getArgs()).contains("-Djgroups.bind.address=$(POD_IP)");
@@ -486,6 +526,22 @@ public class PodTemplateTest {
         assertThat(podTemplate.getSpec().getContainers().get(0).getEnv().stream())
                 .anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TRUSTSTORE_PATHS)
                         && envVar.getValue().equals("/something"));
+    }
+
+    @Test
+    public void testAdditionalOptionEnvKey() {
+        // Arrange
+        PodTemplateSpec additionalPodTemplate = null;
+
+        // Act
+        var podTemplate = getDeployment(additionalPodTemplate, null,
+                s -> s.addToAdditionalOptions(new ValueOrSecret("log-level-org.package.some_class", "debug")))
+                .getSpec().getTemplate();
+
+        // Assert
+        assertThat(podTemplate.getSpec().getContainers().get(0).getEnv().stream())
+                .anyMatch(envVar -> envVar.getName().equals("KCKEY_LOG_LEVEL_ORG_PACKAGE_SOME_CLASS")
+                        && envVar.getValue().equals("log-level-org.package.some_class"));
     }
 
     @Test
@@ -632,6 +688,81 @@ public class PodTemplateTest {
 
         // Assert
         assertThat(podTemplate.getSpec().getAffinity()).isNotEqualTo(affinity);
+    }
+
+    @Test
+    public void testProbe(){
+        PodTemplateSpec additionalPodTemplate = null;
+        var readinessProbe = new ProbeBuilder().withFailureThreshold(1).withPeriodSeconds(2).build();
+        var livenessProbe = new ProbeBuilder().withFailureThreshold(3).withPeriodSeconds(4).build();
+        var startupProbe = new ProbeBuilder().withFailureThreshold(5).withPeriodSeconds(6).build();
+        var readinessPodTemplate = getDeployment(additionalPodTemplate, null,
+                s-> s.withNewReadinessProbeSpec()
+                        .withProbeFailureThreshold(1)
+                        .withProbePeriodSeconds(2)
+                        .endReadinessProbeSpec()).getSpec().getTemplate();
+        assertThat(readinessPodTemplate.getSpec().getContainers().get(0).getReadinessProbe().getPeriodSeconds()).isEqualTo(readinessProbe.getPeriodSeconds());
+        assertThat(readinessPodTemplate.getSpec().getContainers().get(0).getReadinessProbe().getFailureThreshold()).isEqualTo(readinessProbe.getFailureThreshold());
+
+        var livenessPodTemplate = getDeployment(additionalPodTemplate, null,
+                s-> s.withNewLivenessProbeSpec()
+                        .withProbeFailureThreshold(3)
+                        .withProbePeriodSeconds(4)
+                        .endLivenessProbeSpec()).getSpec().getTemplate();
+        assertThat(livenessPodTemplate.getSpec().getContainers().get(0).getLivenessProbe().getPeriodSeconds()).isEqualTo(livenessProbe.getPeriodSeconds());
+        assertThat(livenessPodTemplate.getSpec().getContainers().get(0).getLivenessProbe().getFailureThreshold()).isEqualTo(livenessProbe.getFailureThreshold());
+
+        var startupPodTemplate = getDeployment(additionalPodTemplate, null,
+                s-> s.withNewStartupProbeSpec()
+                        .withProbeFailureThreshold(5)
+                        .withProbePeriodSeconds(6)
+                        .endStartupProbeSpec()).getSpec().getTemplate();
+        assertThat(startupPodTemplate.getSpec().getContainers().get(0).getStartupProbe().getPeriodSeconds()).isEqualTo(startupProbe.getPeriodSeconds());
+        assertThat(startupPodTemplate.getSpec().getContainers().get(0).getStartupProbe().getFailureThreshold()).isEqualTo(startupProbe.getFailureThreshold());
+    }
+
+    private Job getUpdateJob(Consumer<KeycloakSpecBuilder> newSpec, Consumer<KeycloakSpecBuilder> oldSpec, Consumer<StatefulSetBuilder> existingModifier) {
+        // create an existing from the old spec and modifier
+        StatefulSetBuilder existingBuilder = getDeployment(null, null, oldSpec).toBuilder();
+        existingModifier.accept(existingBuilder);
+        StatefulSet existingStatefulSet = existingBuilder.build();
+
+        // determine the desired statefulset state
+        StatefulSetBuilder desired = getDeployment(null, existingStatefulSet, newSpec).toBuilder();
+
+        // setup the mock context
+        Context<Keycloak> context = mockContext(existingStatefulSet);
+        var managedWorkflowAndDependentResourceContext = context.managedWorkflowAndDependentResourceContext();
+        Mockito.when(managedWorkflowAndDependentResourceContext.get(OLD_DEPLOYMENT_KEY, StatefulSet.class)).thenReturn(Optional.of(existingStatefulSet));
+        Mockito.when(managedWorkflowAndDependentResourceContext.getMandatory(NEW_DEPLOYMENT_KEY, StatefulSet.class)).thenReturn(desired.build());
+
+        return jobResource.desired(createKeycloak(null, newSpec), context);
+    }
+
+    @Test
+    public void testUpdateJobSecretHandling() {
+        Job job = getUpdateJob(builder -> {}, builder -> {}, builder -> {});
+        assertEquals(List.of(), job.getSpec().getTemplate().getSpec().getImagePullSecrets());
+
+        LocalObjectReference secret = new LocalObjectReference("secret");
+        Consumer<StatefulSetBuilder> addSecret = builder -> builder.editSpec().editTemplate().editSpec().addToImagePullSecrets(secret).endSpec().endTemplate().endSpec();
+        job = getUpdateJob(builder -> {}, builder -> {}, addSecret);
+        assertEquals(List.of(new LocalObjectReference("secret")), job.getSpec().getTemplate().getSpec().getImagePullSecrets());
+
+        job = getUpdateJob(builder -> builder.addToImagePullSecrets(new LocalObjectReference("new-secret")), builder -> {}, addSecret);
+        assertEquals(List.of(new LocalObjectReference("new-secret"), new LocalObjectReference("secret")), job.getSpec().getTemplate().getSpec().getImagePullSecrets());
+    }
+
+    @Test
+    public void testFieldRemovalForInitContainer() {
+        Job job = getUpdateJob(builder -> {
+        }, builder -> builder.withNewUnsupported().withNewPodTemplate().withNewSpec().addNewContainer()
+                .withRestartPolicy("OnFailure")
+                .withNewLifecycle().withNewPostStart().withNewExec().withCommand("hello").endExec().endPostStart()
+                .endLifecycle().endContainer().endSpec().endPodTemplate().endUnsupported(), builder -> {
+                });
+        assertNull(job.getSpec().getTemplate().getSpec().getInitContainers().get(0).getLifecycle());
+        assertNull(job.getSpec().getTemplate().getSpec().getInitContainers().get(0).getRestartPolicy());
     }
 
 }

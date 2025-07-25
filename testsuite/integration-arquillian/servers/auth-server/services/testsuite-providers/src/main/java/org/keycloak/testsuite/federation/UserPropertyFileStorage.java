@@ -111,7 +111,8 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
     public int getUsersCount(RealmModel realm, Map<String, String> params) {
         addCall(COUNT_SEARCH_METHOD);
 
-        return (int) searchForUser(realm, params.get(UserModel.SEARCH), null, null, username -> username.contains(params.get(UserModel.SEARCH))).count();
+        String search = params.get(UserModel.SEARCH);
+        return (int) searchForUser(realm, search, null, null, username -> search == null || username.contains(search)).count();
     }
 
     @Override

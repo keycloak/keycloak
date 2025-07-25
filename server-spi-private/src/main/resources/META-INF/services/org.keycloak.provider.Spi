@@ -56,6 +56,7 @@ org.keycloak.email.EmailSenderSpi
 org.keycloak.email.EmailTemplateSpi
 org.keycloak.executors.ExecutorsSpi
 org.keycloak.theme.ThemeSpi
+org.keycloak.theme.ThemeManagerSpi
 org.keycloak.tracing.TracingSpi
 org.keycloak.truststore.TruststoreSpi
 org.keycloak.connections.httpclient.HttpClientSpi
@@ -103,3 +104,4 @@ org.keycloak.health.LoadBalancerCheckSpi
 org.keycloak.cookie.CookieSpi
 org.keycloak.organization.OrganizationSpi
 org.keycloak.securityprofile.SecurityProfileSpi
+org.keycloak.logging.MappedDiagnosticContextSpi

@@ -62,7 +62,7 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
     }
 
     protected void loginUser() {
-        oauth.clientId("broker-app");
+        oauth.client("broker-app", "password");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -167,7 +167,7 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
         log.debug("Testing single log out");
 
         oauth.realm(bc.consumerRealmName());
-        oauth.clientId("broker-app");
+        oauth.client("broker-app", "secret");
         oauth.openLoginForm();
 
         Assert.assertTrue("Should be logged in", driver.getTitle().endsWith("AUTH_RESPONSE"));
@@ -175,7 +175,6 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
         logoutFromConsumerRealm();
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
-        oauth.clientId("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         Assert.assertTrue("Should be on " + bc.consumerRealmName() + " realm on login page",
@@ -245,7 +244,7 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
         }
     }
 
-    static void disableUpdateProfileOnFirstLogin(AuthenticationExecutionInfoRepresentation execution, AuthenticationManagementResource flows) {
+    public static void disableUpdateProfileOnFirstLogin(AuthenticationExecutionInfoRepresentation execution, AuthenticationManagementResource flows) {
         if (execution.getProviderId() != null && execution.getProviderId().equals(IdpCreateUserIfUniqueAuthenticatorFactory.PROVIDER_ID)) {
             execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE.name());
             flows.updateExecutions(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW, execution);

@@ -27,6 +27,7 @@ import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticator;
+import org.keycloak.authentication.authenticators.browser.RecoveryAuthnCodesFormAuthenticator;
 import org.keycloak.authentication.forms.RegistrationPage;
 import org.keycloak.authentication.requiredactions.util.UpdateProfileContext;
 import org.keycloak.authentication.requiredactions.util.UserUpdateProfileContext;
@@ -62,6 +63,7 @@ import org.keycloak.forms.login.freemarker.model.TotpLoginBean;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
 import org.keycloak.forms.login.freemarker.model.VerifyProfileBean;
 import org.keycloak.forms.login.freemarker.model.X509ConfirmBean;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -196,6 +198,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             case VERIFY_EMAIL:
                 UpdateProfileContext userBasedContext1 = new UserUpdateProfileContext(realm, user);
                 attributes.put("user", new ProfileBean(userBasedContext1, formData));
+                if (authenticationSession.getAuthNote(Constants.VERIFY_EMAIL_KEY) != null) {
+                    attributes.put("verifyEmail", authenticationSession.getAuthNote(Constants.VERIFY_EMAIL_KEY));
+                }
                 actionMessage = Messages.VERIFY_EMAIL;
                 page = LoginFormsPages.LOGIN_VERIFY_EMAIL;
                 break;
@@ -257,7 +262,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 attributes.put("totp", totpBean);
                 break;
             case LOGIN_RECOVERY_AUTHN_CODES_CONFIG:
-                attributes.put("recoveryAuthnCodesConfigBean", new RecoveryAuthnCodesBean());
+                // generate the recovery codes and assign to the auth session
+                RecoveryAuthnCodesBean recoveryAuthnCodesBean = new RecoveryAuthnCodesBean();
+                attributes.put("recoveryAuthnCodesConfigBean", recoveryAuthnCodesBean);
+                authenticationSession.setAuthNote(RecoveryAuthnCodesFormAuthenticator.GENERATED_RECOVERY_AUTHN_CODES_NOTE, recoveryAuthnCodesBean.getGeneratedRecoveryAuthnCodesAsString());
+                authenticationSession.setAuthNote(RecoveryAuthnCodesFormAuthenticator.GENERATED_AT_NOTE, Long.toString(recoveryAuthnCodesBean.getGeneratedAt()));
                 break;
             case LOGIN_RECOVERY_AUTHN_CODES_INPUT:
                 attributes.put("recoveryAuthnCodesInputBean", new RecoveryAuthnCodeInputLoginBean(session, realm, user));
@@ -459,8 +468,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     }
 
     @Override
-    public String getMessage(String message) {
-        return formatMessage(new FormMessage(null, message));
+    public String getMessage(String message, Object... parameters) {
+        return formatMessage(new FormMessage(null, message, parameters));
     }
 
     /**
@@ -545,6 +554,14 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
                 if (authenticationSession != null && authenticationSession.getAuthNote(Constants.KEY) != null) {
                     b.queryParam(Constants.KEY, authenticationSession.getAuthNote(Constants.KEY));
+                } else {
+                    HttpRequest request = session.getContext().getHttpRequest();
+                    MultivaluedMap<String, String> queryParameters = request.getUri().getQueryParameters();
+
+                    if (queryParameters != null && queryParameters.getFirst(Constants.TOKEN) != null) {
+                        // changing locale should forward the action token
+                        b.queryParam(Constants.TOKEN, queryParameters.getFirst(Constants.TOKEN));
+                    }
                 }
 
                 final var localeBean = new LocaleBean(realm, locale, b, messagesBundle);
@@ -588,6 +605,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             if (!attributes.containsKey("templateName")) {
                 attributes.put("templateName", templateName);
             }
+
+            attributes.put("pageId", templateName.substring(0, templateName.length() - 4));
+
             String result = freeMarker.processTemplate(attributes, templateName, theme);
             Response.ResponseBuilder builder = Response.status(status == null ? Response.Status.OK : status).type(MediaType.TEXT_HTML_UTF_8_TYPE).language(locale).entity(result);
             for (Map.Entry<String, String> entry : httpResponseHeaders.entrySet()) {

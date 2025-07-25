@@ -42,8 +42,10 @@ import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions;
 import org.keycloak.testsuite.webauthn.authenticators.UseVirtualAuthenticators;
 import org.keycloak.testsuite.webauthn.authenticators.VirtualAuthenticatorManager;
+import org.keycloak.testsuite.webauthn.pages.WebAuthnErrorPage;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnLoginPage;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnRegisterPage;
+import org.openqa.selenium.Dimension;
 import org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions;
 
 import jakarta.ws.rs.ClientErrorException;
@@ -52,6 +54,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.REQUIRED;
+import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.util.BrowserDriverUtil.isDriverFirefox;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
@@ -62,6 +65,9 @@ public abstract class AbstractWebAuthnAccountTest extends AbstractAuthTest imple
 
     @Page
     protected WebAuthnRegisterPage webAuthnRegisterPage;
+
+    @Page
+    protected WebAuthnErrorPage webAuthnErrorPage;
 
     @Page
     protected WebAuthnLoginPage webAuthnLoginPage;
@@ -92,9 +98,13 @@ public abstract class AbstractWebAuthnAccountTest extends AbstractAuthTest imple
         }
     }
 
+    public VirtualAuthenticatorManager getVirtualAuthManager() {
+        return webAuthnManager;
+    }
+
     @Before
     public void navigateBeforeTest() {
-        driver.manage().window().maximize();
+        driver.manage().window().setSize(new Dimension(1920, 1080));
 
         RealmRepresentation realm = testRealmResource().toRepresentation();
         assertThat(realm, notNullValue());
@@ -104,7 +114,9 @@ public abstract class AbstractWebAuthnAccountTest extends AbstractAuthTest imple
         webAuthnCredentialType = signingInPage.getCredentialType(WebAuthnCredentialModel.TYPE_TWOFACTOR);
         webAuthnPwdlessCredentialType = signingInPage.getCredentialType(WebAuthnCredentialModel.TYPE_PASSWORDLESS);
 
-        createTestUserWithAdminClient(false);
+        final String password = generatePassword();
+        setPasswordFor(testUser, password);
+        createTestUserWithAdminClient(false, password);
 
         signingInPage.navigateTo();
         waitForPageToLoad();

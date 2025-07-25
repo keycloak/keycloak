@@ -19,6 +19,7 @@ package org.keycloak.testsuite.util;
 import org.jboss.arquillian.graphene.wait.ElementBuilder;
 import org.keycloak.executors.ExecutorsProvider;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
+import org.keycloak.testsuite.pages.AbstractPage;
 import org.openqa.selenium.By;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
@@ -91,6 +92,12 @@ public final class WaitUtils {
         );
     }
 
+    public static void waitUntilPageIsCurrent(AbstractPage page) {
+        WebDriver driver = getCurrentDriver();
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofMillis(PAGELOAD_TIMEOUT_MILLIS));
+        wait.until((WebDriver driver1) -> page.isCurrent());
+    }
+
     public static void pause(long millis) {
         if (millis > 0) {
             log.info("Wait: " + millis + "ms");
@@ -137,19 +144,19 @@ public final class WaitUtils {
             return; // not needed
         }
 
-        String currentUrl = null;
-
         // Ensure the URL is "stable", i.e. is not changing anymore; if it'd changing, some redirects are probably still in progress
         for (int maxRedirects = 4; maxRedirects > 0; maxRedirects--) {
-            currentUrl = driver.getCurrentUrl();
-            FluentWait<WebDriver> wait = new FluentWait<>(driver).withTimeout(Duration.ofMillis(250));
             try {
+                String currentUrl = driver.getCurrentUrl();
+                FluentWait<WebDriver> wait = new FluentWait<>(driver).withTimeout(Duration.ofMillis(250));
                 wait.until(not(urlToBe(currentUrl)));
-            }
-            catch (TimeoutException e) {
+            } catch (TimeoutException e) {
                 if (driver.getPageSource() != null) {
                     break; // URL has not changed recently - ok, the URL is stable and page is current
                 }
+            } catch (Exception e) {
+                log.warnf("Unknown exception thrown waiting stabilization of the URL: %s", e.getMessage());
+                pause(250);
             }
             if (maxRedirects == 1) {
                 log.warn("URL seems unstable! (Some redirect are probably still in progress)");

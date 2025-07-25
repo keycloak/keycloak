@@ -22,8 +22,6 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.DryRun;
@@ -34,6 +32,7 @@ import org.keycloak.it.utils.RawKeycloakDistribution;
 import java.io.File;
 import java.nio.file.Paths;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DistributionTest
@@ -47,6 +46,9 @@ public class StartDevCommandDistTest {
     @Launch({ "start-dev" })
     void testDevModeWarning(CLIResult cliResult) {
         cliResult.assertStartedDevMode();
+        String out = cliResult.getOutput().toUpperCase();
+        assertFalse(out.contains("WARN"));
+        assertFalse(out.contains("ERROR"));
     }
 
     @DryRun
@@ -62,6 +64,8 @@ public class StartDevCommandDistTest {
         cliResult.assertMessageWasShownExactlyNumberOfTimes("Listening for transport dt_socket at address:", 2);
         cliResult.assertStartedDevMode();
         cliResult.assertMessage("passkeys");
+        // ensure consistency with build-time properties
+        cliResult.assertNoMessage("Build time property cannot");
     }
 
     @DryRun
@@ -80,13 +84,15 @@ public class StartDevCommandDistTest {
     }
 
     @Test
-    @DisabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "A drive letter in URI can cause a problem.")
     void testConfigKeystoreAbsolutePath(KeycloakDistribution dist) {
         CLIResult cliResult = dist.run("start-dev", "--config-keystore=" + Paths.get("src/test/resources/keystore").toAbsolutePath().normalize(),
                 "--config-keystore-password=secret");
 
-        cliResult.assertMessage("DEBUG [org.hibernate");
-        cliResult.assertMessage("DEBUG [org.keycloak");
+        // keytool -importpass -alias kc.log-level -keystore keystore -storepass secret -storetype PKCS12 -v (with "org.keycloak.timer:debug" as the stored password)
+        cliResult.assertNoMessage("DEBUG [org.keycloak.services");
+        cliResult.assertMessage("DEBUG [org.keycloak.timer");
+        cliResult.assertNoMessage("DEBUG [org.hibernate");
+
         cliResult.assertMessage("Listening on:");
         cliResult.assertStartedDevMode();
     }

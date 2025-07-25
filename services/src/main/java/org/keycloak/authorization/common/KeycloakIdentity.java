@@ -306,8 +306,14 @@ public class KeycloakIdentity implements Identity {
             return TokenManager.lookupUserFromStatelessToken(keycloakSession, realm, accessToken);
         }
 
+        // Avoid further loookup if verified userSession already set in the context
+        UserSessionModel userSession = keycloakSession.getContext().getUserSession();
+        if (userSession != null && accessToken.getSessionState().equals(userSession.getId())) {
+            return userSession.getUser();
+        }
+
         UserSessionProvider sessions = keycloakSession.sessions();
-        UserSessionModel userSession = sessions.getUserSession(realm, accessToken.getSessionState());
+        userSession = sessions.getUserSession(realm, accessToken.getSessionState());
 
         if (userSession == null) {
             userSession = sessions.getOfflineUserSession(realm, accessToken.getSessionState());

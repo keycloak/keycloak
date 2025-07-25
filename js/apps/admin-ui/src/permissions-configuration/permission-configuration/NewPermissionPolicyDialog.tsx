@@ -36,14 +36,15 @@ import { Role } from "../../clients/authorization/policy/Role";
 import { Time } from "../../clients/authorization/policy/Time";
 import { JavaScript } from "../../clients/authorization/policy/JavaScript";
 import { LogicSelector } from "../../clients/authorization/policy/LogicSelector";
-import { Aggregate } from "./permission-policy/Aggregate";
+import { Aggregate } from "../../clients/authorization/policy/Aggregate";
 import { capitalize } from "lodash-es";
-import { type JSX } from "react";
+import { useEffect, type JSX } from "react";
 
 type Policy = Omit<PolicyRepresentation, "roles"> & {
   groups?: GroupValue[];
   clientScopes?: RequiredIdValue[];
   roles?: RequiredIdValue[];
+  clients?: [];
 };
 
 type ComponentsProps = {
@@ -54,10 +55,10 @@ type ComponentsProps = {
 const defaultValues: Policy = {
   name: "",
   description: "",
-  type: "aggregate",
+  type: "group",
   policies: [],
-  decisionStrategy: "UNANIMOUS" as DecisionStrategy,
-  logic: "POSITIVE" as Logic,
+  decisionStrategy: DecisionStrategy.UNANIMOUS,
+  logic: Logic.POSITIVE,
 };
 
 const COMPONENTS: {
@@ -75,7 +76,7 @@ const COMPONENTS: {
   role: Role,
   time: Time,
   js: JavaScript,
-  default: Aggregate,
+  default: Group,
 } as const;
 
 export const isValidComponentType = (value: string) => value in COMPONENTS;
@@ -86,6 +87,7 @@ type NewPermissionConfigurationDialogProps = {
   policies: PolicyRepresentation[];
   resourceType: string;
   toggleDialog: () => void;
+  onAssign: (newPolicy: PolicyRepresentation) => void;
 };
 
 export const NewPermissionPolicyDialog = ({
@@ -93,6 +95,7 @@ export const NewPermissionPolicyDialog = ({
   providers,
   policies,
   toggleDialog,
+  onAssign,
 }: NewPermissionConfigurationDialogProps) => {
   const { adminClient } = useAdminClient();
   const { realmRepresentation } = useRealm();
@@ -102,7 +105,7 @@ export const NewPermissionPolicyDialog = ({
     defaultValues,
   });
   const { addAlert, addError } = useAlerts();
-  const { handleSubmit } = form;
+  const { handleSubmit, reset } = form;
   const isPermissionClient = realmRepresentation?.adminPermissionsEnabled;
 
   const policyTypeSelector = useWatch({
@@ -111,29 +114,52 @@ export const NewPermissionPolicyDialog = ({
   });
 
   function getComponentType() {
-    if (isValidComponentType(policyTypeSelector!)) {
-      return COMPONENTS[policyTypeSelector!];
+    if (policyTypeSelector && isValidComponentType(policyTypeSelector)) {
+      return COMPONENTS[policyTypeSelector];
     }
     return COMPONENTS["default"];
   }
 
   const ComponentType = getComponentType();
 
+  useEffect(() => {
+    if (policyTypeSelector) {
+      const { name, description, decisionStrategy, logic } = form.getValues();
+
+      reset({
+        type: policyTypeSelector,
+        name,
+        description,
+        decisionStrategy,
+        logic,
+      });
+    }
+  }, [policyTypeSelector, reset, form]);
+
   const save = async (policy: Policy) => {
-    // remove entries that only have the boolean set and no id
-    policy.groups = policy.groups?.filter((g) => g.id);
-    policy.clientScopes = policy.clientScopes?.filter((c) => c.id);
-    policy.roles = policy.roles
-      ?.filter((r) => r.id)
-      .map((r) => ({ ...r, required: r.required || false }));
+    const { groups, roles, policies, clients, ...rest } = policy;
+
+    const cleanedPolicy = {
+      ...rest,
+      ...(groups && groups.length > 0 && { groups }),
+      ...(roles && roles.length > 0 && { roles }),
+      ...(policies && policies.length > 0 && { policies }),
+      ...(clients && clients.length > 0 && { clients }),
+      ...(rest.type === "group" &&
+        (!groups || groups.length === 0) && { groups: [] }),
+      ...(rest.type === "client" &&
+        (!clients || clients.length === 0) && { clients: [] }),
+    };
 
     try {
-      await adminClient.clients.createPolicy(
+      const createdPolicy = await adminClient.clients.createPolicy(
         { id: permissionClientId, type: policyTypeSelector! },
-        policy,
+        cleanedPolicy,
       );
+
+      onAssign(createdPolicy);
       toggleDialog();
-      addAlert(t("create" + "PolicySuccess"), AlertVariant.success);
+      addAlert(t("createPolicySuccess"), AlertVariant.success);
     } catch (error) {
       addError("policySaveError", error);
     }
@@ -141,17 +167,24 @@ export const NewPermissionPolicyDialog = ({
 
   return (
     <Modal
-      aria-label={t("createAPolicy")}
+      aria-label={t("createPermissionPolicy")}
       variant={ModalVariant.medium}
       header={
         <TextContent>
-          <Text component={TextVariants.h1}>{t("createAPolicy")}</Text>
+          <Text component={TextVariants.h1}>{t("createPermissionPolicy")}</Text>
         </TextContent>
       }
       isOpen
       onClose={toggleDialog}
     >
-      <Form id="createAPolicy-form" onSubmit={handleSubmit(save)} isHorizontal>
+      <Form
+        id="createPermissionPolicy-form"
+        onSubmit={async (e) => {
+          e.stopPropagation();
+          await handleSubmit(save)(e);
+        }}
+        isHorizontal
+      >
         <FormProvider {...form}>
           <TextControl
             name="name"

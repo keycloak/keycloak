@@ -41,7 +41,10 @@ export const LdapSettingsSearching = ({
           controller={{
             defaultValue: "",
             rules: {
-              required: t("validateEditMode"),
+              required: {
+                value: true,
+                message: t("validateEditMode"),
+              },
             },
           }}
           options={["", "READ_ONLY", "WRITABLE", "UNSYNCED"]}
@@ -53,6 +56,11 @@ export const LdapSettingsSearching = ({
           rules={{
             required: t("validateUsersDn"),
           }}
+        />
+        <TextControl
+          name="config.relativeCreateDn.0"
+          label={t("relativeUserCreateDn")}
+          labelIcon={t("relativeUserCreateDnHelp")}
         />
         <TextControl
           name="config.usernameLDAPAttribute.0"

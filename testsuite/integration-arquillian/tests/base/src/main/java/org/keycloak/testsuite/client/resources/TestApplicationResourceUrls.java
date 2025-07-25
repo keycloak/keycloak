@@ -17,7 +17,7 @@
 
 package org.keycloak.testsuite.client.resources;
 
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import jakarta.ws.rs.core.UriBuilder;
 

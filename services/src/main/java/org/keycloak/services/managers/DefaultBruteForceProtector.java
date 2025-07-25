@@ -213,7 +213,7 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
             if (success) {
                 success(s, realm, user.getId());
             } else {
-                failure(s, realm, user.getId(), clientConnection.getRemoteAddr(), Time.currentTimeMillis());
+                failure(s, realm, user.getId(), clientConnection.getRemoteHost(), Time.currentTimeMillis());
             }
         }));
     }
@@ -250,8 +250,12 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
 
     @Override
     public void cleanUpPermanentLockout(KeycloakSession session, RealmModel realm, UserModel user) {
-        if (DISABLED_BY_PERMANENT_LOCKOUT.equals(user.getFirstAttribute(DISABLED_REASON))) {
+        if (DISABLED_BY_PERMANENT_LOCKOUT.equals(user.getFirstAttribute(DISABLED_REASON)) || isPermanentlyLockedOut(session, realm, user)) {
             user.removeAttribute(DISABLED_REASON);
+
+            if (!isTemporarilyDisabled(session, realm, user)) {
+                session.loginFailures().removeUserLoginFailure(realm, user.getId());
+            }
         }
     }
 
@@ -294,6 +298,11 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
         @Override
         public UriInfo getUri() {
             return uriInfo;
+        }
+
+        @Override
+        public boolean isProxyTrusted() {
+            return true;
         }
     }
 

@@ -24,7 +24,7 @@ import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.TraceFlags;
 import io.opentelemetry.sdk.trace.ReadableSpan;
 import io.opentelemetry.sdk.trace.data.StatusData;
-import io.opentelemetry.sdk.trace.internal.data.ExceptionEventData;
+import io.opentelemetry.sdk.trace.data.ExceptionEventData;
 import io.opentelemetry.semconv.ExceptionAttributes;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.test.api.ArquillianResource;
@@ -43,7 +43,6 @@ import java.io.Serializable;
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -110,8 +109,9 @@ public class OTelTracingProviderTest extends AbstractTestRealmKeycloakTest {
 
             assertThat(current instanceof ReadableSpan, is(true));
             ReadableSpan readableSpan = (ReadableSpan) current;
-            assertThat(readableSpan.getAttribute(AttributeKey.stringKey("server.address")), is("localhost"));
-            assertThat(readableSpan.getAttribute(AttributeKey.stringKey("url.path")), containsString("run-on-server"));
+            assertThat(readableSpan.getAttribute(AttributeKey.stringKey("code.function")), is("runOnServer"));
+            assertThat(readableSpan.getAttribute(AttributeKey.stringKey("code.namespace")), is("org.keycloak.testsuite.rest.TestingResourceProvider"));
+            assertThat(readableSpan.getName(), is("TestingResourceProvider.runOnServer"));
         });
     }
 

@@ -34,15 +34,15 @@ import { KeycloakProvider } from "@keycloak/keycloak-ui-shared";
       realm: "master",
       clientId: "security-admin-console"
   }}>
-  {/* rest of you application */}
+  {/* rest of your application */}
 </KeycloakProvider>
 ----
 
 === Translating the pages
 
 The pages are translated using the `i18next` library.
-You can set it up as described on their [website](https://react.i18next.com/).
-If you want to use the translations that are provided then you need to add i18next-http-backend to your project and add:
+You can set it up as described on their https://react.i18next.com/[website].
+If you want to use the translations that are provided then you need to add `i18next-fetch-backend` to your project and add:
 
 [source,javascript]
 ----
@@ -51,9 +51,9 @@ backend: {
   parse: (data: string) => {
     const messages = JSON.parse(data);
 
-    const result: Record<string, string> = {};
-    messages.forEach((v) => (result[v.key] = v.value)); //need to convert to record
-    return result;
+    return Object.fromEntries(
+      messages.map(({ key, value }) => [key, value])
+    );
   },
 },
 ----
@@ -61,5 +61,5 @@ backend: {
 === Using the pages
 
 All "pages" are React components that can be used in your application.
-To see what components are available, see the [source](https://github.com/keycloak/keycloak/blob/main/js/apps/account-ui/src/index.ts).
-Or have a look at the [quick start](https://github.com/keycloak/keycloak-quickstarts/tree/main/extension/extend-account-console-node) to see how to use them.
+To see what components are available, see the https://github.com/keycloak/keycloak/blob/main/js/apps/account-ui/src/index.ts[source].
+Or have a look at the https://github.com/keycloak/keycloak-quickstarts/tree/main/extension/extend-account-console-node[quick start] to see how to use them.

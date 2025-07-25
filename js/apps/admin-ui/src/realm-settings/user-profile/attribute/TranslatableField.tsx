@@ -1,4 +1,5 @@
 import KeycloakAdminClient from "@keycloak/keycloak-admin-client";
+import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { FormErrorText } from "@keycloak/keycloak-ui-shared";
 import {
   Alert,
@@ -9,6 +10,7 @@ import {
   TextInput,
 } from "@patternfly/react-core";
 import { GlobeRouteIcon } from "@patternfly/react-icons";
+import { TFunction } from "i18next";
 import { useEffect } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { Trans, useTranslation } from "react-i18next";
@@ -65,12 +67,26 @@ type TranslatableFieldProps = {
   attributeName: string;
   prefix: string;
   fieldName: string;
+  predefinedAttributes?: string[];
 };
+
+function hasTranslation(value: string, t: TFunction) {
+  return t(value) === value && value !== "";
+}
+
+function isTranslationRequired(
+  value: string,
+  t: TFunction,
+  realm?: RealmRepresentation,
+) {
+  return realm?.internationalizationEnabled && hasTranslation(value, t);
+}
 
 export const TranslatableField = ({
   attributeName,
   prefix,
   fieldName,
+  predefinedAttributes,
 }: TranslatableFieldProps) => {
   const { t } = useTranslation();
   const { realmRepresentation: realm } = useRealm();
@@ -84,16 +100,17 @@ export const TranslatableField = ({
   const requiredTranslationName = `${translationPrefix}.0.value`;
 
   useEffect(() => {
-    if (realm?.internationalizationEnabled) {
-      if (t(value) === value && value !== "") {
-        setValue(fieldName, `\${${prefix}.${value}}`);
-      }
+    if (predefinedAttributes?.includes(value)) {
+      return;
+    }
+    if (realm?.internationalizationEnabled && value) {
+      setValue(fieldName, `\${${prefix}.${value}}`);
     }
   }, [value]);
 
   return (
     <>
-      {realm?.internationalizationEnabled && (
+      {isTranslationRequired(value, t, realm) && (
         <input
           type="hidden"
           data-testid="requiredTranslationName"
@@ -105,6 +122,7 @@ export const TranslatableField = ({
           orgKey={value}
           translationKey={`${prefix}.${value}`}
           fieldName={fieldName}
+          predefinedAttributes={predefinedAttributes}
           toggleDialog={toggle}
         />
       )}
@@ -139,7 +157,7 @@ export const TranslatableField = ({
             title={
               <Trans
                 i18nKey="addTranslationsModalSubTitle"
-                values={{ fieldName }}
+                values={{ fieldName: t(fieldName) }}
               >
                 You are able to translate the fieldName based on your locale or
                 <strong>location</strong>

@@ -24,9 +24,9 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
+import jakarta.ws.rs.core.Response;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.junit.Test;
@@ -35,14 +35,16 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.organization.authentication.authenticators.browser.OrganizationAuthenticatorFactory;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.OrganizationRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.FlowUtil;
+import org.keycloak.testsuite.util.UserBuilder;
 
 public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
@@ -130,9 +132,8 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
         try {
             setTimeOffset(10);
-            oauth.maxAge("1");
-            oauth.kcAction(RequiredAction.UPDATE_PASSWORD.name());
-            loginPage.open(bc.consumerRealmName());
+            oauth.realm(bc.consumerRealmName());
+            oauth.loginForm().maxAge(1).kcAction(RequiredAction.UPDATE_PASSWORD.name()).open();
             loginPage.assertCurrent();
             Matcher<String> expectedInfo = is("Please re-authenticate to continue");
             assertThat(loginPage.getInfoMessage(), expectedInfo);
@@ -141,8 +142,6 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
             appPage.assertCurrent();
         } finally {
             resetTimeOffset();
-            oauth.kcAction(null);
-            oauth.maxAge(null);
         }
     }
 
@@ -205,10 +204,64 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         oauth.clientId("broker-app");
         String expectedUsername = URLEncoder.encode(member.getEmail(), StandardCharsets.UTF_8);
         oauth.realm(bc.consumerRealmName());
-        driver.navigate().to(oauth.getLoginFormUrl() + "&" + OIDCLoginProtocol.LOGIN_HINT_PARAM + "=" + expectedUsername);
-        assertThat(loginPage.getUsername(), Matchers.equalTo(URLDecoder.decode(expectedUsername, StandardCharsets.UTF_8)));
+        oauth.loginForm().loginHint(expectedUsername).open();
+        assertThat(loginPage.getAttemptedUsername(), Matchers.equalTo(URLDecoder.decode(expectedUsername, StandardCharsets.UTF_8)));
 
         // continue authenticating without setting the username
+        loginPage.login(memberPassword);
+        appPage.assertCurrent();
+    }
+
+    @Test
+    public void testDuplicateEmailsEnabled() {
+        RealmRepresentation realm = testRealm().toRepresentation();
+
+        realm.setDuplicateEmailsAllowed(true);
+        realm.setLoginWithEmailAllowed(false);
+        realm.setRegistrationEmailAsUsername(false);
+
+        testRealm().update(realm);
+
+        OrganizationRepresentation organization = createOrganization();
+        OrganizationResource organizationResource = testRealm().organizations().get(organization.getId());
+        UserRepresentation member = addMember(organizationResource);
+        UserRepresentation duplicatedUser = UserBuilder.create()
+                .username("duplicated-user")
+                .password("duplicated-user")
+                .email(member.getEmail())
+                .enabled(true).build();
+        try (Response response = testRealm().users().create(duplicatedUser)) {
+            duplicatedUser.setId(ApiUtil.getCreatedId(response));
+        }
+
+        // user with a unique username can authenticate to his account using a unique username
+        oauth.clientId("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.loginForm().open();
+        loginPage.loginUsername(member.getUsername());
+        loginPage.clickSignIn();
+        loginPage.login(memberPassword);
+        appPage.assertCurrent();
+        testRealm().users().get(member.getId()).logout();
+
+        // a different account with the same email can also authenticate using a unique username
+        oauth.loginForm().open();
+        loginPage.loginUsername(duplicatedUser.getUsername());
+        loginPage.clickSignIn();
+        loginPage.login(duplicatedUser.getUsername());
+        appPage.assertCurrent();
+        testRealm().users().get(duplicatedUser.getId()).logout();
+
+        // trying to authenticate with the duplicated user using the email will fail because the username is the email of a different account
+        oauth.loginForm().open();
+        loginPage.loginUsername(duplicatedUser.getEmail());
+        loginPage.clickSignIn();
+        loginPage.login(duplicatedUser.getEmail());
+        assertThat(loginPage.getInputError(), is("Invalid password."));
+
+        // trying to authenticate to the account that has the email as username is ok
+        oauth.loginForm().open();
+        loginPage.loginUsername(member.getEmail());
         loginPage.clickSignIn();
         loginPage.login(memberPassword);
         appPage.assertCurrent();

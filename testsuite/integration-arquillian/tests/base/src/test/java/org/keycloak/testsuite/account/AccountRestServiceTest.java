@@ -35,7 +35,6 @@ import org.keycloak.authentication.requiredactions.DeleteCredentialAction;
 import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.broker.provider.util.SimpleHttp;
-import org.keycloak.common.Profile;
 import org.keycloak.common.enums.AccountRestApiVersion;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.credential.CredentialTypeMetadata;
@@ -44,6 +43,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
@@ -73,12 +73,11 @@ import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.admin.authentication.AbstractAuthenticationTest;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
-import org.keycloak.testsuite.forms.VerifyProfileTest;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.keycloak.userprofile.UserProfileContext;
 
 import jakarta.ws.rs.ClientErrorException;
@@ -103,7 +102,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_ALL;
+import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.PERMISSIONS_ALL;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -912,7 +911,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
         // Disable parent subflow - that should treat OTP execution as disabled too
         AuthenticationExecutionModel.Requirement currentBrowserReq = setExecutionRequirement(DefaultAuthenticationFlows.BROWSER_FLOW,
-                "Browser - Conditional OTP", AuthenticationExecutionModel.Requirement.DISABLED);
+                "Browser - Conditional 2FA", AuthenticationExecutionModel.Requirement.DISABLED);
 
         // Disable OTP directly in first-broker-login and direct-grant
         AuthenticationExecutionModel.Requirement currentFBLReq = setExecutionRequirement(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW,
@@ -928,14 +927,14 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
             // Enable browser subflow. OTP should be available then
             setExecutionRequirement(DefaultAuthenticationFlows.BROWSER_FLOW,
-                    "Browser - Conditional OTP", currentBrowserReq);
+                    "Browser - Conditional 2FA", currentBrowserReq);
             credentials = getCredentials();
             Assert.assertEquals(2, credentials.size());
             Assert.assertEquals(OTPCredentialModel.TYPE, credentials.get(1).getType());
 
             // Disable browser subflow and enable FirstBrokerLogin. OTP should be available then
             setExecutionRequirement(DefaultAuthenticationFlows.BROWSER_FLOW,
-                    "Browser - Conditional OTP", AuthenticationExecutionModel.Requirement.DISABLED);
+                    "Browser - Conditional 2FA", AuthenticationExecutionModel.Requirement.DISABLED);
             setExecutionRequirement(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW,
                     "OTP Form", currentFBLReq);
             credentials = getCredentials();
@@ -944,7 +943,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         } finally {
             // Revert flows
             setExecutionRequirement(DefaultAuthenticationFlows.BROWSER_FLOW,
-                    "Browser - Conditional OTP", currentBrowserReq);
+                    "Browser - Conditional 2FA", currentBrowserReq);
             setExecutionRequirement(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW,
                     "Direct Grant - Conditional OTP", currentDirectGrantReq);
         }
@@ -1140,8 +1139,8 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
     @Test
     public void listApplications() throws Exception {
-        oauth.clientId("in-use-client");
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("secret1", "view-applications-access", "password");
+        oauth.client("in-use-client", "secret1");
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("view-applications-access", "password");
         assertNull(tokenResponse.getErrorDescription());
 
         TokenUtil token = new TokenUtil("view-applications-access", "password");
@@ -1163,8 +1162,8 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
     @Test
     public void listApplicationsFiltered() throws Exception {
-        oauth.clientId("in-use-client");
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("secret1", "view-applications-access", "password");
+        oauth.client("in-use-client", "secret1");
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("view-applications-access", "password");
         assertNull(tokenResponse.getErrorDescription());
 
         TokenUtil token = new TokenUtil("view-applications-access", "password");
@@ -1186,12 +1185,12 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     @Test
     public void listApplicationsOfflineAccess() throws Exception {
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
-        oauth.clientId("offline-client");
-        OAuthClient.AccessTokenResponse offlineTokenResponse = oauth.doGrantAccessTokenRequest("secret1", "view-applications-access", "password");
+        oauth.client("offline-client", "secret1");
+        AccessTokenResponse offlineTokenResponse = oauth.doPasswordGrantRequest("view-applications-access", "password");
         assertNull(offlineTokenResponse.getErrorDescription());
 
-        oauth.clientId("offline-client-without-base-url");
-        offlineTokenResponse = oauth.doGrantAccessTokenRequest("secret1", "view-applications-access", "password");
+        oauth.client("offline-client-without-base-url", "secret1");
+        offlineTokenResponse = oauth.doPasswordGrantRequest("view-applications-access", "password");
         assertNull(offlineTokenResponse.getErrorDescription());
 
         TokenUtil token = new TokenUtil("view-applications-access", "password");
@@ -1273,7 +1272,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     @Test
     public void listApplicationsWithRootUrl() throws Exception {
         oauth.clientId("root-url-client");
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "view-applications-access", "password");
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("view-applications-access", "password");
         assertNull(tokenResponse.getErrorDescription());
 
         TokenUtil token = new TokenUtil("view-applications-access", "password");
@@ -1712,8 +1711,8 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     @Test
     public void revokeOfflineAccess() throws Exception {
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
-        oauth.clientId("offline-client");
-        OAuthClient.AccessTokenResponse offlineTokenResponse = oauth.doGrantAccessTokenRequest("secret1", "view-applications-access", "password");
+        oauth.client("offline-client", "secret1");
+        AccessTokenResponse offlineTokenResponse = oauth.doPasswordGrantRequest("view-applications-access", "password");
         assertNull(offlineTokenResponse.getErrorDescription());
 
         tokenUtil = new TokenUtil("view-applications-access", "password");
@@ -1760,7 +1759,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     @Test
     public void testAudience() throws Exception {
         oauth.clientId("custom-audience");
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
         assertNull(tokenResponse.getErrorDescription());
 
         SimpleHttp.Response response = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient)
@@ -1776,7 +1775,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         mapperRep.getConfig().put("included.custom.audience", "account");
         testRealm().clients().get(clientRep.getId()).getProtocolMappers().update(mapperRep.getId(), mapperRep);
 
-        tokenResponse = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
         assertNull(tokenResponse.getErrorDescription());
 
         response = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient)
@@ -1788,7 +1787,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         // remove audience completely
         testRealm().clients().get(clientRep.getId()).getProtocolMappers().delete(mapperRep.getId());
 
-        tokenResponse = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
         assertNull(tokenResponse.getErrorDescription());
 
         response = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient)
@@ -1836,12 +1835,13 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
        assertThat(error.getError(), containsString("Invalid json representation for UserRepresentation. Unrecognized field \"invalid\" at line"));
     }
 
-    @EnableFeature(Profile.Feature.UPDATE_EMAIL)
+    @Test
     public void testEmailWhenUpdateEmailEnabled() throws Exception {
         reconnectAdminClient();
         RealmRepresentation realm = testRealm().toRepresentation();
         Boolean registrationEmailAsUsername = realm.isRegistrationEmailAsUsername();
         Boolean editUsernameAllowed = realm.isEditUsernameAllowed();
+        ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
 
         try {
             realm.setRegistrationEmailAsUsername(true);
@@ -1858,6 +1858,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             assertNotNull(user.getEmail());
             assertUserProfileAttributeMetadata(user, "email", "${email}", true, true);
         } finally {
+            ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, false);
             realm.setRegistrationEmailAsUsername(registrationEmailAsUsername);
             realm.setEditUsernameAllowed(editUsernameAllowed);
             testRealm().update(realm);
@@ -1865,6 +1866,6 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     }
 
     protected void setUserProfileConfiguration(String configuration) {
-        VerifyProfileTest.setUserProfileConfiguration(testRealm(), configuration);
+        UserProfileUtil.setUserProfileConfiguration(testRealm(), configuration);
     }
 }

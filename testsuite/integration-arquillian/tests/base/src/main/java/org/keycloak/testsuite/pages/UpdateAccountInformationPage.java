@@ -97,7 +97,7 @@ public class UpdateAccountInformationPage extends LanguageComboboxAwarePage {
 
     @Override
     public boolean isCurrent() {
-        return PageUtils.getPageTitle(driver).equalsIgnoreCase("update account information");
+        return PageUtils.getPageTitle(driver) != null && PageUtils.getPageTitle(driver).equalsIgnoreCase("update account information");
     }
 
     public String getLabelForField(String fieldId) {
@@ -112,8 +112,4 @@ public class UpdateAccountInformationPage extends LanguageComboboxAwarePage {
         }
     }
 
-    @Override
-    public void open() throws Exception {
-
-    }
 }

@@ -1,6 +1,7 @@
 package org.keycloak.testframework.server;
 
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -39,6 +40,10 @@ public class KeycloakUrls {
         return toUrl(getAdmin());
     }
 
+    public KeycloakUriBuilder getBaseBuilder() {
+        return toBuilder(getBase());
+    }
+
     public KeycloakUriBuilder getAdminBuilder() {
         return toBuilder(getAdmin());
     }
@@ -59,4 +64,7 @@ public class KeycloakUrls {
         return KeycloakUriBuilder.fromUri(url);
     }
 
+    public String getToken(String realm) {
+        return baseUrl + "/realms/" + realm + "/protocol/" + OIDCLoginProtocol.LOGIN_PROTOCOL + "/token";
+    }
 }

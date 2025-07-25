@@ -35,6 +35,9 @@ import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
+import org.keycloak.quarkus.runtime.cli.command.BootstrapAdmin;
+import org.keycloak.quarkus.runtime.cli.command.BootstrapAdminService;
+import org.keycloak.quarkus.runtime.cli.command.BootstrapAdminUser;
 import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.cli.command.Export;
 import org.keycloak.quarkus.runtime.cli.command.Import;
@@ -137,6 +140,24 @@ public class HelpCommandDistTest {
     }
 
     @Test
+    @Launch({ BootstrapAdmin.NAME, "--help" })
+    void testBootstrapAdmin(CLIResult cliResult) {
+        assertHelp(cliResult);
+    }
+
+    @Test
+    @Launch({ BootstrapAdmin.NAME, BootstrapAdminUser.NAME, "--help" })
+    void testBootstrapAdminUser(CLIResult cliResult) {
+        assertHelp(cliResult);
+    }
+
+    @Test
+    @Launch({ BootstrapAdmin.NAME, BootstrapAdminService.NAME, "--help" })
+    void testBootstrapAdminService(CLIResult cliResult) {
+        assertHelp(cliResult);
+    }
+
+    @Test
     @Launch({ UpdateCompatibility.NAME, "--help" })
     void testUpdateCompatibilityHelp(CLIResult cliResult) {
         assertHelp(cliResult);
@@ -190,7 +211,7 @@ public class HelpCommandDistTest {
         // normalize the output to prevent changes around the feature toggles or events to mark the output to differ
         String output = cliResult.getOutput()
                 .replaceAll("((Disables|Enables) a set of one or more features. Possible values are: )[^.]{30,}", "$1<...>")
-                .replaceAll("(create a metric. Possible values are:)[^.]{30,}.(Available|only|when|user|event|metrics|are|enabled.| )*", "$1<...>");
+                .replaceAll("(create a metric.\\s+Possible values are:)[^.]{30,}.(Available|only|when|user|event|metrics|are|enabled.| )*", "$1<...>");
 
         String osName = System.getProperty("os.name");
         if(osName.toLowerCase(Locale.ROOT).contains("windows")) {
@@ -204,7 +225,7 @@ public class HelpCommandDistTest {
 
         try {
             Approvals.verify(output);
-        } catch (AssertionError cause) {
+        } catch (Error cause) {
             if ("true".equals(System.getenv(REPLACE_EXPECTED))) {
                 try {
                     FileUtils.write(Approvals.createApprovalNamer().getApprovedFile(".txt"), output,

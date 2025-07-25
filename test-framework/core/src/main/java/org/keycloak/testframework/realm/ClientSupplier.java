@@ -1,5 +1,6 @@
 package org.keycloak.testframework.realm;
 
+import jakarta.ws.rs.NotFoundException;
 import java.util.List;
 
 import jakarta.ws.rs.core.Response;
@@ -14,16 +15,6 @@ import org.keycloak.testframework.injection.SupplierHelpers;
 import org.keycloak.testframework.util.ApiUtil;
 
 public class ClientSupplier implements Supplier<ManagedClient, InjectClient> {
-
-    @Override
-    public Class<InjectClient> getAnnotationClass() {
-        return InjectClient.class;
-    }
-
-    @Override
-    public Class<ManagedClient> getValueType() {
-        return ManagedClient.class;
-    }
 
     @Override
     public ManagedClient getValue(InstanceContext<ManagedClient, InjectClient> instanceContext) {
@@ -69,7 +60,9 @@ public class ClientSupplier implements Supplier<ManagedClient, InjectClient> {
     @Override
     public void close(InstanceContext<ManagedClient, InjectClient> instanceContext) {
         if (instanceContext.getNote("managed", Boolean.class)) {
-            instanceContext.getValue().admin().remove();
+            try {
+                instanceContext.getValue().admin().remove();
+            } catch (NotFoundException ex) {}
         }
     }
 

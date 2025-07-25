@@ -44,7 +44,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.TestAppHelper;
 
 
@@ -64,7 +64,7 @@ public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTe
     public void spnegoNotAvailableTest() throws Exception {
         initHttpClient(false);
 
-        String kcLoginPageLocation = oauth.getLoginFormUrl();
+        String kcLoginPageLocation = oauth.loginForm().build();
 
         Response response = client.target(kcLoginPageLocation).request().get();
         Assert.assertEquals(401, response.getStatus());
@@ -189,7 +189,7 @@ public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTe
         response.close();
 
         // SPNEGO login
-        OAuthClient.AccessTokenResponse tokenResponse = assertSuccessfulSpnegoLogin("hnelson", "hnelson", "secret");
+        AccessTokenResponse tokenResponse = assertSuccessfulSpnegoLogin("hnelson", "hnelson", "secret");
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
 
         // Assert kerberos ticket in the accessToken can be re-used to authenticate against other 3rd party kerberos service (ApacheDS Server in this case)
@@ -200,13 +200,13 @@ public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTe
         Assert.assertEquals("Horatio Nelson", ldapResponse);
 
         // Assert kerberos ticket also in userinfo endpoint
-        UserInfo userInfo = oauth.doUserInfoRequest(tokenResponse.getAccessToken());
+        UserInfo userInfo = oauth.doUserInfoRequest(tokenResponse.getAccessToken()).getUserInfo();
         Assert.assertEquals(serializedGssCredential, userInfo.getOtherClaims().get(KerberosConstants.GSS_DELEGATION_CREDENTIAL));
         // Clear USER_INFO_REQUEST event
         events.poll();
 
         // Logout
-        oauth.openLogout();
+        oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).open();
         events.poll();
 
         // Remove protocolMapper
@@ -216,7 +216,7 @@ public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTe
         tokenResponse = assertSuccessfulSpnegoLogin("hnelson", "hnelson", "secret");
         token = oauth.verifyToken(tokenResponse.getAccessToken());
         Assert.assertFalse(token.getOtherClaims().containsKey(KerberosConstants.GSS_DELEGATION_CREDENTIAL));
-        userInfo = oauth.doUserInfoRequest(tokenResponse.getAccessToken());
+        userInfo = oauth.doUserInfoRequest(tokenResponse.getAccessToken()).getUserInfo();
         Assert.assertFalse(userInfo.getOtherClaims().containsKey(KerberosConstants.GSS_DELEGATION_CREDENTIAL));
 
         events.clear();

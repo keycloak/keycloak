@@ -44,19 +44,20 @@ public class Globals {
         CryptoIntegration.init(cl);
 
         System.setProperty(BaseAuthOptionsCmd.DEFAULT_CONFIG_PATH_STRING_KEY, defaultConfigFile);
-        CommandLine cli = createCommandLine(rootCommand, command);
+        CommandLine cli = createCommandLine(rootCommand, command, new PrintWriter(System.err, true));
         int exitCode = cli.execute(args);
         System.exit(exitCode);
     }
 
-    public static CommandLine createCommandLine(BaseGlobalOptionsCmd rootCommand, String command) {
+    public static CommandLine createCommandLine(BaseGlobalOptionsCmd rootCommand, String command, PrintWriter errorWriter) {
         CommandSpec spec = CommandSpec.forAnnotatedObject(rootCommand).name(command);
 
         CommandLine cmd = new CommandLine(spec);
-
+        cmd.setExpandAtFiles(false);
+        cmd.setPosixClusteredShortOptionsAllowed(false);
         cmd.setExecutionExceptionHandler(new ExecutionExceptionHandler());
         cmd.setParameterExceptionHandler(new ShortErrorMessageHandler());
-        cmd.setErr(new PrintWriter(System.err, true));
+        cmd.setErr(errorWriter);
 
         return cmd;
     }

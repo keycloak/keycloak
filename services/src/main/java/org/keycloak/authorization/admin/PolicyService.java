@@ -43,7 +43,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.jboss.resteasy.reactive.NoCache;
-import org.keycloak.authorization.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
@@ -67,8 +67,9 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.StringUtil;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -121,7 +122,7 @@ public class PolicyService {
     @APIResponse(responseCode = "201", description = "Created")
     public Response create(String payload) {
         if (auth != null) {
-            this.auth.realm().requireManageAuthorization();
+            this.auth.realm().requireManageAuthorization(resourceServer);
         }
 
         AbstractPolicyRepresentation representation = doCreateRepresentation(payload);
@@ -173,7 +174,7 @@ public class PolicyService {
     })
     public Response findByName(@QueryParam("name") String name, @QueryParam("fields") String fields) {
         if (auth != null) {
-            this.auth.realm().requireViewAuthorization();
+            this.auth.realm().requireViewAuthorization(resourceServer);
         }
 
         StoreFactory storeFactory = authorization.getStoreFactory();
@@ -204,6 +205,7 @@ public class PolicyService {
     public Response findAll(@QueryParam("policyId") String id,
                             @QueryParam("name") String name,
                             @QueryParam("type") String type,
+                            @QueryParam("resourceType") String resourceType,
                             @QueryParam("resource") String resource,
                             @QueryParam("scope") String scope,
                             @QueryParam("permission") Boolean permission,
@@ -212,7 +214,7 @@ public class PolicyService {
                             @QueryParam("first") Integer firstResult,
                             @QueryParam("max") Integer maxResult) {
         if (auth != null) {
-            this.auth.realm().requireViewAuthorization();
+            this.auth.realm().requireViewAuthorization(resourceServer);
         }
 
         Map<Policy.FilterOption, String[]> search = new EnumMap<>(Policy.FilterOption.class);
@@ -285,6 +287,10 @@ public class PolicyService {
             search.put(Policy.FilterOption.PERMISSION, new String[] {permission.toString()});
         }
 
+        if (StringUtil.isNotBlank(resourceType)) {
+            search.put(Policy.FilterOption.CONFIG, new String[] {"defaultResourceType", resourceType});
+        }
+
         return Response.ok(
                 doSearch(firstResult, maxResult, fields, search))
                 .build();
@@ -312,7 +318,7 @@ public class PolicyService {
     )
     public Response findPolicyProviders() {
         if (auth != null) {
-            this.auth.realm().requireViewAuthorization();
+            this.auth.realm().requireViewAuthorization(resourceServer);
         }
 
         return Response.ok(
@@ -334,7 +340,7 @@ public class PolicyService {
     @Path("evaluate")
     public PolicyEvaluationService getPolicyEvaluateResource() {
         if (auth != null) {
-            this.auth.realm().requireViewAuthorization();
+            this.auth.realm().requireViewAuthorization(resourceServer);
         }
 
         return new PolicyEvaluationService(this.resourceServer, this.authorization, this.auth);

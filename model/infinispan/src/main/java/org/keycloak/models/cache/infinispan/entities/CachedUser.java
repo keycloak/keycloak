@@ -20,6 +20,7 @@ package org.keycloak.models.cache.infinispan.entities;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -83,11 +84,11 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
         return eagerLoadedAttributes.getFirst(UserModel.USERNAME);
     }
 
-    public String getFirstAttribute(String name, Supplier<UserModel> userModel) {
+    public String getFirstAttribute(KeycloakSession session, String name, Supplier<UserModel> userModel) {
         if(eagerLoadedAttributes.containsKey(name))
             return eagerLoadedAttributes.getFirst(name);
         else
-            return this.lazyLoadedAttributes.get(userModel).getFirst(name);
+            return this.lazyLoadedAttributes.get(session, userModel).getFirst(name);
     }
 
     public Long getCreatedTimestamp() {
@@ -106,16 +107,16 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
         return enabled;
     }
 
-    public MultivaluedHashMap<String, String> getAttributes(Supplier<UserModel> userModel) {
-        return lazyLoadedAttributes.get(userModel);
+    public MultivaluedHashMap<String, String> getAttributes(KeycloakSession session, Supplier<UserModel> userModel) {
+        return lazyLoadedAttributes.get(session, userModel);
     }
 
-    public Set<String> getRequiredActions(Supplier<UserModel> userModel) {
-        return this.requiredActions.get(userModel);
+    public Set<String> getRequiredActions(KeycloakSession session, Supplier<UserModel> userModel) {
+        return this.requiredActions.get(session, userModel);
     }
 
-    public Set<String> getRoleMappings(Supplier<UserModel> userModel) {
-        return roleMappings.get(userModel);
+    public Set<String> getRoleMappings(KeycloakSession session, Supplier<UserModel> userModel) {
+        return roleMappings.get(session, userModel);
     }
 
     public String getFederationLink() {
@@ -126,17 +127,17 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
         return serviceAccountClientLink;
     }
 
-    public Set<String> getGroups(Supplier<UserModel> userModel) {
-        return groups.get(userModel);
+    public Set<String> getGroups(KeycloakSession session, Supplier<UserModel> userModel) {
+        return groups.get(session, userModel);
     }
 
     public int getNotBefore() {
         return notBefore;
     }
 
-    public List<CredentialModel> getStoredCredentials(Supplier<UserModel> userModel) {
+    public List<CredentialModel> getStoredCredentials(KeycloakSession session, Supplier<UserModel> userModel) {
         // clone the credential model before returning it, so that modifications don't pollute the cache
-        return storedCredentials.get(userModel).stream().map(CredentialModel::shallowClone).collect(Collectors.toList());
+        return storedCredentials.get(session, userModel).stream().map(CredentialModel::shallowClone).collect(Collectors.toList());
     }
 
 }

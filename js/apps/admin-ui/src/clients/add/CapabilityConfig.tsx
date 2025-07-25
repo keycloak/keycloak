@@ -1,16 +1,16 @@
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
+import { HelpItem, SelectControl } from "@keycloak/keycloak-ui-shared";
 import {
   Checkbox,
   FormGroup,
   Grid,
   GridItem,
   InputGroup,
-  Switch,
   InputGroupItem,
+  Switch,
 } from "@patternfly/react-core";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { FormAccess } from "../../components/form/FormAccess";
 import { convertAttributeNameToForm } from "../../util";
@@ -61,7 +61,7 @@ export const CapabilityConfig = ({
               render={({ field }) => (
                 <Switch
                   data-testid="authentication"
-                  id="kc-authentication-switch"
+                  id="kc-authentication"
                   label={t("on")}
                   labelOff={t("off")}
                   isChecked={!field.value}
@@ -73,6 +73,12 @@ export const CapabilityConfig = ({
                       setValue(
                         convertAttributeNameToForm<FormFields>(
                           "attributes.oidc.ciba.grant.enabled",
+                        ),
+                        false,
+                      );
+                      setValue(
+                        convertAttributeNameToForm<FormFields>(
+                          "attributes.standard.token.exchange.enabled",
                         ),
                         false,
                       );
@@ -152,7 +158,7 @@ export const CapabilityConfig = ({
               <GridItem lg={8} sm={6}>
                 <Controller
                   name="directAccessGrantsEnabled"
-                  defaultValue={true}
+                  defaultValue={false}
                   control={control}
                   render={({ field }) => (
                     <InputGroup>
@@ -234,6 +240,41 @@ export const CapabilityConfig = ({
                   )}
                 />
               </GridItem>
+              {isFeatureEnabled(Feature.StandardTokenExchangeV2) && (
+                <GridItem lg={8} sm={6}>
+                  <Controller
+                    name={convertAttributeNameToForm<
+                      Required<ClientRepresentation["attributes"]>
+                    >("attributes.standard.token.exchange.enabled")}
+                    defaultValue={false}
+                    control={control}
+                    render={({ field }) => (
+                      <InputGroup>
+                        <InputGroupItem>
+                          <Checkbox
+                            data-testid="standard-token-exchange-enabled"
+                            label={t("standardTokenExchangeEnabled")}
+                            id="kc-standard-token-exchange-enabled"
+                            name="standard-token-exchange-enabled"
+                            isChecked={
+                              field.value.toString() === "true" &&
+                              !clientAuthentication
+                            }
+                            onChange={field.onChange}
+                            isDisabled={clientAuthentication}
+                          />
+                        </InputGroupItem>
+                        <InputGroupItem>
+                          <HelpItem
+                            helpText={t("standardTokenExchangeEnabledHelp")}
+                            fieldLabelId="standardTokenExchangeEnabled"
+                          />
+                        </InputGroupItem>
+                      </InputGroup>
+                    )}
+                  />
+                </GridItem>
+              )}
               {isFeatureEnabled(Feature.DeviceFlow) && (
                 <GridItem lg={8} sm={6}>
                   <Controller
@@ -297,6 +338,20 @@ export const CapabilityConfig = ({
               </GridItem>
             </Grid>
           </FormGroup>
+          <SelectControl
+            id="keyForCodeExchange"
+            label={t("keyForCodeExchange")}
+            labelIcon={t("keyForCodeExchangeHelp")}
+            controller={{ defaultValue: "" }}
+            name={convertAttributeNameToForm<FormFields>(
+              "attributes.pkce.code.challenge.method",
+            )}
+            options={[
+              { key: "", value: t("choose") },
+              { key: "S256", value: "S256" },
+              { key: "plain", value: "plain" },
+            ]}
+          />
         </>
       )}
       {protocol === "saml" && (

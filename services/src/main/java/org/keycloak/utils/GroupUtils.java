@@ -4,12 +4,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
+
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
-import org.keycloak.services.resources.admin.permissions.GroupPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.GroupPermissionEvaluator;
 
 
 
@@ -24,28 +26,40 @@ public class GroupUtils {
      * @param groups The groups that we want to populate the hierarchy for
      * @return A stream of groups that contain all relevant groups from the root down with no extra siblings
      */
-    public static Stream<GroupRepresentation> populateGroupHierarchyFromSubGroups(KeycloakSession session, RealmModel realm, Stream<GroupModel> groups, boolean full, GroupPermissionEvaluator groupEvaluator) {
+    public static Stream<GroupRepresentation> populateGroupHierarchyFromSubGroups(KeycloakSession session, RealmModel realm, Stream<GroupModel> groups, boolean full, GroupPermissionEvaluator groupEvaluator, boolean subGroupsCount) {
         Map<String, GroupRepresentation> groupIdToGroups = new HashMap<>();
         groups.forEach(group -> {
-            //TODO GROUPS do permissions work in such a way that if you can view the children you can definitely view the parents?
-            if(!groupEvaluator.canView() && !groupEvaluator.canView(group)) return;
+
+            if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+                //TODO GROUPS do permissions work in such a way that if you can view the children you can definitely view the parents?
+                if (!groupEvaluator.canView() && !groupEvaluator.canView(group)) return;
+            }
 
             GroupRepresentation currGroup = toRepresentation(groupEvaluator, group, full);
-            populateSubGroupCount(group, currGroup);
+
+            if (subGroupsCount) {
+                populateSubGroupCount(group, currGroup);
+            }
+
             groupIdToGroups.putIfAbsent(currGroup.getId(), currGroup);
 
             while(currGroup.getParentId() != null) {
                 GroupModel parentModel = session.groups().getGroupById(realm, currGroup.getParentId());
 
-                //TODO GROUPS not sure if this is even necessary but if somehow you can't view the parent we need to remove the child and move on
-                if(!groupEvaluator.canView() && !groupEvaluator.canView(parentModel)) {
-                    groupIdToGroups.remove(currGroup.getId());
-                    break;
-                }
+                if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+                    //TODO GROUPS not sure if this is even necessary but if somehow you can't view the parent we need to remove the child and move on
+                    if(!groupEvaluator.canView() && !groupEvaluator.canView(parentModel)) {
+                        groupIdToGroups.remove(currGroup.getId());
+                        break;
+                    }                }
 
                 GroupRepresentation parent = groupIdToGroups.computeIfAbsent(currGroup.getParentId(),
                     id -> toRepresentation(groupEvaluator, parentModel, full));
-                populateSubGroupCount(parentModel, parent);
+
+                if (subGroupsCount) {
+                    populateSubGroupCount(parentModel, parent);
+                }
+
                 GroupRepresentation finalCurrGroup = currGroup;
 
                 // check the parent for existing subgroups that match the group we're currently operating on and merge them if needed
@@ -83,15 +97,5 @@ public class GroupUtils {
         GroupRepresentation rep = ModelToRepresentation.toRepresentation(groupTree, full);
         rep.setAccess(groupsEvaluator.getAccess(groupTree));
         return rep;
-    }
-
-    private static boolean groupMatchesSearchOrIsPathElement(GroupModel group, String search) {
-        if (StringUtil.isBlank(search)) {
-            return true;
-        }
-        if (group.getName().contains(search)) {
-            return true;
-        }
-        return group.getSubGroupsStream().findAny().isPresent();
     }
 }

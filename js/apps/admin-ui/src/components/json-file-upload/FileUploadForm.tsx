@@ -10,7 +10,6 @@ import {
   Modal,
   ModalVariant,
 } from "@patternfly/react-core";
-import CodeEditor from "@uiw/react-textarea-code-editor";
 import {
   ChangeEvent,
   DragEvent as ReactDragEvent,
@@ -18,6 +17,7 @@ import {
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
+import CodeEditor from "../form/CodeEditor";
 
 type FileUploadType = {
   value: string;
@@ -155,8 +155,7 @@ export const FileUploadForm = ({
                 aria-label="File content"
                 value={fileUpload.value}
                 language={language}
-                style={{ height: "128px", overflow: "scroll" }}
-                onChange={(value) => handleTextOrDataChange(value.target.value)}
+                onChange={(value) => handleTextOrDataChange(value)}
                 readOnly={!rest.allowEditingUploadedText}
               />
             )}

@@ -1,10 +1,10 @@
 package org.keycloak.testframework.server;
 
 import org.jboss.logging.Logger;
-import org.keycloak.testframework.injection.AbstractInterceptorHelper;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.config.Config;
 import org.keycloak.testframework.database.TestDatabase;
+import org.keycloak.testframework.injection.AbstractInterceptorHelper;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.injection.Registry;
@@ -16,25 +16,22 @@ import org.keycloak.testframework.injection.SupplierOrder;
 public abstract class AbstractKeycloakServerSupplier implements Supplier<KeycloakServer, KeycloakIntegrationTest> {
 
     @Override
-    public Class<KeycloakServer> getValueType() {
-        return KeycloakServer.class;
-    }
-
-    @Override
-    public Class<KeycloakIntegrationTest> getAnnotationClass() {
-        return KeycloakIntegrationTest.class;
-    }
-
-    @Override
     public KeycloakServer getValue(InstanceContext<KeycloakServer, KeycloakIntegrationTest> instanceContext) {
         KeycloakIntegrationTest annotation = instanceContext.getAnnotation();
         KeycloakServerConfig serverConfig = SupplierHelpers.getInstance(annotation.config());
 
         KeycloakServerConfigBuilder command = KeycloakServerConfigBuilder.startDev()
-                .cache("local")
-                .bootstrapAdminClient(Config.getAdminClientId(), Config.getAdminClientSecret());
+                .cache(cache())
+                .bootstrapAdminClient(Config.getAdminClientId(), Config.getAdminClientSecret())
+                .bootstrapAdminUser(Config.getAdminUsername(), Config.getAdminPassword());
 
         command.log().handlers(KeycloakServerConfigBuilder.LogHandlers.CONSOLE);
+
+        String supplierConfig = Config.getSupplierConfig(KeycloakServer.class);
+        if (supplierConfig != null) {
+            KeycloakServerConfig serverConfigOverride = SupplierHelpers.getInstance(supplierConfig);
+            serverConfigOverride.configure(command);
+        }
 
         command = serverConfig.configure(command);
 
@@ -69,12 +66,7 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
 
     @Override
     public boolean compatible(InstanceContext<KeycloakServer, KeycloakIntegrationTest> a, RequestedInstance<KeycloakServer, KeycloakIntegrationTest> b) {
-        if (!a.getAnnotation().config().equals(b.getAnnotation().config())) {
-            return false;
-        }
-
-        ServerConfigInterceptorHelper interceptor = new ServerConfigInterceptorHelper(a.getRegistry());
-        return interceptor.sameInterceptors(a);
+        return a.getAnnotation().config().equals(b.getAnnotation().config());
     }
 
     @Override
@@ -87,6 +79,10 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
     public abstract boolean requiresDatabase();
 
     public abstract Logger getLogger();
+
+    protected String cache() {
+        return "local";
+    }
 
     @Override
     public int order() {

@@ -22,6 +22,8 @@ import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -32,6 +34,9 @@ public class ClientPolicyExecutorRepresentation {
     private String executorProviderId;
 
     @JsonProperty("configuration")
+    @Schema(type=SchemaType.OBJECT,
+            description = "Configuration settings as a JSON object",
+            additionalProperties = Schema.True.class)
     private JsonNode configuration;
 
     public String getExecutorProviderId() {

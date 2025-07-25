@@ -38,14 +38,14 @@ public class LocaleBeanTest {
     @Test
     public void verifyRtl() {
         for (String rtlLanguageCode : RTL_LANGUAGE_CODES) {
-            MatcherAssert.assertThat(LocaleBean.isLeftToRight(Locale.forLanguageTag(rtlLanguageCode)), Matchers.is(true));
+            MatcherAssert.assertThat(LocaleBean.isLeftToRight(Locale.forLanguageTag(rtlLanguageCode).getLanguage()), Matchers.is(true));
         }
     }
 
     @Test
     public void verifyLtr() {
         for (String rtlLanguageCode : LTR_LANGUAGE_CODES) {
-            MatcherAssert.assertThat(LocaleBean.isLeftToRight(Locale.forLanguageTag(rtlLanguageCode)), Matchers.is(true));
+            MatcherAssert.assertThat(LocaleBean.isLeftToRight(Locale.forLanguageTag(rtlLanguageCode).getLanguage()), Matchers.is(true));
         }
     }
 
