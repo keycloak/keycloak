@@ -6,6 +6,7 @@ import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
+import org.keycloak.testframework.injection.SupplierHelpers;
 import org.keycloak.testframework.injection.SupplierOrder;
 import org.keycloak.testframework.server.KeycloakServer;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
@@ -15,8 +16,15 @@ public abstract class AbstractDatabaseSupplier implements Supplier<TestDatabase,
 
     @Override
     public TestDatabase getValue(InstanceContext<TestDatabase, InjectTestDatabase> instanceContext) {
+        DatabaseConfigBuilder builder = DatabaseConfigBuilder
+              .create()
+              .withPreventReuse(instanceContext.getLifeCycle() != LifeCycle.GLOBAL);
+
+        DatabaseConfigurator configurator = SupplierHelpers.getInstance(instanceContext.getAnnotation().config());
+        configurator.configure(builder);
+
         TestDatabase testDatabase = getTestDatabase();
-        testDatabase.start();
+        testDatabase.start(builder.build());
         return testDatabase;
     }
 

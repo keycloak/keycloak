@@ -8,6 +8,7 @@ import { confirmModal } from "../utils/modal";
 import { goToClientScopes } from "../utils/sidebar";
 import {
   assertRowExists,
+  assertTableRowsLength,
   clickNextPageButton,
   clickRowKebabItem,
   clickSelectRow,
@@ -83,8 +84,7 @@ test.describe("Client Scopes test", () => {
       const itemName = clientScopeName + "0";
       await searchItem(page, placeHolder, itemName);
       await assertRowExists(page, itemName);
-      const rows = await getTableData(page, tableName);
-      expect(rows.length).toBe(1);
+      await assertTableRowsLength(page, tableName, 1);
     });
 
     test("should filter items by Assigned type Default", async ({ page }) => {

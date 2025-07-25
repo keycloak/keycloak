@@ -15,24 +15,43 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.admin;
+package org.keycloak.tests.admin;
 
+import jakarta.ws.rs.core.Response;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Test;
+import org.jboss.logging.Logger;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.resource.ComponentResource;
 import org.keycloak.admin.client.resource.ComponentsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.component.ComponentModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.representations.idm.*;
-import org.keycloak.testsuite.components.TestProvider;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.representations.idm.AdminEventRepresentation;
+import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.ErrorRepresentation;
+import org.keycloak.testframework.annotations.InjectAdminEvents;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.AdminEvents;
+import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.remote.providers.runonserver.FetchOnServer;
+import org.keycloak.testframework.remote.providers.runonserver.FetchOnServerWrapper;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.testsuite.components.TestComponentProvider;
+import org.keycloak.testsuite.components.TestComponentProviderFactory;
+import org.keycloak.tests.utils.admin.ApiUtil;
 
-import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.Response;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -41,28 +60,41 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class ComponentsTest extends AbstractAdminTest {
+@KeycloakIntegrationTest(config = ComponentsTest.ComponentsTestServerConfig.class)
+public class ComponentsTest {
+
+    @InjectRealm(lifecycle = LifeCycle.METHOD)
+    ManagedRealm managedRealm;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
+
+    @InjectAdminEvents
+    AdminEvents adminEvents;
+
+    private static final Logger log = Logger.getLogger(ComponentsTest.class);
 
     private ComponentsResource components;
 
-    @Before
+    @BeforeEach
     public void before() throws Exception {
-        components = adminClient.realm(REALM_NAME).components();
+        components = managedRealm.admin().components();
     }
 
     private volatile CountDownLatch remainingDeleteSubmissions;
@@ -81,9 +113,9 @@ public class ComponentsTest extends AbstractAdminTest {
         }
 
         try {
-            assertTrue("Did not create all components in time", this.remainingDeleteSubmissions.await(100, TimeUnit.SECONDS));
+            assertTrue(this.remainingDeleteSubmissions.await(100, TimeUnit.SECONDS), "Did not create all components in time");
             s.shutdown();
-            assertTrue("Did not finish before timeout", s.awaitTermination(100, TimeUnit.SECONDS));
+            assertTrue(s.awaitTermination(100, TimeUnit.SECONDS), "Did not finish before timeout");
         } finally {
             s.shutdownNow();
         }
@@ -116,7 +148,7 @@ public class ComponentsTest extends AbstractAdminTest {
             rep.getConfig().putSingle("required", "required-value");
             createComponent(rep);
 
-            List<ComponentRepresentation> list = realm.components().query(realmId, TestProvider.class.getName());
+            List<ComponentRepresentation> list = components.query(managedRealm.getId(), TestComponentProvider.class.getName());
             assertEquals(i + 1, list.size());
         }
     }
@@ -126,21 +158,13 @@ public class ComponentsTest extends AbstractAdminTest {
         ComponentRepresentation rep = createComponentRepresentation("mycomponent");
 
         // Check validation is invoked
-        try {
-            createComponent(rep);
-        } catch (WebApplicationException e) {
-            assertError(e.getResponse(), "'Required' is required");
-        }
+        createComponentAndAssertError(rep, "'Required' is required");
 
         rep.getConfig().putSingle("required", "Required");
         rep.getConfig().putSingle("number", "invalid");
 
         // Check validation is invoked
-        try {
-            createComponent(rep);
-        } catch (WebApplicationException e) {
-            assertError(e.getResponse(), "'Number' should be a number");
-        }
+        createComponentAndAssertError(rep, "'Number' should be a number");
     }
 
     @Test
@@ -192,8 +216,6 @@ public class ComponentsTest extends AbstractAdminTest {
         ComponentRepresentation rep = createComponentRepresentation(name.toString());
 
         rep.getConfig().addFirst("required", "foo");
-
-        ComponentsResource components = realm.components();
 
         try (Response response = components.add(rep)) {
             if (Response.Status.INTERNAL_SERVER_ERROR.getStatusCode() == response.getStatus()) {
@@ -290,11 +312,11 @@ public class ComponentsTest extends AbstractAdminTest {
         assertEquals(ComponentRepresentation.SECRET_VALUE, returned.getConfig().getFirst("secret"));
 
         // Check secret not leaked in admin events
-        AdminEventRepresentation event = testingClient.testing().pollAdminEvent();
+        AdminEventRepresentation event = adminEvents.poll();
         assertFalse(event.getRepresentation().contains("some secret value!!"));
         assertTrue(event.getRepresentation().contains(ComponentRepresentation.SECRET_VALUE));
 
-        Map<String, TestProvider.DetailsRepresentation> details = testingClient.testing(REALM_NAME).getTestComponentDetails();
+        Map<String, TestComponentProvider.DetailsRepresentation> details = runOnServer.fetch(new TestComponents()).componentsDetailsMap();
 
         // Check value is set correctly
         assertEquals("some secret value!!", details.get("mycomponent").getConfig().get("secret").get(0));
@@ -306,19 +328,19 @@ public class ComponentsTest extends AbstractAdminTest {
         assertEquals(ComponentRepresentation.SECRET_VALUE, returned2.getConfig().getFirst("secret"));
 
         // Check secret not leaked in admin events
-        event = testingClient.testing().pollAdminEvent();
+        event = adminEvents.poll();
         assertThat(event.getRepresentation(), not(containsString("some secret value!!")));
         assertThat(event.getRepresentation(), containsString(ComponentRepresentation.SECRET_VALUE));
 
         // Check secret value is not set to '*********'
-        details = testingClient.testing(REALM_NAME).getTestComponentDetails();
+        details = runOnServer.fetch(new TestComponents()).componentsDetailsMap();
         assertEquals("some secret value!!", details.get("mycomponent").getConfig().get("secret").get(0));
 
         returned2.getConfig().putSingle("secret", "updated secret value!!");
         components.component(id).update(returned2);
 
         // Check secret value is updated
-        details = testingClient.testing(REALM_NAME).getTestComponentDetails();
+        details = runOnServer.fetch(new TestComponents()).componentsDetailsMap();
         assertEquals("updated secret value!!", details.get("mycomponent").getConfig().get("secret").get(0));
 
         ComponentRepresentation returned3 = components.query().stream().filter(c -> c.getId().equals(returned2.getId())).findFirst().get();
@@ -329,7 +351,7 @@ public class ComponentsTest extends AbstractAdminTest {
         components.component(id).update(returned2);
 
         // Check secret value is updated
-        details = testingClient.testing(REALM_NAME).getTestComponentDetails();
+        details = runOnServer.fetch(new TestComponents()).componentsDetailsMap();
         assertThat(details.get("mycomponent").getConfig().get("secret"), contains("${vault.value}"));
 
         ComponentRepresentation returned4 = components.query().stream().filter(c -> c.getId().equals(returned2.getId())).findFirst().get();
@@ -381,27 +403,20 @@ public class ComponentsTest extends AbstractAdminTest {
         assertEquals(value, returned.getConfig().getFirst("val1"));
     }
 
-    private java.lang.String createComponent(ComponentRepresentation rep) {
-        return createComponent(realm, rep);
+    private String createComponent(ComponentRepresentation rep) {
+        return createComponent(managedRealm.admin(), rep);
     }
 
     private String createComponent(RealmResource realm, ComponentRepresentation rep) {
-        Response response = null;
-        try {
-            ComponentsResource components = realm.components();
-            response = components.add(rep);
-            String id = ApiUtil.getCreatedId(response);
-            getCleanup(realm.toRepresentation().getRealm()).addComponentId(id);
-            return id;
-        } finally {
-            if (response != null) {
-                response.bufferEntity();
-                response.close();
-            }
-        }
+        ComponentsResource components = realm.components();
+        Response response = components.add(rep);
+        return ApiUtil.getCreatedId(response);
     }
 
-    private void assertError(Response response, String error) {
+    private void createComponentAndAssertError(ComponentRepresentation rep, String error) {
+        ComponentsResource components = managedRealm.admin().components();
+        Response response = components.add(rep);
+
         if (!response.hasEntity()) {
             fail("No error message set");
         }
@@ -413,9 +428,9 @@ public class ComponentsTest extends AbstractAdminTest {
     private ComponentRepresentation createComponentRepresentation(String name) {
         ComponentRepresentation rep = new ComponentRepresentation();
         rep.setName(name);
-        rep.setParentId(realmId);
-        rep.setProviderId("test");
-        rep.setProviderType(TestProvider.class.getName());
+        rep.setParentId(managedRealm.getId());
+        rep.setProviderId("test-component");
+        rep.setProviderType(TestComponentProvider.class.getName());
         rep.setSubType("foo");
 
         MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
@@ -436,7 +451,7 @@ public class ComponentsTest extends AbstractAdminTest {
         }
 
         public CreateComponent(ExecutorService s, int i) {
-            this(s, i, ComponentsTest.this.realm);
+            this(s, i, ComponentsTest.this.managedRealm.admin());
         }
 
         @Override
@@ -530,7 +545,7 @@ public class ComponentsTest extends AbstractAdminTest {
         public void run() {
             log.debugf("Started, id=%s", id);
 
-            ComponentResource c = realm.components().component(id);
+            ComponentResource c = managedRealm.admin().components().component(id);
             assertThat(c.toRepresentation(), Matchers.notNullValue());
             c.remove();
 
@@ -538,4 +553,45 @@ public class ComponentsTest extends AbstractAdminTest {
         }
     }
 
+    public static class TestComponents implements FetchOnServerWrapper<ComponentsDetails> {
+
+        @Override
+        public FetchOnServer getRunOnServer() {
+            return session -> {
+                RealmModel realm = session.getContext().getRealm();
+                return new ComponentsDetails(
+                        realm.getComponentsStream(realm.getId(), TestComponentProvider.class.getName())
+                                .collect(Collectors.toMap(ComponentModel::getName,
+                                        componentModel -> {
+                                            ProviderFactory<TestComponentProvider> f = session.getKeycloakSessionFactory()
+                                                    .getProviderFactory(TestComponentProvider.class, componentModel.getProviderId());
+                                            TestComponentProviderFactory factory = (TestComponentProviderFactory) f;
+                                            TestComponentProvider p = (TestComponentProvider) factory.create(session, componentModel);
+                                            return p.getDetails();
+                                        }))
+                );
+            };
+        }
+
+        @Override
+        public Class<ComponentsDetails> getResultClass() {
+            return ComponentsDetails.class;
+        }
+    }
+
+    /**
+     * This class serves only as a wrapper for a {@code Map<String, TestProvider.DetailsRepresentation>}
+     * This is crucial for deserialization to correctly reconstruct {@link TestComponentProvider.DetailsRepresentation}
+     * objects, as {@link FetchOnServerWrapper#getResultClass()} cannot retain generic map type information at runtime.
+     */
+    private record ComponentsDetails(Map<String, TestComponentProvider.DetailsRepresentation> componentsDetailsMap) {
+    }
+
+    public static class ComponentsTestServerConfig implements KeycloakServerConfig {
+
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return config.dependency("org.keycloak.tests", "keycloak-tests-custom-providers");
+        }
+    }
 }

@@ -78,6 +78,8 @@ This option applies to REDIRECT bindings where the signature is transferred in q
 +
 This option is used when {project_name} server and adapter provide the IDP and SP. This option is only relevant when *Sign Documents* is set to ON.
 
+*Allow ECP Flow*:: If true, this application is allowed to use SAML ECP profile for authentication.
+
 === Signature and Encryption
 
 *Sign Documents*:: When set to ON, {project_name} signs the document using the realms private key.
@@ -97,6 +99,16 @@ do not work if the SAML client runs on Java 17 or higher.
 --
 +
 *Canonicalization Method*:: The canonicalization method for XML signatures.
+
+*Encryption algorithm*:: Encryption algorithm used for the client. Default value is `AES_256_GCM` when not defined.
+
+*Key transport algorithm*:: Key transport algorithm used for the client to encrypt the secret key used for encryption. Default value is `RSA-OAEP-11` when not defined.
+
+*Digest method for RSA-OAEP*:: Digest method to use when RSA-OAEP is selected as the key transport algorithm. Only available if *Key transport algorithm* is set to any RSA-OAEP algorithm. Default value is `SHA-256` when not defined.
+
+*Mask generation function*:: Mask generation function to use when `RSA-OAEP-11` is selected as the key transport algorithm. Only available if *Key transport algorithm* is set to `RSA-OAEP-11` algorithm. Default value is `mgf1sha256` when no defined.
+
+NOTE: The encryption options are only available if the *Encrypt Assertions* option is enabled in the *Keys* tab. For more information about SAML/XML encryption, see the link:https://www.w3.org/TR/xmlenc-core1/[XML Encryption Syntax and Processing] specification.
 
 === Login settings
 
@@ -123,11 +135,9 @@ There will be also one item on the consent screen about this client itself.
 
 == Keys tab
 
-*Encrypt Assertions*:: Encrypts the assertions in SAML documents with the realms private key. The AES algorithm uses a key size of 128 bits.
-
 *Client Signature Required*:: If *Client Signature Required* is enabled, documents coming from a client are expected to be signed. {project_name} will validate this signature using the client public key or cert set up in the `Keys` tab.
 
-*Allow ECP Flow*:: If true, this application is allowed to use SAML ECP profile for authentication.
+*Encrypt Assertions*:: Encrypts the assertions in SAML documents with the specified client public key. Default algorithms used for encryption are configured with security in mind. If you need a different configuration, the encryption details can be modified in the *Settings* tab, section *Signature and Encryption*. The encryption options are only visible when this *Encrypt Assertions* option is enabled.
 
 == Advanced tab
 
@@ -157,3 +167,6 @@ This tab has many fields for specific situations.  Some fields are covered in ot
 
 *Artifact Resolution Service*:: URL of the client SOAP endpoint where to send the `ArtifactResolve` messages to.
 
+=== Advanced settings
+
+*Assertion Lifespan*:: Specific client lifespan set in the SAML assertion conditions. After that time the assertion will be invalid. If not specified the realm *Access Token Lifespan* is used. The `SessionNotOnOrAfter` attribute is not modified and continue using the *SSO Session Max* time defined at realm level.

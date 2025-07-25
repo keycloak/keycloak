@@ -43,7 +43,7 @@
                     errmsg : "${msg("webauthn-unsupported-browser-text")?no_esc}"
                 };
                 registerByWebAuthn(input);
-            });
+            }, { once: true });
         </script>
 
         <input type="submit"

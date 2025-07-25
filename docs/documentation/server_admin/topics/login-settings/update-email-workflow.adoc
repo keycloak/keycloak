@@ -9,6 +9,9 @@ as well as verify their emails before any update to their account.
 
 Applications are able to send their users to the email update form by leveraging UPDATE_EMAIL as an <<con-aia_{context},AIA (Application Initiated Action)>>.
 
+To enable `Update Email` capability for a realm, go to the `Authentication` menu in the administration console and click on `Required actions` tab.
+Switch the toggle for `Update Email` required action to `enabled`.
+
 === Verifying Emails
 
 If the realm has email verification disabled, this action will allow to update the email without verification.
@@ -26,6 +29,9 @@ In case the `Verify Email` is enabled at the realm level, the `VERIFY_EMAIL` req
 Otherwise, if only the `Force Email Verification` is enabled the `UPDATE_EMAIL` required
 action will be added instead.
 
+If a user has `Email Verified` set, and both `Verify Email` and `Force Email Verification` are disabled, `Email Verified`
+resets after the user updates email.
+
 === Updating the user email
 
 When the `Update Email` required action is enabled, the user can update their emails by:
@@ -36,11 +42,9 @@ When the `Update Email` required action is enabled, the user can update their em
 If an existing user does have an email set when updating the profile during the authentication flow, the email attribute will not be available.
 * Administrators when updating the user account through the administration console
 
-:tech_feature_name: UpdateEmail
-:tech_feature_id: update-email
-include::../templates/techpreview.adoc[]
+=== Update Email and User Profile
 
-[NOTE]
-====
-If you enable this feature and you are migrating from a previous version, enable the *Update Email* required action in your realms. Otherwise, users cannot update their email addresses.
-====
+If the email attribute is set as required in the user profile configuration, the requirement is kept in the `Update Email` workflow,
+meaning a user won't be able to clear his/her email in update email page. The opposite is true, if the email attribute is set as optional
+in the user profile configuration.
+

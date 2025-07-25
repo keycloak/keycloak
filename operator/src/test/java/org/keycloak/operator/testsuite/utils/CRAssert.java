@@ -40,6 +40,7 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
+import org.keycloak.operator.controllers.KeycloakController;
 import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
 import org.keycloak.operator.controllers.KeycloakServiceDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
@@ -57,7 +58,6 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPort;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.netty.util.NetUtil;
@@ -297,13 +297,9 @@ public final class CRAssert {
     }
 
     public static CompletableFuture<Void> eventuallyRollingUpdateStatus(KubernetesClient client, Keycloak keycloak, String reason) {
-        var cf1 = client.resource(keycloak).informOnCondition(kcs -> {
-            try {
-                assertKeycloakStatusCondition(kcs.get(0), KeycloakStatusCondition.ROLLING_UPDATE, true, "Rolling out deployment update");
-                return true;
-            } catch (AssertionError e) {
-                return false;
-            }
+        // test the statefulset, rather that the keycloak status as the events with the local api server may happen too quickly and the keycloak status may not get upddated
+        var cf1 = client.apps().statefulSets().withName(keycloak.getMetadata().getName()).informOnCondition(ss -> {
+            return !ss.isEmpty() && KeycloakController.isRolling(ss.get(0));
         });
         var cf2 = client.resource(keycloak).informOnCondition(kcs -> {
             try {

@@ -244,7 +244,7 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
         }
     }
 
-    static void disableUpdateProfileOnFirstLogin(AuthenticationExecutionInfoRepresentation execution, AuthenticationManagementResource flows) {
+    public static void disableUpdateProfileOnFirstLogin(AuthenticationExecutionInfoRepresentation execution, AuthenticationManagementResource flows) {
         if (execution.getProviderId() != null && execution.getProviderId().equals(IdpCreateUserIfUniqueAuthenticatorFactory.PROVIDER_ID)) {
             execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE.name());
             flows.updateExecutions(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW, execution);
