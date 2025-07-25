@@ -67,7 +67,6 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.generateSignedDPoPP
 @EnableFeature(value = Profile.Feature.DPOP, skipRestart = true)
 public class FAPI2DPoPTest extends AbstractFAPI2Test {
 
-    private static final String REALM_NAME = "test";
     private static final String DPOP_JWT_HEADER_TYPE = "dpop+jwt";
     private static final String nonce = "123456"; // need to be 123456.
 
@@ -102,23 +101,23 @@ public class FAPI2DPoPTest extends AbstractFAPI2Test {
 
     @Test
     public void testFAPI2DPoPSecurityProfileClientRegistration() throws Exception {
-        testFAPI2ClientRegistration(FAPI2_DPOP_SECURITY_PROFILE_NAME);
+        testFAPI2ClientRegistration(getSecurityProfileName());
     }
 
     @Test
     public void testFAPI2DPoPSecurityProfileOIDCClientRegistration() throws Exception {
-        testFAPI2OIDCClientRegistration(FAPI2_DPOP_SECURITY_PROFILE_NAME);
+        testFAPI2OIDCClientRegistration(getSecurityProfileName());
     }
 
     @Test
     public void testFAPI2DPoPSecurityProfileSignatureAlgorithms() throws Exception {
-        testFAPI2SignatureAlgorithms(FAPI2_DPOP_SECURITY_PROFILE_NAME);
+        testFAPI2SignatureAlgorithms(getSecurityProfileName());
     }
 
     @Test
     public void testFAPI2DPoPSecurityProfileLoginWithPrivateKeyJWT() throws Exception {
         // setup client policy
-        setupPolicyFAPI2ForAllClient(FAPI2_DPOP_SECURITY_PROFILE_NAME);
+        setupPolicyFAPI2ForAllClient(getSecurityProfileName());
 
         // Register client with private-key-jwt
         String clientUUID = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
@@ -196,7 +195,7 @@ public class FAPI2DPoPTest extends AbstractFAPI2Test {
     @Test
     public void testFAPI2DPoPSecurityProfileLoginWithMTLS() throws Exception {
         // setup client policy
-        setupPolicyFAPI2ForAllClient(FAPI2_DPOP_SECURITY_PROFILE_NAME);
+        setupPolicyFAPI2ForAllClient(getSecurityProfileName());
 
         // create client with MTLS authentication
         // Register client with X509
@@ -300,23 +299,23 @@ public class FAPI2DPoPTest extends AbstractFAPI2Test {
 
     @Test
     public void testFAPI2DPoPMessageSigningClientRegistration() throws Exception {
-        testFAPI2ClientRegistration(FAPI2_DPOP_MESSAGE_SIGNING_PROFILE_NAME);
+        testFAPI2ClientRegistration(getMessageSigningName());
     }
 
     @Test
     public void testFAPI2DPoPMessageSigningOIDCClientRegistration() throws Exception {
-        testFAPI2OIDCClientRegistration(FAPI2_DPOP_MESSAGE_SIGNING_PROFILE_NAME);
+        testFAPI2OIDCClientRegistration(getMessageSigningName());
     }
 
     @Test
     public void testFAPI2DPoPMessageSigningSignatureAlgorithms() throws Exception {
-        testFAPI2SignatureAlgorithms(FAPI2_DPOP_MESSAGE_SIGNING_PROFILE_NAME);
+        testFAPI2SignatureAlgorithms(getMessageSigningName());
     }
 
     @Test
     public void testFAPI2DPoPMessageSigningLoginWithMTLS() throws Exception {
         // setup client policy
-        setupPolicyFAPI2ForAllClient(FAPI2_DPOP_MESSAGE_SIGNING_PROFILE_NAME);
+        setupPolicyFAPI2ForAllClient(getMessageSigningName());
 
         // create client with MTLS authentication
         // Register client with X509
@@ -401,7 +400,7 @@ public class FAPI2DPoPTest extends AbstractFAPI2Test {
     @Test
     public void testFAPI2DPoPMessageSigningLoginWithPrivateKeyJWT() throws Exception {
         // setup client policy
-        setupPolicyFAPI2ForAllClient(FAPI2_DPOP_MESSAGE_SIGNING_PROFILE_NAME);
+        setupPolicyFAPI2ForAllClient(getMessageSigningName());
 
         // create client with MTLS authentication
         // Register client with X509
@@ -499,5 +498,13 @@ public class FAPI2DPoPTest extends AbstractFAPI2Test {
 
         // Logout and remove consent of the user for next logins
         logoutUserAndRevokeConsent(clientId, TEST_USERNAME);
+    }
+
+    protected String getSecurityProfileName() {
+        return FAPI2_DPOP_SECURITY_PROFILE_NAME;
+    }
+
+    protected String getMessageSigningName() {
+        return FAPI2_DPOP_MESSAGE_SIGNING_PROFILE_NAME;
     }
 }
