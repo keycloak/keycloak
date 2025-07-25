@@ -302,9 +302,6 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     private void addEmbeddedOperationalInfo(Map<String, String> info) {
         var cacheManagerInfo = cacheManager.getCacheManagerInfo();
         info.put("clusterSize", Integer.toString(cacheManagerInfo.getClusterSize()));
-        info.put("coordinator", cacheManagerInfo.getCoordinatorAddress());
-        info.put("members", String.join(",", cacheManagerInfo.getClusterMembers()));
-        info.put("membersPhysicalAddresses", String.join(",", cacheManagerInfo.getClusterMembersPhysicalAddresses()));
         var cacheNames = Arrays.stream(InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES)
                 .sorted()
                 .collect(Collectors.toCollection(LinkedHashSet::new));
@@ -314,7 +311,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     }
 
     private void addRemoteOperationalINfo(Map<String, String> info) {
-        info.put("externalServers", String.join(",", remoteCacheManager.getServers()));
+        info.put("externalServers", Integer.toString(remoteCacheManager.getServers().length));
         info.put("connectionCount", Integer.toString(remoteCacheManager.getConnectionCount()));
     }
 }
