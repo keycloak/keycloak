@@ -36,6 +36,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.jpa.entities.CompositeRoleEntity;
 import org.keycloak.models.jpa.entities.RoleAttributeEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
+import org.keycloak.models.jpa.util.ModelAdapterUtil;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.utils.StreamsUtil;
 
@@ -155,11 +156,8 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
 
     @Override
     public void setAttribute(String name, List<String> values) {
-        removeAttribute(name);
-
-        for (String value : values) {
-            persistAttributeValue(name, value);
-        }
+        ModelAdapterUtil.setMultiValueAttribute(name, values, this::getAttributes, this::removeAttribute,
+                this::persistAttributeValue);
     }
 
     @Override

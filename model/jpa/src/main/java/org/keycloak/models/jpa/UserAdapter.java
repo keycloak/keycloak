@@ -18,7 +18,6 @@
 package org.keycloak.models.jpa;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -59,6 +58,7 @@ import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
 import org.keycloak.models.jpa.entities.UserRequiredActionEntity;
 import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
+import org.keycloak.models.jpa.util.ModelAdapterUtil;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.organization.OrganizationProvider;
@@ -205,24 +205,8 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
             return;
         }
 
-        Set<String> oldEntries = getAttributeStream(name).collect(Collectors.toSet());
-        Set<String> newEntries;
-        if (values == null) {
-            newEntries = new HashSet<>();
-        } else {
-            newEntries = new HashSet<>(values);
-        }
-        if (CollectionUtil.collectionEquals(oldEntries, newEntries)) {
-            return;
-        }
-
-        // Remove all existing
-        removeAttribute(name);
-        if (values != null) {
-            for (Iterator<String> it = values.stream().filter(Objects::nonNull).iterator(); it.hasNext();) {
-                persistAttributeValue(name, it.next());
-            }
-        }
+        ModelAdapterUtil.setMultiValueAttribute(name, values, this::getAttributes, this::removeAttribute,
+                this::persistAttributeValue);
     }
 
     private void persistAttributeValue(String name, String value) {
@@ -295,8 +279,8 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         } else if (UserModel.USERNAME.equals(name)) {
             return Stream.of(user.getUsername());
         }
-        return user.getAttributes().stream().filter(attribute -> Objects.equals(attribute.getName(), name)).
-                map(attribute -> attribute.getValue());
+        return user.getAttributes().stream().filter(attribute -> Objects.equals(attribute.getName(), name))
+                .map(attribute -> attribute.getValue());
     }
 
     @Override
@@ -388,7 +372,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     }
 
     private TypedQuery<String> createGetGroupsQuery() {
-        // we query ids only as the group  might be cached and following the @ManyToOne will result in a load
+        // we query ids only as the group might be cached and following the @ManyToOne will result in a load
         // even if we're getting just the id.
         CriteriaBuilder builder = em.getCriteriaBuilder();
         CriteriaQuery<String> queryBuilder = builder.createQuery(String.class);
@@ -404,7 +388,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     }
 
     private TypedQuery<Long> createCountGroupsQuery() {
-        // we query ids only as the group  might be cached and following the @ManyToOne will result in a load
+        // we query ids only as the group might be cached and following the @ManyToOne will result in a load
         // even if we're getting just the id.
         CriteriaBuilder builder = em.getCriteriaBuilder();
         CriteriaQuery<Long> queryBuilder = builder.createQuery(Long.class);
@@ -443,7 +427,8 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public long getGroupsCountByNameContaining(String search) {
-        if (search == null) return getGroupsCount();
+        if (search == null)
+            return getGroupsCount();
         return session.groups().getGroupsCount(realm, closing(createGetGroupsQuery().getResultStream()), search);
     }
 
@@ -489,12 +474,14 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public void leaveGroup(GroupModel group) {
-        if (user == null || group == null) return;
+        if (user == null || group == null)
+            return;
 
         TypedQuery<UserGroupMembershipEntity> query = getUserGroupMappingQuery(group);
         query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
         List<UserGroupMembershipEntity> results = query.getResultList();
-        if (results.isEmpty()) return;
+        if (results.isEmpty())
+            return;
         for (UserGroupMembershipEntity entity : results) {
             em.remove(entity);
         }
@@ -514,11 +501,9 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         return query;
     }
 
-
     @Override
     public boolean hasRole(RoleModel role) {
-        return RoleUtils.hasRole(getRoleMappingsStream(), role)
-                || RoleUtils.hasRoleFromGroup(getGroupsStream(), role, true);
+        return RoleUtils.hasRole(getRoleMappingsStream(), role) || RoleUtils.hasRoleFromGroup(getGroupsStream(), role, true);
     }
 
     protected TypedQuery<UserRoleMappingEntity> getUserRoleMappingEntityTypedQuery(RoleModel role) {
@@ -530,7 +515,8 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public void grantRole(RoleModel role) {
-        if (hasDirectRole(role)) return;
+        if (hasDirectRole(role))
+            return;
         grantRoleImpl(role);
         RoleGrantedEvent.fire(role, this, session);
     }
@@ -564,7 +550,6 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         return getRoleMappingsStream().filter(RoleUtils::isRealmRole);
     }
 
-
     @Override
     public Stream<RoleModel> getRoleMappingsStream() {
         // we query ids only as the role might be cached and following the @ManyToOne will result in a load
@@ -576,12 +561,14 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public void deleteRoleMapping(RoleModel role) {
-        if (user == null || role == null) return;
+        if (user == null || role == null)
+            return;
 
         TypedQuery<UserRoleMappingEntity> query = getUserRoleMappingEntityTypedQuery(role);
         query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
         List<UserRoleMappingEntity> results = query.getResultList();
-        if (results.isEmpty()) return;
+        if (results.isEmpty())
+            return;
         for (UserRoleMappingEntity entity : results) {
             em.remove(entity);
         }
@@ -621,8 +608,10 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || !(o instanceof UserModel)) return false;
+        if (this == o)
+            return true;
+        if (o == null || !(o instanceof UserModel))
+            return false;
 
         UserModel that = (UserModel) o;
         return that.getId().equals(getId());

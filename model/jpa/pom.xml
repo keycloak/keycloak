@@ -123,6 +123,32 @@
             <version>${jdbc.mvn.version}</version>
             <scope>test</scope>
         </dependency>
+        <!-- libraries needed for unit tests using an in-memory database -->
+		    <dependency>
+		        <groupId>com.h2database</groupId>
+		        <artifactId>h2</artifactId>
+		        <scope>test</scope>
+		    </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-core</artifactId>
+		        <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-crypto-default</artifactId>
+		        <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-micrometer</artifactId>
+            <scope>test</scope>
+        </dependency>
+			  <dependency>
+					  <groupId>io.smallrye</groupId> 
+					  <artifactId>jandex</artifactId> 
+            <scope>test</scope>
+			  </dependency>
     </dependencies>
 
     <build>
