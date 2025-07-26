@@ -37,6 +37,7 @@ import org.keycloak.services.scheduled.ClearExpiredEvents;
 import org.keycloak.services.scheduled.ClearExpiredRevokedTokens;
 import org.keycloak.services.scheduled.ClearExpiredUserSessions;
 import org.keycloak.services.scheduled.ClusterAwareScheduledTaskRunner;
+import org.keycloak.services.scheduled.StartUpTasks;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.DatastoreProviderFactory;
 import org.keycloak.storage.StoreMigrateRepresentationEvent;
@@ -140,6 +141,8 @@ public class DefaultDatastoreProviderFactory implements DatastoreProviderFactory
         for (ScheduledTask task : getScheduledTasks()) {
             scheduleTask(timer, sessionFactory, task, interval);
         }
+        long intervalOnce = 60 * 1000;
+        timer.scheduleOnce(new ClusterAwareScheduledTaskRunner(sessionFactory, new StartUpTasks(), intervalOnce), interval);
 
         UserStorageSyncManager.bootstrapPeriodic(sessionFactory, timer);
     }

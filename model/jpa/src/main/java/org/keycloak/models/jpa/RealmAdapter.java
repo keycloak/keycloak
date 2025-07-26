@@ -17,6 +17,8 @@
 
 package org.keycloak.models.jpa;
 
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.ws.rs.NotFoundException;
 import org.keycloak.Config;
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.RequiredActionFactory;
@@ -28,6 +30,8 @@ import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.*;
 import org.keycloak.models.GroupModel.GroupUpdatedEvent;
+import org.keycloak.models.enums.ClientRegistrationTypeEnum;
+import org.keycloak.models.enums.EntityTypeEnum;
 import org.keycloak.models.jpa.entities.*;
 import org.keycloak.models.utils.ComponentUtil;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -50,6 +54,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Arrays;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Objects.nonNull;
@@ -1086,6 +1091,118 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
         } else {
             removeAttribute(RealmAttributes.WEBAUTHN_POLICY_PASSKEYS_ENABLED + attributePrefix);
         }
+    }
+
+    @Override
+    public OpenIdFederationGeneralConfig getOpenIdFederationGeneralConfig() {
+        //for enabling OpenId Federation at least one Federation configuration needs to exist
+        if (getAttribute(Constants.OPENID_FEDERATION_ENABLED, Boolean.TRUE)) {
+            OpenIdFederationGeneralConfig config = new OpenIdFederationGeneralConfig();
+
+            config.setOrganizationName(getAttribute(Constants.OPENID_FEDERATION_ORGANIZATION_NAME));
+            String contactsStr = getAttribute(Constants.OPENID_FEDERATION_CONTACTS);
+            List<String> contacts = (contactsStr == null || contactsStr.isEmpty()) ? null : Arrays.asList(contactsStr.split(","));
+            config.setContacts(contacts);
+            config.setLogoUri(getAttribute(Constants.OPENID_FEDERATION_LOGO_URI));
+            config.setPolicyUri(getAttribute(Constants.OPENID_FEDERATION_POLICY_URI));
+            config.setOrganizationUri(getAttribute(Constants.OPENID_FEDERATION_ORGANIZATION_URI));
+            String authorityHintsStr = getAttribute(Constants.OPENID_FEDERATION_AUTHORITY_HINTS);
+            List<String> authorityHints = (authorityHintsStr == null || authorityHintsStr.isEmpty()) ? new ArrayList<>() : Arrays.asList(authorityHintsStr.split(","));
+            config.setAuthorityHints(authorityHints);
+            config.setLifespan(getAttribute(Constants.OPENID_FEDERATION_LIFESPAN, 86400));
+            config.setFederationResolveEndpoint(getAttribute(Constants.OPENID_FEDERATION_RESOLVE_ENDPOINT));
+            config.setFederationHistoricalKeysEndpoint(getAttribute(Constants.OPENID_FEDERATION_HISTORICAL_KEYS_ENDPOINT));
+
+            config.setOpenIdFederationList(getOpenIdFederationList(realm.getOpenIdFederationList()));
+            return config;
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public void setOpenIdFederationGeneralConfig(OpenIdFederationGeneralConfig generalConfig) {
+        if (generalConfig == null) {
+            setAttribute(Constants.OPENID_FEDERATION_ENABLED, Boolean.FALSE);
+        } else {
+            setAttribute(Constants.OPENID_FEDERATION_ENABLED, Boolean.TRUE);
+            setAttribute(Constants.OPENID_FEDERATION_ORGANIZATION_NAME, generalConfig.getOrganizationName());
+            if (generalConfig.getContacts() == null || generalConfig.getContacts().isEmpty()) {
+                removeAttribute(Constants.OPENID_FEDERATION_CONTACTS);
+            } else {
+                setAttribute(Constants.OPENID_FEDERATION_CONTACTS, String.join(",", generalConfig.getContacts()));
+            }
+            setAttribute(Constants.OPENID_FEDERATION_LOGO_URI, generalConfig.getLogoUri());
+            setAttribute(Constants.OPENID_FEDERATION_POLICY_URI, generalConfig.getPolicyUri());
+            setAttribute(Constants.OPENID_FEDERATION_ORGANIZATION_URI, generalConfig.getOrganizationUri());
+            if (generalConfig.getAuthorityHints() == null || generalConfig.getAuthorityHints().isEmpty()) {
+                removeAttribute(Constants.OPENID_FEDERATION_AUTHORITY_HINTS);
+            } else {
+                setAttribute(Constants.OPENID_FEDERATION_AUTHORITY_HINTS, String.join(",", generalConfig.getAuthorityHints()));
+            }
+            setAttribute(Constants.OPENID_FEDERATION_LIFESPAN, generalConfig.getLifespan() == null ? String.valueOf(86400) : String.valueOf(generalConfig.getLifespan()));
+            setAttribute(Constants.OPENID_FEDERATION_RESOLVE_ENDPOINT, generalConfig.getFederationResolveEndpoint());
+            setAttribute(Constants.OPENID_FEDERATION_HISTORICAL_KEYS_ENDPOINT, generalConfig.getFederationHistoricalKeysEndpoint());
+            if (generalConfig.getOpenIdFederationList() != null && !generalConfig.getOpenIdFederationList().isEmpty()) {
+                realm.setOpenIdFederationList(generalConfig.getOpenIdFederationList().stream().map(fedConfig -> {
+                    OpenIdFederationEntity fedEntity = new OpenIdFederationEntity();
+                    fedEntity.setInternalId(fedConfig.getInternalId() != null ? fedConfig.getInternalId() : KeycloakModelUtils.generateId());
+                    transformToOpenIdFederationEntity(fedEntity, fedConfig);
+                    return fedEntity;
+                }).collect(Collectors.toList()));
+            }
+        }
+    }
+
+    @Override
+    public List<OpenIdFederationConfig> getOpenIdFederations() {
+        return getOpenIdFederationList(realm.getOpenIdFederationList());
+    }
+
+    private List<OpenIdFederationConfig> getOpenIdFederationList(List<OpenIdFederationEntity> openIdFederationList){
+        return openIdFederationList.stream().map(fedEntity -> {
+            OpenIdFederationConfig fedConfig = new OpenIdFederationConfig();
+            fedConfig.setInternalId(fedEntity.getInternalId());
+            fedConfig.setTrustAnchor(fedEntity.getTrustAnchor());
+            String clientRegistrationTypesSupportedStr = fedEntity.getConfig().get(Constants.OPENID_FEDERATION_CLIENT_REGISTRATION_TYPES_SUPPORTED);
+            List<String> clientRegistrationTypesSupported = (clientRegistrationTypesSupportedStr == null || clientRegistrationTypesSupportedStr.isEmpty()) ? new ArrayList<>() : Arrays.asList(clientRegistrationTypesSupportedStr.split("##"));
+            fedConfig.setClientRegistrationTypesSupported(clientRegistrationTypesSupported.stream().map(x -> ClientRegistrationTypeEnum.valueOf(x)).collect(Collectors.toList()));
+            String entityTypesStr = fedEntity.getConfig().get(Constants.OPENID_FEDERATION_ENTITY_TYPES);
+            List<String> entityTypes = (entityTypesStr == null || entityTypesStr.isEmpty()) ? new ArrayList<>() : Arrays.asList(entityTypesStr.split("##"));
+            fedConfig.setEntityTypes(entityTypes.stream().map(x -> EntityTypeEnum.valueOf(x)).collect(Collectors.toList()));
+            return fedConfig;
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    public void addOpenIdFederation(OpenIdFederationConfig fedConfig) {
+        OpenIdFederationEntity fedEntity = new OpenIdFederationEntity();
+        fedEntity.setInternalId(KeycloakModelUtils.generateId());
+        transformToOpenIdFederationEntity(fedEntity, fedConfig);
+        realm.getOpenIdFederationList().add(fedEntity);
+        em.persist(fedEntity);
+        em.flush();
+        fedConfig.setInternalId(fedEntity.getInternalId());
+    }
+
+    @Override
+    public void updateOpenIdFederation(OpenIdFederationConfig fedConfig) {
+        OpenIdFederationEntity fedEntity = realm.getOpenIdFederationList().stream().filter(x -> fedConfig.getInternalId().equals(x.getInternalId())).findAny().orElseThrow(() -> new EntityNotFoundException("OpenIdFederation not found"));
+        transformToOpenIdFederationEntity(fedEntity, fedConfig);
+    }
+
+    private void transformToOpenIdFederationEntity(OpenIdFederationEntity fedEntity, OpenIdFederationConfig fedConfig){
+        fedEntity.setTrustAnchor(fedConfig.getTrustAnchor());
+        fedEntity.getConfig().put(Constants.OPENID_FEDERATION_ENTITY_TYPES, fedConfig.getEntityTypes().stream().map(x -> x.name()).collect(Collectors.joining("##")));
+        fedEntity.getConfig().put(Constants.OPENID_FEDERATION_CLIENT_REGISTRATION_TYPES_SUPPORTED, fedConfig.getClientRegistrationTypesSupported().stream().map(x -> x.name()).collect(Collectors.joining("##")));
+        fedEntity.setRealm(realm);
+    }
+
+    @Override
+    public void removeOpenIdFederation(String internalId) {
+        OpenIdFederationEntity entity = realm.getOpenIdFederationList().stream().filter(x -> internalId.equals(x.getInternalId())).findAny().orElseThrow(NotFoundException::new);
+        this.realm.getOpenIdFederationList().remove(entity);
+        em.remove(entity);
     }
 
     @Override

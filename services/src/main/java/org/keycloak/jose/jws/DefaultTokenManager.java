@@ -53,6 +53,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.LogoutTokenMapper;
 import org.keycloak.representations.LogoutToken;
 import org.keycloak.services.util.DefaultClientSessionContext;
+import org.keycloak.representations.openid_federation.EntityStatement;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
@@ -79,11 +80,20 @@ public class DefaultTokenManager implements TokenManager {
     public String encode(Token token) {
         String signatureAlgorithm = signatureAlgorithm(token.getCategory());
 
-        SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, signatureAlgorithm);
-        SignatureSignerContext signer = signatureProvider.signer();
+        SignatureSignerContext signer = session.getProvider(SignatureProvider.class, signatureAlgorithm).signer();
 
         String type = type(token.getCategory());
         String encodedToken = new JWSBuilder().type(type).jsonContent(token).sign(signer);
+        return encodedToken;
+    }
+
+    @Override
+    public String encodeForOpenIdFederation(EntityStatement token) {
+        String signatureAlgorithm = signatureAlgorithm(token.getCategory());
+
+        SignatureSignerContext signer = session.getProvider(SignatureProvider.class, signatureAlgorithm).signer();
+
+        String encodedToken = new JWSBuilder().type(token.getType()).jsonContent(token).sign(signer);
         return encodedToken;
     }
 
@@ -201,6 +211,7 @@ public class DefaultTokenManager implements TokenManager {
             case ADMIN:
                 return getSignatureAlgorithm(null);
             case ACCESS:
+            case ENTITY_STATEMENT:
                 return getSignatureAlgorithm(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG);
             case ID:
             case LOGOUT:

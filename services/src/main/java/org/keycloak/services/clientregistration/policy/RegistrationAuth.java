@@ -34,7 +34,13 @@ public enum RegistrationAuth {
      *
      * Note this will be the case also update + view + remove with registrationToken, which was created during authenticated registration or via admin console
      */
-    AUTHENTICATED;
+    AUTHENTICATED,
+    /**
+     * For OpenId Federation client explicit registration.
+     *
+     * For create + update
+     */
+    OPENID_FEDERATION;
 
     public static RegistrationAuth fromString(String regAuth) {
         return Enum.valueOf(RegistrationAuth.class, regAuth.toUpperCase());

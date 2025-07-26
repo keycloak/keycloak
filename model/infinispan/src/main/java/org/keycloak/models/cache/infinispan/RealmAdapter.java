@@ -38,6 +38,8 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OTPPolicy;
+import org.keycloak.models.OpenIdFederationConfig;
+import org.keycloak.models.OpenIdFederationGeneralConfig;
 import org.keycloak.models.ParConfig;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -54,6 +56,7 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.client.ClientStorageProvider;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -789,6 +792,42 @@ public class RealmAdapter implements CachedRealmModel {
     public void setWebAuthnPolicyPasswordless(WebAuthnPolicy policy) {
         getDelegateForUpdate();
         updated.setWebAuthnPolicyPasswordless(policy);
+    }
+
+    @Override
+    public OpenIdFederationGeneralConfig getOpenIdFederationGeneralConfig() {
+        if (isUpdated()) return updated.getOpenIdFederationGeneralConfig();
+        return cached.getOpenIdFederationConfig();
+    }
+
+    @Override
+    public void setOpenIdFederationGeneralConfig(OpenIdFederationGeneralConfig generalConfig) {
+        getDelegateForUpdate();
+        updated.setOpenIdFederationGeneralConfig(generalConfig);
+    }
+
+    @Override
+    public List<OpenIdFederationConfig> getOpenIdFederations() {
+        if (isUpdated()) return updated.getOpenIdFederations();
+        return isOpenIdFederationEnabled() ?  cached.getOpenIdFederationConfig().getOpenIdFederationList() : new ArrayList<>();
+    }
+
+    @Override
+    public void addOpenIdFederation(OpenIdFederationConfig fedConfig) {
+        getDelegateForUpdate();
+        updated.addOpenIdFederation(fedConfig);
+    }
+
+    @Override
+    public void updateOpenIdFederation(OpenIdFederationConfig fedConfig) {
+        getDelegateForUpdate();
+        updated.updateOpenIdFederation(fedConfig);
+    }
+
+    @Override
+    public void removeOpenIdFederation(String internalId) {
+        getDelegateForUpdate();
+        updated.removeOpenIdFederation(internalId);
     }
 
     @Override

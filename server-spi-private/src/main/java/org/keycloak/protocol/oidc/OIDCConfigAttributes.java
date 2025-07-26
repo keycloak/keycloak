@@ -93,6 +93,8 @@ public final class OIDCConfigAttributes {
     public static final String STANDARD_TOKEN_EXCHANGE_ENABLED = "standard.token.exchange.enabled";
     public static final String STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED = "standard.token.exchange.enableRefreshRequestedTokenType";
 
+    public static final String EXPIRATION_TIME = "expiration.time";
+
     private OIDCConfigAttributes() {
     }
 

@@ -66,6 +66,18 @@ public class BasicTimerProvider implements TimerProvider {
     }
 
     @Override
+    public void scheduleOnce(final Runnable runnable, final long delay, String taskName) {
+
+        logger.debugf("Task '%s' will be executed with delay '%d'", taskName, delay);
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                runnable.run();
+            }
+        }, delay);
+    }
+
+    @Override
     public void scheduleTask(ScheduledTask scheduledTask, long intervalMillis, String taskName) {
         ScheduledTaskRunner scheduledTaskRunner = new ScheduledTaskRunner(session.getKeycloakSessionFactory(), scheduledTask, transactionTimeout);
         this.schedule(scheduledTaskRunner, intervalMillis, taskName);

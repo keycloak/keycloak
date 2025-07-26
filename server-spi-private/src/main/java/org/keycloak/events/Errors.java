@@ -23,7 +23,6 @@ package org.keycloak.events;
 public interface Errors {
 
     String INVALID_REQUEST = "invalid_request";
-
     String REALM_DISABLED = "realm_disabled";
 
     String CLIENT_NOT_FOUND = "client_not_found";
@@ -64,6 +63,10 @@ public interface Errors {
     String INVALID_SIGNATURE = "invalid_signature";
     String INVALID_REGISTRATION = "invalid_registration";
     String INVALID_ISSUER = "invalid_issuer";
+    String INVALID_SUBJECT = "invalid_subject";
+    String INVALID_TRUST_ANCHOR = "invalid_trust_anchor";
+    String INVALID_METADATA = "invalid_metadata";
+    String INVALID_TRUST_CHAIN = "invalid_trust_chain";
     String INVALID_FORM = "invalid_form";
     String INVALID_CONFIG = "invalid_config";
     String EXPIRED_CODE = "expired_code";

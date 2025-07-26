@@ -1,0 +1,19 @@
+[id="openid-federation_{context}"]
+
+=== OpenID Federation
+[role="_abstract"]
+link:https://openid.net/specs/openid-federation-1_0.html/[OpenID Federation] offers a robust framework for establishing dynamic trust between OpenID Providers (OPs, Identity Providers in Keycloak) and Relying Parties (RPs, Clients in Keycloak) via Trust Anchors(TA), significantly simplifying the management of large-scale identity federations.
+This eliminates the need for cumbersome manual or bilateral trust agreements.
+OpenID Federation uses link:https://openid.net/developers/how-connect-works/[OpenID Connect] and link:https://datatracker.ietf.org/doc/html/rfc6749[OAuth 2.0] flows and contexts.
+Basic goal is to support Keycloak being member in an OpenID Federation as OP and RP.
+link:https://openid.net/specs/openid-federation-1_0.html#name-openid-connect-client-regis/[Client Registration] can be done via automatic, without client registration, and via explicit, automatic client registration.
+https://openid.net/specs/openid-federation-1_0.html/[OpenID Federation] defines also other entity types such as Trust Anchor, Intermediate Entity, Trust Marks, OAuth entities.
+
+
+OpenID Federation is experimental and it is disabled by default in a realm.
+Keycloak supports only being OP with explicit registration, receiving Entity Statement.
+You need to enable OpenID Federation with required attributes and define at least one Federation(Trust Anchor) to be member of.
+A realm can be member in multiple Federation(Trust Anchor) with different configuration.
+This will enable link:https://openid.net/specs/openid-federation-1_0.html/[a signed JWT Federation Entity Configuration] from `<root>/realms/{realm-name}/.well-known/openid-federation`.
+After you need to enroll your Keycloak realm in the configured Trust Anchor in order to be able to accept client explicit registrations, via federation registration endpoint (`<root>/realms/{realm-name}/openid-federation/clients-registrations` that is shown also in OpenID Federation Entity Configuration.
+OpenID Federation access policies can be defined, without enabling any by default.
