@@ -20,3 +20,9 @@ You can now add context information to each log message like the realm or the cl
 This helps you to track down a warning or error message in the log to a specific caller or environment
 
 For more details on this opt-in feature, see the https://www.keycloak.org/server/logging[Logging guide].
+
+= Ability to specify a tlsSecret on the Keycloak CR ingress
+
+In order to support basic TLS termination (edge) deployments via the operator, you may now set the Keycloak CR `spec.ingress.tlsSecret` field to a tls Secret name in the namespace.
+
+
