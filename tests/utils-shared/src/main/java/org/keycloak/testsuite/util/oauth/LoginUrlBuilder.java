@@ -89,6 +89,11 @@ public class LoginUrlBuilder extends AbstractUrlBuilder {
         return this;
     }
 
+    public LoginUrlBuilder resource(String request) {
+        parameter(OIDCLoginProtocol.RESOURCE_PARAM, request);
+        return this;
+    }
+
     @Override
     protected void initRequest() {
         parameter(OAuth2Constants.RESPONSE_TYPE, client.config().getResponseType());
