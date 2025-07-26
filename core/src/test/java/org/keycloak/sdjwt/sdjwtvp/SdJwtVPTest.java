@@ -143,7 +143,7 @@ public abstract class SdJwtVPTest {
 
     @Test
     public void testS6_2_PresentationPositive() throws VerificationException {
-        String jwsType = "vc+sd-jwt";
+        String jwsType = "dc+sd-jwt";
         String sdJwtVPString = TestUtils.readFileAsString(getClass(), "sdjwt/s6.2-presented-sdjwtvp.txt");
         SdJwtVP sdJwtVP = SdJwtVP.of(sdJwtVPString);
         JsonNode keyBindingClaims = TestUtils.readClaimSet(getClass(), "sdjwt/s6.2-key-binding-claims.json");
@@ -163,7 +163,7 @@ public abstract class SdJwtVPTest {
 
     @Test(expected = VerificationException.class)
     public void testS6_2_PresentationNegative() throws VerificationException {
-        String jwsType = "vc+sd-jwt";
+        String jwsType = "dc+sd-jwt";
         String sdJwtVPString = TestUtils.readFileAsString(getClass(), "sdjwt/s6.2-presented-sdjwtvp.txt");
         SdJwtVP sdJwtVP = SdJwtVP.of(sdJwtVPString);
         JsonNode keyBindingClaims = TestUtils.readClaimSet(getClass(), "sdjwt/s6.2-key-binding-claims.json");
@@ -182,7 +182,7 @@ public abstract class SdJwtVPTest {
 
     @Test
     public void testS6_2_PresentationPartialDisclosure() throws VerificationException {
-        String jwsType = "vc+sd-jwt";
+        String jwsType = "dc+sd-jwt";
         String sdJwtVPString = TestUtils.readFileAsString(getClass(), "sdjwt/s6.2-presented-sdjwtvp.txt");
         SdJwtVP sdJwtVP = SdJwtVP.of(sdJwtVPString);
         JsonNode keyBindingClaims = TestUtils.readClaimSet(getClass(), "sdjwt/s6.2-key-binding-claims.json");

@@ -40,7 +40,7 @@ public class Format {
     /**
      * SD-JWT-Credentials {@see https://drafts.oauth.net/oauth-sd-jwt-vc/draft-ietf-oauth-sd-jwt-vc.html}
      */
-    public static final String SD_JWT_VC = "vc+sd-jwt";
+    public static final String SD_JWT_VC = "dc+sd-jwt";
 
     public static final Set<String> SUPPORTED_FORMATS = Collections.unmodifiableSet(Set.of(JWT_VC, LDP_VC, SD_JWT_VC));
 }
