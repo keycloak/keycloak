@@ -87,6 +87,7 @@ export interface UserProfileAttributeMetadata {
   annotations?: { [index: string]: any };
   validators: { [index: string]: { [index: string]: any } };
   multivalued: boolean;
+  defaultValue: string;
 }
 
 export interface UserProfileMetadata {
