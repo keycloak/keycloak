@@ -187,7 +187,7 @@ Database - additional datasources (Preview):
                      Preview: Used for named <datasource>. The database vendor. In production mode
                        the default value of 'dev-file' is deprecated, you should explicitly specify
                        the db instead. Possible values are: dev-file, dev-mem, mariadb, mssql,
-                       mysql, oracle, postgres. Default: dev-file.
+                       mysql, oracle, postgres.
 --db-log-slow-queries-threshold-<datasource> <milliseconds>
                      Preview: Used for named <datasource>. Log SQL statements slower than the
                        configured threshold with logger org.hibernate.SQL_SLOW and log-level info.

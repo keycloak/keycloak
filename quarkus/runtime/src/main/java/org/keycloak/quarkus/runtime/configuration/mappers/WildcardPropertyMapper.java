@@ -66,7 +66,7 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
         return true;
     }
 
-    String getTo(String wildcardKey) {
+    public String getTo(String wildcardKey) {
         return toPrefix + wildcardKey + toSuffix;
     }
 
