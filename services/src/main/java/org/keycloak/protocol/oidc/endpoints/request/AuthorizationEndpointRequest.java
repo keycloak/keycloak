@@ -55,10 +55,16 @@ public class AuthorizationEndpointRequest {
 
     String acr;
 
+    String resource;
+
     AuthorizationRequestContext authorizationRequestContext;
 
     public String getAcr() {
         return acr;
+    }
+
+    public String getResource() {
+        return resource;
     }
 
     public String getClientId() {

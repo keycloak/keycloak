@@ -162,6 +162,8 @@ public class Profile {
 
         CIMD("OAuth Client ID Metadata Document", Type.EXPERIMENTAL),
 
+        RESOURCE_INDICATOR("Resource Indicators for OAuth 2.0", Type.EXPERIMENTAL),
+
         /**
          * @see <a href="https://github.com/keycloak/keycloak/issues/37967">Deprecate for removal the Instagram social broker</a>.
          */
