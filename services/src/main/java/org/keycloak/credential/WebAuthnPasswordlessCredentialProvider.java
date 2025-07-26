@@ -18,19 +18,25 @@
 
 package org.keycloak.credential;
 
+import java.io.IOException;
+import java.util.Set;
 import com.webauthn4j.converter.util.ObjectConverter;
+import org.jboss.logging.Logger;
 import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
+import org.keycloak.models.credential.dto.WebAuthnCredentialData;
+import org.keycloak.util.JsonSerialization;
 
 /**
  * Credential provider for WebAuthn passwordless credential of the user
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class WebAuthnPasswordlessCredentialProvider extends WebAuthnCredentialProvider {
+public class WebAuthnPasswordlessCredentialProvider extends WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCredentialModel> {
 
+    private static final Logger logger = Logger.getLogger(RecoveryAuthnCodesCredentialProvider.class);
     public WebAuthnPasswordlessCredentialProvider(KeycloakSession session, ObjectConverter objectConverter) {
         super(session, objectConverter);
     }
@@ -56,5 +62,28 @@ public class WebAuthnPasswordlessCredentialProvider extends WebAuthnCredentialPr
     @Override
     protected WebAuthnPolicy getWebAuthnPolicy() {
         return getKeycloakSession().getContext().getRealm().getWebAuthnPolicyPasswordless();
+    }
+
+    @Override
+    public CredentialMetadata getCredentialMetadata(WebAuthnCredentialModel credentialModel, CredentialTypeMetadata credentialTypeMetadata) {
+
+        CredentialMetadata credentialMetadata = new CredentialMetadata();
+
+        try {
+            WebAuthnCredentialData credentialData = JsonSerialization.readValue(credentialModel.getCredentialData(), WebAuthnCredentialData.class);
+            Set<String> transports = credentialData.getTransports();
+            if (transports != null && !transports.isEmpty()) {
+                String joinedTransports = String.join(", ", transports);
+                credentialMetadata.setInfoMessage("credentialTransports", joinedTransports);
+
+            }
+
+        } catch (
+                IOException e) {
+            logger.warn("unable to deserialize model information, skipping messages", e);
+        }
+
+        credentialMetadata.setCredentialModel(credentialModel);
+        return credentialMetadata;
     }
 }
