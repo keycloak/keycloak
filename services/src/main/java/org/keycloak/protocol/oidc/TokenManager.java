@@ -131,6 +131,7 @@ import org.jboss.logging.Logger;
 import static org.keycloak.OAuth2Constants.ORGANIZATION;
 import static org.keycloak.models.Constants.AUTHORIZATION_DETAILS_RESPONSE;
 import static org.keycloak.models.light.LightweightUserAdapter.isLightweightUser;
+import static org.keycloak.protocol.oidc.mappers.ResourceIndicatorMapper.PREFIX_RESOURCE_ON_TOKEN_ENDPOINT;
 import static org.keycloak.representations.IDToken.NONCE;
 
 /**
@@ -252,6 +253,13 @@ public class TokenManager {
             clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, oldToken.getNonce());
         }
         clientSessionCtx.setAttribute(Constants.GRANT_TYPE, OAuth2Constants.REFRESH_TOKEN);
+
+        // Set resource an attribute in the ClientSessionContext. Will be used for the token refresh
+        clientSessionCtx.setAttribute(OAuth2Constants.RESOURCE, clientSession.getNote(OAuth2Constants.RESOURCE));
+        if (session.getContext().getHttpRequest().getDecodedFormParameters().get(OAuth2Constants.RESOURCE) != null) {
+            String resourceOnTokenEndpoint = session.getContext().getHttpRequest().getDecodedFormParameters().get(OAuth2Constants.RESOURCE).get(0);
+            clientSessionCtx.setAttribute(PREFIX_RESOURCE_ON_TOKEN_ENDPOINT + OIDCLoginProtocol.RESOURCE_PARAM, resourceOnTokenEndpoint);
+        }
 
         // recreate token.
         AccessToken newToken = createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx);
@@ -585,6 +593,9 @@ public class TokenManager {
         Map<String, String> transferredNotes = authSession.getClientNotes();
         for (Map.Entry<String, String> entry : transferredNotes.entrySet()) {
             clientSession.setNote(entry.getKey(), entry.getValue());
+        }
+        if (authSession.getClientNote(OAuth2Constants.RESOURCE) == null && clientSession.getNote(OAuth2Constants.RESOURCE) != null) {
+            clientSession.removeNote(OAuth2Constants.RESOURCE);
         }
 
         Map<String, String> transferredUserSessionNotes = authSession.getUserSessionNotes();

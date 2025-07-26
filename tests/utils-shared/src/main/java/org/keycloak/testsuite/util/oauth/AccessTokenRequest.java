@@ -52,6 +52,11 @@ public class AccessTokenRequest extends AbstractHttpPostRequest<AccessTokenReque
         return this;
     }
 
+    public AccessTokenRequest resource(String resource) {
+        parameter(OAuth2Constants.RESOURCE, resource);
+        return this;
+    }
+
     public AccessTokenRequest param(String name, String value) {
         parameter(name, value);
         return this;

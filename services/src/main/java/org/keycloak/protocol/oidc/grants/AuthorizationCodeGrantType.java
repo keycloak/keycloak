@@ -54,6 +54,7 @@ import org.jboss.logging.Logger;
 
 import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS;
 import static org.keycloak.models.Constants.AUTHORIZATION_DETAILS_RESPONSE;
+import static org.keycloak.protocol.oidc.mappers.ResourceIndicatorMapper.PREFIX_RESOURCE_ON_TOKEN_ENDPOINT;
 
 /**
  * OAuth 2.0 Authorization Code Grant
@@ -215,6 +216,12 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
 
         // Set nonce as an attribute in the ClientSessionContext. Will be used for the token generation
         clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, codeData.getNonce());
+
+        // Set resource an attribute in the ClientSessionContext. Will be used for the token generation
+        clientSessionCtx.setAttribute(OIDCLoginProtocol.RESOURCE_PARAM, clientSession.getNote(OAuth2Constants.RESOURCE));
+        if (formParams.get(OAuth2Constants.RESOURCE) != null) {
+            clientSessionCtx.setAttribute(PREFIX_RESOURCE_ON_TOKEN_ENDPOINT + OIDCLoginProtocol.RESOURCE_PARAM, formParams.get(OAuth2Constants.RESOURCE).get(0));
+        }
 
         // Process authorization_details using provider discovery (if present in request)
         List<AuthorizationDetailsJSONRepresentation> authorizationDetailsResponse = null;
