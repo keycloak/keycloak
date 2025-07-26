@@ -53,8 +53,8 @@ public class WelcomePageTest {
 
         welcomePage.navigateTo();
 
-        Assertions.assertEquals("Create a temporary administrative user", welcomePage.getWelcomeMessage());
-        Assertions.assertTrue(welcomePage.getWelcomeDescription().startsWith("To get started with Keycloak, you first create a temporary administrative user"));
+        Assertions.assertEquals("Create an administrative user", welcomePage.getWelcomeMessage());
+        Assertions.assertTrue(welcomePage.getWelcomeDescription().startsWith("To get started with Keycloak, you first create an administrative user"));
         Assertions.assertTrue(driver.getPageSource().contains("form"));
     }
 
@@ -64,7 +64,7 @@ public class WelcomePageTest {
         driver.get(getPublicServerUrl().toString());
 
         Assertions.assertEquals("Local access required", welcomePage.getWelcomeMessage());
-        Assertions.assertTrue(welcomePage.getWelcomeDescription().startsWith("You will need local access to create the temporary administrative user."));
+        Assertions.assertTrue(welcomePage.getWelcomeDescription().startsWith("You will need local access to create the administrative user."));
         Assertions.assertFalse(driver.getPageSource().contains("form"));
     }
 
