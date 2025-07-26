@@ -100,10 +100,15 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         assertExternalConfig("quarkus.datasource.\"store\".jdbc.url", "jdbc:h2:file:" + Environment.getHomeDir() + "/data/h2/keycloakdb-store;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0");
         onAfter();
 
+        ConfigArgsConfigSource.setCliArgs("--db=dev-file", "--cache=local");
+        initConfig();
+        assertExternalConfig("quarkus.datasource.jdbc.url", "jdbc:h2:file:" + Environment.getHomeDir() + "/data/h2/keycloakdb;NON_KEYWORDS=VALUE;AUTO_SERVER=true");
+        onAfter();
+
         ConfigArgsConfigSource.setCliArgs("--db-kind-store=dev-mem");
         initConfig();
         assertConfig("db-dialect-store", H2Dialect.class.getName());
-        assertExternalConfig("quarkus.datasource.\"store\".jdbc.url", "jdbc:h2:mem:keycloakdb-store;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0");
+        assertExternalConfig("quarkus.datasource.\"store\".jdbc.url", "jdbc:h2:mem:keycloakdb-store;NON_KEYWORDS=VALUE");
         assertExternalConfig("quarkus.datasource.\"store\".db-kind", "h2");
         onAfter();
 

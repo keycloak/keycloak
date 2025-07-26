@@ -147,7 +147,7 @@ final class DatabasePropertyMappers {
     }
 
     private static String getDatabaseUrl(String name, String value, ConfigSourceInterceptorContext c) {
-        return Database.getDefaultUrl(name, value).orElse(null);
+        return Database.getDefaultUrl(name, value, CachingPropertyMappers.cacheSetToInfinispan()).orElse(null);
     }
 
     private static String getXaOrNonXaDriver(String name, String value, ConfigSourceInterceptorContext context) {
