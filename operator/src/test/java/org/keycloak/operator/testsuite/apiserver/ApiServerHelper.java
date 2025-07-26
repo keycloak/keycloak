@@ -7,19 +7,37 @@ import java.util.Optional;
 import org.keycloak.operator.Utils;
 
 import io.fabric8.kubeapitest.KubeAPIServer;
+import io.fabric8.kubeapitest.KubeAPIServerConfigBuilder;
+import io.fabric8.kubeapitest.KubeAPITestException;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
+import io.quarkus.logging.Log;
 
 public class ApiServerHelper {
+
+    static final int MAX_START_RETRIES = 2;
 
     private KubeAPIServer kubeApi;
 
     public ApiServerHelper() {
-        kubeApi = new KubeAPIServer();
-        kubeApi.start();
+        long start = System.currentTimeMillis();
+        for (int i = 0; i < MAX_START_RETRIES; i++) {
+            kubeApi = new KubeAPIServer(
+                    KubeAPIServerConfigBuilder.anAPIServerConfig().withStartupTimeout(90_000).build());
+            try {
+                kubeApi.start();
+            } catch (KubeAPITestException e) {
+                if (i == MAX_START_RETRIES - 1) {
+                    throw e;
+                }
+                kubeApi.stop();
+                Log.warnf("api server failed to become ready %s", e.getMessage());
+            }
+        }
+        Log.infof("api server started in %s ms", System.currentTimeMillis() - start);
     }
 
     public void stop() {
