@@ -877,4 +877,37 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertTrue(nonRunningPicocli.reaug);
         assertThat(nonRunningPicocli.getOutString(), containsString("The following SPI options"));
     }
+
+    @Test
+    public void httpAccessLog() {
+        // http-access-log-pattern disabled
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--http-access-log-pattern=long");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Available only when HTTP Access log is enabled"));
+        onAfter();
+
+        // http-access-log-pattern disabled
+        nonRunningPicocli = pseudoLaunch("start-dev", "--http-access-log-exclude=something/");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Available only when HTTP Access log is enabled"));
+        onAfter();
+
+        // accept other patterns - error will be thrown on Quarkus side
+        nonRunningPicocli = pseudoLaunch("start-dev", "--http-access-log-enabled=true", "--http-access-log-pattern=not-named-pattern");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        onAfter();
+
+        // accept other patterns
+        nonRunningPicocli = pseudoLaunch("start-dev", "--http-access-log-enabled=true", "--http-access-log-pattern='%r n%{ALL_REQUEST_HEADERS}'");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        onAfter();
+
+        // exclude
+        nonRunningPicocli = pseudoLaunch("start-dev", "--http-access-log-enabled=true", "--http-access-log-exclude=something.*");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--http-access-log-enabled=true", "--http-access-log-exclude='/realms/my-realm/.*");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+    }
 }

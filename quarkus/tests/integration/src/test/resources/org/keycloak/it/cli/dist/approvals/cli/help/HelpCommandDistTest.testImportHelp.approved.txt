@@ -134,6 +134,12 @@ Feature:
 --features-disabled <feature>
                      Disables a set of one or more features. Possible values are: <...>.
 
+HTTP Access log:
+
+--http-access-log-enabled <true|false>
+                     If HTTP access logging is enabled. By default this will log records in
+                       console. Default: false.
+
 Management:
 
 --http-management-port <port>
