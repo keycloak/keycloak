@@ -408,6 +408,46 @@ m|cache-embedded-network-external-address
 
 |===
 
+== Verify cluster and network health
+
+This section provides methods to verify that your {project_name} cluster has formed correctly and that network communication between instances is functioning as expected.
+It is crucial to perform these checks after deployment to ensure high availability and data consistency.
+
+To verify if the cluster is formed properly, check one of these locations:
+
+* Admin UI
++
+Access the {project_name} Web UI, typically available at `++https://<your-host>/admin/master/console/#/master/providers++`.
+Under the *Provider Info* section, locate the *connectionsInfinispan* entry.
+Click on *Show more* to expand its details.
+You should find information about the cluster status and the health of individual caches.
++
+image:server/infinispan_info.png[Infinispan Cluster Information in Web UI]
+
+* Logs
++
+Infinispan logs a cluster view every time a new instance joins or leaves the cluster.
+Search for log entries with the ID `ISPN000094`.
++
+A healthy cluster view will show all expected nodes.
+For example:
++
+[source,text]
+----
+ISPN000094: Received new cluster view for channel ISPN: [node1-26186|1] (2) [node1-26186, node2-37007]
+----
++
+This log entry indicates that the cluster named "ISPN" currently has 2 nodes: `node1-26186` and `node2-37007`.
+The `(2)` confirms the total number of nodes in the cluster.
+
+* Metrics
++
+{project_name} exposes Infinispan metrics via a Prometheus endpoint, which can be visualized in tools like Grafana.
+The metric `vendor_cluster_size` shows the current number of instances in the cluster.
+You should verify that this metric matches the expected number of running instances configured in your cluster.
++
+Refer to <@links.observability id="metrics-for-troubleshooting-clustering-and-network" anchor="_cluster_size"/> for more information.
+
 == Exposing metrics from caches
 
 Metrics from caches are automatically exposed when the metrics are enabled.
