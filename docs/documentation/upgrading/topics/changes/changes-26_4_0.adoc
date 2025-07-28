@@ -48,6 +48,16 @@ Starting with this release, {project_name} will cache by default only 10000 entr
 
 Use the options `cache-embedded-offline-sessions-max-count` and `cache-embedded-offline-client-sessions-max-count` to change size of the offline session caches.
 
+=== Translation resource bundle file names
+
+The naming of resource bundles in classloader and folder based themes is now aligned with Java https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/ResourceBundle.html#getBundle(java.lang.String,java.util.Locale,java.lang.ClassLoader)[ResourceBunndle#getBundle] file names.
+For all included community languages like `de` or `pt-BR` a file is as before named `messages_de.properties` or `messages_pt_BR.properties`.
+If you added custom language code, you should check if your file names are still the same.
+
+The languages "Chinese (traditional)" and "Chinese (simplified)" are named for historical reasons `zh-TW` and `zh-CN` in the community themes of {project_name}.
+As a start to migrate to the new language codes `zh-Hant` and `zh-Hans`, the classloader and folder based themes pick up for the old language codes `zh-TW` and `zh-CN` also the files `messages_zh_Hant.properties` and `messages_zh_Hant.properties`.
+Entries in `messages_zh_Hant.properties` take precedence over entries in `messages_zh_TW.properties`, and entries in `messages_zh_Hans.properties` take precedence over entries in `messages_zh_CN.properties`.
+
 === Supported Update Email Feature
 
 The `Update Email` is now a supported feature so it is no longer needed to enable the feature during the server startup.
