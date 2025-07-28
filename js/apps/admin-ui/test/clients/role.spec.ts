@@ -150,7 +150,7 @@ test.describe("Roles tab test", () => {
     await goToRolesTab(page);
 
     // Search non-existing
-    await searchItem(page, placeHolder, "role_DNE");
+    await searchItem(page, placeHolder, "role_DNE", 0);
     await assertNoResults(page);
 
     // Search existing

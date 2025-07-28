@@ -89,7 +89,7 @@ test.describe("Realm settings general tab tests", () => {
   });
 
   test("Modify front end URL", async ({ page }) => {
-    const frontendUrl = "www.example.com";
+    const frontendUrl = "http://www.example.com";
     await goToRealmSettings(page);
     await fillFrontendURL(page, frontendUrl);
 

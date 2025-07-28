@@ -75,7 +75,7 @@ test.describe("Go to localization tab", () => {
       await searchItem(page, "Search for translation", "321");
       await assertRowExists(page, "search");
 
-      await searchItem(page, "Search for translation", "not-found");
+      await searchItem(page, "Search for translation", "not-found", 0);
       await assertRowExists(page, "not-found", false);
     });
 

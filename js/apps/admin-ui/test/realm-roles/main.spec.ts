@@ -178,7 +178,7 @@ test.describe("Realm roles test", () => {
     page,
   }) => {
     const itemName = "non-existent-associated-role";
-    await searchItem(page, searchPlaceHolder, itemName);
+    await searchItem(page, searchPlaceHolder, itemName, 0);
     await assertNoResults(page);
   });
 

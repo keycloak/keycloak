@@ -37,7 +37,7 @@ test.describe("Sessions test", () => {
 
   test.describe("Sessions list view", () => {
     test("check item values", async ({ page }) => {
-      await searchItem(page, placeHolder, client);
+      await searchItem(page, placeHolder, client, false);
       const rows = await getTableData(page, tableName);
       expect(rows).not.toBeNull();
 
@@ -45,7 +45,7 @@ test.describe("Sessions test", () => {
     });
 
     test("go to item accessed clients link", async ({ page }) => {
-      await searchItem(page, placeHolder, client);
+      await searchItem(page, placeHolder, client, false);
       await clickTableRowItem(page, admin);
       expect(page.url()).toMatch(/users\/.*\/sessions/);
     });
@@ -113,7 +113,7 @@ test.describe("Search", () => {
   });
 
   test("search non-existent session", async ({ page }) => {
-    await searchItem(page, placeHolder, "non-existent-session");
+    await searchItem(page, placeHolder, "non-existent-session", 0);
     await assertNoResults(page);
   });
 });
