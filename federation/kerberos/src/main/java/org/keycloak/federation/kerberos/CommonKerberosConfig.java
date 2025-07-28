@@ -22,8 +22,6 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.representations.idm.ComponentRepresentation;
 
-import java.util.Map;
-
 /**
  * Common configuration useful for all providers
  *
@@ -51,18 +49,15 @@ public abstract class CommonKerberosConfig {
     }
 
     public String getKerberosRealm() {
-        String kerberosRealm = getConfig().getFirst(KerberosConstants.KERBEROS_REALM);
-        return kerberosRealm != null ? kerberosRealm.trim() : null;
+        return getConfig().getFirst(KerberosConstants.KERBEROS_REALM);
     }
 
     public String getServerPrincipal() {
-        String serverPrincipal = getConfig().getFirst(KerberosConstants.SERVER_PRINCIPAL);
-        return serverPrincipal != null ? serverPrincipal.trim() : null;
+        return getConfig().getFirst(KerberosConstants.SERVER_PRINCIPAL);
     }
 
     public String getKeyTab() {
-        String keyTab = getConfig().getFirst(KerberosConstants.KEYTAB);
-        return keyTab != null ? keyTab.trim() : null;
+        return getConfig().getFirst(KerberosConstants.KEYTAB);
     }
 
     public boolean isDebug() {
