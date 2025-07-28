@@ -293,7 +293,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         info.put("product", Version.getBrandName());
         info.put("version", Version.getBrandVersion());
         if (InfinispanUtils.isRemoteInfinispan()) {
-            addRemoteOperationalINfo(info);
+            addRemoteOperationalInfo(info);
         } else {
             addEmbeddedOperationalInfo(info);
         }
@@ -311,7 +311,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         }
     }
 
-    private void addRemoteOperationalINfo(Map<String, String> info) {
+    private void addRemoteOperationalInfo(Map<String, String> info) {
         info.put("connectionCount", Integer.toString(remoteCacheManager.getConnectionCount()));
     }
 }
