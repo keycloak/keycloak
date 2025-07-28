@@ -258,7 +258,6 @@ These properties are available only when asynchronous logging is enabled for the
 {project_name} supports HTTP access logging to record details of incoming HTTP requests.
 While access logs are often used for debugging and traffic analysis, they are also important for security auditing and compliance monitoring, helping administrators track access patterns, identify suspicious activity, and maintain audit trails.
 
-Currently, HTTP access logs are only supported via console output.
 These logs are written at the `INFO` level, so make sure your logging configuration includes this level — either globally (e.g. `log-level=info`) or specifically for the access log category (e.g. `log-level=org.keycloak.http.access-log:info`).
 When HTTP access logs are enabled, they are shown by default, as `INFO` level is the default log level for {project_name}.
 
