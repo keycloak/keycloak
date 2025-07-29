@@ -136,6 +136,8 @@ public class Profile {
         ROLLING_UPDATES_V1("Rolling Updates", Type.DEFAULT, 1),
         ROLLING_UPDATES_V2("Rolling Updates for patch releases", Type.PREVIEW, 2),
 
+        RESOURCE_LIFECYCLE("Resource lifecycle management", Type.EXPERIMENTAL),
+
         LOG_MDC("Mapped Diagnostic Context (MDC) information in logs", Type.PREVIEW),
 
         /**
