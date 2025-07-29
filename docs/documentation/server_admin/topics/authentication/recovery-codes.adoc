@@ -1,5 +1,4 @@
 [[_recovery-codes]]
-
 === Recovery Codes (RecoveryCodes)
 
 You can configure Recovery codes for two-factor authentication by adding 'Recovery Authentication Code Form' as a two-factor authenticator to your authentication flow. For an example of configuring this authenticator, see xref:webauthn_{context}[WebAuthn].
