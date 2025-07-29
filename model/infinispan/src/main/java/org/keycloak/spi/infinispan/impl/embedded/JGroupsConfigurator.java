@@ -214,7 +214,7 @@ public final class JGroupsConfigurator {
         var stack = getProtocolConfigurations(tableName, isUdp, tracingEnabled);
         var connectionFactory = (JpaConnectionProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(JpaConnectionProvider.class);
 
-        String clusterName = transportOf(holder).attributes().attribute(CLUSTER_NAME).computeIfAbsent(() -> "ISPN");
+        String clusterName = transportOf(holder).attributes().attribute(CLUSTER_NAME).get();
 
         Address address = Retry.call(ignored -> KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(),
                 s -> prepareJGroupsAddress(s, clusterName)),
