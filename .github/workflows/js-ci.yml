@@ -147,6 +147,13 @@ jobs:
     runs-on: ubuntu-latest
     env:
       WORKSPACE: "@keycloak/keycloak-account-ui"
+    strategy:
+      matrix:
+        browser: [chromium, firefox]
+        exclude:
+          # Only test with Firefox on scheduled runs
+          - browser: ${{ github.event_name != 'workflow_dispatch' && 'firefox' || '' }}
+      fail-fast: false
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
@@ -173,14 +180,14 @@ jobs:
         working-directory: js
 
       - name: Run Playwright tests
-        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test
+        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test -- --project=${{ matrix.browser }}
         working-directory: js
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:
-          name: account-ui-playwright-report
+          name: account-ui-playwright-report-${{ matrix.browser }}
           path: js/apps/account-ui/playwright-report
           retention-days: 30
 
@@ -188,35 +195,18 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: account-ui-server-log
+          name: account-ui-server-log-${{ matrix.browser }}
           path: ~/server.log
-
-
-  generate-test-seed:
-    name: Generate Test Seed
-    needs:
-      - conditional
-    if: needs.conditional.outputs.js-ci == 'true'
-    runs-on: ubuntu-latest
-    outputs:
-      seed: ${{ steps.generate-random-number.outputs.value }}
-    steps:
-      - name: Generate random number
-        id: generate-random-number
-        shell: bash
-        run: |
-          echo "value=$(shuf -i 1-100 -n 1)" >> $GITHUB_OUTPUT
 
   admin-ui-e2e:
     name: Admin UI E2E
     needs:
       - conditional
       - build-keycloak
-      - generate-test-seed
     if: needs.conditional.outputs.js-ci == 'true'
     runs-on: ubuntu-latest
     env:
-      WORKSPACE: keycloak-admin-ui
+      WORKSPACE: "@keycloak/keycloak-admin-ui"
     strategy:
       matrix:
         browser: [chromium, firefox]
@@ -228,10 +218,6 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - uses: ./.github/actions/pnpm-setup
-
-      - name: Compile Admin Client
-        run: pnpm --fail-if-no-match --filter @keycloak/keycloak-admin-client build
-        working-directory: js
 
       - name: Download Keycloak server
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
@@ -256,7 +242,7 @@ jobs:
         working-directory: js
 
       - name: Run Playwright tests
-        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test:integration --project=${{ matrix.browser }}
+        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test:integration -- --project=${{ matrix.browser }}
         working-directory: js
 
       - name: Upload Playwright report

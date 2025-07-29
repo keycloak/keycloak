@@ -17,16 +17,23 @@
 
 package org.keycloak.connections.infinispan;
 
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.stream.Collectors;
 
 import org.infinispan.client.hotrod.RemoteCacheManager;
+import org.infinispan.commons.util.Version;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.eviction.EvictionStrategy;
+import org.infinispan.health.CacheHealth;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.jboss.logging.Logger;
@@ -52,6 +59,7 @@ import org.keycloak.provider.InvalidationHandler.ObjectType;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
+import org.keycloak.provider.ServerInfoAwareProviderFactory;
 import org.keycloak.spi.infinispan.CacheEmbeddedConfigProvider;
 import org.keycloak.spi.infinispan.CacheRemoteConfigProvider;
 import org.keycloak.spi.infinispan.impl.embedded.CacheConfigurator;
@@ -73,7 +81,7 @@ import static org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderF
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class DefaultInfinispanConnectionProviderFactory implements InfinispanConnectionProviderFactory, ProviderEventListener {
+public class DefaultInfinispanConnectionProviderFactory implements InfinispanConnectionProviderFactory, ProviderEventListener, ServerInfoAwareProviderFactory {
 
     private static final ReadWriteLock READ_WRITE_LOCK = new ReentrantReadWriteLock();
     private static final Logger logger = Logger.getLogger(DefaultInfinispanConnectionProviderFactory.class);
@@ -277,5 +285,33 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         if (event instanceof PostMigrationEvent pme) {
             KeycloakModelUtils.runJobInTransaction(pme.getFactory(), this::registerSystemWideListeners);
         }
+    }
+
+    @Override
+    public Map<String, String> getOperationalInfo() {
+        Map<String, String> info = new LinkedHashMap<>();
+        info.put("product", Version.getBrandName());
+        info.put("version", Version.getBrandVersion());
+        if (InfinispanUtils.isRemoteInfinispan()) {
+            addRemoteOperationalInfo(info);
+        } else {
+            addEmbeddedOperationalInfo(info);
+        }
+        return info;
+    }
+
+    private void addEmbeddedOperationalInfo(Map<String, String> info) {
+        var cacheManagerInfo = cacheManager.getCacheManagerInfo();
+        info.put("clusterSize", Integer.toString(cacheManagerInfo.getClusterSize()));
+        var cacheNames = Arrays.stream(InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES)
+                .sorted()
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        for (CacheHealth health : cacheManager.getHealth().getCacheHealth(cacheNames)) {
+            info.put(health.getCacheName() + ":Cache", health.getStatus().toString());
+        }
+    }
+
+    private void addRemoteOperationalInfo(Map<String, String> info) {
+        info.put("connectionCount", Integer.toString(remoteCacheManager.getConnectionCount()));
     }
 }

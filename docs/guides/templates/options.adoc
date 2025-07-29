@@ -16,7 +16,7 @@
 <#nested>
 </#macro>
 
-<#macro list options buildIcon=true anchor=true>
+<#macro list options buildIcon=true anchor=true categoryName="">
 [cols="12a,4",role="options"]
 |===
 | |Value
@@ -27,7 +27,7 @@
 
 [.options-description]#${option.description}#
 
-[<#if anchor>#option-extended-${option.key},</#if>role="options-extended"]
+[<#if anchor>#option-extended-${categoryName?lower_case}-${option.key},</#if>role="options-extended"]
 --
 <#if option.descriptionExtended?has_content>[.options-description-extended]#${option.descriptionExtended!}#</#if>
 

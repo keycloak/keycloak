@@ -23,7 +23,7 @@
     "preview": "wireit",
     "lint": "wireit",
     "test": "wireit",
-    "test:integration": "playwright test"
+    "test:integration": "wireit"
   },
   "wireit": {
     "dev": {
@@ -74,6 +74,12 @@
       "command": "vitest",
       "dependencies": [
         "../../libs/ui-shared:build",
+        "../../libs/keycloak-admin-client:build"
+      ]
+    },
+    "test:integration": {
+      "command": "playwright test",
+      "dependencies": [
         "../../libs/keycloak-admin-client:build"
       ]
     }

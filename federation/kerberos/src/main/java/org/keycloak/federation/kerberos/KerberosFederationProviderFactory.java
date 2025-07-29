@@ -38,6 +38,7 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderFactory;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.utils.CredentialHelper;
+import org.keycloak.component.ComponentValidationException;
 
 import java.util.List;
 
@@ -167,5 +168,24 @@ public class KerberosFederationProviderFactory implements UserStorageProviderFac
     public void preRemove(KeycloakSession session, RealmModel realm, ComponentModel model) {
         CredentialHelper.setOrReplaceAuthenticationRequirement(session, realm, CredentialRepresentation.KERBEROS,
                 AuthenticationExecutionModel.Requirement.DISABLED, null);
+    }
+
+    @Override
+    public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel config) throws ComponentValidationException {
+        // Trim whitespace from string configuration values
+        trimConfigValue(config, KerberosConstants.SERVER_PRINCIPAL);
+        trimConfigValue(config, KerberosConstants.KERBEROS_REALM);
+        trimConfigValue(config, KerberosConstants.KEYTAB);
+    }
+
+    private void trimConfigValue(ComponentModel config, String configKey) {
+        String value = config.getConfig().getFirst(configKey);
+        if (value != null) {
+            String trimmedValue = value.trim();
+            if (!value.equals(trimmedValue)) {
+                // Update the config with trimmed value
+                config.getConfig().putSingle(configKey, trimmedValue);
+            }
+        }
     }
 }
