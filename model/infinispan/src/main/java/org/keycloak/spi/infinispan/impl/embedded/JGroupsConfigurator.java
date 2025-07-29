@@ -17,6 +17,9 @@
 
 package org.keycloak.spi.infinispan.impl.embedded;
 
+import static org.infinispan.configuration.global.TransportConfiguration.CLUSTER_NAME;
+import static org.infinispan.configuration.global.TransportConfiguration.NODE_NAME;
+import static org.infinispan.configuration.global.TransportConfiguration.SITE_ID;
 import static org.infinispan.configuration.global.TransportConfiguration.STACK;
 import static org.keycloak.config.CachingOptions.CACHE_EMBEDDED_PREFIX;
 
@@ -51,11 +54,11 @@ import org.jgroups.conf.ProtocolConfiguration;
 import org.jgroups.protocols.TCP;
 import org.jgroups.protocols.TCP_NIO2;
 import org.jgroups.protocols.UDP;
+import org.jgroups.protocols.relay.SiteUUID;
 import org.jgroups.stack.IpAddress;
 import org.jgroups.stack.Protocol;
 import org.jgroups.util.DefaultSocketFactory;
 import org.jgroups.util.SocketFactory;
-import org.jgroups.util.UUID;
 import org.keycloak.Config;
 import org.keycloak.common.util.Retry;
 import org.keycloak.config.CachingOptions;
@@ -212,7 +215,13 @@ public final class JGroupsConfigurator {
         var stack = getProtocolConfigurations(tableName, isUdp, tracingEnabled);
         var connectionFactory = (JpaConnectionProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(JpaConnectionProvider.class);
 
-        Address address = Retry.call(ignored -> KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), JGroupsConfigurator::prepareJGroupsAddress), 50, 10);
+        String nodeName = transportOf(holder).attributes().attribute(NODE_NAME).computeIfAbsent(org.jgroups.util.Util::generateLocalName);
+        String siteName = transportOf(holder).attributes().attribute(SITE_ID).get();
+        String clusterName = transportOf(holder).attributes().attribute(CLUSTER_NAME).computeIfAbsent(() -> "ISPN");
+
+        Address address = Retry.call(ignored -> KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(),
+                s -> prepareJGroupsAddress(s, nodeName, siteName, clusterName)),
+                50, 10);
         holder.addJGroupsStack(new JpaFactoryAwareJGroupsChannelConfigurator(stackName, stack, connectionFactory, isUdp, address), null);
 
         transportOf(holder).stack(stackName);
@@ -225,7 +234,7 @@ public final class JGroupsConfigurator {
      * for max_join_attempts x all_clients_retry_timeout = 10 x 100 ms = 1 second. Otherwise, we will wait for that
      * one second. This prevents a split-brain scenario on a concurrent startup.
      */
-    private static Address prepareJGroupsAddress(KeycloakSession session) {
+    private static Address prepareJGroupsAddress(KeycloakSession session, String nodeName, String siteName, String clusterName) {
         var storage = session.getProvider(ServerConfigStorageProvider.class);
         String seq = storage.loadOrCreate(JGROUPS_ADDRESS_SEQUENCE, () -> "0");
         long value = Long.parseLong(seq) + 1;
@@ -236,14 +245,15 @@ public final class JGroupsConfigurator {
         var tableName = JpaUtils.getTableNameForNativeQuery("JGROUPS_PING", cp.getEntityManager());
         String statement = String.format("INSERT INTO %s values (?, ?, ?, ?, ?)", tableName);
 
-        Address address = new UUID(0, value);
+        SiteUUID address = new SiteUUID(0, value, nodeName, siteName);
+
 
         cp.getEntityManager().runWithConnection(o -> {
             Connection con = (Connection) o;
             try (PreparedStatement s = con.prepareStatement(statement)) {
                 s.setString(1, org.jgroups.util.Util.addressToString(address)); // address
-                s.setString(2, "(starting)"); // name
-                s.setString(3, "ISPN"); // cluster name
+                s.setString(2, address.getName()); // name
+                s.setString(3, clusterName); // cluster name
                 s.setString(4, new IpAddress("localhost", 0).toString()); // ip
                 s.setBoolean(5, false); // coord
                 s.execute();
