@@ -63,7 +63,7 @@
     "@vitejs/plugin-react-swc": "^3.11.0",
     "rollup-plugin-peer-deps-external": "^2.2.4",
     "vite": "^7.0.5",
-    "vite-plugin-checker": "^0.10.0",
+    "vite-plugin-checker": "^0.10.1",
     "vite-plugin-dts": "^4.5.4",
     "vite-plugin-lib-inject-css": "^2.2.2",
     "vitest": "^3.2.4"
