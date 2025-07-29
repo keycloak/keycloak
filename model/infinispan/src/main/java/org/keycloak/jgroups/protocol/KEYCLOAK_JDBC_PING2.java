@@ -23,8 +23,11 @@ import org.jgroups.PhysicalAddress;
 import org.jgroups.View;
 import org.jgroups.protocols.JDBC_PING2;
 import org.jgroups.protocols.PingData;
+import org.jgroups.stack.Protocol;
+import org.jgroups.util.ExtendedUUID;
 import org.jgroups.util.NameCache;
 import org.jgroups.util.Responses;
+import org.jgroups.util.UUID;
 import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
 
 import java.sql.Connection;
@@ -42,6 +45,18 @@ import java.util.stream.Collectors;
 public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
 
     private JpaConnectionProviderFactory factory;
+
+    @Override
+    public <T extends Protocol> T addr(Address addr) {
+        addr = toUUID(addr);
+        return super.addr(addr);
+    }
+
+    @Override
+    public <T extends Protocol> T setAddress(Address addr) {
+        addr = toUUID(addr);
+        return super.setAddress(addr);
+    }
 
     @Override
     protected void handleView(View new_view, View old_view, boolean coord_changed) {
@@ -179,6 +194,31 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
             lock.unlock();
         }
 
+    }
+
+    @Override
+    protected void delete(Connection conn, String clustername, Address addressToDelete) throws SQLException {
+        super.delete(conn, clustername, toUUID(addressToDelete));
+    }
+
+    @Override
+    protected void delete(String clustername, Address addressToDelete) throws SQLException {
+        super.delete(clustername, toUUID(addressToDelete));
+    }
+
+    @Override
+    protected void insert(Connection connection, PingData data, String clustername) throws SQLException {
+        if (data.getAddress() instanceof ExtendedUUID) {
+            data = new PingData(toUUID(data.getAddress()), data.isServer(), data.getLogicalName(), data.getPhysicalAddr()).coord(data.isCoord());
+        }
+        super.insert(connection, data, clustername);
+    }
+
+    private static Address toUUID(Address addr) {
+        if (addr instanceof ExtendedUUID eUUID) {
+            addr = new UUID(eUUID.getMostSignificantBits(), eUUID.getLeastSignificantBits());
+        }
+        return addr;
     }
 
     @Override
