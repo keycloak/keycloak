@@ -235,8 +235,8 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
 
         ConfigArgsConfigSource.setCliArgs("");
         initConfig();
-        assertConfig("db-dialect-clients", H2Dialect.class.getName());
-        assertExternalConfig("quarkus.datasource.\"clients\".jdbc.url", "jdbc:h2:file:test-dir/data/h2/keycloakdb-clients;;test=test;test1=test1;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0");
+        assertConfigNull("db-dialect-clients");
+        assertConfigNull("quarkus.datasource.\"clients\".jdbc.url", true);
         onAfter();
 
         System.setProperty("kc.db-url-properties-users", "?test=test&test1=test1");
@@ -294,6 +294,13 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         initConfig();
 
         assertConfigNull("db-pool-initial-size-clients");
+        assertConfigNull("db-pool-min-size-clients");
+        assertConfig("db-pool-max-size-clients", "100");
+
+        ConfigArgsConfigSource.setCliArgs("--db-kind-clients=dev-mem");
+        initConfig();
+
+        assertConfigNull("db-pool-initial-size-clients");
         assertConfig(Map.of(
                 "db-pool-min-size-clients", "1",
                 "db-pool-max-size-clients", "100"
@@ -325,6 +332,12 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         onAfter();
 
         ConfigArgsConfigSource.setCliArgs("--db-pool-initial-size-clients=10");
+        initConfig();
+        assertConfigNull("db-pool-min-size-clients");
+        assertConfig("db-pool-initial-size-clients", "10");
+        onAfter();
+
+        ConfigArgsConfigSource.setCliArgs("--db-pool-initial-size-clients=10", "--db-kind-clients=dev-file");
         initConfig();
         assertConfig(Map.of(
                 "db-pool-min-size-clients", "1", // set 1 for H2
