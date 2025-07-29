@@ -86,7 +86,10 @@ public class ClientScopesResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_SCOPES)
-    @Operation(summary = "Get client scopes belonging to the realm Returns a list of client scopes belonging to the realm")
+    @Operation(
+            summary = "Get client scopes belonging to the realm Returns a list of client scopes belonging to the realm",
+            operationId = "getClientScopes"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = ClientScopeRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -111,7 +114,10 @@ public class ClientScopesResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_SCOPES)
-    @Operation(summary = "Create a new client scope Client Scope’s name must be unique!")
+    @Operation(
+            summary = "Create a new client scope Client Scope’s name must be unique!",
+            operationId = "createClientScope"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "201", description = "Created"),
         @APIResponse(responseCode = "403", description = "Forbidden"),
