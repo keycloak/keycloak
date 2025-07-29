@@ -19,6 +19,7 @@ package org.keycloak.testsuite.util;
 import org.jboss.arquillian.graphene.wait.ElementBuilder;
 import org.keycloak.executors.ExecutorsProvider;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
+import org.keycloak.testsuite.pages.AbstractPage;
 import org.openqa.selenium.By;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
@@ -89,6 +90,12 @@ public final class WaitUtils {
         new WebDriverWait(getCurrentDriver(), Duration.ofSeconds(1)).until(
                 ExpectedConditions.attributeContains(element, "class", value)
         );
+    }
+
+    public static void waitUntilPageIsCurrent(AbstractPage page) {
+        WebDriver driver = getCurrentDriver();
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofMillis(PAGELOAD_TIMEOUT_MILLIS));
+        wait.until((WebDriver driver1) -> page.isCurrent());
     }
 
     public static void pause(long millis) {

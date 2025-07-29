@@ -20,6 +20,7 @@ package org.keycloak.connections.jpa.util;
 import jakarta.persistence.PersistenceUnitTransactionType;
 import jakarta.persistence.ValidationMode;
 import org.hibernate.dialect.Dialect;
+import org.hibernate.engine.jdbc.env.spi.IdentifierHelper;
 import org.hibernate.internal.SessionFactoryImpl;
 import org.hibernate.jpa.boot.spi.PersistenceUnitDescriptor;
 import org.hibernate.jpa.boot.spi.PersistenceXmlParser;
@@ -32,6 +33,7 @@ import org.keycloak.models.KeycloakSession;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -56,9 +58,10 @@ public class JpaUtils {
     private static final Logger logger = Logger.getLogger(JpaUtils.class);
 
     public static String getTableNameForNativeQuery(String tableName, EntityManager em) {
-        String schema = (String) em.getEntityManagerFactory().getProperties().get(HIBERNATE_DEFAULT_SCHEMA);
         final Dialect dialect = em.getEntityManagerFactory().unwrap(SessionFactoryImpl.class).getJdbcServices().getDialect();
-        return (schema==null) ? tableName : dialect.openQuote() + schema + dialect.closeQuote() + "." + tableName;
+        IdentifierHelper identifierHelper = em.getEntityManagerFactory().unwrap(SessionFactoryImpl.class).getJdbcServices().getJdbcEnvironment().getIdentifierHelper();
+        String schema = em.getEntityManagerFactory().unwrap(SessionFactoryImpl.class).getSessionFactoryOptions().getDefaultSchema();
+        return (schema==null) ? tableName : identifierHelper.toIdentifier(schema).render(dialect) + "." + tableName;
     }
 
     private static List<ParsedPersistenceXmlDescriptor> transformPersistenceUnits(Collection<PersistenceUnitDescriptor> descriptors) {

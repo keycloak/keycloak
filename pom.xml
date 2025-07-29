@@ -45,8 +45,8 @@
 
         <asciidoctor.plugin.version>1.5.8</asciidoctor.plugin.version>
 
-        <quarkus.version>3.24.3</quarkus.version>
-        <quarkus.build.version>3.24.2</quarkus.build.version>
+        <quarkus.version>3.24.5</quarkus.version>
+        <quarkus.build.version>3.24.5</quarkus.build.version>
         <jboss-logging-annotations.version>3.0.4.Final</jboss-logging-annotations.version> <!-- keep in sync with the version used by quarkus -->
 
         <project.build-time>${timestamp}</project.build-time>
@@ -90,7 +90,7 @@
         <h2.version>2.3.230</h2.version>
         <hibernate-orm.plugin.version>6.2.13.Final</hibernate-orm.plugin.version>
         <hibernate.c3p0.version>6.2.13.Final</hibernate.c3p0.version>
-        <infinispan.version>15.0.16.Final</infinispan.version>
+        <infinispan.version>15.0.18.Final</infinispan.version>
         <protostream.version>5.0.14.Final</protostream.version> <!-- For the annotation processor: keep in sync with the version shipped with Infinispan -->
         <protostream.plugin.version>${protostream.version}</protostream.plugin.version>
 
@@ -127,7 +127,7 @@
         <wildfly.common.wildfly.aligned.version>1.6.0.Final</wildfly.common.wildfly.aligned.version>
         <xmlsec.version>2.2.6</xmlsec.version>
         <nashorn.version>15.4</nashorn.version>
-        <ua-parser.version>1.5.4</ua-parser.version>
+        <ua-parser.version>1.6.1</ua-parser.version>
         <org.yaml.snakeyaml.version>2.0</org.yaml.snakeyaml.version>
         <picketbox.version>5.0.3.Final</picketbox.version>
         <xstream.version>1.4.21</xstream.version>

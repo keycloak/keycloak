@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,24 +15,25 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.events;
+package org.keycloak.services.clientpolicy.executor;
 
 import org.keycloak.Config;
-import org.keycloak.events.EventListenerProvider;
-import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.ProviderConfigProperty;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
- * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class TestEventsListenerProviderFactory implements EventListenerProviderFactory {
-
-    public static final String PROVIDER_ID = "event-queue";
+public class SecureClientAuthenticationAssertionExecutorFactory implements ClientPolicyExecutorProviderFactory {
+    public static final String PROVIDER_ID = "secure-client-authentication-assertion";
 
     @Override
-    public EventListenerProvider create(KeycloakSession session) {
-        return new TestEventsListenerProvider(session);
+    public ClientPolicyExecutorProvider create(KeycloakSession session) {
+        return new SecureClientAuthenticationAssertionExecutor(session);
     }
 
     @Override
@@ -50,5 +51,15 @@ public class TestEventsListenerProviderFactory implements EventListenerProviderF
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+
+    @Override
+    public String getHelpText() {
+        return "This executor only accepts Keycloak's issuer URI as the aud claim value in a client authentication assertion ";
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigProperties() {
+        return Collections.emptyList();
     }
 }

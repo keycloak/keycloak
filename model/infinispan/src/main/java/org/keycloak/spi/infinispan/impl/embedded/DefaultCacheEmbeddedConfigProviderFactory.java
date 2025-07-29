@@ -74,6 +74,7 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
     // Configuration
     public static final String CONFIG = "configFile";
     private static final String METRICS = "metricsEnabled";
+    public static final String TRACING = "tracingEnabled";
     private static final String HISTOGRAMS = "metricsHistogramsEnabled";
     public static final String STACK = "stack";
     public static final String NODE_NAME = "nodeName";
