@@ -15,5 +15,4 @@
 # limitations under the License.
 #
 
-org.keycloak.models.policy.UserCreationDateResourcePolicyProviderFactory
-org.keycloak.models.policy.UserLastAuthTimeResourcePolicyProviderFactory
+org.keycloak.models.policy.UserLastAuthTimeEventListenerProviderFactory

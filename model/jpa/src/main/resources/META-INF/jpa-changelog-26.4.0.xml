@@ -60,4 +60,15 @@
         />
     </changeSet>
 
+    <changeSet id="RLM-add-last-auth-time-to-user-entity" author="keycloak">
+        <addColumn tableName="USER_ENTITY">
+            <column name="LAST_AUTHENTICATION_TIME" type="BIGINT" />
+        </addColumn>
+
+        <createIndex indexName="IDX_USER_LAST_AUTH_TIME"
+                     tableName="USER_ENTITY">
+            <column name="LAST_AUTHENTICATION_TIME" />
+        </createIndex>
+    </changeSet>
+
 </databaseChangeLog>
