@@ -18,7 +18,6 @@
 package org.keycloak.spi.infinispan.impl.embedded;
 
 import static org.infinispan.configuration.global.TransportConfiguration.CLUSTER_NAME;
-import static org.infinispan.configuration.global.TransportConfiguration.NODE_NAME;
 import static org.infinispan.configuration.global.TransportConfiguration.STACK;
 import static org.keycloak.config.CachingOptions.CACHE_EMBEDDED_PREFIX;
 
@@ -215,11 +214,10 @@ public final class JGroupsConfigurator {
         var stack = getProtocolConfigurations(tableName, isUdp, tracingEnabled);
         var connectionFactory = (JpaConnectionProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(JpaConnectionProvider.class);
 
-        String nodeName = transportOf(holder).attributes().attribute(NODE_NAME).computeIfAbsent(org.jgroups.util.Util::generateLocalName);
         String clusterName = transportOf(holder).attributes().attribute(CLUSTER_NAME).computeIfAbsent(() -> "ISPN");
 
         Address address = Retry.call(ignored -> KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(),
-                s -> prepareJGroupsAddress(s, nodeName, clusterName)),
+                s -> prepareJGroupsAddress(s, clusterName)),
                 50, 10);
         holder.addJGroupsStack(new JpaFactoryAwareJGroupsChannelConfigurator(stackName, stack, connectionFactory, isUdp, address), null);
 
@@ -233,7 +231,7 @@ public final class JGroupsConfigurator {
      * for max_join_attempts x all_clients_retry_timeout = 10 x 100 ms = 1 second. Otherwise, we will wait for that
      * one second. This prevents a split-brain scenario on a concurrent startup.
      */
-    private static Address prepareJGroupsAddress(KeycloakSession session, String nodeName, String clusterName) {
+    private static Address prepareJGroupsAddress(KeycloakSession session, String clusterName) {
         var storage = session.getProvider(ServerConfigStorageProvider.class);
         String seq = storage.loadOrCreate(JGROUPS_ADDRESS_SEQUENCE, () -> "0");
         long value = Long.parseLong(seq) + 1;
@@ -251,7 +249,7 @@ public final class JGroupsConfigurator {
             Connection con = (Connection) o;
             try (PreparedStatement s = con.prepareStatement(statement)) {
                 s.setString(1, org.jgroups.util.Util.addressToString(new UUID(address.getMostSignificantBits(), address.getLeastSignificantBits()))); // address
-                s.setString(2, nodeName); // name
+                s.setString(2, "(starting)"); // name
                 s.setString(3, clusterName); // cluster name
                 s.setString(4, new IpAddress("localhost", 0).toString()); // ip
                 s.setBoolean(5, false); // coord
