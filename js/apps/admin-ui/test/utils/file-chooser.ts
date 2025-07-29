@@ -1,6 +1,6 @@
 import { Page } from "@playwright/test";
-import path from "path";
-import { fileURLToPath } from "url";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 export async function chooseFile(page: Page, file: string) {
   const fileChooserPromise = page.waitForEvent("filechooser");
