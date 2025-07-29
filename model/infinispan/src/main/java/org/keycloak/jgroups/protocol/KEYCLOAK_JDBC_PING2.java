@@ -47,18 +47,6 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
     private JpaConnectionProviderFactory factory;
 
     @Override
-    public <T extends Protocol> T addr(Address addr) {
-        addr = toUUID(addr);
-        return super.addr(addr);
-    }
-
-    @Override
-    public <T extends Protocol> T setAddress(Address addr) {
-        addr = toUUID(addr);
-        return super.setAddress(addr);
-    }
-
-    @Override
     protected void handleView(View new_view, View old_view, boolean coord_changed) {
         // If we are the coordinator, it is good to learn about new entries that have been added before we delete them.
         // If we are not the coordinator, it is good to learn the new entries added by the coordinator.
@@ -196,6 +184,22 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
 
     }
 
+    /* START: JDBC_PING2 does not handle ExtendedUUID yet, see
+       https://github.com/belaban/JGroups/pull/901 - until this is backported, we convert all of them.
+     */
+
+    @Override
+    public <T extends Protocol> T addr(Address addr) {
+        addr = toUUID(addr);
+        return super.addr(addr);
+    }
+
+    @Override
+    public <T extends Protocol> T setAddress(Address addr) {
+        addr = toUUID(addr);
+        return super.setAddress(addr);
+    }
+
     @Override
     protected void delete(Connection conn, String clustername, Address addressToDelete) throws SQLException {
         super.delete(conn, clustername, toUUID(addressToDelete));
@@ -220,6 +224,10 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
         }
         return addr;
     }
+
+    /* END: JDBC_PING2 does not handle ExtendedUUID yet, see
+       https://github.com/belaban/JGroups/pull/901 - until this is backported, we convert all of them.
+    */
 
     @Override
     protected void loadDriver() {
