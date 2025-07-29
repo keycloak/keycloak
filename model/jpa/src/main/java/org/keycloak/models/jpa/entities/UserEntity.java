@@ -91,6 +91,9 @@ public class UserEntity {
     @Column(name = "REALM_ID")
     protected String realmId;
 
+    @Column(name = "LAST_SESSION_REFRESH_TIME")
+    private Integer lastSessionRefreshTime;
+
     // Explicitly not using OrphanRemoval as we're handling the removal manually through HQL but at the same time we still
     // want to remove elements from the entity's collection in a manual way. Without this, Hibernate would do a duplicit
     // delete query.
@@ -224,6 +227,14 @@ public class UserEntity {
 
     public void setRealmId(String realmId) {
         this.realmId = realmId;
+    }
+
+    public Integer getLastSessionRefreshTime() {
+        return lastSessionRefreshTime;
+    }
+
+    public void setLastSessionRefreshTime(int lastAuthenticationTime) {
+        this.lastSessionRefreshTime = lastAuthenticationTime;
     }
 
     public Collection<CredentialEntity> getCredentials() {
