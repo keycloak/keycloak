@@ -26,6 +26,13 @@ test.describe("Members", () => {
   const tableName = "Members";
 
   test.beforeAll(async () => {
+    // Cleanup from a rerun
+    for (const user of users) {
+      await adminClient.deleteUser(user.username, "master", true);
+    }
+    await adminClient.deleteUser("new", "master", true);
+    await adminClient.deleteGroups();
+
     const createdGroups = await adminClient.createSubGroups(predefinedGroups);
     for (let index = 0; index < 5; index++) {
       const { id } = await adminClient.createUser({
