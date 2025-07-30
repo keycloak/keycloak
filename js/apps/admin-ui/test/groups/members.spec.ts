@@ -28,9 +28,21 @@ test.describe("Members", () => {
   test.beforeAll(async () => {
     // Cleanup from a rerun
     for (const user of users) {
-      await adminClient.deleteUser(user.username, "master", true);
+      // Cleanup from a rerun
+      try {
+        await adminClient.deleteUser(user.username);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (ignored) {
+        // ignored
+      }
     }
-    await adminClient.deleteUser("new", "master", true);
+    // Cleanup from a rerun
+    try {
+      await adminClient.deleteUser("new");
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (ignored) {
+      // ignored
+    }
     await adminClient.deleteGroups();
 
     const createdGroups = await adminClient.createSubGroups(predefinedGroups);
