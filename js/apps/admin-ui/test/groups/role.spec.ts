@@ -26,6 +26,15 @@ test.describe("Role mappings", () => {
   const roleName = `remove-role-${uuid()}`;
 
   test.beforeAll(async () => {
+    // Cleanup from a rerun
+    try {
+      await adminClient.deleteRealmRole(roleName);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (ignored) {
+      // ignored
+    }
+    await adminClient.deleteGroups();
+
     await adminClient.createGroup(predefinedGroup);
     const { id } = await adminClient.createGroup(predefinedGroup1);
 
