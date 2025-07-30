@@ -1,6 +1,9 @@
 package org.keycloak.testsuite.broker;
 
+import org.junit.Test;
+import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 
@@ -18,8 +21,29 @@ public class KcOidcBrokerAcrParameterTest extends AbstractBrokerTest {
         return KcOidcBrokerConfiguration.INSTANCE;
     }
 
+    @Test
+    public void testLogInAsUserInIDPWithAcrValues() {
+        // Forward acr_values = true
+        IdentityProviderResource idpRes = adminClient
+                .realm(bc.consumerRealmName())
+                .identityProviders()
+                .get(BrokerTestConstants.IDP_OIDC_ALIAS);
+        IdentityProviderRepresentation idpRep = idpRes.toRepresentation();
+        OIDCIdentityProviderConfigRep cfg = new OIDCIdentityProviderConfigRep(idpRep);
+        cfg.setForwardAcrValues(true);
+        idpRes.update(idpRep);
+
+        assertValidLogin(true);
+
+        testSingleLogout();
+    }
+
     @Override
     protected void loginUser() {
+        assertValidLogin(false);
+    }
+
+    private void assertValidLogin(boolean expectHasAcrValues) {
         oauth.clientId("broker-app");
         loginPage.open(bc.consumerRealmName());
 
@@ -33,8 +57,13 @@ public class KcOidcBrokerAcrParameterTest extends AbstractBrokerTest {
         Assert.assertTrue("Driver should be on the provider realm page right now",
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
 
-        Assert.assertTrue(ACR_VALUES + "=" + ACR_3 + " should be part of the url",
-                driver.getCurrentUrl().contains(ACR_VALUES + "=" + ACR_3));
+        if (expectHasAcrValues) {
+            Assert.assertTrue(ACR_VALUES + "=" + ACR_3 + " SHOULD be part of the url",
+                    driver.getCurrentUrl().contains(ACR_VALUES + "=" + ACR_3));
+        } else {
+            Assert.assertFalse(ACR_VALUES + "=" + ACR_3 + " SHOULD NOT be part of the url",
+                    driver.getCurrentUrl().contains(ACR_VALUES + "=" + ACR_3));
+        }
 
         log.debug("Logging in");
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
