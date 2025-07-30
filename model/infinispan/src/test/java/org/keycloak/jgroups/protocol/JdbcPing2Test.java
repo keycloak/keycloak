@@ -40,7 +40,7 @@ public class JdbcPing2Test {
             a.connect(CLUSTER);
             for(int i=1; i <= 10; i++) {
                 long start=System.nanoTime();
-                try(var b=createChannel("jdbc-h2.xml", "B")) {
+                try(var b=createChannel(PROTOCOAL_STACK, Character.toString('A' + i))) {
                     b.connect(CLUSTER);
                     Util.waitUntilAllChannelsHaveSameView(10000, 10, a,b);
                     long time=System.nanoTime()-start;
