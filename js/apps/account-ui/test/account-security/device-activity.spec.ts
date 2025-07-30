@@ -30,7 +30,7 @@ test.describe("Sign out test", () => {
         .getByRole("button", { name: "Sign out", exact: true })
         .click();
       await page2.getByRole("button", { name: "Confirm" }).click();
-      await page2.getByTestId("global-alerts").isVisible();
+      await page2.getByText("Signed out").isVisible();
 
       // reload pages in browsers, one should stay logged in, the other should be logged out
       await page1.reload();
