@@ -2142,7 +2142,9 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
                     ComponentUtil.notifyPreRemove(session, this, c);
                 });
 
-        getEntity().getComponents().removeIf(sameParent);
+        if (getEntity().getComponents().removeIf(sameParent)) {
+            em.flush();
+        }
     }
 
     @Override
