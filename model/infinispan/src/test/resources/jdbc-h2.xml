@@ -23,9 +23,8 @@
             write_data_on_find="true"
     />
     <!-- very aggressive merging to speed up the test -->
-    <MERGE3 min_interval="150"
-            max_interval="200"/>
-    <FD_SOCK2/>
+    <MERGE3 min_interval="2000"
+            max_interval="4000"/>
     <FD_ALL3 timeout="40s" interval="5s" />
     <VERIFY_SUSPECT2 />
     <pbcast.NAKACK2

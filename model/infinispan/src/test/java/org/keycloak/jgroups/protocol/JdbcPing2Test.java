@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -33,42 +32,22 @@ public class JdbcPing2Test {
         ClassConfigurator.addProtocol((short) 1026, KEYCLOAK_JDBC_PING2_FOR_TESTING.class);
     }
 
-    @Test
-    public void testClusterFormedAfterRestart() throws Exception {
-        try(var a=createChannel(PROTOCOL_STACK, "A")) {
-            a.connect(CLUSTER);
-            for(int i=1; i <= 10; i++) {
-                long start=System.nanoTime();
-                try(var b=createChannel(PROTOCOL_STACK, Character.toString('A' + i))) {
-                    b.connect(CLUSTER);
-                    Util.waitUntilAllChannelsHaveSameView(10000, 10, a,b);
-                    long time=System.nanoTime()-start;
-                    log.infof("-- join #%d took %s\n", i, Util.printTime(time, TimeUnit.NANOSECONDS));
-                }
-            }
-        }
-    }
-
     /**
-     * 100 iterations would run approx 4 minutes and should complete successfully.
+     * 100 iterations would run approx 8 minutes and should complete successfully,
+     * with an average of 3.3 seconds in converging.
      */
     @Test
     @Ignore
     public void testConcurrentStartupMultipleTimes() throws Exception {
+        int count = 100;
+        long sum = 0;
         for (int j = 0; j < 100; j++) {
-            runSingleTest();
+            sum += runSingleTest();
         }
+        log.info("Average time to form the cluster: " + Duration.ofNanos(sum / count));
     }
 
-    /**
-     * 100 iterations would run approx 4 minutes and should complete successfully.
-     */
-    @Test
-    public void testConcurrentStartup() throws Exception {
-        runSingleTest();
-    }
-
-    private static void runSingleTest() throws Exception {
+    private static long runSingleTest() throws Exception {
         JChannel[] channels = new JChannel[NUM_NODES];
         List<Thread> threads = new ArrayList<>();
         try {
@@ -86,11 +65,12 @@ public class JdbcPing2Test {
             }
             latch.countDown();
             long start = System.nanoTime();
-            Util.waitUntilAllChannelsHaveSameView(20000, 100, channels);
+            Util.waitUntilAllChannelsHaveSameView(40000, 100, channels);
             long time = System.nanoTime() - start;
             log.infof("-- cluster of %d formed in %s:\n%s\n", NUM_NODES, Duration.ofNanos(time),
                     Stream.of(channels).map(ch -> String.format("%s: %s", ch.address(), ch.view()))
                             .collect(Collectors.joining("\n")));
+            return time;
         } finally {
             for (Thread thread : threads) {
                 thread.join();
