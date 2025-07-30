@@ -13,7 +13,7 @@ This is a fork of Open Source Identity and Access Management Keycloak, enhanced 
 
 ## Rational
 
-Please see [Community Discussion: Introduce foundational Identity Governance & Administration (IGA) capabilities into Keycloak](https://github.com/keycloak/keycloak/issues/41351)
+Please see [Community Discussion: Introduce foundational Identity Governance & Administration (IGA) capabilities into Keycloak](https://github.com/keycloak/keycloak/discussions/41350)
 
 
 ### Getting Started (Keycloak IGA)
