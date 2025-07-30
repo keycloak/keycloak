@@ -36,7 +36,7 @@ public class JdbcPing2Test {
 
     @Test
     public void testClusterFormedAfterRestart() throws Exception {
-        try(var a=createChannel("jdbc-h2.xml", "A")) {
+        try(var a=createChannel(PROTOCOAL_STACK, "A")) {
             a.connect(CLUSTER);
             for(int i=1; i <= 10; i++) {
                 long start=System.nanoTime();
