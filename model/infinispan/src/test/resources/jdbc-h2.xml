@@ -38,8 +38,8 @@
             max_bytes="1000000"/>
     <pbcast.GMS
             print_local_addr="false"
-            join_timeout="1s"
-            max_join_attempts="1"/>
+            join_timeout="3s"
+            max_join_attempts="5"/>
     <UFC max_credits="2M"
          min_threshold="0.40"/>
     <MFC max_credits="2M"

@@ -22,6 +22,7 @@ import static org.infinispan.configuration.global.TransportConfiguration.STACK;
 import static org.keycloak.config.CachingOptions.CACHE_EMBEDDED_PREFIX;
 
 import java.lang.invoke.MethodHandles;
+import java.net.InetAddress;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
@@ -52,7 +53,6 @@ import org.jgroups.conf.ProtocolConfiguration;
 import org.jgroups.protocols.TCP;
 import org.jgroups.protocols.TCP_NIO2;
 import org.jgroups.protocols.UDP;
-import org.jgroups.stack.IpAddress;
 import org.jgroups.stack.Protocol;
 import org.jgroups.util.DefaultSocketFactory;
 import org.jgroups.util.ExtendedUUID;
@@ -251,7 +251,7 @@ public final class JGroupsConfigurator {
                 s.setString(1, org.jgroups.util.Util.addressToString(new UUID(address.getMostSignificantBits(), address.getLeastSignificantBits()))); // address
                 s.setString(2, "(starting)"); // name
                 s.setString(3, clusterName); // cluster name
-                s.setString(4, new IpAddress("localhost", 0).toString()); // ip
+                s.setString(4, "127.0.0.1:0"); // ip = new IpAddress("localhost", 0).toString()
                 s.setBoolean(5, false); // coord
                 s.execute();
             }
