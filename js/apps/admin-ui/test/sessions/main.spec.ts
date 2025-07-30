@@ -114,7 +114,7 @@ test.describe("Offline sessions", () => {
     // TODO: UI is unstable as it will forget the filter if a session is revoked.
     // As a follow-up, fix the UI to remember the filter, and wait for the no search results page
     await page.reload();
-    await searchItem(page, placeHolder, clientId);
+    await searchItem(page, placeHolder, clientId, 0);
     await assertNoResults(page);
   });
 });
