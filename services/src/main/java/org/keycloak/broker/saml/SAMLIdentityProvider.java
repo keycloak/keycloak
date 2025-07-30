@@ -19,6 +19,7 @@ package org.keycloak.broker.saml;
 import jakarta.xml.soap.SOAPException;
 import jakarta.xml.soap.SOAPMessage;
 import org.jboss.logging.Logger;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -205,14 +206,18 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
         if (getConfig().getConfig().get(SAMLIdentityProviderConfig.ALLOW_CREATE) == null || getConfig().isAllowCreate())
             allowCreate = Boolean.TRUE;
         LoginProtocol protocol = session.getProvider(LoginProtocol.class, request.getAuthenticationSession().getProtocol());
-        boolean forceAuthn = getConfig().isForceAuthn();
+        Boolean forceAuthn = getConfig().isForceAuthn();
         if (protocol.requireReauthentication(null, request.getAuthenticationSession()))
             forceAuthn = Boolean.TRUE;
+        String prompt = request.getAuthenticationSession().getClientNote(OIDCLoginProtocol.PROMPT_PARAM);
+        boolean isPassive = OIDCLoginProtocol.PROMPT_VALUE_NONE.equals(prompt);
+
         return new SAML2AuthnRequestBuilder()
                 .assertionConsumerUrl(assertionConsumerServiceUrl)
                 .destination(destinationUrl)
                 .issuer(issuerURL)
                 .forceAuthn(forceAuthn)
+                .isPassive(isPassive)
                 .protocolBinding(protocolBinding)
                 .nameIdPolicy(SAML2NameIDPolicyBuilder
                         .format(nameIDPolicyFormat)
