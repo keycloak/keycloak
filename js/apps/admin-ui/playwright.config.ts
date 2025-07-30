@@ -10,6 +10,7 @@ export default defineConfig({
   testDir: "./test",
   forbidOnly: !!process.env.CI,
   retries: retryCount,
+  workers: process.env.CI ? 1 : undefined,
   timeout: 60_000,
   reporter: process.env.CI ? [["github"], ["html"]] : "list",
 
