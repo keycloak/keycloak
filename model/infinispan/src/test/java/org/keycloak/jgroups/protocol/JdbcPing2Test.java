@@ -28,7 +28,7 @@ public class JdbcPing2Test {
 
     protected static final String CLUSTER="jdbc-test";
     protected static final int NUM_NODES=8;
-    public static final String PROTOCOAL_STACK = "jdbc-h2.xml";
+    public static final String PROTOCOL_STACK = "jdbc-h2.xml";
 
     static {
         ClassConfigurator.addProtocol((short) 1026, KEYCLOAK_JDBC_PING2_FOR_TESTING.class);
