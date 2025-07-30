@@ -8,10 +8,30 @@ import userProfileRealm from "./realms/user-profile-realm.json" assert { type: "
 import verifiableCredentialsRealm from "./realms/verifiable-credentials-realm.json" assert { type: "json" };
 
 setup("import realm", async () => {
-  await deleteRealm("photoz");
-  await deleteRealm("groups");
-  await deleteRealm("user-profile");
-  await deleteRealm("verifiable-credentials");
+  try {
+    await deleteRealm("photoz");
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (ignored) {
+    // ignored
+  }
+  try {
+    await deleteRealm("groups");
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (ignored) {
+    // ignored
+  }
+  try {
+    await deleteRealm("user-profile");
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (ignored) {
+    // ignored
+  }
+  try {
+    await deleteRealm("verifiable-credentials");
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (ignored) {
+    // ignored
+  }
   await importRealm(groupsRealm as RealmRepresentation);
   await importRealm(resourcesRealm as RealmRepresentation);
   await importRealm(userProfileRealm as RealmRepresentation);
