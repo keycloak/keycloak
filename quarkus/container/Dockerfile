@@ -26,9 +26,10 @@ ENV LANG en_US.UTF-8
 ENV KC_RUN_IN_CONTAINER true
 
 COPY --from=ubi-micro-build /tmp/null/rootfs/ /
-COPY --from=ubi-micro-build --chown=1000:0 /opt/keycloak /opt/keycloak
+COPY --from=ubi-micro-build --chown=0:0 /opt/keycloak /opt/keycloak
 
-RUN echo "keycloak:x:0:root" >> /etc/group && \
+RUN chown 1000:0 /opt/keycloak/lib/quarkus /opt/keycloak/data && \
+    echo "keycloak:x:0:root" >> /etc/group && \
     echo "keycloak:x:1000:0:keycloak user:/opt/keycloak:/sbin/nologin" >> /etc/passwd
 
 USER 1000
