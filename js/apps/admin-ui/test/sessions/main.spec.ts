@@ -62,6 +62,16 @@ test.describe("Offline sessions", () => {
   });
 
   test.beforeEach(async () => {
+    // Cleanup from a rerun
+    try {
+      await Promise.all([
+        adminClient.deleteClient(clientId),
+        adminClient.deleteUser(username),
+      ]);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (ignored) {
+      // ignored
+    }
     await Promise.all([
       adminClient.createClient({
         protocol: "openid-connect",
@@ -101,8 +111,11 @@ test.describe("Offline sessions", () => {
     await assertRowExists(page, username);
     await clickRowKebabItem(page, username, "Revoke");
 
+    // TODO: UI is unstable as it will forget the filter if a session is revoked.
+    // As a follow-up, fix the UI to remember the filter, and wait for the no search results page
+    await page.reload();
     await searchItem(page, placeHolder, clientId);
-    await assertRowExists(page, username, false);
+    await assertNoResults(page);
   });
 });
 
