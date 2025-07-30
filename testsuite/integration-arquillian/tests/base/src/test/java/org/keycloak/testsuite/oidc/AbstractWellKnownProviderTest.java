@@ -29,6 +29,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.Profile;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.jose.jwe.JWEConstants;
@@ -288,6 +289,10 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
 
         JSONWebKeySet jsonWebKeySet = SimpleHttpDefault.doGet(jwksUri, client).asJson(JSONWebKeySet.class);
         assertEquals(3, jsonWebKeySet.getKeys().length);
+
+        // Test HEAD method works (Issue 41537)
+        SimpleHttp.Response responseHead = SimpleHttpDefault.doHead(jwksUri, client).asResponse();
+        assertEquals(Response.Status.OK.getStatusCode(), responseHead.getStatus());
     }
 
     @Test
