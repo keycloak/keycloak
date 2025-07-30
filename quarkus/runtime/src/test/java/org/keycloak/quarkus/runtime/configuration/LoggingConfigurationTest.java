@@ -482,4 +482,39 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
         assertConfig("log-%s-async-queue-length".formatted(handlerName), queueLength.toString());
         assertExternalConfig("quarkus.log.%s.async.queue-length".formatted(handlerName), queueLength.toString());
     }
+
+    // HTTP Access log
+    @Test
+    public void httpAccessLogDefaults() {
+        initConfig();
+
+        assertConfig(Map.of(
+                "http-access-log-enabled", "false",
+                "http-access-log-pattern", "common"
+        ));
+        assertConfigNull("http-access-log-exclude");
+
+        assertExternalConfig(Map.of(
+                "quarkus.http.access-log.enabled", "false",
+                "quarkus.http.access-log.pattern", "common"
+        ));
+        assertExternalConfigNull("quarkus.http.access-log.exclude-pattern");
+    }
+
+    @Test
+    public void httpAccessLogChanges() {
+        ConfigArgsConfigSource.setCliArgs("--http-access-log-enabled=true", "--http-access-log-pattern=long", "--http-access-log-exclude=/realms/test/*");
+        initConfig();
+
+        assertConfig(Map.of(
+                "http-access-log-enabled", "true",
+                "http-access-log-pattern", "long",
+                "http-access-log-exclude", "/realms/test/*"
+        ));
+        assertExternalConfig(Map.of(
+                "quarkus.http.access-log.enabled", "true",
+                "quarkus.http.access-log.pattern", "long",
+                "quarkus.http.access-log.exclude-pattern", "/realms/test/*"
+        ));
+    }
 }
