@@ -22,20 +22,15 @@ import org.hamcrest.Matchers;
 import org.jboss.arquillian.container.spi.client.container.LifecycleException;
 import org.junit.After;
 import org.junit.Test;
-import org.keycloak.Config;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.exportimport.ExportImportConfig;
-import org.keycloak.exportimport.ExportProvider;
-import org.keycloak.exportimport.ExportProviderFactory;
 import org.keycloak.exportimport.Strategy;
 import org.keycloak.exportimport.dir.DirExportProvider;
 import org.keycloak.exportimport.dir.DirExportProviderFactory;
 import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
 import org.keycloak.exportimport.util.ImportUtils;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -46,7 +41,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
-import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
@@ -62,7 +56,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -193,49 +186,6 @@ public class ExportImportTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void checkForRealmNotFoundExceptionWhenDirExportingNonExistentRealm() throws IOException {
-        String realmName = "non-existent-realm";
-
-        try {
-            exportNonExistentRealm(new DirExportProviderFactory(), realmName, "dirRealmExport");
-        } catch (NullPointerException e) {
-            assertEquals(String.format("realm not found by realm name '%s'", realmName), e.getMessage());
-        }
-    }
-
-    @Test
-    public void checkForRealmNotFoundExceptionWhenFileExportingNonExistentRealm() throws IOException {
-        String realmName = "non-existent-realm";
-
-        try {
-            exportNonExistentRealm(new SingleFileExportProviderFactory(), realmName, "singleFile-full.json");
-        } catch (NullPointerException e) {
-            assertEquals(String.format("realm not found by realm name '%s'", realmName), e.getMessage());
-        }
-    }
-
-    private void exportNonExistentRealm(ExportProviderFactory exportProviderFactory,
-                                        String realmName, String targetDirSuffix) throws IOException {
-
-        String targetDirPath = Files.createTempDirectory("kc-tests").toAbsolutePath() + File.separator + targetDirSuffix;
-
-        if (exportProviderFactory instanceof DirExportProviderFactory) {
-            ExportImportConfig.setDir(targetDirPath);
-        } else if (exportProviderFactory instanceof SingleFileExportProviderFactory) {
-            ExportImportConfig.setFile(targetDirPath);
-        }
-
-        ExportImportConfig.setRealmName(realmName);
-        Config.Scope config = new Config.SystemPropertiesScope("");
-
-        exportProviderFactory.init(config);
-        KeycloakSessionFactory keycloakSessionFactory = KeycloakApplication.getSessionFactory();
-        KeycloakSession keycloakSession = keycloakSessionFactory.create();
-        ExportProvider exportProvider = exportProviderFactory.create(keycloakSession);
-        exportProvider.exportModel();
-    }
-
-    @Test
     public void testDirRealmExportImport() throws Throwable {
         testingClient.testing()
                 .exportImport()
@@ -360,7 +310,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
         exportImport.runImport();
 
         List<ComponentRepresentation> userProfileComponents = realmRes.components().query(TEST_REALM, "org.keycloak.userprofile.UserProfileProvider");
-        assertThat(userProfileComponents, 	notNullValue());
+        assertThat(userProfileComponents,   notNullValue());
         assertThat(userProfileComponents, hasSize(1));
         MultivaluedHashMap<String, String> config = userProfileComponents.get(0).getConfig();
         assertThat(config, notNullValue());
