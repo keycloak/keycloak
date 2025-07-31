@@ -56,7 +56,7 @@ public class PasskeysConditionalUIAuthenticatorFactory extends WebAuthnPasswordl
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return Profile.isFeatureEnabled(Profile.Feature.PASSKEYS);
+        return Profile.isFeatureEnabled(Profile.Feature.PASSKEYS_CONDITIONAL_UI_AUTHENTICATOR);
     }
 
     @Override
