@@ -110,8 +110,8 @@ const UserDetailLink = (event: EventRepresentation) => {
         })}
       >
         {userName}
-      </Link>
-      <span className="keycloak_eventsection_userid">(ID: {userId})</span>
+      </Link>{" "}
+      <span className="keycloak_eventsection_userid">({userId})</span>
     </div>
   ) : (
     <>{t("noUserDetails")}</>
