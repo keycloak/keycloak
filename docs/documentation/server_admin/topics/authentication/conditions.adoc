@@ -64,6 +64,15 @@ The name of the client scope, which should be present as a client scope of the c
 Negate output:::
 Apply a NOT to the check result. When this is true, then the condition will evaluate to true just if configured client scope is not present.
 
+`Condition - credential`::
+This condition evaluates if a specific credential type has been used (or not used) by the user during the authentication process. Configuration options:
+
+Credentials:::
+The list of credentials to be considered by the condition.
+
+Included:::
+If *included* is true, the condition will be evaluated to `true` when any of the credentials specified in the *credentials* option has been used in the authentication process, false otherwise. If *included* is false, the condition is evaluated in the opposite way, it will be `true` if none of the *credentials* configured have been used, and `false` if one or more of them have been used.
+
 
 ==== Explicitly deny/allow access in conditional flows
 
