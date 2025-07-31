@@ -8,32 +8,16 @@ import userProfileRealm from "./realms/user-profile-realm.json" assert { type: "
 import verifiableCredentialsRealm from "./realms/verifiable-credentials-realm.json" assert { type: "json" };
 
 setup("import realm", async () => {
-  try {
-    await deleteRealm("photoz");
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (ignored) {
-    // ignored
-  }
-  try {
-    await deleteRealm("groups");
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (ignored) {
-    // ignored
-  }
-  try {
-    await deleteRealm("user-profile");
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (ignored) {
-    // ignored
-  }
-  try {
-    await deleteRealm("verifiable-credentials");
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (ignored) {
-    // ignored
-  }
-  await importRealm(groupsRealm as RealmRepresentation);
-  await importRealm(resourcesRealm as RealmRepresentation);
-  await importRealm(userProfileRealm as RealmRepresentation);
-  await importRealm(verifiableCredentialsRealm as RealmRepresentation);
+  await Promise.allSettled([
+    deleteRealm(groupsRealm.realm),
+    deleteRealm(resourcesRealm.realm),
+    deleteRealm(userProfileRealm.realm),
+    deleteRealm(verifiableCredentialsRealm.realm),
+  ]);
+  await Promise.all([
+    importRealm(groupsRealm),
+    importRealm(resourcesRealm as RealmRepresentation),
+    importRealm(userProfileRealm),
+    importRealm(verifiableCredentialsRealm as RealmRepresentation),
+  ]);
 });
