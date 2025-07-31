@@ -46,9 +46,7 @@ import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.policy.MaxAuthAgePasswordPolicyProviderFactory;
 import org.keycloak.protocol.AuthorizationEndpointBase;
-import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.services.Urls;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
@@ -56,10 +54,9 @@ import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
-import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import static org.keycloak.models.Constants.EMAIL_RESEND_COOLDOWN_DEFAULT_SECONDS;
@@ -72,7 +69,7 @@ import static org.keycloak.models.Constants.EMAIL_RESEND_COOLDOWN_SECONDS;
  */
 public class VerifyEmail implements RequiredActionProvider, RequiredActionFactory {
     private static final Logger logger = Logger.getLogger(VerifyEmail.class);
-
+    private static final String KEY_EXPIRE = "expire";
 
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
@@ -113,18 +110,12 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
         authSession.setClientNote(AuthorizationEndpointBase.APP_INITIATED_FLOW, null);
 
         // Do not allow resending e-mail by simple page refresh, i.e. when e-mail sent, it should be resent properly via email-verification endpoint
-        SingleUseObjectProvider cache = context.getSession().singleUseObjects();
-        String cacheKey = EMAIL_RESEND_COOLDOWN_KEY_PREFIX + context.getUser().getId();
-        long cooldownSeconds = getCooldownInSeconds(context);
-
-        if (cache.putIfAbsent(cacheKey, cooldownSeconds)) {
+        if (!Objects.equals(authSession.getAuthNote(Constants.VERIFY_EMAIL_KEY), email) && !(isCurrentActionTriggeredFromAIA(context) && isChallenge)) {
+            authSession.setAuthNote(Constants.VERIFY_EMAIL_KEY, email);
             EventBuilder event = context.getEvent().clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, email);
             challenge = sendVerifyEmail(context, event);
         } else {
-            long remaining = cooldownSeconds;
-            challenge = loginFormsProvider
-                    .setError("You must wait " + remaining + " seconds before requesting another verification email.")
-                    .createErrorPage(Response.Status.BAD_REQUEST);
+            challenge = loginFormsProvider.createResponse(UserModel.RequiredAction.VERIFY_EMAIL);
         }
 
         context.challenge(challenge);
@@ -138,28 +129,26 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
     public void processAction(RequiredActionContext context) {
         logger.debugf("Re-sending email requested for user: %s", context.getUser().getUsername());
 
-        AuthenticationSessionModel authSession = context.getAuthenticationSession();
-        String email = context.getUser().getEmail();
-        if (Validation.isBlank(email)) {
-            context.ignore();
-            return;
-        }
-
-        String cooldownKey = EMAIL_RESEND_COOLDOWN_KEY_PREFIX + context.getUser().getId();
-        long cooldown = getCooldownInSeconds(context);
         SingleUseObjectProvider singleUseCache = context.getSession().singleUseObjects();
+        Map<String, String> cooldownDetails = singleUseCache.get(getCacheKey(context));
 
-        if (singleUseCache.putIfAbsent(cooldownKey, cooldown)) {
-            EventBuilder event = context.getEvent().clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, email);
-            sendVerifyEmail(context, event);
-            context.challenge(context.form().createResponse(UserModel.RequiredAction.VERIFY_EMAIL));
-        } else {
-            Response retryPage = context.form()
-                    .setError("You must wait " + cooldown + " seconds before resending the verification email.")
-                    .createResponse(UserModel.RequiredAction.VERIFY_EMAIL); // re-render same verify email page
+        if (cooldownDetails != null) {
+            long remaining = (Long.parseLong(cooldownDetails.get(KEY_EXPIRE)) - Time.currentTime());
+            if (remaining > 0) {
+                // Avoid the awkward situation where due to rounding the value is zero
+                Response retryPage = context.form()
+                        .setError(Messages.COOLDOWN_VERIFICATION_EMAIL, remaining)
+                        .createResponse(UserModel.RequiredAction.VERIFY_EMAIL); // re-render same verify email page
 
-            context.challenge(retryPage);
+                context.challenge(retryPage);
+                return;
+            }
         }
+
+        // This will allow user to re-send email again
+        context.getAuthenticationSession().removeAuthNote(Constants.VERIFY_EMAIL_KEY);
+
+        process(context, false);
     }
 
 
@@ -241,6 +230,11 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
               .setUser(user)
               .sendVerifyEmail(link, expirationInMinutes);
             event.success();
+
+            SingleUseObjectProvider cache = context.getSession().singleUseObjects();
+            long cooldownSeconds = getCooldownInSeconds(context);
+            cache.put(getCacheKey(context), cooldownSeconds, Map.of("expire", Long.toString(Time.currentTime() + cooldownSeconds)));
+
             return context.form().createResponse(UserModel.RequiredAction.VERIFY_EMAIL);
         } catch (EmailException e) {
             event.clone().event(EventType.SEND_VERIFY_EMAIL)
@@ -254,6 +248,11 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
                     .createErrorPage(Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
+
+    private static String getCacheKey(RequiredActionContext context) {
+        return EMAIL_RESEND_COOLDOWN_KEY_PREFIX + context.getUser().getId();
+    }
+
     private long getCooldownInSeconds(RequiredActionContext context) {
         try {
             RequiredActionProviderModel model = context.getRealm().getRequiredActionProviderByAlias(getId());
@@ -264,7 +263,7 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
 
             String value = model.getConfig().getOrDefault(EMAIL_RESEND_COOLDOWN_SECONDS, String.valueOf(EMAIL_RESEND_COOLDOWN_DEFAULT_SECONDS));
             return Long.parseLong(value);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             logger.error("Failed to fetch cooldown from config: ", e);
             return EMAIL_RESEND_COOLDOWN_DEFAULT_SECONDS;
         }
