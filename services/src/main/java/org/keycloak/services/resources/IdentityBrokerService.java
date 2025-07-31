@@ -486,6 +486,8 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             if (authResult != null) {
                 AccessToken token = authResult.getToken();
                 ClientModel clientModel = authResult.getClient();
+                event.client(clientModel);
+                event.user(authResult.getUser());
 
                 session.getContext().setClient(clientModel);
 
@@ -513,15 +515,32 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                         return corsResponse(notFound("No token stored for user [" + authResult.getUser().getId() + "] with associated identity provider [" + providerAlias + "]."), clientModel);
                     }
 
-                    this.event.success();
-
-                    return corsResponse(identityProvider.retrieveToken(session, identity), clientModel);
+                    String oldToken = identity.getToken();
+                    try {
+                        Response response = corsResponse(identityProvider.retrieveToken(session, identity), clientModel);
+                        this.event.success();
+                        return response;
+                    } catch (WebApplicationException e) {
+                        this.event.detail(Details.REASON, e.getMessage());
+                        this.event.error(Errors.IDENTITY_PROVIDER_ERROR);
+                        return corsResponse(e.getResponse(), clientModel);
+                    } finally {
+                        if (!Objects.equals(oldToken, identity.getToken())) {
+                            // The API of the IdentityProvider doesn't allow use to pass down the realm and the user, so we check if the token has changed,
+                            // and then update the store.
+                            session.users().updateFederatedIdentity(session.getContext().getRealm(), authResult.getUser(), identity);
+                        }
+                    }
                 }
 
                 return corsResponse(badRequest("Identity Provider [" + providerAlias + "] does not support this operation."), clientModel);
             }
 
             return badRequest("Invalid token.");
+        } catch (WebApplicationException e) {
+            this.event.detail(Details.REASON, e.getMessage());
+            this.event.error(Errors.IDENTITY_PROVIDER_ERROR);
+            return e.getResponse();
         } catch (IdentityBrokerException e) {
             return redirectToErrorPage(Response.Status.BAD_GATEWAY, Messages.COULD_NOT_OBTAIN_TOKEN, e, providerAlias);
         }  catch (Exception e) {
