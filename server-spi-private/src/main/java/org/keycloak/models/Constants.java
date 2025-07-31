@@ -103,6 +103,9 @@ public final class Constants {
     public static final String KC_ACTION_ENFORCED = "kc_action_enforced";
     public static final int KC_ACTION_MAX_AGE = 300;
     public static final String MAX_AUTH_AGE_KEY = "max_auth_age";
+    public static final String EMAIL_RESEND_COOLDOWN_SECONDS = "email_resend_cooldown";
+    public static final int EMAIL_RESEND_COOLDOWN_DEFAULT_SECONDS = 30;
+    public static final String EMAIL_RESEND_COOLDOWN_KEY_PREFIX = "verify-email-cooldown-";
 
 
     public static final String IS_AIA_REQUEST = "IS_AIA_REQUEST";
