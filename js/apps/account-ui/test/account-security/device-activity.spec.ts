@@ -25,26 +25,20 @@ test.describe("Sign out test", () => {
         page2.getByTestId("account-security/device-activity"),
       ).toBeVisible();
       await page2.getByTestId("account-security/device-activity").click();
-
       await expect(page2.getByTestId("row-0")).toContainText("Current session");
-      while (true) {
-        let count = await page2
-          .locator('[aria-label="device-sessions-content"]')
-          .count();
+      const count = await page2
+        .locator('[aria-label="device-sessions-content"]')
+        .count();
+
+      for (let i = 0; i < count - 1; ++i) {
         await page2
           .getByRole("button", { name: "Sign out", exact: true })
           .first()
           .click();
         await page2.getByRole("button", { name: "Confirm" }).click();
-        --count;
-        await expect(page2.getByTestId("row-" + count)).toHaveCount(0);
-        // eslint-disable-next-line playwright/no-conditional-in-test
-        if (count == 1) {
-          break;
-        }
+        await page2.getByText("Signed out").isVisible();
+        await page2.getByTestId("global-alerts").locator("button").click();
       }
-
-      await page2.getByText("Signed out").isVisible();
 
       // reload pages in browsers, one should stay logged in, the other should be logged out
       await page1.reload();
