@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Displays the count of Dependabot PRs opened in the last 7 days
 # and the number of failed Admin UI E2E and Account UI E2E checks.
 
