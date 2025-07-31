@@ -87,7 +87,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.models.Constants.EMAIL_RESEND_COOLDOWN_KEY_PREFIX;
+import static org.keycloak.authentication.requiredactions.VerifyEmail.EMAIL_RESEND_COOLDOWN_KEY_PREFIX;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
