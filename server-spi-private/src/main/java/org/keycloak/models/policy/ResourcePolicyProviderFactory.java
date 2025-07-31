@@ -17,9 +17,7 @@
 
 package org.keycloak.models.policy;
 
-import org.keycloak.component.ComponentFactory;
+import org.keycloak.provider.ProviderFactory;
 
-public interface ResourcePolicyProviderFactory<P extends ResourcePolicyProvider> extends ComponentFactory<P, ResourcePolicyProvider> {
-
-    ResourceType getType();
+public interface ResourcePolicyProviderFactory extends ProviderFactory<ResourcePolicyProvider> {
 }

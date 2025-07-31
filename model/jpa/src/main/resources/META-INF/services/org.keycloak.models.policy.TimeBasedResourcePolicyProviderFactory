@@ -15,4 +15,5 @@
 # limitations under the License.
 #
 
-org.keycloak.models.policy.JpaResourcePolicyProviderFactory
+org.keycloak.models.policy.UserCreationDateResourcePolicyProviderFactory
+org.keycloak.models.policy.UserLastAuthTimeResourcePolicyProviderFactory

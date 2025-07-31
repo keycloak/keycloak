@@ -17,42 +17,31 @@
 
 package org.keycloak.models.policy;
 
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.Spi;
 
-import org.keycloak.Config;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
+public class TimeBasedResourcePolicySpi implements Spi {
 
-public class UserCreationDateResourcePolicyProviderFactory implements TimeBasedResourcePolicyProviderFactory {
-
-    public static final String ID = "user-creation-date-resource-policy";
+    public static final String NAME = "rlm-time-policy";
 
     @Override
-    public ResourceType getType() {
-        return ResourceType.USERS;
+    public boolean isInternal() {
+        return true;
     }
 
     @Override
-    public UserCreationDateResourcePolicyProvider create(KeycloakSession session) {
-        return new UserCreationDateResourcePolicyProvider(session);
+    public String getName() {
+        return NAME;
     }
 
     @Override
-    public void init(Config.Scope config) {
-        // no-op
+    public Class<? extends Provider> getProviderClass() {
+        return TimeBasedResourcePolicyProvider.class;
     }
 
     @Override
-    public void postInit(KeycloakSessionFactory factory) {
-        // no-op
-    }
-
-    @Override
-    public void close() {
-        // no-op
-    }
-
-    @Override
-    public String getId() {
-        return ID;
+    public Class<? extends ProviderFactory> getProviderFactoryClass() {
+        return TimeBasedResourcePolicyProviderFactory.class;
     }
 }

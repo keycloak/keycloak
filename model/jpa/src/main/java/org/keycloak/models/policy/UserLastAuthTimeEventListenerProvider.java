@@ -17,6 +17,7 @@
 
 package org.keycloak.models.policy;
 
+import org.keycloak.models.policy.entity.ResourcePolicyStateEntity;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaDelete;

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.policy;
+package org.keycloak.models.policy.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -29,7 +29,7 @@ import java.util.Objects;
  * Represents the state of a resource within a time-based policy flow.
  */
 @Entity
-@Table(name = "RESOURCE_POLICY_STATE")
+@Table(name = "RLM_POLICY_STATE")
 @IdClass(ResourcePolicyStateEntity.PrimaryKey.class)
 public class ResourcePolicyStateEntity {
 

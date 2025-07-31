@@ -17,130 +17,30 @@
 
 package org.keycloak.models.policy;
 
-import jakarta.ws.rs.BadRequestException;
-import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
-import org.keycloak.component.ComponentFactory;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.provider.ProviderFactory;
 
 public class ResourcePolicyManager {
 
     private final KeycloakSession session;
+    private final ResourcePolicyProvider policyProvider;
+    private final ResourcePolicyStateProvider stateProvider;
+    
     private static final Logger log = Logger.getLogger(ResourcePolicyManager.class);
 
     public ResourcePolicyManager(KeycloakSession session) {
         this.session = session;
-    }
-
-    public ResourcePolicy addPolicy(String providerId) {
-        return addPolicy(new ResourcePolicy(providerId));
-    }
-
-    public ResourcePolicy addPolicy(ResourcePolicy policy) {
-        RealmModel realm = getRealm();
-        ComponentModel model = new ComponentModel();
-
-        model.setParentId(realm.getId());
-        model.setProviderId(policy.getProviderId());
-        model.setProviderType(ResourcePolicyProvider.class.getName());
-
-        return new ResourcePolicy(realm.addComponentModel(model));
-    }
-
-    /*
-        This method takes an ordered list of actions. First action in the list has the highest priority, last action has the lowest priority
-        It is used for both create and update actions
-        ---------------------------------------------------------------------------------------
-        using delete-and-recreate approach for now as it seems more simple and robust solution
-        todo: consider changing it to "diff-and-update" (more complex) approach where we'd need to
-            * keep existing actions
-            * create newly added actions
-            * delete removed actions
-            * reorder existing action according to new order (we may add gaps between priority so that we won't need to update all existing actions)
-                * with the gap approach, it may eventually happen that there won't be any space between the two action, in that case we'd have to trigger recalculation of priorities
-    */
-    public void updateActions(ResourcePolicy policy, List<ResourceAction> actions) {
-
-        validateActions(actions);
-
-        // get the stable IDs of the new actions
-        Set<String> newActionIds = actions.stream()
-                .map(ResourceAction::getId)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-
-        // get the stable IDs of the old actions
-        List<ResourceAction> oldActions = getActions(policy);
-        Set<String> oldActionIds = oldActions.stream()
-                .map(ResourceAction::getId)
-                .collect(Collectors.toSet());
-
-        // find which action IDs were deleted
-        oldActionIds.removeAll(newActionIds); // The remaining IDs are the deleted ones
-        Set<String> deletedActionIds = oldActionIds;
-
-        ResourcePolicyStateProvider stateProvider = getResourcePolicyStateProvider();
-        // delete orphaned state records - this means that we actually reset the flow for users which completed the action which is being removed
-        // it seems like the best way to handle this
-        if (!deletedActionIds.isEmpty()) {
-            stateProvider.deleteStatesByCompletedActions(policy.getId(), deletedActionIds);
-        }
-
-        RealmModel realm = getRealm();
-        // remove all existing actions of the policy
-        realm.removeComponents(policy.getId());
-
-        // add the new actions
-        for (int i = 0; i < actions.size(); i++) {
-            ResourceAction action = actions.get(i);
-
-            // assign priority based on index.
-            action.setPriority(i + 1);
-
-            // persist the new action component.
-            addAction(policy, action);
-        }
-    }
-
-    private ResourceAction addAction(ResourcePolicy policy, ResourceAction action) {
-        RealmModel realm = getRealm();
-        ComponentModel policyModel = realm.getComponent(policy.getId());
-        ComponentModel actionModel = new ComponentModel();
-
-        actionModel.setId(action.getId());//need to keep stable UUIDs not to break a link in state table
-        actionModel.setParentId(policyModel.getId());
-        actionModel.setProviderId(action.getProviderId());
-        actionModel.setProviderType(ResourceActionProvider.class.getName());
-        actionModel.setConfig(action.getConfig());
-
-        return new ResourceAction(realm.addComponentModel(actionModel));
-    }
-
-    public List<ResourcePolicy> getPolicies() {
-        RealmModel realm = getRealm();
-        return realm.getComponentsStream(realm.getId(), ResourcePolicyProvider.class.getName())
-                .map(ResourcePolicy::new).toList();
-    }
-
-    public List<ResourceAction> getActions(ResourcePolicy policy) {
-        RealmModel realm = getRealm();
-        return realm.getComponentsStream(policy.getId(), ResourceActionProvider.class.getName())
-                .map(ResourceAction::new).sorted().toList();
+        this.policyProvider = session.getProvider(ResourcePolicyProvider.class);
+        this.stateProvider = session.getProvider(ResourcePolicyStateProvider.class);
     }
 
     public void runPolicies() {
-        List<ResourcePolicy> policies = getPolicies();
+        List<ResourcePolicy> policies = policyProvider.getPolicies();
 
         for (ResourcePolicy policy : policies) {
             runPolicy(policy);
@@ -151,13 +51,10 @@ public class ResourcePolicyManager {
         log.tracev("Running policy {0}", policy.getProviderId());
 
         // no actions -> skip
-        List<ResourceAction> actions = getActions(policy);
+        List<ResourceAction> actions = policyProvider.getActions(policy.getId());
         if (actions.isEmpty()) {
             return;
         }
-
-        ResourcePolicyProvider policyProvider = getPolicyProvider(policy);
-        ResourcePolicyStateProvider stateProvider = getResourcePolicyStateProvider();
 
         // fetch all candidate lists for subsequent actions
         // need to load all candidates before creation a state record for initial action
@@ -174,7 +71,9 @@ public class ResourcePolicyManager {
         ResourceActionProvider actionProvider = getActionProvider(initialAction);
         log.tracev("Initial action {0}", initialAction.getProviderId());
 
-        List<String> newResourceIds = policyProvider.getEligibleResourcesForInitialAction(initialAction.getAfter());
+        TimeBasedResourcePolicyProvider timeBasedProvider = session.getProvider(TimeBasedResourcePolicyProvider.class, policy.getProviderId());
+        
+        List<String> newResourceIds = timeBasedProvider.getEligibleResourcesForInitialAction(policy, initialAction.getAfter());
         log.tracev("Eligable resource IDs for initial action {0}", newResourceIds);
         // <comment> todo: do we want to wrap it into separate tx? So we have more granular approach for handling errors & possible retries??
         if (!newResourceIds.isEmpty()) {
@@ -196,7 +95,7 @@ public class ResourcePolicyManager {
             }
 
             // Ask the policyProvider to filter these candidates based on time.
-            List<String> eligibleIds = policyProvider.filterEligibleResources(candidateIds, action.getAfter());
+            List<String> eligibleIds = timeBasedProvider.filterEligibleResources(candidateIds, action.getAfter());
 
             // <comment> todo: do we want to wrap it into separate tx? So we have more granular approach for handling errors & possible retries??
             if (!eligibleIds.isEmpty()) {
@@ -211,58 +110,8 @@ public class ResourcePolicyManager {
         }
     }
 
-    private ResourcePolicyProvider getPolicyProvider(ResourcePolicy policy) {
-        ComponentFactory<?, ?> factory = (ComponentFactory<?, ?>) session.getKeycloakSessionFactory()
-                .getProviderFactory(ResourcePolicyProvider.class, policy.getProviderId());
-        return (ResourcePolicyProvider) factory.create(session, getRealm().getComponent(policy.getId()));
-    }
-
     private ResourceActionProvider getActionProvider(ResourceAction action) {
-        ComponentFactory<?, ?> actionFactory = (ComponentFactory<?, ?>) session.getKeycloakSessionFactory()
-                .getProviderFactory(ResourceActionProvider.class, action.getProviderId());
-        return (ResourceActionProvider) actionFactory.create(session, getRealm().getComponent(action.getId()));
+        return session.getProvider(ResourceActionProvider.class, action.getProviderId());
     }
 
-    private ResourcePolicyStateProvider getResourcePolicyStateProvider() {
-        ProviderFactory<ResourcePolicyStateProvider> providerFactory = session.getKeycloakSessionFactory().getProviderFactory(ResourcePolicyStateProvider.class);
-        return providerFactory.create(session);
-    }
-
-    private RealmModel getRealm() {
-        return session.getContext().getRealm();
-    }
-
-    private void validateActions(List<ResourceAction> actions) {
-        // the list should be in the desired priority order
-        for (int i = 0; i < actions.size(); i++) {
-            ResourceAction currentAction = actions.get(i);
-
-            // check that each action's duration is positive.
-            if (currentAction.getAfter() <= 0) {
-                throw new BadRequestException("Validation Error: 'after' duration must be positive.");
-            }
-
-            if (i > 0) {// skip for initial action
-                ResourceAction previousAction = actions.get(i - 1);
-                // compare current with the previous action in the list
-                if (currentAction.getAfter() < previousAction.getAfter()) {
-                    throw new BadRequestException(
-                        String.format("Validation Error: The 'after' duration for action #%d (%s) cannot be less than the duration of the preceding action #%d (%s).",
-                            i + 1, formatDuration(currentAction.getAfter()),
-                            i, formatDuration(previousAction.getAfter()))
-                    );
-                }
-            }
-        }
-    }
-
-    private String formatDuration(long millis) {
-        long days = Duration.ofMillis(millis).toDays();
-        if (days > 0) {
-            return String.format("%d day(s)", days);
-        } else {
-            long hours = Duration.ofMillis(millis).toHours();
-            return String.format("%d hour(s)", hours);
-        }
-    }
 }

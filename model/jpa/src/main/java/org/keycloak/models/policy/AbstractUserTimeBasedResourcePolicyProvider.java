@@ -17,6 +17,7 @@
 
 package org.keycloak.models.policy;
 
+import org.keycloak.models.policy.entity.ResourcePolicyStateEntity;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -25,18 +26,15 @@ import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
 import java.util.Collections;
 import java.util.List;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.jpa.entities.UserEntity;
 
-public abstract class AbstractUserResourcePolicyProvider implements ResourcePolicyProvider {
+public abstract class AbstractUserTimeBasedResourcePolicyProvider implements TimeBasedResourcePolicyProvider {
 
-    private final ComponentModel policyModel;
     private final EntityManager em;
 
-    public AbstractUserResourcePolicyProvider(KeycloakSession session, ComponentModel model) {
-        this.policyModel = model;
+    public AbstractUserTimeBasedResourcePolicyProvider(KeycloakSession session) {
         this.em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
     }
 
@@ -50,7 +48,7 @@ public abstract class AbstractUserResourcePolicyProvider implements ResourcePoli
     // For each user row, a subquery is executed to check if a corresponding record exists in 
     // the state table. If no record is found, the condition is met -> user is eligable for initial action 
     @Override
-    public List<String> getEligibleResourcesForInitialAction(long time) {
+    public List<String> getEligibleResourcesForInitialAction(ResourcePolicy policy, long time) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<String> query = cb.createQuery(String.class);
         Root<UserEntity> userRoot = query.from(UserEntity.class);
@@ -63,7 +61,7 @@ public abstract class AbstractUserResourcePolicyProvider implements ResourcePoli
         subquery.where(
             cb.and(
                 cb.equal(stateRoot.get("resourceId"), userRoot.get("id")),
-                cb.equal(stateRoot.get("policyId"), policyModel.getId())
+                cb.equal(stateRoot.get("policyId"), policy.getId())
             )
         );
 

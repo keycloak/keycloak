@@ -20,7 +20,6 @@ package org.keycloak.models.policy;
 import java.util.List;
 import org.jboss.logging.Logger;
 
-import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -28,12 +27,10 @@ import org.keycloak.models.UserModel;
 public class NotifyUserActionProvider implements ResourceActionProvider {
 
     private final KeycloakSession session;
-    private final ComponentModel actionModel;
     private final Logger log = Logger.getLogger(NotifyUserActionProvider.class);
 
-    public NotifyUserActionProvider(KeycloakSession session, ComponentModel model) {
+    public NotifyUserActionProvider(KeycloakSession session) {
         this.session = session;
-        this.actionModel = model;
     }
 
     @Override
@@ -57,8 +54,4 @@ public class NotifyUserActionProvider implements ResourceActionProvider {
         }
     }
 
-    @Override
-    public boolean isRunnable() {
-        return actionModel.get("after") != null;
-    }
 }

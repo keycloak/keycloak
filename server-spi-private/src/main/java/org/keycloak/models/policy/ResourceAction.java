@@ -17,78 +17,43 @@
 
 package org.keycloak.models.policy;
 
-import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.component.ComponentModel;
-
 public class ResourceAction implements Comparable<ResourceAction> {
 
-    private static final String AFTER_KEY = "after";
-    private static final String PRIORITY_KEY = "priority";
-
     private String id;
-    private String providerId;
-    private MultivaluedHashMap<String, String> config;
-
-    public ResourceAction() {
-        // reflection
-    }
+    private final String providerId;
+    private int priority;
+    private long after;
 
     public ResourceAction(String providerId) {
         this.providerId = providerId;
-    }
-
-    public ResourceAction(ComponentModel model) {
-        this.id = model.getId();
-        this.providerId = model.getProviderId();
-        this.config = model.getConfig();
     }
 
     public String getId() {
         return id;
     }
 
+    public void setId(String id) {
+        this.id = id;
+    }
+
     public String getProviderId() {
         return providerId;
     }
 
-    public ResourceAction setConfig(String key, String value) {
-        if (config == null) {
-            config = new MultivaluedHashMap<>();
-        }
-        this.config.putSingle(key, value);
-        return this;
-    }
-
-    public MultivaluedHashMap<String, String> getConfig() {
-        if (config == null) {
-            return new MultivaluedHashMap<>();
-        }
-        return config;
+    public int getPriority() {
+        return priority;
     }
 
     public void setPriority(int priority) {
-        setConfig(PRIORITY_KEY, String.valueOf(priority));
+        this.priority = priority;
     }
 
-    // todo, do not expose the priority to user?? in export etc. the order of actions should define the priority
-    public int getPriority() {
-        String value = getConfig().getFirst(PRIORITY_KEY);
-        if (value == null) {
-            return Integer.MAX_VALUE;
-        }
-        try {
-            return Integer.parseInt(value);
-        } catch (NumberFormatException ignored) {
-            return Integer.MAX_VALUE;
-        }
+    public long getAfter() {
+        return after;
     }
 
-    public void setAfter(Long ms) {
-        setConfig(AFTER_KEY, String.valueOf(ms));
-    }
-
-    public Long getAfter() {
-        return Long.valueOf(getConfig().getFirstOrDefault(AFTER_KEY, "0"));
+    public void setAfter(long after) {
+        this.after = after;
     }
 
     @Override

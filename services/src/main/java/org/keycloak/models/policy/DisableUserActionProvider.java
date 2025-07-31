@@ -19,7 +19,6 @@ package org.keycloak.models.policy;
 
 import java.util.List;
 import org.jboss.logging.Logger;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -27,12 +26,10 @@ import org.keycloak.models.UserModel;
 public class DisableUserActionProvider implements ResourceActionProvider {
 
     private final KeycloakSession session;
-    private final ComponentModel actionModel;
     private final Logger log = Logger.getLogger(DisableUserActionProvider.class);
 
-    public DisableUserActionProvider(KeycloakSession session, ComponentModel model) {
+    public DisableUserActionProvider(KeycloakSession session) {
         this.session = session;
-        this.actionModel = model;
     }
 
     @Override
@@ -56,8 +53,4 @@ public class DisableUserActionProvider implements ResourceActionProvider {
         }
     }
 
-    @Override
-    public boolean isRunnable() {
-        return actionModel.get("after") != null;
-    }
 }

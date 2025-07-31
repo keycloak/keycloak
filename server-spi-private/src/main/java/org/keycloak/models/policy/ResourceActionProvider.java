@@ -24,5 +24,4 @@ public interface ResourceActionProvider extends Provider {
 
     void run(List<String> resourceIds);
 
-    boolean isRunnable();
 }

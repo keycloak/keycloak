@@ -17,38 +17,29 @@
 
 package org.keycloak.models.policy;
 
-
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
-public class UserCreationDateResourcePolicyProviderFactory implements TimeBasedResourcePolicyProviderFactory {
+public class JpaResourcePolicyProviderFactory implements ResourcePolicyProviderFactory {
 
-    public static final String ID = "user-creation-date-resource-policy";
-
-    @Override
-    public ResourceType getType() {
-        return ResourceType.USERS;
-    }
+    private static final String ID = "jpa";
 
     @Override
-    public UserCreationDateResourcePolicyProvider create(KeycloakSession session) {
-        return new UserCreationDateResourcePolicyProvider(session);
+    public ResourcePolicyProvider create(KeycloakSession session) {
+        return new JpaResourcePolicyProvider(session);
     }
 
     @Override
     public void init(Config.Scope config) {
-        // no-op
     }
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        // no-op
     }
 
     @Override
     public void close() {
-        // no-op
     }
 
     @Override

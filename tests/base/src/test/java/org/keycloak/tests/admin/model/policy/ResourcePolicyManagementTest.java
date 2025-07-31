@@ -41,7 +41,8 @@ import org.keycloak.models.policy.NotifyUserActionProviderFactory;
 import org.keycloak.models.policy.ResourceAction;
 import org.keycloak.models.policy.ResourcePolicy;
 import org.keycloak.models.policy.ResourcePolicyManager;
-import org.keycloak.models.policy.ResourcePolicyStateEntity;
+import org.keycloak.models.policy.ResourcePolicyProvider;
+import org.keycloak.models.policy.entity.ResourcePolicyStateEntity;
 import org.keycloak.models.policy.ResourcePolicyStateProvider;
 import org.keycloak.models.policy.UserActionBuilder;
 import org.keycloak.models.policy.UserCreationDateResourcePolicyProviderFactory;
@@ -61,13 +62,14 @@ public class ResourcePolicyManagementTest {
     @Test
     public void testCreatePolicy() {
         runOnServer.run(session -> {
-            RealmModel realm = configureSessionContext(session);
-            ResourcePolicyManager manager = new ResourcePolicyManager(session);
+            configureSessionContext(session);
 
-            ResourcePolicy created = manager.addPolicy(new ResourcePolicy(UserCreationDateResourcePolicyProviderFactory.ID));
+            ResourcePolicyProvider policyProvider = session.getProvider(ResourcePolicyProvider.class);
+            ResourcePolicy created = policyProvider.addPolicy(new ResourcePolicy(UserCreationDateResourcePolicyProviderFactory.ID));
+
             assertNotNull(created.getId());
 
-            List<ResourcePolicy> policies = manager.getPolicies();
+            List<ResourcePolicy> policies = policyProvider.getPolicies();
 
             assertEquals(1, policies.size());
 
@@ -75,7 +77,6 @@ public class ResourcePolicyManagementTest {
 
             assertNotNull(policy.getId());
             assertEquals(created.getId(), policy.getId());
-            assertNotNull(realm.getComponent(policy.getId()));
             assertEquals(UserCreationDateResourcePolicyProviderFactory.ID, policy.getProviderId());
         });
     }
@@ -84,8 +85,8 @@ public class ResourcePolicyManagementTest {
     public void testCreateAction() {
         runOnServer.run(session -> {
             RealmModel realm = configureSessionContext(session);
-            ResourcePolicyManager manager = new ResourcePolicyManager(session);
-            ResourcePolicy policy = manager.addPolicy(new ResourcePolicy(UserCreationDateResourcePolicyProviderFactory.ID));
+            ResourcePolicyProvider policyProvider = session.getProvider(ResourcePolicyProvider.class);
+            ResourcePolicy policy = policyProvider.addPolicy(new ResourcePolicy(UserCreationDateResourcePolicyProviderFactory.ID));
 
             int expectedActionsSize = 5;
 
@@ -95,9 +96,9 @@ public class ResourcePolicyManagementTest {
                         .after(Duration.ofDays(i + 1))
                         .build());
             }
-            manager.updateActions(policy, expectedActions);
+            policyProvider.updateActions(policy.getId(), expectedActions);
 
-            List<ResourceAction> actions = manager.getActions(policy);
+            List<ResourceAction> actions = policyProvider.getActions(policy.getId());
 
             assertEquals(expectedActionsSize, actions.size());
 
@@ -115,18 +116,18 @@ public class ResourcePolicyManagementTest {
             EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
 
             RealmModel realm = configureSessionContext(session);
-            ResourcePolicyManager manager = new ResourcePolicyManager(session);
             ResourcePolicyStateProvider stateProvider = session.getProvider(ResourcePolicyStateProvider.class);
             UserModel user = session.users().addUser(realm, "test");
 
             // Create a policy with two actions
-            ResourcePolicy policy = manager.addPolicy(new ResourcePolicy(UserCreationDateResourcePolicyProviderFactory.ID));
+            ResourcePolicyProvider policyProvider = session.getProvider(ResourcePolicyProvider.class);
+            ResourcePolicy policy = policyProvider.addPolicy(new ResourcePolicy(UserCreationDateResourcePolicyProviderFactory.ID));
             ResourceAction notify = UserActionBuilder.builder(NotifyUserActionProviderFactory.ID).after(Duration.ofDays(5)).build();
             ResourceAction disable = UserActionBuilder.builder(DisableUserActionProviderFactory.ID).after(Duration.ofDays(10)).build();
-            manager.updateActions(policy, List.of(notify, disable));
+            policyProvider.updateActions(policy.getId(), List.of(notify, disable));
 
             // Get the created actions to access their IDs
-            List<ResourceAction> createdActions = manager.getActions(policy);
+            List<ResourceAction> createdActions = policyProvider.getActions(policy.getId());
             ResourceAction createdNotifyAction = createdActions.get(0);
             ResourceAction createdDisableAction = createdActions.get(1);
 
@@ -137,7 +138,7 @@ public class ResourcePolicyManagementTest {
             assertNotNull(em.find(ResourcePolicyStateEntity.class, pk), "State should exist before the update.");
 
             // Admin deletes 'notify' by updating the policy with only 'disable'
-            manager.updateActions(policy, List.of(createdDisableAction));
+            policyProvider.updateActions(policy.getId(), List.of(createdDisableAction));
 
             //need to flush and clear the persistance context cache to get correct result in next call
             em.flush();
@@ -159,12 +160,13 @@ public class ResourcePolicyManagementTest {
             user.setEnabled(true);
 
             // Create a policy with notify (5 days) and disable (10 days) actions
-            ResourcePolicy policy = manager.addPolicy(new ResourcePolicy(UserCreationDateResourcePolicyProviderFactory.ID));
+            ResourcePolicyProvider policyProvider = session.getProvider(ResourcePolicyProvider.class);
+            ResourcePolicy policy = policyProvider.addPolicy(new ResourcePolicy(UserCreationDateResourcePolicyProviderFactory.ID));
             ResourceAction notifyAction = UserActionBuilder.builder(NotifyUserActionProviderFactory.ID).after(Duration.ofDays(5)).build();
             ResourceAction disableAction = UserActionBuilder.builder(DisableUserActionProviderFactory.ID).after(Duration.ofDays(10)).build();
-            manager.updateActions(policy, List.of(notifyAction, disableAction));
+            policyProvider.updateActions(policy.getId(), List.of(notifyAction, disableAction));
 
-            ResourceAction createdNotifyAction = manager.getActions(policy).get(0);
+            ResourceAction createdNotifyAction = policyProvider.getActions(policy.getId()).get(0);
 
             try {
                 // Simulate the user being 12 days old, making them eligible for both actions' time conditions.
@@ -193,8 +195,8 @@ public class ResourcePolicyManagementTest {
     public void testTimeVsPriorityConflictingActions() {
         runOnServer.run(session -> {
             configureSessionContext(session);
-            ResourcePolicyManager manager = new ResourcePolicyManager(session);
-            ResourcePolicy policy = manager.addPolicy(UserCreationDateResourcePolicyProviderFactory.ID);
+            ResourcePolicyProvider policyProvider = session.getProvider(ResourcePolicyProvider.class);
+            ResourcePolicy policy = policyProvider.addPolicy(new ResourcePolicy(UserCreationDateResourcePolicyProviderFactory.ID));
 
             ResourceAction action1 = UserActionBuilder.builder(DisableUserActionProviderFactory.ID)
                     .after(Duration.ofDays(10))
@@ -205,7 +207,7 @@ public class ResourcePolicyManagementTest {
                     .build();
 
             try {
-                manager.updateActions(policy, List.of(action1, action2));
+                policyProvider.updateActions(policy.getId(), List.of(action1, action2));
                 fail("Expected exception was not thrown");
             } catch (BadRequestException expected) {}
         });
@@ -216,8 +218,8 @@ public class ResourcePolicyManagementTest {
         // setup
         runOnServer.run(session -> {
             RealmModel realm = configureSessionContext(session);
-            ResourcePolicyManager manager = new ResourcePolicyManager(session);
-            ResourcePolicy policy = manager.addPolicy(UserLastAuthTimeResourcePolicyProviderFactory.ID);
+            ResourcePolicyProvider policyProvider = session.getProvider(ResourcePolicyProvider.class);
+            ResourcePolicy policy = policyProvider.addPolicy(new ResourcePolicy(UserLastAuthTimeResourcePolicyProviderFactory.ID));
 
             ResourceAction notifyAction = UserActionBuilder.builder(NotifyUserActionProviderFactory.ID)
                     .after(Duration.ofDays(5))
@@ -227,7 +229,7 @@ public class ResourcePolicyManagementTest {
                     .after(Duration.ofDays(10))
                     .build();
 
-            manager.updateActions(policy, List.of(notifyAction, disableAction));
+            policyProvider.updateActions(policy.getId(), List.of(notifyAction, disableAction));
 
             UserModel user = session.users().addUser(realm, "myuser");
             user.setEnabled(true);

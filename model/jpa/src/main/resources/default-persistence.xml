@@ -93,7 +93,9 @@
         <class>org.keycloak.storage.configuration.jpa.entity.ServerConfigEntity</class>
 
         <!-- Resource Lifecycle Management -->
-        <class>org.keycloak.models.policy.ResourcePolicyStateEntity</class>
+        <class>org.keycloak.models.policy.entity.ResourceActionEntity</class>
+        <class>org.keycloak.models.policy.entity.ResourcePolicyEntity</class>
+        <class>org.keycloak.models.policy.entity.ResourcePolicyStateEntity</class>
 
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
 

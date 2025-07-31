@@ -22,14 +22,13 @@ import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import org.keycloak.common.util.Time;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.jpa.entities.UserEntity;
 
-public class UserCreationDateResourcePolicyProvider extends AbstractUserResourcePolicyProvider {
+public class UserCreationDateResourcePolicyProvider extends AbstractUserTimeBasedResourcePolicyProvider {
 
-    public UserCreationDateResourcePolicyProvider(KeycloakSession session, ComponentModel model) {
-        super(session, model);
+    public UserCreationDateResourcePolicyProvider(KeycloakSession session) {
+        super(session);
     }
 
     @Override
