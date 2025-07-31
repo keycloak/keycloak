@@ -337,8 +337,10 @@ public class DeviceGrantType extends OAuth2GrantTypeBase {
             event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
             event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
             event.error(cpe.getError());
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, cpe.getErrorDetail(),
-                Response.Status.BAD_REQUEST);
+            if (!cpe.isPermissiveMode()) {
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, cpe.getErrorDetail(),
+                        Response.Status.BAD_REQUEST);
+            }
         }
 
         // Compute client scopes again from scope parameter. Check if user still has them granted

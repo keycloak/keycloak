@@ -30,6 +30,7 @@ public class ClientPolicyException extends Exception {
     private String error = OAuthErrorException.INVALID_REQUEST;
     private String errorDetail ="NA";
     private Status errorStatus = Response.Status.BAD_REQUEST;
+    private boolean permissiveMode = false;
 
     public ClientPolicyException(String error) {
         super(error);
@@ -62,6 +63,14 @@ public class ClientPolicyException extends Exception {
         setErrorStatus(errorStatus);
     }
 
+    public ClientPolicyException(ClientPolicyException cpe, boolean permissiveMode) {
+        super();
+        setError(cpe.getError());
+        setErrorDetail(cpe.getErrorDetail());
+        setErrorStatus(cpe.getErrorStatus());
+        setPermissiveMode(permissiveMode);
+    }
+
     public String getError() {
         return error;
     }
@@ -84,6 +93,14 @@ public class ClientPolicyException extends Exception {
 
     public void setErrorStatus(Status errorStatus) {
         this.errorStatus = errorStatus;
+    }
+
+    public boolean isPermissiveMode() {
+        return permissiveMode;
+    }
+
+    public void setPermissiveMode(boolean permissiveMode) {
+        this.permissiveMode = permissiveMode;
     }
 
     /**
