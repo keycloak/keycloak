@@ -39,7 +39,7 @@ public class KerberosPrincipalAttributeMapper extends AbstractLDAPStorageMapper 
         if (kerberosPrincipalAttribute != null) {
             String localKerberosPrincipal = user.getFirstAttribute(KERBEROS_PRINCIPAL);
             String ldapKerberosPrincipal = ldapUser.getAttributeAsString(kerberosPrincipalAttribute);
-            if (ldapKerberosPrincipal != null && localKerberosPrincipal != null) {
+            if (ldapKerberosPrincipal != null) {
                 // update the Kerberos principal stored in DB as user's attribute if it doesn't match LDAP
                 if (!ldapKerberosPrincipal.equals(localKerberosPrincipal)) {
                     user.setSingleAttribute(KERBEROS_PRINCIPAL, ldapKerberosPrincipal);
