@@ -96,6 +96,12 @@
         }
     },
 
+    "datastore": {
+        "legacy": {
+            "allowMigrateExistingDatabaseToSnapshot": "${keycloak.datastore.allowMigrateExistingDatabaseToSnapshot:false}"
+        }
+    },
+
     "realmCache": {
         "default" : {
             "enabled": "${keycloak.realmCache.enabled:true}"
