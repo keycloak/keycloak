@@ -1,50 +1,43 @@
 import { expect, test } from "@playwright/test";
-import { login } from "../login";
+import { login } from "../support/actions.ts";
+import { createTestBed } from "../support/testbed.ts";
 
-test.describe("Sign out test", () => {
-  test("Sign out one device", async ({ browser }) => {
-    const context1 = await browser.newContext({
-      userAgent:
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)",
-    });
+test.describe("Device activity", () => {
+  test("signs out of a single device session", async ({ browser }) => {
+    const realm = await createTestBed();
+    const context1 = await browser.newContext();
     const context2 = await browser.newContext();
+
     try {
       const page1 = await context1.newPage();
       const page2 = await context2.newPage();
-      await login(page1, "jdoe", "jdoe", "groups");
+
+      // Log in the first session, and verify it is active.
+      await login(page1, realm);
       await page1.getByTestId("accountSecurity").click();
-      await expect(
-        page1.getByTestId("account-security/device-activity"),
-      ).toBeVisible();
       await page1.getByTestId("account-security/device-activity").click();
       await expect(page1.getByTestId("row-0")).toContainText("Current session");
 
-      await login(page2, "jdoe", "jdoe", "groups");
+      // Log in the second session, and verify it is active.
+      await login(page2, realm);
       await page2.getByTestId("accountSecurity").click();
-      await expect(
-        page2.getByTestId("account-security/device-activity"),
-      ).toBeVisible();
       await page2.getByTestId("account-security/device-activity").click();
       await expect(page2.getByTestId("row-0")).toContainText("Current session");
-      const count = await page2
-        .locator('[aria-label="device-sessions-content"]')
-        .count();
 
-      for (let i = 0; i < count - 1; ++i) {
-        await page2
-          .getByRole("button", { name: "Sign out", exact: true })
-          .first()
-          .click();
-        await page2.getByRole("button", { name: "Confirm" }).click();
-        await page2.getByText("Signed out").isVisible();
-        await page2.getByTestId("global-alerts").locator("button").click();
-      }
+      // Sign out the first session from the second session.
+      await page2
+        .getByRole("button", { name: "Sign out", exact: true })
+        .click();
+      await page2.getByRole("button", { name: "Confirm", exact: true }).click();
 
-      // reload pages in browsers, one should stay logged in, the other should be logged out
+      // Reload pages and verify the first session is logged out, while the second session remains active.
       await page1.reload();
       await page2.reload();
       await expect(
-        page1.getByRole("heading", { name: "Sign in to your account" }),
+        page1.getByRole("heading", {
+          name: "Sign in to your account",
+          exact: true,
+        }),
       ).toBeVisible();
       await expect(page2.getByTestId("accountSecurity")).toBeVisible();
     } finally {
@@ -53,37 +46,38 @@ test.describe("Sign out test", () => {
     }
   });
 
-  test("Sign out all devices", async ({ browser }) => {
-    const context1 = await browser.newContext({
-      userAgent:
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)",
-    });
+  test("signs out of all device sessions", async ({ browser }) => {
+    const realm = await createTestBed();
+    const context1 = await browser.newContext();
     const context2 = await browser.newContext();
+
     try {
       const page1 = await context1.newPage();
       const page2 = await context2.newPage();
-      await login(page1, "jdoe", "jdoe", "groups");
-      await login(page2, "jdoe", "jdoe", "groups");
 
+      // Log in both sessions, then sign out of all devices from the second session.
+      await login(page1, realm);
+      await login(page2, realm);
       await page2.getByTestId("accountSecurity").click();
       await page2.getByTestId("account-security/device-activity").click();
-
       await page2
         .getByRole("button", { name: "Sign out all devices", exact: true })
         .click();
-      await page2.getByRole("button", { name: "Confirm" }).click();
-      await expect(
-        page2.getByRole("heading", { name: "Sign in to your account" }),
-      ).toBeVisible();
+      await page2.getByRole("button", { name: "Confirm", exact: true }).click();
 
-      // reload pages in browsers, one should stay logged in, the other should be logged out
+      // Reload only the first page (second page is already logged out), and verify both sessions are logged out.
       await page1.reload();
-      // Reload in page2 should not be needed, as it should be logged out after clicking the button
       await expect(
-        page1.getByRole("heading", { name: "Sign in to your account" }),
+        page1.getByRole("heading", {
+          name: "Sign in to your account",
+          exact: true,
+        }),
       ).toBeVisible();
       await expect(
-        page2.getByRole("heading", { name: "Sign in to your account" }),
+        page2.getByRole("heading", {
+          name: "Sign in to your account",
+          exact: true,
+        }),
       ).toBeVisible();
     } finally {
       await context1.close();
