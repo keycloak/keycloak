@@ -103,7 +103,7 @@ NOTE:  The name format of options defined in this way is identical to the key fo
 
 === Secret References
 
-Secret References are used by some dedicated options in the Keycloak CR, such as `tlsSecret`, or as a value in `additionalOptions`.
+Secret References are used by some dedicated options in the Keycloak CR, such as a `tlsSecret`, or as a value in `additionalOptions`.
 
 Similarly ConfigMap References are used by options such as the `configMapFile`.
 
@@ -290,7 +290,7 @@ spec:
 ----
 
 NOTE: If you are using a custom image, the Operator is *unaware* of any configuration options that might've been specified there.
-For instance, it may cause that the management interface uses the `https` schema, but the Operator accesses it via `http` when the TLS settings is specified in the custom image.
+For instance, the management interface may use `https`, but the Operator accesses it via `http` when the TLS settings are specified in the custom image.
 To ensure proper TLS configuration, use the `tlsSecret` and `truststores` fields in the Keycloak CR so that the Operator can reflect that.
 
 For more details, see <@links.server id="management-interface" />.

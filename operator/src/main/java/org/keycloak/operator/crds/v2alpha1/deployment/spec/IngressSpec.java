@@ -30,13 +30,16 @@ public class IngressSpec {
 
     @JsonProperty("enabled")
     private boolean ingressEnabled = true;
-    
+
     @JsonProperty("className")
     private String ingressClassName;
 
     @JsonProperty("annotations")
     @JsonPropertyDescription("Additional annotations to be appended to the Ingress object")
     Map<String, String> annotations;
+
+    @JsonPropertyDescription("A secret containing the TLS configuration for re-encrypt or TLS termination scenarios. Reference: https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets.")
+    private String tlsSecret;
 
     public boolean isIngressEnabled() {
         return ingressEnabled;
@@ -45,11 +48,11 @@ public class IngressSpec {
     public void setIngressEnabled(boolean enabled) {
         this.ingressEnabled = enabled;
     }
-    
+
     public String getIngressClassName() {
         return ingressClassName;
     }
-    
+
     public void setIngressClassName(String className) {
         this.ingressClassName = className;
     }
@@ -60,5 +63,13 @@ public class IngressSpec {
 
     public void setAnnotations(Map<String, String> annotations) {
         this.annotations = annotations;
+    }
+
+    public String getTlsSecret() {
+        return tlsSecret;
+    }
+
+    public void setTlsSecret(String tlsSecret) {
+        this.tlsSecret = tlsSecret;
     }
 }
