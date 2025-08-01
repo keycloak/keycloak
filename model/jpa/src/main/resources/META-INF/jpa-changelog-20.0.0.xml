@@ -55,6 +55,17 @@
         </createIndex>
     </changeSet>
 
+    <changeSet author="keycloak" id="client-attributes-string-accomodation-fixed-pre-drop-index">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <and>
+                <not>
+                    <changeSetExecuted id="client-attributes-string-accomodation-fixed" author="keycloak" changeLogFile="META-INF/jpa-changelog-20.0.0.xml"/>
+                </not>
+            </and>
+        </preConditions>
+        <dropIndex tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE" />
+    </changeSet>
+
     <changeSet author="keycloak" id="client-attributes-string-accomodation-fixed">
         <addColumn tableName="CLIENT_ATTRIBUTES">
             <column name="VALUE_NEW" type="NCLOB" />
@@ -66,6 +77,21 @@
 
         <dropColumn tableName="CLIENT_ATTRIBUTES" columnName="VALUE"/>
         <renameColumn tableName="CLIENT_ATTRIBUTES" oldColumnName="VALUE_NEW" newColumnName="VALUE" columnDataType="NCLOB"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="client-attributes-string-accomodation-fixed-post-create-index">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <and>
+                <not>
+                    <changeSetExecuted id="client-attributes-string-accomodation-fixed" author="keycloak" changeLogFile="META-INF/jpa-changelog-20.0.0.xml"/>
+                </not>
+            </and>
+        </preConditions>
+
+        <createIndex tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE">
+            <column name="NAME" type="VARCHAR(255)"/>
+            <column name="VALUE(255)" valueComputed="VALUE(255)" />
+        </createIndex>
     </changeSet>
 
 </databaseChangeLog>

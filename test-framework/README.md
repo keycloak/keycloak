@@ -385,6 +385,7 @@ Valid values:
 | mysql    | MySQL test container                    |
 | oracle   | Oracle test container                   |
 | postgres | PostgreSQL test container               |
+| tidb     | TiDb test container                     |
 
 Configuration:
 

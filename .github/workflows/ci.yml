@@ -693,7 +693,7 @@ jobs:
     timeout-minutes: 75
     strategy:
       matrix:
-        db: [postgres, mysql, oracle, mssql, mariadb]
+        db: [postgres, mysql, oracle, mssql, mariadb, tidb]
       fail-fast: false
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
