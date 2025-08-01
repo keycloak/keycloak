@@ -155,6 +155,8 @@ public interface OAuth2Constants {
     String AUTHENTICATOR_METHOD_REFERENCE = "amr";
 
     String CNF = "cnf";
+
+    String AUTHORIZATION_DETAILS_PARAM = "authorization_details";
 }
 
 

@@ -153,6 +153,9 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
             res = responseBuilder.build();
         }
 
+        // Extension point for subclasses to add custom claims
+        addCustomTokenResponseClaims(res, clientSessionCtx);
+
         event.success();
 
         return cors.add(Response.ok(res).type(MediaType.APPLICATION_JSON_TYPE));
@@ -240,6 +243,14 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         if (client.isBearerOnly()) {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Bearer-only not allowed", Response.Status.BAD_REQUEST);
         }
+    }
+
+    /**
+     * Extension point for subclasses to add custom claims to the AccessTokenResponse before it is returned.
+     * Default implementation does nothing.
+     */
+    protected void addCustomTokenResponseClaims(AccessTokenResponse res, ClientSessionContext clientSessionCtx) {
+        // Default: do nothing
     }
 
     @Override
