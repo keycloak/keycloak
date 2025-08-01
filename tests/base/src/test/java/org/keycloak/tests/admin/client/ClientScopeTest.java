@@ -50,7 +50,7 @@ import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 import org.keycloak.tests.utils.admin.ApiUtil;
 import org.keycloak.tests.utils.matchers.Matchers;
-import org.keycloak.testsuite.util.RoleBuilder;
+import org.keycloak.testframework.realm.RoleConfigBuilder;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -346,9 +346,9 @@ public class ClientScopeTest extends AbstractClientScopeTest {
         String roleContainerClientUuid = realm.clients().findByClientId("role-container-client").stream().findFirst().orElseThrow().getId();
         ClientResource roleContainerClient = realm.clients().get(roleContainerClientUuid);
 
-        RoleRepresentation clientCompositeRole = RoleBuilder.create().name("client-composite").build();
+        RoleRepresentation clientCompositeRole = RoleConfigBuilder.create().name("client-composite").build();
         roleContainerClient.roles().create(clientCompositeRole);
-        roleContainerClient.roles().create(RoleBuilder.create().name("client-child").build());
+        roleContainerClient.roles().create(RoleConfigBuilder.create().name("client-child").build());
         roleContainerClient.roles().get("client-composite").addComposites(Collections
                 .singletonList(
                         roleContainerClient.roles().get("client-child").toRepresentation()));

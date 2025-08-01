@@ -15,7 +15,7 @@ import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
-import org.keycloak.testsuite.util.RoleBuilder;
+import org.keycloak.testframework.realm.RoleConfigBuilder;
 
 @KeycloakIntegrationTest(config = CaseSensitiveSchemaTest.KeycloakConfig.class)
 // MSSQL does not support setting the default schema per session
@@ -29,7 +29,7 @@ public class CaseSensitiveSchemaTest {
 
     @Test
     public void testCaseSensitiveSchema() {
-        RoleRepresentation role1 = RoleBuilder.create()
+        RoleRepresentation role1 = RoleConfigBuilder.create()
               .name("role1")
               .description("role1-description")
               .singleAttribute("role1-attr-key", "role1-attr-val")
