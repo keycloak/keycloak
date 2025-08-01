@@ -2,14 +2,14 @@ package org.keycloak.testframework.database;
 
 public class DatabaseConfigBuilder {
 
-    DatabaseConfigRepresentation rep;
+    DatabaseConfiguration rep;
 
-    private DatabaseConfigBuilder(DatabaseConfigRepresentation rep) {
+    private DatabaseConfigBuilder(DatabaseConfiguration rep) {
         this.rep = rep;
     }
 
     public static DatabaseConfigBuilder create() {
-        DatabaseConfigRepresentation rep = new DatabaseConfigRepresentation();
+        DatabaseConfiguration rep = new DatabaseConfiguration();
         return new DatabaseConfigBuilder(rep);
     }
 
@@ -28,7 +28,7 @@ public class DatabaseConfigBuilder {
         return this;
     }
 
-    public DatabaseConfigRepresentation build() {
+    public DatabaseConfiguration build() {
         return rep;
     }
 }
