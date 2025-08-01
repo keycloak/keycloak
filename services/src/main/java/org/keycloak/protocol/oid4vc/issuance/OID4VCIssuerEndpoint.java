@@ -555,6 +555,7 @@ public class OID4VCIssuerEndpoint {
             String errorMessage = String.format("Invalid JWK: Not suitable for encryption with algorithm %s", encryptionParams.getAlg());
             LOGGER.debug(errorMessage);
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
+
         }
     }
 
@@ -572,7 +573,8 @@ public class OID4VCIssuerEndpoint {
         if (expectedAlg != null && !expectedAlg.equals(jwk.getAlgorithm())) {
             return false;
         }
-        return "enc".equals(jwk.getPublicKeyUse());
+        String publicKeyUse = jwk.getPublicKeyUse();
+        return publicKeyUse == null || "enc".equals(publicKeyUse);
     }
 
     private boolean isSupportedEncryption(CredentialResponseEncryptionMetadata metadata, String alg, String enc) {
