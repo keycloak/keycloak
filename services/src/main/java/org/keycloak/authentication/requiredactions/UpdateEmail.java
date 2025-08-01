@@ -55,6 +55,7 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.services.Urls;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.userprofile.EventAuditingAttributeChangeListener;
@@ -62,6 +63,8 @@ import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
+
+import static java.util.Optional.ofNullable;
 
 public class UpdateEmail implements RequiredActionProvider, RequiredActionFactory, EnvironmentDependentProviderFactory {
 
@@ -144,6 +147,13 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
         UserModel user = context.getUser();
         UserProfile emailUpdateValidationResult;
         try {
+            boolean isUpdated = !ofNullable(user.getEmail()).orElse("").equals(newEmail);
+            if (!isUpdated) {
+                context.challenge(context.form().setError(Messages.EMAIL_EXISTS).setFormData(formData)
+                        .createResponse(UserModel.RequiredAction.UPDATE_EMAIL));
+                return;
+            }
+
             emailUpdateValidationResult = validateEmailUpdate(context.getSession(), user, newEmail);
         } catch (ValidationException pve) {
             List<FormMessage> errors = Validation.getFormErrorsFromValidation(pve.getErrors());
