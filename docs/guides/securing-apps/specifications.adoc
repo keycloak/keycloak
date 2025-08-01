@@ -2,7 +2,7 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Specifications implemented by {project_name}"
+title="Specifications implemented"
 priority=130
 summary="List of specifications and standards implemented by {project_name}.">
 
