@@ -370,8 +370,7 @@ public class ReflectionUtil {
         // use setter on dest, and getter on source to copy value over
         Map<String, Field> fieldMap = getAttrFieldsForType(source.getClass());
         try {
-            for (String attrName : fieldMap.keySet()) {
-                Field field = fieldMap.get(attrName);
+            for (Field field : fieldMap.values()) {
                 Object localValue = field.get(source);
                 if (localValue != null) {
                     field.set(dest, localValue);

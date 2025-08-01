@@ -85,8 +85,8 @@ public class StatementUtil {
 
         int i = 0;
 
-        Set<String> keys = attributes.keySet();
-        for (String key : keys) {
+        for (var entry : attributes.entrySet()) {
+            String key = entry.getKey();
             if (i == 0) {
                 // Deal with the X500 Profile of SAML2
                 attrStatement = new AttributeStatementType();
@@ -95,14 +95,14 @@ public class StatementUtil {
 
             // if the attribute contains roles, add each role as an attribute.
             if (AttributeConstants.ROLES.equalsIgnoreCase(key)) {
-                Object value = attributes.get(key);
+                Object value = entry.getValue();
                 if (value instanceof Collection<?>) {
                     Collection<?> roles = (Collection<?>) value;
                     attrStatement = createAttributeStatement(new ArrayList(roles));
                 }
             } else {
                 AttributeType att;
-                Object value = attributes.get(key);
+                Object value = entry.getValue();
 
                 String uri = X500SAMLProfileConstants.getOID(key);
                 if (StringUtil.isNotNull(uri)) {
