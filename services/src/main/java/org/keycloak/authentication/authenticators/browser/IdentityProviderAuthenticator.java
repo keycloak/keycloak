@@ -17,8 +17,8 @@
 
 package org.keycloak.authentication.authenticators.browser;
 
+import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.Authenticator;
@@ -31,11 +31,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.ClientSessionCode;
 
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
 import java.net.URI;
-import java.util.Objects;
-import java.util.Optional;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -44,7 +40,7 @@ public class IdentityProviderAuthenticator implements Authenticator {
 
     private static final Logger LOG = Logger.getLogger(IdentityProviderAuthenticator.class);
 
-    protected static final String ACCEPTS_PROMPT_NONE = "acceptsPromptNoneForwardFromClient";
+    public static final String ACCEPTS_PROMPT_NONE = "acceptsPromptNoneForwardFromClient";
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
