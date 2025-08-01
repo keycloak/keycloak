@@ -17,6 +17,7 @@
 
 package org.keycloak.services.clientregistration;
 
+import org.keycloak.events.EventType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.RepresentationToModel;
@@ -49,7 +50,7 @@ public class DefaultClientRegistrationProvider extends AbstractClientRegistratio
     @Produces(MediaType.APPLICATION_JSON)
     public Response createDefault(ClientRepresentation client) {
         DefaultClientRegistrationContext context = new DefaultClientRegistrationContext(session, client, this);
-        client = create(context);
+        client = create(context, EventType.CLIENT_REGISTER);
         validateClient(client, true);
         URI uri = session.getContext().getUri().getAbsolutePathBuilder().path(client.getClientId()).build();
         return Response.created(uri).entity(client).build();
@@ -71,7 +72,7 @@ public class DefaultClientRegistrationProvider extends AbstractClientRegistratio
     public Response updateDefault(@PathParam("clientId") String clientId, ClientRepresentation client) {
         DefaultClientRegistrationContext context = new DefaultClientRegistrationContext(session, client, this);
         ResourceServerRepresentation authorizationSettings = client.getAuthorizationSettings();
-        client = update(clientId, context);
+        client = update(clientId, context, null);
         updateAuthorizationSettings(client, authorizationSettings);
         validateClient(client, false);
         return Response.ok(client).build();

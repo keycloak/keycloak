@@ -41,6 +41,7 @@ import org.keycloak.services.clientpolicy.context.DynamicClientRegisterContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUnregisterContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientViewContext;
+import org.keycloak.services.clientregistration.openid_federation.OpenIdFederationClientRegistrationService;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyException;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyManager;
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
@@ -134,23 +135,27 @@ public class ClientRegistrationAuth {
         init();
 
         RegistrationAuth registrationAuth = RegistrationAuth.ANONYMOUS;
+        if (provider instanceof OpenIdFederationClientRegistrationService) {
+            registrationAuth = RegistrationAuth.OPENID_FEDERATION;
+        } else {
 
-        if (isBearerToken()) {
+            if (isBearerToken()) {
 
-            if (hasRole(AdminRoles.MANAGE_CLIENTS, AdminRoles.CREATE_CLIENT)) {
-                registrationAuth = RegistrationAuth.AUTHENTICATED;
-            } else {
-                throw forbidden();
-            }
-        } else if (isInitialAccessToken()) {
-            if (initialAccessModel.getRemainingCount() > 0) {
-                if (initialAccessModel.getExpiration() == 0 || (initialAccessModel.getTimestamp() + initialAccessModel.getExpiration()) > Time.currentTime()) {
+                if (hasRole(AdminRoles.MANAGE_CLIENTS, AdminRoles.CREATE_CLIENT)) {
                     registrationAuth = RegistrationAuth.AUTHENTICATED;
                 } else {
-                    throw unauthorized("Expired initial access token");
+                    throw forbidden();
                 }
-            } else {
-                throw unauthorized("No remaining count on initial access token");
+            } else if (isInitialAccessToken()) {
+                if (initialAccessModel.getRemainingCount() > 0) {
+                    if (initialAccessModel.getExpiration() == 0 || (initialAccessModel.getTimestamp() + initialAccessModel.getExpiration()) > Time.currentTime()) {
+                        registrationAuth = RegistrationAuth.AUTHENTICATED;
+                    } else {
+                        throw unauthorized("Expired initial access token");
+                    }
+                } else {
+                    throw unauthorized("No remaining count on initial access token");
+                }
             }
         }
 
@@ -230,7 +235,7 @@ public class ClientRegistrationAuth {
     }
 
     public RegistrationAuth requireUpdate(ClientRegistrationContext context, ClientModel client) {
-        RegistrationAuth regAuth = requireUpdateAuth(client);
+        RegistrationAuth regAuth = provider instanceof OpenIdFederationClientRegistrationService ? RegistrationAuth.OPENID_FEDERATION : requireUpdateAuth(client);
 
         try {
             session.clientPolicy().triggerOnEvent(new DynamicClientUpdateContext(context, client, jwt, realm));

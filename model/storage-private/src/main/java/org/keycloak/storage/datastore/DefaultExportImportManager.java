@@ -50,6 +50,8 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OTPPolicy;
+import org.keycloak.models.OpenIdFederationConfig;
+import org.keycloak.models.OpenIdFederationGeneralConfig;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ParConfig;
 import org.keycloak.models.PasswordPolicy;
@@ -62,6 +64,8 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.WebAuthnPolicyPasswordlessDefaults;
 import org.keycloak.models.WebAuthnPolicyTwoFactorDefaults;
+import org.keycloak.models.enums.ClientRegistrationTypeEnum;
+import org.keycloak.models.enums.EntityTypeEnum;
 import org.keycloak.models.utils.ComponentUtil;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.DefaultKeyProviders;
@@ -90,6 +94,7 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
+import org.keycloak.representations.idm.OpenIdFederationRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -339,6 +344,8 @@ public class DefaultExportImportManager implements ExportImportManager {
 
         webAuthnPolicy = getWebAuthnPolicyPasswordless(rep);
         newRealm.setWebAuthnPolicyPasswordless(webAuthnPolicy);
+
+        newRealm.setOpenIdFederationGeneralConfig(getOpenIdFederationConfig(rep, true));
 
         updateCibaSettings(rep, newRealm);
 
@@ -895,6 +902,9 @@ public class DefaultExportImportManager implements ExportImportManager {
             realm.setWebAuthnPolicyPasswordless(webAuthnPolicy);
         }
 
+        if (rep.getOpenIdFederationEnabled() != null)
+            realm.setOpenIdFederationGeneralConfig(getOpenIdFederationConfig(rep, false));
+
         updateCibaSettings(rep, realm);
         updateParSettings(rep, realm);
         session.clientPolicy().updateRealmModelFromRepresentation(realm, rep);
@@ -1420,6 +1430,37 @@ public class DefaultExportImportManager implements ExportImportManager {
 
         return webAuthnPolicy;
     }
+
+    private static OpenIdFederationGeneralConfig getOpenIdFederationConfig(RealmRepresentation rep, boolean withFederationList) {
+        if (rep.getOpenIdFederationEnabled() != null && rep.getOpenIdFederationEnabled()) {
+            OpenIdFederationGeneralConfig config = new OpenIdFederationGeneralConfig();
+            config.setOrganizationName(rep.getOpenIdFederationOrganizationName());
+            config.setContacts(rep.getOpenIdFederationContacts());
+            config.setLogoUri(rep.getOpenIdFederationLogoUri());
+            config.setPolicyUri(rep.getOpenIdFederationPolicyUri());
+            config.setOrganizationUri(rep.getOpenIdFederationOrganizationUri());
+            config.setAuthorityHints(rep.getOpenIdFederationAuthorityHints());
+            config.setLifespan(rep.getOpenIdFederationLifespan());
+            config.setFederationResolveEndpoint(rep.getOpenIdFederationResolveEndpoint());
+            config.setFederationHistoricalKeysEndpoint(rep.getOpenIdFederationHistoricalKeysEndpoint());
+            if (withFederationList && rep.getOpenIdFederationList() != null && !rep.getOpenIdFederationList().isEmpty()) {
+                config.setOpenIdFederationList(rep.getOpenIdFederationList().stream().map(fedRep -> toModel(fedRep)).collect(Collectors.toList()));
+            }
+            return config;
+        } else {
+            return null;
+        }
+    }
+
+    public static OpenIdFederationConfig toModel(OpenIdFederationRepresentation representation ) {
+        OpenIdFederationConfig fedConfig = new OpenIdFederationConfig();
+        fedConfig.setInternalId(representation.getInternalId());
+        fedConfig.setTrustAnchor(representation.getTrustAnchor());
+        fedConfig.setEntityTypes(representation.getEntityTypes().stream().map(EntityTypeEnum::valueOf).collect(Collectors.toList()));
+        fedConfig.setClientRegistrationTypesSupported(representation.getClientRegistrationTypesSupported().stream().map(ClientRegistrationTypeEnum::valueOf).collect(Collectors.toList()));
+        return fedConfig;
+    }
+
     public static Map<String, String> importAuthenticationFlows(KeycloakSession session, RealmModel newRealm, RealmRepresentation rep) {
         Map<String, String> mappedFlows = new HashMap<>();
 

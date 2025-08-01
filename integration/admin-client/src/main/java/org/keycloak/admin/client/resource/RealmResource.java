@@ -294,6 +294,9 @@ public interface RealmResource {
     @Path("identity-provider")
     IdentityProvidersResource identityProviders();
 
+    @Path("openid-federations")
+    public OpenIdFederationsResource openIdFederationsResource();
+
     @DELETE
     void remove();
 

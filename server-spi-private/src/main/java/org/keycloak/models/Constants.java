@@ -178,6 +178,18 @@ public final class Constants {
     public static final String MINIMUM_ACR_VALUE = "minimum.acr.value";
     public static final int MINIMUM_LOA = 0;
     public static final int NO_LOA = -1;
+    public static final String OPENID_FEDERATION_ENABLED = "openidFederationEnabled";
+    public static final String OPENID_FEDERATION_ORGANIZATION_NAME = "openidFederationOrganizationName";
+    public static final String OPENID_FEDERATION_CONTACTS = "openIdFederationContacts";
+    public static final String OPENID_FEDERATION_LOGO_URI = "openIdFederationLogoUri";
+    public static final String OPENID_FEDERATION_POLICY_URI = "openIdFederationPolicyUri";
+    public static final String OPENID_FEDERATION_ORGANIZATION_URI = "openIdFederationOrganizationUri";
+    public static final String OPENID_FEDERATION_AUTHORITY_HINTS = "openidFederationAuthorityHints";
+    public static final String OPENID_FEDERATION_CLIENT_REGISTRATION_TYPES_SUPPORTED = "openidFederationClientRegistrationTypesSupported";
+    public static final String OPENID_FEDERATION_ENTITY_TYPES = "openidFederationEntityTypes";
+    public static final String OPENID_FEDERATION_LIFESPAN = "openidFederationLifespan";
+    public static final String OPENID_FEDERATION_RESOLVE_ENDPOINT = "openIdFederationResolveEndpoint";
+    public static final String OPENID_FEDERATION_HISTORICAL_KEYS_ENDPOINT = "openIdFederationHistoricalKeysEndpoint";
 
     public static final String SESSION_NOTE_LIGHTWEIGHT_USER = "keycloak.userModel";
 

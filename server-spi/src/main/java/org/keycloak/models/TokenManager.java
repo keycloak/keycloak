@@ -23,6 +23,7 @@ import org.keycloak.TokenCategory;
 import org.keycloak.jose.JOSE;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.representations.LogoutToken;
+import org.keycloak.representations.openid_federation.EntityStatement;
 
 public interface TokenManager {
 
@@ -41,6 +42,14 @@ public interface TokenManager {
      * @return The encoded token
      */
     String encode(Token token);
+
+    /**
+     * Encodes the supplied token for OpenID Federation
+     *
+     * @param token the token to encode
+     * @return The encoded token
+     */
+    String encodeForOpenIdFederation(EntityStatement token);
 
     /**
      * Decodes and verifies the token, or <code>null</code> if the token was invalid
