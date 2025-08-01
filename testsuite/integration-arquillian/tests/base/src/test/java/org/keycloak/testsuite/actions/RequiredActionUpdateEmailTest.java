@@ -102,4 +102,19 @@ public class RequiredActionUpdateEmailTest extends AbstractRequiredActionUpdateE
     public void updateEmailLogoutSessionsNotChecked() {
         updateEmail(false);
     }
+
+    @Test
+    public void testNotUpdatingEmailDoesNotClearRequiredAction() {
+        configureRequiredActionsToUser("test-user@localhost", UserModel.RequiredAction.UPDATE_EMAIL.name());
+
+        UserResource testUser = testRealm().users().get(findUser("test-user@localhost").getId());
+        assertEquals(1, testUser.toRepresentation().getRequiredActions().size());
+
+        changeEmailUsingRequiredAction("test-user@localhost", false);
+
+        updateEmailPage.isCurrent();
+        assertEquals("Email already exists.", updateEmailPage.getFeedbackMessage());
+
+        assertEquals(1, testUser.toRepresentation().getRequiredActions().size());
+    }
 }
