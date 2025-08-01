@@ -19,12 +19,11 @@ package org.keycloak.exportimport;
 
 import static org.keycloak.common.util.StringPropertyReplacer.replaceProperties;
 
-import java.io.ByteArrayInputStream;
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.util.Optional;
 import org.keycloak.common.util.StringPropertyReplacer;
 
@@ -39,9 +38,7 @@ public abstract class AbstractFileBasedImportProvider implements ImportProvider 
 
     protected InputStream parseFile(File importFile) throws IOException {
         if (ExportImportConfig.isReplacePlaceholders()) {
-            String raw = Files.readString(importFile.toPath());
-            String parsed = replaceProperties(raw, ENV_VAR_PROPERTY_RESOLVER);
-            return new ByteArrayInputStream(parsed.getBytes());
+            return replaceProperties(new BufferedInputStream(new FileInputStream(importFile)), ENV_VAR_PROPERTY_RESOLVER);
         }
 
         return new FileInputStream(importFile);
