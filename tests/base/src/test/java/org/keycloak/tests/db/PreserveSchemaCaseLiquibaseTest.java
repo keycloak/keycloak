@@ -7,7 +7,6 @@ import org.keycloak.testframework.conditions.DisabledForDatabases;
 import org.keycloak.testframework.database.DatabaseConfigBuilder;
 import org.keycloak.testframework.database.PostgresTestDatabase;
 import org.keycloak.testframework.database.TestDatabase;
-import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
@@ -18,7 +17,7 @@ import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 @DisabledForDatabases({ "mssql", "oracle", "tidb" })
 public class PreserveSchemaCaseLiquibaseTest extends AbstractDBSchemaTest {
 
-    @InjectTestDatabase(lifecycle = LifeCycle.CLASS, config = PreserveSchemaCaseDatabaseConfig.class)
+    @InjectTestDatabase(config = PreserveSchemaCaseDatabaseConfig.class)
     TestDatabase db;
 
     public static class PreserveSchemaCaseServerConfig implements KeycloakServerConfig {

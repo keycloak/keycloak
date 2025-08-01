@@ -1,6 +1,6 @@
 package org.keycloak.testframework.database;
 
-public final class DatabaseConfigRepresentation {
+public final class DatabaseConfiguration {
     private String initScript;
     private String database;
     private boolean preventReuse;
@@ -21,7 +21,7 @@ public final class DatabaseConfigRepresentation {
         this.database = database;
     }
 
-    public boolean doesPreventReuse() {
+    public boolean isPreventReuse() {
         return preventReuse;
     }
 

@@ -15,14 +15,14 @@ public abstract class AbstractContainerTestDatabase implements TestDatabase {
     protected boolean reuse;
 
     protected JdbcDatabaseContainer<?> container;
-    protected DatabaseConfigRepresentation config;
+    protected DatabaseConfiguration config;
 
-    public void start(DatabaseConfigRepresentation config) {
+    public void start(DatabaseConfiguration config) {
         this.config = config;
 
         String reuseProp = Config.getValueTypeFQN(TestDatabase.class, "reuse");
         boolean reuseConfigured = Config.get(reuseProp, false, Boolean.class);
-        if (config.doesPreventReuse() && reuseConfigured) {
+        if (config.isPreventReuse() && reuseConfigured) {
             getLogger().warnf("Ignoring '%s' as test explicitly prevents it", reuseProp);
             this.reuse = false;
         } else {
