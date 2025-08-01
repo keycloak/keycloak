@@ -42,6 +42,7 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.From;
 import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
@@ -302,12 +303,11 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
     private Predicate buildStringSearchPredicate(CriteriaBuilder builder, CriteriaQuery<?> query, Root<OrganizationEntity> org, String search,
                                                  Boolean exact) {
-        Root<OrganizationDomainEntity> domain = query.from(OrganizationDomainEntity.class);
+        Join<OrganizationEntity, OrganizationDomainEntity> domain = org.join("domains", JoinType.LEFT);
 
         List<Predicate> predicates = new ArrayList<>();
         RealmModel realm = getRealm();
         predicates.add(builder.equal(org.get("realmId"), realm.getId()));
-        predicates.add(builder.equal(org.get("id"), domain.get("organization").get("id")));
 
         Predicate namePredicate;
         Predicate domainPredicate;
