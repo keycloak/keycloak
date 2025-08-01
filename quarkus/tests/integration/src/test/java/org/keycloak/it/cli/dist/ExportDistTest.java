@@ -71,4 +71,13 @@ public class ExportDistTest {
         cliResult.assertMessage("Export of realm 'fgap' requested.");
         cliResult.assertMessage("Export finished successfully");
     }
+
+    @Test
+    void testExportNonExistent(KeycloakDistribution dist) {
+        CLIResult cliResult = dist.run("build");
+
+        cliResult = dist.run("export", "--realm=non-existent-realm", "--dir=.");
+        cliResult.assertMessage("realm not found by realm name 'non-existent-realm'");
+    }
+
 }

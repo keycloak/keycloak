@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -102,6 +103,7 @@ public abstract class MultipleStepsExportProvider<T extends MultipleStepsExportP
             @Override
             protected void runExportImportTask(KeycloakSession session) throws IOException {
                 RealmModel realm = session.realms().getRealmByName(realmName);
+                Objects.requireNonNull(realm, "realm not found by realm name '" + realmName + "'");
                 session.getContext().setRealm(realm);
                 RealmRepresentation rep = ExportUtils.exportRealm(session, realm, exportUsersIntoRealmFile, true);
                 writeRealm(realmName + "-realm.json", rep);
