@@ -47,6 +47,9 @@ See the <@links.ha id="concepts-database-connections" /> {section} for details.
 
 == Verifying the deployment
 
+WARNING: make sure the `automountServiceAccountToken` is not set to `false` in the {project_name} Custom Resource.
+This is required for the {project_name} Operator to be able to access the Kubernetes API in HA setup
+
 Confirm that the {project_name} deployment is ready.
 
 [source,bash]
