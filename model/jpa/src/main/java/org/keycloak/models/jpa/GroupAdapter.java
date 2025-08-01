@@ -17,10 +17,24 @@
 
 package org.keycloak.models.jpa;
 
+import static org.keycloak.models.jpa.PaginationUtils.*;
+import static org.keycloak.utils.StreamsUtil.*;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Stream;
+
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.TypedQuery;
+
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationStorageProvider;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -32,24 +46,10 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.jpa.entities.GroupAttributeEntity;
 import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.models.jpa.entities.GroupRoleMappingEntity;
+import org.keycloak.models.jpa.util.ModelAdapterUtil;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
-
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Stream;
-import jakarta.persistence.LockModeType;
 import org.keycloak.storage.UserStoragePrivateUtil;
-
-import static java.util.Optional.ofNullable;
-import static org.keycloak.common.util.CollectionUtil.collectionEquals;
-import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
-import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -69,6 +69,7 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
         this.realm = realm;
     }
 
+    @Override
     public GroupEntity getEntity() {
         return group;
     }
@@ -237,19 +238,8 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
 
     @Override
     public void setAttribute(String name, List<String> values) {
-        List<String> current = getAttributes().getOrDefault(name, List.of());
-
-        if (collectionEquals(current, ofNullable(values).orElse(List.of()))) {
-            return;
-        }
-
-        // Remove all existing
-        removeAttribute(name);
-
-        // Put all new
-        for (String value : values) {
-            persistAttributeValue(name, value);
-        }
+        ModelAdapterUtil.setMultiValueAttribute(name, values, this::getAttributes, this::removeAttribute,
+                this::persistAttributeValue);
     }
 
     private void persistAttributeValue(String name, String value) {
