@@ -139,6 +139,7 @@ import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.oauth.ParResponse;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.JsonParser;
@@ -1276,7 +1277,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
 
         try {
             String expectedErrorDescription = "Implicit/Hybrid flow is prohibited.";
-            oauth.client(clientId);
+            oauth.client(clientId, clientSecret);
 
             // implicit grant
             testProhibitedImplicitOrHybridFlow(false, OIDCResponseType.TOKEN, null, OAuthErrorException.INVALID_REQUEST, expectedErrorDescription);
@@ -1290,6 +1291,24 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
             // hybrid grant
             testProhibitedImplicitOrHybridFlow(true, OIDCResponseType.TOKEN + " " + OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN, "exsefweag", OAuthErrorException.INVALID_REQUEST, expectedErrorDescription);
 
+            //
+            // Pushed Authorization Request
+            //
+
+            // implicit grant
+            testProhibitedImplicitOrHybridFlowOnPARRequest(false, OIDCResponseType.TOKEN, "evawieak39j", OAuthErrorException.INVALID_REQUEST, expectedErrorDescription);
+
+            // hybrid grant
+            testProhibitedImplicitOrHybridFlowOnPARRequest(true, OIDCResponseType.TOKEN + " " + OIDCResponseType.ID_TOKEN, "ob937kcoiei3", OAuthErrorException.INVALID_REQUEST, expectedErrorDescription);
+
+            // hybrid grant
+            testProhibitedImplicitOrHybridFlowOnPARRequest(true, OIDCResponseType.TOKEN + " " + OIDCResponseType.CODE, "xiensoi3", OAuthErrorException.INVALID_REQUEST, expectedErrorDescription);
+
+            // hybrid grant
+            testProhibitedImplicitOrHybridFlowOnPARRequest(true, OIDCResponseType.TOKEN + " " + OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN, "bor9v8uoan", OAuthErrorException.INVALID_REQUEST, expectedErrorDescription);
+
+            // authorization code grant
+            testAllowedAuthorizationCodeFlowOnPARRequest(true, "ddab9e88");
         } finally {
             // revert test client instance settings the same as OAuthClient.init
             oauth.openid(true);
@@ -1399,4 +1418,18 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         assertEquals(expectedErrorDescription, authorizationEndpointResponse.getErrorDescription());
     }
 
+    private void testProhibitedImplicitOrHybridFlowOnPARRequest(boolean isOpenid, String responseType, String nonce, String expectedError, String expectedErrorDescription) {
+        oauth.openid(isOpenid);
+        oauth.responseType(responseType);
+        ParResponse pResp = oauth.pushedAuthorizationRequest().nonce(nonce).send();
+        assertEquals(expectedError, pResp.getError());
+        assertEquals(expectedErrorDescription, pResp.getErrorDescription());
+    }
+
+    private void testAllowedAuthorizationCodeFlowOnPARRequest(boolean isOpenid, String nonce) {
+        oauth.openid(isOpenid);
+        oauth.responseType(OAuth2Constants.CODE);
+        ParResponse pResp = oauth.pushedAuthorizationRequest().nonce(nonce).send();
+        assertEquals(201, pResp.getStatusCode());
+    }
 }
