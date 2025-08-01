@@ -1,18 +1,27 @@
-import { test, expect } from "@playwright/test";
-import { login } from "./login.ts";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation.js";
+import { expect, test } from "@playwright/test";
+import resourcesRealm from "./realms/resources-realm.json" with { type: "json" };
+import { login } from "./support/actions.ts";
+import { createTestBed } from "./support/testbed.ts";
 
-test.describe("My resources page", () => {
+test.describe("Resources", () => {
   test.describe.configure({ mode: "serial" });
 
-  test("List my resources", async ({ page }) => {
-    await login(page, "jdoe", "jdoe", "photoz");
+  let realm: string;
+
+  test.beforeAll(async () => {
+    realm = await createTestBed(resourcesRealm as RealmRepresentation);
+  });
+
+  test("shows the resources owned by the user", async ({ page }) => {
+    await login(page, realm);
     await page.getByTestId("resources").click();
 
     await expect(page.getByRole("gridcell", { name: "one" })).toBeVisible();
   });
 
-  test("Nothing is shared with alice", async ({ page }) => {
-    await login(page, "alice", "alice", "photoz");
+  test("shows no resources are shared with another user", async ({ page }) => {
+    await login(page, realm, "alice", "alice");
     await page.getByTestId("resources").click();
 
     await page.getByTestId("sharedWithMe").click();
@@ -20,8 +29,8 @@ test.describe("My resources page", () => {
     expect(tableData).toBe(0);
   });
 
-  test("Share one with alice", async ({ page }) => {
-    await login(page, "jdoe", "jdoe", "photoz");
+  test("shares a recourse with another user", async ({ page }) => {
+    await login(page, realm);
     await page.getByTestId("resources").click();
 
     await page.getByTestId("expand-one").click();
@@ -52,8 +61,8 @@ test.describe("My resources page", () => {
     await expect(page.getByTestId("shared-with-alice")).toBeVisible();
   });
 
-  test("One is shared with alice", async ({ page }) => {
-    await login(page, "alice", "alice", "photoz");
+  test("shows the resources shared with another user", async ({ page }) => {
+    await login(page, realm, "alice", "alice");
     await page.getByTestId("resources").click();
 
     await page.getByTestId("sharedWithMe").click();
