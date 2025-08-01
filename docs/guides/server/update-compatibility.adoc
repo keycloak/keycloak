@@ -1,3 +1,4 @@
+<#import "/templates/features.adoc" as features>
 <#import "/templates/guide.adoc" as tmpl>
 <#import "/templates/kc.adoc" as kc>
 <#import "/templates/links.adoc" as links>
@@ -146,14 +147,14 @@ The following configuration changes return a "Rolling Update is not possible" re
 
 The enabling or disabling of the following features requires a recreate update:
 
-<@showFeaturesRolling ctx.features.updatePolicyShutdown />
+<@features.table ctx.features.updatePolicyShutdown />
 
 
 ==== Recreate on feature version change
 
 Changing the following features versions triggers a recreate update:
 
-<@showFeaturesRolling ctx.features.updatePolicyRollingNoUpgrade />
+<@features.table ctx.features.updatePolicyRollingNoUpgrade />
 
 === Configuration options
 
@@ -231,14 +232,3 @@ Known limitations:
 The {project_name} Operator uses the functionality described above to determine if a rolling update is possible. See the <@links.operator id="rolling-updates" /> {section} and the `Auto` strategy for more information.
 
 </@tmpl.guide>
-
-<#macro showFeaturesRolling features>
-[cols="30%,70%"]
-|===
-| Feature | Description
-
-<#list features as feature>
-| [.features-name]#${feature.versionedKey}# | [.features-description]#${feature.description}#
-</#list>
-|===
-</#macro>
