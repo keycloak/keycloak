@@ -581,8 +581,16 @@ public class OID4VCIssuerEndpoint {
         if (metadata == null) {
             return false;
         }
-        return (metadata.getAlgValuesSupported() == null || metadata.getAlgValuesSupported().contains(alg)) &&
-                (metadata.getEncValuesSupported() == null || metadata.getEncValuesSupported().contains(enc));
+
+        if (metadata.getAlgValuesSupported() == null ||
+                metadata.getEncValuesSupported() == null ||
+                metadata.getAlgValuesSupported().isEmpty() ||
+                metadata.getEncValuesSupported().isEmpty()) {
+            return false;
+        }
+
+        return metadata.getAlgValuesSupported().contains(alg) &&
+                metadata.getEncValuesSupported().contains(enc);
     }
 
     private AuthenticatedClientSessionModel getAuthenticatedClientSession() {

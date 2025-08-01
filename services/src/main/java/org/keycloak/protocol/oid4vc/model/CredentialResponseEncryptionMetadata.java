@@ -24,7 +24,7 @@ import java.util.List;
 
 /**
  * Represents the credential_response_encryption metadata for an OID4VCI Credential Issuer.
- * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#section-11.2.2}
+ * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-15.html#name-credential-issuer-metadata-p}
  *
  * @author <a href="mailto:Bertrand.Ogen@adorsys.com">Bertrand Ogen</a>
  */
