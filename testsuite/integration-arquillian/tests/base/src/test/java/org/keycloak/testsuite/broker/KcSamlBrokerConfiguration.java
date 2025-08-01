@@ -17,9 +17,9 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-
 import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.util.ClientBuilder;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,16 +27,36 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.*;
+import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.ARTIFACT_BINDING_RESPONSE;
+import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.ARTIFACT_RESOLUTION_SERVICE_URL;
+import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.BACKCHANNEL_SUPPORTED;
+import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.FORCE_AUTHN;
+import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT;
+import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST;
+import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.POST_BINDING_RESPONSE;
+import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.SINGLE_LOGOUT_SERVICE_URL;
+import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL;
+import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.VALIDATE_SIGNATURE;
+import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED;
 import static org.keycloak.protocol.saml.SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE;
 import static org.keycloak.protocol.saml.SamlProtocol.SAML_IDP_INITIATED_SSO_URL_NAME;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.*;
-import static org.keycloak.testsuite.broker.BrokerTestTools.*;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_SAML_ALIAS;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_SAML_PROVIDER_ID;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_CONS_NAME;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_LOGIN;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_PASSWORD;
+import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
 
 public class KcSamlBrokerConfiguration implements BrokerConfiguration {
 
     public static final KcSamlBrokerConfiguration INSTANCE = new KcSamlBrokerConfiguration();
     public static final String ATTRIBUTE_TO_MAP_FRIENDLY_NAME = "user-attribute-friendly";
+    public static final String CONSUMER_CLIENT_ID = "broker-app";
+    public static final String CONSUMER_CLIENT_SECRET = "broker-app-secret";
 
     private final boolean loginHint;
 
@@ -176,37 +196,37 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
     @Override
     public List<ClientRepresentation> createConsumerClients() {
         return Arrays.asList(
-          ClientBuilder.create()
-            .clientId(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST)
-            .enabled(true)
-            .fullScopeEnabled(true)
-            .protocol(SamlProtocol.LOGIN_PROTOCOL)
-            .baseUrl(getConsumerRoot() + "/sales-post")
-            .addRedirectUri(getConsumerRoot() + "/sales-post/*")
-            .attribute(SamlConfigAttributes.SAML_AUTHNSTATEMENT, SamlProtocol.ATTRIBUTE_TRUE_VALUE)
-            .attribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, SamlProtocol.ATTRIBUTE_FALSE_VALUE)
-            .build(),
-          ClientBuilder.create()
-            .clientId(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST + ".dot/ted")
-            .enabled(true)
-            .fullScopeEnabled(true)
-            .protocol(SamlProtocol.LOGIN_PROTOCOL)
-            .baseUrl(getConsumerRoot() + "/sales-post")
-            .addRedirectUri(getConsumerRoot() + "/sales-post/*")
-            .attribute(SamlConfigAttributes.SAML_AUTHNSTATEMENT, SamlProtocol.ATTRIBUTE_TRUE_VALUE)
-            .attribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, SamlProtocol.ATTRIBUTE_FALSE_VALUE)
-            .attribute(SAML_IDP_INITIATED_SSO_URL_NAME, "sales-post")
-            .attribute(SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, getConsumerRoot() + "/sales-post/saml")
-            .build(),
-          ClientBuilder.create()
-            .clientId("broker-app")
-            .name("broker-app")
-            .secret("broker-app-secret")
-            .enabled(true)
-            .directAccessGrants()
-            .addRedirectUri(getConsumerRoot() + "/auth/*")
-            .baseUrl(getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/app")
-            .build()
+            ClientBuilder.create()
+                    .clientId(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST)
+                    .enabled(true)
+                    .fullScopeEnabled(true)
+                    .protocol(SamlProtocol.LOGIN_PROTOCOL)
+                    .baseUrl(getConsumerRoot() + "/sales-post")
+                    .addRedirectUri(getConsumerRoot() + "/sales-post/*")
+                    .attribute(SamlConfigAttributes.SAML_AUTHNSTATEMENT, SamlProtocol.ATTRIBUTE_TRUE_VALUE)
+                    .attribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, SamlProtocol.ATTRIBUTE_FALSE_VALUE)
+                    .build(),
+            ClientBuilder.create()
+                    .clientId(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST + ".dot/ted")
+                    .enabled(true)
+                    .fullScopeEnabled(true)
+                    .protocol(SamlProtocol.LOGIN_PROTOCOL)
+                    .baseUrl(getConsumerRoot() + "/sales-post")
+                    .addRedirectUri(getConsumerRoot() + "/sales-post/*")
+                    .attribute(SamlConfigAttributes.SAML_AUTHNSTATEMENT, SamlProtocol.ATTRIBUTE_TRUE_VALUE)
+                    .attribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, SamlProtocol.ATTRIBUTE_FALSE_VALUE)
+                    .attribute(SAML_IDP_INITIATED_SSO_URL_NAME, "sales-post")
+                    .attribute(SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, getConsumerRoot() + "/sales-post/saml")
+                    .build(),
+            ClientBuilder.create()
+                    .clientId(CONSUMER_CLIENT_ID)
+                    .name("broker-app")
+                    .secret(CONSUMER_CLIENT_SECRET)
+                    .enabled(true)
+                    .directAccessGrants()
+                    .addRedirectUri(getConsumerRoot() + "/auth/*")
+                    .baseUrl(getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/app")
+                    .build()
         );
     }
 

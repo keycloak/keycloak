@@ -19,6 +19,7 @@ package org.keycloak.broker.saml;
 import jakarta.xml.soap.SOAPException;
 import jakarta.xml.soap.SOAPMessage;
 import org.jboss.logging.Logger;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -127,65 +128,14 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
     @Override
     public Response performLogin(AuthenticationRequest request) {
         try {
-            UriInfo uriInfo = request.getUriInfo();
-            RealmModel realm = request.getRealm();
-            String issuerURL = getEntityId(uriInfo, realm);
-            String destinationUrl = getConfig().getSingleSignOnServiceUrl();
-            String nameIDPolicyFormat = getConfig().getNameIDPolicyFormat();
-
-            if (nameIDPolicyFormat == null) {
-                nameIDPolicyFormat =  JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get();
-            }
-
-            String protocolBinding = JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get();
-
-            String assertionConsumerServiceUrl = request.getRedirectUri();
-
-            if (getConfig().isArtifactBindingResponse()) {
-                protocolBinding = JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.get();
-            } else if (getConfig().isPostBindingResponse()) {
-                protocolBinding = JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get();
-            }
-
-            SAML2RequestedAuthnContextBuilder requestedAuthnContext =
-                new SAML2RequestedAuthnContextBuilder()
-                    .setComparison(getConfig().getAuthnContextComparisonType());
-
-            for (String authnContextClassRef : getAuthnContextClassRefUris())
-                requestedAuthnContext.addAuthnContextClassRef(authnContextClassRef);
-
-            for (String authnContextDeclRef : getAuthnContextDeclRefUris())
-                requestedAuthnContext.addAuthnContextDeclRef(authnContextDeclRef);
-
-            Integer attributeConsumingServiceIndex = getConfig().getAttributeConsumingServiceIndex();
-
-            String loginHint = getConfig().isLoginHint() ? request.getAuthenticationSession().getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM) : null;
-            Boolean allowCreate = null;
-            if (getConfig().getConfig().get(SAMLIdentityProviderConfig.ALLOW_CREATE) == null || getConfig().isAllowCreate())
-                allowCreate = Boolean.TRUE;
-            LoginProtocol protocol = session.getProvider(LoginProtocol.class, request.getAuthenticationSession().getProtocol());
-            Boolean forceAuthn = getConfig().isForceAuthn();
-            if (protocol.requireReauthentication(null, request.getAuthenticationSession()))
-                forceAuthn = Boolean.TRUE;
-            SAML2AuthnRequestBuilder authnRequestBuilder = new SAML2AuthnRequestBuilder()
-                    .assertionConsumerUrl(assertionConsumerServiceUrl)
-                    .destination(destinationUrl)
-                    .issuer(issuerURL)
-                    .forceAuthn(forceAuthn)
-                    .protocolBinding(protocolBinding)
-                    .nameIdPolicy(SAML2NameIDPolicyBuilder
-                        .format(nameIDPolicyFormat)
-                        .setAllowCreate(allowCreate))
-                    .attributeConsumingServiceIndex(attributeConsumingServiceIndex)
-                    .requestedAuthnContext(requestedAuthnContext)
-                    .subject(loginHint);
+            SAML2AuthnRequestBuilder authnRequestBuilder = buildAuthnRequest(request);
 
             JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder(session)
                     .relayState(request.getState().getEncoded());
             boolean postBinding = getConfig().isPostBindingAuthnRequest();
 
             if (getConfig().isWantAuthnRequestsSigned()) {
-                KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
+                KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(request.getRealm());
 
                 String keyName = getConfig().getXmlSigKeyInfoKeyNameTransformer().getKeyName(keys.getKid(), keys.getCertificate());
                 binding.signWith(keyName, keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate())
@@ -201,6 +151,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                 authnRequest = it.next().beforeSendingLoginRequest(authnRequest, request.getAuthenticationSession());
             }
 
+            String destinationUrl = getConfig().getSingleSignOnServiceUrl();
             if (authnRequest.getDestination() != null) {
                 destinationUrl = authnRequest.getDestination().toString();
             }
@@ -216,6 +167,64 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
         } catch (Exception e) {
             throw new IdentityBrokerException("Could not create authentication request.", e);
         }
+    }
+
+    protected SAML2AuthnRequestBuilder buildAuthnRequest(AuthenticationRequest request) {
+        String nameIDPolicyFormat = getConfig().getNameIDPolicyFormat();
+        if (nameIDPolicyFormat == null) {
+            nameIDPolicyFormat =  JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get();
+        }
+
+        String protocolBinding = JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get();
+
+        String assertionConsumerServiceUrl = request.getRedirectUri();
+
+        if (getConfig().isArtifactBindingResponse()) {
+            protocolBinding = JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.get();
+        } else if (getConfig().isPostBindingResponse()) {
+            protocolBinding = JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get();
+        }
+
+        SAML2RequestedAuthnContextBuilder requestedAuthnContext =
+                new SAML2RequestedAuthnContextBuilder()
+                        .setComparison(getConfig().getAuthnContextComparisonType());
+
+        for (String authnContextClassRef : getAuthnContextClassRefUris())
+            requestedAuthnContext.addAuthnContextClassRef(authnContextClassRef);
+
+        for (String authnContextDeclRef : getAuthnContextDeclRefUris())
+            requestedAuthnContext.addAuthnContextDeclRef(authnContextDeclRef);
+
+        Integer attributeConsumingServiceIndex = getConfig().getAttributeConsumingServiceIndex();
+
+        String destinationUrl = getConfig().getSingleSignOnServiceUrl();
+        UriInfo uriInfo = request.getUriInfo();
+        RealmModel realm = request.getRealm();
+        String issuerURL = getEntityId(uriInfo, realm);
+        String loginHint = getConfig().isLoginHint() ? request.getAuthenticationSession().getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM) : null;
+        Boolean allowCreate = null;
+        if (getConfig().getConfig().get(SAMLIdentityProviderConfig.ALLOW_CREATE) == null || getConfig().isAllowCreate())
+            allowCreate = Boolean.TRUE;
+        LoginProtocol protocol = session.getProvider(LoginProtocol.class, request.getAuthenticationSession().getProtocol());
+        Boolean forceAuthn = getConfig().isForceAuthn();
+        if (protocol.requireReauthentication(null, request.getAuthenticationSession()))
+            forceAuthn = Boolean.TRUE;
+        String prompt = request.getAuthenticationSession().getClientNote(OIDCLoginProtocol.PROMPT_PARAM);
+        boolean isPassive = OIDCLoginProtocol.PROMPT_VALUE_NONE.equals(prompt);
+
+        return new SAML2AuthnRequestBuilder()
+                .assertionConsumerUrl(assertionConsumerServiceUrl)
+                .destination(destinationUrl)
+                .issuer(issuerURL)
+                .forceAuthn(forceAuthn)
+                .isPassive(isPassive)
+                .protocolBinding(protocolBinding)
+                .nameIdPolicy(SAML2NameIDPolicyBuilder
+                        .format(nameIDPolicyFormat)
+                        .setAllowCreate(allowCreate))
+                .attributeConsumingServiceIndex(attributeConsumingServiceIndex)
+                .requestedAuthnContext(requestedAuthnContext)
+                .subject(loginHint);
     }
 
     private String getEntityId(UriInfo uriInfo, RealmModel realm) {
