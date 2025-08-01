@@ -30,7 +30,7 @@ public abstract class AbstractDatabaseSupplier implements Supplier<TestDatabase,
 
     @Override
     public boolean compatible(InstanceContext<TestDatabase, InjectTestDatabase> a, RequestedInstance<TestDatabase, InjectTestDatabase> b) {
-        return true;
+        return a.getAnnotation().config().equals(b.getAnnotation().config());
     }
 
     @Override

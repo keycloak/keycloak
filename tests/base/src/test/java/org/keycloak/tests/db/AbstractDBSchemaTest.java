@@ -6,8 +6,8 @@ import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.config.Config;
 import org.keycloak.testframework.database.TestDatabase;
+import org.keycloak.testframework.injection.Extensions;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testsuite.util.RoleBuilder;
 
@@ -18,8 +18,7 @@ public abstract class AbstractDBSchemaTest {
     ManagedClient managedClient;
 
     protected static String dbType() {
-        String database = Config.getSelectedSupplier(TestDatabase.class);
-        return database == null ? "dev-mem" : database;
+        return Extensions.getInstance().findSupplierByType(TestDatabase.class).getAlias();
     }
 
     @Test

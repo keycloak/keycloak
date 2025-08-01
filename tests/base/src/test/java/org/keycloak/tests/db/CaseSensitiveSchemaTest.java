@@ -7,7 +7,6 @@ import org.keycloak.testframework.database.DatabaseConfig;
 import org.keycloak.testframework.database.DatabaseConfigBuilder;
 import org.keycloak.testframework.database.PostgresTestDatabase;
 import org.keycloak.testframework.database.TestDatabase;
-import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
@@ -16,7 +15,7 @@ import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 @DisabledForDatabases("mssql")
 public class CaseSensitiveSchemaTest extends AbstractDBSchemaTest {
 
-    @InjectTestDatabase(lifecycle = LifeCycle.CLASS, config = CaseSensitiveDatabaseConfig.class)
+    @InjectTestDatabase(config = CaseSensitiveDatabaseConfig.class)
     TestDatabase db;
 
     public static class CaseSensitiveServerConfig implements KeycloakServerConfig {
