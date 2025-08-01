@@ -180,6 +180,12 @@ test.describe("User Fed Kerberos tests", () => {
     test("Should edit existing Kerberos provider and cancel", async ({
       page,
     }) => {
+      // Set to default policy in case another test has changed it
+      await clickUserFederationCard(page, firstKerberosName);
+      await selectItem(page, "#kc-cache-policy", defaultPolicy);
+      await clickSave(page, provider);
+      await goToUserFederation(page);
+
       await clickUserFederationCard(page, firstKerberosName);
       await selectItem(page, "#kc-cache-policy", weeklyPolicy);
       await selectItem(page, "#kc-eviction-day", newKerberosDay);

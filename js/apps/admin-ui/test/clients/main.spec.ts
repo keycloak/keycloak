@@ -110,7 +110,7 @@ test.describe("Clients test", () => {
   });
 
   test("Search for clients", async ({ page }) => {
-    await searchItem(page, placeHolder, "John Doe");
+    await searchItem(page, placeHolder, "John Doe", 0);
     await expect(
       page.getByRole("heading", { name: "No search results" }),
     ).toBeVisible();

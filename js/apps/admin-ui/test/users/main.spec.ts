@@ -141,7 +141,7 @@ test.describe("User creation", () => {
     });
 
     test("Search non-existing user test", async ({ page }) => {
-      await searchItem(page, "Search", "user_DNE");
+      await searchItem(page, "Search", "user_DNE", 0);
       await assertNoResults(page);
     });
 

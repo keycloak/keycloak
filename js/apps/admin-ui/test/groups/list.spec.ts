@@ -108,7 +108,7 @@ test.describe("Search group under current group", () => {
   });
 
   test("Search group that does not exists", async ({ page }) => {
-    await searchItem(page, placeholder, "not-existent-group");
+    await searchItem(page, placeholder, "not-existent-group", 0);
     await assertNoResults(page);
   });
 

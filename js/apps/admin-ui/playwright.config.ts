@@ -16,6 +16,7 @@ export default defineConfig({
   retries: retryCount,
   workers: process.env.CI ? 1 : undefined,
   timeout: 60_000,
+  workers: process.env.CI ? 1 : undefined,
   reporter: process.env.CI ? [["github"], ["html"]] : "list",
 
   use: {

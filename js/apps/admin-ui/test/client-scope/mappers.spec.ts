@@ -51,7 +51,7 @@ test.describe("Mappers tab test", () => {
     await addPredefinedMappers(page, mappers);
 
     // Configure first mapper
-    await searchItem(page, placeHolder, mappers[0]);
+    await searchItem(page, placeHolder, mappers[0], false);
     await clickTableRowItem(page, mappers[0]);
     await fillMapperDetails(
       page,
@@ -64,10 +64,10 @@ test.describe("Mappers tab test", () => {
     await assertNotificationMessage(page, "Mapping successfully updated");
 
     await goToClientScopes(page);
-    await searchItem(page, placeHolderClientScope, scopeName);
+    await searchItem(page, placeHolderClientScope, scopeName, false);
     await clickTableRowItem(page, scopeName);
     await goToMappersTab(page);
-    await searchItem(page, placeHolder, mappers[0]);
+    await searchItem(page, placeHolder, mappers[0], false);
     await clickTableRowItem(page, mappers[0]);
 
     await assertMapperConfigurationValues(

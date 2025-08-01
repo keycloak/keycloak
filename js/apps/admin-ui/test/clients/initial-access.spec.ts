@@ -72,7 +72,7 @@ test.describe("Client initial access tokens", () => {
 
     await assertInitialAccessTokensIsNotEmpty(page);
 
-    await searchItem(page, placeHolder, "John Doe");
+    await searchItem(page, placeHolder, "John Doe", 0);
     await assertNoResults(page);
     await clearAllFilters(page);
 

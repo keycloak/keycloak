@@ -46,7 +46,7 @@ export async function checkElementNotInList(page: Page, name: string) {
 }
 
 export async function searchNonExistingClientProfile(page: Page, name: string) {
-  await searchItem(page, "Search", name);
+  await searchItem(page, "Search", name, 0);
   await assertEmptyTable(page);
 }
 

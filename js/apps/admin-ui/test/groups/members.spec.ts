@@ -26,6 +26,25 @@ test.describe("Members", () => {
   const tableName = "Members";
 
   test.beforeAll(async () => {
+    // Cleanup from a rerun
+    for (const user of users) {
+      // Cleanup from a rerun
+      try {
+        await adminClient.deleteUser(user.username);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (ignored) {
+        // ignored
+      }
+    }
+    // Cleanup from a rerun
+    try {
+      await adminClient.deleteUser("new");
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (ignored) {
+      // ignored
+    }
+    await adminClient.deleteGroups();
+
     const createdGroups = await adminClient.createSubGroups(predefinedGroups);
     for (let index = 0; index < 5; index++) {
       const { id } = await adminClient.createUser({

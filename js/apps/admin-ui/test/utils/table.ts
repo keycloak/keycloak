@@ -4,10 +4,16 @@ export async function searchItem(
   page: Page,
   placeHolder: string,
   itemName: string,
+  rowCount: number | false = 1,
 ) {
   await page.locator("table tbody").waitFor();
   await page.getByPlaceholder(placeHolder).fill(itemName);
   await page.keyboard.press("Enter");
+
+  if (typeof rowCount === "number") {
+    const rows = page.locator("table tbody tr");
+    await expect(rows).toHaveCount(rowCount);
+  }
 }
 
 export async function clearAllFilters(page: Page) {
@@ -76,15 +82,6 @@ export async function getTableData(page: Page, name: string) {
     }),
   );
   return tableData;
-}
-
-export async function assertTableRowsLength(
-  page: Page,
-  name: string,
-  length: number,
-): Promise<void> {
-  const rows = await getTableRows(page, name);
-  await expect(rows).toHaveCount(length);
 }
 
 async function getTableRows(page: Page, name: string): Promise<Locator> {
