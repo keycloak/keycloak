@@ -25,11 +25,20 @@ test.describe("Sign out test", () => {
         page2.getByTestId("account-security/device-activity"),
       ).toBeVisible();
       await page2.getByTestId("account-security/device-activity").click();
+      await expect(page2.getByTestId("row-0")).toContainText("Current session");
+      const count = await page2
+        .locator('[aria-label="device-sessions-content"]')
+        .count();
 
-      await page2
-        .getByRole("button", { name: "Sign out", exact: true })
-        .click();
-      await page2.getByRole("button", { name: "Confirm" }).click();
+      for (let i = 0; i < count - 1; ++i) {
+        await page2
+          .getByRole("button", { name: "Sign out", exact: true })
+          .first()
+          .click();
+        await page2.getByRole("button", { name: "Confirm" }).click();
+        await page2.getByText("Signed out").isVisible();
+        await page2.getByTestId("global-alerts").locator("button").click();
+      }
 
       // reload pages in browsers, one should stay logged in, the other should be logged out
       await page1.reload();
@@ -63,6 +72,9 @@ test.describe("Sign out test", () => {
         .getByRole("button", { name: "Sign out all devices", exact: true })
         .click();
       await page2.getByRole("button", { name: "Confirm" }).click();
+      await expect(
+        page2.getByRole("heading", { name: "Sign in to your account" }),
+      ).toBeVisible();
 
       // reload pages in browsers, one should stay logged in, the other should be logged out
       await page1.reload();
