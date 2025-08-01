@@ -6,20 +6,20 @@ title="Concepts to automate {jdgserver_name} CLI commands"
 summary="{jdgserver_name} CLI commands can be automated by creating a `Batch` CR instance."
 tileVisible="false" >
 
-include::partials/infinispan/infinispan-attributes.adoc[]
+include::../partials/infinispan/infinispan-attributes.adoc[]
 
-When interacting with an external {jdgserver_name} in Kubernetes, the `Batch` CR allows you to automate this using standard `kubectl` commands.
+When interacting with an external {jdgserver_name} in {kubernetes}, the `Batch` CR allows you to automate this using standard `kubectl` commands.
 
 == When to use it
 
-Use this when automating interactions on Kubernetes.
+Use this when automating interactions on {kubernetes}.
 This avoids providing usernames and passwords and checking shell script outputs and their status.
 
 For human interactions, the CLI shell might still be a better fit.
 
 == Example
 
-The following `Batch` CR takes a site offline as described in the operational procedure <@links.ha id="operate-site-offline" />.
+The following `Batch` CR takes a site offline as described in the operational procedure <@links.ha id="multi-cluster-operate-site-offline" />.
 
 [source,yaml,subs="+attributes"]
 ----

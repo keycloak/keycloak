@@ -1,0 +1,17 @@
+Sizing of a {project_name} instance depends on the actual and forecasted numbers for password-based user logins, refresh token requests, and client credential grants as described in the previous section.
+
+To retrieve the actual numbers of a running {project_name} instance for these three key inputs, use the metrics {project_name} provides:
+
+* The user event metric `keycloak_user_events_total` for event type `login` includes both password-based logins and cookie-based logins, still it can serve as a first approximate input for this sizing guide.
+* To find out number of password validations performed by {project_name} use the metric `keycloak_credentials_password_hashing_validations_total`.
+The metric also contains tags providing some details about the hashing algorithm used and the outcome of the validation.
+Here is the list of available tags: `realm`, `algorithm`, `hashing_strength`, `outcome`.
+* Use the user event metric `keycloak_user_events_total` for the event types `refresh_token` and `client_login` for refresh token requests and client credential grants respectively.
+
+See the <@links.observability id="event-metrics"/> and <@links.observability id="metrics-for-troubleshooting-http"/> {sections} for more information.
+
+These metrics are crucial for tracking daily and weekly fluctuations in user activity loads,
+identifying emerging trends that may indicate the need to resize the system and
+validating sizing calculations.
+By systematically measuring and evaluating these user event metrics,
+you can ensure your system remains appropriately scaled and responsive to changes in user behavior and demand.
