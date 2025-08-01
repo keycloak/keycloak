@@ -98,6 +98,9 @@ export const SigningIn = () => {
     const maxWidth = {
       "--pf-v5-u-max-width--MaxWidth": "300px",
     } as CSSProperties;
+    const topVerticalAlign = {
+      "vertical-align": "top",
+    } as CSSProperties;
     const items = [
       <DataListCell
         key="title"
@@ -134,16 +137,23 @@ export const SigningIn = () => {
         >
           <>
             {credMetadata.infoMessage && (
-              <p>
-                <InfoAltIcon />{" "}
-                {t(
-                  credMetadata.infoMessage.key,
-                  credMetadata.infoMessage.parameters?.reduce(
-                    (acc, val, idx) => ({ ...acc, [idx]: val }),
-                    {},
-                  ),
-                )}
-              </p>
+              <table>
+                <tr>
+                  <td style={topVerticalAlign}>
+                    <InfoAltIcon />{" "}
+                  </td>
+                  <td>
+                    <Trans
+                      i18nKey={credMetadata.infoMessage.key}
+                      components={{ 99: <br /> }}
+                      values={credMetadata.infoMessage.parameters?.reduce(
+                        (acc, val, idx) => ({ ...acc, [idx]: val }),
+                        {},
+                      )}
+                    ></Trans>
+                  </td>
+                </tr>
+              </table>
             )}
             {credMetadata.warningMessageTitle &&
               credMetadata.warningMessageDescription && (

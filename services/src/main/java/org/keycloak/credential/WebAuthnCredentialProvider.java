@@ -35,6 +35,7 @@ import com.webauthn4j.verifier.OriginVerifierImpl;
 import com.webauthn4j.verifier.exception.BadOriginException;
 import jakarta.annotation.Nonnull;
 import org.jboss.logging.Logger;
+import org.keycloak.authentication.authenticators.browser.WebAuthnMetadataService;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.Time;
@@ -44,6 +45,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.models.credential.dto.WebAuthnCredentialData;
+import org.keycloak.models.credential.dto.WebAuthnCredentialPresentationData;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
@@ -60,17 +62,16 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
     private static final Logger logger = Logger.getLogger(WebAuthnCredentialProvider.class);
     private static final String WEBAUTHN_INFO = "webauthn-info";
 
-    private KeycloakSession session;
+    private final KeycloakSession session;
+    private final WebAuthnMetadataService metadataService;
+    private final CredentialPublicKeyConverter credentialPublicKeyConverter;
+    private final AttestationStatementConverter attestationStatementConverter;
 
-    private CredentialPublicKeyConverter credentialPublicKeyConverter;
-    private AttestationStatementConverter attestationStatementConverter;
-
-    public WebAuthnCredentialProvider(KeycloakSession session, ObjectConverter objectConverter) {
+    public WebAuthnCredentialProvider(KeycloakSession session, WebAuthnMetadataService metadataService, ObjectConverter objectConverter) {
         this.session = session;
-        if (credentialPublicKeyConverter == null)
-            credentialPublicKeyConverter = new CredentialPublicKeyConverter(objectConverter);
-        if (attestationStatementConverter == null)
-            attestationStatementConverter = new AttestationStatementConverter(objectConverter);
+        this.metadataService = metadataService;
+        this.credentialPublicKeyConverter = new CredentialPublicKeyConverter(objectConverter);
+        this.attestationStatementConverter = new AttestationStatementConverter(objectConverter);
     }
 
     @Override
@@ -93,6 +94,21 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
         return WebAuthnCredentialModel.createFromCredentialModel(model);
     }
 
+    @Override
+    public WebAuthnCredentialModel getCredentialForPresentationFromModel(CredentialModel model) {
+        WebAuthnCredentialModel origCredential = getCredentialFromModel(model);
+        WebAuthnCredentialData data = origCredential.getWebAuthnCredentialData();
+
+        String authenticatorProvider = metadataService.getAuthenticatorProvider(data.getAaguid());
+        if (authenticatorProvider == null)
+            return origCredential;
+
+        WebAuthnCredentialPresentationData presentationData = new WebAuthnCredentialPresentationData(
+                data.getAaguid(), data.getCredentialId(), data.getCounter(), data.getAttestationStatement(), data.getCredentialPublicKey(),
+                data.getAttestationStatementFormat(), data.getTransports(), authenticatorProvider);
+        return WebAuthnCredentialModel.create(origCredential.getId(), origCredential.getType(), origCredential.getCreatedDate(), origCredential.getUserLabel(),
+                presentationData, origCredential.getWebAuthnSecretData());
+    }
 
     /**
      * Convert WebAuthn credential input to the model, which can be saved in the persistent storage (DB)
@@ -311,12 +327,13 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
         CredentialMetadata credentialMetadata = new CredentialMetadata();
 
         try {
-            WebAuthnCredentialData credentialData = JsonSerialization.readValue(credentialModel.getCredentialData(), WebAuthnCredentialData.class);
+            credentialModel = getCredentialForPresentationFromModel(credentialModel);
+            WebAuthnCredentialPresentationData credentialData = JsonSerialization.readValue(credentialModel.getCredentialData(), WebAuthnCredentialPresentationData.class);
             Set<String> transports = credentialData.getTransports();
-            if (transports != null && !transports.isEmpty()) {
-                String joinedTransports = String.join(", ", transports);
-                credentialMetadata.setInfoMessage(WEBAUTHN_INFO, joinedTransports);
-
+            String joinedTransports = (transports != null && !transports.isEmpty()) ? String.join(", ", transports) : "unknown";
+            String authenticatorProvider = credentialData.getAuthenticatorProvider() != null ? credentialData.getAuthenticatorProvider() : "unknown";
+            if (!joinedTransports.equals("unknown") || !authenticatorProvider.equals("unknown")) {
+                credentialMetadata.setInfoMessage(WEBAUTHN_INFO, authenticatorProvider, joinedTransports);
             }
 
         } catch (

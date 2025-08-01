@@ -54,6 +54,7 @@ import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvide
 import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProviderFactory;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.FileUtils;
 
 /**
  * Utilities for treating client policies/profiles
@@ -66,16 +67,7 @@ public class ClientPoliciesUtil {
 
     public static InputStream getJsonFileFromClasspathOrConfFolder(String name) throws IOException {
         final String fileName = name + ".json";
-        // first try to read the json configuration file from classpath
-        InputStream is = ClientPoliciesUtil.class.getResourceAsStream("/" + fileName);
-        if (is == null) {
-            Path path = Paths.get(System.getProperty("jboss.server.config.dir")).resolve(fileName);
-            if (!Files.isReadable(path)) {
-                throw new IOException(String.format("File \"%s\" does not exists under the config folder", path));
-            }
-            is = Files.newInputStream(path);
-        }
-        return is;
+        return FileUtils.getJsonFileFromClasspathOrConfFolder(fileName);
     }
 
     public static List<ClientProfileRepresentation> readGlobalClientProfilesRepresentation(KeycloakSession session, String name) throws ClientPolicyException {
