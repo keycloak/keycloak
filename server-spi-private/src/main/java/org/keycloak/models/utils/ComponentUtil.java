@@ -63,11 +63,16 @@ public class ComponentUtil {
             List<ProviderConfigProperty> l = componentFactory.getConfigProperties();
             Map<String, ProviderConfigProperty> properties = new HashMap<>();
             for (ProviderConfigProperty p : l) {
-                properties.put(p.getName(), p);
+                if (properties.put(p.getName(), p) != null) {
+                    throw new IllegalStateException("Duplicate properties for " + p.getName() + " in " + providerType);
+                }
             }
+            // TODO: This is only called here, but in no other place where we return this - why is this the case?
             List<ProviderConfigProperty> common = componentFactory.getCommonProviderConfigProperties();
             for (ProviderConfigProperty p : common) {
-                properties.put(p.getName(), p);
+                if (properties.put(p.getName(), p) != null) {
+                    logger.warn("Duplicate properties for " + p.getName() + " in " + providerType + " due to common provider config properties");
+                }
             }
 
             return properties;
