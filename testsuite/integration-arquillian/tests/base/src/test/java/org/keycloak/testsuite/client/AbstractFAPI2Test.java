@@ -108,11 +108,13 @@ public abstract class AbstractFAPI2Test extends AbstractFAPITest {
         assertFalse(client.isFullScopeAllowed());
         switch (profile) {
             case FAPI2_SECURITY_PROFILE_NAME:
+            case FAPI2_SECURITY_PROFILE_FINAL_NAME:
             case FAPI2_MESSAGE_SIGNING_PROFILE_NAME:
                 assertTrue(clientConfig.isUseMtlsHokToken());
                 assertFalse(clientConfig.isUseDPoP());
                 break;
             case FAPI2_DPOP_SECURITY_PROFILE_NAME:
+            case FAPI2_DPOP_SECURITY_PROFILE_FINAL_NAME:
             case FAPI2_DPOP_MESSAGE_SIGNING_PROFILE_NAME:
                 assertFalse(clientConfig.isUseMtlsHokToken());
                 assertTrue(clientConfig.isUseDPoP());
@@ -158,11 +160,13 @@ public abstract class AbstractFAPI2Test extends AbstractFAPITest {
         // Check Holder-of-key is enabled
         switch (profile) {
             case FAPI2_SECURITY_PROFILE_NAME:
+            case FAPI2_SECURITY_PROFILE_FINAL_NAME:
             case FAPI2_MESSAGE_SIGNING_PROFILE_NAME:
                 assertTrue(clientConfig.isUseMtlsHokToken());
                 assertFalse(clientConfig.isUseDPoP());
                 break;
             case FAPI2_DPOP_SECURITY_PROFILE_NAME:
+            case FAPI2_DPOP_SECURITY_PROFILE_FINAL_NAME:
             case FAPI2_DPOP_MESSAGE_SIGNING_PROFILE_NAME:
                 assertFalse(clientConfig.isUseMtlsHokToken());
                 assertTrue(clientConfig.isUseDPoP());
