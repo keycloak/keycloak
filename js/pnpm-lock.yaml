@@ -139,8 +139,8 @@ importers:
         specifier: ^7.0.5
         version: 7.0.5(@types/node@24.1.0)(lightningcss@1.30.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.8.0)
       vite-plugin-checker:
-        specifier: ^0.10.0
-        version: 0.10.0(eslint@9.32.0)(optionator@0.9.4)(typescript@5.8.3)(vite@7.0.5(@types/node@24.1.0)(lightningcss@1.30.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.8.0))
+        specifier: ^0.10.2
+        version: 0.10.2(eslint@9.32.0)(optionator@0.9.4)(typescript@5.8.3)(vite@7.0.5(@types/node@24.1.0)(lightningcss@1.30.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.8.0))
       vite-plugin-dts:
         specifier: ^4.5.4
         version: 4.5.4(@types/node@24.1.0)(rollup@4.45.1)(typescript@5.8.3)(vite@7.0.5(@types/node@24.1.0)(lightningcss@1.30.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.8.0))
@@ -278,8 +278,8 @@ importers:
         specifier: ^7.0.5
         version: 7.0.5(@types/node@24.1.0)(lightningcss@1.30.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.8.0)
       vite-plugin-checker:
-        specifier: ^0.10.0
-        version: 0.10.0(eslint@9.32.0)(optionator@0.9.4)(typescript@5.8.3)(vite@7.0.5(@types/node@24.1.0)(lightningcss@1.30.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.8.0))
+        specifier: ^0.10.2
+        version: 0.10.2(eslint@9.32.0)(optionator@0.9.4)(typescript@5.8.3)(vite@7.0.5(@types/node@24.1.0)(lightningcss@1.30.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.8.0))
       vite-plugin-dts:
         specifier: ^4.5.4
         version: 4.5.4(@types/node@24.1.0)(rollup@4.45.1)(typescript@5.8.3)(vite@7.0.5(@types/node@24.1.0)(lightningcss@1.30.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.8.0))
@@ -421,8 +421,8 @@ importers:
         specifier: ^7.0.5
         version: 7.0.5(@types/node@24.1.0)(lightningcss@1.30.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.8.0)
       vite-plugin-checker:
-        specifier: ^0.10.0
-        version: 0.10.0(eslint@9.32.0)(optionator@0.9.4)(typescript@5.8.3)(vite@7.0.5(@types/node@24.1.0)(lightningcss@1.30.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.8.0))
+        specifier: ^0.10.2
+        version: 0.10.2(eslint@9.32.0)(optionator@0.9.4)(typescript@5.8.3)(vite@7.0.5(@types/node@24.1.0)(lightningcss@1.30.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.8.0))
       vite-plugin-dts:
         specifier: ^4.5.4
         version: 4.5.4(@types/node@24.1.0)(rollup@4.45.1)(typescript@5.8.3)(vite@7.0.5(@types/node@24.1.0)(lightningcss@1.30.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.8.0))
@@ -1070,10 +1070,6 @@ packages:
 
   '@eslint/eslintrc@3.3.1':
     resolution: {integrity: sha512-gtF186CXhIl1p4pJNGZw8Yc6RlshoePRvE0X91oPGb3vZ8pM3qOS9W9NGPat9LziaBV7XrJWGylNQXkGcnM3IQ==}
-    engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
-
-  '@eslint/js@9.31.0':
-    resolution: {integrity: sha512-LOm5OVt7D4qiKCqoiPbA7LWmI+tbw1VbTUowBcUMgQSuM6poJufkFkYDcQpo5KfgD39TnNySV26QjOh7VFpSyw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
   '@eslint/js@9.32.0':
@@ -4259,8 +4255,8 @@ packages:
     engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
     hasBin: true
 
-  vite-plugin-checker@0.10.0:
-    resolution: {integrity: sha512-EcAi4M5mzayH386Hc1xWi+vnfl4a+1vrDP9PVEQImUR6tIjItNK6R/98YNnJkaAq1ond2qkA6f+H49aprUgzGA==}
+  vite-plugin-checker@0.10.2:
+    resolution: {integrity: sha512-FX9U8TnIS6AGOlqmC6O2YmkJzcZJRrjA03UF7FOhcUJ7it3HmCoxcIPMcoHliBP6EFOuNzle9K4c0JL4suRPow==}
     engines: {node: '>=14.16'}
     peerDependencies:
       '@biomejs/biome': '>=1.7'
@@ -5033,8 +5029,6 @@ snapshots:
       strip-json-comments: 3.1.1
     transitivePeerDependencies:
       - supports-color
-
-  '@eslint/js@9.31.0': {}
 
   '@eslint/js@9.32.0': {}
 
@@ -8666,13 +8660,13 @@ snapshots:
       - tsx
       - yaml
 
-  vite-plugin-checker@0.10.0(eslint@9.32.0)(optionator@0.9.4)(typescript@5.8.3)(vite@7.0.5(@types/node@24.1.0)(lightningcss@1.30.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.8.0)):
+  vite-plugin-checker@0.10.2(eslint@9.32.0)(optionator@0.9.4)(typescript@5.8.3)(vite@7.0.5(@types/node@24.1.0)(lightningcss@1.30.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.8.0)):
     dependencies:
       '@babel/code-frame': 7.27.1
       chokidar: 4.0.3
       npm-run-path: 6.0.0
       picocolors: 1.1.1
-      picomatch: 4.0.2
+      picomatch: 4.0.3
       strip-ansi: 7.1.0
       tiny-invariant: 1.3.3
       tinyglobby: 0.2.14
