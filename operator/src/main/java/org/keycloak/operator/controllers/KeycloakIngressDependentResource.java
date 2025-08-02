@@ -97,6 +97,7 @@ public class KeycloakIngressDependentResource extends CRUDKubernetesDependentRes
     @Override
     public Ingress desired(Keycloak keycloak, Context<Keycloak> context) {
         var annotations = new HashMap<String, String>();
+        var labels = new HashMap<String, String>();
         boolean tlsConfigured = isTlsConfigured(keycloak);
         var portName = tlsConfigured ? Constants.KEYCLOAK_HTTPS_PORT_NAME : Constants.KEYCLOAK_HTTP_PORT_NAME;
 
@@ -107,15 +108,17 @@ public class KeycloakIngressDependentResource extends CRUDKubernetesDependentRes
             annotations.put("nginx.ingress.kubernetes.io/backend-protocol", "HTTP");
             annotations.put("route.openshift.io/termination", "edge");
         }
-
         var optionalSpec = Optional.ofNullable(keycloak.getSpec().getIngressSpec());
         optionalSpec.map(IngressSpec::getAnnotations).ifPresent(annotations::putAll);
+        optionalSpec.map(IngressSpec::getLabels).ifPresent(labels::putAll);
+
 
         Ingress ingress = new IngressBuilder()
                 .withNewMetadata()
                     .withName(getName(keycloak))
                     .withNamespace(keycloak.getMetadata().getNamespace())
                     .addToLabels(Utils.allInstanceLabels(keycloak))
+                    .addToLabels(optionalSpec.map(IngressSpec::getLabels).orElse(null))
                     .addToAnnotations(annotations)
                 .endMetadata()
                 .withNewSpec()
