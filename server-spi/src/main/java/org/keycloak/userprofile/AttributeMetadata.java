@@ -53,6 +53,7 @@ public class AttributeMetadata {
     private Map<String, Object> annotations;
     private int guiOrder;
     private boolean multivalued;
+    private String defaultValue;
     private Function<AttributeContext, Map<String, Object>> annotationDecorator = (c) -> c.getMetadata().getAnnotations();
 
     AttributeMetadata(String attributeName, int guiOrder) {
@@ -114,6 +115,10 @@ public class AttributeMetadata {
 
     public String getName() {
         return attributeName;
+    }
+
+    public String getDefaultValue() {
+        return defaultValue;
     }
 
     public int getGuiOrder() {
@@ -226,6 +231,7 @@ public class AttributeMetadata {
             cloned.setAttributeGroupMetadata(attributeGroupMetadata.clone());
         }
         cloned.setMultivalued(multivalued);
+        cloned.setDefaultValue(defaultValue);
         cloned.setAnnotationDecorator(annotationDecorator);
         return cloned;
     }
@@ -270,6 +276,11 @@ public class AttributeMetadata {
 
     public AttributeMetadata setValidators(List<AttributeValidatorMetadata> validators) {
         this.validators = validators;
+        return this;
+    }
+
+    public AttributeMetadata setDefaultValue(String defaultValue) {
+        this.defaultValue = defaultValue;
         return this;
     }
 

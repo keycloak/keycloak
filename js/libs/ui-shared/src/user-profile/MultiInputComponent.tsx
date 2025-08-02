@@ -29,6 +29,7 @@ export const MultiInputComponent = ({
       form={form}
       aria-label={labelAttribute(t, attribute)}
       name={fieldName(attribute.name)!}
+      defaultValue={[attribute.defaultValue || ""]}
       addButtonLabel={t("addMultivaluedLabel", {
         fieldLabel: labelAttribute(t, attribute),
       })}
