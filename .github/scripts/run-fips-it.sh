@@ -9,7 +9,7 @@ if [ $? -ne 0 ]; then
 fi
 STRICT_OPTIONS=""
 if [ "$1" = "strict" ]; then
-  STRICT_OPTIONS="-Dauth.server.fips.mode=strict -Dauth.server.supported.keystore.types=BCFKS -Dauth.server.keystore.type=bcfks -Dauth.server.supported.rsa.key.sizes=2048,4096"
+  STRICT_OPTIONS="-Dauth.server.fips.mode=strict -Dauth.server.supported.keystore.types=BCFKS -Dauth.server.keystore.type=bcfks -Dauth.server.supported.rsa.key.sizes=2048,3072,4096"
 fi
 echo "STRICT_OPTIONS: $STRICT_OPTIONS"
 TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh fips`

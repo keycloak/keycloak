@@ -19,6 +19,7 @@ package org.keycloak.tests.admin.authentication;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
@@ -80,6 +81,9 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
             FlowExecutions fe1 = it1.next();
             FlowExecutions fe2 = it2.next();
 
+            expectedConfigs.put("conditional-credential", newConfig(
+                    "browser".equals(fe1.flow.getAlias()) ? "browser-conditional-credential" : "first-broker-login-conditional-credential",
+                    new String[]{"credentials", WebAuthnCredentialModel.TYPE_PASSWORDLESS}));
             compareFlows(fe1.flow, fe2.flow);
             compareExecutionsInfo(fe1.executions, fe2.executions);
         }
@@ -143,9 +147,10 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
         addExecInfo(execs, "Username Password Form", "auth-username-password-form", false, 1, 0, REQUIRED, null, new String[]{REQUIRED}, 10);
         addExecInfo(execs, "Browser - Conditional 2FA", null, false, 1, 1, CONDITIONAL, true, new String[]{REQUIRED, ALTERNATIVE, DISABLED, CONDITIONAL}, 20);
         addExecInfo(execs, "Condition - user configured", "conditional-user-configured", false, 2, 0, REQUIRED, null, new String[]{REQUIRED, DISABLED}, 10);
-        addExecInfo(execs, "OTP Form", "auth-otp-form", false, 2, 1, ALTERNATIVE, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 20);
-        addExecInfo(execs, "WebAuthn Authenticator", "webauthn-authenticator", false, 2, 2, DISABLED, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 30);
-        addExecInfo(execs, "Recovery Authentication Code Form", "auth-recovery-authn-code-form", false, 2, 3, DISABLED, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 40);
+        addExecInfo(execs, "Condition - credential", "conditional-credential", true, 2, 1, REQUIRED, null, new String[]{REQUIRED, DISABLED}, 20);
+        addExecInfo(execs, "OTP Form", "auth-otp-form", false, 2, 2, ALTERNATIVE, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 30);
+        addExecInfo(execs, "WebAuthn Authenticator", "webauthn-authenticator", false, 2, 3, DISABLED, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 40);
+        addExecInfo(execs, "Recovery Authentication Code Form", "auth-recovery-authn-code-form", false, 2, 4, DISABLED, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 50);
         expected.add(new FlowExecutions(flow, execs));
 
         flow = newFlow("clients", "Base authentication for clients", "client-flow", true, true);
@@ -185,7 +190,7 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
                 "basic-flow", true, true);
         addExecExport(flow, null, false, "idp-review-profile", false, "review profile config", REQUIRED, 10);
         addExecExport(flow, "User creation or linking", false, null, true, null, REQUIRED, 20);
-        addExecExport(flow, "First Broker Login - Conditional Organization", false, null, true, null, CONDITIONAL, 50);
+        addExecExport(flow, "First Broker Login - Conditional Organization", false, null, true, null, CONDITIONAL, 60);
 
         execs = new LinkedList<>();
         addExecInfo(execs, "Review Profile", "idp-review-profile", true, 0, 0, REQUIRED, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 10);
@@ -199,10 +204,11 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
         addExecInfo(execs, "Username Password Form for identity provider reauthentication", "idp-username-password-form", false, 4, 0, REQUIRED, null, new String[]{REQUIRED}, 10);
         addExecInfo(execs, "First broker login - Conditional 2FA", null, false, 4, 1, CONDITIONAL, true, new String[]{REQUIRED, ALTERNATIVE, DISABLED, CONDITIONAL}, 20);
         addExecInfo(execs, "Condition - user configured", "conditional-user-configured", false, 5, 0, REQUIRED, null, new String[]{REQUIRED, DISABLED}, 10);
-        addExecInfo(execs, "OTP Form", "auth-otp-form", false, 5, 1, ALTERNATIVE, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 20);
-        addExecInfo(execs, "WebAuthn Authenticator", "webauthn-authenticator", false, 5, 2, DISABLED, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 30);
-        addExecInfo(execs, "Recovery Authentication Code Form", "auth-recovery-authn-code-form", false, 5, 3, DISABLED, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 40);
-        addExecInfo(execs, "First Broker Login - Conditional Organization", null, false, 0, 2, CONDITIONAL, true, new String[]{REQUIRED, ALTERNATIVE, DISABLED, CONDITIONAL}, 50);
+        addExecInfo(execs, "Condition - credential", "conditional-credential", true, 5, 1, REQUIRED, null, new String[]{REQUIRED, DISABLED}, 20);
+        addExecInfo(execs, "OTP Form", "auth-otp-form", false, 5, 2, ALTERNATIVE, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 30);
+        addExecInfo(execs, "WebAuthn Authenticator", "webauthn-authenticator", false, 5, 3, DISABLED, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 40);
+        addExecInfo(execs, "Recovery Authentication Code Form", "auth-recovery-authn-code-form", false, 5, 4, DISABLED, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 50);
+        addExecInfo(execs, "First Broker Login - Conditional Organization", null, false, 0, 2, CONDITIONAL, true, new String[]{REQUIRED, ALTERNATIVE, DISABLED, CONDITIONAL}, 60);
         addExecInfo(execs, "Condition - user configured", "conditional-user-configured", false, 1, 0, REQUIRED, null, new String[]{REQUIRED, DISABLED}, 10);
         addExecInfo(execs, "Organization Member Onboard", "idp-add-organization-member", false, 1, 1, REQUIRED, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 20);
         expected.add(new FlowExecutions(flow, execs));

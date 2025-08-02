@@ -225,7 +225,7 @@ public class IssuerSignedJWT extends SdJws {
         public IssuerSignedJWT build() {
             // Preinitialize hashAlg to sha-256 if not provided
             hashAlg = hashAlg == null ? "sha-256" : hashAlg;
-            jwsType = jwsType == null ? "vc+sd-jwt" : jwsType;
+            jwsType = jwsType == null ? "dc+sd-jwt" : jwsType;
             // send an empty lise if claims not set.
             claims = claims == null ? Collections.emptyList() : claims;
             decoyClaims = decoyClaims == null ? Collections.emptyList() : decoyClaims;

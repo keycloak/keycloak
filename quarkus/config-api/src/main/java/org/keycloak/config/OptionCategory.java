@@ -10,6 +10,7 @@ public enum OptionCategory {
     HOSTNAME_V2("Hostname v2", 50, ConfigSupportLevel.SUPPORTED),
     HOSTNAME_V1("Hostname v1", 51, ConfigSupportLevel.DEPRECATED),
     HTTP("HTTP(S)", 60, ConfigSupportLevel.SUPPORTED),
+    HTTP_ACCESS_LOG("HTTP Access log", 61, ConfigSupportLevel.SUPPORTED),
     HEALTH("Health", 70, ConfigSupportLevel.SUPPORTED),
     MANAGEMENT("Management", 75, ConfigSupportLevel.SUPPORTED),
     METRICS("Metrics", 80, ConfigSupportLevel.SUPPORTED),

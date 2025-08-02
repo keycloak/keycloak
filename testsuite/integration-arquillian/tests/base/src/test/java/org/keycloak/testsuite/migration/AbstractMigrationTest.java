@@ -607,8 +607,8 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
                 ConditionalUserConfiguredAuthenticatorFactory.PROVIDER_ID, AuthenticationExecutionModel.Requirement.REQUIRED, 5, 0);
 
         AuthenticationExecutionModel.Requirement requirement = imported ? AuthenticationExecutionModel.Requirement.REQUIRED : AuthenticationExecutionModel.Requirement.ALTERNATIVE;
-        testAuthenticationExecution(authExecutions.get(11), null,
-                OTPFormAuthenticatorFactory.PROVIDER_ID, requirement, 5, 1);
+        testAuthenticationExecution(imported ? authExecutions.get(11) : authExecutions.get(12), null,
+                OTPFormAuthenticatorFactory.PROVIDER_ID, requirement, 5, imported ? 1 : 2);
     }
 
 

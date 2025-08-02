@@ -19,7 +19,7 @@ package org.keycloak.authentication.authenticators.browser;
 
 import org.keycloak.WebAuthnConstants;
 import org.keycloak.authentication.AuthenticationFlowContext;
-import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
@@ -78,8 +78,8 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
 
     protected boolean alreadyAuthenticatedUsingPasswordlessCredential(AuthenticationSessionModel authSession) {
         // check if the authentication was already done using passwordless via passkeys
-        return webauthnAuth != null && webauthnAuth.isPasskeysEnabled() && webauthnAuth.getCredentialType().equals(
-                authSession.getAuthNote(AuthenticationProcessor.LAST_AUTHN_CREDENTIAL));
+        return webauthnAuth != null && webauthnAuth.isPasskeysEnabled()
+                && AuthenticatorUtil.getAuthnCredentials(authSession).contains(webauthnAuth.getCredentialType());
     }
 
     @Override

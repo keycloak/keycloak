@@ -109,6 +109,7 @@ final class DatabasePropertyMappers {
 
         return appendDatasourceMappers(mappers, Map.of(
                 // Inherit options from the DB mappers
+                DatabaseOptions.DB, PropertyMapper.Builder::removeMapFrom,
                 DatabaseOptions.DB_POOL_INITIAL_SIZE, mapper -> mapper.mapFrom(DatabaseOptions.DB_POOL_INITIAL_SIZE),
                 DatabaseOptions.DB_POOL_MAX_SIZE, mapper -> mapper.mapFrom(DatabaseOptions.DB_POOL_MAX_SIZE)
         ));

@@ -21,4 +21,11 @@
         <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_4_0_SamlEncryptionAttributes"/>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.4.0-51321">
+        <createIndex tableName="EVENT_ENTITY" indexName="IDX_EVENT_ENTITY_USER_ID_TYPE">
+            <column name="USER_ID" type="VARCHAR(255)" />
+            <column name="TYPE" type="VARCHAR(255)" />
+        </createIndex>
+    </changeSet>
+
 </databaseChangeLog>

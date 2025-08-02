@@ -89,7 +89,7 @@ It is possible to specify that the refresh token is considered invalid once it i
 which were already used, would not be considered valid anymore by {project_name}. This is possible to set with the use of _Revoke Refresh token_ option as specified in the <<_timeouts,timeouts section>>.
 
 {project_name} also supports the situation that no refresh token rotation exists. In this case, a refresh token is returned during login, but subsequent responses from refresh-token requests will not
-return new refresh tokens. This practice is recommended for instance in the *FAPI 2 draft specification* in the link:{securing_apps_link}[securing apps] section.
+return new refresh tokens. This practice is recommended for instance in the *FAPI 2 draft specification* and *FAPI 2 final specification* in the link:{securing_apps_link}[securing apps] section.
 In {project_name}, it is possible to skip refresh token rotation with the use of <<_client_policies,client policies>>. You can add executor `suppress-refresh-token-rotation` to some client
 profile and configure client policy to specify for which clients would be the profile triggered, which means that for those clients the refresh token rotation is going to be skipped.
 

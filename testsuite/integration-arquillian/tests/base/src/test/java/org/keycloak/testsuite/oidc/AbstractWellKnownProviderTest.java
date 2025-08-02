@@ -308,6 +308,11 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
 
         SimpleHttp.Response response = SimpleHttpDefault.doGet(jwksUri, client).header(ACCEPT, APPLICATION_JWKS).asResponse();
         assertEquals(APPLICATION_JWKS, response.getFirstHeader(CONTENT_TYPE));
+
+        // Test HEAD method works (Issue 41537)
+        SimpleHttp.Response responseHead = SimpleHttpDefault.doHead(jwksUri, client).header(ACCEPT, APPLICATION_JWKS).asResponse();
+        assertEquals(Response.Status.OK.getStatusCode(), responseHead.getStatus());
+        assertEquals(APPLICATION_JWKS, responseHead.getFirstHeader(CONTENT_TYPE));
     }
 
     @Test

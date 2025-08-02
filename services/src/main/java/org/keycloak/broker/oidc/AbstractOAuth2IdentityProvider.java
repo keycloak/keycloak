@@ -16,6 +16,9 @@
  */
 package org.keycloak.broker.oidc;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
@@ -67,6 +70,7 @@ import org.keycloak.protocol.oidc.utils.PkceUtils;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
@@ -74,6 +78,7 @@ import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.urls.UrlType;
 import org.keycloak.utils.StringUtil;
 import org.keycloak.vault.VaultStringSecret;
@@ -94,7 +99,9 @@ import java.net.URI;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -126,6 +133,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     private static final String BROKER_CODE_CHALLENGE_PARAM = "BROKER_CODE_CHALLENGE";
     private static final String BROKER_CODE_CHALLENGE_METHOD_PARAM = "BROKER_CODE_CHALLENGE_METHOD";
 
+    public static final String ACCESS_TOKEN_EXPIRATION = "accessTokenExpiration";
 
     public AbstractOAuth2IdentityProvider(KeycloakSession session, C config) {
         super(session, config);
@@ -151,9 +159,150 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         }
     }
 
+    /**
+     * This is a custom variant of {@link AccessTokenResponse} which avoid primitives that would auto-add zero values
+     * to the original responses. It also allows accessTokenExpiration to be handled as a long value.
+     */
+    public static class OAuthResponse {
+        @JsonProperty(OAuth2Constants.ACCESS_TOKEN)
+        protected String token;
+
+        @JsonProperty(OAuth2Constants.EXPIRES_IN)
+        protected Long expiresIn;
+
+        @JsonProperty(OAuth2Constants.REFRESH_TOKEN)
+        protected String refreshToken;
+
+        @JsonProperty("refresh_expires_in")
+        protected Long refreshExpiresIn;
+
+        @JsonProperty(OAuth2Constants.ID_TOKEN)
+        protected String idToken;
+
+        @JsonProperty(ACCESS_TOKEN_EXPIRATION)
+        protected Long accessTokenExpiration;
+
+        protected Map<String, Object> otherClaims = new HashMap<>();
+
+        public String getToken() {
+            return token;
+        }
+
+        public void setToken(String token) {
+            this.token = token;
+        }
+
+        public long getExpiresIn() {
+            return expiresIn;
+        }
+
+        public void setExpiresIn(long expiresIn) {
+            this.expiresIn = expiresIn;
+        }
+
+        public String getRefreshToken() {
+            return refreshToken;
+        }
+
+        public void setRefreshToken(String refreshToken) {
+            this.refreshToken = refreshToken;
+        }
+
+        public long getRefreshExpiresIn() {
+            return refreshExpiresIn;
+        }
+
+        public void setRefreshExpiresIn(long refreshExpiresIn) {
+            this.refreshExpiresIn = refreshExpiresIn;
+        }
+
+        public String getIdToken() {
+            return idToken;
+        }
+
+        public void setIdToken(String idToken) {
+            this.idToken = idToken;
+        }
+
+        public Long getAccessTokenExpiration() {
+            return accessTokenExpiration;
+        }
+
+        public void setAccessTokenExpiration(Long accessTokenExpiration) {
+            this.accessTokenExpiration = accessTokenExpiration;
+        }
+
+        @JsonAnyGetter
+        public Map<String, Object> getOtherClaims() {
+            return otherClaims;
+        }
+
+        @JsonAnySetter
+        public void setOtherClaims(String name, Object value) {
+            otherClaims.put(name, value);
+        }
+
+    }
+
     @Override
     public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity) {
+        try {
+            if (identity.getToken().startsWith("{")) {
+                OAuthResponse previousResponse = JsonSerialization.readValue(identity.getToken(), OAuthResponse.class);
+                Long exp = previousResponse.getAccessTokenExpiration();
+                if (needsRefresh(exp) && previousResponse.getRefreshToken() != null) {
+                    OAuthResponse newResponse = refreshToken(previousResponse, session);
+                    if (newResponse.getExpiresIn() > 0) {
+                        long accessTokenExpiration = Time.currentTime() + newResponse.getExpiresIn();
+                        newResponse.setAccessTokenExpiration(accessTokenExpiration);
+                    }
+                    identity.setToken(JsonSerialization.writeValueAsString(newResponse));
+                }
+            }
+        } catch (IOException e) {
+            ErrorRepresentation error = new ErrorRepresentation();
+            error.setErrorMessage("Unable to refresh token");
+            throw new WebApplicationException("Unable to refresh token", e,
+                    Response.status(Response.Status.BAD_GATEWAY).entity(error).type(MediaType.APPLICATION_JSON).build());
+        }
         return Response.ok(identity.getToken()).type(MediaType.APPLICATION_JSON).build();
+    }
+
+    private boolean needsRefresh(Long exp) {
+        return exp != null && exp != 0 && exp < Time.currentTime() + getConfig().getMinValidityToken();
+    }
+
+    protected SimpleHttp getRefreshTokenRequest(KeycloakSession session, String refreshToken, String clientId, String clientSecret) {
+        SimpleHttp refreshTokenRequest = SimpleHttp.doPost(getConfig().getTokenUrl(), session)
+                .param(OAUTH2_GRANT_TYPE_REFRESH_TOKEN, refreshToken)
+                .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_REFRESH_TOKEN);
+        return authenticateTokenRequest(refreshTokenRequest);
+    }
+
+    private OAuthResponse refreshToken(OAuthResponse previousResponse, KeycloakSession session) throws IOException {
+        try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
+            SimpleHttp refreshTokenRequest = getRefreshTokenRequest(session, previousResponse.getRefreshToken(), getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret()));
+            try (SimpleHttp.Response refreshTokenResponse = refreshTokenRequest.asResponse()) {
+                String response = refreshTokenResponse.asString();
+                if (response.contains("error")) {
+                    ErrorRepresentation error = new ErrorRepresentation();
+                    error.setErrorMessage("Unable to refresh token");
+                    throw new WebApplicationException("Received and response code " + refreshTokenResponse.getStatus() +
+                                                      " with a response '" + refreshTokenResponse.asString() + "'",
+                            Response.status(Response.Status.BAD_GATEWAY).entity(error).type(MediaType.APPLICATION_JSON).build());
+                }
+                OAuthResponse newResponse = JsonSerialization.readValue(response, OAuthResponse.class);
+
+                if (newResponse.getRefreshToken() == null && previousResponse.getRefreshToken() != null) {
+                    newResponse.setRefreshToken(previousResponse.getRefreshToken());
+                    newResponse.setRefreshExpiresIn(previousResponse.getRefreshExpiresIn());
+                }
+                if (newResponse.getIdToken() == null && previousResponse.getIdToken() != null) {
+                    newResponse.setIdToken(previousResponse.getIdToken());
+                }
+                return newResponse;
+            }
+        }
     }
 
     @Override
@@ -320,6 +469,21 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         }
 
         BrokeredIdentityContext context = doGetFederatedIdentity(accessToken);
+
+        if (getConfig().isStoreToken() && response.startsWith("{")) {
+            try {
+                OAuthResponse tokenResponse = JsonSerialization.readValue(response, OAuthResponse.class);
+                if (tokenResponse.getExpiresIn() > 0) {
+                    long accessTokenExpiration = Time.currentTime() + tokenResponse.getExpiresIn();
+                    tokenResponse.setAccessTokenExpiration(accessTokenExpiration);
+                    response = JsonSerialization.writeValueAsString(tokenResponse);
+                }
+                context.setToken(response);
+            } catch (IOException e) {
+                logger.debugf("Can't store expiration date in JSON token", e);
+            }
+        }
+
         context.getContextData().put(FEDERATED_ACCESS_TOKEN, accessToken);
         return context;
     }

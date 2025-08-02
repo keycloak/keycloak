@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
-import path from "path";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient";
 import { assertRequiredFieldError } from "../utils/form";
+import { chooseFile } from "../utils/file-chooser";
 import { login } from "../utils/login";
 import { assertNotificationMessage } from "../utils/masthead";
 import { assertModalTitle, confirmModal } from "../utils/modal";
@@ -132,19 +132,7 @@ test.describe("Clients test", () => {
 
     test("Import client", async ({ page }) => {
       await page.getByTestId("importClient").click();
-
-      const fileChooserPromise = page.waitForEvent("filechooser");
-      await page.getByText("Browse...").click();
-      const fileChooser = await fileChooserPromise;
-      await fileChooser.setFiles(
-        new URL(
-          path.join(
-            path.dirname(import.meta.url),
-            "../utils/files/import-identical-client.json",
-          ),
-        ).pathname,
-      );
-
+      await chooseFile(page, "../utils/files/import-identical-client.json");
       await save(page);
       await assertNotificationMessage(
         page,

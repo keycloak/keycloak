@@ -174,8 +174,9 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         configureRealmEnableRequiredActionByAlias("CONFIGURE_TOTP", false);
         // Set "Browser - Conditional OTP" execution requirement to CONDITIONAL
         configureRealmSetExecutionRequirementByDisplayName("browser", "Browser - Conditional 2FA", AuthenticationExecutionModel.Requirement.CONDITIONAL);
-        // Set "Condition - user configured" execution requirement to DISABLED
+        // Set "Condition - user configured" and "Condition - current credential" execution requirement to DISABLED to have no condition
         configureRealmSetExecutionRequirementByDisplayName("browser", "Condition - user configured", AuthenticationExecutionModel.Requirement.DISABLED);
+        configureRealmSetExecutionRequirementByDisplayName("browser", "Condition - credential", AuthenticationExecutionModel.Requirement.DISABLED);
         // Set "OTP Form" execution requirement to ALTERNATIVE
         configureRealmSetExecutionRequirementByDisplayName("browser", "OTP Form", AuthenticationExecutionModel.Requirement.ALTERNATIVE);
     }

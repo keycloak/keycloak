@@ -1,11 +1,15 @@
 import { Page } from "@playwright/test";
-import path from "path";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 export async function chooseFile(page: Page, file: string) {
   const fileChooserPromise = page.waitForEvent("filechooser");
   await page.getByText("Browse...").click();
   const fileChooser = await fileChooserPromise;
-  await fileChooser.setFiles(
-    new URL(path.join(path.dirname(import.meta.url), file)).pathname,
-  );
+
+  const fileName = fileURLToPath(import.meta.url);
+  const dirName = path.dirname(fileName);
+  const pathName = path.resolve(dirName, file);
+
+  await fileChooser.setFiles(pathName);
 }

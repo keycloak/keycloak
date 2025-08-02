@@ -98,7 +98,6 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     public static final String USER_INFO = "UserInfo";
     public static final String FEDERATED_ACCESS_TOKEN_RESPONSE = "FEDERATED_ACCESS_TOKEN_RESPONSE";
     public static final String VALIDATED_ID_TOKEN = "VALIDATED_ID_TOKEN";
-    public static final String ACCESS_TOKEN_EXPIRATION = "accessTokenExpiration";
     public static final String EXCHANGE_PROVIDER = "EXCHANGE_PROVIDER";
     public static final String VALIDATED_ACCESS_TOKEN = "VALIDATED_ACCESS_TOKEN";
     private static final String BROKER_NONCE_PARAM = "BROKER_NONCE";
@@ -299,13 +298,6 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             JsonWebToken access = validateToken(response.getToken(), true);
             context.getContextData().put(VALIDATED_ACCESS_TOKEN, access);
         }
-    }
-
-    protected SimpleHttp getRefreshTokenRequest(KeycloakSession session, String refreshToken, String clientId, String clientSecret) {
-        SimpleHttp refreshTokenRequest = SimpleHttp.doPost(getConfig().getTokenUrl(), session)
-                .param(OAUTH2_GRANT_TYPE_REFRESH_TOKEN, refreshToken)
-                .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_REFRESH_TOKEN);
-        return authenticateTokenRequest(refreshTokenRequest);
     }
 
     @Override

@@ -656,7 +656,7 @@ For running testsuite with server using BCFIPS approved mode, those additional p
 -Dauth.server.fips.mode=strict \
 -Dauth.server.supported.keystore.types=BCFKS \
 -Dauth.server.keystore.type=bcfks \
--Dauth.server.supported.rsa.key.sizes=2048,4096
+-Dauth.server.supported.rsa.key.sizes=2048,3072,4096
 ```
 The log should contain `KeycloakFipsSecurityProvider` mentioning "Approved mode". Something like:
 ```

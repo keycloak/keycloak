@@ -3,6 +3,10 @@ import { type ViewportSize, defineConfig, devices } from "@playwright/test";
 import { getAccountUrl } from "./test/utils";
 
 const retryCount = parseInt(process.env.RETRY_COUNT || "0");
+console.log("----------------------------");
+console.log("Playwright retries = " + retryCount);
+console.log("----------------------------");
+
 const viewport: ViewportSize = { width: 1920, height: 1080 };
 
 /**

@@ -42,6 +42,12 @@ configured directly via {project_name}: `cache-embedded-network-bind-address`, `
 `cache-embedded-network-external-address`, `cache-embedded-network-external-port`. Configuring ports using the old
 properties will still function as before, but we recommend to change to the CLI options as this may change in the future.
 
+=== External IDP tokens automatically refreshed
+
+When using the `+/realms/{realm-name}/broker/{provider_alias}/token+` endpoint for an OAuth 2.0 IDPs that provides refresh tokens and JSON responses or for OIDC IDPs, the tokens will be automatically refreshed each time they are retrieved via the endpoint if the access token has expired and the IDP provided a refresh token.
+
+When using GitHub as an IDP, you can now enable JSON responses to leverage the token refresh for this endpoint.
+
 === Volatile user sessions affecting offline session memory requirements
 
 Starting with this release, {project_name} will cache by default only 10000 entries for offline user and client sessions in memory when volatile user sessions are enabled. This will greatly reduce memory usage.
@@ -64,6 +70,13 @@ The `Update Email` is now a supported feature so it is no longer needed to enabl
 The feature is enabled for a realm, if `Update Email` required action is enabled in the realm's required actions setting.
 The feature slightly changes behaviour from previous versions when updating the profile during the authentication flow (e.g. when running the `UPDATE_PROFILE` required action).
 If an existing user does have an email set when updating the profile during the authentication flow, the email attribute will not be available.
+
+=== New database index on the `EVENT_ENTITY` table
+
+The table `EVENT_ENTITY` now has an index `IDX_EVENT_ENTITY_USER_ID_TYPE` on the columns `USER_ID` and `TYPE` to allow a faster search in the admin UI for events of a specific user and event type.
+
+If the table contain more than 300000 entries, {project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
+See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
 
 === Encryption algorithms for SAML updated
 
@@ -96,6 +109,14 @@ The Typescript code `ConsentScopeRepresentation` for the Account Console already
 The options `+--spi-user-sessions--infinispan--offline-session-cache-entry-lifespan-override+` and `+--spi-user-sessions--infinispan--offline-client-session-cache-entry-lifespan-override+` are now deprecated for removal.
 
 Instead use the options `cache-embedded-offline-sessions-max-count` and `cache-embedded-offline-client-sessions-max-count` to limit the memory usage if the default of 10000 cache offline user and client sessions does not work in your scenario.
+
+=== Deprecated Passkeys Conditional UI Authenticator requires a feature
+
+The authenticator *Passkeys Conditional UI Authenticator*, which was deprecated in the previous version 26.3.0, is still available for now, but it requires the feature
+`passkeys_conditional_ui_authenticator` to be explicitly enabled during server startup. The feature itself is deprecated and disabled by default.
+This allows administrator to start the server and re-configure authentication flows for passkeys authentication in a recommended way as described
+in the link:{adminguide_link}#passkeys_server_administration_guide[Passkeys] chapter in the {adminguide_name}. In the future major version, we plan to remove the feature
+as well as the *Passkeys Conditional UI Authenticator* as already announced.
 
 // ------------------------ Removed features ------------------------ //
 == Removed features

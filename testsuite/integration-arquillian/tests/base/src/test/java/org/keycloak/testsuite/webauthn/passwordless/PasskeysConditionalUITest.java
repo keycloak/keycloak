@@ -45,6 +45,7 @@ import org.openqa.selenium.firefox.FirefoxDriver;
  * @author rmartinc
  */
 @EnableFeature(value = Profile.Feature.PASSKEYS, skipRestart = true)
+@EnableFeature(value = Profile.Feature.PASSKEYS_CONDITIONAL_UI_AUTHENTICATOR, skipRestart = true)
 @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
 public class PasskeysConditionalUITest extends AbstractWebAuthnVirtualTest {
 
