@@ -102,7 +102,10 @@ public class ClientRoleMappingsResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_ROLE_MAPPINGS)
-    @Operation( summary = "Get client-level role mappings for the user or group, and the app")
+    @Operation(
+            summary = "Get client-level role mappings for the user or group, and the app",
+            operationId = "getClientRoleMappings"
+    )
     public Stream<RoleRepresentation> getClientRoleMappings() {
         viewPermission.require();
 
@@ -123,7 +126,10 @@ public class ClientRoleMappingsResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_ROLE_MAPPINGS)
-    @Operation( summary = "Get effective client-level role mappings This recurses any composite roles")
+    @Operation(
+            summary = "Get effective client-level role mappings This recurses any composite roles",
+            operationId = "getCompositeClientRoleMappings"
+    )
     public Stream<RoleRepresentation> getCompositeClientRoleMappings(@Parameter(description = "if false, return roles with their attributes") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         viewPermission.require();
 
@@ -143,7 +149,10 @@ public class ClientRoleMappingsResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_ROLE_MAPPINGS)
-    @Operation( summary = "Get available client-level roles that can be mapped to the user or group")
+    @Operation(
+            summary = "Get available client-level roles that can be mapped to the user or group",
+            operationId = "getAvailableClientRoleMappings"
+    )
     public Stream<RoleRepresentation> getAvailableClientRoleMappings() {
         viewPermission.require();
 
@@ -161,7 +170,10 @@ public class ClientRoleMappingsResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_ROLE_MAPPINGS)
-    @Operation( summary = "Add client-level roles to the user or group role mapping")
+    @Operation(
+            summary = "Add client-level roles to the user or group role mapping",
+            operationId = "addClientRoleMapping"
+    )
     @APIResponse(responseCode = "204", description = "No Content")
     public void addClientRoleMapping(List<RoleRepresentation> roles) {
         managePermission.require();
@@ -197,7 +209,10 @@ public class ClientRoleMappingsResource {
     @DELETE
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_ROLE_MAPPINGS)
-    @Operation( summary = "Delete client-level roles from user or group role mapping")
+    @Operation(
+            summary = "Delete client-level roles from user or group role mapping",
+            operationId = "deleteClientRoleMapping"
+    )
     public void deleteClientRoleMapping(List<RoleRepresentation> roles) {
         managePermission.require();
 
