@@ -51,4 +51,37 @@ public class FileTruststoreProviderFactoryTest {
         assertEquals(HostnameVerificationPolicy.ANY, provider.getPolicy());
     }
 
+    @Test(expected = RuntimeException.class)
+    public void testInvalidTruststoreFile() throws IOException {
+        Map<String, String> values = new HashMap<>();
+        values.put("file", "invalid-path.jks");
+        values.put("password", "testpass");
+        FileTruststoreProviderFactory factory = new FileTruststoreProviderFactory();
+        factory.init(ScopeUtil.createScope(values));
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testInvalidHostnameVerificationPolicy() throws IOException {
+        Map<String, String> values = new HashMap<>();
+        values.put(FileTruststoreProviderFactory.HOSTNAME_VERIFICATION_POLICY, "INVALID_POLICY");
+        FileTruststoreProviderFactory factory = new FileTruststoreProviderFactory();
+        factory.init(ScopeUtil.createScope(values));
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testInvalidTruststoreType() throws IOException {
+        Map<String, String> values = new HashMap<>();
+        values.put("file", "path/to/truststore.unknown");
+        values.put("password", "changeit");
+        FileTruststoreProviderFactory factory = new FileTruststoreProviderFactory();
+        factory.init(ScopeUtil.createScope(values));
+    }
+
+    @Test
+    public void testPostInitAndClose() {
+        FileTruststoreProviderFactory factory = new FileTruststoreProviderFactory();
+        factory.postInit(null);
+        factory.close();
+    }
+
 }
