@@ -42,6 +42,7 @@ export const ExtendedNonDiscoverySettings = () => {
         <SwitchField label="passLoginHint" field="config.loginHint" />
         <SwitchField label="passMaxAge" field="config.passMaxAge" />
         <SwitchField label="passCurrentLocale" field="config.uiLocales" />
+        <SwitchField label="passAcrValues" field="config.forwardAcrValues" />
         <SwitchField
           field="config.backchannelSupported"
           label="backchannelLogout"
