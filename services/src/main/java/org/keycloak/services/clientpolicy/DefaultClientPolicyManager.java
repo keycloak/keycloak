@@ -69,14 +69,18 @@ public class DefaultClientPolicyManager implements ClientPolicyManager {
         }
 
         for (ClientPolicy policy: list) {
-            logger.tracev("POLICY OPERATION :: policy name = {0}", policy.getName());
-            if (!isSatisfied(policy, condition)) {
-                logger.tracev("POLICY UNSATISFIED :: policy name = {0}", policy.getName());
-                continue;
-            }
+            try {
+                logger.tracev("POLICY OPERATION :: policy name = {0}", policy.getName());
+                if (!isSatisfied(policy, condition)) {
+                    logger.tracev("POLICY UNSATISFIED :: policy name = {0}", policy.getName());
+                    continue;
+                }
 
-            logger.tracev("POLICY APPLIED :: policy name = {0}", policy.getName());
-            execute(policy, executor, realm);
+                logger.tracev("POLICY APPLIED :: policy name = {0}", policy.getName());
+                execute(policy, executor, realm);
+            } catch (ClientPolicyException cpe) {
+                throw new ClientPolicyException(cpe, policy.isPermissiveMode());
+            }
         }
     }
 

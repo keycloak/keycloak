@@ -32,6 +32,7 @@ public class ClientPolicyRepresentation {
     protected Boolean enabled;
     protected List<ClientPolicyConditionRepresentation> conditions;
     protected List<String> profiles;
+    protected Boolean permissiveMode;
 
     public String getName() {
         return name;
@@ -71,6 +72,14 @@ public class ClientPolicyRepresentation {
 
     public void setProfiles(List<String> profiles) {
         this.profiles = profiles;
+    }
+
+    public Boolean isPermissiveMode() {
+        return permissiveMode;
+    }
+
+    public void setPermissiveMode(Boolean permissiveMode) {
+        this.permissiveMode = permissiveMode;
     }
 
     @Override
