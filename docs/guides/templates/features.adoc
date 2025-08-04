@@ -1,0 +1,10 @@
+<#macro table features>
+[cols="30%,70%"]
+|===
+| Feature | Description
+
+<#list features as feature>
+| [.features-name]#${feature.versionedKey}# | [.features-description]#${feature.description}#
+</#list>
+|===
+</#macro>
