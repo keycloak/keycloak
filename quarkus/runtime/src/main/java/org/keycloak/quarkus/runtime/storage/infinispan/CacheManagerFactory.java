@@ -80,6 +80,7 @@ import static org.keycloak.config.CachingOptions.CACHE_REMOTE_HOST_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_REMOTE_PASSWORD_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_REMOTE_PORT_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_REMOTE_USERNAME_PROPERTY;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ACTION_TOKEN_CACHE;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES;
@@ -331,6 +332,7 @@ public class CacheManagerFactory {
             jGroupsConfigurator.configure(session);
             configureCacheMaxCount(builder, CachingOptions.CLUSTERED_MAX_COUNT_CACHES);
             configureSessionsCaches(builder);
+            ensureMinimumOwners(builder);
             validateWorkCacheConfiguration(builder);
         }
         configureCacheMaxCount(builder, CachingOptions.LOCAL_MAX_COUNT_CACHES);
@@ -338,6 +340,34 @@ public class CacheManagerFactory {
         configureMetrics(builder);
 
         return new DefaultCacheManager(builder, isStartEagerly());
+    }
+
+    /**
+     * Configures the caches "actionToken", "authenticationSessions", and "loginFailures" with the minimum number of
+     * owners to prevent data loss in a single instance crash.
+     * <p>
+     * The data in those caches only exist in memory, therefore they must have more than one owner configured.
+     *
+     * @param holder The {@link ConfigurationBuilderHolder} where the caches are configured.
+     * @throws IllegalStateException if an Infinispan cache is not defined in the {@code holder}. This could indicate a
+     *                               missing or incorrect configuration.
+     */
+    private static void ensureMinimumOwners(ConfigurationBuilderHolder holder) {
+        for (var name : Arrays.asList(
+                LOGIN_FAILURE_CACHE_NAME,
+                AUTHENTICATION_SESSIONS_CACHE_NAME,
+                ACTION_TOKEN_CACHE)) {
+            var builder = holder.getNamedConfigurationBuilders().get(name);
+            if (builder == null) {
+                throw new IllegalStateException("Infinispan cache '%s' not found. Make sure it is defined in your XML configuration file.".formatted(name));
+            }
+            var hashConfig = builder.clustering().hash();
+            var owners = hashConfig.attributes().attribute(HashConfiguration.NUM_OWNERS).get();
+            if (owners < 2) {
+                logger.infof("Setting num_owners=2 (configured value is %s) for cache '%s' to prevent data loss.", owners, name);
+                hashConfig.numOwners(2);
+            }
+        }
     }
 
     private static void configureMetrics(ConfigurationBuilderHolder holder) {
