@@ -17,6 +17,39 @@
 
 package org.keycloak.models.jpa;
 
+import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
+import static org.keycloak.storage.jpa.JpaHashUtils.predicateForFilteringUsersByAttributes;
+import static org.keycloak.storage.jpa.JpaHashUtils.predicateForMultiFilteringUsersByAttributes;
+import static org.keycloak.utils.StreamsUtil.closing;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.From;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
+
 import org.keycloak.authorization.jpa.entities.ResourceEntity;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
@@ -34,50 +67,30 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.RoleProvider;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.UserRoleModel;
+import org.keycloak.models.jpa.entities.ClientEntity;
 import org.keycloak.models.jpa.entities.CredentialEntity;
 import org.keycloak.models.jpa.entities.FederatedIdentityEntity;
+import org.keycloak.models.jpa.entities.OrganizationEntity;
+import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.jpa.entities.UserAttributeEntity;
 import org.keycloak.models.jpa.entities.UserConsentClientScopeEntity;
 import org.keycloak.models.jpa.entities.UserConsentEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
+import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.FilterAttributeRepresentation;
+import org.keycloak.representations.idm.UserRolesBodyRepresentation;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
-
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.LockModeType;
-import jakarta.persistence.TypedQuery;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Expression;
-import jakarta.persistence.criteria.From;
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.JoinType;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
-import jakarta.persistence.criteria.Subquery;
 import org.keycloak.storage.jpa.JpaHashUtils;
 import org.keycloak.utils.StringUtil;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Stream;
-
-import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
-import static org.keycloak.storage.jpa.JpaHashUtils.predicateForFilteringUsersByAttributes;
-import static org.keycloak.utils.StreamsUtil.closing;
 
 
 /**
@@ -90,18 +103,32 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     private static final String EMAIL = "email";
     private static final String EMAIL_VERIFIED = "emailVerified";
     private static final String USERNAME = "username";
+    private static final String ID = "id";
     private static final String FIRST_NAME = "firstName";
     private static final String LAST_NAME = "lastName";
     private static final char ESCAPE_BACKSLASH = '\\';
 
     private final KeycloakSession session;
-    protected EntityManager em;
     private final JpaUserCredentialStore credentialStore;
+    protected EntityManager em;
 
     public JpaUserProvider(KeycloakSession session, EntityManager em) {
         this.session = session;
         this.em = em;
         credentialStore = new JpaUserCredentialStore(session, em);
+    }
+
+    private static List<FilterAttributeRepresentation> attributesMapToRepresentation(Map<String, String> attributes) {
+        Boolean exact = Boolean.parseBoolean(attributes.get(UserModel.EXACT));
+        List<FilterAttributeRepresentation> attributeRepresentations = new ArrayList<>();
+        attributes.forEach((key, value) -> {
+            FilterAttributeRepresentation representation = new FilterAttributeRepresentation();
+            representation.setKey(key);
+            representation.setValues(List.of(value));
+            representation.setExact(exact);
+            attributeRepresentations.add(representation);
+        });
+        return attributeRepresentations;
     }
 
     @Override
@@ -667,7 +694,8 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         Expression<Long> count = qb.count(from);
 
         userQuery = userQuery.select(count);
-        List<Predicate> restrictions = predicates(params, from, Map.of());
+        List<FilterAttributeRepresentation> attributeRepresentations = attributesMapToRepresentation(params);
+        List<Predicate> restrictions = predicates(attributeRepresentations, from, Map.of());
         restrictions.add(qb.equal(from.get("realmId"), realm.getId()));
 
         userQuery = userQuery.where(restrictions.toArray(Predicate[]::new));
@@ -690,7 +718,8 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         Root<UserEntity> root = countQuery.from(UserEntity.class);
         countQuery.select(cb.count(root));
 
-        List<Predicate> restrictions = predicates(params, root, Map.of());
+        List<FilterAttributeRepresentation> attributeRepresentations = attributesMapToRepresentation(params);
+        List<Predicate> restrictions = predicates(attributeRepresentations, root, Map.of());
         restrictions.add(cb.equal(root.get("realmId"), realm.getId()));
 
         groupsWithPermissionsSubquery(countQuery, groupIds, root, restrictions);
@@ -748,33 +777,12 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
-        CriteriaBuilder builder = em.getCriteriaBuilder();
-        CriteriaQuery<UserEntity> queryBuilder = builder.createQuery(UserEntity.class);
-        Root<UserEntity> root = queryBuilder.from(UserEntity.class);
+        return getBaseQuery(realm, attributes, firstResult, maxResults);
+    }
 
-        Map<String, String> customLongValueSearchAttributes = new HashMap<>();
-        List<Predicate> predicates = predicates(attributes, root, customLongValueSearchAttributes);
-
-        predicates.add(builder.equal(root.get("realmId"), realm.getId()));
-
-        Set<String> userGroups = (Set<String>) session.getAttribute(UserModel.GROUPS);
-
-        if (userGroups != null) {
-            groupsWithPermissionsSubquery(queryBuilder, userGroups, root, predicates);
-        }
-
-        queryBuilder.where(predicates.toArray(Predicate[]::new)).orderBy(builder.asc(root.get(UserModel.USERNAME)));
-
-        TypedQuery<UserEntity> query = em.createQuery(queryBuilder);
-
-        UserProvider users = session.users();
-        return closing(paginateQuery(query, firstResult, maxResults).getResultStream())
-                // following check verifies that there are no collisions with hashes
-                .filter(predicateForFilteringUsersByAttributes(customLongValueSearchAttributes, JpaHashUtils::compareSourceValueLowerCase))
-                .map(userEntity -> users.getUserById(realm, userEntity.getId()))
-                .filter(Objects::nonNull);
+    public Stream<UserRoleModel> searchForUserRoleStream(RealmModel realm, UserRolesBodyRepresentation userRolesBodyRepresentation) {
+        return getBaseQuery(realm, userRolesBodyRepresentation);
     }
 
     @Override
@@ -791,7 +799,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                         .setParameter("value", attrValue);
 
         return closing(query.getResultStream()
-                // following check verifies that there are no collisions with hashes
+                // The following check verifies that there are no collisions with hashes
                 .filter(longAttribute ? predicateForFilteringUsersByAttributes(Map.of(attrName, attrValue), JpaHashUtils::compareSourceValue) : u -> true)
                 .map(userEntity -> new UserAdapter(session, realm, em, userEntity)));
     }
@@ -960,7 +968,12 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         return em.contains(user) ? user : null;
     }
 
-    private List<Predicate> predicates(Map<String, String> attributes, Root<UserEntity> root, Map<String, String> customLongValueSearchAttributes) {
+    private void processPredicate(List<String> values, Consumer<String> action) {
+        values.forEach(value -> action.accept(value.toLowerCase()));
+    }
+
+    private List<Predicate> predicates(List<FilterAttributeRepresentation> attributeEntries, From<?, UserEntity> from,
+                                       Map<String, List<String>> customLongValueSearchAttributes) {
         CriteriaBuilder builder = em.getCriteriaBuilder();
 
         List<Predicate> predicates = new ArrayList<>();
@@ -968,95 +981,199 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
         Join<Object, Object> federatedIdentitiesJoin = null;
 
-        for (Map.Entry<String, String> entry : attributes.entrySet()) {
+        for (FilterAttributeRepresentation entry : attributeEntries) {
             String key = entry.getKey();
-            String value = entry.getValue();
+            List<String> values = entry.getValues();
+            List<Predicate> valuePredicates = new ArrayList<>();
 
-            if (value == null) {
+            if (values.isEmpty()) {
                 continue;
             }
 
+            boolean isExact = Optional.ofNullable(entry.getExact()).orElse(true);
             switch (key) {
-                case UserModel.SEARCH:
-                    for (String stringToSearch : value.trim().split("\\s+")) {
-                        predicates.add(builder.or(getSearchOptionPredicateArray(stringToSearch, builder, root)));
-                    }
+                case UserModel.SEARCH: {
+                    processPredicate(values, valueLowerCase -> {
+                        for (String stringToSearch : valueLowerCase.trim().split("\\s+")) {
+                            valuePredicates.add(builder.or(getSearchOptionPredicateArray(stringToSearch, builder, from)));
+                        }
+                    });
                     break;
+                }
+                case ID:
                 case FIRST_NAME:
                 case LAST_NAME:
-                    if (Boolean.parseBoolean(attributes.get(UserModel.EXACT))) {
-                        predicates.add(builder.equal(builder.lower(root.get(key)), value.toLowerCase()));
-                    } else {
-                        predicates.add(builder.like(builder.lower(root.get(key)), "%" + value.toLowerCase() + "%"));
-                    }
-                    break;
                 case USERNAME:
-                case EMAIL:
-                    if (Boolean.parseBoolean(attributes.get(UserModel.EXACT))) {
-                        predicates.add(builder.equal(root.get(key), value.toLowerCase()));
-                    } else {
-                        predicates.add(builder.like(root.get(key), "%" + value.toLowerCase() + "%"));
-                    }
+                case EMAIL: {
+                    processPredicate(values, valueLowerCase -> {
+                        if (isExact) {
+                            valuePredicates.add(builder.equal(builder.lower(from.get(key)), valueLowerCase));
+                        } else {
+                            valuePredicates.add(builder.like(builder.lower(from.get(key)), "%" + valueLowerCase + "%"));
+                        }
+                    });
                     break;
+                }
                 case EMAIL_VERIFIED:
-                    predicates.add(builder.equal(root.get(key), Boolean.valueOf(value.toLowerCase())));
+                    valuePredicates.add(builder.equal(from.get(key), Boolean.valueOf(values.get(0).toLowerCase())));
                     break;
                 case UserModel.ENABLED:
-                    predicates.add(builder.equal(root.get(key), Boolean.valueOf(value)));
+                    valuePredicates.add(builder.equal(from.get(key), Boolean.valueOf(values.get(0))));
                     break;
                 case UserModel.IDP_ALIAS:
-                    if (federatedIdentitiesJoin == null) {
-                        federatedIdentitiesJoin = root.join("federatedIdentities");
-                    }
-                    predicates.add(builder.equal(federatedIdentitiesJoin.get("identityProvider"), value));
-                    break;
                 case UserModel.IDP_USER_ID:
                     if (federatedIdentitiesJoin == null) {
-                        federatedIdentitiesJoin = root.join("federatedIdentities");
+                        federatedIdentitiesJoin = from.join("federatedIdentities");
                     }
-                    predicates.add(builder.equal(federatedIdentitiesJoin.get("userId"), value));
+                    Join<Object, Object> finalFederatedIdentitiesJoin = federatedIdentitiesJoin;
+                    valuePredicates.add(
+                        builder.equal(finalFederatedIdentitiesJoin.get(key.equals(UserModel.IDP_USER_ID) ? "userId" : "identityProvider"),
+                            values.get(0)));
                     break;
                 case UserModel.EXACT:
                     break;
-                // All unknown attributes will be assumed as custom attributes
-                default:
-                    Join<UserEntity, UserAttributeEntity> attributesJoin = root.join("attributes", JoinType.LEFT);
-                    if (value.length() > 255) {
-                        customLongValueSearchAttributes.put(key, value);
-                        attributePredicates.add(builder.and(
-                                builder.equal(attributesJoin.get("name"), key),
-                                builder.equal(attributesJoin.get("longValueHashLowerCase"), JpaHashUtils.hashForAttributeValueLowerCase(value))));
-                    } else {
-                        if (Boolean.parseBoolean(attributes.getOrDefault(UserModel.EXACT, Boolean.TRUE.toString()))) {
-                            attributePredicates.add(builder.and(
-                                builder.equal(attributesJoin.get("name"), key),
-                                builder.equal(builder.lower(attributesJoin.get("value")), value.toLowerCase())));
-                        } else {
-                            attributePredicates.add(builder.and(
-                                builder.equal(attributesJoin.get("name"), key),
-                                builder.like(builder.lower(attributesJoin.get("value")), "%" + value.toLowerCase() + "%")));
-                        }
-                    }
-                    break;
                 case UserModel.INCLUDE_SERVICE_ACCOUNT: {
-                    if (!attributes.containsKey(UserModel.INCLUDE_SERVICE_ACCOUNT)
-                            || !Boolean.parseBoolean(attributes.get(UserModel.INCLUDE_SERVICE_ACCOUNT))) {
-                        predicates.add(root.get("serviceAccountClientLink").isNull());
+                    if (values.get(0) == null || !Boolean.parseBoolean(values.get(0))) {
+                        valuePredicates.add(from.get("serviceAccountClientLink").isNull());
                     }
                     break;
                 }
+                // All unknown attributes will be assumed as custom attributes
+                default: {
+                    Join<UserEntity, UserAttributeEntity> attributesJoin = from.join("attributes", JoinType.LEFT);
+                    processPredicate(values, valueLowerCase -> {
+                        if (valueLowerCase.length() > 255) {
+                            customLongValueSearchAttributes.put(key, Collections.singletonList(valueLowerCase));
+                            valuePredicates.add(builder.and(builder.equal(attributesJoin.get("name"), key),
+                                builder.equal(attributesJoin.get("longValueHashLowerCase"), JpaHashUtils.hashForAttributeValueLowerCase(valueLowerCase))));
+                        } else {
+                            if (isExact) {
+                                valuePredicates.add(builder.and(builder.equal(attributesJoin.get("name"), key),
+                                    builder.equal(builder.lower(attributesJoin.get("value")), valueLowerCase)));
+                            } else {
+                                valuePredicates.add(builder.and(builder.equal(attributesJoin.get("name"), key),
+                                    builder.like(builder.lower(attributesJoin.get("value")), "%" + valueLowerCase + "%")));
+                            }
+                        }
+                    });
+                    break;
+                }
             }
+            // This ensures that in cases like exact where we do not add any value predicates, we do not add conditions that cannot be met.
+            if (!valuePredicates.isEmpty()) attributePredicates.add(builder.or(valuePredicates.toArray(Predicate[]::new)));
         }
 
-        if (!attributePredicates.isEmpty()) {
-            predicates.add(builder.and(attributePredicates.toArray(Predicate[]::new)));
-        }
+        if (!attributePredicates.isEmpty()) predicates.add(builder.and(attributePredicates.toArray(Predicate[]::new)));
 
         return predicates;
     }
 
+    private Stream<UserModel> getBaseQuery(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
+        UserRolesBodyRepresentation userRolesBodyRepresentation = new UserRolesBodyRepresentation();
+        userRolesBodyRepresentation.setFilterAttributes(attributesMapToRepresentation(attributes));
+        userRolesBodyRepresentation.setFirst(firstResult);
+        userRolesBodyRepresentation.setMax(maxResults);
+        return getBaseQuery(realm, userRolesBodyRepresentation).map(UserRoleModel::getUser);
+    }
+
     @SuppressWarnings("unchecked")
-    private void groupsWithPermissionsSubquery(CriteriaQuery<?> query, Set<String> groupIds, Root<UserEntity> root, List<Predicate> restrictions) {
+    private Stream<UserRoleModel> getBaseQuery(RealmModel realm, UserRolesBodyRepresentation representation) {
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<UserEntity> queryBuilder = builder.createQuery(UserEntity.class);
+        From<?, UserEntity> from;
+
+        List<Predicate> predicates = new ArrayList<>();
+
+        // Handle Table Base
+        // Setup Organizations if any.
+        if (representation.getOrgId() != null) {
+            // First, get the organization to get its group ID
+            OrganizationEntity organization = em.find(OrganizationEntity.class, representation.getOrgId());
+            if (organization != null) {
+                Root<UserGroupMembershipEntity> membershipRoot = queryBuilder.from(UserGroupMembershipEntity.class);
+                Join<UserGroupMembershipEntity, UserEntity> userJoin = membershipRoot.join("user");
+                predicates.add(builder.equal(membershipRoot.get("groupId"), organization.getGroupId()));
+                predicates.add(builder.equal(userJoin.get("realmId"), realm.getId()));
+                from = userJoin;
+            } else {
+                from = queryBuilder.from(UserEntity.class);
+            }
+        } else {
+            from = queryBuilder.from(UserEntity.class);
+        }
+        // End of Table Base.
+
+        // Setup Role join.
+        final Map<String, List<RoleModel>> rolesByUserId;
+        if (representation.getClientId() != null || !representation.getByRoles().isEmpty()) {
+            // Client UUID can be empty string if you want to retrieve all users
+            String clientUUID = representation.getClientId() == null || representation.getClientId().isBlank() ? "" :
+                getIdFromClientId(realm, representation.getClientId());
+            Map<String, RoleModel> acceptedRoles = getRoles(realm, clientUUID);
+            rolesByUserId = getUsersTiedToRoles(acceptedRoles);
+            // If roleIds is populated, we remove any user's ids from being included if they do not have the role in question,
+            // to prevent users that do not own this role from appearing.
+            if (!representation.getByRoles().isEmpty()) {
+                Set<String> userIds = rolesByUserId.entrySet()
+                    .stream()
+                    .filter(rolesByUser -> rolesByUser.getValue().stream().anyMatch(role -> representation.getByRoles().contains(role.getId())))
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toSet());
+                predicates.add(from.get("id").in(userIds));
+            }
+        } else {
+            rolesByUserId = new HashMap<>();
+        }
+        // End of Role join.
+
+        // Add baseline predicates
+        predicates.add(builder.equal(from.get("realmId"), realm.getId()));
+        Map<String, List<String>> customLongValueSearchAttributes = new HashMap<>();
+        predicates.addAll(predicates(representation.getFilterAttributes(), from, customLongValueSearchAttributes));
+        // End of baseline predicates
+
+
+        // Add group permissions if needed
+        Set<String> userGroups = (Set<String>) session.getAttribute(UserModel.GROUPS);
+        if (userGroups != null) {
+            groupsWithPermissionsSubquery(queryBuilder, userGroups, from, predicates);
+        }
+        // End of Group Permission
+
+        queryBuilder.select(from)
+            // Add all predicates within the CriteriaQuery.
+            .where(predicates.toArray(Predicate[]::new))
+            // Create ordering based on orderByField (If it starts with -, its descending based field).
+            .orderBy(representation.getSortBy()
+                .stream()
+                .map(orderByField -> orderByField.startsWith("-") ? builder.desc(from.get(orderByField.substring(1))) :
+                    builder.asc(from.get(orderByField)))
+                .toList());
+
+        TypedQuery<UserEntity> query = em.createQuery(queryBuilder);
+        UserProvider users = session.users();
+        return closing(paginateQuery(query, representation.getFirst(), representation.getMax()).getResultStream())
+            // the following check verifies that there are no collisions with hashes
+            .filter(predicateForMultiFilteringUsersByAttributes(customLongValueSearchAttributes, JpaHashUtils::compareSourceValueLowerCase))
+            .map(userEntity -> {
+                UserModel user = users.getUserById(realm, userEntity.getId());
+                if (user == null) return null;
+
+                UserRoleModel userRoleModel = new UserRoleModel(user);
+                if (!rolesByUserId.isEmpty()) {
+                    // Separated client roles from builder for clarity-sake.
+                    Map<String, List<RoleModel>> userRoles = rolesByUserId.getOrDefault(user.getId(), Collections.emptyList())
+                        .stream()
+                        .collect(Collectors.groupingBy(role -> role.isClientRole() ? ((ClientModel) role.getContainer()).getClientId() : "",
+                            Collectors.mapping(role -> role, Collectors.toList())));
+                    userRoleModel.setRoles(userRoles);
+                }
+                return userRoleModel;
+            }).filter(Objects::nonNull);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void groupsWithPermissionsSubquery(CriteriaQuery<?> query, Set<String> groupIds, From<?, UserEntity> root, List<Predicate> restrictions) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
 
         Subquery subquery = query.subquery(String.class);
@@ -1087,5 +1204,64 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         subquery.where(subPredicates.toArray(Predicate[]::new));
 
         restrictions.add(cb.exists(subquery));
+    }
+
+    private String getIdFromClientId(RealmModel realm, String clientId) {
+        CriteriaBuilder clientCb = em.getCriteriaBuilder();
+        CriteriaQuery<ClientEntity> clientCq = clientCb.createQuery(ClientEntity.class);
+        Root<ClientEntity> clientRoot = clientCq.from(ClientEntity.class);
+        clientCq.where(clientCb.and(clientCb.equal(clientRoot.get("clientId"), clientId), clientCb.equal(clientRoot.get("realmId"), realm.getId())));
+
+        return em.createQuery(clientCq).getResultStream().findFirst().map(ClientEntity::getId).orElse(null);
+    }
+
+    /**
+     * [JD] Roles are missing some Foreign keys, missing two of them:
+     * <ul><li>Role within UserRoleMappingEntity.</li>
+     * <li>Roles within UserEntity.</li></ul>
+     * <br>So for this function, we will be retrieving Client Roles
+     * (Service roles are not supported at the moment due to lack of a need) tied to the clientId you passed.
+     *
+     * @param realm      The realm
+     * @param clientUUID The Client UUID that you want to retrieve the roles from.
+     * @return A Map of RoleEntities, tied by RoleEntity::getId.
+     */
+    private Map<String, RoleModel> getRoles(RealmModel realm, String clientUUID) {
+        CriteriaBuilder roleCb = em.getCriteriaBuilder();
+        CriteriaQuery<RoleEntity> roleCq = roleCb.createQuery(RoleEntity.class);
+        Root<RoleEntity> roleRoot = roleCq.from(RoleEntity.class);
+        if (clientUUID.isEmpty()) {
+            roleCq.where(roleCb.and(roleCb.notEqual(roleRoot.get("clientId"), ""), roleCb.isNotNull(roleRoot.get("clientId"))));
+        } else {
+            roleCq.where(roleCb.equal(roleRoot.get("clientId"), clientUUID));
+        }
+
+        RoleProvider roleProvider = session.roles();
+        return em.createQuery(roleCq)
+            .getResultStream()
+            .collect(Collectors.toMap(RoleEntity::getId, roleEntity -> roleProvider.getRoleById(realm, roleEntity.getId())));
+    }
+
+    /**
+     * [JD] Roles are missing some Foreign keys, missing two of them:
+     * <ul><li>Role within UserRoleMappingEntity.</li>
+     * <li>Roles within UserEntity.</li></ul>
+     * <br>So for this function, we will be retrieving a map of user's id tied to his respective roles using valid
+     * roleIds (acquired from the roles Map you provided).
+     *
+     * @param roles A Map of `key: roleId | value: RoleModel`
+     * @return A Map of `key: userId | value: List of RoleModel`
+     */
+    private Map<String, List<RoleModel>> getUsersTiedToRoles(Map<String, RoleModel> roles) {
+        CriteriaBuilder userRoleCb = em.getCriteriaBuilder();
+        CriteriaQuery<UserRoleMappingEntity> userRoleCq = userRoleCb.createQuery(UserRoleMappingEntity.class);
+        Root<UserRoleMappingEntity> userRoleRoot = userRoleCq.from(UserRoleMappingEntity.class);
+
+        userRoleCq.where(userRoleRoot.get("roleId").in(roles.keySet()));
+
+        return em.createQuery(userRoleCq)
+            .getResultStream()
+            .collect(
+                Collectors.groupingBy(urm -> urm.getUser().getId(), Collectors.mapping(user -> roles.get(user.getRoleId()), Collectors.toList())));
     }
 }

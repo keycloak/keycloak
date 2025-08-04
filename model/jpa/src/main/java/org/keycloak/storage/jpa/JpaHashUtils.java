@@ -17,16 +17,19 @@
 
 package org.keycloak.storage.jpa;
 
-import org.keycloak.crypto.HashException;
-import org.keycloak.crypto.JavaAlgorithm;
-import org.keycloak.models.jpa.entities.UserEntity;
-
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiPredicate;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
+import org.keycloak.crypto.HashException;
+import org.keycloak.crypto.JavaAlgorithm;
+import org.keycloak.models.jpa.entities.UserEntity;
 
 /**
  * Create hashes for long values stored in the database. Offers different variants for exact and lowercase search.
@@ -67,29 +70,33 @@ public class JpaHashUtils {
 
     /**
      * This method returns a predicate that returns true when user has all attributes specified in {@code customLongValueSearchAttributes} map
-     * <p />
+     * <p/>
      * The check is performed by exact comparison on attribute name the value
-     * <p />
+     * <p/>
      * This is necessary because database can return users without the searched attribute when a hash collision on long user attribute value occurs
      *
      * @param customLongValueSearchAttributes required attributes
      * @param valueComparator                 comparator for comparing attribute values
      * @return predicate for filtering users based on attributes map
      */
-    public static java.util.function.Predicate<UserEntity> predicateForFilteringUsersByAttributes(Map<String, String> customLongValueSearchAttributes, BiPredicate<String, String> valueComparator) {
-        return userEntity -> customLongValueSearchAttributes.isEmpty() || // are there some long attribute values
-                customLongValueSearchAttributes
-                        .entrySet()
-                        .stream()
-                        .allMatch(longAttrEntry -> //for all long search attributes
-                                userEntity
-                                        .getAttributes()
-                                        .stream()
-                                        .anyMatch(userAttribute -> //check whether the user indeed has the attribute
-                                                Objects.equals(longAttrEntry.getKey().toLowerCase(), userAttribute.getName().toLowerCase())
-                                                        && valueComparator.test(longAttrEntry.getValue(), userAttribute.getValue())
-                                        )
-                        );
+    public static Predicate<UserEntity> predicateForFilteringUsersByAttributes(Map<String, String> customLongValueSearchAttributes,
+                                                                               BiPredicate<String, String> valueComparator) {
+        return predicateForMultiFilteringUsersByAttributes(customLongValueSearchAttributes.entrySet()
+            .stream()
+            .collect(Collectors.toMap(Map.Entry::getKey, value -> List.of(value.getValue()))), valueComparator);
     }
 
+    public static Predicate<UserEntity> predicateForMultiFilteringUsersByAttributes(Map<String, List<String>> customLongValueSearchAttributes,
+                                                                                    BiPredicate<String, String> valueComparator) {
+        return userEntity -> customLongValueSearchAttributes.isEmpty() ||
+            customLongValueSearchAttributes.entrySet().stream().allMatch(longAttrEntry -> {
+                String searchAttributeName = longAttrEntry.getKey().toLowerCase();
+                List<String> searchAttributeValues = longAttrEntry.getValue();
+
+                return userEntity.getAttributes()
+                    .stream()
+                    .anyMatch(userAttribute -> Objects.equals(searchAttributeName, userAttribute.getName().toLowerCase()) &&
+                        searchAttributeValues.stream().anyMatch(searchValue -> valueComparator.test(searchValue, userAttribute.getValue())));
+            });
+    }
 }
