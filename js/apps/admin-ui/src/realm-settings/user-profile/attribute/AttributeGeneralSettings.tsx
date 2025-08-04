@@ -140,9 +140,9 @@ export const AttributeGeneralSettings = () => {
           labelIcon={t("multivaluedHelp")}
         />
         <TextControl
-            name="defaultValue"
-            label={t("defaultValue")}
-            labelIcon={t("defaultValueHelp")}
+          name="defaultValue"
+          label={t("defaultValue")}
+          labelIcon={t("defaultValueHelp")}
         />
         <SelectControl
           name="group"
