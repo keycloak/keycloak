@@ -17,7 +17,7 @@ export const TextAreaComponent = (props: UserProfileFieldProps) => {
         rows={attribute.annotations?.["inputTypeRows"] as number}
         readOnly={attribute.readOnly}
         isRequired={isRequired}
-        value={attribute.defaultValue}
+        defaultValue={attribute.defaultValue}
       />
     </UserProfileGroup>
   );
