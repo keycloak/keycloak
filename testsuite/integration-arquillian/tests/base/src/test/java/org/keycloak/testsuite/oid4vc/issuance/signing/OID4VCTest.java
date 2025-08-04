@@ -177,7 +177,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
     }
 
 
-    public static KeyWrapper getRsaKey() {
+    public static KeyWrapper getRsaKey(KeyUse keyUse, String algorithm, String keyName) {
         try {
             KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
             kpg.initialize(2048);
@@ -185,14 +185,18 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
             KeyWrapper kw = new KeyWrapper();
             kw.setPrivateKey(keyPair.getPrivate());
             kw.setPublicKey(keyPair.getPublic());
-            kw.setUse(KeyUse.SIG);
-            kw.setKid(KeyUtils.createKeyId(keyPair.getPublic()));
+            kw.setUse(keyUse);
+            kw.setKid(keyName != null ? keyName : KeyUtils.createKeyId(keyPair.getPublic()));
             kw.setType("RSA");
-            kw.setAlgorithm("RS256");
+            kw.setAlgorithm(algorithm);
             return kw;
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static KeyWrapper getRsaKey() {
+        return getRsaKey(KeyUse.SIG, "RS256", null);
     }
 
     public static ComponentExportRepresentation getRsaKeyProvider(KeyWrapper keyWrapper) {
@@ -211,11 +215,37 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
                         "active", List.of("true"),
                         "priority", List.of("0"),
                         "enabled", List.of("true"),
-                        "algorithm", List.of("RS256")
+                        "algorithm", List.of(keyWrapper.getAlgorithm()),
+                        "keyUse", List.of(keyWrapper.getUse().name())
                 )
         ));
         return componentExportRepresentation;
     }
+
+    public static ComponentExportRepresentation getRsaEncKeyProvider(String algorithm, String keyName) {
+        KeyWrapper keyWrapper = getRsaKey(KeyUse.ENC, algorithm, keyName);
+        ComponentExportRepresentation componentExportRepresentation = new ComponentExportRepresentation();
+        componentExportRepresentation.setName(keyName);
+        componentExportRepresentation.setId(UUID.randomUUID().toString());
+        componentExportRepresentation.setProviderId("rsa");
+
+        Certificate certificate = CertificateUtils.generateV1SelfSignedCertificate(
+                new KeyPair((PublicKey) keyWrapper.getPublicKey(), (PrivateKey) keyWrapper.getPrivateKey()), "TestKey");
+
+        componentExportRepresentation.setConfig(new MultivaluedHashMap<>(
+                Map.of(
+                        "privateKey", List.of(PemUtils.encodeKey(keyWrapper.getPrivateKey())),
+                        "certificate", List.of(PemUtils.encodeCertificate(certificate)),
+                        "active", List.of("true"),
+                        "priority", List.of("100"),
+                        "enabled", List.of("true"),
+                        "algorithm", List.of(algorithm),
+                        "keyUse", List.of(KeyUse.ENC.name())
+                )
+        ));
+        return componentExportRepresentation;
+    }
+
 
     protected ClientRepresentation getTestClient(String clientId) {
         ClientRepresentation clientRepresentation = new ClientRepresentation();
@@ -314,7 +344,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
         protocolMapperRepresentation.setProtocolMapper("oid4vc-static-claim-mapper");
         protocolMapperRepresentation.setConfig(
                 Map.of("claim.name", "scope-name",
-                       "staticValue", scopeName)
+                        "staticValue", scopeName)
         );
         return protocolMapperRepresentation;
     }
@@ -467,7 +497,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
     public static String getCNonce() {
         UriBuilder builder = UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT);
         URI oid4vcUri = RealmsResource.protocolUrl(builder).build(AbstractTestRealmKeycloakTest.TEST_REALM_NAME,
-                                                                  OID4VCLoginProtocolFactory.PROTOCOL_ID);
+                OID4VCLoginProtocolFactory.PROTOCOL_ID);
         String nonceUrl = String.format("%s/%s", oid4vcUri.toString(), OID4VCIssuerEndpoint.NONCE_PATH);
 
         String nonceResponseString;
@@ -476,10 +506,10 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
             WebTarget nonceTarget = client.target(nonceUrl);
             // the nonce endpoint must be unprotected, and therefore it must be accessible without any authentication
             Invocation.Builder nonceInvocationBuilder = nonceTarget.request()
-                                                                   // just making sure that no authentication is added
-                                                                   // by interceptors or similar
-                                                                   .header(HttpHeaders.AUTHORIZATION, null)
-                                                                   .header(HttpHeaders.COOKIE, null);
+                    // just making sure that no authentication is added
+                    // by interceptors or similar
+                    .header(HttpHeaders.AUTHORIZATION, null)
+                    .header(HttpHeaders.COOKIE, null);
 
             try (Response response = nonceInvocationBuilder.post(null)) {
                 Assert.assertEquals(HttpStatus.SC_OK, response.getStatus());
