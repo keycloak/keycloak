@@ -35,6 +35,7 @@ import com.webauthn4j.verifier.OriginVerifierImpl;
 import com.webauthn4j.verifier.exception.BadOriginException;
 import jakarta.annotation.Nonnull;
 import org.jboss.logging.Logger;
+import org.keycloak.authentication.authenticators.browser.WebAuthnMetadataService;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.Time;
@@ -44,6 +45,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.models.credential.dto.WebAuthnCredentialData;
+import org.keycloak.models.credential.dto.WebAuthnCredentialPresentationData;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -58,17 +60,16 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
 
     private static final Logger logger = Logger.getLogger(WebAuthnCredentialProvider.class);
 
-    private KeycloakSession session;
+    private final KeycloakSession session;
+    private final WebAuthnMetadataService metadataService;
+    private final CredentialPublicKeyConverter credentialPublicKeyConverter;
+    private final AttestationStatementConverter attestationStatementConverter;
 
-    private CredentialPublicKeyConverter credentialPublicKeyConverter;
-    private AttestationStatementConverter attestationStatementConverter;
-
-    public WebAuthnCredentialProvider(KeycloakSession session, ObjectConverter objectConverter) {
+    public WebAuthnCredentialProvider(KeycloakSession session, WebAuthnMetadataService metadataService, ObjectConverter objectConverter) {
         this.session = session;
-        if (credentialPublicKeyConverter == null)
-            credentialPublicKeyConverter = new CredentialPublicKeyConverter(objectConverter);
-        if (attestationStatementConverter == null)
-            attestationStatementConverter = new AttestationStatementConverter(objectConverter);
+        this.metadataService = metadataService;
+        this.credentialPublicKeyConverter = new CredentialPublicKeyConverter(objectConverter);
+        this.attestationStatementConverter = new AttestationStatementConverter(objectConverter);
     }
 
     @Override
@@ -91,6 +92,20 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
         return WebAuthnCredentialModel.createFromCredentialModel(model);
     }
 
+    @Override
+    public WebAuthnCredentialModel getCredentialForPresentationFromModel(CredentialModel model) {
+        WebAuthnCredentialModel origCredential = getCredentialFromModel(model);
+        WebAuthnCredentialData data = origCredential.getWebAuthnCredentialData();
+
+        String authenticatorProvider = metadataService.getAuthenticatorProvider(data.getAaguid());
+        if (authenticatorProvider == null)
+            return origCredential;
+
+        WebAuthnCredentialPresentationData presentationData = new WebAuthnCredentialPresentationData(
+                data.getAaguid(), data.getCredentialId(), data.getCounter(), data.getAttestationStatement(), data.getCredentialPublicKey(),
+                data.getAttestationStatementFormat(), data.getTransports(), authenticatorProvider);
+        return WebAuthnCredentialModel.create(origCredential.getType(), origCredential.getUserLabel(), presentationData, origCredential.getWebAuthnSecretData());
+    }
 
     /**
      * Convert WebAuthn credential input to the model, which can be saved in the persistent storage (DB)
