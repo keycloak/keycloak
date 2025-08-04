@@ -37,7 +37,7 @@ export class TideUsersExt extends Resource<{ realm?: string }> {
     string
     >({
         method: "POST",
-        path: "/generate-default-user-context",
+        path: "/tide-admin/generate-default-user-context",
         payloadKey: "clients",
     });
 
@@ -46,7 +46,7 @@ export class TideUsersExt extends Resource<{ realm?: string }> {
     string
   >({
     method: "GET",
-    path: "/users/{id}/draft/status",
+    path: "/tide-admin/users/{id}/draft/status",
     urlParamKeys: ["id"],
   });
 
@@ -55,7 +55,7 @@ export class TideUsersExt extends Resource<{ realm?: string }> {
     RoleDraftStatus
   >({
     method: "GET",
-    path: "/users/{userId}/roles/{roleId}/draft/status",
+    path: "/tide-admin/users/{userId}/roles/{roleId}/draft/status",
     urlParamKeys: ["userId", "roleId"],
   });
 
@@ -64,31 +64,37 @@ export class TideUsersExt extends Resource<{ realm?: string }> {
     RoleDraftStatus
   >({
     method: "GET",
-    path: "/composite/{parentId}/child/{childId}/draft/status",
+    path: "/tide-admin/composite/{parentId}/child/{childId}/draft/status",
     urlParamKeys: ["parentId", "childId"],
   });
 
   public getRequestedChangesForUsers = this.makeRequest<void, RoleChangeRequest[]>({
     method: "GET",
-    path: "/change-set/users/requests",
+    path: "/tide-admin/change-set/users/requests",
   });
 
   public getRequestedChangesForRoles = this.makeRequest<void, CompositeRoleChangeRequest[] | RoleChangeRequest[]>({
     method: "GET",
-    path: "/change-set/roles/requests",
+    path: "/tide-admin/change-set/roles/requests",
   });
 
   public getRequestedChangesForClients = this.makeRequest<void, RequestedChanges[]>({
     method: "GET",
-    path: "/change-set/clients/requests",
+    path: "/tide-admin/change-set/clients/requests",
   });
+
+  public getRequestedChangesForRagnarokSettings = this.makeRequest<void, RequestedChanges[]>({
+    method: "GET",
+    path: "/ragnarok/change-set/offboarding/requests",
+  });
+
 
   public approveDraftChangeSet = this.makeRequest<
   ChangeSetRequestList,
   string[]
 >({
   method: "POST",
-  path: "/change-set/sign/batch",
+  path: "/tide-admin/change-set/sign/batch",
 });
 
 
@@ -97,7 +103,7 @@ export class TideUsersExt extends Resource<{ realm?: string }> {
     void
   >({
     method: "POST",
-    path: "/change-set/cancel/batch",
+    path: "/tide-admin/change-set/cancel/batch",
   });
 
   public commitDraftChangeSet = this.makeRequest<
@@ -105,12 +111,12 @@ export class TideUsersExt extends Resource<{ realm?: string }> {
     void
   >({
     method: "POST",
-    path: "/change-set/commit/batch",
+    path: "/tide-admin/change-set/commit/batch",
   });
 
   constructor(client: KeycloakAdminClient) {
     super(client, {
-      path: "/admin/realms/{realm}/tide-admin",
+      path: "/admin/realms/{realm}",
       getUrlParams: () => ({
         realm: client.realmName,
       }),
