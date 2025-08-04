@@ -17,14 +17,17 @@
 
 package org.keycloak.tests.admin;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPatch;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.util.EntityUtils;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.api.client.ClientApi;
@@ -32,31 +35,38 @@ import org.keycloak.representations.admin.v2.ClientRepresentation;
 import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.nio.charset.StandardCharsets;
 
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @KeycloakIntegrationTest()
 public class AdminV2Test {
 
     private static final String HOSTNAME_LOCAL_ADMIN = "http://localhost:8080/admin/api/v2";
+    private static ObjectMapper mapper;
 
     @InjectHttpClient
     private HttpClient client;
 
+    @BeforeAll
+    public static void setupMapper() {
+        mapper = new ObjectMapper();
+    }
+
     @Test
-    public void testGetClient() throws Exception {
+    public void getClient() throws Exception {
         HttpGet request = new HttpGet(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients/account");
         HttpResponse response = client.execute(request);
         assertEquals(200, response.getStatusLine().getStatusCode());
-        ObjectMapper mapper = new ObjectMapper();
         ClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
         assertEquals("account", client.getClientId());
     }
 
     @Test
-    public void testJsonPatchClient() throws Exception {
+    public void jsonPatchClient() throws Exception {
         HttpPatch request = new HttpPatch(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients/account");
         request.setEntity(new StringEntity("not json"));
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_PATCH_JSON);
@@ -72,21 +82,18 @@ public class AdminV2Test {
         response = client.execute(request);
         assertEquals(200, response.getStatusLine().getStatusCode());
 
-        ObjectMapper mapper = new ObjectMapper();
         ClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
         assertEquals("I'm a description", client.getDescription());
     }
 
     @Disabled
     @Test
-    public void testJsonMergePatchClient() throws Exception {
+    public void jsonMergePatchClient() throws Exception {
         HttpPatch request = new HttpPatch(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients/account");
         request.setHeader(HttpHeaders.CONTENT_TYPE, ClientApi.CONENT_TYPE_MERGE_PATCH);
 
         ClientRepresentation patch = new ClientRepresentation();
         patch.setDescription("I'm also a description");
-
-        ObjectMapper mapper = new ObjectMapper();
 
         request.setEntity(new StringEntity(mapper.writeValueAsString(patch)));
 
@@ -95,6 +102,24 @@ public class AdminV2Test {
 
         ClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
         assertEquals("I'm also a description", client.getDescription());
+    }
+
+    @Test
+    public void clientRepresentationValidation() throws Exception {
+        HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients");
+        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        request.setEntity(new StringEntity("""
+                {
+                    "displayName": "something",
+                    "appUrl": "notUrl"
+                }
+                """));
+
+        var response = client.execute(request);
+        assertThat(response, notNullValue());
+        System.err.println(EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8));
+        assertThat(response.getStatusLine().getStatusCode(), is(400));
     }
 
 }

@@ -114,3 +114,4 @@ org.keycloak.models.workflow.WorkflowStateSpi
 org.keycloak.services.KeycloakServicesSpi
 org.keycloak.services.client.ClientServiceSpi
 org.keycloak.models.mapper.ModelMapperSpi
+org.keycloak.validation.jakarta.JakartaValidatorSpi
