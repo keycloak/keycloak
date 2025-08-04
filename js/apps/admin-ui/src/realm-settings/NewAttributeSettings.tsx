@@ -231,7 +231,9 @@ export default function NewAttributeSettings() {
             annotations,
             validations,
           },
-          formFields.defaultValue ? { defaultValue: formFields.defaultValue } : { defaultValue: null },
+          formFields.defaultValue
+            ? { defaultValue: formFields.defaultValue }
+            : { defaultValue: null },
           formFields.isRequired ? { required: formFields.required } : undefined,
           formFields.group ? { group: formFields.group } : { group: null },
         );
@@ -250,7 +252,9 @@ export default function NewAttributeSettings() {
             annotations,
             validations,
           },
-          formFields.defaultValue ? { defaultValue: formFields.defaultValue } : { defaultValue: null },
+          formFields.defaultValue
+            ? { defaultValue: formFields.defaultValue }
+            : { defaultValue: null },
           formFields.isRequired ? { required: formFields.required } : undefined,
           formFields.group ? { group: formFields.group } : undefined,
         ),
