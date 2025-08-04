@@ -18,6 +18,7 @@ package org.keycloak.operator.controllers;
 
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.api.model.networking.v1.IngressBuilder;
+import io.fabric8.kubernetes.api.model.networking.v1.IngressTLSBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -146,8 +147,9 @@ public class KeycloakIngressDependentResource extends CRUDKubernetesDependentRes
                 .build();
 
         final var hostnameSpec = keycloak.getSpec().getHostnameSpec();
+        String hostname = null;
         if (hostnameSpec != null && hostnameSpec.getHostname() != null) {
-            String hostname = hostnameSpec.getHostname();
+            hostname = hostnameSpec.getHostname();
 
             try {
                 hostname = new URL(hostname).getHost();
@@ -158,6 +160,13 @@ public class KeycloakIngressDependentResource extends CRUDKubernetesDependentRes
             }
 
             ingress.getSpec().getRules().get(0).setHost(hostname);
+        }
+
+        if (hostname != null) {
+            String[] hosts = new String[] {hostname};
+            optionalSpec.map(IngressSpec::getTlsSecret).ifPresent(tlsSecret ->
+                ingress.getSpec().getTls().add(new IngressTLSBuilder().addToHosts(hosts).withSecretName(tlsSecret).build())
+            );
         }
 
         return ingress;
