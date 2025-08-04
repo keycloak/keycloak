@@ -164,19 +164,6 @@ apply the upper bound to. For example, to apply an upper-bound of `1000` to the 
 
 Setting a maximum cache size for `sessions`, `clientSessions`, `offlineSessions` and `offlineClientSessions` is not supported when volatile sessions are enabled.
 
-=== Configuring caches for availability
-
-Distributed caches replicate cache entries on a subset of nodes in a cluster and assigns entries to fixed owner nodes.
-
-Each distributed cache, that is a primary source of truth of the data (`authenticationSessions`, `loginFailures` and `actionTokens`) has two owners per default, which means that two nodes have a copy of the specific cache entries.
-Non-owner nodes query the owners of a specific cache to obtain data.
-When one of the owners becomes unavailable, the data is restored from the remaining owner and rebalanced across the remaining nodes.
-When both owner nodes are offline, all data is lost.
-
-The default number of two owners is the minimum number is necessary to survive one node (owner) failure or a rolling restart in a cluster setup with at least two nodes.
-A higher number increases the availability of the data, but at the expense of slower writes as more nodes need to be updated.
-Therefore, changing the number of owners for the caches `authenticationSessions`, `loginFailures` and `actionTokens` is not recommended.
-
 === Specify your own cache configuration file
 
 To specify your own cache configuration file, enter this command:

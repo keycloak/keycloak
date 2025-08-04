@@ -213,6 +213,7 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
         CacheConfigurator.checkCachesExist(holder, Arrays.stream(ALL_CACHES_NAME));
         CacheConfigurator.configureCacheMaxCount(config, holder, Arrays.stream(CLUSTERED_MAX_COUNT_CACHES));
         CacheConfigurator.validateWorkCacheConfiguration(holder);
+        CacheConfigurator.ensureMinimumOwners(holder);
         KeycloakModelUtils.runJobInTransaction(factory, session -> JGroupsConfigurator.configureJGroups(config, holder, session));
         configureMetrics(config, holder);
     }

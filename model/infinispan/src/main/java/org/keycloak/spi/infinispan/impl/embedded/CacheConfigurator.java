@@ -34,15 +34,20 @@ import org.infinispan.transaction.TransactionMode;
 import org.infinispan.transaction.lookup.EmbeddedTransactionManagerLookup;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ACTION_TOKEN_CACHE;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ALL_CACHES_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_DEFAULT_MAX;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CRL_CACHE_DEFAULT_MAX;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CRL_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOCAL_CACHE_NAMES;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOCAL_MAX_COUNT_CACHES;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.REALM_CACHE_NAME;
@@ -102,7 +107,7 @@ public final class CacheConfigurator {
      */
     public static void applyDefaultConfiguration(ConfigurationBuilderHolder holder) {
         var configs = holder.getNamedConfigurationBuilders();
-        for (var name : InfinispanConnectionProvider.ALL_CACHES_NAME) {
+        for (var name : ALL_CACHES_NAME) {
             configs.computeIfAbsent(name, cacheName -> DEFAULT_CONFIGS.getOrDefault(cacheName, TO_NULL).get());
         }
     }
@@ -157,7 +162,7 @@ public final class CacheConfigurator {
      */
     public static void removeClusteredCaches(ConfigurationBuilderHolder holder) {
         logger.debug("Removing clustered caches");
-        Arrays.stream(InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES).forEach(holder.getNamedConfigurationBuilders()::remove);
+        Arrays.stream(CLUSTERED_CACHE_NAMES).forEach(holder.getNamedConfigurationBuilders()::remove);
     }
 
     /**
@@ -245,8 +250,36 @@ public final class CacheConfigurator {
             if (builder.clustering().hash().attributes().attribute(HashConfiguration.NUM_OWNERS).get() != 1 &&
                     builder.persistence().stores().stream().noneMatch(p -> p.attributes().attribute(AbstractStoreConfiguration.SHARED).get())
             ) {
-                logger.infof("Setting a memory limit implies to have exactly one owne. Setting num_owners=1 to avoid data loss.", name);
+                logger.infof("Setting a memory limit implies to have exactly one owner. Setting num_owners=1 to avoid data loss.", name);
                 builder.clustering().hash().numOwners(1);
+            }
+        }
+    }
+
+    /**
+     * Configures the caches "actionToken", "authenticationSessions", and "loginFailures" with the minimum number of
+     * owners to prevent data loss in a single instance crash.
+     * <p>
+     * The data in those caches only exist in memory, therefore they must have more than one owner configured.
+     *
+     * @param holder The {@link ConfigurationBuilderHolder} where the caches are configured.
+     * @throws IllegalStateException if an Infinispan cache is not defined in the {@code holder}. This could indicate a
+     *                               missing or incorrect configuration.
+     */
+    public static void ensureMinimumOwners(ConfigurationBuilderHolder holder) {
+        for (var name : Arrays.asList(
+                LOGIN_FAILURE_CACHE_NAME,
+                AUTHENTICATION_SESSIONS_CACHE_NAME,
+                ACTION_TOKEN_CACHE)) {
+            var builder = holder.getNamedConfigurationBuilders().get(name);
+            if (builder == null) {
+                throw cacheNotFound(name);
+            }
+            var hashConfig = builder.clustering().hash();
+            var owners = hashConfig.attributes().attribute(HashConfiguration.NUM_OWNERS).get();
+            if (owners < 2) {
+                logger.infof("Setting num_owners=2 (configured value is %s) for cache '%s' to prevent data loss.", owners, name);
+                hashConfig.numOwners(2);
             }
         }
     }
@@ -284,7 +317,7 @@ public final class CacheConfigurator {
 
     public static ConfigurationBuilder getCrlCacheConfig() {
         var builder = createCacheConfigurationBuilder();
-        builder.memory().whenFull(EvictionStrategy.REMOVE).maxCount(InfinispanConnectionProvider.CRL_CACHE_DEFAULT_MAX);
+        builder.memory().whenFull(EvictionStrategy.REMOVE).maxCount(CRL_CACHE_DEFAULT_MAX);
         return builder;
     }
 
