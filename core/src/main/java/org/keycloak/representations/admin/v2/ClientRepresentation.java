@@ -3,8 +3,11 @@ package org.keycloak.representations.admin.v2;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import org.hibernate.validator.constraints.URL;
+import org.keycloak.representations.admin.v2.validation.CreateClient;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -13,6 +16,7 @@ public class ClientRepresentation extends BaseRepresentation {
 
     public static final String OIDC = "openid-connect";
 
+    @NotBlank(groups = CreateClient.class)
     @JsonPropertyDescription("ID uniquely identifying this client")
     private String clientId;
 
@@ -29,28 +33,31 @@ public class ClientRepresentation extends BaseRepresentation {
     @JsonPropertyDescription("Whether this client is enabled")
     private Boolean enabled;
 
+    @URL
     @JsonPropertyDescription("URL to the application's homepage that is represented by this client")
     private String appUrl;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @JsonPropertyDescription("URLs that the browser can redirect to after login")
-    private Set<String> appRedirectUrls = new LinkedHashSet<String>();
+    private Set<@NotBlank @URL(message = "Each redirect URL must be valid") String> appRedirectUrls = new LinkedHashSet<String>();
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @JsonPropertyDescription("Login flows that are enabled for this client")
-    private Set<String> loginFlows = new LinkedHashSet<String>();
+    private Set<@NotBlank String> loginFlows = new LinkedHashSet<String>();
 
+    @Valid
     @JsonPropertyDescription("Authentication configuration for this client")
     private Auth auth;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @JsonPropertyDescription("Web origins that are allowed to make requests to this client")
-    private Set<String> webOrigins = new LinkedHashSet<String>();
+    private Set<@NotBlank String> webOrigins = new LinkedHashSet<String>();
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @JsonPropertyDescription("Roles associated with this client")
-    private Set<String> roles = new LinkedHashSet<String>();
+    private Set<@NotBlank String> roles = new LinkedHashSet<String>();
 
+    @Valid
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @JsonPropertyDescription("Service account configuration for this client")
     private ServiceAccount serviceAccount;
@@ -160,6 +167,7 @@ public class ClientRepresentation extends BaseRepresentation {
     @JsonInclude(JsonInclude.Include.NON_ABSENT)
     public static class Auth {
 
+        @NotNull
         @JsonPropertyDescription("Whether authentication is enabled for this client")
         private Boolean enabled;
 
@@ -208,6 +216,7 @@ public class ClientRepresentation extends BaseRepresentation {
     @JsonInclude(JsonInclude.Include.NON_ABSENT)
     public static class ServiceAccount {
 
+        @NotNull
         @JsonPropertyDescription("Whether the service account is enabled")
         private Boolean enabled;
 

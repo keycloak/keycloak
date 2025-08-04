@@ -140,6 +140,7 @@ import org.keycloak.transaction.JBossJtaTransactionManagerLookup;
 import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
+import org.keycloak.validation.jakarta.HibernateValidatorProviderFactory;
 import org.keycloak.vault.FilesKeystoreVaultProviderFactory;
 import org.keycloak.vault.FilesPlainTextVaultProviderFactory;
 
@@ -197,6 +198,7 @@ class KeycloakProcessor {
             JBossJtaTransactionManagerLookup.class,
             DefaultJpaConnectionProviderFactory.class,
             DefaultLiquibaseConnectionProvider.class,
+            //HibernateValidatorProviderFactory.class,
             FolderThemeProviderFactory.class,
             LiquibaseJpaUpdaterProviderFactory.class,
             FilesKeystoreVaultProviderFactory.class,
