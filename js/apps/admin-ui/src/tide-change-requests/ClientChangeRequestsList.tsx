@@ -25,7 +25,8 @@ import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { useRealm } from '../context/realm-context/RealmContext';
 import { findTideComponent } from '../identity-providers/utils/SignSettingsUtil';
-import { importHeimdall } from './HeimdallHelper';
+import { ApprovalEnclave} from "heimdall-tide";
+import { groupRequestsByDraftId, type BundledRequest } from './utils/bundleUtils';
 
 type ChangeRequestProps = {
   updateCounter: (count: number) => void;
@@ -41,12 +42,12 @@ export const ClientChangeRequestsList = ({ updateCounter }: ChangeRequestProps) 
     setSelectedRow([])
     setKey((prev: number) => prev + 1);
   };
-  const [selectedRow, setSelectedRow] = useState<RequestedChanges[]>([]);
+  const [selectedRow, setSelectedRow] = useState<BundledRequest[]>([]);
   const [commitRecord, setCommitRecord] = useState<boolean>(false);
   const [approveRecord, setApproveRecord] = useState<boolean>(false);
   const [showModal, setShowModal] = useState(false);
   const { addAlert, addError } = useAlerts();
-  const [isTideEnabled, setIsTideEnabled] = useState<boolean>(true)
+  const [isTideEnabled, setIsTideEnabled] = useState<boolean>(true);
 
 
   useEffect(() => {
@@ -76,31 +77,27 @@ export const ClientChangeRequestsList = ({ updateCounter }: ChangeRequestProps) 
       return;
     }
 
-    const { status, deleteStatus } = selectedRow[0];
+    const bundle = selectedRow[0];
+    const { status } = bundle;
 
     // Disable both buttons if status is DENIED
-    if (status === "DENIED" || deleteStatus === "DENIED") {
+    if (status === "DENIED") {
       setApproveRecord(false);
       setCommitRecord(false);
       return;
     }
 
-    // Enable Approve button if the record is PENDING or DRAFT
-    // Or if the record is ACTIVE and deleteStatus is DRAFT or PENDING
-    if (
-      status === "PENDING" ||
-      status === "DRAFT" ||
-      (status === "ACTIVE" && (deleteStatus === "DRAFT" || deleteStatus === "PENDING"))
-    ) {
+    // Enable Approve button if the bundle is PENDING or DRAFT or MIXED
+    if (status === "PENDING" || status === "DRAFT" || status === "MIXED") {
       setApproveRecord(true);
-      setCommitRecord(false); // Ensure commit is off when approve is on
+      setCommitRecord(false);
       return;
     }
 
-    // Enable Commit button if status or deleteStatus is APPROVED
-    if (status === "APPROVED" || deleteStatus === "APPROVED") {
+    // Enable Commit button if status is APPROVED
+    if (status === "APPROVED") {
       setCommitRecord(true);
-      setApproveRecord(false); // Ensure approve is off when commit is on
+      setApproveRecord(false);
       return;
     }
 
@@ -133,22 +130,20 @@ export const ClientChangeRequestsList = ({ updateCounter }: ChangeRequestProps) 
             {t("Cancel Draft")}
           </Button>
         </ToolbarItem>
-        {isTideEnabled && (
-          <ToolbarItem>
-            <Button variant="secondary" onClick={() => setShowModal(true)}>
-              {t("Generate Default")}
-            </Button>
-          </ToolbarItem>
-        )}
+        <ToolbarItem>
+          <Button variant="secondary" onClick={() => setShowModal(true)}>
+            {t("Generate Default User Context")}
+          </Button>
+        </ToolbarItem>
         <CancelConfirm />
       </>
     );
   };
 
-  const handleApproveButtonClick = async (selectedRow: RequestedChanges[]) => {
+  const handleApproveButtonClick = async (selectedBundles: BundledRequest[]) => {
     try {
-
-      const changeRequests = selectedRow.map(x => {
+      const allRequests = selectedBundles.flatMap(bundle => bundle.requests);
+      const changeRequests = allRequests.map(x => {
         return {
           changeSetId: x.draftRecordId,
           changeSetType: x.changeSetType,
@@ -165,21 +160,21 @@ export const ClientChangeRequestsList = ({ updateCounter }: ChangeRequestProps) 
         if (response.length === 1) {
           const respObj = JSON.parse(response[0])
           if (respObj.requiresApprovalPopup === "true") {
-            const module = await importHeimdall();
-            if(module === null){
-              addAlert("Heimdall module no provided", AlertVariant.danger);
-              return
-            }
-            const heimdall = new module.Heimdall(respObj.uri, [keycloak.tokenParsed!['vuid']])
-            await heimdall.openEnclave();
+            const orkURL = new URL(respObj.uri);
+            const heimdall = new ApprovalEnclave({
+              homeOrkOrigin: orkURL.origin,
+              voucherURL: "",
+              signed_client_origin: "",
+              vendorId: ""
+            }).init([keycloak.tokenParsed!['vuid']], respObj.uri);
             const authApproval = await heimdall.getAuthorizerApproval(respObj.changeSetRequests, "UserContext:1", respObj.expiry, "base64url");
 
             if (authApproval.draft === respObj.changeSetRequests) {
               if (authApproval.accepted === false) {
                 const formData = new FormData();
-                formData.append("changeSetId", selectedRow[0].draftRecordId)
-                formData.append("actionType", selectedRow[0].actionType);
-                formData.append("changeSetType", selectedRow[0].changeSetType);
+                formData.append("changeSetId", allRequests[0].draftRecordId)
+                formData.append("actionType", allRequests[0].actionType);
+                formData.append("changeSetType", allRequests[0].changeSetType);
                 await adminClient.tideAdmin.addRejection(formData)
               }
 
@@ -187,15 +182,15 @@ export const ClientChangeRequestsList = ({ updateCounter }: ChangeRequestProps) 
 
                 const authzAuthn = await heimdall.getAuthorizerAuthentication();
                 const formData = new FormData();
-                formData.append("changeSetId", selectedRow[0].draftRecordId)
-                formData.append("actionType", selectedRow[0].actionType);
-                formData.append("changeSetType", selectedRow[0].changeSetType);
+                formData.append("changeSetId", allRequests[0].draftRecordId)
+                formData.append("actionType", allRequests[0].actionType);
+                formData.append("changeSetType", allRequests[0].changeSetType);
                 formData.append("authorizerApproval", authApproval.data);
                 formData.append("authorizerAuthentication", authzAuthn);
                 await adminClient.tideAdmin.addAuthorization(formData)
               }
             }
-            heimdall.closeEnclave();
+            heimdall.close();
           }
           refresh();
         }
@@ -205,9 +200,10 @@ export const ClientChangeRequestsList = ({ updateCounter }: ChangeRequestProps) 
     }
   };
 
-  const handleCommitButtonClick = async (selectedRow: RequestedChanges[]) => {
+  const handleCommitButtonClick = async (selectedBundles: BundledRequest[]) => {
     try {
-      const changeRequests = selectedRow.map(x => {
+      const allRequests = selectedBundles.flatMap(bundle => bundle.requests);
+      const changeRequests = allRequests.map(x => {
         return {
           changeSetId: x.draftRecordId,
           changeSetType: x.changeSetType,
@@ -223,6 +219,7 @@ export const ClientChangeRequestsList = ({ updateCounter }: ChangeRequestProps) 
     }
   };
 
+
   const [toggleCancelDialog, CancelConfirm] = useConfirmDialog({
     titleKey: "Cancel Change Request",
     children: (
@@ -235,7 +232,8 @@ export const ClientChangeRequestsList = ({ updateCounter }: ChangeRequestProps) 
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
-        const changeSetArray = selectedRow.map((row: { draftRecordId: any; changeSetType: any; actionType: any; }) => {
+        const allRequests = selectedRow.flatMap(bundle => bundle.requests);
+        const changeSetArray = allRequests.map((row) => {
           return {
             changeSetId: row.draftRecordId,
             changeSetType: row.changeSetType,
@@ -254,53 +252,70 @@ export const ClientChangeRequestsList = ({ updateCounter }: ChangeRequestProps) 
 
   const columns = [
     {
-      name: t('Action'),
-      displayKey: 'Action',
-      cellRenderer: (row: RequestedChanges) => row.action
+      name: 'Summary',
+      displayKey: 'Summary',
+      cellRenderer: (bundle: BundledRequest) => {
+        if (bundle.requests.length === 1) {
+          const request = bundle.requests[0];
+          return (
+            <div>
+              <div className="pf-v5-u-font-weight-bold">
+                {request.action} {request.requestType}
+              </div>
+              <div className="pf-v5-u-color-200">
+                {request.role ? `Role: ${request.role}` : ''} {request.clientId ? `• Client: ${request.clientId}` : ''}
+              </div>
+            </div>
+          );
+        } else {
+          const actions = [...new Set(bundle.requests.map((r: any) => r.action))];
+          const types = [...new Set(bundle.requests.map((r: any) => r.requestType))];
+          return (
+            <div>
+              <div className="pf-v5-u-font-weight-bold">
+                {bundle.requests.length} changes: {actions.join(', ')}
+              </div>
+              <div className="pf-v5-u-color-200">
+                {types.join(', ')}
+              </div>
+            </div>
+          );
+        }
+      }
     },
     {
-      name: t('Client ID'),
-      displayKey: 'Client ID',
-      cellRenderer: (row: RequestedChanges) => row.clientId
+      name: 'Requested By',
+      displayKey: 'Requested By',
+      cellRenderer: (bundle: BundledRequest) => bundle.requestedBy
     },
     {
-      name: t('Type'),
-      displayKey: 'Type',
-      cellRenderer: (row: RequestedChanges) => row.requestType
-    },
-    {
-      name: t('Status'),
+      name: 'Status',
       displayKey: 'Status',
-      cellRenderer: (row: RequestedChanges) => statusLabel(row)
+      cellRenderer: (bundle: BundledRequest) => bundleStatusLabel(bundle)
     },
   ];
 
-  const statusLabel = (row: any) => {
-    return (
-      <>
-        {(row.status === "DRAFT" || row.deleteStatus === "DRAFT") && (
-          <Label className="keycloak-admin--role-mapping__client-name">
-            {"DRAFT"}
-          </Label>
-        )}
-        {(row.status === "PENDING" || row.deleteStatus === "PENDING") && (
-          <Label color="orange" className="keycloak-admin--role-mapping__client-name">
-            {"PENDING"}
-          </Label>
-        )}
-        {(row.status === "APPROVED" || row.deleteStatus === "APPROVED") && (
-          <Label color="blue" className="keycloak-admin--role-mapping__client-name">
-            {"APPROVED"}
-          </Label>
-        )}
-        {(row.status === "DENIED" || row.deleteStatus === "DENIED") && (
-          <Label color="red" className="keycloak-admin--role-mapping__client-name">
-            {"DENIED"}
-          </Label>
-        )}
-      </>
-    )
-  }
+  const bundleStatusLabel = (bundle: BundledRequest) => {
+    const statuses = [...new Set(bundle.requests.map((r: any) => r.status === "ACTIVE" ? r.deleteStatus || r.status : r.status))];
+    
+    if (statuses.length === 1) {
+      const status = statuses[0];
+      return (
+        <Label 
+          color={status === 'PENDING' ? 'orange' : status === 'APPROVED' ? 'blue' : status === 'DENIED' ? 'red' : 'grey'}
+          className="keycloak-admin--role-mapping__client-name"
+        >
+          {status}
+        </Label>
+      );
+    } else {
+      return (
+        <Label color="purple" className="keycloak-admin--role-mapping__client-name">
+          MIXED
+        </Label>
+      );
+    }
+  };
 
 
   const parseAndFormatJson = (str: string) => {
@@ -320,42 +335,63 @@ export const ClientChangeRequestsList = ({ updateCounter }: ChangeRequestProps) 
     accessDraft: 'Access Draft',
   };
 
-  const DetailCell = (row: RequestedChanges) => (
+  const DetailCell = (bundle: BundledRequest) => (
     <Table
-      aria-label="Simple table"
+      aria-label="Bundle details"
       variant={'compact'}
       borders={false}
       isStriped
     >
       <Thead>
         <Tr>
-          <Th width={20} modifier="wrap">{columnNames.username}</Th>
-          <Th width={20} modifier="wrap">{columnNames.clientId}</Th>
-          <Th width={40}>{columnNames.accessDraft}</Th>
+          <Th width={15}>Action</Th>
+          <Th width={15}>Role</Th>
+          <Th width={15}>Client ID</Th>
+          <Th width={15}>Type</Th>
+          <Th width={10}>Status</Th>
+          <Th width={15}>Affected User</Th>
+          <Th width={15}>Affected Client</Th>
+          <Th width={30}>Access Draft</Th>
         </Tr>
       </Thead>
       <Tbody>
-        {row.userRecord.map((value: RequestChangesUserRecord) => (
-          <Tr key={value.username}>
-            <Td dataLabel={columnNames.username}>{value.username}</Td>
-            <Td dataLabel={columnNames.clientId}>{value.clientId}</Td>
-            <Td dataLabel={columnNames.accessDraft}>
-              <ClipboardCopy isCode isReadOnly hoverTip="Copy" clickTip="Copied" variant={ClipboardCopyVariant.expansion}>
-                {parseAndFormatJson(value.accessDraft)}
-              </ClipboardCopy>
-            </Td>
-          </Tr>
-        ))}
+        {bundle.requests.map((request: any, index: number) => 
+          request.userRecord.map((userRecord: any, userIndex: number) => (
+            <Tr key={`${index}-${userIndex}`}>
+              <Td dataLabel="Action">{request.action}</Td>
+              <Td dataLabel="Role">{request.role}</Td>
+              <Td dataLabel="Client ID">{request.clientId}</Td>
+              <Td dataLabel="Type">{request.requestType}</Td>
+              <Td dataLabel="Status">
+                <Label 
+                  color={request.status === 'APPROVED' ? 'blue' : request.status === 'PENDING' ? 'orange' : request.status === 'DENIED' ? 'red' : 'grey'}
+                >
+                  {request.status === "ACTIVE" ? request.deleteStatus || request.status : request.status}
+                </Label>
+              </Td>
+              <Td dataLabel="Affected User">{userRecord.username}</Td>
+              <Td dataLabel="Affected Client">{userRecord.clientId}</Td>
+              <Td dataLabel={columnNames.accessDraft}>
+                <ClipboardCopy isCode isReadOnly hoverTip="Copy" clickTip="Copied" variant={ClipboardCopyVariant.expansion}>
+                  {parseAndFormatJson(userRecord.accessDraft)}
+                </ClipboardCopy>
+              </Td>
+            </Tr>
+          ))
+        )}
       </Tbody>
     </Table>
   );
 
   const loader = async () => {
     try {
-      const clientRequest = await adminClient.tideUsersExt.getRequestedChangesForClients();
-      updateCounter(clientRequest.length)
-      return clientRequest;
+      const requests = await adminClient.tideUsersExt.getRequestedChangesForClients();
+      const bundledRequests = groupRequestsByDraftId(requests);
+      updateCounter(bundledRequests.length);
+      return bundledRequests;
     } catch (error) {
+      console.error("Failed to load client requests:", error);
+      updateCounter(0);
       return [];
     }
   };
@@ -368,39 +404,32 @@ export const ClientChangeRequestsList = ({ updateCounter }: ChangeRequestProps) 
           onClose={() => setShowModal(false)}
         />
       )}
-      <KeycloakDataTable
-        isSearching={false}
-        toolbarItem={<ToolbarItemsComponent />}
-        key={key}
-        isRadio={isTideEnabled}
-        loader={loader}
-        ariaLabelKey="clientChangeRequestsList"
-        detailColumns={[
-          {
-            name: "details",
-            enabled: (row) => row.userRecord.length > 0,
-            cellRenderer: DetailCell,
-          },
-        ]}
-        columns={columns}
-        isPaginated
-        onSelect={(values: RequestedChanges[]) => setSelectedRow([...values])}
-        emptyState={
-          <>
+      <div className="keycloak__events_table">
+        <KeycloakDataTable
+          key={key}
+          toolbarItem={<ToolbarItemsComponent />}
+          isRadio={isTideEnabled}
+          loader={loader}
+          ariaLabelKey="Client Change Requests"
+          detailColumns={[
+            {
+              name: "details",
+              enabled: (bundle) => bundle.requests.length > 0,
+              cellRenderer: DetailCell,
+            },
+          ]}
+          columns={columns}
+          isPaginated
+          onSelect={(value: BundledRequest[]) => setSelectedRow([...value])}
+          emptyState={
             <EmptyState variant="lg">
               <TextContent>
                 <Text>No requested changes found.</Text>
-                {isTideEnabled && (
-                  <Button variant="secondary" onClick={() => setShowModal(true)}>
-                    {t("Generate Default")}
-                  </Button>
-                )}
               </TextContent>
             </EmptyState>
-          </>
-
-        }
-      />
+          }
+        />
+      </div>
     </>
   );
 };

@@ -50,7 +50,8 @@ export const DownloadDialog = ({
   const [snippet, setSnippet] = useState<string | ArrayBuffer>();
   const [openType, setOpenType] = useState(false);
 
-  const [isTidecloak, setIsTidecloak] = useState(false);
+  // TIDECLOAK IMPLEMENTATION
+  const [isTideKeyEnabled, setIsTideKeyEnabled] = useState(false);
 
   const selectedConfig = useMemo(
     () => configFormats.find((config) => config.id === selected) ?? null,
@@ -90,10 +91,15 @@ export const DownloadDialog = ({
         return response.arrayBuffer();
       } else {
         // TIDECLOAK IMPLEMENTATION
-        const snippet = await adminClient.tideAdmin.getInstallationProviders({
+        const snippet = isTideKeyEnabled
+          ? await adminClient.tideAdmin.getInstallationProviders({
             clientId: id,
             providerId: selected,
           })
+          : await adminClient.clients.getInstallationProviders({
+            id,
+            providerId: selected,
+          });
 
         if (typeof snippet === "string") {
           return sanitizeSnippet(snippet);
@@ -116,7 +122,7 @@ export const DownloadDialog = ({
       onConfirm={() => {
         saveAs(
           new Blob([snippet!], { type: selectedConfig?.mediaType }),
-          isTidecloak ? "tidecloak" : selectedConfig?.filename,
+          isTideKeyEnabled ? "tidecloak" : selectedConfig?.filename,
         );
       }}
       open={open}
