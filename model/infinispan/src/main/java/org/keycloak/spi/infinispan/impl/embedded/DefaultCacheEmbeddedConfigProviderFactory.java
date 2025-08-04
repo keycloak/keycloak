@@ -73,7 +73,6 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
 
     // Configuration
     public static final String CONFIG = "configFile";
-    private static final String METRICS = "metricsEnabled";
     public static final String TRACING = "tracingEnabled";
     private static final String HISTOGRAMS = "metricsHistogramsEnabled";
     public static final String STACK = "stack";
@@ -119,7 +118,6 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
         var builder = ProviderConfigurationBuilder.create();
         Util.copyFromOption(builder, CONFIG, "file", ProviderConfigProperty.STRING_TYPE, CachingOptions.CACHE_CONFIG_FILE, false);
         Util.copyFromOption(builder, HISTOGRAMS, "enabled", ProviderConfigProperty.BOOLEAN_TYPE, CachingOptions.CACHE_METRICS_HISTOGRAMS_ENABLED, false);
-        Util.copyFromOption(builder, METRICS, "enabled", ProviderConfigProperty.BOOLEAN_TYPE, MetricsOptions.INFINISPAN_METRICS_ENABLED, false);
         Stream.concat(Arrays.stream(LOCAL_CACHE_NAMES), Arrays.stream(CLUSTERED_MAX_COUNT_CACHES))
                 .forEach(name -> Util.copyFromOption(builder, CacheConfigurator.maxCountConfigKey(name), "max-count", ProviderConfigProperty.INTEGER_TYPE, CachingOptions.maxCountOption(name), false));
         createTopologyProperties(builder);
@@ -219,7 +217,7 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
 
     private static void configureMetrics(Config.Scope keycloakConfig, ConfigurationBuilderHolder holder) {
         //metrics are disabled by default (check MetricsOptions class)
-        if (keycloakConfig.getBoolean(METRICS, Boolean.FALSE)) {
+        if (keycloakConfig.root().getBoolean(MetricsOptions.METRICS_ENABLED.getKey(), Boolean.FALSE)) {
             logger.debug("Enabling Infinispan metrics");
             var builder = holder.getGlobalConfigurationBuilder();
             builder.addModule(MicrometerMeterRegisterConfigurationBuilder.class)
