@@ -17,6 +17,9 @@
 
 package org.keycloak.spi.infinispan.impl.embedded;
 
+import static org.infinispan.configuration.global.TransportConfiguration.CLUSTER_NAME;
+import static org.infinispan.configuration.global.TransportConfiguration.STACK;
+
 import java.lang.invoke.MethodHandles;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -25,12 +28,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import jakarta.persistence.Query;
 import org.infinispan.commons.configuration.attributes.Attribute;
 import org.infinispan.configuration.global.TransportConfigurationBuilder;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.infinispan.remoting.transport.jgroups.EmbeddedJGroupsChannelConfigurator;
 import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.jboss.logging.Logger;
+import org.jgroups.Address;
+import org.jgroups.JChannel;
 import org.jgroups.conf.ClassConfigurator;
 import org.jgroups.conf.ProtocolConfiguration;
 import org.jgroups.protocols.TCP;
@@ -38,8 +44,11 @@ import org.jgroups.protocols.TCP_NIO2;
 import org.jgroups.protocols.UDP;
 import org.jgroups.stack.Protocol;
 import org.jgroups.util.DefaultSocketFactory;
+import org.jgroups.util.ExtendedUUID;
 import org.jgroups.util.SocketFactory;
+import org.jgroups.util.UUID;
 import org.keycloak.Config;
+import org.keycloak.common.util.Retry;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.InfinispanConnectionSpi;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
@@ -48,6 +57,7 @@ import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.jgroups.protocol.KEYCLOAK_JDBC_PING2;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.spi.infinispan.JGroupsCertificateProvider;
 
 import javax.net.ssl.KeyManager;
@@ -56,7 +66,7 @@ import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.TrustManager;
 
-import static org.infinispan.configuration.global.TransportConfiguration.STACK;
+import org.keycloak.storage.configuration.ServerConfigStorageProvider;
 
 /**
  * Utility class to configure JGroups based on the Keycloak configuration.
@@ -66,6 +76,7 @@ public final class JGroupsConfigurator {
     private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
     private static final String TLS_PROTOCOL_VERSION = "TLSv1.3";
     private static final String TLS_PROTOCOL = "TLS";
+    public static final String JGROUPS_ADDRESS_SEQUENCE = "JGROUPS_ADDRESS_SEQUENCE";
 
     private JGroupsConfigurator() {
     }
@@ -176,10 +187,47 @@ public final class JGroupsConfigurator {
         var tableName = JpaUtils.getTableNameForNativeQuery("JGROUPS_PING", em);
         var stack = getProtocolConfigurations(tableName, isUdp);
         var connectionFactory = (JpaConnectionProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(JpaConnectionProvider.class);
-        holder.addJGroupsStack(new JpaFactoryAwareJGroupsChannelConfigurator(stackName, stack, connectionFactory, isUdp), null);
+
+        String clusterName = transportOf(holder).attributes().attribute(CLUSTER_NAME).get();
+
+        Address address = Retry.call(ignored -> KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(),
+                s -> prepareJGroupsAddress(s, clusterName)),
+                50, 10);
+        holder.addJGroupsStack(new JpaFactoryAwareJGroupsChannelConfigurator(stackName, stack, connectionFactory, isUdp, address), null);
 
         transportOf(holder).stack(stackName);
         JGroupsConfigurator.logger.info("JGroups JDBC_PING discovery enabled.");
+    }
+
+    /**
+     * Generate the next sequence of the address, and place it into the JGROUPS_PING table so other nodes can see it.
+     * If we are the first = smallest entry, the other nodes will wait for us to become a coordinator
+     * for max_join_attempts x all_clients_retry_timeout = 10 x 100 ms = 1 second. Otherwise, we will wait for that
+     * one second. This prevents a split-brain scenario on a concurrent startup.
+     */
+    private static Address prepareJGroupsAddress(KeycloakSession session, String clusterName) {
+        var storage = session.getProvider(ServerConfigStorageProvider.class);
+        String seq = storage.loadOrCreate(JGROUPS_ADDRESS_SEQUENCE, () -> "0");
+        long value = Long.parseLong(seq) + 1;
+        String newSeq = Long.toString(value);
+        storage.replace(JGROUPS_ADDRESS_SEQUENCE, seq, newSeq);
+
+        var cp = session.getProvider(JpaConnectionProvider.class);
+        var tableName = JpaUtils.getTableNameForNativeQuery("JGROUPS_PING", cp.getEntityManager());
+        String statement = String.format("INSERT INTO %s values (?, ?, ?, ?, ?)", tableName);
+
+        ExtendedUUID address = new ExtendedUUID(0, value);
+
+
+        Query s = cp.getEntityManager().createNativeQuery(statement);
+        s.setParameter(1, org.jgroups.util.Util.addressToString(new UUID(address.getMostSignificantBits(), address.getLeastSignificantBits()))); // address
+        s.setParameter(2, "(starting)"); // name
+        s.setParameter(3, clusterName); // cluster name
+        s.setParameter(4, "127.0.0.1:0"); // ip = new IpAddress("localhost", 0).toString()
+        s.setParameter(5, false); // coord
+        s.executeUpdate();
+
+        return address;
     }
 
     private static List<ProtocolConfiguration> getProtocolConfigurations(String tableName, boolean udp) {
@@ -258,10 +306,18 @@ public final class JGroupsConfigurator {
     private static class JpaFactoryAwareJGroupsChannelConfigurator extends EmbeddedJGroupsChannelConfigurator {
 
         private final JpaConnectionProviderFactory factory;
+        private final Address address;
 
-        public JpaFactoryAwareJGroupsChannelConfigurator(String name, List<ProtocolConfiguration> stack, JpaConnectionProviderFactory factory, boolean isUdp) {
+        public JpaFactoryAwareJGroupsChannelConfigurator(String name, List<ProtocolConfiguration> stack, JpaConnectionProviderFactory factory, boolean isUdp, Address address) {
             super(name, stack, null, isUdp ? "udp" : "tcp");
             this.factory = Objects.requireNonNull(factory);
+            this.address = address;
+        }
+
+        @Override
+        protected JChannel amendChannel(JChannel channel) {
+            channel.addAddressGenerator(() -> address);
+            return super.amendChannel(channel);
         }
 
         @Override
