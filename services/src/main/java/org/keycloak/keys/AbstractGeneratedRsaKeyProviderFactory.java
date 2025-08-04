@@ -23,6 +23,7 @@ import java.security.cert.Certificate;
 import java.security.interfaces.RSAPrivateKey;
 
 import org.jboss.logging.Logger;
+import org.keycloak.Config;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -33,9 +34,12 @@ import org.keycloak.crypto.KeyUse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ConfigurationValidationHelper;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
 public abstract class AbstractGeneratedRsaKeyProviderFactory extends AbstractRsaKeyProviderFactory {
+
+    private int defaultKeySize = 2048;
 
     abstract protected Logger getLogger();
 
@@ -44,6 +48,17 @@ public abstract class AbstractGeneratedRsaKeyProviderFactory extends AbstractRsa
                 .property(Attributes.PRIORITY_PROPERTY)
                 .property(Attributes.ENABLED_PROPERTY)
                 .property(Attributes.ACTIVE_PROPERTY);
+    }
+
+    protected ProviderConfigurationBuilder generatedRsaKeyConfigurationBuilder() {
+        ProviderConfigProperty prop = Attributes.KEY_SIZE_PROPERTY.get();
+        prop.setDefaultValue(defaultKeySize);
+        return rsaKeyConfigurationBuilder().property(prop);
+    }
+
+    @Override
+    public void init(Config.Scope config) {
+        this.defaultKeySize = config.getInt(Attributes.KEY_SIZE_KEY, 2048);
     }
 
     @Override
@@ -80,7 +95,7 @@ public abstract class AbstractGeneratedRsaKeyProviderFactory extends AbstractRsa
 
         ConfigurationValidationHelper.check(model).checkList(Attributes.KEY_SIZE_PROPERTY.get(), false);
 
-        int size = model.get(Attributes.KEY_SIZE_KEY, 2048);
+        int size = model.get(Attributes.KEY_SIZE_KEY, this.defaultKeySize);
 
         if (!(model.contains(Attributes.PRIVATE_KEY_KEY) && model.contains(Attributes.CERTIFICATE_KEY))) {
             generateKeys(realm, model, size);

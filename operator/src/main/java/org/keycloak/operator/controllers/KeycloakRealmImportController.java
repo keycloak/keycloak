@@ -129,8 +129,8 @@ public class KeycloakRealmImportController implements Reconciler<KeycloakRealmIm
                 status.addStartedMessage("Import Job started");
             } else if (oldStatus.getSucceeded() != null && oldStatus.getSucceeded() > 0) {
                 if (!lastReportedStatus.isDone()) {
-                    Log.info("Job finished performing a rolling restart of the deployment");
-                    rollingRestart(realmCR, client); // could be based upon a hash annotation on the deployment instead
+                    // no need to restart Keycloak as we're only importing new realms and are not overwriting existing realms
+                    Log.info("Job finished");
                 }
                 status.addDone();
             } else if (oldStatus.getFailed() != null && oldStatus.getFailed() > 0) {
@@ -145,13 +145,6 @@ public class KeycloakRealmImportController implements Reconciler<KeycloakRealmIm
 
     private Integer getReadyReplicas(StatefulSet existingDeployment) {
         return Optional.ofNullable(existingDeployment.getStatus()).map(StatefulSetStatus::getReadyReplicas).orElse(0);
-    }
-
-    private void rollingRestart(KeycloakRealmImport realmCR, KubernetesClient client) {
-        client.apps().statefulSets()
-                .inNamespace(realmCR.getMetadata().getNamespace())
-                .withName(realmCR.getSpec().getKeycloakCRName())
-                .rolling().restart();
     }
 
 }

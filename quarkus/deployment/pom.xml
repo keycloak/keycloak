@@ -298,6 +298,8 @@
                 <configuration>
                     <systemPropertyVariables>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+                        <!-- We want to avoid any other artifacts fetches done via surefire and @QuarkusTest - see https://github.com/keycloak/keycloak/issues/41466 -->
+                        <maven.settings>void</maven.settings>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>

@@ -42,11 +42,27 @@ configured directly via {project_name}: `cache-embedded-network-bind-address`, `
 `cache-embedded-network-external-address`, `cache-embedded-network-external-port`. Configuring ports using the old
 properties will still function as before, but we recommend to change to the CLI options as this may change in the future.
 
+=== External IDP tokens automatically refreshed
+
+When using the `+/realms/{realm-name}/broker/{provider_alias}/token+` endpoint for an OAuth 2.0 IDPs that provides refresh tokens and JSON responses or for OIDC IDPs, the tokens will be automatically refreshed each time they are retrieved via the endpoint if the access token has expired and the IDP provided a refresh token.
+
+When using GitHub as an IDP, you can now enable JSON responses to leverage the token refresh for this endpoint.
+
 === Volatile user sessions affecting offline session memory requirements
 
 Starting with this release, {project_name} will cache by default only 10000 entries for offline user and client sessions in memory when volatile user sessions are enabled. This will greatly reduce memory usage.
 
 Use the options `cache-embedded-offline-sessions-max-count` and `cache-embedded-offline-client-sessions-max-count` to change size of the offline session caches.
+
+=== Translation resource bundle file names
+
+The naming of resource bundles in classloader and folder based themes is now aligned with Java https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/ResourceBundle.html#getBundle(java.lang.String,java.util.Locale,java.lang.ClassLoader)[ResourceBunndle#getBundle] file names.
+For all included community languages like `de` or `pt-BR` a file is as before named `messages_de.properties` or `messages_pt_BR.properties`.
+If you added custom language code, you should check if your file names are still the same.
+
+The languages "Chinese (traditional)" and "Chinese (simplified)" are named for historical reasons `zh-TW` and `zh-CN` in the community themes of {project_name}.
+As a start to migrate to the new language codes `zh-Hant` and `zh-Hans`, the classloader and folder based themes pick up for the old language codes `zh-TW` and `zh-CN` also the files `messages_zh_Hant.properties` and `messages_zh_Hant.properties`.
+Entries in `messages_zh_Hant.properties` take precedence over entries in `messages_zh_TW.properties`, and entries in `messages_zh_Hans.properties` take precedence over entries in `messages_zh_CN.properties`.
 
 === Supported Update Email Feature
 
@@ -55,6 +71,13 @@ The feature is enabled for a realm, if `Update Email` required action is enabled
 The feature slightly changes behaviour from previous versions when updating the profile during the authentication flow (e.g. when running the `UPDATE_PROFILE` required action).
 If an existing user does have an email set when updating the profile during the authentication flow, the email attribute will not be available.
 
+=== New database index on the `EVENT_ENTITY` table
+
+The table `EVENT_ENTITY` now has an index `IDX_EVENT_ENTITY_USER_ID_TYPE` on the columns `USER_ID` and `TYPE` to allow a faster search in the admin UI for events of a specific user and event type.
+
+If the table contain more than 300000 entries, {project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
+See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
+
 === Encryption algorithms for SAML updated
 
 When a SAML client was enabled to *Encrypt Assertions*, the assertion included in the SAML response was encrypted following the link:https://www.w3.org/TR/xmlenc-core1/[XML Encryption Syntax and Processing] specification. The algorithms used for encryption were fixed and outdated. Since this release, default encryption options are up to date and better suited in terms of security. Besides, the encryption details are also configurable, just in case a specific client needs a different set of algorithms to work properly. New attributes can be defined in the client to specify the exact algorithms used for encryption. The Admin console displays them in the client tab *Settings*, section *Signature and Encryption*, when the *Encrypt Assertions* option is enabled in the *Keys* tab.
@@ -62,6 +85,13 @@ When a SAML client was enabled to *Encrypt Assertions*, the assertion included i
 In order to maintain backwards compatibility, {project_name}'s upgrade will modify the existing SAML clients to set the encryption attributes to work as before. This way old clients will receive the same encrypted assertion using the same previous algorithms. If the client supports the new default configuration, removing the attributes is recommended.
 
 For more information about client configuration, please see link:{adminguide_link}#_client-saml-configuration[Creating a SAML client] chapter in the {adminguide_name}.
+
+=== Tracing extended for embedded Infinispan caches
+
+When tracing is enabled, now also calls to other nodes of a {project_name} cluster will create spans in the traces.
+
+To disable this kind of tracing, set the option `tracing-infinispan-enabled` to `false`.
+
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
@@ -79,6 +109,14 @@ The Typescript code `ConsentScopeRepresentation` for the Account Console already
 The options `+--spi-user-sessions--infinispan--offline-session-cache-entry-lifespan-override+` and `+--spi-user-sessions--infinispan--offline-client-session-cache-entry-lifespan-override+` are now deprecated for removal.
 
 Instead use the options `cache-embedded-offline-sessions-max-count` and `cache-embedded-offline-client-sessions-max-count` to limit the memory usage if the default of 10000 cache offline user and client sessions does not work in your scenario.
+
+=== Deprecated Passkeys Conditional UI Authenticator requires a feature
+
+The authenticator *Passkeys Conditional UI Authenticator*, which was deprecated in the previous version 26.3.0, is still available for now, but it requires the feature
+`passkeys_conditional_ui_authenticator` to be explicitly enabled during server startup. The feature itself is deprecated and disabled by default.
+This allows administrator to start the server and re-configure authentication flows for passkeys authentication in a recommended way as described
+in the link:{adminguide_link}#passkeys_server_administration_guide[Passkeys] chapter in the {adminguide_name}. In the future major version, we plan to remove the feature
+as well as the *Passkeys Conditional UI Authenticator* as already announced.
 
 // ------------------------ Removed features ------------------------ //
 == Removed features

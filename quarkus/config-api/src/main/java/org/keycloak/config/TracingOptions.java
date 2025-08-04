@@ -85,4 +85,11 @@ public class TracingOptions {
             .description("OpenTelemetry compression method used to compress payloads. If unset, compression is disabled.")
             .defaultValue(TracingCompression.none)
             .build();
+
+    public static final Option<Boolean> TRACING_INFINISPAN_ENABLED = new OptionBuilder<>("tracing-infinispan-enabled", Boolean.class)
+            .category(OptionCategory.TRACING)
+            .description("Enables the OpenTelemetry tracing for embedded Infinispan.")
+            .defaultValue(true)
+            .build();
+
 }

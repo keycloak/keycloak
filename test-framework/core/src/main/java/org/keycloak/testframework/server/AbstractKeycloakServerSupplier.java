@@ -1,10 +1,10 @@
 package org.keycloak.testframework.server;
 
 import org.jboss.logging.Logger;
-import org.keycloak.testframework.injection.AbstractInterceptorHelper;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.config.Config;
 import org.keycloak.testframework.database.TestDatabase;
+import org.keycloak.testframework.injection.AbstractInterceptorHelper;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.injection.Registry;
@@ -26,6 +26,12 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
                 .bootstrapAdminUser(Config.getAdminUsername(), Config.getAdminPassword());
 
         command.log().handlers(KeycloakServerConfigBuilder.LogHandlers.CONSOLE);
+
+        String supplierConfig = Config.getSupplierConfig(KeycloakServer.class);
+        if (supplierConfig != null) {
+            KeycloakServerConfig serverConfigOverride = SupplierHelpers.getInstance(supplierConfig);
+            serverConfigOverride.configure(command);
+        }
 
         command = serverConfig.configure(command);
 

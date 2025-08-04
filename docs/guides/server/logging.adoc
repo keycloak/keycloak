@@ -94,7 +94,7 @@ Use the option `log-mdc-enabled` to enable it.
 
 Specify which keys to be added by setting the configuration option `log-mdc-keys`.
 
-==== Configuring levels as individual options
+=== Configuring levels as individual options
 When configuring category-specific log levels, you can also set the log levels as individual `log-level-<category>` options instead of using the `log-level` option for that.
 This is useful when you want to set the log levels for selected categories without overwriting the previously set `log-level` option.
 
@@ -252,6 +252,48 @@ You can change the queue length as follows:
 <@kc.start parameters="--log-console-async-queue-length=512 --log-file-async-queue-length=512 --log-syslog-async-queue-length=512"/>
 
 These properties are available only when asynchronous logging is enabled for these specific log handlers.
+
+=== HTTP Access Logging
+
+{project_name} supports HTTP access logging to record details of incoming HTTP requests.
+While access logs are often used for debugging and traffic analysis, they are also important for security auditing and compliance monitoring, helping administrators track access patterns, identify suspicious activity, and maintain audit trails.
+
+These logs are written at the `INFO` level, so make sure your logging configuration includes this level — either globally (e.g. `log-level=info`) or specifically for the access log category (e.g. `log-level=org.keycloak.http.access-log:info`).
+When HTTP access logs are enabled, they are shown by default, as `INFO` level is the default log level for {project_name}.
+
+==== How to enable
+
+You can enable HTTP access logging by using `http-access-log-enabled` property as follows:
+
+<@kc.start parameters="--http-access-log-enabled=true"/>
+
+==== Change log format/pattern
+
+You can change format/pattern of the access log records by using `http-access-log-pattern` property as follows:
+
+<@kc.start parameters="--http-access-log-pattern=combined"/>
+
+Predefined named patterns:
+
+* `common` (default) - prints basic information about the request
+* `combined` - prints basic information about the request + information about referer and user agent
+* `long` - prints comprehensive information about the request with all its headers
+
+You can even specify your own pattern with your required data to be logged, such as:
+
+<@kc.start parameters="--http-access-log-pattern='%A %{METHOD} %{REQUEST_URL} %{i,User-Agent}'"/>
+
+Consult the https://quarkus.io/guides/http-reference#configuring-http-access-logs[Quarkus documentation] for the full list of variables that can be used.
+
+==== Exclude specific URL paths
+
+It is possible to exclude specific URL paths from the HTTP access logging, so they will not be recorded.
+
+You can use regular expressions to exclude them, such as:
+
+<@kc.start parameters="--http-access-log-exclude='/realms/my-internal-realm/.*'"/>
+
+In this case, all calls to the `/realms/my-internal-realm/` and subsequent paths will be excluded from the HTTP Access log.
 
 == Console log handler
 The console log handler is enabled by default, providing unstructured log messages for the console.
@@ -510,6 +552,9 @@ As you can see, the timestamp is present twice, so you can amend it correspondin
 
 === Syslog
 <@opts.includeOptions includedOptions="log-syslog-*"/>
+
+=== HTTP Access log
+<@opts.includeOptions includedOptions="http-access-log-*"/>
 
 </@opts.printRelevantOptions>
 

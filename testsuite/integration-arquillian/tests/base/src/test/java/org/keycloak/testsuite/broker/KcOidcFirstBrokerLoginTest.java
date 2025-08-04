@@ -10,6 +10,8 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
+import org.keycloak.models.jpa.JpaRealmProviderFactory;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
@@ -39,9 +41,11 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.ApiUtil.removeUserByUsername;
+import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.grantReadTokenRole;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
 import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
@@ -142,6 +146,99 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
 
         assertThat(firstLoginAccessToken, not(equalTo(secondLoginAccessToken)));
         assertThat(firstLoginRefreshToken, is(equalTo(secondLoginRefreshToken)));
+    }
+
+    @Test
+    public void testRefreshTokenFetchExternalIdpTokenSuccess() {
+        // Step 1: Set up the identity provider and user in the provider realm
+        IdentityProviderResource idp = realmsResouce().realm(bc.consumerRealmName()).identityProviders().get(bc.getIDPAlias());
+        IdentityProviderRepresentation representation = idp.toRepresentation();
+        representation.setStoreToken(true);
+        idp.update(representation);
+
+        // Create a test user in the provider realm
+        createUser(bc.providerRealmName(), "brucewayne", BrokerTestConstants.USER_PASSWORD, "Bruce", "Wayne", "brucewayne@gotham.com");
+
+        oauth.client("broker-app", "broker-app-secret");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
+        logInWithIdp(bc.getIDPAlias(), "brucewayne", BrokerTestConstants.USER_PASSWORD);
+        testingClient.server(bc.consumerRealmName()).run(grantReadTokenRole("brucewayne"));
+
+        String code = oauth.parseLoginResponse().getCode();
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse internalTokens = oauth.doAccessTokenRequest(code);
+        assertEquals(200, internalTokens.getStatusCode());
+
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse externalTokens = oauth.doFetchExternalIdpToken(bc.getIDPAlias(), internalTokens.getAccessToken());
+        assertEquals(200, externalTokens.getStatusCode());
+
+        String realmName = bc.consumerRealmName();
+        String userName = "brucewayne";
+        String idpAlias = bc.getIDPAlias();
+        String oldTokenFromDatabase = testingClient.server().fetch(session -> {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            UserModel user = session.users().getUserByUsername(realm, userName);
+            return session.getProvider(UserProvider.class, JpaRealmProviderFactory.PROVIDER_ID).getFederatedIdentity(realm, user, idpAlias).getToken();
+        }, String.class);
+
+        setTimeOffset(externalTokens.getExpiresIn() - IdentityProviderModel.DEFAULT_MIN_VALIDITY_TOKEN + 1);
+
+        internalTokens = oauth
+                .doRefreshTokenRequest(internalTokens.getRefreshToken());
+        assertEquals(200, internalTokens.getStatusCode());
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse externalTokens2 = oauth.doFetchExternalIdpToken(bc.getIDPAlias(), internalTokens.getAccessToken());
+        assertEquals(200, externalTokens2.getStatusCode());
+
+        // Check that we now have a different access and refresh token
+        assertNotEquals(externalTokens.getAccessToken(), externalTokens2.getAccessToken());
+        assertNotEquals(externalTokens.getRefreshToken(), externalTokens2.getRefreshToken());
+
+        String newTokenFromDatabase = testingClient.server().fetch(session -> {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            UserModel user = session.users().getUserByUsername(realm, userName);
+            return session.getProvider(UserProvider.class, JpaRealmProviderFactory.PROVIDER_ID).getFederatedIdentity(realm, user, idpAlias).getToken();
+        }, String.class);
+
+        // Ensure that the new token has been persisted
+        assertNotEquals(newTokenFromDatabase, oldTokenFromDatabase);
+
+    }
+
+    @Test
+    public void testRefreshTokenFetchExternalIdpTokenFailure() {
+        // Step 1: Set up the identity provider and user in the provider realm
+        IdentityProviderResource idp = realmsResouce().realm(bc.consumerRealmName()).identityProviders().get(bc.getIDPAlias());
+        IdentityProviderRepresentation representation = idp.toRepresentation();
+        representation.setStoreToken(true);
+        idp.update(representation);
+
+        // Create a test user in the provider realm
+        createUser(bc.providerRealmName(), "brucewayne", BrokerTestConstants.USER_PASSWORD, "Bruce", "Wayne", "brucewayne@gotham.com");
+
+        oauth.client("broker-app", "broker-app-secret");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
+        logInWithIdp(bc.getIDPAlias(), "brucewayne", BrokerTestConstants.USER_PASSWORD);
+        testingClient.server(bc.consumerRealmName()).run(grantReadTokenRole("brucewayne"));
+
+        String code = oauth.parseLoginResponse().getCode();
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse internalTokens = oauth.doAccessTokenRequest(code);
+        assertEquals(200, internalTokens.getStatusCode());
+
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse externalTokens = oauth.doFetchExternalIdpToken(bc.getIDPAlias(), internalTokens.getAccessToken());
+        assertEquals(200, externalTokens.getStatusCode());
+
+        setTimeOffset(externalTokens.getExpiresIn() + 10);
+
+        representation.getConfig().put("clientSecret", "wrongpassword");
+        idp.update(representation);
+
+        internalTokens = oauth.doRefreshTokenRequest(internalTokens.getRefreshToken());
+        assertEquals(200, internalTokens.getStatusCode());
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse error = oauth.doFetchExternalIdpToken(bc.getIDPAlias(), internalTokens.getAccessToken());
+        assertEquals(502, error.getStatusCode());
+        assertEquals("Unable to refresh token", error.getError());
+
     }
 
     /**
