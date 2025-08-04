@@ -27,3 +27,15 @@ For more details on this opt-in feature, see the https://www.keycloak.org/server
 While access logs are often used for debugging and traffic analysis, they are also important for security auditing and compliance monitoring.
 
 For more information, see the https://www.keycloak.org/server/logging[Logging guide].
+
+= Supported passkeys
+
+*Passkeys* integration is now a supported feature. This feature integrates passkeys seamlessly in the {project_name} forms using both conditional and modal UI. Although supported, *passkeys* are disabled by default. To activate the integration in the realm, the option *Enable Passkeys* in the *WebAuthn Passwordless Policy* (*Authentication* → *Policies* → *Webauthn Passwordless Policy*) needs to be enabled.
+
+For more information, see the link:{adminguide_link}#passkeys_server_administration_guide[Passkeys] chapter in the {adminguide_name}.
+
+= New conditional authenticator `Conditional - credential`
+
+The *Conditional - credential* is a new authenticator that checks if a specific credential type has been used (or not used) during the authentication process. This condition is related to the *Passkeys* feature. It is added by {project_name} to the default *browser* flow to skip 2FA in case a passkey was used to login as the primary credential.
+
+For more information about conditional flows, see the link:{adminguide_link}#conditions-in-conditional-flows[Conditions in conditional flows] chapter in the {adminguide_name}.
