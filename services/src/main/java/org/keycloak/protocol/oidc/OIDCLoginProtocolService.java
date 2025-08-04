@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oidc;
 
+import jakarta.ws.rs.HEAD;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuthErrorException;
@@ -193,6 +194,16 @@ public class OIDCLoginProtocolService {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getVersionPreflight() {
         return Cors.builder().allowedMethods("GET").preflight().auth().add(Response.ok());
+    }
+
+    // The method added just as a workaround to https://github.com/quarkusio/quarkus/issues/49172 . It can be removed once that one is
+    // fixed in quarkus and Keycloak updated to the corresponding version
+    @HEAD
+    @Path("/certs")
+    @Produces({MediaType.APPLICATION_JSON, org.keycloak.utils.MediaType.APPLICATION_JWKS})
+    @NoCache
+    public Response certsHead() {
+        return certs();
     }
 
     @GET

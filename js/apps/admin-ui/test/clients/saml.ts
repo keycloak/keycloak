@@ -1,8 +1,29 @@
-import { Page, expect } from "@playwright/test";
-import { selectItem, switchOff, switchOn } from "../utils/form";
+import { Locator, Page, expect } from "@playwright/test";
+import {
+  assertSelectValue,
+  selectItem,
+  switchOff,
+  switchOn,
+} from "../utils/form";
 
 function getTermsOfServiceUrl(page: Page) {
   return page.getByTestId("attributes.tosUri");
+}
+
+function getKeyForEncryptionAlgorithmInput(page: Page) {
+  return page.locator("#attributes\\.saml🍺encryption🍺algorithm");
+}
+
+function getKeyForEncryptionKeyAlgorithmInput(page: Page) {
+  return page.locator("#attributes\\.saml🍺encryption🍺keyAlgorithm");
+}
+
+function getKeyForEncryptionDigestMethodInput(page: Page) {
+  return page.locator("#attributes\\.saml🍺encryption🍺digestMethod");
+}
+
+function getKeyForEncryptionMaskGenerationFunctionInput(page: Page) {
+  return page.locator("#attributes\\.saml🍺encryption🍺maskGenerationFunction");
 }
 
 export async function setTermsOfServiceUrl(page: Page, url: string) {
@@ -37,6 +58,10 @@ export async function goToKeysTab(page: Page) {
   await page.getByTestId("keysTab").click();
 }
 
+export async function goToClientSettingsTab(page: Page) {
+  await page.getByTestId("clientSettingsTab").click();
+}
+
 export async function clickClientSignature(page: Page) {
   await switchOff(page, "#clientSignature");
 }
@@ -47,6 +72,10 @@ export async function assertCertificate(page: Page, exists = true) {
 
 export async function clickEncryptionAssertions(page: Page) {
   await switchOn(page, "#encryptAssertions");
+}
+
+export async function clickOffEncryptionAssertions(page: Page) {
+  await switchOff(page, "#encryptAssertions");
 }
 
 export async function clickGenerate(page: Page) {
@@ -65,4 +94,97 @@ export async function assertNameIdFormatDropdown(page: Page) {
       item,
     );
   }
+}
+
+export async function selectEncryptionAlgorithmInput(
+  page: Page,
+  value: string,
+) {
+  await selectItem(page, getKeyForEncryptionAlgorithmInput(page), value);
+}
+
+export async function selectEncryptionKeyAlgorithmInput(
+  page: Page,
+  value: string,
+) {
+  await selectItem(page, getKeyForEncryptionKeyAlgorithmInput(page), value);
+}
+
+export async function selectEncryptionDigestMethodInput(
+  page: Page,
+  value: string,
+) {
+  await selectItem(page, getKeyForEncryptionDigestMethodInput(page), value);
+}
+
+export async function selectEncryptionMaskGenerationFunctionInput(
+  page: Page,
+  value: string,
+) {
+  await selectItem(
+    page,
+    getKeyForEncryptionMaskGenerationFunctionInput(page),
+    value,
+  );
+}
+
+export async function assertEncryptionAlgorithm(page: Page, value: string) {
+  await assertSelectValue(getKeyForEncryptionAlgorithmInput(page), value);
+}
+
+export async function assertEncryptionKeyAlgorithm(page: Page, value: string) {
+  await assertSelectValue(getKeyForEncryptionKeyAlgorithmInput(page), value);
+}
+
+export async function assertEncryptionDigestMethod(page: Page, value: string) {
+  await assertSelectValue(getKeyForEncryptionDigestMethodInput(page), value);
+}
+
+export async function assertEncryptionMaskGenerationFunction(
+  page: Page,
+  value: string,
+) {
+  await assertSelectValue(
+    getKeyForEncryptionMaskGenerationFunctionInput(page),
+    value,
+  );
+}
+
+async function assertInputVisible(locator: Locator, visible: boolean) {
+  if (visible) {
+    await expect(locator).toBeVisible();
+  } else {
+    await expect(locator).toBeHidden();
+  }
+}
+
+export async function assertEncryptionAlgorithmInputVisible(
+  page: Page,
+  visible: boolean,
+) {
+  await assertInputVisible(getKeyForEncryptionAlgorithmInput(page), visible);
+}
+
+export async function assertEncryptionKeyAlgorithmInputVisible(
+  page: Page,
+  visible: boolean,
+) {
+  await assertInputVisible(getKeyForEncryptionKeyAlgorithmInput(page), visible);
+}
+
+export async function assertEncryptionDigestMethodInputVisible(
+  page: Page,
+  visible: boolean,
+) {
+  await assertInputVisible(getKeyForEncryptionDigestMethodInput(page), visible);
+}
+
+export async function assertEncryptionMaskGenerationFunctionInputVisible(
+  page: Page,
+  visible: boolean,
+) {
+  await assertInputVisible(
+    getKeyForEncryptionMaskGenerationFunctionInput(page),
+    visible,
+  );
 }

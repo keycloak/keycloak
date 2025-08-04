@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 public class DatabaseOptions {
 
@@ -116,21 +117,23 @@ public class DatabaseOptions {
      * Example: for `db-dialect`, `db-dialect-<datasource>` is created
      */
     public static final List<Option<?>> OPTIONS_DATASOURCES = List.of(
-            DatabaseOptions.DB_DIALECT,
-            DatabaseOptions.DB_DRIVER,
-            DatabaseOptions.DB,
-            DatabaseOptions.DB_URL,
-            DatabaseOptions.DB_URL_HOST,
-            DatabaseOptions.DB_URL_DATABASE,
-            DatabaseOptions.DB_URL_PORT,
-            DatabaseOptions.DB_URL_PROPERTIES,
-            DatabaseOptions.DB_USERNAME,
-            DatabaseOptions.DB_PASSWORD,
-            DatabaseOptions.DB_SCHEMA,
-            DatabaseOptions.DB_POOL_INITIAL_SIZE,
-            DatabaseOptions.DB_POOL_MIN_SIZE,
-            DatabaseOptions.DB_POOL_MAX_SIZE
-    );
+            DB_DIALECT,
+            DB_DRIVER,
+            DB,
+            DB_URL,
+            DB_URL_HOST,
+            DB_URL_DATABASE,
+            DB_URL_PORT,
+            DB_URL_PROPERTIES,
+            DB_USERNAME,
+            DB_PASSWORD,
+            DB_SCHEMA,
+            DB_POOL_INITIAL_SIZE,
+            DB_POOL_MIN_SIZE,
+            DB_POOL_MAX_SIZE,
+            DB_SQL_JPA_DEBUG,
+            DB_SQL_LOG_SLOW_QUERIES
+            );
 
     /**
      * In order to avoid ambiguity, we need to have unique option names for wildcard options.
@@ -139,6 +142,13 @@ public class DatabaseOptions {
     private static final Map<String, String> DATASOURCES_OVERRIDES_SUFFIX = Map.of(
             DatabaseOptions.DB.getKey(), "-kind", // db-kind
             DatabaseOptions.DB_URL.getKey(), "-full"  // db-url-full
+    );
+
+    /**
+     * You can override some {@link OptionBuilder} methods for additional datasources in this map
+     */
+    private static final Map<Option<?>, Consumer<OptionBuilder<?>>> DATASOURCES_OVERRIDES_OPTIONS = Map.of(
+            DatabaseOptions.DB, builder -> builder.defaultValue(Optional.empty()) // no default value for DB kind for datasources
     );
 
     private static final Map<String, Option<?>> cachedDatasourceOptions = new HashMap<>();
@@ -177,6 +187,12 @@ public class DatabaseOptions {
                 builder.description("Used for named <datasource>. " + parentOption.getDescription());
             }
 
+            // override some settings for options
+            var override = DATASOURCES_OVERRIDES_OPTIONS.get(parentOption);
+            if (override != null) {
+                override.accept(builder);
+            }
+
             option = builder.build();
             cachedDatasourceOptions.put(key.get(), option);
         }
@@ -208,7 +224,7 @@ public class DatabaseOptions {
      * <p>
      * Result: {@code db-driver-my-store}
      */
-    public static Optional<String> getResultNamedKey(Option<?> option, String namedProperty) {
+    public static Optional<String> getNamedKey(Option<?> option, String namedProperty) {
         return getKeyForDatasource(option)
                 .map(key -> key.substring(0, key.indexOf("<")))
                 .map(key -> key.concat(namedProperty));

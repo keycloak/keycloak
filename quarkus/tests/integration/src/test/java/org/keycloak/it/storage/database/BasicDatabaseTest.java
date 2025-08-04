@@ -20,7 +20,6 @@ package org.keycloak.it.storage.database;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.main.Launch;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -36,7 +35,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static org.apache.commons.lang3.StringUtils.countMatches;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.is;
@@ -92,11 +90,9 @@ public abstract class BasicDatabaseTest {
         var output = readKeycloakDbUpdateScript(rawDistRootPath);
 
         assertThat(output, notNullValue());
-        assertThat(output, containsString("Create Database Change Log Table"));
-
-        var outputLowerCase = output.toLowerCase();
-        var count = countMatches(outputLowerCase, "create table public.databasechangelog") + countMatches(outputLowerCase, "create table keycloak.databasechangelog");
-        assertThat(count, is(1));
+        assertThat(output, containsString("Keycloak database creation script - apply this script to empty DB"));
+        assertThat(output, containsString("Change Log: META-INF/jpa-changelog-master.xml"));
+        assertThat(output, containsString("Changeset META-INF/jpa-changelog-26.2.6.xml"));
     }
 
     protected static String readKeycloakDbUpdateScript(RawDistRootPath path) {

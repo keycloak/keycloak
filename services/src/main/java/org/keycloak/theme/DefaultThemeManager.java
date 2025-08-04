@@ -311,9 +311,9 @@ public class DefaultThemeManager implements ThemeManager {
                 // This is mapping old locale codes to the new locale codes for Simplified and Traditional Chinese.
                 // Once the existing locales have been moved, this code can be removed.
                 if (l.equals("zh-CN")) {
-                    rl = "zh-HANS";
+                    rl = "zh-Hans";
                 } else if (l.equals("zh-TW")) {
-                    rl = "zh-HANT";
+                    rl = "zh-Hans";
                 }
                 Locale loc = Locale.forLanguageTag(rl);
                 label = capitalize(loc.getDisplayName(locale), locale);
