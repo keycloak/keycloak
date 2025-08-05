@@ -63,9 +63,9 @@
         <tests.wildfly.core.version>21.1.1.Final</tests.wildfly.core.version>
 
         <!-- Upstream WildFly Versions -->
-        <upstream.wildfly.version>29.0.0.Final</upstream.wildfly.version>
+        <upstream.wildfly.version>34.0.0.Final</upstream.wildfly.version>
         <upstream.wildfly.build-tools.version>1.2.13.Final</upstream.wildfly.build-tools.version>
-        <upstream.wildfly.core.version>21.1.0.Final</upstream.wildfly.core.version>
+        <upstream.wildfly.core.version>29.0.0.Final</upstream.wildfly.core.version>
 
         <!-- Downstream Builds WildFly Versions Override -->
         <eap8.version>8.0.0.GA-redhat-00007</eap8.version>  <!-- G:A = org.jboss.eap:jboss-eap-parent -->
