@@ -1,7 +1,6 @@
 package org.keycloak.admin.api.realm;
 
 import org.keycloak.Config;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
 public class DefaultRealmApiFactory implements RealmApiFactory {
@@ -13,8 +12,8 @@ public class DefaultRealmApiFactory implements RealmApiFactory {
     }
 
     @Override
-    public RealmApi create(KeycloakSession session) {
-        return new DefaultRealmApi(session);
+    public Class<? extends RealmApi> getProviderClass() {
+        return DefaultRealmApi.class;
     }
 
     @Override

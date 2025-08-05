@@ -56,5 +56,9 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-storage-private</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-api</artifactId>
+        </dependency>
     </dependencies>
 </project>

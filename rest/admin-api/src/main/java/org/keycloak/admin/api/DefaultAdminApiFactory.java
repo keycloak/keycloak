@@ -8,13 +8,13 @@ public class DefaultAdminApiFactory implements AdminApiFactory {
     public static final String PROVIDER_ID = "default";
 
     @Override
-    public String getId() {
-        return PROVIDER_ID;
+    public Class<DefaultAdminApi> getProviderClass() {
+        return DefaultAdminApi.class;
     }
 
     @Override
-    public AdminApi create(KeycloakSession session) {
-        return new DefaultAdminApi(session);
+    public String getId() {
+        return PROVIDER_ID;
     }
 
     @Override

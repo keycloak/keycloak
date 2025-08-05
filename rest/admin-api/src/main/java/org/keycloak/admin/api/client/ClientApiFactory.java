@@ -1,6 +1,6 @@
 package org.keycloak.admin.api.client;
 
-import org.keycloak.provider.ProviderFactory;
+import org.keycloak.admin.api.CdiProviderFactory;
 
-public interface ClientApiFactory extends ProviderFactory<ClientApi> {
+public interface ClientApiFactory extends CdiProviderFactory<ClientApi> {
 }

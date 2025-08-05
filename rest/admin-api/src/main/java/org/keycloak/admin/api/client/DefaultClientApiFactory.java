@@ -1,7 +1,6 @@
 package org.keycloak.admin.api.client;
 
 import org.keycloak.Config;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
 public class DefaultClientApiFactory implements ClientApiFactory {
@@ -12,9 +11,8 @@ public class DefaultClientApiFactory implements ClientApiFactory {
         return PROVIDER_ID;
     }
 
-    @Override
-    public ClientApi create(KeycloakSession session) {
-        return new DefaultClientApi(session);
+    public Class<? extends ClientApi> getProviderClass() {
+        return DefaultClientApi.class;
     }
 
     @Override

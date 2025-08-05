@@ -1,6 +1,6 @@
 package org.keycloak.admin.api.realm;
 
-import org.keycloak.provider.ProviderFactory;
+import org.keycloak.admin.api.CdiProviderFactory;
 
-public interface RealmApiFactory extends ProviderFactory<RealmApi> {
+public interface RealmApiFactory extends CdiProviderFactory<RealmApi> {
 }

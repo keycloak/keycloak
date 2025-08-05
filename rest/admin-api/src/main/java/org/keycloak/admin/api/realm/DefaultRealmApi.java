@@ -1,27 +1,25 @@
 package org.keycloak.admin.api.realm;
 
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.Path;
+import org.keycloak.admin.api.ChosenBySpi;
 import org.keycloak.admin.api.client.ClientsApi;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 
-import java.util.Objects;
-
+@RequestScoped
+@ChosenBySpi
 public class DefaultRealmApi implements RealmApi {
-    private final KeycloakSession session;
-    private final RealmModel realm;
 
-    public DefaultRealmApi(KeycloakSession session) {
-        this.session = session;
-        this.realm = Objects.requireNonNull(session.getContext().getRealm());
-    }
+    @Inject
+    ClientsApi clientsApi;
 
     @Path("clients")
     @Override
     public ClientsApi clients() {
-        return session.getProvider(ClientsApi.class);
+        return clientsApi;
     }
 
     @Override
-    public void close() {}
+    public void close() {
+    }
 }

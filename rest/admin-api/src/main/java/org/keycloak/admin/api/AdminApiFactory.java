@@ -1,6 +1,4 @@
 package org.keycloak.admin.api;
 
-import org.keycloak.provider.ProviderFactory;
-
-public interface AdminApiFactory extends ProviderFactory<AdminApi> {
+public interface AdminApiFactory extends CdiProviderFactory<AdminApi> {
 }

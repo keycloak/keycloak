@@ -1,21 +1,21 @@
 package org.keycloak.admin.api;
 
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.Path;
-import org.keycloak.admin.api.realm.DefaultRealmsApi;
 import org.keycloak.admin.api.realm.RealmsApi;
-import org.keycloak.models.KeycloakSession;
 
+@RequestScoped
+@ChosenBySpi
 public class DefaultAdminApi implements AdminApi {
-    private final KeycloakSession session;
 
-    public DefaultAdminApi(KeycloakSession session) {
-        this.session = session;
-    }
+    @Inject
+    RealmsApi realmsApi;
 
     @Path("realms")
     @Override
     public RealmsApi realms() {
-        return new DefaultRealmsApi(session);
+        return realmsApi;
     }
 
     @Override

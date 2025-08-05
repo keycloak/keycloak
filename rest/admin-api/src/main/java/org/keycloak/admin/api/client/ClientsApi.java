@@ -19,8 +19,8 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
-import org.keycloak.representations.admin.v2.validation.CreateClient;
 import org.keycloak.services.resources.KeycloakOpenAPI;
+import org.keycloak.representations.admin.v2.validation.CreateClientDefault;
 
 @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS_V2)
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
@@ -36,7 +36,7 @@ public interface ClientsApi extends Provider {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Create a new client", description = "Creates a new client in the realm")
-    ClientRepresentation createClient(@Valid @ConvertGroup(to = CreateClient.class) ClientRepresentation client,
+    ClientRepresentation createClient(@Valid @ConvertGroup(to = CreateClientDefault.class) ClientRepresentation client,
                                       @QueryParam("fieldValidation") FieldValidation fieldValidation);
 
     @Path("{id}")
