@@ -2,6 +2,7 @@ team/cloud-native:
   - area/admin/cli
   - area/dist/quarkus
   - area/operator
+  - area/observability
 
 team/continuous-testing:
   - area/ci
@@ -40,7 +41,8 @@ team/core-shared:
   - area/storage
 
 team/sre:
-
+  - area/observability
+  
 team/ui:
   - area/account/ui
   - area/admin/client-js
