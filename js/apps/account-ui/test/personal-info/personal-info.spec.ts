@@ -17,10 +17,10 @@ test.describe("Personal info page", () => {
   test.beforeAll(() => createRandomUserWithPassword(user, "pwd", realm));
   test.afterAll(async () => deleteUser(user, realm));
 
-  test.skip("sets basic information", async ({ page }) => {
+  test("sets basic information", async ({ page }) => {
     await login(page, user, "pwd", realm);
 
-    await page.getByTestId("email").fill(`${user}@somewhere.com`); //<-- field disabled
+    await page.getByTestId("email").fill(`${user}@somewhere.com`);
     await page.getByTestId("firstName").fill("Erik");
     await page.getByTestId("lastName").fill("de Wit");
     await page.getByTestId("save").click();
