@@ -21,7 +21,8 @@ import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.RuntimePackageDependency;
-import org.jboss.modules.ModuleIdentifier;
+
+import static org.keycloak.subsystem.adapter.saml.extension.KeycloakDependencyProcessor.KEYCLOAK_JBOSS_CORE_ADAPTER;
 
 /**
  * Definition of subsystem=keycloak-saml.
@@ -31,7 +32,6 @@ import org.jboss.modules.ModuleIdentifier;
 public class KeycloakSubsystemDefinition extends SimpleResourceDefinition {
 
     static final KeycloakSubsystemDefinition INSTANCE = new KeycloakSubsystemDefinition();
-    static final ModuleIdentifier KEYCLOAK_JBOSS_CORE_ADAPTER = ModuleIdentifier.create("org.keycloak.keycloak-jboss-adapter-core");
 
     private KeycloakSubsystemDefinition() {
         super(KeycloakSamlExtension.SUBSYSTEM_PATH,
@@ -51,6 +51,6 @@ public class KeycloakSubsystemDefinition extends SimpleResourceDefinition {
     public void registerAdditionalRuntimePackages(ManagementResourceRegistration resourceRegistration) {
         // This module is required by deployment but not referenced by JBoss modules
         resourceRegistration.registerAdditionalRuntimePackages(
-                RuntimePackageDependency.required(KEYCLOAK_JBOSS_CORE_ADAPTER.getName()));
+                RuntimePackageDependency.required(KEYCLOAK_JBOSS_CORE_ADAPTER));
     }
 }
