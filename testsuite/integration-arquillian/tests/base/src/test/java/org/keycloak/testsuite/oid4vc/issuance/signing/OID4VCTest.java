@@ -222,7 +222,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
         return componentExportRepresentation;
     }
 
-    public static ComponentExportRepresentation getRsaEncKeyProvider(String algorithm, String keyName) {
+    public static ComponentExportRepresentation getRsaEncKeyProvider(String algorithm, String keyName, int priority) {
         KeyWrapper keyWrapper = getRsaKey(KeyUse.ENC, algorithm, keyName);
         ComponentExportRepresentation componentExportRepresentation = new ComponentExportRepresentation();
         componentExportRepresentation.setName(keyName);
@@ -237,7 +237,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
                         "privateKey", List.of(PemUtils.encodeKey(keyWrapper.getPrivateKey())),
                         "certificate", List.of(PemUtils.encodeCertificate(certificate)),
                         "active", List.of("true"),
-                        "priority", List.of("100"),
+                        "priority", List.of(String.valueOf(priority)),
                         "enabled", List.of("true"),
                         "algorithm", List.of(algorithm),
                         "keyUse", List.of(KeyUse.ENC.name())
