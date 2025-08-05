@@ -69,10 +69,12 @@ test.describe("User profile tabs", () => {
     test("Completes new attribute form and performs cancel", async ({
       page,
     }) => {
+      const uniqueName = "UniqueName";
       await clickCreateAttribute(page);
-      await fillAttributeForm(page, { name, displayName });
+      await fillAttributeForm(page, { name: uniqueName, displayName });
       await clickCancelAttribute(page);
-      await assertRowExists(page, name, false);
+      await assertRowExists(page, uniqueName, false);
+      await assertRowExists(page, "firstName", true);
     });
 
     test("Completes new attribute form and performs submit", async ({
