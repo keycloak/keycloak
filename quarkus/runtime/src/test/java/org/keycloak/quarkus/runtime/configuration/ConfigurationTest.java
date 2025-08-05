@@ -61,7 +61,11 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         putEnvVar("KC_SPI_CAMEL_CASE_SCOPE_CAMEL_CASE_PROP", "foobar");
         initConfig();
         String value = Config.scope("camelCaseScope").get("camelCaseProp");
-        assertEquals(value, "foobar");
+        assertEquals("foobar", value);
+
+        // root should be at kc - users are not expected to obtain spi options this way
+        value = Config.scope().root().get("spi-camel-case-scope-camel-case-prop");
+        assertEquals("foobar", value);
     }
 
     @Test
@@ -69,7 +73,11 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         putEnvVar("KC_SPI_CAMEL_CASE_SCOPE__CAMEL_CASE_PROP", "foobar");
         initConfig();
         String value = Config.scope("camelCaseScope").get("camelCaseProp");
-        assertEquals(value, "foobar");
+        assertEquals("foobar", value);
+
+        // root should be at kc - users are not expected to obtain spi options this way
+        value = Config.scope().root().get("spi-camel-case-scope--camel-case-prop");
+        assertEquals("foobar", value);
     }
 
     @Test
