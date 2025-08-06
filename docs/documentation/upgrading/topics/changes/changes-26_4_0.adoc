@@ -34,6 +34,13 @@ Starting with this release, and when using the original PostgreSQL driver, {proj
 
 You can override this behavior by setting your own value for `targetServerType` in the DB URL or additional properties.
 
+=== Operator default affinity configuration changed
+
+The default affinity strategy has been updated so that a `preferredDuringSchedulingIgnoredDuringExecution` anti-affinity rule
+is created for both zones and nodes in order to increase availability in the presence of failures. Previously the default
+preferred that all nodes were deployed to the same availability zone. See the link:{highavailabilityguide_link}[{highavailabilityguide_name}]
+for more details.
+
 === JGroups system properties replaced with CLI options
 
 Until now it was necessary to configure JGroups network addresses and ports using the `+jgroups.bind.*+` and `+jgroups.external_*+`
