@@ -2,14 +2,15 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Concepts for multi-site deployments"
-summary="Understand multi-site deployment with synchronous replication." >
+title="Concepts for multi-cluster deployments"
+summary="Understand multi-cluster deployment with synchronous replication."
+tileVisible="false" >
 
-This topic describes a highly available multi-site setup and the behavior to expect. It outlines the requirements of the high availability architecture and describes the benefits and tradeoffs.
+This topic describes a highly available multi-cluster setup and the behavior to expect. It outlines the requirements of the high availability architecture and describes the benefits and tradeoffs.
 
 == When to use this setup
 
-Use this setup to provide {project_name} deployments that are able to tolerate site failures, reducing the likelihood of downtime.
+Use this setup to provide {project_name} deployments that are able to tolerate {kubernetes} cluster failures, reducing the likelihood of downtime.
 
 == Deployment, data storage and caching
 
@@ -144,6 +145,6 @@ Therefore, tradeoffs exist between high availability and consistency. The focus 
 
 == Next steps
 
-Continue reading in the <@links.ha id="bblocks-multi-site" /> {section} to find blueprints for the different building blocks.
+Continue reading in the <@links.ha id="multi-cluster-building-blocks" /> {section} to find blueprints for the different building blocks.
 
 </@tmpl.guide>
