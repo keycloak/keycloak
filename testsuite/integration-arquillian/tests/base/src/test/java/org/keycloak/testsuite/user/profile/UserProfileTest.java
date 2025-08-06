@@ -81,6 +81,7 @@ import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileConstants;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
+import org.keycloak.userprofile.UserProfileUtil;
 import org.keycloak.userprofile.ValidationException;
 import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.userprofile.validator.MultiValueValidator;
@@ -2400,6 +2401,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
     public void testDefaultValue() {
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testInvalidConfigDefaultValue);
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testDefaultValue);
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testNoDefaultValueForRootAttributes);
     }
 
     private static void testInvalidConfigDefaultValue(KeycloakSession session) {
@@ -2436,6 +2438,27 @@ public class UserProfileTest extends AbstractUserProfileTest {
         List<String> actualValue = user.getAttributes().get("foo");
         List<String> expectedValue = List.of("def");
         assertThat(actualValue, Matchers.equalTo(expectedValue));
+    }
+
+    private static void testNoDefaultValueForRootAttributes(KeycloakSession session) {
+        UserProfileProvider provider = getUserProfileProvider(session);
+        UPConfig upConfig = UPConfigUtils.parseSystemDefaultConfig();
+        upConfig.getAttribute(UserModel.USERNAME).setDefaultValue("def");
+        upConfig.getAttribute(UserModel.EMAIL).setDefaultValue("def");
+        upConfig.getAttribute(UserModel.FIRST_NAME).setDefaultValue("def");
+        upConfig.getAttribute(UserModel.LAST_NAME).setDefaultValue("def");
+
+        try {
+            provider.setConfiguration(upConfig);
+            fail("Should fail validation for default value");
+        } catch (ComponentValidationException cve) {
+            String message = cve.getMessage();
+            for (String attributeName : List.of(UserModel.USERNAME, UserModel.EMAIL, UserModel.FIRST_NAME, UserModel.LAST_NAME)) {
+                if (UserProfileUtil.isRootAttribute(attributeName)) {
+                    assertThat(message, Matchers.containsString("Default value not supported for attribute '" + attributeName + "'"));
+                }
+            }
+        }
     }
 
     private static void testMultivalued(KeycloakSession session) {
