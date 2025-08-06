@@ -19,13 +19,10 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import org.keycloak.common.Profile;
 import org.keycloak.config.TracingOptions;
+import org.keycloak.config.OpenTelemetryOptions;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.utils.StringUtil;
-
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
 
 import static org.keycloak.config.TracingOptions.TRACING_COMPRESSION;
 import static org.keycloak.config.TracingOptions.TRACING_ENABLED;
@@ -50,28 +47,30 @@ public class TracingPropertyMappers {
         return new PropertyMapper[]{
                 fromOption(TRACING_ENABLED)
                         .isEnabled(TracingPropertyMappers::isFeatureEnabled, OTEL_FEATURE_ENABLED_MSG)
-                        .to("quarkus.otel.enabled") // enable/disable whole OTel, tracing is enabled by default
+                        .mapFrom(OpenTelemetryOptions.OTEL_TRACES_ENABLED)
+                        .to("quarkus.otel.traces.enabled")
                         .build(),
                 fromOption(TRACING_ENDPOINT)
                         .isEnabled(TracingPropertyMappers::isTracingEnabled, TRACING_ENABLED_MSG)
+                        .mapFrom(OpenTelemetryOptions.OTEL_TRACES_ENDPOINT)
                         .to("quarkus.otel.exporter.otlp.traces.endpoint")
                         .paramLabel("url")
-                        .validator(TracingPropertyMappers::validateEndpoint)
-                        .build(),
-                fromOption(TRACING_SERVICE_NAME)
-                        .isEnabled(TracingPropertyMappers::isTracingEnabled, TRACING_ENABLED_MSG)
-                        .to("quarkus.otel.service.name")
-                        .paramLabel("name")
-                        .build(),
-                fromOption(TRACING_RESOURCE_ATTRIBUTES)
-                        .isEnabled(TracingPropertyMappers::isTracingEnabled, TRACING_ENABLED_MSG)
-                        .to("quarkus.otel.resource.attributes")
-                        .paramLabel("attributes")
+                        .validator(OpenTelemetryPropertyMappers::validateEndpoint)
                         .build(),
                 fromOption(TRACING_PROTOCOL)
                         .isEnabled(TracingPropertyMappers::isTracingEnabled, TRACING_ENABLED_MSG)
+                        .mapFrom(OpenTelemetryOptions.OTEL_TRACES_PROTOCOL)
                         .to("quarkus.otel.exporter.otlp.traces.protocol")
                         .paramLabel("protocol")
+                        .build(),
+                fromOption(TRACING_SERVICE_NAME)
+                        .isEnabled(TracingPropertyMappers::isTracingEnabled, TRACING_ENABLED_MSG)
+                        .paramLabel("name")
+                        .build(),
+                fromOption(TRACING_RESOURCE_ATTRIBUTES)
+                        // mapped to 'otel-resource-attributes'
+                        .isEnabled(TracingPropertyMappers::isTracingEnabled, TRACING_ENABLED_MSG)
+                        .paramLabel("attributes")
                         .build(),
                 fromOption(TRACING_SAMPLER_TYPE)
                         .isEnabled(TracingPropertyMappers::isTracingEnabled, TRACING_ENABLED_MSG)
@@ -102,16 +101,6 @@ public class TracingPropertyMappers {
         };
     }
 
-    private static void validateEndpoint(String value) {
-        if (StringUtil.isBlank(value)) {
-            throw new PropertyException("URL specified in 'tracing-endpoint' option must not be empty.");
-        }
-
-        if (!isValidUrl(value)) {
-            throw new PropertyException("URL specified in 'tracing-endpoint' option is invalid.");
-        }
-    }
-
     private static void validateRatio(String value) {
         if (StringUtil.isBlank(value)) {
             throw new PropertyException("Ratio in 'tracing-sampler-ratio' option must not be empty.");
@@ -138,14 +127,5 @@ public class TracingPropertyMappers {
 
     public static boolean isTracingAndEmbeddedInfinispanEnabled() {
         return Configuration.isTrue(TRACING_ENABLED) && CachingPropertyMappers.cacheSetToInfinispan();
-    }
-
-    private static boolean isValidUrl(String url) {
-        try {
-            new URL(url).toURI();
-            return true;
-        } catch (MalformedURLException | URISyntaxException e) {
-            return false;
-        }
     }
 }
