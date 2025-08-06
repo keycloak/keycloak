@@ -14,7 +14,7 @@ export async function assertInitialAccessTokensIsEmpty(page: Page) {
 export async function assertInitialAccessTokensIsNotEmpty(page: Page) {
   await expect(
     page.getByTestId("no-initial-access-tokens-empty-action"),
-  ).not.toBeVisible();
+  ).toBeHidden();
 }
 
 export async function goToCreateFromEmptyList(page: Page) {

@@ -79,7 +79,7 @@ export async function assertSwitchDisplayOnConsentScreenIsChecked(page: Page) {
 
 export async function assertConsentInputIsVisible(page: Page, not = false) {
   if (not) {
-    await expect(getConsentScreenTextInput(page)).not.toBeVisible();
+    await expect(getConsentScreenTextInput(page)).toBeHidden();
   } else {
     await expect(getConsentScreenTextInput(page)).toBeVisible();
   }

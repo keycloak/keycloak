@@ -61,7 +61,7 @@ export async function assertRowExists(page: Page, name: string, exists = true) {
   if (exists) {
     await expect(locator).toBeVisible();
   } else {
-    await expect(locator).not.toBeVisible();
+    await expect(locator).toBeHidden();
   }
 }
 
