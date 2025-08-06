@@ -38,7 +38,7 @@ include::../examples/generated/keycloak.yaml[tag=keycloak]
 ----
 <1> The database connection pool initial, max and min size should be identical to allow statement caching for the database.
 Adjust this number to meet the needs of your system.
-As most requests will not touch the database due to the {project_name} embedded cache, this change can server several hundreds of requests per second.
+As most requests will not touch the database due to the {project_name} embedded cache, this change can serve several hundreds of requests per second.
 See the <@links.ha id="multi-cluster-concepts-database-connections" /> {section} for details.
 <2> Specify the URL to your custom {project_name} image. If your image is optimized, set the `startOptimized` flag to `true`.
 <3> Enable additional features for multi-cluster support like the loadbalancer probe `/lb-check`.
