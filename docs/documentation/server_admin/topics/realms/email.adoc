@@ -69,6 +69,9 @@ Auth Token Client Secret::
   Only needed when *Authentication Type* 'token' is selected.
   Supply the *Auth Client Secret* that authenticates the client to fetch a token from the *Auth Token URL*. The value of the *Auth Client Secret* field can refer a value from an external <<_vault-administration,vault>>.
 
+Allow UTF-8::
+  Enable to allow UTF-8 characters in the local part of the email address. This should only be enabled if the mail server supports UTF-8 via the SMTPUTF8 extension. If disabled, domain names containing UTF-8 characters will be encoded using punycode, and addresses containing UTF-8 characters in the local part of the address will return an error.
+
 ifeval::[{project_community}==true]
 
 == XOAUTH2 email configuration with third-party vendors

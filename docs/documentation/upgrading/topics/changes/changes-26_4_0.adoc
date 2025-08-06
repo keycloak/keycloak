@@ -119,6 +119,11 @@ The input fields  in the login theme for OTP and recovery codes and have been op
 
 * The input mode is now `numeric`, which will ease the input on mobile devices.
 * The auto-complete is set to `one-time-code` to avoid interference with password managers.
+=== UTF-8 management in the email sender
+
+Since this release, {project_name} adds a new option `allowutf8` for the realm SMTP configuration (*Allow UTF-8* field inside the *Email* tab in the *Realm settings* section of the admin console). For more information about email configuration, see the link:{adminguide_link}#_email[Configuring email for a realm] chapter in the {adminguide_name}.
+
+This new option corresponds to the property link:https://jakarta.ee/specifications/mail/2.1/apidocs/jakarta.mail/jakarta/mail/internet/package-summary[mail.mime.allowutf8] of the jakarta mail API. Enabling the option allows using UTF-8 characters in the local part of an email (first part before `@`), but it needs that the SMTP server also supports UTF-8 via the SMTPUTF8 extension. If *Allow UTF-8* is disabled, {project_name} will encode the domain part of the email (second part after `@`) using punycode, but will reject emails that use UTF-8 characters in the local part. This new behavior controls better the data that is sent to the SMPT server. If you detect that non-ascii emails are rejected after the upgrade, please check if this new option *Allow UTF-8* should be enabled for your email server.
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
