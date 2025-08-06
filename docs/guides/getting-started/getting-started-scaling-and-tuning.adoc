@@ -41,7 +41,7 @@ In general, consider allowing the {project_name} Operator to handle horizontal s
 
 If you are not using the Operator, please review the following:
 
-* Higher availability is possible of your instances are on separate machines. On Kubernetes, use Pod anti-affinity to enforce this.
+* Higher availability is possible if your instances are on separate machines. On Kubernetes, use Pod anti-affinity to enforce this.
 
 * Use distributed caching; for multi-cluster deployments, use external caching for cluster members to share the same state. For details on the relevant configuration, see <@links.server id="caching" />. The embedded Infinispan cache has horizontal scaling considerations including:
 
