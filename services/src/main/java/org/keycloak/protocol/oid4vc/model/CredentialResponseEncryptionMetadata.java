@@ -37,6 +37,9 @@ public class CredentialResponseEncryptionMetadata {
     @JsonProperty("enc_values_supported")
     private List<String> encValuesSupported;
 
+    @JsonProperty("zip_values_supported")
+    private List<String> zipValuesSupported;
+
     @JsonProperty("encryption_required")
     private Boolean encryptionRequired;
 
@@ -44,16 +47,27 @@ public class CredentialResponseEncryptionMetadata {
         return algValuesSupported;
     }
 
-    public void setAlgValuesSupported(List<String> algValuesSupported) {
+    public CredentialResponseEncryptionMetadata setAlgValuesSupported(List<String> algValuesSupported) {
         this.algValuesSupported = algValuesSupported;
+        return this;
     }
 
     public List<String> getEncValuesSupported() {
         return encValuesSupported;
     }
 
-    public void setEncValuesSupported(List<String> encValuesSupported) {
+    public CredentialResponseEncryptionMetadata setEncValuesSupported(List<String> encValuesSupported) {
         this.encValuesSupported = encValuesSupported;
+        return this;
+    }
+
+    public List<String> getZipValuesSupported() {
+        return zipValuesSupported;
+    }
+
+    public CredentialResponseEncryptionMetadata setZipValuesSupported(List<String> zipValuesSupported) {
+        this.zipValuesSupported = zipValuesSupported;
+        return this;
     }
 
     public Boolean getEncryptionRequired() {

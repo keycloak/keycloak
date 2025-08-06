@@ -106,6 +106,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.zip.DeflaterOutputStream;
 
 /**
  * Provides the (REST-)endpoints required for the OID4VCI protocol.
@@ -405,15 +406,23 @@ public class OID4VCIssuerEndpoint {
             try {
                 validateEncryptionParameters(encryptionParams);
 
-                // Check if the encryption algorithms are supported
-                if (!isSupportedEncryption(encryptionMetadata, encryptionParams.getAlg(), encryptionParams.getEnc())) {
-                    String errorMessage = String.format("Unsupported encryption parameters: alg=%s, enc=%s",
-                            encryptionParams.getAlg(), encryptionParams.getEnc());
+                // Check if the encryption algorithm is supported
+                if (!isSupportedEncryption(encryptionMetadata, encryptionParams.getEnc())) {
+                    String errorMessage = String.format("Unsupported encryption parameter: enc=%s",
+                            encryptionParams.getEnc());
+                    LOGGER.debug(errorMessage);
+                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
+                }
+
+                // Check if compression is supported if requested
+                if (encryptionParams.getZip() != null &&
+                        !isSupportedCompression(encryptionMetadata, encryptionParams.getZip())) {
+                    String errorMessage = String.format("Unsupported compression parameter: zip=%s",
+                            encryptionParams.getZip());
                     LOGGER.debug(errorMessage);
                     throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
                 }
             } catch (BadRequestException e) {
-                // Re-throw with proper error type
                 throw e;
             }
         }
@@ -478,8 +487,8 @@ public class OID4VCIssuerEndpoint {
         // Validate input parameters
         validateEncryptionParameters(encryptionParams);
 
-        String alg = encryptionParams.getAlg();
         String enc = encryptionParams.getEnc();
+        String zip = encryptionParams.getZip(); // Get compression algorithm if specified
         JWK jwk = encryptionParams.getJwk();
 
         // Parse public key
@@ -500,10 +509,17 @@ public class OID4VCIssuerEndpoint {
         // Perform encryption
         try {
             byte[] content = JsonSerialization.writeValueAsBytes(response);
+
+            // Apply compression if specified
+            if (zip != null) {
+                content = compressContent(content, zip);
+            }
+
             JWEHeader header = new JWEHeader.JWEHeaderBuilder()
-                    .algorithm(alg)
                     .encryptionAlgorithm(enc)
+                    .compressionAlgorithm(zip)
                     .build();
+
             JWE jwe = new JWE()
                     .header(header)
                     .content(content);
@@ -529,6 +545,20 @@ public class OID4VCIssuerEndpoint {
     }
 
     /**
+     * Compress content using the specified algorithm
+     */
+    private byte[] compressContent(byte[] content, String zipAlgorithm) throws IOException {
+        if ("DEF".equals(zipAlgorithm)) {
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            try (DeflaterOutputStream deflaterOutputStream = new DeflaterOutputStream(byteArrayOutputStream)) {
+                deflaterOutputStream.write(content);
+            }
+            return byteArrayOutputStream.toByteArray();
+        }
+        throw new IOException("Unsupported compression algorithm: " + zipAlgorithm);
+    }
+
+    /**
      * Validate the encryption parameters for a credential response.
      *
      * @param encryptionParams The encryption parameters to validate
@@ -537,25 +567,24 @@ public class OID4VCIssuerEndpoint {
     private void validateEncryptionParameters(CredentialResponseEncryption encryptionParams) {
         if (encryptionParams == null) {
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS,
-                    "Missing required encryption parameters (alg, enc, and jwk)."));
+                    "Missing required encryption parameters (enc and jwk)."));
         }
 
         List<String> missingParams = new ArrayList<>();
-        if (encryptionParams.getAlg() == null) missingParams.add("alg");
         if (encryptionParams.getEnc() == null) missingParams.add("enc");
         if (encryptionParams.getJwk() == null) missingParams.add("jwk");
 
         if (!missingParams.isEmpty()) {
-            String errorMessage = String.format("Missing required encryption parameters: %s", String.join(", ", missingParams));
+            String errorMessage = String.format("Missing required encryption parameters: %s",
+                    String.join(", ", missingParams));
             LOGGER.debug(errorMessage);
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
         }
 
-        if (!isValidJwkForEncryption(encryptionParams.getJwk(), encryptionParams.getAlg())) {
-            String errorMessage = String.format("Invalid JWK: Not suitable for encryption with algorithm %s", encryptionParams.getAlg());
+        if (!isValidJwkForEncryption(encryptionParams.getJwk())) {
+            String errorMessage = "Invalid JWK: Not suitable for encryption";
             LOGGER.debug(errorMessage);
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
-
         }
     }
 
@@ -563,34 +592,33 @@ public class OID4VCIssuerEndpoint {
      * Validates if the provided JWK is suitable for encryption.
      *
      * @param jwk The JWK to validate
-     * @param expectedAlg The expected algorithm (e.g., "RSA-OAEP")
      * @return true if the JWK is valid for encryption, false otherwise
      */
-    private boolean isValidJwkForEncryption(JWK jwk, String expectedAlg) {
+    private boolean isValidJwkForEncryption(JWK jwk) {
         if (jwk == null) {
-            return false;
-        }
-        if (expectedAlg != null && !expectedAlg.equals(jwk.getAlgorithm())) {
             return false;
         }
         String publicKeyUse = jwk.getPublicKeyUse();
         return publicKeyUse == null || "enc".equals(publicKeyUse);
     }
 
-    private boolean isSupportedEncryption(CredentialResponseEncryptionMetadata metadata, String alg, String enc) {
+    private boolean isSupportedEncryption(CredentialResponseEncryptionMetadata metadata, String enc) {
         if (metadata == null) {
             return false;
         }
 
-        if (metadata.getAlgValuesSupported() == null ||
-                metadata.getEncValuesSupported() == null ||
-                metadata.getAlgValuesSupported().isEmpty() ||
+        if (metadata.getEncValuesSupported() == null ||
                 metadata.getEncValuesSupported().isEmpty()) {
             return false;
         }
 
-        return metadata.getAlgValuesSupported().contains(alg) &&
-                metadata.getEncValuesSupported().contains(enc);
+        return metadata.getEncValuesSupported().contains(enc);
+    }
+
+    private boolean isSupportedCompression(CredentialResponseEncryptionMetadata metadata, String zip) {
+        return metadata != null &&
+                metadata.getZipValuesSupported() != null &&
+                metadata.getZipValuesSupported().contains(zip);
     }
 
     private AuthenticatedClientSessionModel getAuthenticatedClientSession() {

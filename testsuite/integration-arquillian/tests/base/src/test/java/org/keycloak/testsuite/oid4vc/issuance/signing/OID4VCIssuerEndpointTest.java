@@ -17,6 +17,8 @@
 
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.HttpHeaders;
@@ -390,6 +392,15 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         byte[] decryptedContent = jwe.getContent();
         return JsonSerialization.readValue(decryptedContent, CredentialResponse.class);
     }
+
+    protected String getStringFromJson(JsonObject json, String key) {
+        JsonElement element = json.get(key);
+        if (element == null || element.isJsonNull()) {
+            return null;
+        }
+        return element.getAsString();
+    }
+
 
     void setClientOid4vciEnabled(String clientId, boolean enabled) {
         ClientRepresentation clientRepresentation = adminClient.realm(TEST_REALM_NAME).clients().findByClientId(clientId).get(0);

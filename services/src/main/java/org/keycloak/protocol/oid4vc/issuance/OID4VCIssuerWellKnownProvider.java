@@ -61,6 +61,10 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
 
     public static final String ATTR_ENCRYPTION_REQUIRED = "oid4vci.encryption.required";
 
+    // Constants for compression algorithms
+    public static final String DEFLATE_COMPRESSION = "DEF";
+    private static final List<String> DEFAULT_COMPRESSION_ALGORITHMS = List.of(DEFLATE_COMPRESSION);
+
     public OID4VCIssuerWellKnownProvider(KeycloakSession keycloakSession) {
         this.keycloakSession = keycloakSession;
     }
@@ -121,9 +125,10 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         CredentialResponseEncryptionMetadata metadata = new CredentialResponseEncryptionMetadata();
 
         // Get supported algorithms from available encryption keys
-        metadata.setAlgValuesSupported(getSupportedEncryptionAlgorithms(session));
-        metadata.setEncValuesSupported(getSupportedEncryptionMethods());
-        metadata.setEncryptionRequired(isEncryptionRequired(realm));
+        metadata.setAlgValuesSupported(getSupportedEncryptionAlgorithms(session))
+                .setEncValuesSupported(getSupportedEncryptionMethods())
+                .setZipValuesSupported(getSupportedCompressionMethods())
+                .setEncryptionRequired(isEncryptionRequired(realm));
 
         return metadata;
     }
@@ -142,6 +147,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                 .distinct()
                 .collect(Collectors.toList());
 
+        // Default algorithms if none configured
         if (supportedEncryptionAlgorithms.isEmpty()) {
             boolean hasRsaKeys = keyManager.getKeysStream(realm)
                     .filter(key -> KeyUse.ENC.equals(key.getUse()))
@@ -155,6 +161,15 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
 
         return supportedEncryptionAlgorithms;
     }
+
+    /**
+     * Returns the supported compression methods.
+     */
+    private static List<String> getSupportedCompressionMethods() {
+        // Currently only DEFLATE is widely supported
+        return DEFAULT_COMPRESSION_ALGORITHMS;
+    }
+
 
     /**
      * Returns the supported encryption methods from realm attributes.
