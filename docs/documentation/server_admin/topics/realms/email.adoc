@@ -69,6 +69,9 @@ Auth Token Client Secret::
   Only needed when *Authentication Type* 'token' is selected.
   Supply the *Auth Client Secret* that authenticates the client to fetch a token from the *Auth Token URL*. The value of the *Auth Client Secret* field can refer a value from an external <<_vault-administration,vault>>.
 
+Allow UTF-8::
+  Option to allow UTF-8 strings in message headers, for example in addresses. This should only be enabled if the mail server also supports UTF-8 (SMTPUTF8 extension).
+
 ifeval::[{project_community}==true]
 
 == XOAUTH2 email configuration with third-party vendors
