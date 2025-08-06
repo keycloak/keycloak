@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import org.jboss.logging.Logger;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
+import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
@@ -97,6 +98,7 @@ import org.keycloak.services.util.UserSessionUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.tracing.TracingAttributes;
 import org.keycloak.tracing.TracingProvider;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
 import java.util.Arrays;
@@ -122,6 +124,14 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 
 import static org.keycloak.OAuth2Constants.ORGANIZATION;
+import static org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider.FEDERATED_REFRESH_TOKEN;
+import static org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider.FEDERATED_TOKEN_EXPIRATION;
+import static org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider.OAUTH2_GRANT_TYPE_REFRESH_TOKEN;
+import static org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider.OAUTH2_PARAMETER_CLIENT_ID;
+import static org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider.OAUTH2_PARAMETER_CLIENT_SECRET;
+import static org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider.OAUTH2_PARAMETER_GRANT_TYPE;
+import static org.keycloak.broker.oidc.OIDCIdentityProvider.FEDERATED_ID_TOKEN;
+import static org.keycloak.broker.provider.IdentityProvider.FEDERATED_ACCESS_TOKEN;
 import static org.keycloak.models.light.LightweightUserAdapter.isLightweightUser;
 import static org.keycloak.representations.IDToken.NONCE;
 
@@ -295,6 +305,7 @@ public class TokenManager {
     public AccessTokenResponseBuilder refreshAccessToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm, ClientModel authorizedClient,
                                             String encodedRefreshToken, EventBuilder event, HttpHeaders headers, HttpRequest request, String scopeParameter) throws OAuthErrorException {
         RefreshToken refreshToken = verifyRefreshToken(session, realm, authorizedClient, request, encodedRefreshToken, true);
+        refreshIdpToken(session, realm, refreshToken, event);
 
         event.session(refreshToken.getSessionState())
                 .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
@@ -1545,4 +1556,40 @@ public class TokenManager {
         return Optional.ofNullable(refreshToken.getOtherClaims().get(Constants.REUSE_ID)).map(String::valueOf).orElse("");
     }
 
+    private void refreshIdpToken(KeycloakSession session, RealmModel realm, RefreshToken refreshToken, EventBuilder event) {
+        try {
+            UserSessionModel userSession = session.sessions().getUserSession(realm, refreshToken.getSessionId());
+            String idpAccessToken = userSession.getNote(FEDERATED_ACCESS_TOKEN);
+            String idpRefreshToken = userSession.getNote(FEDERATED_REFRESH_TOKEN);
+            String idpClientId = userSession.getNote("FEDERATED_CLIENT_ID");
+            String idpSecret = userSession.getNote("FEDERATED_SECRET");
+            String idpTokenUrl = userSession.getNote("FEDERATED_TOKEN_URL");
+            logger.info("old idp access token: " + idpAccessToken);
+            logger.info("old idp refresh token: " + idpRefreshToken);
+            if (idpTokenUrl != null) {
+                SimpleHttp refreshTokenRequest = SimpleHttp.doPost(idpTokenUrl, session)
+                        .param(OAUTH2_GRANT_TYPE_REFRESH_TOKEN, idpRefreshToken)
+                        .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_REFRESH_TOKEN)
+                        .param(OAUTH2_PARAMETER_CLIENT_ID, idpClientId)
+                        .param(OAUTH2_PARAMETER_CLIENT_SECRET, idpSecret);
+                String response = refreshTokenRequest.asString();
+                if (response.contains("error")) {
+                    logger.debugv("Error refreshing token, refresh token expiration?: {0}", response);
+                    event.detail(Details.REASON, "requested_issuer token expired");
+                    event.error(Errors.INVALID_TOKEN);
+                }
+                final int currentTime = Time.currentTime();
+                AccessTokenResponse newResponse = JsonSerialization.readValue(response, AccessTokenResponse.class);
+                long accessTokenExpiration = newResponse.getExpiresIn() > 0 ? currentTime + newResponse.getExpiresIn() : 0;
+                userSession.setNote(FEDERATED_TOKEN_EXPIRATION, Long.toString(accessTokenExpiration));
+                userSession.setNote(FEDERATED_REFRESH_TOKEN, newResponse.getRefreshToken());
+                userSession.setNote(FEDERATED_ACCESS_TOKEN, newResponse.getToken());
+                userSession.setNote(FEDERATED_ID_TOKEN, newResponse.getIdToken());
+                logger.info("new idp access token: " + newResponse.getToken());
+                logger.info("new idp refresh token: " + newResponse.getRefreshToken());
+            }
+        } catch (Exception e) {
+            logger.error("refresh idp token error", e);
+        }
+    }
 }

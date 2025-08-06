@@ -98,6 +98,14 @@ public class SimpleHttp {
         this.maxConsumedResponseSize = maxConsumedResponseSize;
     }
 
+    public Map<String, String> getHeaders() {
+        return headers;
+    }
+
+    public Map<String, String> getParams() {
+        return params;
+    }
+
     public static SimpleHttp doDelete(String url, KeycloakSession session) {
         HttpClientProvider provider = session.getProvider(HttpClientProvider.class);
         return doDelete(url, provider.getHttpClient(), provider.getMaxConsumedResponseSize());
