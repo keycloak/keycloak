@@ -112,13 +112,17 @@ public final class Database {
                                     .append(separator)
                                     .append("${kc.data.dir:data}")
                                     .append(separator)
-                                    .append("h2")
+                                    .append(getFolder(namedProperty))
                                     .append(separator)
                                     .append(getDbName(namedProperty))
                                     .append(getProperty(DatabaseOptions.DB_URL_PROPERTIES, namedProperty))
                                     .toString());
                         }
                         return amendH2("jdbc:h2:mem:%s%s".formatted(getDbName(namedProperty), getProperty(DatabaseOptions.DB_URL_PROPERTIES, namedProperty)));
+                    }
+
+                    private String getFolder(String namedProperty) {
+                        return StringUtil.isNullOrEmpty(namedProperty) ? "h2" : "h2-%s".formatted(namedProperty);
                     }
 
                     private String getDbName(String namedProperty) {
