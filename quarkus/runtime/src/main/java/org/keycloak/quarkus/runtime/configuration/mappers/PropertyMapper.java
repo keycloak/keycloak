@@ -628,6 +628,10 @@ public class PropertyMapper<T> {
         return this;
     }
 
+    public boolean hasConnectedOptions() {
+        return !option.getConnectedOptions().isEmpty();
+    }
+
     String getMapFrom() {
         return mapFrom;
     }
