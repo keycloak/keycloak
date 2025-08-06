@@ -27,6 +27,7 @@ import org.infinispan.commons.dataconversion.MediaType;
 import org.infinispan.configuration.cache.AbstractStoreConfiguration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.cache.HashConfiguration;
+import org.infinispan.configuration.cache.HashConfigurationBuilder;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.infinispan.eviction.EvictionStrategy;
 import org.infinispan.transaction.LockingMode;
@@ -43,6 +44,7 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.A
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NUM_OWNERS;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CRL_CACHE_DEFAULT_MAX;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CRL_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOCAL_CACHE_NAMES;
@@ -73,6 +75,7 @@ public final class CacheConfigurator {
     private static final Map<String, Supplier<ConfigurationBuilder>> DEFAULT_CONFIGS = Map.of(CRL_CACHE_NAME, CacheConfigurator::getCrlCacheConfig);
     private static final Supplier<ConfigurationBuilder> TO_NULL = () -> null;
     private static final String MAX_COUNT_SUFFIX = "MaxCount";
+    private static final String OWNER_SUFFIX = "Owners";
 
     private CacheConfigurator() {
     }
@@ -284,6 +287,26 @@ public final class CacheConfigurator {
         }
     }
 
+    /**
+     * Configures (and overwrites) the {@link HashConfigurationBuilder#numOwners(int)} based on the SPI configuration
+     * input.
+     *
+     * @param keycloakConfig The Keycloak configuration, which provides the number owners value for the caches.
+     * @param holder         The {@link ConfigurationBuilderHolder} where the caches are configured.
+     */
+    public static void configureNumOwners(Config.Scope keycloakConfig, ConfigurationBuilderHolder holder) {
+        for (var name : CLUSTERED_CACHE_NUM_OWNERS) {
+            var builder = holder.getNamedConfigurationBuilders().get(name);
+            if (builder == null) {
+                throw cacheNotFound(name);
+            }
+            var owners = keycloakConfig.getInt(numOwnerConfigKey(name));
+            if (owners != null) {
+                builder.clustering().hash().numOwners(owners);
+            }
+        }
+    }
+
     // private methods below
 
     private static void configureRevisionCache(ConfigurationBuilderHolder holder, String baseCache, String revisionCache, long defaultMaxEntries) {
@@ -307,6 +330,10 @@ public final class CacheConfigurator {
 
     public static String maxCountConfigKey(String name) {
         return name + MAX_COUNT_SUFFIX;
+    }
+
+    public static String numOwnerConfigKey(String name) {
+        return name + OWNER_SUFFIX;
     }
 
     private static IllegalStateException cacheNotFound(String cache) {
