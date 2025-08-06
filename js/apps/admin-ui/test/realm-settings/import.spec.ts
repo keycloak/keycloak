@@ -49,7 +49,7 @@ test.describe("Partial import test", () => {
   test("Opens and closes partial import dialog", async ({ page }) => {
     await expect(page.getByTestId("confirm")).toBeDisabled();
     await cancelModal(page);
-    await expect(page.getByTestId("confirm")).not.toBeVisible();
+    await expect(page.getByTestId("confirm")).toBeHidden();
   });
 
   test("Import button only enabled if JSON has something to import", async ({
@@ -108,7 +108,7 @@ test.describe("Partial import test", () => {
 
     await chooseFile(page, "../utils/files/client-only.json");
 
-    await expect(page.locator("select")).not.toBeVisible();
+    await expect(page.locator("select")).toBeHidden();
 
     await assertTextContent(page, "1 Clients");
 

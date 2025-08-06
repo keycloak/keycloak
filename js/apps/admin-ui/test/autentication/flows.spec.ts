@@ -56,7 +56,7 @@ test.describe("Authentication test", () => {
     const itemId = "browser";
     await searchItem(page, "Search for flow", itemId);
     await expect(getRowByCellText(page, itemId)).toBeVisible();
-    await expect(getRowByCellText(page, "clients")).not.toBeVisible();
+    await expect(getRowByCellText(page, "clients")).toBeHidden();
   });
 
   test("should create duplicate of existing flow", async ({ page }) => {

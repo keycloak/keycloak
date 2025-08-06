@@ -258,7 +258,7 @@ function DataTable<T>({
                     rows[index + 1].cells.length === 0
                       ? undefined
                       : {
-                          isExpanded: !!expandedRows[index],
+                          isExpanded: expandedRows[index] ?? false,
                           rowIndex: index,
                           expandId: "expandable-row-",
                           onToggle: (_, rowIndex, isOpen) => {
@@ -278,7 +278,7 @@ function DataTable<T>({
                 />
               </Tr>
             ) : (
-              <Tr isExpanded={!!expandedRows[index - 1]}>
+              <Tr isExpanded={expandedRows[index - 1] ?? false}>
                 <Td />
                 <Td colSpan={columns.length}>
                   <ExpandableRowContent>
