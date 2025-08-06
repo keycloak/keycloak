@@ -188,6 +188,20 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void testProviderDefault() {
+        ConfigArgsConfigSource.setCliArgs("--spi-client-registration--provider-default=openid-connect");
+        initConfig("client-registration");
+        assertEquals("openid-connect", Config.getDefaultProvider("client-registration"));
+    }
+
+    @Test
+    public void testScopePropertyWithPeriod() {
+        ConfigArgsConfigSource.setCliArgs("--spi-client-registration--openid-connect--some-property=value");
+        Config.Scope scope = initConfig("client-registration", "openid-connect");
+        assertEquals("value", scope.get("some.property"));
+    }
+
+    @Test
     public void testPropertyNamesFromConfig() {
         ConfigArgsConfigSource.setCliArgs("--spi-client-registration-openid-connect-static-jwk-url=http://c.jwk.url");
         Config.Scope config = initConfig("client-registration", "openid-connect");
