@@ -438,6 +438,7 @@ public class OIDCAttributeMapperHelper {
         property.setLabel(TOKEN_CLAIM_NAME_LABEL);
         property.setType(ProviderConfigProperty.STRING_TYPE);
         property.setHelpText(TOKEN_CLAIM_NAME_TOOLTIP);
+        property.setRequired(true);
         configProperties.add(property);
     }
 
