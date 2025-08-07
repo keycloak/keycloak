@@ -1,11 +1,11 @@
 import KeycloakAdminClient from "@keycloak/keycloak-admin-client";
-import ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-import IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
-import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
-import UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation.js";
+import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation.js";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation.js";
+import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata.js";
+import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation.js";
 
-import { DEFAULT_REALM, SERVER_URL } from "./constants";
+import { DEFAULT_REALM, SERVER_URL } from "./constants.ts";
 
 const adminClient = new KeycloakAdminClient({
   baseUrl: SERVER_URL,

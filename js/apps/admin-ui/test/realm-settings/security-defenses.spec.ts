@@ -1,10 +1,10 @@
 import { test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { selectItem } from "../utils/form";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
-import { goToRealm, goToRealmSettings } from "../utils/sidebar";
+import adminClient from "../utils/AdminClient.ts";
+import { selectItem } from "../utils/form.ts";
+import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import { goToRealm, goToRealmSettings } from "../utils/sidebar.ts";
 import {
   clickSaveBruteForce,
   clickSaveSecurityDefenses,
@@ -13,7 +13,7 @@ import {
   fillMinimumQuickLoginWaitSeconds,
   fillWaitIncrementSeconds,
   goToSecurityDefensesTab,
-} from "./security-defenses";
+} from "./security-defenses.ts";
 
 test.describe("Security defenses", () => {
   const realmName = `security-defenses-realm-settings-${uuid()}`;

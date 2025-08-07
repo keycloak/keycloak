@@ -1,10 +1,10 @@
-import { Locator, Page, expect } from "@playwright/test";
+import { type Locator, type Page, expect } from "@playwright/test";
 import {
   assertSelectValue,
   selectItem,
   switchOff,
   switchOn,
-} from "../utils/form";
+} from "../utils/form.ts";
 
 function getTermsOfServiceUrl(page: Page) {
   return page.getByTestId("attributes.tosUri");

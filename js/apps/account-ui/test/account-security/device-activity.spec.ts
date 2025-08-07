@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { login } from "../login";
+import { login } from "../login.ts";
 
 test.describe("Sign out test", () => {
   test("Sign out one device", async ({ browser }) => {

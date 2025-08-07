@@ -1,6 +1,6 @@
 import { generatePath } from "react-router-dom";
 
-import { DEFAULT_REALM, ROOT_PATH, SERVER_URL } from "./constants";
+import { DEFAULT_REALM, ROOT_PATH, SERVER_URL } from "./constants.ts";
 
 export function getAccountUrl() {
   return SERVER_URL + getRootPath();

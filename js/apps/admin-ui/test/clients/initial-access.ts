@@ -1,5 +1,5 @@
-import { Page, expect } from "@playwright/test";
-import { assertFieldError } from "../utils/form";
+import { type Page, expect } from "@playwright/test";
+import { assertFieldError } from "../utils/form.ts";
 
 export async function goToInitialAccessTokenTab(page: Page) {
   await page.getByTestId("initialAccessToken").click();
