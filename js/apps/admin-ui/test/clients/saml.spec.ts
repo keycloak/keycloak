@@ -212,18 +212,20 @@ test.describe("Clients SAML tests", () => {
   test("should check access settings", async ({ page }) => {
     const validUrl =
       "http://localhost:8180/realms/master/protocol/" + clientId + "/clients/";
-    const invalidUrlError =
+    const invalidUrlErrorRoot =
       "Client could not be updated: invalid_inputRoot URL is not a valid URL";
+    const invalidUrlErrorBase =
+      "Client could not be updated: invalid_inputBase URL is not a valid URL";
 
     await page.getByTestId("rootUrl").fill("Invalid URL");
     await saveSamlSettings(page);
-    await assertNotificationMessage(page, invalidUrlError);
+    await assertNotificationMessage(page, invalidUrlErrorRoot);
     await page.getByTestId("rootUrl").clear();
 
     await page.getByTestId("baseUrl").fill("Invalid URL");
     await saveSamlSettings(page);
 
-    await assertNotificationMessage(page, invalidUrlError);
+    await assertNotificationMessage(page, invalidUrlErrorBase);
     await page.getByTestId("baseUrl").clear();
 
     await page.getByTestId("rootUrl").fill(validUrl);
