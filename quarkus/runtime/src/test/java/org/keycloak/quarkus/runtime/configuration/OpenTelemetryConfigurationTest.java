@@ -141,4 +141,60 @@ public class OpenTelemetryConfigurationTest extends AbstractConfigurationTest {
                 "quarkus.otel.exporter.otlp.traces.protocol", "http/protobuf" // 'tracing-protocol' takes precedence
         ));
     }
+
+    @Test
+    public void logsDefault() {
+        initConfig();
+
+        assertConfig(Map.of(
+                "otel-logs-enabled", "false",
+                "otel-logs-endpoint", "http://localhost:4317",
+                "otel-logs-protocol", "grpc",
+                "otel-logs-level", "all"
+        ));
+
+        assertExternalConfig(Map.of(
+                "quarkus.otel.logs.enabled", "false",
+                "quarkus.otel.enabled", "false",
+                "quarkus.otel.exporter.otlp.logs.endpoint", "http://localhost:4317",
+                "quarkus.otel.exporter.otlp.logs.protocol", "grpc",
+                "quarkus.otel.logs.level","ALL"
+        ));
+    }
+
+    @Test
+    public void logsPriority() {
+        ConfigArgsConfigSource.setCliArgs("--otel-logs-enabled=true", "--otel-logs-endpoint=localhost:2000", "--otel-logs-protocol=http/protobuf","--otel-logs-level=warn");
+        initConfig();
+        assertConfig(Map.of(
+                "otel-logs-enabled", "true",
+                "otel-logs-endpoint", "localhost:2000",
+                "otel-logs-protocol", "http/protobuf",
+                "otel-logs-level", "warn"
+        ));
+        assertExternalConfig(Map.of(
+                "quarkus.otel.logs.enabled", "true",
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.exporter.otlp.logs.endpoint", "localhost:2000",
+                "quarkus.otel.exporter.otlp.logs.protocol", "http/protobuf",
+                "quarkus.otel.logs.level","WARN"
+        ));
+        onAfter();
+
+        ConfigArgsConfigSource.setCliArgs("--otel-endpoint=http://keycloak.org:1234", "--otel-protocol=grpc", "--otel-logs-enabled=true", "--otel-logs-endpoint=my-domain:2001", "--otel-logs-protocol=http/protobuf");
+        initConfig();
+        assertConfig(Map.of(
+                "otel-logs-enabled", "true",
+                "otel-logs-endpoint", "my-domain:2001",
+                "otel-logs-protocol", "http/protobuf",
+                "otel-endpoint", "http://keycloak.org:1234",
+                "otel-protocol", "grpc"
+        ));
+        assertExternalConfig(Map.of(
+                "quarkus.otel.logs.enabled", "true",
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.exporter.otlp.logs.endpoint", "my-domain:2001",
+                "quarkus.otel.exporter.otlp.logs.protocol", "http/protobuf"
+        ));
+    }
 }

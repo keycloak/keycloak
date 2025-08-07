@@ -452,20 +452,36 @@ OpenTelemetry:
 
 --otel-endpoint <url>
                      OpenTelemetry endpoint to connect to. Default: http://localhost:4317.
-                       Available only when any of available OpenTelemetry components (Traces) is
-                       turned on.
+                       Available only when any of available OpenTelemetry components (Logs, Traces)
+                       is turned on.
+--otel-logs-enabled <true|false>
+                     PREVIEW. Enables the OpenTelemetry Logs. Default: false.
+--otel-logs-endpoint <url>
+                     PREVIEW. OpenTelemetry endpoint to connect to for Logs. If not given, the
+                       value is inherited from the 'otel-endpoint' option. Available only when
+                       OpenTelemetry Logs is enabled.
+--otel-logs-level <level>
+                     Most verbose log level for logs exported to the OpenTelemetry collector. For
+                       more information, check the OpenTelemetry guide. Possible values are (case
+                       insensitive): off, fatal, error, warn, info, debug, trace, all. Default:
+                       all. Available only when OpenTelemetry Logs is enabled.
+--otel-logs-protocol <protocol>
+                     PREVIEW. OpenTelemetry protocol used for the logging telemetry data. If not
+                       given, the value is inherited from the 'otel-protocol' option. Possible
+                       values are: grpc, http/protobuf. Available only when OpenTelemetry Logs is
+                       enabled.
 --otel-protocol <protocol>
                      OpenTelemetry protocol used for the telemetry data. Possible values are: grpc,
                        http/protobuf. Default: grpc. Available only when any of available
-                       OpenTelemetry components (Traces) is turned on.
+                       OpenTelemetry components (Logs, Traces) is turned on.
 --otel-resource-attributes <attributes>
                      OpenTelemetry resource attributes characterize the telemetry producer. Values
                        in format 'key1=val1,key2=val2'. Available only when any of available
-                       OpenTelemetry components (Traces) is turned on.
+                       OpenTelemetry components (Logs, Traces) is turned on.
 --otel-service-name <name>
                      OpenTelemetry service name. Takes precedence over 'service.name' defined in
                        the 'otel-resource-attributes' property. Default: keycloak. Available only
-                       when any of available OpenTelemetry components (Traces) is turned on.
+                       when any of available OpenTelemetry components (Logs, Traces) is turned on.
 --otel-traces-enabled <true|false>
                      Enables the OpenTelemetry Traces. Property 'tracing-enabled' takes precedence.
                        Default: false.

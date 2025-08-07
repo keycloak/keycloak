@@ -12,7 +12,7 @@ import org.keycloak.it.junit5.extension.RawDistOnly;
 public class OpenTelemetryDistTest {
 
     @Test
-    @Launch({"start-dev", "--log-level=io.opentelemetry:fine", "--otel-traces-enabled=true"})
+    @Launch({"start-dev", "--log-level=io.opentelemetry:fine", "--otel-traces-enabled=true", "--otel-logs-enabled=true"})
     void enabled(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStartedDevMode();

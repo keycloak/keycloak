@@ -2,7 +2,6 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import org.keycloak.common.Profile;
-import org.keycloak.config.LoggingOptions;
 import org.keycloak.config.OpenTelemetryOptions;
 import org.keycloak.config.TracingOptions;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
@@ -15,6 +14,10 @@ import java.net.URL;
 
 import static org.keycloak.config.OpenTelemetryOptions.OTEL_ENABLED;
 import static org.keycloak.config.OpenTelemetryOptions.OTEL_ENDPOINT;
+import static org.keycloak.config.OpenTelemetryOptions.OTEL_LOGS_ENABLED;
+import static org.keycloak.config.OpenTelemetryOptions.OTEL_LOGS_ENDPOINT;
+import static org.keycloak.config.OpenTelemetryOptions.OTEL_LOGS_LEVEL;
+import static org.keycloak.config.OpenTelemetryOptions.OTEL_LOGS_PROTOCOL;
 import static org.keycloak.config.OpenTelemetryOptions.OTEL_PROTOCOL;
 import static org.keycloak.config.OpenTelemetryOptions.OTEL_RESOURCE_ATTRIBUTES;
 import static org.keycloak.config.OpenTelemetryOptions.OTEL_SERVICE_NAME;
@@ -25,7 +28,9 @@ import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.
 
 public class OpenTelemetryPropertyMappers {
     private static final String OTEL_FEATURE_ENABLED_MSG = "'opentelemetry' feature is enabled";
-    private static final String OTEL_COLLECTOR_ENABLED_MSG = "any of available OpenTelemetry components (Traces) is turned on";
+    private static final String OTEL_COLLECTOR_ENABLED_MSG = "any of available OpenTelemetry components (Logs, Traces) is turned on";
+
+    private static final String OTEL_LOGS_ENABLED_MSG = "OpenTelemetry Logs is enabled";
     private static final String OTEL_TRACES_ENABLED_MSG = "OpenTelemetry Traces is enabled";
 
     private OpenTelemetryPropertyMappers() {
@@ -61,6 +66,31 @@ public class OpenTelemetryPropertyMappers {
                         .to("quarkus.otel.resource.attributes")
                         .paramLabel("attributes")
                         .build(),
+
+                // Logs
+                fromOption(OTEL_LOGS_ENABLED)
+                        .to("quarkus.otel.logs.enabled")
+                        .build(),
+                fromOption(OTEL_LOGS_ENDPOINT)
+                        .isEnabled(OpenTelemetryPropertyMappers::isOpenTelemetryLogsEnabled, OTEL_LOGS_ENABLED_MSG)
+                        .mapFrom(OpenTelemetryOptions.OTEL_ENDPOINT)
+                        .to("quarkus.otel.exporter.otlp.logs.endpoint")
+                        .validator(OpenTelemetryPropertyMappers::validateEndpoint)
+                        .paramLabel("url")
+                        .build(),
+                fromOption(OTEL_LOGS_PROTOCOL)
+                        .isEnabled(OpenTelemetryPropertyMappers::isOpenTelemetryLogsEnabled, OTEL_LOGS_ENABLED_MSG)
+                        .mapFrom(OpenTelemetryOptions.OTEL_PROTOCOL)
+                        .to("quarkus.otel.exporter.otlp.logs.protocol")
+                        .paramLabel("protocol")
+                        .build(),
+                fromOption(OTEL_LOGS_LEVEL)
+                        .isEnabled(OpenTelemetryPropertyMappers::isOpenTelemetryLogsEnabled, OTEL_LOGS_ENABLED_MSG)
+                        .to("quarkus.otel.logs.level")
+                        .paramLabel("level")
+                        .transformer(LoggingPropertyMappers::upperCase)
+                        .build(),
+
                 // Traces
                 fromOption(OTEL_TRACES_ENABLED)
                         .build(),
@@ -79,7 +109,7 @@ public class OpenTelemetryPropertyMappers {
     }
 
     private static String checkIfDependantsAreEnabled(String value, ConfigSourceInterceptorContext context) {
-        if (Configuration.isTrue(TracingOptions.TRACING_ENABLED)) {
+        if (isOpenTelemetryLogsEnabled() || isOpenTelemetryTracesEnabled()) {
             return Boolean.TRUE.toString();
         }
         return Boolean.FALSE.toString();
@@ -95,6 +125,10 @@ public class OpenTelemetryPropertyMappers {
 
     public static boolean isOpenTelemetryTracesEnabled() {
         return Configuration.isTrue("quarkus.otel.traces.enabled");
+    }
+
+    public static boolean isOpenTelemetryLogsEnabled() {
+        return Configuration.isTrue(OTEL_LOGS_ENABLED);
     }
 
     static void validateEndpoint(String value) {

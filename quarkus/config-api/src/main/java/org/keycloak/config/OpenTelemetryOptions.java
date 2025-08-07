@@ -34,6 +34,32 @@ public class OpenTelemetryOptions {
             .description("OpenTelemetry resource attributes characterize the telemetry producer. Values in format 'key1=val1,key2=val2'.")
             .build();
 
+    // Logs
+    public static final Option<Boolean> OTEL_LOGS_ENABLED = new OptionBuilder<>("otel-logs-enabled", Boolean.class)
+            .category(OptionCategory.OPENTELEMETRY)
+            .description("PREVIEW. Enables the OpenTelemetry Logs.")
+            .defaultValue(Boolean.FALSE)
+            .buildTime(true)
+            .build();
+
+    public static final Option<String> OTEL_LOGS_ENDPOINT = new OptionBuilder<>("otel-logs-endpoint", String.class)
+            .category(OptionCategory.OPENTELEMETRY)
+            .description("PREVIEW. OpenTelemetry endpoint to connect to for Logs. If not given, the value is inherited from the '%s' option.".formatted(OTEL_ENDPOINT.getKey()))
+            .build();
+
+    public static final Option<String> OTEL_LOGS_PROTOCOL = new OptionBuilder<>("otel-logs-protocol", String.class)
+            .category(OptionCategory.OPENTELEMETRY)
+            .description("PREVIEW. OpenTelemetry protocol used for the logging telemetry data. If not given, the value is inherited from the '%s' option.".formatted(OTEL_PROTOCOL.getKey()))
+            .expectedValues("grpc", "http/protobuf")
+            .build();
+
+    public static final Option<LoggingOptions.Level> OTEL_LOGS_LEVEL = new OptionBuilder<>("otel-logs-level", LoggingOptions.Level.class)
+            .category(OptionCategory.OPENTELEMETRY)
+            .description("Most verbose log level for logs exported to the OpenTelemetry collector. For more information, check the OpenTelemetry guide.")
+            .defaultValue(LoggingOptions.Level.ALL)
+            .caseInsensitiveExpectedValues(true)
+            .build();
+
     // Traces
     public static final Option<Boolean> OTEL_TRACES_ENABLED = new OptionBuilder<>("otel-traces-enabled", Boolean.class)
             .category(OptionCategory.OPENTELEMETRY)
@@ -52,6 +78,6 @@ public class OpenTelemetryOptions {
             .description("OpenTelemetry protocol used for the tracing telemetry data. If not given, the value is inherited from the '%s' option. Property 'tracing-protocol' takes precedence.".formatted(OTEL_PROTOCOL.getKey()))
             .expectedValues("grpc", "http/protobuf")
             .build();
-    // Logs
+
     // Metrics
 }

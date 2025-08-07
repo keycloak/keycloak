@@ -96,6 +96,8 @@ Vault:
 
 OpenTelemetry:
 
+--otel-logs-enabled <true|false>
+                     PREVIEW. Enables the OpenTelemetry Logs. Default: false.
 --otel-traces-enabled <true|false>
                      Enables the OpenTelemetry Traces. Property 'tracing-enabled' takes precedence.
                        Default: false.

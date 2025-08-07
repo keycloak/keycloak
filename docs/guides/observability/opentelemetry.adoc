@@ -1,7 +1,7 @@
 <#import "/templates/guide.adoc" as tmpl>
 <#import "/templates/kc.adoc" as kc>
 <#import "/templates/options.adoc" as opts>
-<#import "/templates/links.adoc" as links>
+<#import "/templates/links.adoc" as links> <#import "/templates/profile.adoc" as profile>
 
 <@tmpl.guide
 title="OpenTelemetry support"
@@ -57,6 +57,50 @@ You can override the global OpenTelemetry settings if you want to export traces 
 For the purpose of unified configuration, the `otel-traces-*` options were introduced to simplify the setting of OpenTelemetry Traces.
 
 NOTE: Tracing options `+tracing-*+` takes precedence over the `+otel-traces-*+` options.
+
+== Logs
+
+WARNING: OpenTelemetry Logs is considered a *preview* and can be changed. Feedback is more than welcome.
+
+It is possible to export {project_name}'s logs to the OpenTelemetry collector and be managed by various logging backends that support OpenTelemetry.
+It helps to have a centralized logging system that is beneficial for application deployments.
+
+=== Enable Logs
+You can enable OpenTelemetry Logs via CLI as follows:
+
+<@kc.start parameters="--otel-logs-enabled=true"/>
+
+For more details about OpenTelemetry Logs functionality in Quarkus, see the https://quarkus.io/guides/opentelemetry-logging[Quarkus OpenTelemetry Logging guide].
+For more information on how to set up logging, see the https://www.keycloak.org/server/logging[Configuring Logging guide].
+
+=== Log level
+You can specify what logs will be exported to the OpenTelemetry Collector based on the log level via the `otel-logs-level` option.
+By default, all log levels are exported, but you can choose the most verbose log level that should be exported.
+For instance, if you set the level to `WARN`, warning and errors will be exported.
+
+You can change the log level via CLI as follows:
+
+<@kc.start parameters="--otel-logs-level=WARN"/>
+
+<@profile.ifCommunity>
+
+== Development setup
+
+For development purposes, you can use the https://github.com/grafana/docker-otel-lgtm[Grafana OTel-LGTM service], containing OpenTelemetry Collector and backends for logs (Loki), metrics (Prometheus), and traces (Tempo).
+
+.Service architecture
+image::observability/grafana-otel-lgtm.png[]
+
+You can start the service by using Docker/Podman as follows:
+
+[source,shell]
+----
+docker run -p 3000:3000 -p 4317:4317 -p 4318:4318 --rm -ti grafana/otel-lgtm
+----
+
+Then, you can navigate to Grafana UI by accessing `+localhost:3000+` and then you can explore all the data sent to OpenTelemetry Collector.
+
+</@profile.ifCommunity>
 
 <@opts.printRelevantOptions includedOptions="otel-*" excludedOptions="otel-traces-*">
 
