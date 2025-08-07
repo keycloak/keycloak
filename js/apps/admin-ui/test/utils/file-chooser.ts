@@ -1,4 +1,4 @@
-import { Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
 import path from "path";
 
 export async function chooseFile(page: Page, file: string) {

@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-import { ADMIN_PASSWORD, ADMIN_USER, DEFAULT_REALM } from "./constants";
-import { login } from "./login";
-import { getAdminUrl } from "./utils";
+import { ADMIN_PASSWORD, ADMIN_USER, DEFAULT_REALM } from "./constants.ts";
+import { login } from "./login.ts";
+import { getAdminUrl } from "./utils.ts";
 
 test.describe("Signing in with referrer link", () => {
   test("shows a referrer link when a matching client exists", async ({

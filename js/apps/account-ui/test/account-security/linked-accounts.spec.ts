@@ -1,6 +1,6 @@
-import ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-import IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
-import { Page, expect, test } from "@playwright/test";
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation.js";
+import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation.js";
+import { type Page, expect, test } from "@playwright/test";
 
 import {
   createClient,
@@ -10,9 +10,9 @@ import {
   deleteIdentityProvider,
   deleteUser,
   findClientByClientId,
-} from "../admin-client";
-import { SERVER_URL } from "../constants";
-import groupsIdPClient from "../realms/groups-idp.json" assert { type: "json" };
+} from "../admin-client.ts";
+import { SERVER_URL } from "../constants.ts";
+import groupsIdPClient from "../realms/groups-idp.json" with { type: "json" };
 
 const realm = "groups";
 

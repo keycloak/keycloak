@@ -1,12 +1,12 @@
-import { Page, expect } from "@playwright/test";
+import { type Page, expect } from "@playwright/test";
 import {
   assertSelectValue,
   selectItem,
   switchOff,
   switchOn,
-} from "../utils/form";
-import { confirmModal } from "../utils/modal";
-import { clickRowKebabItem } from "../utils/table";
+} from "../utils/form.ts";
+import { confirmModal } from "../utils/modal.ts";
+import { clickRowKebabItem } from "../utils/table.ts";
 
 export async function goToAdvancedTab(page: Page) {
   await page.getByTestId("advancedTab").click();

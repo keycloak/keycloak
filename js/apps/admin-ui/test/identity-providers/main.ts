@@ -1,4 +1,4 @@
-import { Page, expect } from "@playwright/test";
+import { type Page, expect } from "@playwright/test";
 
 const SERVER_URL = "http://localhost:8080";
 const discoveryUrl = `${SERVER_URL}/realms/master/.well-known/openid-configuration`;

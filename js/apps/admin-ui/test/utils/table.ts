@@ -1,4 +1,4 @@
-import { Locator, Page, expect } from "@playwright/test";
+import { type Locator, type Page, expect } from "@playwright/test";
 
 export async function searchItem(
   page: Page,
@@ -42,7 +42,7 @@ export async function assertRowExists(
   if (exist) {
     await expect(page.getByRole("row", { name: itemName })).toBeVisible();
   } else {
-    await expect(page.getByRole("row", { name: itemName })).not.toBeVisible();
+    await expect(page.getByRole("row", { name: itemName })).toBeHidden();
   }
 }
 

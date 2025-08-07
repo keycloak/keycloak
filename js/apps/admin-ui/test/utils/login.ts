@@ -1,4 +1,4 @@
-import { Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
 
 import {
   ADMIN_PASSWORD,
@@ -6,7 +6,7 @@ import {
   DEFAULT_REALM,
   SERVER_URL,
   ROOT_PATH,
-} from "./constants";
+} from "./constants.ts";
 
 export const login = async (
   page: Page,

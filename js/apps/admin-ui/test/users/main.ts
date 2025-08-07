@@ -1,4 +1,4 @@
-import { Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
 
 export async function clickCancelButton(page: Page) {
   await page.getByTestId("user-creation-revert").click();

@@ -1,5 +1,5 @@
 import { test as setup } from "@playwright/test";
-import { deleteRealm } from "./admin-client";
+import { deleteRealm } from "./admin-client.ts";
 
 setup("delete realm", async () => {
   await deleteRealm("photoz");

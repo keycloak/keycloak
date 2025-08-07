@@ -1,5 +1,5 @@
-import { Page, expect } from "@playwright/test";
-import { selectItem, switchOff, switchOn } from "../utils/form";
+import { type Page, expect } from "@playwright/test";
+import { selectItem, switchOff, switchOn } from "../utils/form.ts";
 
 function getTermsOfServiceUrl(page: Page) {
   return page.getByTestId("attributes.tosUri");

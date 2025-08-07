@@ -1,5 +1,5 @@
-import ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-import { Page } from "@playwright/test";
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation.js";
+import type { Page } from "@playwright/test";
 
 export async function createClient(
   page: Page,

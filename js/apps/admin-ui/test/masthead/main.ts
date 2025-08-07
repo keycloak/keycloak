@@ -1,4 +1,4 @@
-import { Page, expect } from "@playwright/test";
+import { type Page, expect } from "@playwright/test";
 
 function getMobileUserDropdownSelector(page: Page) {
   return page.getByTestId("options-kebab-toggle");
@@ -25,13 +25,13 @@ export async function goToAccountManagement(page: Page) {
 }
 
 export async function assertIsMobileView(page: Page) {
-  await expect(getUserDropdownSelector(page)).not.toBeVisible();
+  await expect(getUserDropdownSelector(page)).toBeHidden();
   await expect(getMobileUserDropdownSelector(page)).toBeVisible();
 }
 
 export async function assertIsDesktopView(page: Page) {
   await expect(getUserDropdownSelector(page)).toBeVisible();
-  await expect(getMobileUserDropdownSelector(page)).not.toBeVisible();
+  await expect(getMobileUserDropdownSelector(page)).toBeHidden();
 }
 
 export async function toggleUsernameDropdown(page: Page) {

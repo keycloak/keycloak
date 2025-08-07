@@ -1,17 +1,17 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { selectItem, switchOff, switchToggle } from "../utils/form";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
-import { confirmModal } from "../utils/modal";
-import { goToRealm, goToUserFederation } from "../utils/sidebar";
+import adminClient from "../utils/AdminClient.ts";
+import { selectItem, switchOff, switchToggle } from "../utils/form.ts";
+import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import { confirmModal } from "../utils/modal.ts";
+import { goToRealm, goToUserFederation } from "../utils/sidebar.ts";
 import {
   clickAddProvider,
   clickSave,
   clickUserFederationCard,
   fillKerberosForm,
-} from "./kerberos";
+} from "./kerberos.ts";
 
 const provider = "kerberos";
 const initCapProvider = provider.charAt(0).toUpperCase() + provider.slice(1);
