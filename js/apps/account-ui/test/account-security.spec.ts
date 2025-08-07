@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { login } from "./login";
+import { login } from "./login.ts";
 
 test("Check page heading", async ({ page }) => {
   await login(page, "alice", "alice", "user-profile");

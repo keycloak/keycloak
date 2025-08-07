@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { login, logout } from "../utils/login";
-import { assertAxeViolations } from "../utils/masthead";
-import { goToClients } from "../utils/sidebar";
+import adminClient from "../utils/AdminClient.ts";
+import { login, logout } from "../utils/login.ts";
+import { assertAxeViolations } from "../utils/masthead.ts";
+import { goToClients } from "../utils/sidebar.ts";
 import {
   assertIsDesktopView,
   assertIsMobileView,
@@ -13,7 +13,7 @@ import {
   toggleGlobalHelp,
   toggleMobileViewHelp,
   toggleUsernameDropdown,
-} from "./main";
+} from "./main.ts";
 
 test.describe("Masthead tests", () => {
   test.beforeEach(async ({ page }) => {

@@ -1,17 +1,17 @@
 import { test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
+import adminClient from "../utils/AdminClient.ts";
 import {
   assertAttributeLength,
   clickAttributeSaveButton,
   deleteAttribute,
   fillAttributeData,
   goToAttributesTab,
-} from "../utils/attributes";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
-import { goToGroups } from "../utils/sidebar";
-import { goToGroupDetails } from "./util";
+} from "../utils/attributes.ts";
+import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import { goToGroups } from "../utils/sidebar.ts";
+import { goToGroupDetails } from "./util.ts";
 
 test.describe("Attributes", () => {
   const groupName = `group-${uuid()}`;

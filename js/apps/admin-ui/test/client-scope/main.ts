@@ -1,6 +1,6 @@
-import { Page, expect } from "@playwright/test";
-import { assertSwitchIsChecked, selectItem, switchOff } from "../utils/form";
-import { clickTableToolbarItem, getTableData } from "../utils/table";
+import { type Page, expect } from "@playwright/test";
+import { assertSwitchIsChecked, selectItem, switchOff } from "../utils/form.ts";
+import { clickTableToolbarItem, getTableData } from "../utils/table.ts";
 
 export async function selectClientScopeFilter(page: Page, value: string) {
   await page.getByTestId("clientScopeSearch").click();

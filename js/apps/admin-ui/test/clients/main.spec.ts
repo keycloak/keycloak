@@ -1,25 +1,25 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { assertRequiredFieldError } from "../utils/form";
-import { chooseFile } from "../utils/file-chooser";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
-import { assertModalTitle, confirmModal } from "../utils/modal";
-import { goToClients, goToRealm } from "../utils/sidebar";
+import adminClient from "../utils/AdminClient.ts";
+import { assertRequiredFieldError } from "../utils/form.ts";
+import { chooseFile } from "../utils/file-chooser.ts";
+import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import { assertModalTitle, confirmModal } from "../utils/modal.ts";
+import { goToClients, goToRealm } from "../utils/sidebar.ts";
 import {
   clearAllFilters,
   clickRowKebabItem,
   getRowByCellText,
   searchItem,
-} from "../utils/table";
+} from "../utils/table.ts";
 import {
   cancel,
   clientCapabilityConfig,
   continueNext,
   createClient,
   save,
-} from "./utils";
+} from "./utils.ts";
 
 test.describe("Clients test", () => {
   const realmName = `clients-realm-${uuid()}`;

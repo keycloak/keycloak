@@ -1,13 +1,17 @@
 import { test } from "@playwright/test";
-import adminClient from "../utils/AdminClient";
-import { clickSaveButton } from "../utils/form";
-import { login } from "../utils/login";
+import adminClient from "../utils/AdminClient.ts";
+import { clickSaveButton } from "../utils/form.ts";
+import { login } from "../utils/login.ts";
 import {
   assertAxeViolations,
   assertNotificationMessage,
-} from "../utils/masthead";
-import { goToClients, goToRealm } from "../utils/sidebar";
-import { assertRowExists, clickTableRowItem, searchItem } from "../utils/table";
+} from "../utils/masthead.ts";
+import { goToClients, goToRealm } from "../utils/sidebar.ts";
+import {
+  assertRowExists,
+  clickTableRowItem,
+  searchItem,
+} from "../utils/table.ts";
 import {
   assertClipboardHasText,
   assertDefaultResource,
@@ -29,7 +33,7 @@ import {
   inputClient,
   selectResource,
   setPolicy,
-} from "./authorization";
+} from "./authorization.ts";
 
 test.describe("Client authentication subtab", () => {
   const clientId = `client-authentication-${crypto.randomUUID()}`;

@@ -1,11 +1,11 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { switchOff, switchOn } from "../utils/form";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
-import { confirmModal } from "../utils/modal";
-import { goToClients, goToRealm, goToRealmSettings } from "../utils/sidebar";
+import adminClient from "../utils/AdminClient.ts";
+import { switchOff, switchOn } from "../utils/form.ts";
+import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import { confirmModal } from "../utils/modal.ts";
+import { goToClients, goToRealm, goToRealmSettings } from "../utils/sidebar.ts";
 import {
   assertDisplayName,
   assertFrontendURL,
@@ -15,8 +15,8 @@ import {
   fillDisplayName,
   fillFrontendURL,
   fillRequireSSL,
-} from "./general";
-import { SERVER_URL } from "../utils/constants";
+} from "./general.ts";
+import { SERVER_URL } from "../utils/constants.ts";
 
 test.describe("Realm settings general tab tests", () => {
   const realmName = `general-realm-settings-${uuid()}`;

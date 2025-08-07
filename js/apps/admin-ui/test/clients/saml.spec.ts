@@ -1,13 +1,13 @@
 import { test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { switchOff, switchOn } from "../utils/form";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
-import { assertModalTitle, cancelModal, confirmModal } from "../utils/modal";
-import { goToClients } from "../utils/sidebar";
-import { clickTableRowItem } from "../utils/table";
-import { goToAdvancedTab, revertFineGrain, saveFineGrain } from "./advanced";
+import adminClient from "../utils/AdminClient.ts";
+import { switchOff, switchOn } from "../utils/form.ts";
+import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import { assertModalTitle, cancelModal, confirmModal } from "../utils/modal.ts";
+import { goToClients } from "../utils/sidebar.ts";
+import { clickTableRowItem } from "../utils/table.ts";
+import { goToAdvancedTab, revertFineGrain, saveFineGrain } from "./advanced.ts";
 import {
   assertCertificate,
   assertEncryptionAlgorithm,
@@ -34,7 +34,7 @@ import {
   selectEncryptionDigestMethodInput,
   selectEncryptionMaskGenerationFunctionInput,
   setTermsOfServiceUrl,
-} from "./saml";
+} from "./saml.ts";
 
 test.describe("Fine Grain SAML Endpoint Configuration", () => {
   const clientName = `saml-advanced-tab-${uuid()}`;
