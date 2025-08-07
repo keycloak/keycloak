@@ -1,6 +1,6 @@
-import ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
-import { Page } from "@playwright/test";
-import { pickRoleType, confirmModalAssign, pickRole } from "../utils/roles";
+import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation.js";
+import type { Page } from "@playwright/test";
+import { pickRoleType, confirmModalAssign, pickRole } from "../utils/roles.ts";
 
 export async function goToMapperTab(page: Page) {
   await page.getByTestId("ldap-mappers-tab").click();

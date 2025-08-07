@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
-import { login } from "./login";
-import { getAccountUrl, getAdminUrl, getRootPath } from "./utils";
+import { login } from "./login.ts";
+import { getAccountUrl, getAdminUrl, getRootPath } from "./utils.ts";
 
 test.describe("Applications test", () => {
   test.beforeEach(async ({ page }) => {

@@ -1,5 +1,5 @@
-import { Locator, Page, expect } from "@playwright/test";
-import { switchOff, switchOn } from "../utils/form";
+import { type Locator, type Page, expect } from "@playwright/test";
+import { switchOff, switchOn } from "../utils/form.ts";
 
 export async function assertImportButtonDisabled(page: Page, disabled = true) {
   if (disabled) {

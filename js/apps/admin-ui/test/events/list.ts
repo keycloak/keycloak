@@ -1,5 +1,5 @@
-import { Page, expect } from "@playwright/test";
-import { selectItem, switchOn } from "../utils/form";
+import { type Page, expect } from "@playwright/test";
+import { selectItem, switchOn } from "../utils/form.ts";
 
 export async function goToEventsConfig(page: Page) {
   await page.getByRole("link", { name: "Event configs" }).click();

@@ -1,13 +1,13 @@
-import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
+import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata.js";
 import { expect, test } from "@playwright/test";
 import {
   createRandomUserWithPassword,
   deleteUser,
   enableLocalization,
   importUserProfile,
-} from "../admin-client";
-import { login } from "../login";
-import userProfileConfig from "./user-profile.json" assert { type: "json" };
+} from "../admin-client.ts";
+import { login } from "../login.ts";
+import userProfileConfig from "./user-profile.json" with { type: "json" };
 
 const realm = "user-profile";
 

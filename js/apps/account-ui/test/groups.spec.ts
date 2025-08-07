@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { login } from "./login";
+import { login } from "./login.ts";
 
 test.describe("Groups page", () => {
   test("List my groups", async ({ page }) => {

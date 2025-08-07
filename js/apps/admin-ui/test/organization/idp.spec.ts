@@ -1,20 +1,20 @@
 import { test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
-import { confirmModal } from "../utils/modal";
-import { goToOrganizations, goToRealm } from "../utils/sidebar";
+import adminClient from "../utils/AdminClient.ts";
+import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import { confirmModal } from "../utils/modal.ts";
+import { goToOrganizations, goToRealm } from "../utils/sidebar.ts";
 import {
   assertEmptyTable,
   assertRowExists,
   clickTableRowItem,
-} from "../utils/table";
+} from "../utils/table.ts";
 import {
   clickAddIdentityProvider,
   fillForm,
   goToIdentityProviders,
-} from "./idp";
+} from "./idp.ts";
 
 test.describe("Identity providers", () => {
   const realmName = `organization-idp-${uuid()}`;

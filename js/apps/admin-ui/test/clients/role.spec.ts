@@ -1,22 +1,22 @@
 import { test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
+import adminClient from "../utils/AdminClient.ts";
 import {
   assertAttributeLength,
   clickAttributeSaveButton,
   deleteAttribute,
   fillAttributeData,
   goToAttributesTab,
-} from "../utils/attributes";
-import { assertRequiredFieldError, clickSaveButton } from "../utils/form";
-import { login } from "../utils/login";
+} from "../utils/attributes.ts";
+import { assertRequiredFieldError, clickSaveButton } from "../utils/form.ts";
+import { login } from "../utils/login.ts";
 import {
   assertNotificationMessage,
   selectActionToggleItem,
-} from "../utils/masthead";
-import { assertModalTitle, confirmModal } from "../utils/modal";
-import { clickUnassign } from "../utils/roles";
-import { goToClients, goToRealm } from "../utils/sidebar";
+} from "../utils/masthead.ts";
+import { assertModalTitle, confirmModal } from "../utils/modal.ts";
+import { clickUnassign } from "../utils/roles.ts";
+import { goToClients, goToRealm } from "../utils/sidebar.ts";
 import {
   assertNoResults,
   assertRowExists,
@@ -25,7 +25,7 @@ import {
   clickSelectRow,
   clickTableRowItem,
   searchItem,
-} from "../utils/table";
+} from "../utils/table.ts";
 import {
   addAssociatedRoles,
   assertDescriptionValue,
@@ -34,7 +34,7 @@ import {
   goToCreateRole,
   goToCreateRoleFromEmptyState,
   goToRolesTab,
-} from "./role";
+} from "./role.ts";
 
 test.describe("Roles tab test", () => {
   const realmName = `clients-realm-${uuid()}`;

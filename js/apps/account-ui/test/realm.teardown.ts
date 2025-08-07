@@ -1,9 +1,9 @@
 import { test as setup } from "@playwright/test";
-import { deleteRealm } from "./admin-client";
-import groupsRealm from "./realms/groups-realm.json" assert { type: "json" };
-import resourcesRealm from "./realms/resources-realm.json" assert { type: "json" };
-import userProfileRealm from "./realms/user-profile-realm.json" assert { type: "json" };
-import verifiableCredentialsRealm from "./realms/verifiable-credentials-realm.json" assert { type: "json" };
+import { deleteRealm } from "./admin-client.ts";
+import groupsRealm from "./realms/groups-realm.json" with { type: "json" };
+import resourcesRealm from "./realms/resources-realm.json" with { type: "json" };
+import userProfileRealm from "./realms/user-profile-realm.json" with { type: "json" };
+import verifiableCredentialsRealm from "./realms/verifiable-credentials-realm.json" with { type: "json" };
 
 setup("delete realm", async () => {
   await Promise.all([

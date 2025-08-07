@@ -1,25 +1,25 @@
-import { Page, expect } from "@playwright/test";
+import { type Page, expect } from "@playwright/test";
 import {
   assertSelectValue,
   clickCancelButton,
   clickSaveButton,
   selectItem,
-} from "../utils/form";
-import { assertNotificationMessage } from "../utils/masthead";
-import { confirmModal } from "../utils/modal";
+} from "../utils/form.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import { confirmModal } from "../utils/modal.ts";
 import {
   assertRowExists,
   clickRowKebabItem,
   clickSelectRow,
-} from "../utils/table";
+} from "../utils/table.ts";
 
-export enum ClaimJsonType {
-  String = "String",
-  Long = "long",
-  Int = "int",
-  Boolean = "boolean",
-  Json = "JSON",
-}
+export const ClaimJsonType = {
+  String: "String",
+  Long: "long",
+  Int: "int",
+  Boolean: "boolean",
+  Json: "JSON",
+};
 
 export async function goToMappersTab(page: Page) {
   await page.getByTestId("mappers").click();
@@ -74,7 +74,7 @@ export async function fillMapperDetails(
   page: Page,
   userAttribute: string,
   tokenClaimName: string,
-  jsonType: ClaimJsonType,
+  jsonType: string,
 ) {
   await getUserAttribute(page).fill(userAttribute);
   await getClaimName(page).fill(tokenClaimName);
@@ -85,7 +85,7 @@ export async function assertMapperConfigurationValues(
   page: Page,
   userAttribute: string,
   tokenClaimName: string,
-  jsonType: ClaimJsonType,
+  jsonType: string,
 ) {
   await expect(getUserAttribute(page)).toHaveValue(userAttribute);
   await expect(getClaimName(page)).toHaveValue(tokenClaimName);
