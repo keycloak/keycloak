@@ -101,6 +101,7 @@ public class DPoPUtil {
     }
 
     public static final String DPOP_HTTP_HEADER = "DPoP";
+    public static final String DPOP_NONCE_HEADER = "DPoP-Nonce";
     private static final String DPOP_JWT_HEADER_TYPE = "dpop+jwt";
     public static final String DPOP_ATH_ALG = "RS256";
 
@@ -190,7 +191,7 @@ public class DPoPUtil {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, ex.getMessage(), Response.Status.BAD_REQUEST);
         }
     }
-    
+
     private static DPoP validateDPoP(KeycloakSession session, URI uri, String method, String token, String accessToken, int lifetime, int clockSkew) throws VerificationException {
 
         if (token == null || token.trim().isEmpty()) {
