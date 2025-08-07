@@ -36,6 +36,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.config.CachingOptions;
+import org.keycloak.config.HealthOptions;
 import org.keycloak.config.MetricsOptions;
 import org.keycloak.infinispan.module.configuration.global.KeycloakConfigurationBuilder;
 import org.keycloak.infinispan.util.InfinispanUtils;
@@ -80,6 +81,8 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
     public static final String STACK = "stack";
     public static final String NODE_NAME = "nodeName";
     public static final String SITE_NAME = "siteName";
+    private static final String HEALTH_CHECK_INTERVAL = "healthCheckInterval";
+    private static final int DEFAULT_HEALTH_CHECK_INTERVAL = 15;
 
     private volatile ConfigurationBuilderHolder builderHolder;
     private volatile Config.Scope keycloakConfig;
@@ -131,6 +134,7 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
                         .add());
         createTopologyProperties(builder);
         createJGroupsProperties(builder);
+        createClusterHealCheckProperties(builder);
         return builder.build();
     }
 
@@ -224,7 +228,19 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
         CacheConfigurator.validateWorkCacheConfiguration(holder);
         CacheConfigurator.ensureMinimumOwners(holder);
         KeycloakModelUtils.runJobInTransaction(factory, session -> JGroupsConfigurator.configureJGroups(config, holder, session));
+        configureClusterHealth(config, holder);
         configureMetrics(config, holder);
+    }
+
+    private static void configureClusterHealth(Config.Scope config, ConfigurationBuilderHolder holder) {
+        // copied from org.keycloak.quarkus.deployment.KeycloakProcessor.disableHealthCheckBean()
+        if (!config.root().getBoolean(HealthOptions.HEALTH_ENABLED.getKey(),Boolean.FALSE) ||
+                !config.root().getBoolean(MetricsOptions.METRICS_ENABLED.getKey(), Boolean.FALSE)) {
+            return;
+        }
+        holder.getGlobalConfigurationBuilder()
+                .addModule(KeycloakConfigurationBuilder.class)
+                .setClusterHealthInterval(config.getInt(HEALTH_CHECK_INTERVAL, DEFAULT_HEALTH_CHECK_INTERVAL));
     }
 
     private static void configureMetrics(Config.Scope keycloakConfig, ConfigurationBuilderHolder holder) {
@@ -258,6 +274,16 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
                 .helpText("The name of the site where this node runs. Used for server hinting.")
                 .label("name")
                 .type(ProviderConfigProperty.STRING_TYPE)
+                .add();
+    }
+
+    private static void createClusterHealCheckProperties(ProviderConfigurationBuilder builder) {
+        builder.property()
+                .name(HEALTH_CHECK_INTERVAL)
+                .helpText("The interval (in seconds) to check the cluster health. A zero or negative value disables it.")
+                .defaultValue(DEFAULT_HEALTH_CHECK_INTERVAL)
+                .type(ProviderConfigProperty.INTEGER_TYPE)
+                .label("seconds")
                 .add();
     }
 }

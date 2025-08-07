@@ -13,11 +13,16 @@ public class KeycloakConfiguration {
             .autoPersist(false)
             .immutable()
             .build();
+    static final AttributeDefinition<Integer> CLUSTER_HEALTH_INTERVAL = AttributeDefinition.builder("cluster-health-interval", -1)
+            .global(true)
+            .autoPersist(false)
+            .immutable()
+            .build();
 
     private final AttributeSet attributes;
 
     static AttributeSet attributeSet() {
-        return new AttributeSet(KeycloakConfiguration.class, KEYCLOAK_SESSION_FACTORY);
+        return new AttributeSet(KeycloakConfiguration.class, KEYCLOAK_SESSION_FACTORY, CLUSTER_HEALTH_INTERVAL);
     }
 
     KeycloakConfiguration(AttributeSet attributes) {
@@ -30,6 +35,10 @@ public class KeycloakConfiguration {
 
     public KeycloakSessionFactory keycloakSessionFactory() {
         return attributes.attribute(KEYCLOAK_SESSION_FACTORY).get();
+    }
+
+    public int clusterHealthInterval() {
+        return attributes.attribute(CLUSTER_HEALTH_INTERVAL).get();
     }
 
 }
