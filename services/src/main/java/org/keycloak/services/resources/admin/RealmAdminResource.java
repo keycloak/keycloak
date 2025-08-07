@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -1034,9 +1035,9 @@ public class RealmAdminResource {
     private boolean reuseConfiguredAuthenticationForSmtp(Map<String, String> settings) {
         // just reuse the configured authentication if the same authenticator, host, port and user are passed
         return Boolean.parseBoolean(settings.get("auth")) && Boolean.parseBoolean(realm.getSmtpConfig().get("auth"))
-                && Objects.equals(settings.getOrDefault("host", ""), realm.getSmtpConfig().getOrDefault("host", ""))
-                && Objects.equals(settings.getOrDefault("port", "25"), realm.getSmtpConfig().getOrDefault("port", "25"))
-                && Objects.equals(settings.getOrDefault("user", ""), realm.getSmtpConfig().getOrDefault("user", ""));
+                && Objects.equals(Optional.ofNullable(settings.get("host")).orElse(""), realm.getSmtpConfig().getOrDefault("host", ""))
+                && Objects.equals(Optional.ofNullable(settings.get("port")).orElse("25"), realm.getSmtpConfig().getOrDefault("port", "25"))
+                && Objects.equals(Optional.ofNullable(settings.get("user")).orElse(""), realm.getSmtpConfig().getOrDefault("user", ""));
     }
 
     @Path("identity-provider")
