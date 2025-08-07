@@ -282,7 +282,7 @@ public final class Database {
 
         private static String getProperty(Option<?> option, String namedProperty, String defaultValue) {
             return "${kc.%s:%s}".formatted(StringUtil.isNullOrEmpty(namedProperty) ? option.getKey() :
-                            DatabaseOptions.getNamedKey(option, namedProperty).orElseThrow(() -> new IllegalArgumentException("Cannot find the named property")),
+                            DatabaseOptions.Datasources.getNamedKey(option, namedProperty).orElseThrow(() -> new IllegalArgumentException("Cannot find the named property")),
                     defaultValue);
         }
 
