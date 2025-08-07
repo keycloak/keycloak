@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import io.sundr.builder.annotations.Buildable;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -40,6 +41,10 @@ public class IngressSpec {
 
     @JsonPropertyDescription("A secret containing the TLS configuration for re-encrypt or TLS termination scenarios. Reference: https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets.")
     private String tlsSecret;
+
+    @JsonProperty("labels")
+    @JsonPropertyDescription("Additional labels to be appended to the Ingress object")
+    Map<String, String> labels = new LinkedHashMap<String, String>();
 
     public boolean isIngressEnabled() {
         return ingressEnabled;
@@ -71,5 +76,11 @@ public class IngressSpec {
 
     public void setTlsSecret(String tlsSecret) {
         this.tlsSecret = tlsSecret;
+    }
+    public Map<String, String> getLabels() {
+        return labels;
+    }
+    public void setLabels(Map<String, String> labels) {
+        this.labels = labels;
     }
 }

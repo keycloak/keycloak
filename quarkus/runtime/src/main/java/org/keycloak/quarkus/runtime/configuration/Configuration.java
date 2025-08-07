@@ -184,10 +184,10 @@ public final class Configuration {
 
         for (int i = 0; i < key.length(); i++) {
             char c = key.charAt(i);
-            if (c == ',') {
-                c = '-'; // should not happen, but was allowed by the previous logic
-            }
-            if (l && Character.isUpperCase(c)) {
+            if (c == '.') {
+                c = '-'; // this is not documented, but was in the previous logic
+                l = false;
+            } else if (l && Character.isUpperCase(c)) {
                 sb.append('-');
                 c = Character.toLowerCase(c);
                 l = false;

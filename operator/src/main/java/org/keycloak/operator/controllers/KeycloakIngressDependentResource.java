@@ -115,6 +115,7 @@ public class KeycloakIngressDependentResource extends CRUDKubernetesDependentRes
                 .withNewMetadata()
                     .withName(getName(keycloak))
                     .withNamespace(keycloak.getMetadata().getNamespace())
+                    .addToLabels(optionalSpec.map(IngressSpec::getLabels).orElse(null))
                     .addToLabels(Utils.allInstanceLabels(keycloak))
                     .addToAnnotations(annotations)
                 .endMetadata()

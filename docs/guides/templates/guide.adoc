@@ -2,13 +2,14 @@
 
 <#macro guide title summary priority=999 deniedCategories="" includedOptions="" excludedOptions="" preview="" tileVisible="true" previewDiscussionLink="">
 :guide-id: ${id}
+:guide-parent: ${parent}
 :guide-title: ${title}
 :guide-summary: ${summary}
 :guide-priority: ${priority}
 :guide-tile-visible: ${tileVisible}
 :version: ${version}
 
-include::../attributes.adoc[]
+include::${attributes}
 
 [[${id}]]
 = ${title}

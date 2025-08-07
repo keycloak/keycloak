@@ -11,8 +11,10 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 import java.util.List;
 import java.util.Map;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.models.IdentityProviderSyncMode;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
@@ -36,7 +38,7 @@ public class KcOidcBrokerParameterForwardTest extends AbstractBrokerTest {
             IdentityProviderRepresentation idp = createIdentityProvider(IDP_OIDC_ALIAS, IDP_OIDC_PROVIDER_ID);
             Map<String, String> config = idp.getConfig();
             applyDefaultConfiguration(config, syncMode);
-            config.put("forwardParameters", FORWARDED_PARAMETER +", " + PARAMETER_NOT_SET);
+            config.put("forwardParameters", FORWARDED_PARAMETER +", " + PARAMETER_NOT_SET + ", " + OAuth2Constants.ACR_VALUES + ", " + OIDCLoginProtocol.CLAIMS_PARAM);
             return idp;
         }
     }
@@ -46,7 +48,9 @@ public class KcOidcBrokerParameterForwardTest extends AbstractBrokerTest {
         oauth.clientId("broker-app");
         loginPage.open(bc.consumerRealmName());
 
-        String queryString = "&" + FORWARDED_PARAMETER + "=" + FORWARDED_PARAMETER_VALUE + "&" + PARAMETER_NOT_FORWARDED + "=" + "value";
+        String queryString = "&" + FORWARDED_PARAMETER + "=" + FORWARDED_PARAMETER_VALUE + "&" + PARAMETER_NOT_FORWARDED + "=" + "value"
+                + "&" + OAuth2Constants.ACR_VALUES + "=" + "phr"
+                + "&" + OIDCLoginProtocol.CLAIMS_PARAM + "=" + "myclaims";
         driver.navigate().to(driver.getCurrentUrl() + queryString);
 
         log.debug("Clicking social " + bc.getIDPAlias());
@@ -59,6 +63,10 @@ public class KcOidcBrokerParameterForwardTest extends AbstractBrokerTest {
 
         assertThat(FORWARDED_PARAMETER + "=" + FORWARDED_PARAMETER_VALUE + " should be part of the url",
                 driver.getCurrentUrl(), containsString(FORWARDED_PARAMETER + "=" + FORWARDED_PARAMETER_VALUE));
+        assertThat(OAuth2Constants.ACR_VALUES + "=" + "phr" + " should be part of the url",
+                driver.getCurrentUrl(), containsString(OAuth2Constants.ACR_VALUES + "=" + "phr"));
+        assertThat(OIDCLoginProtocol.CLAIMS_PARAM + "=" + "myclaims" + " should be part of the url",
+                driver.getCurrentUrl(), containsString(OIDCLoginProtocol.CLAIMS_PARAM + "=" + "myclaims"));
 
         assertThat("\"" + PARAMETER_NOT_SET + "\"" + " should NOT be part of the url",
                 driver.getCurrentUrl(), not(containsString(PARAMETER_NOT_SET)));

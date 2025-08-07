@@ -420,10 +420,10 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
             AttributeMetadata metadata = metadataByAttribute.get(attributeName);
 
             if (user != null && isIncludeAttributeIfNotProvided(metadata)) {
-                values = normalizeAttributeValues(attributeName, user.getAttributes().getOrDefault(attributeName, EMPTY_VALUE));
+                values = user.getAttributes().getOrDefault(attributeName, EMPTY_VALUE);
             }
 
-            newAttributes.put(attributeName, values);
+            newAttributes.put(attributeName, normalizeAttributeValues(attributeName, values));
         }
 
         if (user != null) {
@@ -468,10 +468,16 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         if (value instanceof String) {
             values = Collections.singletonList((String) value);
         } else {
-            values = (List<String>) value;
+            values = value == null ? EMPTY_VALUE : (List<String>) value;
         }
 
-        Stream<String> valuesStream = Optional.ofNullable(values).orElse(EMPTY_VALUE).stream().filter(Objects::nonNull);
+        AttributeMetadata metadata = metadataByAttribute.get(name);
+
+        if (values.isEmpty() && metadata != null && metadata.getDefaultValue() != null) {
+            values = List.of(metadata.getDefaultValue());
+        }
+
+        Stream<String> valuesStream = values.stream().filter(Objects::nonNull);
 
         // do not normalize the username if a federated user because we need to respect the format from the external identity store
         if ((UserModel.USERNAME.equals(name) && !isFederated()) || UserModel.EMAIL.equals(name)) {

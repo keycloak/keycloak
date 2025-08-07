@@ -521,9 +521,9 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         testRealm.getComponents().add("org.keycloak.keys.KeyProvider", getKeyProvider());
 
         testRealm.getComponents().add("org.keycloak.keys.KeyProvider",
-                getRsaEncKeyProvider(RSA_OAEP_256, "enc-key-oaep256"));
+                getRsaEncKeyProvider(RSA_OAEP_256, "enc-key-oaep256", 100));
         testRealm.getComponents().add("org.keycloak.keys.KeyProvider",
-                getRsaEncKeyProvider(RSA_OAEP, "enc-key-oaep"));
+                getRsaEncKeyProvider(RSA_OAEP, "enc-key-oaep", 101));
 
         // Find existing client representation
         ClientRepresentation existingClient = testRealm.getClients().stream()

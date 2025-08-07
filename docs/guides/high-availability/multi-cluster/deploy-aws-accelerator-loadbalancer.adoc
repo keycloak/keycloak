@@ -3,15 +3,15 @@
 
 <@tmpl.guide
 title="Deploying an AWS Global Accelerator load balancer"
-summary="Deploy an AWS Global Accelerator as the load-balancer building block in a multi-site deployment."
+summary="Deploy an AWS Global Accelerator as the load-balancer building block in a multi-cluster deployment."
 tileVisible="false" >
 
-This topic describes the procedure required to deploy an AWS Global Accelerator to route traffic between multi-site {project_name} deployments.
+This topic describes the procedure required to deploy an AWS Global Accelerator to route traffic between multi-cluster {project_name} deployments.
 
-This deployment is intended to be used with the setup described in the <@links.ha id="concepts-multi-site"/> {section}.
-Use this deployment with the other building blocks outlined in the <@links.ha id="bblocks-multi-site"/> {section}.
+This deployment is intended to be used with the setup described in the <@links.ha id="multi-cluster-concepts"/> {section}.
+Use this deployment with the other building blocks outlined in the <@links.ha id="multi-cluster-building-blocks"/> {section}.
 
-include::partials/blueprint-disclaimer.adoc[]
+include::../partials/blueprint-disclaimer.adoc[]
 
 == Audience
 
@@ -48,7 +48,7 @@ Perform the following on each of the {project_name} clusters:
 +
 .. Login to the ROSA cluster
 +
-.. Create a Kubernetes load balancer service
+.. Create a {kubernetes} load balancer service
 +
 .Command:
 [source,bash]
@@ -298,7 +298,7 @@ To verify that the Global Accelerator is correctly configured to connect to the 
 
 == Further reading
 
-* <@links.ha id="operate-site-online" />
-* <@links.ha id="operate-site-offline" />
+* <@links.ha id="multi-cluster-operate-site-online" />
+* <@links.ha id="multi-cluster-operate-site-offline" />
 
 </@tmpl.guide>

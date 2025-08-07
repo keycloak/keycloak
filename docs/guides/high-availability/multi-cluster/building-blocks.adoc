@@ -2,19 +2,20 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Building blocks multi-site deployments"
-summary="Learn about building blocks and suggested setups for multi-site deployments." >
+title="Building blocks multi-cluster deployments"
+summary="Learn about building blocks and suggested setups for multi-cluster deployments."
+tileVisible="false" >
 
-The following building blocks are needed to set up a multi-site deployment with synchronous replication.
+The following building blocks are needed to set up a multi-cluster deployment with synchronous replication.
 
 The building blocks link to a blueprint with an example configuration.
 They are listed in the order in which they need to be installed.
 
-include::partials/blueprint-disclaimer.adoc[]
+include::../partials/blueprint-disclaimer.adoc[]
 
 == Prerequisites
 
-* Understanding the concepts laid out in the <@links.ha id="concepts-multi-site"/> {section}.
+* Understanding the concepts laid out in the <@links.ha id="multi-cluster-concepts"/> {section}.
 
 == Two sites with low-latency connection
 
@@ -37,22 +38,22 @@ Ensures that the instances are deployed and restarted as needed.
 
 A synchronously replicated database across two sites.
 
-*Blueprint:* <@links.ha id="deploy-aurora-multi-az"/>.
+*Blueprint:* <@links.ha id="multi-cluster-deploy-aurora"/>.
 
 == {jdgserver_name}
 
 A deployment of {jdgserver_name} that leverages the {jdgserver_name}'s Cross-DC functionality.
 
-*Blueprint:* <@links.ha id="deploy-infinispan-kubernetes-crossdc" /> using the {jdgserver_name} Operator, and connect the two sites using {jdgserver_name}'s Gossip Router.
+*Blueprint:* <@links.ha id="multi-cluster-deploy-infinispan-kubernetes-crossdc" /> using the {jdgserver_name} Operator, and connect the two sites using {jdgserver_name}'s Gossip Router.
 
-*Not considered:* Direct interconnections between the Kubernetes clusters on the network layer.
+*Not considered:* Direct interconnections between the {kubernetes} clusters on the network layer.
 It might be considered in the future.
 
 == {project_name}
 
 A clustered deployment of {project_name} in each site, connected to an external {jdgserver_name}.
 
-*Blueprint:* <@links.ha id="deploy-keycloak-kubernetes" /> that includes connecting to the Aurora database and the {jdgserver_name} server.
+*Blueprint:* <@links.ha id="multi-cluster-deploy-keycloak-kubernetes" /> that includes connecting to the Aurora database and the {jdgserver_name} server.
 
 </@tmpl.guide>
 
@@ -60,4 +61,4 @@ A clustered deployment of {project_name} in each site, connected to an external 
 
 A load balancer which checks the `/lb-check` URL of the {project_name} deployment in each site, plus an automation to detect {jdgserver_name} connectivity problems between the two sites.
 
-*Blueprint:* <@links.ha id="deploy-aws-accelerator-loadbalancer"/> together with  <@links.ha id="deploy-aws-accelerator-fencing-lambda"/>.
+*Blueprint:* <@links.ha id="multi-cluster-deploy-aws-accelerator-loadbalancer"/> together with  <@links.ha id="multi-cluster-deploy-aws-accelerator-fencing-lambda"/>.

@@ -51,7 +51,7 @@ export async function assertSearchButtonDisabled(page: Page, disabled = true) {
   if (disabled) {
     await expect(page.getByTestId("search-events-btn")).toBeDisabled();
   } else {
-    await expect(page.getByTestId("search-events-btn")).not.toBeDisabled();
+    await expect(page.getByTestId("search-events-btn")).toBeEnabled();
   }
 }
 
@@ -68,7 +68,7 @@ export async function assertSearchChipGroupItemExist(
   if (exist) {
     await expect(locator).toHaveText(`User ID${itemName}`);
   } else {
-    await expect(locator).not.toBeVisible();
+    await expect(locator).toBeHidden();
   }
 }
 

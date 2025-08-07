@@ -93,9 +93,9 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
         }
 
         testRealm.getComponents().add("org.keycloak.keys.KeyProvider",
-                getRsaEncKeyProvider(RSA_OAEP_256, "enc-key-oaep256"));
+                getRsaEncKeyProvider(RSA_OAEP_256, "enc-key-oaep256", 100));
         testRealm.getComponents().add("org.keycloak.keys.KeyProvider",
-                getRsaEncKeyProvider(RSA_OAEP, "enc-key-oaep"));
+                getRsaEncKeyProvider(RSA_OAEP, "enc-key-oaep", 101));
 
         super.configureTestRealm(testRealm);
     }

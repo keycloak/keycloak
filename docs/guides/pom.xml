@@ -97,10 +97,9 @@
                             <resources>
                                 <resource>
                                     <directory>${basedir}/</directory>
-                                    <includes>
-                                        <include>**/examples/**/*.*</include>
-                                        <include>**/partials/**/*.*</include>
-                                    </includes>
+                                    <excludes>
+                                        <exclude>**/templates/**</exclude>
+                                    </excludes>
                                 </resource>
                             </resources>
                         </configuration>
@@ -212,8 +211,7 @@
                         </goals>
                         <configuration>
                             <sourceDirectory>${basedir}/target/generated-guides/high-availability</sourceDirectory>
-                            <outputDirectory>
-                                ${project.build.directory}/generated-docs/high-availability</outputDirectory>
+                            <outputDirectory>${project.build.directory}/generated-docs/high-availability</outputDirectory>
                         </configuration>
                     </execution>
                     <execution>
