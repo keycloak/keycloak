@@ -98,7 +98,7 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
         boolean filterRuntime = isRebuild() || Environment.isRebuildCheck();
 
         var baseStream = StreamSupport.stream(iterable.spliterator(), false).flatMap(name -> {
-            PropertyMapper<?> mapper = PropertyMappers.getMapper(name);
+            final PropertyMapper<?> mapper = PropertyMappers.getMapper(name);
 
             if (mapper == null) {
                 return Stream.of(name);
@@ -106,6 +106,14 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
             if (filterRuntime && mapper.getCategory() == OptionCategory.CONFIG) {
                 return Stream.of(); // advertising the keystore type causes the keystore to be used early
             }
+
+            final PropertyMapper<?> mappedMapper = mapper.forKey(name);
+
+            // only include additional mappings if we're on the from side of the mapping as the mapping may not be bi-directional
+            if (!name.equals(mappedMapper.getFrom())) {
+                return Stream.of(name);
+            }
+
             allMappers.remove(mapper);
 
             if (mapper.hasWildcard()) {
@@ -119,9 +127,7 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
 
                     return Stream.concat(toDistinctStream(name, wildcardMapper.getTo(wildcardValue)), connectedTo);
                 }
-            } else if (name.equals(mapper.getFrom())) {
-                // include additional mappings if we're on the from side of the mapping as the mapping may not be bi-directional
-                // -----------------------------------------
+            } else {
                 // this is not a wildcard value, but may map to wildcards
                 // the current example is something like log-level=wildcardCat1:level,wildcardCat2:level
                 var wildCard = PropertyMappers.getWildcardMappedFrom(mapper.getOption());
@@ -133,14 +139,9 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
                 }
             }
 
-            mapper = mapper.forKey(name);
-
-            if (name.equals(mapper.getFrom())) {
-                // there is a corner case here: -1 for the reload period has no 'to' value.
-                // if that becomes an issue we could use more metadata to perform a full mapping
-                return toDistinctStream(name, mapper.getTo());
-            }
-            return Stream.of(name);
+            // there is a corner case here: -1 for the reload period has no 'to' value.
+            // if that becomes an issue we could use more metadata to perform a full mapping
+            return toDistinctStream(name, mappedMapper.getTo());
         });
 
         // include anything remaining that has a default value
