@@ -162,6 +162,7 @@ public interface OAuth2Constants {
 
     // DPoP - https://datatracker.ietf.org/doc/html/rfc9449
     String DPOP_HTTP_HEADER = "DPoP";
+    String DPOP_NONCE_HEADER = "DPoP-Nonce";
     Algorithm DPOP_DEFAULT_ALGORITHM = PS256;
     String DPOP_JWT_HEADER_TYPE = "dpop+jwt";
 

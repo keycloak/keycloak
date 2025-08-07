@@ -21,6 +21,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.AbstractMap;
 import java.util.HashMap;
+import java.util.Set;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -101,6 +102,19 @@ public class DPoPUtil {
         DISABLED
     }
 
+    public static final String DPOP_ATH_ALG = "RS256";
+
+    public static final Set<String> DPOP_SUPPORTED_ALGS = Stream.of(
+        Algorithm.ES256,
+        Algorithm.ES384,
+        Algorithm.ES512,
+        Algorithm.PS256,
+        Algorithm.PS384,
+        Algorithm.PS512,
+        Algorithm.RS256,
+        Algorithm.RS384,
+        Algorithm.RS512
+    ).collect(Collectors.toSet());
     private static URI normalize(URI uri) {
         return UriBuilder.fromUri(uri).replaceQuery("").build();
     }
@@ -160,7 +174,7 @@ public class DPoPUtil {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, ex.getMessage(), Response.Status.BAD_REQUEST);
         }
     }
-    
+
     private static DPoP validateDPoP(KeycloakSession session, URI uri, String method, String token, String accessToken, int lifetime, int clockSkew) throws VerificationException {
 
         if (token == null || token.trim().isEmpty()) {
