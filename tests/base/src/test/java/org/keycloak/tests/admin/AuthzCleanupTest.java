@@ -105,7 +105,7 @@ public class AuthzCleanupTest {
 
         @Override
         public RealmConfigBuilder configure(RealmConfigBuilder realm) {
-            realm.addClient(clientId).secret(clientSecret).authorizationServices().redirectUris("http://localhost/myclient");
+            realm.addClient(clientId).secret(clientSecret).authorizationServicesEnabled(true).redirectUris("http://localhost/myclient");
             realm.roles("client-role-1",
                     "client-role-2",
                     "Acme administrator",

@@ -979,7 +979,7 @@ public class GroupTest extends AbstractGroupTest {
                     .password("password");
 
             realm.addClient("resource-owner")
-                    .directAccessGrants()
+                    .directAccessGrantsEnabled(true)
                     .secret("secret");
 
             return realm;

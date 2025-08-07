@@ -187,7 +187,7 @@ public class GroupMappersTest extends AbstractGroupTest {
             realm.addClient(CLIENT_ID)
                     .enabled(true)
                     .secret(CLIENT_SECRET)
-                    .directAccessGrants()
+                    .directAccessGrantsEnabled(true)
                     .protocolMappers(mappers);
 
             realm.eventsEnabled(true)
