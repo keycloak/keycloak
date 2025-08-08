@@ -253,7 +253,7 @@ to test if the token looks as expected for the given user and for the given set 
 
 These additional points clarify the behavior of token exchange.
 
-* It is not supported for public clients to send the token exchange requests. The V1 had some very limited support for public clients, when public client can exchange the token to itself with fewer scopes.
+* It is not supported for public clients to send the token exchange requests. Token exchange V1 include very limited support for public clients, allowing public clients to exchange the token to itself with fewer scopes.
 This use case can be replaced by refresh token grant.
 
 * The `subject_token` sent to the token exchange endpoint must have the requester client set as an audience in the `aud` claim. Otherwise, the request would be rejected. The only exception is, if client
