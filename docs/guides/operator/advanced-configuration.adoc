@@ -266,7 +266,7 @@ spec:
 
 Please see https://kubernetes.io/docs/concepts/scheduling-eviction[the kubernetes docs] for more on scheduling concepts.
 
-If you do not specify a custom affinity, your Pods will have an affinity for the same zone and an anti-affinity for the same node to improve availability. Scheduling to the same zone if possible helps prevent stretch clusters where cross zone cache cluster traffic may have too high of a latency.
+If you do not specify a custom affinity, your Pods will have an anti-affinity for the same zone and node to improve availability.
 
 === Management Interface
 
