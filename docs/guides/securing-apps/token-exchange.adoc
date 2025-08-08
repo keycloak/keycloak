@@ -253,7 +253,7 @@ to test if the token looks as expected for the given user and for the given set 
 
 These additional points clarify the behavior of token exchange.
 
-* It is not supported for public clients to send the token exchange requests. Token exchange V1 include very limited support for public clients, allowing public clients to exchange the token to itself with fewer scopes.
+* It is not supported for public clients to send the token exchange requests. Token exchange V1 includes very limited support for public clients, allowing public clients to exchange the token to itself with fewer scopes.
 This use case can be replaced by refresh token grant.
 
 * The `subject_token` sent to the token exchange endpoint must have the requester client set as an audience in the `aud` claim. Otherwise, the request would be rejected. The only exception is, if client
@@ -310,9 +310,9 @@ While the preceding sections fully detail standard and legacy token exchange, th
 s|Internal-internal token exchange | Supported. Implemented as per rfc8693 | Preview support. Loose implementation of rfc8693. It is recommended to use V2 instead
 s|Allowed `subject_token_type`     | Access token type only   | Access token type only for internal-internal, JWT for external-internal scenarios
 s|Allowed `requested_token_type`   | Access token (default), Refresh token, ID token | Access token, Refresh token (default), SAML2 assertion
-s|Behaviour of `scope` parameter   | Aligned with other grants. Scope parameter means requesting optional scopes of the client, which sent the token exchange request  | Scope parameter based on the scopes of
+s|Behavior of `scope` parameter   | Aligned with other grants. Scope parameter means requesting optional scopes of the client, which sent the token exchange request  | Scope parameter based on the scopes of
 the "target" client specified by audience parameter. Downscoping support only
-s|Behavior of `audience` parameter   | Support for more values as per the specification. Can be used to narrow down the available audiences and keep only the requested audiences. Effectively downscoping the token per
+s|Behavior of `audience` parameter   | Support for more values as per the specification. It can be used to narrow down the available audiences and keep only the requested audiences. Effectively downscoping the token per
 the required target audience | Support for single audience value. Token effectively issued to the client requested by the audience parameter and using the scopes of that client
 s|Public clients  | Not available. Downscoping implemented by V1 can be replaced by refresh token grant| Available only to exchange token of the client itself. Effectively downscoping support only
 s|Consents        | Allowed for clients with `Consent required` as long as the user is already granted consent | Not allowed for clients with *Consent required*
@@ -636,7 +636,7 @@ curl -X POST \
 The `subject_token` parameter must be an access token for the target realm.  The `requested_token_type` parameter
 must be `urn:ietf:params:oauth:token-type:access_token` or left blank.  No other requested token type is supported
 at this time.  Here's
-an example successful JSON response you get back from this call.
+an example of a successful JSON response you get back from this call.
 
 [source,json]
 ----
