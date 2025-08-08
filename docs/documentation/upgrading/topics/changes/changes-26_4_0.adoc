@@ -99,6 +99,10 @@ When tracing is enabled, now also calls to other nodes of a {project_name} clust
 
 To disable this kind of tracing, set the option `tracing-infinispan-enabled` to `false`.
 
+=== LDAP Connection Timeout Default
+
+If no value is specified either on the LDAP configuration as the connectionTimeout or via the `com.sun.jndi.ldap.connect.timeout` system property, the default timeout
+will be 5 seconds. This will ensure that requests will see errors rather than indefinite waits in obtaining an LDAP connection from the pool or when making a connection to the LDAP server.
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
