@@ -77,6 +77,10 @@ test.describe("Organization CRUD", () => {
 
     test("should modify existing organization", async ({ page }) => {
       await clickTableRowItem(page, orgName);
+
+      // This waits for the field to be filled before we clear and fill it with a new value
+      await expect(getNameField(page)).toHaveValue(orgName);
+
       const newValue = "newName";
       await fillNameField(page, newValue);
       await expect(getNameField(page)).toHaveValue(newValue);
