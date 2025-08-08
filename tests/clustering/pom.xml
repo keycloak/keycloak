@@ -10,6 +10,9 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
+    <name>Keycloak Clustering Tests</name>
+    <description>Keycloak Clustering Tests</description>
+
     <artifactId>keycloak-tests-clustering</artifactId>
 
     <dependencyManagement>

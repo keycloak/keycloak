@@ -28,7 +28,7 @@
 
     <artifactId>keycloak-saml-core-public</artifactId>
     <name>Keycloak SAML Core Public API</name>
-    <description/>
+    <description>Keycloak SAML Core Public API</description>
 
     <properties>
         <!-- We still need to support EAP 8, set the Java version to 11. -->

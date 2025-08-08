@@ -24,7 +24,7 @@
         <relativePath>../../../pom.xml</relativePath>
     </parent>
     <name>Keycloak SAML Wildfly Integration</name>
-    <description/>
+    <description>Keycloak SAML Wildfly Integration Parent</description>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>keycloak-saml-wildfly-integration-pom</artifactId>

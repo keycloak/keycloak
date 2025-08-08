@@ -65,6 +65,8 @@
     </parent>
 
     <name>Keycloak Documentation tests</name>
+    <description>Keycloak Documentation tests</description>
+
     <artifactId>tests</artifactId>
     <packaging>jar</packaging>
 

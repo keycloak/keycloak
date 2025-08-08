@@ -27,7 +27,7 @@
     <artifactId>keycloak-quarkus-dist</artifactId>
     <packaging>pom</packaging>
     <name>Keycloak Quarkus Server Distribution</name>
-    <description/>
+    <description>Keycloak Quarkus Server Distribution</description>
 
     <dependencies>
         <dependency>

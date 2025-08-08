@@ -11,6 +11,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <name>Keycloak Quarkus Server Deployment</name>
+    <description>Keycloak Quarkus Server Deployment</description>
+
     <artifactId>keycloak-quarkus-server-deployment</artifactId>
 
     <dependencies>

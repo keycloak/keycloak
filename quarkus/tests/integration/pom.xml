@@ -29,6 +29,8 @@
     </parent>
 
     <name>Keycloak Quarkus Server Integration tests</name>
+    <description>Keycloak Quarkus Server Integration tests</description>
+
     <artifactId>keycloak-quarkus-integration-tests</artifactId>
     <packaging>jar</packaging>
 

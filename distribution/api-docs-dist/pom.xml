@@ -27,7 +27,7 @@
     <artifactId>keycloak-api-docs-dist</artifactId>
     <packaging>pom</packaging>
     <name>Keycloak Docs Distribution</name>
-    <description/>
+    <description>Keycloak Docs Distribution</description>
 
     <properties>
         <javadoc.branding>Keycloak ${project.version}</javadoc.branding>

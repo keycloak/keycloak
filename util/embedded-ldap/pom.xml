@@ -28,7 +28,7 @@
 
     <artifactId>keycloak-util-embedded-ldap</artifactId>
     <name>Keycloak Util Embedded LDAP</name>
-    <description/>
+    <description>Keycloak Util Embedded LDAP</description>
 
     <dependencies>
         <dependency>

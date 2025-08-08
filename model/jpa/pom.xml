@@ -27,7 +27,7 @@
 
     <artifactId>keycloak-model-jpa</artifactId>
     <name>Keycloak Model JPA</name>
-    <description/>
+    <description>Keycloak Model JPA</description>
 
     <properties>
         <keycloak.connectionsJpa.driver>org.h2.Driver</keycloak.connectionsJpa.driver>

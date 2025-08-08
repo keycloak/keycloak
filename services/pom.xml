@@ -28,7 +28,7 @@
 
     <artifactId>keycloak-services</artifactId>
     <name>Keycloak REST Services</name>
-    <description/>
+    <description>Keycloak REST Services</description>
 
     <properties>
         <version.swagger.doclet>1.1.2</version.swagger.doclet>

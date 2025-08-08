@@ -28,7 +28,7 @@
     <artifactId>keycloak-saml-wildfly-adapter-dist</artifactId>
     <packaging>pom</packaging>
     <name>Keycloak SAML Wildfly Adapter Distro</name>
-    <description/>
+    <description>Keycloak SAML Wildfly Adapter Distro</description>
 
     <dependencies>
         <dependency>

@@ -28,7 +28,7 @@
 
     <artifactId>keycloak-server-spi-private</artifactId>
     <name>Keycloak Server Private SPI</name>
-    <description/>
+    <description>Keycloak Server Private SPI</description>
 
     <dependencies>
         <dependency>

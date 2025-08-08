@@ -10,6 +10,8 @@
     </parent>
 
     <name>Upgrading Guide</name>
+    <description>Upgrading Guide</description>
+
     <artifactId>upgrading</artifactId>
     <packaging>pom</packaging>
 

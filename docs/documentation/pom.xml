@@ -10,6 +10,8 @@
     </parent>
 
     <name>Keycloak Documentation Parent</name>
+    <description>Keycloak Documentation Parent</description>
+
     <groupId>org.keycloak.documentation</groupId>
     <artifactId>documentation-parent</artifactId>
     <version>999.0.0-SNAPSHOT</version>
