@@ -37,14 +37,12 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.SecretGenerator;
-import org.keycloak.component.ComponentFactory;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwe.JWE;
 import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.jose.jwe.JWEHeader;
-import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -778,10 +776,16 @@ public class OID4VCIssuerEndpoint {
             throw new BadRequestException(String.format("Unable to validate proofs of type %s", proofType));
         }
 
-        // Validate proof and bind public key to credential
+        // Validate proof and bind public key(s) to credential
         try {
-            Optional.ofNullable(proofValidator.validateProof(vcIssuanceContext))
-                    .ifPresent(jwk -> vcIssuanceContext.getCredentialBody().addKeyBinding(jwk));
+            List<JWK> jwks = proofValidator.validateProof(vcIssuanceContext);
+            if (jwks != null && !jwks.isEmpty()) {
+                if (jwks.size() > 1) {
+                    LOGGER.warnf("Multiple keys (%d) returned for proof validation—only the first will be used", jwks.size());
+                }
+                // Bind only the first key for VC compatibility
+                vcIssuanceContext.getCredentialBody().addKeyBinding(jwks.get(0));
+            }
         } catch (VCIssuerException e) {
             throw new BadRequestException("Could not validate provided proof", e);
         }

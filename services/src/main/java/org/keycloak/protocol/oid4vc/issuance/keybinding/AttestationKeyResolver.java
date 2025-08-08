@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,25 +18,19 @@
 package org.keycloak.protocol.oid4vc.issuance.keybinding;
 
 import org.keycloak.jose.jwk.JWK;
-import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
-import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
-import org.keycloak.provider.Provider;
 
-import java.util.List;
+import java.util.Map;
 
-public interface ProofValidator extends Provider {
-
-    @Override
-    default void close() {
-    }
-
-    String getProofType();
-
+/**
+ * Interface for resolving attestation public keys by kid for JWT attestation validation.
+ * Implementations may use local registries, remote JWKS, or other trusted sources.
+ *
+ * @author <a href="mailto:Rodrick.Awambeng@adorsys.com">Rodrick Awambeng</a>
+ */
+public interface AttestationKeyResolver {
     /**
-     * Validates a client-provided key binding proof(s).
-     *
-     * @param vcIssuanceContext the issuance context with credential request and config
-     * @return a list of {@link org.keycloak.jose.jwk.JWK} instances to be bound to the issued credential(s)
+     * Resolves a JWK for the given kid, header, and payload context.
+     * Returns null if the key cannot be resolved or is not trusted.
      */
-    List<JWK> validateProof(VCIssuanceContext vcIssuanceContext) throws VCIssuerException;
+    JWK resolveKey(String kid, Map<String, Object> header, Map<String, Object> payload);
 }
