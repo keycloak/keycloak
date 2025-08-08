@@ -74,12 +74,15 @@ const StatusRow = (event: EventRepresentation) =>
 const DetailCell = (event: EventRepresentation) => (
   <DescriptionList isHorizontal className="keycloak_eventsection_details">
     {event.details &&
-      Object.entries(event.details).map(([key, value]) => (
-        <DescriptionListGroup key={key}>
-          <DescriptionListTerm>{key}</DescriptionListTerm>
-          <DescriptionListDescription>{value}</DescriptionListDescription>
-        </DescriptionListGroup>
-      ))}
+      Object.entries(event.details)
+        .filter(([key]) => key !== "username")
+        .map(([key, value]) => (
+          <DescriptionListGroup key={key}>
+            <DescriptionListTerm>{key}</DescriptionListTerm>
+            <DescriptionListDescription>{value}</DescriptionListDescription>
+          </DescriptionListGroup>
+        ))}
+
     {event.error && (
       <DescriptionListGroup key="error">
         <DescriptionListTerm>error</DescriptionListTerm>
@@ -92,23 +95,26 @@ const DetailCell = (event: EventRepresentation) => (
 const UserDetailLink = (event: EventRepresentation) => {
   const { t } = useTranslation();
   const { realm } = useRealm();
+  // Extract the username from event.details, if it available
+  const userName = event.details ? event.details["username"] : null;
+  const userId = event.userId;
 
-  return (
-    <>
-      {event.userId && (
-        <Link
-          key={`link-${event.time}-${event.type}`}
-          to={toUser({
-            realm,
-            id: event.userId,
-            tab: "settings",
-          })}
-        >
-          {event.userId}
-        </Link>
-      )}
-      {!event.userId && t("noUserDetails")}
-    </>
+  return userId && userName ? (
+    <div>
+      <Link
+        key={`link-${event.time}-${event.type}`}
+        to={toUser({
+          realm,
+          id: userId,
+          tab: "settings",
+        })}
+      >
+        {userName}
+      </Link>{" "}
+      <span className="keycloak_eventsection_userid">({userId})</span>
+    </div>
+  ) : (
+    <>{t("noUserDetails")}</>
   );
 };
 
@@ -469,7 +475,8 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
           ...(!user
             ? [
                 {
-                  name: "userId",
+                  name: "userName",
+                  displayKey: "User",
                   cellRenderer: UserDetailLink,
                 },
               ]
