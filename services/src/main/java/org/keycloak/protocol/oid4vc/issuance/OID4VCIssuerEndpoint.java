@@ -575,6 +575,22 @@ public class OID4VCIssuerEndpoint {
         } else {
             throw new IllegalArgumentException("Unsupported algorithm: " + alg);
         }
+        JWEEncryptionProvider encProvider = getJweEncryptionProvider(enc, algProvider, alg);
+
+        // Decrypt
+        jwe.verifyAndDecodeJwe(jwePayload, algProvider, encProvider);
+
+        // Decompress if necessary
+        String decryptedPayload = new String(jwe.getContent(), StandardCharsets.UTF_8);
+        if (zip != null && zip.equals("DEF")) {
+            decryptedPayload = decompress(decryptedPayload, zip);
+        }
+
+        // Parse to CredentialRequest
+        return JsonSerialization.mapper.readValue(decryptedPayload, CredentialRequest.class);
+    }
+
+    private static JWEEncryptionProvider getJweEncryptionProvider(String enc, JWEAlgorithmProvider algProvider, String alg) {
         JWEEncryptionProvider encProvider;
         if (JWEConstants.A256GCM.equals(enc)) {
             encProvider = new AesGcmJWEEncryptionProvider(JWEConstants.A256GCM);
@@ -588,28 +604,20 @@ public class OID4VCIssuerEndpoint {
         if (encProvider == null) {
             throw new IllegalArgumentException("No encryption provider found for enc: " + enc);
         }
-
-        // Decrypt
-        jwe.verifyAndDecodeJwe(jwePayload, algProvider, encProvider);
-
-        // Decompress if necessary
-        String decryptedPayload = new String(jwe.getContent(), StandardCharsets.UTF_8);
-        if (zip != null && zip.equals("DEF")) {
-            decryptedPayload = decompress(decryptedPayload);
-        }
-
-        // Parse to CredentialRequest
-        return JsonSerialization.mapper.readValue(decryptedPayload, CredentialRequest.class);
+        return encProvider;
     }
 
-    private String decompress(String compressed) throws Exception {
-        Inflater inflater = new Inflater(true);
-        byte[] compressedBytes = Base64Url.decode(compressed);
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (InflaterOutputStream inflaterOutputStream = new InflaterOutputStream(out, inflater)) {
-            inflaterOutputStream.write(compressedBytes);
+    private String decompress(String compressed, String zipAlgorithm) throws Exception {
+        if ("DEF".equals(zipAlgorithm)) {
+            Inflater inflater = new Inflater(true);
+            byte[] compressedBytes = Base64Url.decode(compressed);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            try (InflaterOutputStream inflaterOutputStream = new InflaterOutputStream(out, inflater)) {
+                inflaterOutputStream.write(compressedBytes);
+            }
+            return out.toString(StandardCharsets.UTF_8);
         }
-        return out.toString(StandardCharsets.UTF_8);
+        throw new IllegalArgumentException("Unsupported compression algorithm: " + zipAlgorithm);
     }
 
     /**
@@ -687,14 +695,17 @@ public class OID4VCIssuerEndpoint {
      */
     private byte[] compressContent(byte[] content, String zipAlgorithm) throws IOException {
         if ("DEF".equals(zipAlgorithm)) {
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            try (DeflaterOutputStream deflaterOutputStream = new DeflaterOutputStream(byteArrayOutputStream)) {
-                deflaterOutputStream.write(content);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            try (DeflaterOutputStream deflate = new DeflaterOutputStream(out)) {
+                deflate.write(content);
             }
-            return byteArrayOutputStream.toByteArray();
+            
+            return out.toByteArray();
+
         }
         throw new IOException("Unsupported compression algorithm: " + zipAlgorithm);
     }
+
 
     /**
      * Validate the encryption parameters for a credential response.

@@ -18,7 +18,9 @@
 package org.keycloak.protocol.oid4vc.issuance;
 
 import jakarta.ws.rs.core.UriInfo;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.constants.Oid4VciConstants;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwe.JWEConstants;
@@ -43,14 +45,20 @@ import org.keycloak.urls.UrlType;
 import org.keycloak.wellknown.WellKnownProvider;
 import org.jboss.logging.Logger;
 
+import java.security.Key;
+import java.security.PublicKey;
+import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static org.keycloak.crypto.KeyType.OCT;
 import static org.keycloak.crypto.KeyType.RSA;
 import static org.keycloak.jose.jwk.ECPublicJWK.EC;
 
@@ -88,7 +96,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
     @Override
     public Object getConfig() {
         KeycloakContext context = keycloakSession.getContext();
-        CredentialIssuer issuer = new CredentialIssuer()
+        return new CredentialIssuer()
                 .setCredentialIssuer(getIssuer(context))
                 .setCredentialEndpoint(getCredentialsEndpoint(context))
                 .setNonceEndpoint(getNonceEndpoint(context))
@@ -96,10 +104,9 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                 .setCredentialsSupported(getSupportedCredentials(keycloakSession))
                 .setAuthorizationServers(List.of(getIssuer(context)))
                 .setCredentialResponseEncryption(getCredentialResponseEncryption(keycloakSession))
-//                .setCredentialRequestEncryption(getCredentialRequestEncryption(keycloakSession))
+                .setCredentialRequestEncryption(getCredentialRequestEncryption(keycloakSession))
                 .setBatchCredentialIssuance(getBatchCredentialIssuance(keycloakSession))
                 .setSignedMetadata(getSignedMetadata(keycloakSession));
-        return issuer;
     }
 
     private static String getDeferredCredentialEndpoint(KeycloakContext context) {
@@ -149,17 +156,17 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
      * Returns the credential request encryption metadata for the issuer.
      * Determines supported algorithms and JWK Set from available realm keys
      */
-//    public static CredentialRequestEncryptionMetadata getCredentialRequestEncryption(KeycloakSession session) {
-//        RealmModel realm = session.getContext().getRealm();
-//        CredentialRequestEncryptionMetadata metadata = new CredentialRequestEncryptionMetadata();
-//
-//        metadata.setJwks(getJWKSet(session))
-//                .setEncValuesSupported(getSupportedEncryptionMethods())
-//                .setZipValuesSupported(getSupportedCompressionMethods())
-//                .setEncryptionRequired(isRequestEncryptionRequired(realm));
-//
-//        return metadata;
-//    }
+    public static CredentialRequestEncryptionMetadata getCredentialRequestEncryption(KeycloakSession session) {
+        RealmModel realm = session.getContext().getRealm();
+        CredentialRequestEncryptionMetadata metadata = new CredentialRequestEncryptionMetadata();
+
+        metadata.setJwks(getJWKSet(session))
+                .setEncValuesSupported(getSupportedEncryptionMethods())
+                .setZipValuesSupported(getSupportedCompressionMethods())
+                .setEncryptionRequired(isRequestEncryptionRequired(realm));
+
+        return metadata;
+    }
 
 
     /**
@@ -192,32 +199,52 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
     }
 
     /**
-     * Returns the JWK Set for credential request encryption
+     * Returns the JWK Set for credential request encryption, containing public keys for encrypting Credential Requests.
+     * Each JWK includes a unique 'kid' and supported algorithm.
+     *
+     * @param session The Keycloak session
+     * @return A JSONWebKeySet containing public encryption keys
      */
-//    private static JSONWebKeySet getJWKSet(KeycloakSession session) {
-//        RealmModel realm = session.getContext().getRealm();
-//        List<JWK> jwks = session.keys().getKeysStream(realm)
-//                .filter(key -> KeyUse.ENC.equals(key.getUse()))
-//                .map(key -> {
-//                    try {
-//                        String kid = key.getKid() != null ? key.getKid() : realm.getId() + "-" + key.getProviderId();
-//                        String algorithm = key.getAlgorithm() != null ? key.getAlgorithm() : JWEConstants.RSA_OAEP;
-//                        if ("RSA".equals(key.getType())) {
-//                            return JWKBuilder.create()
-//                                    .rsa
-//                                    )
-//                        }
-//                        // Skip non-RSA keys for now (EC not supported in this context)
-//                        return null;
-//                    } catch (Exception e) {
-//                        LOGGER.warnf(e, "Failed to convert key to JWK");
-//                        return null;
-//                    }
-//                })
-//                .filter(Objects::nonNull)
-//                .collect(Collectors.toList());
-//        return jwks.isEmpty() ? null : new JSONWebKeySet(jwks);
-//    }
+
+    private static JSONWebKeySet getJWKSet(KeycloakSession session) {
+        RealmModel realm = session.getContext().getRealm();
+        KeyManager keyManager = session.keys();
+        List<JWK> keys = new ArrayList<>();
+
+        keyManager.getKeysStream(realm)
+                .filter(key -> KeyUse.ENC.equals(key.getUse()))
+                .forEach(key -> {
+                    JWK jwk = new JWK();
+                    jwk.setKeyId(key.getKid());
+                    jwk.setAlgorithm(key.getAlgorithm());
+                    jwk.setPublicKeyUse("enc"); // Static since we filtered for ENC keys
+
+                    try {
+                        if (key.getType().equals("RSA")) {
+                            RSAPublicKey rsaKey = (RSAPublicKey) key.getPublicKey();
+                            jwk.setKeyType("RSA");
+                            jwk.setOtherClaims("n", Base64Url.encode(rsaKey.getModulus().toByteArray()));
+                            jwk.setOtherClaims("e", Base64Url.encode(rsaKey.getPublicExponent().toByteArray()));
+                            keys.add(jwk);
+                        } else if (key.getType().equals("EC")) {
+                            ECPublicKey ecKey = (ECPublicKey) key.getPublicKey();
+                            jwk.setKeyType("EC");
+                            jwk.setOtherClaims("crv", "P-256"); // Simplified - assumes P-256
+                            jwk.setOtherClaims("x", Base64Url.encode(ecKey.getW().getAffineX().toByteArray()));
+                            jwk.setOtherClaims("y", Base64Url.encode(ecKey.getW().getAffineY().toByteArray()));
+                            keys.add(jwk);
+                        }
+                        // Skip other key types
+                    } catch (Exception e) {
+                        LOGGER.warnf("Failed to process key %s: %s", key.getKid(), e.getMessage());
+                    }
+                });
+
+        JSONWebKeySet jwks = new JSONWebKeySet();
+        jwks.setKeys(keys.toArray(new JWK[0]));
+        return jwks;
+    }
+
 
     /**
      * Returns the supported compression methods.

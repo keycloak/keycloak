@@ -77,7 +77,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
 
     private JWK getIssuerJwk(KeycloakSession session) {
         CredentialIssuer issuerMetadata = (CredentialIssuer) new OID4VCIssuerWellKnownProvider(session).getConfig();
-        return issuerMetadata.getCredentialRequestEncryption().getJwks().getKeys()[0]; // Assume first key
+        return issuerMetadata.getCredentialRequestEncryption().getJwks().getKeys()[0];
     }
 
     private String createJwePayload(KeycloakSession session, CredentialRequest credentialRequest, String alg, String enc, String zip) {
@@ -331,7 +331,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                 JWE jwe = new JWE()
                         .header(header)
                         .content(content);
-                // Note: Skip encryption to simulate invalid kid, as encryption would fail without valid key
+                // Note: Skip encryption to simulate invalid kid, as encryption would fail without a valid key
                 String requestPayload = Base64Url.encode(header.toString().getBytes()) + ".." + Base64Url.encode(content) + "..";
                 issuerEndpoint.requestCredential(requestPayload);
                 Assert.fail("Expected BadRequestException for invalid JWK kid");
