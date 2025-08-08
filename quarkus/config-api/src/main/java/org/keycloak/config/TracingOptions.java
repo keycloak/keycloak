@@ -33,7 +33,7 @@ public class TracingOptions {
 
     public static final Option<String> TRACING_ENDPOINT = new OptionBuilder<>("tracing-endpoint", String.class)
             .category(OptionCategory.TRACING)
-            .description("OpenTelemetry endpoint to connect to.")
+            .description("OpenTelemetry endpoint to connect to for traces. If not given, the value is inherited from the '%s' option.".formatted(OpenTelemetryOptions.OTEL_TRACES_ENDPOINT.getKey()))
             .defaultValue("http://localhost:4317")
             .build();
 
@@ -44,19 +44,26 @@ public class TracingOptions {
             .buildTime(true)
             .build();
 
+    @Deprecated
     public static final Option<String> TRACING_SERVICE_NAME = new OptionBuilder<>("tracing-service-name", String.class)
             .category(OptionCategory.TRACING)
-            .description("OpenTelemetry service name. Takes precedence over 'service.name' defined in the 'tracing-resource-attributes' property.")
+            .deprecated()
+            .deprecatedMetadata(DeprecatedMetadata.deprecateOption("Service name is not directly related to Tracing and you should use the OpenTelemetry option.", OpenTelemetryOptions.OTEL_SERVICE_NAME.getKey()))
+            .description("OpenTelemetry service name. Takes precedence over 'service.name' defined in the 'tracing-resource-attributes' property. If not given, the value is inherited from the '%s' option.".formatted(OpenTelemetryOptions.OTEL_SERVICE_NAME.getKey()))
             .defaultValue("keycloak")
             .build();
 
+    @Deprecated
     public static final Option<List<String>> TRACING_RESOURCE_ATTRIBUTES = OptionBuilder.listOptionBuilder("tracing-resource-attributes", String.class)
             .category(OptionCategory.TRACING)
-            .description("OpenTelemetry resource attributes present in the exported trace to characterize the telemetry producer. Values in format 'key1=val1,key2=val2'. For more information, check the Tracing guide.")
+            .deprecated()
+            .deprecatedMetadata(DeprecatedMetadata.deprecateOption("Resource attributes are not directly related to Tracing and you should use the OpenTelemetry option which takes precedence", OpenTelemetryOptions.OTEL_RESOURCE_ATTRIBUTES.getKey()))
+            .description("OpenTelemetry resource attributes present in the exported trace to characterize the telemetry producer. Values in format 'key1=val1,key2=val2'. If not given, the value is inherited from the '%s' option. For more information, check the Tracing guide.".formatted(OpenTelemetryOptions.OTEL_RESOURCE_ATTRIBUTES.getKey()))
             .build();
+
     public static final Option<String> TRACING_PROTOCOL = new OptionBuilder<>("tracing-protocol", String.class)
             .category(OptionCategory.TRACING)
-            .description("OpenTelemetry protocol used for the telemetry data.")
+            .description("OpenTelemetry protocol used for the telemetry data. If not given, the value is inherited from the '%s' option.".formatted(OpenTelemetryOptions.OTEL_TRACES_PROTOCOL.getKey()))
             .defaultValue("grpc")
             .expectedValues("grpc", "http/protobuf")
             .build();

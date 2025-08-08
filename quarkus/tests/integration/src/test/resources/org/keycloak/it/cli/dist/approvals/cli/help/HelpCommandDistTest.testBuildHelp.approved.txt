@@ -94,6 +94,12 @@ Vault:
 
 --vault <provider>   Enables a vault provider. Possible values are: file, keystore.
 
+OpenTelemetry:
+
+--otel-traces-enabled <true|false>
+                     Enables the OpenTelemetry Traces. Property 'tracing-enabled' takes precedence.
+                       Default: false.
+
 Tracing:
 
 --tracing-enabled <true|false>

@@ -361,6 +361,12 @@ Vault:
 --vault-pass <pass>  Password for the vault keystore.
 --vault-type <type>  Specifies the type of the keystore file. Default: PKCS12.
 
+OpenTelemetry:
+
+--otel-traces-enabled <true|false>
+                     Enables the OpenTelemetry Traces. Property 'tracing-enabled' takes precedence.
+                       Default: false.
+
 Logging:
 
 --log <handler>      Enable one or more log handlers in a comma-separated list. Possible values
