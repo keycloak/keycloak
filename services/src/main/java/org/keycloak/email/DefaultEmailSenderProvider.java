@@ -24,6 +24,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.truststore.JSSETruststoreConfigurator;
+import org.keycloak.utils.EmailValidationUtil;
 
 import jakarta.mail.Address;
 import jakarta.mail.MessagingException;
@@ -74,6 +75,10 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
 
     @Override
     public void send(Map<String, String> config, String address, String subject, String textBody, String htmlBody) throws EmailException {
+        if (!isValidEmail(address, isAllowUTF8(config))) {
+            throw new EmailException("Invalid address: " + address);
+        }
+
         Session session = Session.getInstance(buildEmailProperties(config));
 
         Message message = buildMessage(session, address, subject, config, buildMultipartBody(textBody, htmlBody));
@@ -137,9 +142,14 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
             props.setProperty("mail.smtp.from", envelopeFrom);
         }
 
+        final boolean allowutf8 = isAllowUTF8(config);
+        if (allowutf8) {
+            props.setProperty("mail.mime.allowutf8", "true");
+        }
+
         String from = config.get("from");
-        if (from == null) {
-            throw new EmailException("No sender address configured in the realm settings for emails");
+        if (!isValidEmail(from, allowutf8)) {
+            throw new EmailException("Invalid sender address configured in the realm settings for emails: " + from);
         }
 
         // Specify 'mail.from' as InternetAddress.getLocalAddress() would otherwise do a InetAddress.getCanonicalHostName
@@ -224,6 +234,10 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
         return "true".equals(config.get("ssl"));
     }
 
+    private static boolean isAllowUTF8(Map<String, String> config) {
+        return "true".equals(config.get("allowutf8"));
+    }
+
     private static boolean isDebugEnabled(Map<String, String> config) {
         return "true".equals(config.get("debug"));
     }
@@ -236,6 +250,11 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
         return "token".equals(config.get("authType"));
     }
 
+    private static boolean isValidEmail(String email, boolean allowutf8) {
+        return EmailValidationUtil.isValidEmail(email)
+                // check allowutf8 is set or the email address is ascii
+                && (allowutf8 || email.chars().allMatch(c -> c < 128));
+    }
 
     protected InternetAddress toInternetAddress(String email, String displayName) throws UnsupportedEncodingException, AddressException, EmailException {
         if (email == null || "".equals(email.trim())) {

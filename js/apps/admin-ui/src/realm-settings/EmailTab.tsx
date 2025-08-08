@@ -302,6 +302,16 @@ export const RealmSettingsEmailTab = ({
                 )}
               </>
             )}
+            <SwitchControl
+              name="smtpServer.allowutf8"
+              label={t("allowutf8")}
+              labelIcon={t("allowutf8Help")}
+              data-testid="smtpServer.allowutf8"
+              defaultValue=""
+              labelOn={t("enabled")}
+              labelOff={t("disabled")}
+              stringify
+            />
             <Controller
               name="smtpServer.debug"
               control={control}
