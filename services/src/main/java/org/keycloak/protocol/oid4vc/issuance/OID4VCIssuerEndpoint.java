@@ -357,7 +357,7 @@ public class OID4VCIssuerEndpoint {
                                 "scope in access token = %s.",
                         requestedCredential.getName(), accessToken.getScope());
                 throw new CorsErrorResponseException(cors,
-                        ErrorType.UNSUPPORTED_CREDENTIAL_TYPE.toString(),
+                        ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION.toString(),
                         "Scope check failure",
                         Response.Status.BAD_REQUEST);
             } else {
@@ -437,7 +437,16 @@ public class OID4VCIssuerEndpoint {
         // Find the requested credential scope
         CredentialScopeModel requestedCredential = credentialRequestVO.findCredentialScope(session).orElseThrow(() -> {
             LOGGER.debugf("Credential for request '%s' not found.", credentialRequestVO.toString());
-            return new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_TYPE));
+            
+            // Determine the appropriate error type based on what was requested
+            ErrorType errorType;
+            if (credentialRequestVO.getCredentialConfigurationId() != null) {
+                errorType = ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION;
+            } else {
+                errorType = ErrorType.UNKNOWN_CREDENTIAL_IDENTIFIER;
+            }
+            
+            return new BadRequestException(getErrorResponse(errorType));
         });
 
         checkScope(requestedCredential);
@@ -663,9 +672,13 @@ public class OID4VCIssuerEndpoint {
                         vcIssuanceContext.getCredentialBody(),
                         credentialConfig.getCredentialBuildConfig()
                 ))
-                .orElseThrow(() -> new BadRequestException(
-                        String.format("No signer found for format '%s'.", credentialConfig.getFormat())
-                ));
+                .orElseThrow(() -> {
+                    String message = String.format("No signer found for format '%s'.", credentialConfig.getFormat());
+                    return new BadRequestException(
+                            message,
+                            getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION, message)
+                    );
+                });
     }
 
     private CredentialScopeModel getClientScopeModel(SupportedCredentialConfiguration credentialConfig) {
@@ -799,7 +812,8 @@ public class OID4VCIssuerEndpoint {
         CredentialBuilder credentialBuilder = credentialBuilders.get(format);
 
         if (credentialBuilder == null) {
-            throw new BadRequestException(String.format("No credential builder found for format %s", format));
+            String message = String.format("No credential builder found for format %s", format);
+            throw new BadRequestException(message, getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION, message));
         }
 
         return credentialBuilder;
