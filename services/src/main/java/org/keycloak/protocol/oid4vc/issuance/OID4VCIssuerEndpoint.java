@@ -33,22 +33,34 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.jose.jwe.JWE;
+import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.jose.jwe.JWEHeader;
+import org.keycloak.jose.jwe.JWEKeyStorage;
+import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
+import org.keycloak.jose.jwe.enc.AesGcmJWEEncryptionProvider;
+import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.KeyManager;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -64,8 +76,10 @@ import org.keycloak.protocol.oid4vc.issuance.keybinding.JwtCNonceHandler;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.ProofValidator;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
 import org.keycloak.protocol.oid4vc.issuance.signing.CredentialSigner;
+import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
+import org.keycloak.protocol.oid4vc.model.CredentialRequestEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryption;
 import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryptionMetadata;
@@ -107,6 +121,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.zip.DeflaterOutputStream;
+import java.util.zip.Inflater;
+import java.util.zip.InflaterOutputStream;
 
 /**
  * Provides the (REST-)endpoints required for the OID4VCI protocol.
@@ -329,7 +345,7 @@ public class OID4VCIssuerEndpoint {
     }
 
     /**
-     * Provides an OID4VCI compliant credentials offer
+     * Provides an OID4VCI compliant credential offer
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -376,16 +392,48 @@ public class OID4VCIssuerEndpoint {
      * Returns a verifiable credential
      */
     @POST
-    @Consumes(MediaType.APPLICATION_JSON)
+    @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_JWT})
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_JWT})
     @Path(CREDENTIAL_PATH)
-    public Response requestCredential(CredentialRequest credentialRequestVO) {
-        LOGGER.debugf("Received credentials request %s.", credentialRequestVO);
+    public Response requestCredential(String requestPayload) {
+        LOGGER.debugf("Received credentials request %s.", requestPayload);
 
         cors = Cors.builder().auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 
         // Authenticate first to fail fast on auth errors
         AuthenticationManager.AuthResult authResult = getAuthResult();
+
+        CredentialIssuer issuerMetadata = (CredentialIssuer) new OID4VCIssuerWellKnownProvider(session).getConfig();
+        CredentialRequestEncryptionMetadata requestEncryptionMetadata = issuerMetadata.getCredentialRequestEncryption();
+        boolean isRequestEncryptionRequired = Optional.ofNullable(requestEncryptionMetadata)
+                .map(CredentialRequestEncryptionMetadata::getEncryptionRequired)
+                .orElse(false);
+
+        // Detect JWE by checking if the payload has five parts (header, payload, signature, etc.)
+        boolean isJwe = requestPayload != null && requestPayload.split("\\.").length == 5;
+
+        if (isRequestEncryptionRequired && !isJwe) {
+            String errorMessage = "Encryption is required by the Credential Issuer, but the request is not a JWE.";
+            LOGGER.debug(errorMessage);
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
+        }
+
+        CredentialRequest credentialRequestVO;
+        if (isJwe) {
+            try {
+                credentialRequestVO = decryptCredentialRequest(requestPayload, requestEncryptionMetadata);
+            } catch (Exception e) {
+                LOGGER.debugf("Failed to decrypt JWE request: %s", e.getMessage());
+                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, e.getMessage()));
+            }
+        } else {
+            try {
+                credentialRequestVO = JsonSerialization.mapper.readValue(requestPayload, CredentialRequest.class);
+            } catch (JsonProcessingException e) {
+                LOGGER.debugf("Failed to parse JSON request: %s", e.getMessage());
+                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, "Invalid JSON payload"));
+            }
+        }
 
         // Validate encryption parameters if present
         CredentialResponseEncryption encryptionParams = credentialRequestVO.getCredentialResponseEncryption();
@@ -444,7 +492,7 @@ public class OID4VCIssuerEndpoint {
             throw new BadRequestException(getErrorResponse(ErrorType.MISSING_CREDENTIAL_IDENTIFIER_AND_CONFIGURATION_ID));
         }
 
-        // Find the requested credential scope
+        // Find the requested credential
         CredentialScopeModel requestedCredential = credentialRequestVO.findCredentialScope(session).orElseThrow(() -> {
             LOGGER.debugf("Credential for request '%s' not found.", credentialRequestVO.toString());
             return new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_TYPE));
@@ -458,8 +506,7 @@ public class OID4VCIssuerEndpoint {
         Object theCredential = getCredential(authResult, supportedCredential, credentialRequestVO);
 
         // Generate credential response
-        CredentialResponse responseVO = new CredentialResponse();
-        responseVO
+        CredentialResponse responseVO = new CredentialResponse()
                 .addCredential(theCredential)
                 .setNotificationId(generateNotificationId());
 
@@ -472,6 +519,97 @@ public class OID4VCIssuerEndpoint {
         }
 
         return Response.ok().entity(responseVO).build();
+    }
+
+    /**
+     * Decrypt the Credential Request
+     * @param jwePayload
+     * @param metadata
+     * @return
+     * @throws Exception
+     */
+    private CredentialRequest decryptCredentialRequest(
+            String jwePayload,
+            CredentialRequestEncryptionMetadata metadata)
+            throws Exception {
+        JWE jwe = new JWE(jwePayload);
+        JWEHeader header = (JWEHeader) jwe.getHeader();
+        String kid = header.getKeyId();
+        String alg = header.getAlgorithm();
+        String enc = header.getEncryptionAlgorithm();
+        String zip = header.getCompressionAlgorithm();
+
+        // Validate algorithms
+        if (!metadata.getEncValuesSupported().contains(enc)) {
+            throw new IllegalArgumentException("Unsupported encryption algorithm: " + enc);
+        }
+        if (zip != null && (metadata.getZipValuesSupported() == null || !metadata.getZipValuesSupported().contains(zip))) {
+            throw new IllegalArgumentException("Unsupported compression algorithm: " + zip);
+        }
+
+        // Find matching JWK
+        JWK jwk = Arrays.stream(metadata.getJwks().getKeys())
+                .filter(key -> key.getKeyId().equals(kid))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("No JWK found for kid: " + kid));
+
+        if (!jwk.getAlgorithm().equals(alg)) {
+            throw new IllegalArgumentException("JWE alg does not match JWK alg: " + alg);
+        }
+
+        // Retrieve private key from Keycloak KeyManager
+        KeyManager keyManager = session.keys();
+        KeyWrapper keyWrapper = keyManager.getKeysStream(session.getContext().getRealm())
+                .filter(key -> key.getKid().equals(kid) && KeyUse.ENC.equals(key.getUse()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("No private key found for kid: " + kid));
+
+        // Set up decryption
+        JWEKeyStorage keyStorage = jwe.getKeyStorage();
+        keyStorage.setDecryptionKey(keyWrapper.getPrivateKey());
+
+        // Workaround: Hardcode providers instead of JWERegistry
+        JWEAlgorithmProvider algProvider;
+        if (JWEConstants.RSA_OAEP_256.equals(alg)) {
+            algProvider = CryptoIntegration.getProvider().getAlgorithmProvider(JWEAlgorithmProvider.class, alg);
+        } else {
+            throw new IllegalArgumentException("Unsupported algorithm: " + alg);
+        }
+        JWEEncryptionProvider encProvider;
+        if (JWEConstants.A256GCM.equals(enc)) {
+            encProvider = new AesGcmJWEEncryptionProvider(JWEConstants.A256GCM);
+        } else {
+            throw new IllegalArgumentException("Unsupported encryption: " + enc);
+        }
+
+        if (algProvider == null) {
+            throw new IllegalArgumentException("No algorithm provider found for alg: " + alg);
+        }
+        if (encProvider == null) {
+            throw new IllegalArgumentException("No encryption provider found for enc: " + enc);
+        }
+
+        // Decrypt
+        jwe.verifyAndDecodeJwe(jwePayload, algProvider, encProvider);
+
+        // Decompress if necessary
+        String decryptedPayload = new String(jwe.getContent(), StandardCharsets.UTF_8);
+        if (zip != null && zip.equals("DEF")) {
+            decryptedPayload = decompress(decryptedPayload);
+        }
+
+        // Parse to CredentialRequest
+        return JsonSerialization.mapper.readValue(decryptedPayload, CredentialRequest.class);
+    }
+
+    private String decompress(String compressed) throws Exception {
+        Inflater inflater = new Inflater(true);
+        byte[] compressedBytes = Base64Url.decode(compressed);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try (InflaterOutputStream inflaterOutputStream = new InflaterOutputStream(out, inflater)) {
+            inflaterOutputStream.write(compressedBytes);
+        }
+        return out.toString(StandardCharsets.UTF_8);
     }
 
     /**

@@ -25,6 +25,7 @@ import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -42,12 +43,16 @@ import org.keycloak.urls.UrlType;
 import org.keycloak.wellknown.WellKnownProvider;
 import org.jboss.logging.Logger;
 
+import java.security.interfaces.ECPublicKey;
+import java.security.interfaces.RSAPublicKey;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.keycloak.crypto.KeyType.RSA;
+import static org.keycloak.jose.jwk.ECPublicJWK.EC;
 
 /**
  * {@link WellKnownProvider} implementation to provide the .well-known/openid-credential-issuer endpoint, offering
@@ -91,7 +96,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                 .setCredentialsSupported(getSupportedCredentials(keycloakSession))
                 .setAuthorizationServers(List.of(getIssuer(context)))
                 .setCredentialResponseEncryption(getCredentialResponseEncryption(keycloakSession))
-                .setCredentialRequestEncryption(getCredentialRequestEncryption(keycloakSession))
+//                .setCredentialRequestEncryption(getCredentialRequestEncryption(keycloakSession))
                 .setBatchCredentialIssuance(getBatchCredentialIssuance(keycloakSession))
                 .setSignedMetadata(getSignedMetadata(keycloakSession));
         return issuer;
@@ -144,17 +149,17 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
      * Returns the credential request encryption metadata for the issuer.
      * Determines supported algorithms and JWK Set from available realm keys
      */
-    public static CredentialRequestEncryptionMetadata getCredentialRequestEncryption(KeycloakSession session) {
-        RealmModel realm = session.getContext().getRealm();
-        CredentialRequestEncryptionMetadata metadata = new CredentialRequestEncryptionMetadata();
-
-        metadata.setJwks(getJWKSet(session))
-                .setEncValuesSupported(getSupportedEncryptionMethods())
-                .setZipValuesSupported(getSupportedCompressionMethods())
-                .setEncryptionRequired(isRequestEncryptionRequired(realm));
-
-        return metadata;
-    }
+//    public static CredentialRequestEncryptionMetadata getCredentialRequestEncryption(KeycloakSession session) {
+//        RealmModel realm = session.getContext().getRealm();
+//        CredentialRequestEncryptionMetadata metadata = new CredentialRequestEncryptionMetadata();
+//
+//        metadata.setJwks(getJWKSet(session))
+//                .setEncValuesSupported(getSupportedEncryptionMethods())
+//                .setZipValuesSupported(getSupportedCompressionMethods())
+//                .setEncryptionRequired(isRequestEncryptionRequired(realm));
+//
+//        return metadata;
+//    }
 
 
     /**
@@ -189,32 +194,30 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
     /**
      * Returns the JWK Set for credential request encryption
      */
-    private static JSONWebKeySet getJWKSet(KeycloakSession session) {
-        RealmModel realm = session.getContext().getRealm();
-        KeyManager keyManager = session.keys();
-
-        List<JWK> jwks = keyManager.getKeysStream(realm)
-                .filter(key -> KeyUse.ENC.equals(key.getUse()))
-                .map(key -> {
-                    try {
-                        String algorithm = key.getAlgorithm() != null ? key.getAlgorithm() : JWEAlgorithm.RSA_OAEP_256.getName();
-                        return new RSAKey.Builder((java.security.interfaces.RSAPublicKey) key.getPublicKey())
-                                .keyID(key.getKid() != null ? key.getKid() : UUID.randomUUID().toString())
-                                .keyUse(KeyUse.ENCRYPTION)
-                                .algorithm(new JWEAlgorithm(algorithm))
-                                .build();
-                    } catch (Exception e) {
-                        LOGGER.warnf(e, "Failed to convert key to JWK for kid: %s", key.getKid());
-                        return null;
-                    }
-                })
-                .filter(jwk -> jwk != null)
-                .collect(Collectors.toList());
-
-        JSONWebKeySet jsonWebKeySet = new JSONWebKeySet();
-        jsonWebKeySet.setKeys(jwks.toArray(new JWK[0]));
-        return jsonWebKeySet;
-    }
+//    private static JSONWebKeySet getJWKSet(KeycloakSession session) {
+//        RealmModel realm = session.getContext().getRealm();
+//        List<JWK> jwks = session.keys().getKeysStream(realm)
+//                .filter(key -> KeyUse.ENC.equals(key.getUse()))
+//                .map(key -> {
+//                    try {
+//                        String kid = key.getKid() != null ? key.getKid() : realm.getId() + "-" + key.getProviderId();
+//                        String algorithm = key.getAlgorithm() != null ? key.getAlgorithm() : JWEConstants.RSA_OAEP;
+//                        if ("RSA".equals(key.getType())) {
+//                            return JWKBuilder.create()
+//                                    .rsa
+//                                    )
+//                        }
+//                        // Skip non-RSA keys for now (EC not supported in this context)
+//                        return null;
+//                    } catch (Exception e) {
+//                        LOGGER.warnf(e, "Failed to convert key to JWK");
+//                        return null;
+//                    }
+//                })
+//                .filter(Objects::nonNull)
+//                .collect(Collectors.toList());
+//        return jwks.isEmpty() ? null : new JSONWebKeySet(jwks);
+//    }
 
     /**
      * Returns the supported compression methods.
