@@ -175,8 +175,8 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
 
     @Override
     public void setDomains(Set<OrganizationDomainModel> domains) {
-        if (domains == null || domains.isEmpty()) {
-            throw new ModelValidationException("You must provide at least one domain");
+        if (domains == null) {
+            domains = Set.of();
         }
 
         Map<String, OrganizationDomainModel> modelMap = domains.stream()
