@@ -67,7 +67,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -1247,10 +1246,6 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
     private void assertUserDisabledEvent(String error) {
         events.expect(EventType.LOGIN_ERROR).error(error).assertEvent();
-    }
-
-    private void assertUserPermanentlyDisabledEvent() {
-        events.expect(EventType.LOGIN_ERROR).error(Errors.USER_DISABLED).assertEvent();
     }
 
     private void assertUserDisabledReason(String expected) {

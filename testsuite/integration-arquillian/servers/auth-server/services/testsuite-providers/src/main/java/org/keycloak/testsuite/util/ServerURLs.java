@@ -53,12 +53,4 @@ public class ServerURLs {
     public static String removeDefaultPorts(String url) {
         return url != null ? url.replaceFirst("(.*)(:80)(\\/.*)?$", "$1$3").replaceFirst("(.*)(:443)(\\/.*)?$", "$1$3") : null;
     }
-
-    private static int parsePort(String property) {
-        try {
-            return parseInt(System.getProperty(property));
-        } catch (NumberFormatException ex) {
-            throw new RuntimeException("Failed to get " + property, ex);
-        }
-    }
 }

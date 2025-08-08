@@ -78,15 +78,6 @@ public class EventMetricsProviderTest extends AbstractKeycloakTest {
         }
     }
 
-    private static void setConfigProperty(String name, String value) {
-        if (value != null) {
-            System.setProperty(name, value);
-        }
-        else {
-            System.clearProperty(name);
-        }
-    }
-
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmBuilder realm = RealmBuilder.create().name(TEST);

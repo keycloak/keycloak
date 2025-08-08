@@ -35,7 +35,6 @@ import org.junit.Before;
 import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.Base64Url;
@@ -331,11 +330,6 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
     private void assignOptionalClientScopeToClient(String scopeId, String clientId) {
         ClientResource clientResource = findClientByClientId(testRealm(), clientId);
         clientResource.addOptionalClientScope(scopeId);
-    }
-
-    private void logoutUser(String clientId, String username) {
-        UserResource user = ApiUtil.findUserByUsernameId(adminClient.realm(TEST_REALM_NAME), username);
-        user.logout();
     }
 
     public static JWK generateRsaJwk() throws NoSuchAlgorithmException {

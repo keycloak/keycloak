@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.util.cli;
 
 import org.keycloak.cluster.ClusterProvider;
-import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.KeycloakSession;
 
 import java.util.concurrent.ExecutorService;
@@ -56,10 +55,6 @@ public class ClusterProviderTaskCommand extends AbstractCommand {
                 e.printStackTrace();
             }
         });
-    }
-
-    private void updateConfig(MultivaluedHashMap<String, String> cfg, int waitTime) {
-        cfg.putSingle("wait-time", String.valueOf(waitTime));
     }
 
 

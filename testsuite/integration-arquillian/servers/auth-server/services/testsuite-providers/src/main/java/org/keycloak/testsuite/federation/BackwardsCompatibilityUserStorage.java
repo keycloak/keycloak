@@ -452,10 +452,4 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
         }
     }
 
-    private void assertEquals(Object obj1, Object obj2) {
-        if (!(obj1.equals(obj2))) {
-            throw new AssertionError("Objects not equals");
-        }
-    }
-
 }
