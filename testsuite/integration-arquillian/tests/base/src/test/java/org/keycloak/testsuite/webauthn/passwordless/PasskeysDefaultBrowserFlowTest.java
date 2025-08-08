@@ -25,7 +25,6 @@ import static org.hamcrest.Matchers.nullValue;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 import org.keycloak.WebAuthnConstants;
-import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
@@ -34,7 +33,6 @@ import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.auth.page.login.OneTimeCode;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
@@ -49,7 +47,6 @@ import org.openqa.selenium.firefox.FirefoxDriver;
  *
  * @author rmartinc
  */
-@EnableFeature(value = Profile.Feature.PASSKEYS, skipRestart = true)
 @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
 public class PasskeysDefaultBrowserFlowTest extends AbstractWebAuthnVirtualTest {
 

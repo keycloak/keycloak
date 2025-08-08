@@ -57,7 +57,12 @@ public class WebAuthnConditionalUIAuthenticator extends WebAuthnPasswordlessAuth
     }
 
     public boolean isPasskeysEnabled() {
+        return isPasskeysEnabled(session);
+    }
+
+    static public boolean isPasskeysEnabled(KeycloakSession session) {
         return Profile.isFeatureEnabled(Profile.Feature.PASSKEYS) &&
+                session.getContext().getRealm() != null &&
                 Boolean.TRUE.equals(session.getContext().getRealm().getWebAuthnPolicyPasswordless().isPasskeysEnabled());
     }
 }

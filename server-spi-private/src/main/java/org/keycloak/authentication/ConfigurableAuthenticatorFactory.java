@@ -20,6 +20,7 @@ package org.keycloak.authentication;
 import java.util.Collections;
 import java.util.Set;
 import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ConfiguredProvider;
 
 /**
@@ -50,9 +51,10 @@ public interface ConfigurableAuthenticatorFactory extends ConfiguredProvider {
     /**
      * Optional categories that this authenticator can have (for example passkeys in username/form).
      * Optional categories are not taken into account by LoA.
+     * @param session The current session in the request
      * @return Set of extra optional categories, empty by default
      */
-    default Set<String> getOptionalReferenceCategories() {
+    default Set<String> getOptionalReferenceCategories(KeycloakSession session) {
         return Collections.emptySet();
     }
 

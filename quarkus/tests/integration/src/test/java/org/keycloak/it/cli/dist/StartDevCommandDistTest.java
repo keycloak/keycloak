@@ -59,11 +59,11 @@ public class StartDevCommandDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--debug", "--features=passkeys:v1" })
+    @Launch({ "start-dev", "--debug", "--features=oid4vc-vci:v1" })
     void testStartDevShouldStartTwoJVMs(CLIResult cliResult) {
         cliResult.assertMessageWasShownExactlyNumberOfTimes("Listening for transport dt_socket at address:", 2);
         cliResult.assertStartedDevMode();
-        cliResult.assertMessage("passkeys");
+        cliResult.assertMessage("oid4vc-vci");
         // ensure consistency with build-time properties
         cliResult.assertNoMessage("Build time property cannot");
     }

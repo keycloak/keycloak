@@ -22,7 +22,6 @@ import java.util.Set;
 import org.keycloak.Config;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
-import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -71,10 +70,10 @@ public class UsernameFormFactory implements AuthenticatorFactory {
     }
 
     @Override
-    public Set<String> getOptionalReferenceCategories() {
-        return Profile.isFeatureEnabled(Profile.Feature.PASSKEYS)
+    public Set<String> getOptionalReferenceCategories(KeycloakSession session) {
+        return WebAuthnConditionalUIAuthenticator.isPasskeysEnabled(session)
                 ? Collections.singleton(WebAuthnCredentialModel.TYPE_PASSWORDLESS)
-                : AuthenticatorFactory.super.getOptionalReferenceCategories();
+                : AuthenticatorFactory.super.getOptionalReferenceCategories(session);
     }
 
     @Override
